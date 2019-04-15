@@ -1,0 +1,16 @@
+# -*- mode: sh -*-
+cloud_no=0
+cloud_domain=cloudland.edge.bluemix.net
+image_repo=http://192.168.10.2/image
+dns_server=10.0.80.11
+external_vlan=2052
+internal_vlan=1236
+vxlan_mcast_addr=225.10.10.1
+vxlan_interface=bond0
+vlan_interface=bond0
+cpu_limit=10
+mem_limit=32768
+vol_limit=100
+disk_inc_limit=100
+resolver_addr=192.168.1.125
+use_lb=false

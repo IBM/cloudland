@@ -1,0 +1,88 @@
+# -*- mode: sh -*-
+localrc="${BASH_SOURCE[0]}.local"
+source "$localrc"
+cache_dir=/opt/cloudland/cache
+cache_tmp_dir=$cache_dir/tmp
+volume_dir=/opt/cloudland/volume
+image_dir=$cache_dir/instance
+xml_dir=/opt/cloudland/cache/xml
+template_dir=/opt/cloudland/scripts/xml
+container_dir=/var/lib/lxd/containers
+db_file=/opt/cloudland/db/resource-${SCI_CLIENT_ID}.db
+dmasq_dir=/opt/cloudland/cache/dnsmasq
+mudata_dir=/opt/cloudland/mudata
+snapshot_dir=/var/snapshot
+db_lock=/opt/cloudland/run/db-${SCI_CLIENT_ID}.lock
+export JAEGER_SERVICE_NAME="SCI-Backend"
+span=$(basename $0 .sh)
+function die()
+{
+    echo $1
+    exit -1
+}
+
+function inet_aton()
+{
+    ip="$1"
+    hex=`printf '%02x' ${ip//./ }`
+    printf "%lu\n" "0x${hex}"
+}
+
+function inet_ntoa()
+{
+    num="$1"
+    hex=`printf "%08x\n" ${num}`
+    for i in `echo ${hex} | sed "s/\(..\)/\1 /g"`; do
+        printf '%hu.' "0x${i}"
+    done | sed "s/\.$//g"
+}
+
+function get_tunip()
+{
+	tunip=$(ifconfig $vxlan_interface | grep 'inet addr' | cut -d: -f2 | cut -d' ' -f1)
+	echo "tunip=$tunip" >> $localrc
+}
+
+function apply_fw()
+{
+    action=$1
+    chain=$2
+    shift
+    shift
+    rule=$*
+    if [ "$action" = '-I' -o "$action" = '-A' ]; then
+        iptables -D $chain $rule 2>/dev/null
+    elif [ "$action" = '-N' ]; then
+        iptables -S $chain || iptables -N $chain
+    fi
+    iptables $action $chain $rule
+}
+
+function apply_vnic()
+{
+    action=$1
+    vnic=$2
+    apply_fw $action FORWARD -m physdev --physdev-in $vnic --physdev-is-bridged -j ACCEPT
+    apply_fw $action FORWARD -m physdev --physdev-out $vnic --physdev-is-bridged -j ACCEPT
+}
+
+function sql_exec()
+{
+    flock -w 5 $db_lock sqlite3 $db_file "$@"
+}
+
+function sidecar()
+{
+    [ -x /usr/local/bin/sidecar ] && /usr/local/bin/sidecar $@
+}
+
+function end_span()
+{
+    sidecar span finish $span
+}
+
+if [ "$span" != "report_rc" ]; then
+    sidecar span start $span
+    trap end_span EXIT
+fi
+

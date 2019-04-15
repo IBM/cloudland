@@ -1,0 +1,3 @@
+export CLOUDLET_PATH=/home/ubuntu/cloudland/src/cloudlet 
+export SCHEDULE_SO_FILE=/home/ubuntu/cloudland/src/filter/scheduler.so
+export GRPC_REMOTE_ENDPOINT=localhost:30054
