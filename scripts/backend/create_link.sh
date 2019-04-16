@@ -19,3 +19,4 @@ else
     nmcli connection add con-name v-$vlan type vlan id $vlan ifname v-$vlan dev $vlan_interface ipv4.method disabled master $vm_br
 fi
 nmcli connection up v-$vlan
+udevadm settle
