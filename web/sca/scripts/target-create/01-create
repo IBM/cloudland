@@ -1,0 +1,25 @@
+#!/bin/bash
+target=$1
+release=$2
+version=$3
+basedir="targets/${target}"
+if [ -d ${basedir} ]; then
+    state=4
+else
+    mkdir -p ${basedir}
+    state=0
+fi
+deploy="releases/${release}/${version}/deploy"
+if [ -L "${deploy}.sum" ]; then
+    cat ${deploy}.sum > ${basedir}/deploy.sum
+else
+    exit 1
+fi
+
+tar Cxfz ${basedir} ${deploy}.tgz
+cat > ${basedir}/target.toml <<EOF
+[${target}]
+release = "${release}"
+version = "${version}"
+state = ${state}
+EOF

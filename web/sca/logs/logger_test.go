@@ -1,0 +1,23 @@
+package logs
+
+import (
+	"os"
+	"testing"
+
+	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
+)
+
+var testhook = test.NewLocal(defaultLogger)
+
+func TestStderrEqual(t *testing.T) {
+	logger := logrus.New()
+
+	if out := logger.Out; out != os.Stderr {
+		t.Fatal(out, os.Stderr)
+	}
+
+	if out := logrus.StandardLogger().Out; out != os.Stderr {
+		t.Fatal(out, os.Stderr)
+	}
+}

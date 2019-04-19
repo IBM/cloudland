@@ -1,0 +1,85 @@
+{{template "_head" .}}
+    <div class="admin user">
+	    <div class="ui container">
+		    <div class="ui grid">
+                {{template "_left" .}}
+          	    <div class="twelve wide column content">
+		            <h4 class="ui top attached header">
+			            User Manage Panel (Total: {{.Total}})
+			            <div class="ui right">
+				            <a class="ui green tiny button" href="instances/new">Create</a>
+			            </div>
+		            </h4>
+		            <div class="ui attached segment">
+			            <form class="ui form">
+	                        <div class="ui fluid tiny action input">
+	                            <input name="q" value="" placeholder="Search..." autofocus>
+	                            <button class="ui blue tiny button">Search</button>
+	                        </div>
+                        </form>
+		            </div>
+		            <div class="ui unstackable attached table segment">
+                        <table class="ui unstackable very basic striped table">
+	                        <thead>
+		                        <tr>
+			                        <th>ID</th>
+			                        <th>Hostname</th>
+			                        <th>Flavor</th>
+			                        <th>Image</th>
+			                        <th>IP Address</th>
+			                        <th>Status</th>
+									{{ if .IsAdmin }}
+			                        <th>Hyper</th>
+									{{ end }}
+			                        <th>Edit</th>
+                                    <th>Delete</th>
+		                        </tr>
+	                        </thead>
+	                        <tbody>
+                                {{ $Link := .Link }}
+                                {{ range .Instances }}
+		                        <tr>
+			                        <td>{{.ID}}</td>
+			                        <td>{{.Hostname}}</td>
+			                        <td>{{.Flavor.Name}}</td>
+			                        <td>{{.Image.Name}}</td>
+			                        <td>
+										{{ if .FloatingIps }}
+											{{ range .FloatingIps }}
+												{{.FipAddr}}
+											{{ end }}
+										{{ end }}
+										{{ if .Interfaces }}
+											{{ range .Interfaces }}
+												{{ if .Address}}
+												{{ .Address.Address }}
+												{{ end }}
+											{{ end }}
+										{{ end }}
+									</td>
+			                        <td>{{.Status}}</td>
+									{{ if $.IsAdmin }}
+			                        <td>{{.Hyper}}</td>
+									{{ end }}
+			                        <td><a href="{{$Link}}/{{.ID}}"><i class="fa fa-pencil-square-o"></i></a></td>
+                                    <td><div class="ui red tiny button delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}">Delete</div></td>
+		                        </tr>
+                                {{ end }}
+	                        </tbody>
+                        </table>
+		            </div>
+	            </div>
+            </div>
+        </div>
+    </div>
+    <div class="ui small basic delete modal">
+	    <div class="ui icon header">
+		    <i class="trash icon"></i>
+            Instance Deletion
+	    </div>
+	    <div class="content">
+		    <p>This instance is going to be deleted permanently, do you want to continue?</p>
+	    </div>
+	    {{template "_delete_modal_actions" .}}
+    </div>
+{{template "_footer" .}}

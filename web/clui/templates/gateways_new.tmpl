@@ -1,0 +1,77 @@
+{{template "_head" .}}
+<div class="user signup">
+	<div class="ui middle very relaxed page grid">
+        <div class="column" >
+            <form class="ui form" action="{{.Link}}" method="post">
+                <h3 class="ui top attached header">
+                    Create New Gateway
+                </h3>
+                <div class="ui attached segment">
+                    <div class="required inline field">
+                        <label for="name">Name</label>
+                        <input id="name" name="name" autofocus required>
+                    </div>
+			        {{if .IsAdmin }}
+                    <div class="inline field">
+                        <label for="public">Public Gateway</label>
+						<div class="ui selection dropdown">
+						  <input id="public" name="public" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">Public Gateway</div>
+						  <div class="menu">
+                            {{ range .Subnets }}
+							{{ if ne .Type "private" }}
+							<div class="item" data-value={{.ID}} data-text={{.Name}}>
+							  {{.Name}}-{{.Network}}/{{.Netmask}}
+							</div>
+                            {{ end }}
+                            {{ end }}
+						  </div>
+						</div>
+                    </div>
+                    <div class="inline field">
+                        <label for="private">Private Gateway</label>
+						<div class="ui selection dropdown">
+						  <input id="private" name="private" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">Private Gateway</div>
+						  <div class="menu">
+                            {{ range .Subnets }}
+							{{ if ne .Type "public" }}
+							<div class="item" data-value={{.ID}} data-text={{.Name}}>
+							  {{.Name}}-{{.Network}}/{{.Netmask}}
+							</div>
+                            {{ end }}
+                            {{ end }}
+						  </div>
+						</div>
+                    </div>
+			        {{end}}
+                    <div class="inline field">
+					    <label for="subnets">Subnets</label>
+						<div class="ui multiple selection dropdown">
+						  <input name="subnets" id="subnets" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">Subnets</div>
+						  <div class="menu">
+							{{ range .Subnets }}
+							{{ if eq .Type "internal" }}
+							<div class="item" data-value={{.ID}} data-text={{.Name}}>
+							  {{.Name}}-{{.Network}}/{{.Netmask}}
+							</div>
+							{{ end }}
+							{{ end }}
+						  </div>
+						</div>
+					</div>
+                    <div class="inline field">
+                        <label></label>
+                        <button class="ui green button">Create New Gateway</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+	</div>
+</div>
+{{template "_footer" .}}
+

@@ -1,0 +1,12 @@
+#!/bin/bash
+name=$1
+version=$2
+if [ -z "$name" -o -z "$version" ]; then
+    exit 1
+fi
+
+if [ -d "releases/${name}/${version}" ]; then
+    exit 3
+fi
+
+cp -rf "releases/${name}/latest" "releases/${name}/${version}"

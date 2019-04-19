@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package="logs";
+
+package com.gabecloud.sca.logs;
+
+service TraceAgentAdmin {
+  rpc List(ListRequest) returns (stream ListReply){}
+}
+
+message ListRequest {}
+
+message ListReply {
+  bytes data = 1;
+}

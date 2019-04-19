@@ -1,0 +1,32 @@
+{{template "_head" .}}
+<div class="user signup">
+	<div class="ui middle very relaxed page grid">
+        <div class="column" >
+            <form class="ui form" action="{{.Link}}" method="post">
+                <h3 class="ui top attached header">
+                    Create New User
+                </h3>
+                <div class="ui attached segment">
+                    <div class="required inline field">
+                        <label for="username">Username </label>
+                        <input id="username" name="username" autofocus required>
+                    </div>
+                    <div class="required inline field">
+                        <label for="password">New Password</label>
+                        <input id="password"  name="password" type="password" autocomplete="off" required>
+                    </div>
+                    <div class="required inline field">
+                        <label for="confirm">Confirm Password</label>
+                        <input id="confirm"  name="confirm" type="repasswd" autocomplete="off" required>
+                    </div>
+                    <div class="inline field">
+                        <label></label>
+                        <button class="ui green button">Create New User</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+	</div>
+</div>
+{{template "_footer" .}}
+

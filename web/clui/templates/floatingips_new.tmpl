@@ -1,0 +1,51 @@
+{{template "_head" .}}
+<div class="user signup">
+	<div class="ui middle very relaxed page grid">
+        <div class="column" >
+            <form class="ui form" action="{{.Link}}" method="post">
+                <h3 class="ui top attached header">
+                    Create New Floating Ip
+                </h3>
+                <div class="ui attached segment">
+                    <div class="required inline field">
+                        <label for="iface">For Instance Address</label>
+						<div class="ui selection dropdown">
+						  <input id="iface" name="iface" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">Address</div>
+						  <div class="menu">
+                            {{ range .Interfaces }}
+							<div class="item" data-value={{.ID}} data-text={{.Instance.Name}}--{{.Address.Address}}>
+							  {{.Instance.Name}}--{{.Address.Address}}
+							</div>
+                            {{ end }}
+						  </div>
+						</div>
+                    </div>
+                    <div class="inline field">
+                        <label for="ftype">Floating IP type</label>
+						<div class="ui selection dropdown">
+						  <input id="ftype" name="ftype" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">Type</div>
+						  <div class="menu">
+							<div class="item" data-value="public" data-text="Public">
+							  Public
+							</div>
+							<div class="item" data-value="private" data-text="Private">
+							  Private
+							</div>
+						  </div>
+						</div>
+                    </div>
+                    <div class="inline field">
+                        <label></label>
+                        <button class="ui green button">Create New Floating Ip</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+	</div>
+</div>
+{{template "_footer" .}}
+

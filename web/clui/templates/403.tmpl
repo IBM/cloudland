@@ -1,0 +1,9 @@
+{{template "_head" .}}
+<div class="ui container center">
+	<p style="margin-top: 100px"><img src="/img/403.png" alt="403"/></p>
+	<div class="ui divider"></div>
+	<br>
+	{{if .ErrorMsg}}<p>An error has occurred : {{.ErrorMsg}}</p>{{end}}
+	<p>Application Version: {{GetString "AppVersion"}}</p>
+</div>
+{{template "_footer" .}}

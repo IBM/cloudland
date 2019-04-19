@@ -1,0 +1,35 @@
+{{template "_head" .}}
+<div class="user signin">
+	<div class="ui middle very relaxed page grid">
+        <div class="column" >
+            <form class="ui form" action="{{.Link}}" method="post">
+                <h3 class="ui top attached header">
+                    Login
+                </h3>
+                <div class="ui attached segment">
+                    <div class="required inline field">
+                        <label for="username">Username </label>
+                        <input id="username" name="username" value="{{.Username}}" autofocus required>
+                    </div>
+                    <div class="required inline field">
+                        <label for="password">Password</label>
+                        <input id="password"  name="password" type="password" autocomplete="off" value="{{.Password}}" required>
+                    </div>
+                    <div class="inline field">
+						<label></label>
+						<div class="ui checkbox">
+							<label>Remember me</label>
+							<input name="remember" type="checkbox" value="{{.Remember}}">
+						</div>
+                    </div>
+                    <div class="inline field">
+                        <label></label>
+                        <button class="ui green button">Login</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+	</div>
+</div>
+{{template "_footer" .}}
+

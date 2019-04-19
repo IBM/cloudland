@@ -1,0 +1,10 @@
+#!/bin/bash
+
+binary=$3
+if [ ! -x ${binary} ]; then
+   exit 2
+fi
+
+shift 3
+
+nohup ${binary} $@ &> /dev/null &
