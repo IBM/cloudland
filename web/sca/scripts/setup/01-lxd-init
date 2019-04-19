@@ -1,0 +1,15 @@
+#!/bin/bash
+
+exec 2>&1
+
+if dpkg -s lxd &> /dev/null; then
+   apt-get purge -qq lxd lxd-client
+fi
+
+if [ ! -x /snap/bin/lxd ]; then
+    snap install lxd
+    lxd init --auto
+fi
+
+
+

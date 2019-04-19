@@ -1,0 +1,39 @@
+#!/bin/bash
+
+exec 2>&1
+
+lxc image list | grep pkg &> /dev/null
+
+if [ $? == 0 ]; then
+    exit 0
+fi
+lxc stop pkg &> /dev/null
+lxc delete pkg &> /dev/null
+lxc launch ubuntu:xenial/amd64 pkg
+# wait running
+for (( i=0; i<32; i++ )); do
+    (lxc info pkg | grep 'Status: Running') &> /dev/null
+    if [ $? = 0 ]; then
+        break
+    fi
+    sleep 1
+done
+# wait network ready
+for (( i=0; i<32; i++ )); do
+    lxc exec pkg -- ping -c 1 github.com &> /dev/null
+    if [ $? = 0 ]; then
+        break
+    fi
+    sleep 1
+done
+cat <<EOF | lxc exec pkg -- bash
+apt-get update
+apt-get upgrade -qq
+apt-get install -qq build-essential autoconf libtool pkg-config libtool-bin wget curl jq zip unzip
+[ -x /snap/bin/go ] ||  snap install go --classic
+grep GOPATH ~/.bashrc || echo 'export GOPATH=/usr/local' >> ~/.bashrc
+EOF
+lxc stop pkg
+lxc publish -f pkg --alias pkg
+lxc delete pkg
+lxc image info pkg

@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+option go_package="github.com/gabecloud/sca/targets";
+
+package com.github.gabecloud.sca.targets;
+
+import "releases/releases.proto";
+
+service TargetAdmin {
+  rpc Create(CreateRequest) returns (Target);
+  rpc Update(UpdateRequest) returns (Target);
+  rpc Delete(DeleteRequest) returns (Target);
+  rpc List(ListRequest) returns (stream Target);
+  rpc Get(GetRequest) returns (Target);
+  rpc Deploy(DeployRequest) returns (Target);
+  rpc Envs(EnvsRequest) returns (stream Env);
+  rpc Hosts(HostsRequest) returns (stream Host);
+  rpc Keys(KeysRequest) returns (stream Key);
+
+}
+
+enum State {
+  CREATED = 0;
+  DEPLOYED = 1;
+  RUNNING = 2;
+  MAINTAINENCE = 3;
+  UPDATED = 4;
+  DELETED = 5;
+}
+
+message Env {
+  string  name = 1;
+  string value = 2;
+}
+
+message EnvsRequest {
+  string name = 1;
+  Env env = 2;
+}
+
+message Target {
+  string name = 1;
+  State state = 2;
+  repeated Host hosts = 4;
+  releases.Release release = 5;
+}
+
+message Host {
+  string name = 1;
+  string group = 2;
+  string ip = 3;
+}
+
+message Key {
+  string name = 1;
+  string private = 2;
+}
+
+message HostsRequest{
+  string name = 1;
+  Host host = 2;
+}
+
+message KeysRequest {
+  string name = 1;
+  Key key = 2;
+}
+
+message CreateRequest {
+  string name = 1;
+  releases.Release release = 2;
+}
+
+message DeleteRequest {
+  string name = 1;
+}
+
+message UpdateRequest {
+  string name = 1;
+  string version = 2;
+}
+
+message DeployRequest {
+  string name = 1;
+}
+
+message GetRequest {
+  string name = 1;
+}
+
+message ListRequest {}

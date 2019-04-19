@@ -1,0 +1,11 @@
+{{template "_head" .}}
+<div class="ui container center">
+<div class="ui message">
+    <div class="header">
+        {{.StatusCode}} - {{.StatusMsg}}
+    </div>
+	<div class="ui divider"></div>
+    <p> with error : {{.ErrorMsg}} </p>
+</div>
+</div>
+{{template "_footer" .}}

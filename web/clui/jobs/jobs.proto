@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+option go_package="jobs";
+
+package com.ibm.cloudland.jobs;
+
+service JobService {
+  rpc Run(RunRequest) returns (stream Event) {}
+  rpc Invoke(InvokeRequest) returns (InvokeReply) {}
+  rpc Notify(NotifyRequest) returns (NotifyReply) {}
+  rpc Delete(DeleteRequest) returns (DeleteReply) {}
+  rpc List(ListRequest) returns (stream Job) {}
+  rpc RemoteExec(RemoteExecRequest) returns (RemoteExecReply){}
+}
+
+message RemoteExecRequest {
+  int32 id = 1;
+  string control = 2;
+  string command = 3;
+  int32 extra = 4;
+}
+
+message RemoteExecReply {
+  string status = 1;
+}
+
+message RunRequest {
+  Job job = 1;
+  int32 wait = 2;
+}
+
+message RunReply {
+  Job job = 1;
+}
+
+message InvokeRequest {
+  Job job = 1;
+}
+
+message InvokeReply {
+  Job job = 1;
+}
+
+message NotifyRequest {
+  Event event = 1;
+}
+
+message Event {
+  int32 jobId = 1;
+  int32 callbackId = 2;
+  bool succeed = 3;
+  string echo = 4;
+}
+
+message NotifyReply {
+}
+
+message DeleteRequest {
+  Job job = 1;
+  bool callback = 2;
+}
+
+message DeleteReply {
+  int64 deleted = 1;
+}
+
+message ListRequest {
+  Job job = 1;
+  bool callback = 2;
+  bool unscoped = 3;
+}
+
+enum Status {
+  INIT = 0;
+  CREATED = 1;
+  RUNNING = 2;
+  DONE = 3;
+  FAILED = 4;
+  ABORTED = 5;
+}
+
+message Job {
+  int32 id = 1;
+  string status = 2;
+  string control = 3;
+  string command = 4;
+  int32 extra = 5;
+  string hooks = 6;
+  int32 echos = 7;
+}

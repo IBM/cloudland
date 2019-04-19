@@ -1,0 +1,43 @@
+<div class="four wide column">
+    <div class="ui vertical menu">
+        <div class="header item">{{.Organization | Title}} Panel</div>
+        <a class="active item" href="/dashboard">
+            Dashboard
+        </a>
+        {{if .IsAdmin }}
+        <a class=" item" href="/users">
+            Users
+        </a>
+        {{end}}
+        <a class=" item" href="/orgs">
+            Organizations
+        </a>
+        <a class=" item" href="/instances">
+            Instances
+        </a>
+        <a class=" item" href="/flavors">
+            Flavors
+        </a>
+        <a class=" item" href="/images">
+            Images
+        </a>
+        <a class=" item" href="/keys">
+            Keys
+        </a>
+        <a class=" item" href="/subnets">
+            Subnets
+        </a>
+        <a class=" item" href="/floatingips">
+            FloatingIps
+        </a>
+        <a class=" item" href="/gateways">
+            Gateways
+        </a>
+        <a class=" item" href="/secgroups">
+            SecurityGroups
+        </a>
+        <a class=" item" href="/secrules">
+            SecurityRules
+        </a>
+    </div>
+</div>

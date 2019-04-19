@@ -1,0 +1,28 @@
+{{template "_head" .}}
+<div class="user signup">
+	<div class="ui middle very relaxed page grid">
+        <div class="column" >
+            <form class="ui form" action="{{.Link}}" method="post">
+                <h3 class="ui top attached header">
+                    Create New Organization
+                </h3>
+                <div class="ui attached segment">
+                    <div class="required inline field">
+                        <label for="orgname">Organization Name</label>
+                        <input id="orgname" name="orgname" autofocus required>
+                    </div>
+                    <div class="required inline field">
+                        <label for="owner">Owner</label>
+                        <input id="owner"  name="owner" type="owner" autocomplete="off" required>
+                    </div>
+                    <div class="inline field">
+                        <label></label>
+                        <button class="ui green button">Create New User</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+	</div>
+</div>
+{{template "_footer" .}}
+
