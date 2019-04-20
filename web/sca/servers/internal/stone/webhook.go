@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/IBM/cloudland/web/sca/pkgs"
 	"github.com/spf13/viper"
-	"github.com/gabecloud/sca/pkgs"
 )
 
 var (

@@ -5,8 +5,8 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
-	pkgs "github.com/gabecloud/sca/pkgs"
-	"github.com/gabecloud/sca/tables"
+	pkgs "github.com/IBM/cloudland/web/sca/pkgs"
+	"github.com/IBM/cloudland/web/sca/tables"
 	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
 )

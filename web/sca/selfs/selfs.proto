@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option go_package="github.com/gabecloud/sca/selfs";
+option go_package="github.com/IBM/cloudland/web/sca/selfs";
 
-package com.github.gabecloud.sca.selfs;
+package com.github.ibm.cloudland.sca.selfs;
 
 service SelfAdmin {
   rpc Upgrade(UpgradeRequest) returns(UpgradeReply);

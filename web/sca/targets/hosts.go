@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gabecloud/sca/pkgs"
+	"github.com/IBM/cloudland/web/sca/pkgs"
 )
 
 var (
