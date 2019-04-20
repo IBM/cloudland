@@ -3,7 +3,7 @@ package targets
 import (
 	"testing"
 
-	"github.com/gabecloud/sca/pkgs"
+	"github.com/IBM/cloudland/web/sca/pkgs"
 )
 
 func TestFindGroups(t *testing.T) {

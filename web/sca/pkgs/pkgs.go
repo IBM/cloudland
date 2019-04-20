@@ -11,7 +11,7 @@ import (
 	"context"
 
 	"github.com/coduno/netrc"
-	"github.com/gabecloud/sca/logs"
+	"github.com/IBM/cloudland/web/sca/logs"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )

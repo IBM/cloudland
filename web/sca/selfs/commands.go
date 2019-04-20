@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/gabecloud/sca/tables"
+	"github.com/IBM/cloudland/web/sca/tables"
 	grpc "google.golang.org/grpc"
 )
 
