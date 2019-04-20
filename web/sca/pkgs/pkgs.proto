@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+option go_package="github.com/gabecloud/sca/pkgs";
+
+package com.github.gabecloud.sca.pkgs;
+
+service PkgAdmin {
+  rpc Upload(stream PkgChunk) returns (UploadReply);
+  rpc Remove(RemoveRequest) returns (RemoveReply);
+  rpc List(ListRequest) returns (stream Pkg);
+  rpc Build(BuildRequest) returns (BuildReply);
+  rpc Download(DownloadRequest) returns (stream PkgChunk);
+}
+
+message Pkg {
+  string name = 1;
+  string version = 2;
+  string sha1sum = 3;
+  bool deploy = 4;
+}
+
+message Chunk {
+  bytes data = 1;
+  int64 position = 2;
+}
+
+message Setting {
+  string github = 1;
+  string login = 2;
+  string token = 3;
+}
+
+message Project {
+    string name = 1;
+    string version = 2;
+}
+
+message BuildRequest {
+  Project project = 1;
+}
+
+message BuildReply {
+  repeated Pkg pkgs = 1;
+}
+
+message UploadReply {
+  Pkg pkg = 1;
+}
+
+message RemoveRequest {
+  Pkg pkg = 1;
+}
+
+message RemoveReply {
+  Pkg pkg = 1;
+}
+
+message ListRequest {
+  string name = 1;
+}
+
+message DownloadRequest {
+  Pkg pkg = 1;
+}
+
+message PkgChunk {
+  Pkg pkg = 1;
+  Chunk chunk = 2;
+}

@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+option go_package="hypers";
+
+package com.ibm.cloudland.hypers;
+
+service HyperService {
+  rpc Delete(DeleteRequest) returns (DeleteReply);
+  rpc Get(GetRequest) returns (GetReply);
+  rpc List(ListRequest) returns (stream Hyper);
+}
+
+enum Kind {
+  all = 0;
+  hyper = 1;
+  agent = 2;
+}
+
+message Hyper{
+  int32 id = 1;
+  string hostname = 3;
+  string status = 4;
+  int32 parentid = 5;
+  int64 duration = 6;
+}
+
+message GetRequest {
+  int32 id = 1;
+}
+
+message GetReply {
+  Hyper hyper = 1;
+}
+
+message ListRequest {
+  int32 parentid = 1;
+  string status = 2;
+  Kind kind = 3;
+  bool unscoped = 4;
+}
+
+message DeleteRequest{
+}
+message DeleteReply{
+  int64 deleted = 1;
+}

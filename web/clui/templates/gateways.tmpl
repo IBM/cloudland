@@ -1,0 +1,75 @@
+{{template "_head" .}}
+    <div class="admin user">
+	    <div class="ui container">
+		    <div class="ui grid">
+                {{template "_left" .}}
+          	    <div class="twelve wide column content">
+		            <h4 class="ui top attached header">
+			            User Manage Panel (Total: {{.Total}})
+			            <div class="ui right">
+				            <a class="ui green tiny button" href="gateways/new">Create</a>
+			            </div>
+		            </h4>
+		            <div class="ui attached segment">
+			            <form class="ui form">
+	                        <div class="ui fluid tiny action input">
+	                            <input name="q" value="" placeholder="Search..." autofocus>
+	                            <button class="ui blue tiny button">Search</button>
+	                        </div>
+                        </form>
+		            </div>
+		            <div class="ui unstackable attached table segment">
+                        <table class="ui unstackable very basic striped table">
+	                        <thead>
+		                        <tr>
+			                        <th>ID</th>
+			                        <th>Name</th>
+			                        <th>Interfaces</th>
+			                        <th>Subnets</th>
+			                        <th>Edit</th>
+                                    <th>Delete</th>
+		                        </tr>
+	                        </thead>
+	                        <tbody>
+                                {{ $Link := .Link }}
+                                {{ range .Gateways }}
+		                        <tr>
+			                        <td>{{.ID}}</td>
+			                        <td><a href="/{{.Name}}">{{.Name}}</a></td>
+			                        <td>
+										{{ if .Interfaces }}
+											{{ range .Interfaces }}
+												{{ .Address.Address }}
+											{{ end }}
+										{{ end }}
+									</td>
+			                        <td>
+										{{ if .Subnets }}
+											{{ range .Subnets }}
+												{{ .Gateway }}
+											{{ end }}
+										{{ end }}
+									</td>
+			                        <td><span title="Tue, 18 Dec 2018 14:24:59 &#43;0800">{{.CreatedAt}}</span></td>
+			                        <td><a href="{{$Link}}/{{.ID}}"><i class="fa fa-pencil-square-o"></i></a></td>
+                                    <td><div class="ui red tiny button delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}">Delete</div></td>
+		                        </tr>
+                                {{ end }}
+	                        </tbody>
+                        </table>
+		            </div>
+	            </div>
+            </div>
+        </div>
+    </div>
+    <div class="ui small basic delete modal">
+	    <div class="ui icon header">
+		    <i class="trash icon"></i>
+            Gateway Deletion
+	    </div>
+	    <div class="content">
+		    <p>This gateway is going to be deleted permanently, do you want to continue?</p>
+	    </div>
+	    {{template "_delete_modal_actions" .}}
+    </div>
+{{template "_footer" .}}

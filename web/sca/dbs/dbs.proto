@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+option go_package="dbs";
+
+package com.gabecloud.sca.dbs;
+
+service DBAdmin {
+
+  rpc Stats(StatsRequest) returns (StatsReply){
+  }
+
+  rpc Tables(TablesRequest) returns(TablesReply) {
+  }
+
+  rpc Exec(ExecRequest) returns (ExecReply){
+  }
+
+  rpc Query(QueryRequest) returns (QueryReply){
+  }
+
+}
+
+message StatsRequest{}
+
+message Table{
+  int64 rows = 2;
+  int64 deleted = 3;
+  string error = 4;
+}
+
+message Stats {
+  int64 max_open_connections = 1; // Maximum number of open connections to the database.
+  int64 open_connections = 2;     // The number of established connections both in use and idle.
+  int64 in_use = 3;               // The number of connections currently in use.
+  int64 idle = 4;                 // The number of idle connections.
+  int64 wait_count = 5;           // The total number of connections waited for.
+  int64 wait_duration = 6;        // The total time blocked waiting for a new connection.
+  int64 max_idle_closed = 7;      // The total number of connections closed due to SetMaxIdleConns.
+  int64 max_lifetime_closed = 8;  // The total number of connections closed due to SetConnMaxLifetime.
+}
+
+message StatsReply{
+  Stats stats = 1;
+}
+
+message TablesRequest {
+}
+
+message TablesReply {
+  map<string, Table> tables = 1;
+}
+
+message ExecRequest {
+  string sql = 1;
+}
+
+message ExecReply {
+  int64 affected = 1;
+}
+
+message QueryRequest {
+  string sql = 1;
+}
+
+message Result {
+  repeated string values = 1;
+}
+
+message QueryReply {
+  repeated Result result = 1;
+}

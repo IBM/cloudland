@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package="scripts";
+
+package com.ibm.cloudland.scripts;
+
+service RemoteExec {
+  rpc Execute (ExecuteRequest) returns (ExecuteReply) {}
+}
+
+message ExecuteRequest {
+  int32 id = 1;
+  string control = 2;
+  string command = 3;
+  int32 extra = 4;
+}
+
+message ExecuteReply {
+  string status = 1;
+}

@@ -1,0 +1,24 @@
+#!/bin/bash
+name=$1
+pkg=$2
+deploy=$3
+
+if [ -z "${name}" -o -z "${pkg}" ]; then
+    exit 1
+fi
+
+target=${pkg}
+if [ "$deploy" = "true" ]; then
+    target=deploy
+fi
+
+if [ ! -L "releases/${name}/latest/${target}.sum" ]; then
+    exit 2
+fi
+
+# remove link
+rm -f releases/${name}/latest/${target}.*
+
+# regenerate release
+find releases/${name}/latest -type l -name '*.sum' \
+     -exec cat {} \; > releases/${name}/latest/release.toml

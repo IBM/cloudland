@@ -1,0 +1,33 @@
+#!/bin/bash
+name=$1
+pkg=$2
+version=$3
+deploy=$4
+if [ -z "${name}" -o -z "${pkg}" -o -z "${version}" ]; then
+    exit 1
+fi
+
+sum="packages/${pkg}/${version}/${pkg}.sum"
+
+if [ ! -f "$sum" ]; then
+    exit 2
+fi
+
+# link
+(
+    cd releases/${name}/latest
+    target=${pkg}
+    if [ "$deploy" = "true" ]; then
+        target=deploy
+    fi
+    rm -f ${target}.*
+    rm -f ${pkg}.*
+    ln -sf ../../../packages/${pkg}/${version}/${pkg}.tgz ${target}.tgz
+    ln -sf ../../../packages/${pkg}/${version}/${pkg}.sum ${target}.sum
+)
+
+# generate release
+find releases/${name}/latest -type l -name '*.sum' \
+     -exec cat {} \; > releases/${name}/latest/release.toml
+
+
