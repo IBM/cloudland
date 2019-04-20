@@ -23,7 +23,7 @@ for (( i=1; i <= $count; i++ )); do
     else
         vni=${br_name#br}
         ./clear_link.sh $vni
-        ./clear_sg_chain.sh $vif_dev
+#        ./clear_sg_chain.sh $vif_dev
     fi
     sidecar span log $span "Callback: clear_vnic.sh '$vif_dev'"
     [ -n "$vif_dev" ] && echo "|:-COMMAND-:| clear_vnic.sh '$vif_dev'"
