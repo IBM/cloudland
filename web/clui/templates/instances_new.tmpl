@@ -1,0 +1,113 @@
+{{template "_head" .}}
+<div class="user signup">
+	<div class="ui middle very relaxed page grid">
+        <div class="column" >
+            <form class="ui form" action="{{.Link}}" method="post">
+                <h3 class="ui top attached header">
+                    Create New Instance
+                </h3>
+                <div class="ui attached segment">
+                    <div class="required inline field">
+                        <label for="hostname">Hostname</label>
+                        <input id="hostname" name="hostname" autofocus required>
+                    </div>
+                    <div class="required inline field">
+                        <label for="image">Image</label>
+						<div class="ui selection dropdown">
+						  <input id="image" name="image" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">Image</div>
+						  <div class="menu">
+                            {{ range .Images }}
+							<div class="item" data-value={{.ID}} data-text={{.Name}}>
+							  {{.Name}}
+							</div>
+                            {{ end }}
+						  </div>
+						</div>
+                    </div>
+                    <div class="required inline field">
+                        <label for="flavor">Flavor</label>
+						<div class="ui selection dropdown">
+						  <input id="flavor" name="flavor" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">Flavor</div>
+						  <div class="menu">
+                            {{ range .Flavors }}
+							<div class="item" data-value={{.ID}} data-text={{.Name}}>
+							  {{.Name}}
+							</div>
+                            {{ end }}
+						  </div>
+						</div>
+                    </div>
+                    <div class="required inline field">
+                        <label for="primary">Primary Interface</label>
+						<div class="ui selection dropdown">
+						  <input id="primary" name="primary" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">Subnet</div>
+						  <div class="menu">
+                            {{ range .Subnets }}
+							<div class="item" data-value={{.ID}} data-text={{.Name}}>
+							  {{.Name}}-{{.Network}}/{{.Netmask}}
+							</div>
+                            {{ end }}
+						  </div>
+						</div>
+                    </div>
+                    <div class="inline field">
+					    <label for="secondary">Secondary Interfaces</label>
+						<div class="ui multiple selection dropdown">
+						  <input name="subnets" id="subnets" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">Subnets</div>
+						  <div class="menu">
+							    {{ if .IsAdmin }}
+								{{ range .Subnets }}
+								<div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
+								  {{.Name}}
+								</div>
+								{{ end }}
+								{{ else }}
+								{{ range .Subnets }}
+								{{ if eq .Type "normal" }}
+								<div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
+								  {{.Name}}
+								</div>
+								{{ end }}
+								{{ end }}
+								{{ end }}
+						  </div>
+						</div>
+					</div>
+                    <div class="inline field">
+                        <label for="keys">Keys</label>
+						<div class="ui multiple selection dropdown">
+						  <input id="keys" name="keys" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">Key</div>
+						  <div class="menu">
+                            {{ range .Keys }}
+							<div class="item" data-value={{.ID}} data-text={{.Name}}>
+							  {{.Name}}
+							</div>
+                            {{ end }}
+						  </div>
+						</div>
+                    </div>
+                    <div class="inline field">
+						<label>User Data</label>
+						<textarea id="userdata"  name="userdata" autocomplete="off"></textarea>
+                    </div>
+                    <div class="inline field">
+                        <label></label>
+                        <button class="ui green button">Create New Instance</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+	</div>
+</div>
+{{template "_footer" .}}
+

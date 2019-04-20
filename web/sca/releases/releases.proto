@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+option go_package="github.com/gabecloud/sca/releases";
+
+package com.github.gabecloud.sca.releases;
+
+import "pkgs/pkgs.proto";
+
+service ReleaseAdmin {
+  rpc Create(CreateRequest) returns (Release);
+  rpc Delete(DeleteRequest) returns (Release);
+  rpc List(ListRequest) returns(stream Release);
+  rpc Get(GetRequest) returns (Release);
+  rpc Add(AddRequest) returns (AddReply);
+  rpc Remove(RemoveRequest) returns (RemoveReply);
+  rpc Publish(PublishRequest) returns (Release);
+  rpc Refresh(RefreshRequest) returns (Release);
+}
+
+message ListRequest {
+  string name = 1;
+}
+
+message DeleteRequest{
+  string name = 1;
+  string version = 2;
+}
+
+message GetRequest {
+  string name = 1;
+  string version = 2;
+}
+
+message RefreshRequest {
+  string name = 1;
+}
+
+message CreateRequest {
+  string name = 1;
+}
+
+message AddRequest {
+  string name = 1;
+  pkgs.Pkg pkg = 2;
+}
+
+message AddReply {
+  string name = 1;
+  pkgs.Pkg pkg = 2;
+}
+
+message RemoveRequest {
+  string name = 1;
+  pkgs.Pkg pkg = 2;
+}
+
+message RemoveReply {
+  string name = 1;
+  pkgs.Pkg pkg = 2;
+}
+
+message Release {
+  string name = 1;
+  string version = 2;
+  repeated pkgs.Pkg pkgs = 3;
+}
+
+message PublishRequest{
+  string name = 1;
+}

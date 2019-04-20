@@ -1,0 +1,32 @@
+{{template "_head" .}}
+<div class="user signup">
+	<div class="ui middle very relaxed page grid">
+        <div class="column" >
+            <form class="ui form" action="{{.Link}}" method="post">
+                <h3 class="ui top attached header">
+                    Create New Image
+                </h3>
+                <div class="ui attached segment">
+                    <div class="required inline field">
+                        <label for="name">Name</label>
+                        <input id="name" name="name" autofocus required>
+                    </div>
+                    <div class="required inline field">
+                        <label for="oscode">OsCode</label>
+                        <input id="oscode"  name="oscode" autocomplete="off" required>
+                    </div>
+                    <div class="required inline field">
+                        <label for="architecture">Architecture</label>
+                        <input id="architecture"  name="architecture" autocomplete="off" required>
+                    </div>
+                    <div class="inline field">
+                        <label></label>
+                        <button class="ui green button">Create New Image</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+	</div>
+</div>
+{{template "_footer" .}}
+

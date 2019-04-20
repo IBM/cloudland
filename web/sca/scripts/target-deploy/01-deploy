@@ -1,0 +1,20 @@
+#!/bin/bash
+name=$1
+target="targets/$name"
+release=$(cat "${target}/target.toml"|grep 'release = '| cut -d'"' -f2)
+version=$(cat "${target}/target.toml"|grep 'version = '| cut -d'"' -f2)
+if !diff ${target}/deploy.sum \
+         "releases/${release}/${version}/deploy.sum" \
+   &> /dev/null; then
+    tar Cxfz $target releases/${release}/${version}/deploy.tgz
+    cat releases/${release}/${version}/deploy.sum > ${target}/deploy.sum
+fi
+cd "${target}"
+if [ -f environs ]; then
+    source environs
+fi
+./deploy.sh
+if [ $? = 0 ]; then
+   sed -i 's/state.*/state = 1/' target.toml
+fi
+

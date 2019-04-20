@@ -1,0 +1,70 @@
+{{template "_head" .}}
+<div class="user signup">
+	<div class="ui middle very relaxed page grid">
+        <div class="column" >
+            <form class="ui form" action="{{.Link}}" method="post">
+                <h3 class="ui top attached header">
+                    Create New Security Rule
+                </h3>
+                <div class="ui attached segment">
+                    <div class="required inline field">
+                        <label for="remoteip">RemoteIp</label>
+                        <input id="remoteip" name="remoteip" autofocus required>
+                    </div>
+                    <div class="required inline field">
+                        <label for="direction">Direction</label>
+						<div class="ui selection dropdown">
+						  <input id="direction" name="direction" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">Direction</div>
+						  <div class="menu">
+							<div class="item" data-value=ingress data-text=ingress>
+							  ingress
+							</div>
+							<div class="item" data-value=egress data-text=egress>
+							  egress
+							</div>
+						  </div>
+						</div>
+                    </div>
+                    <div class="required inline field">
+                        <label for="protocol">Protocol</label>
+						<div class="ui selection dropdown">
+						  <input id="protocol" name="protocol" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">Protocol</div>
+						  <div class="menu">
+							<div class="item" data-value=tcp data-text=tcp>
+							  tcp
+							</div>
+							<div class="item" data-value=udp data-text=udp>
+							  udp
+							</div>
+							<div class="item" data-value=icmp data-text=icmp>
+							  icmp
+							</div>
+							<div class="item" data-value=vrrp data-text=vrrp>
+							  vrrp
+							</div>
+						  </div>
+						</div>
+                    </div>
+                    <div class="inline field">
+                        <label for="portmin">PortMin | Type</label>
+                        <input id="portmin" name="portmin" autofocus required>
+                    </div>
+                    <div class="inline field">
+                        <label for="portmax">PortMax | Code</label>
+                        <input id="portmax" name="portmax" autofocus required>
+                    </div>
+                    <div class="inline field">
+                        <label></label>
+                        <button class="ui green button">Create New Security Rule</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+	</div>
+</div>
+{{template "_footer" .}}
+
