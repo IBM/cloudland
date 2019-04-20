@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 
-	"github.com/gabecloud/sca/clients"
-	"github.com/gabecloud/sca/targets"
+	"github.com/IBM/cloudland/web/sca/clients"
+	"github.com/IBM/cloudland/web/sca/targets"
 	"google.golang.org/grpc"
 )
 

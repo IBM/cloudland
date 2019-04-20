@@ -12,11 +12,11 @@ using grpc::Channel;
 using grpc::ClientContext;
 using grpc::ClientWriter;
 using grpc::Status;
-using com::gabecloud::hypercube::scripts::ExecuteRequest;
-using com::gabecloud::hypercube::scripts::ExecuteReply;
-using com::gabecloud::hypercube::scripts::FileChunk;
-using com::gabecloud::hypercube::scripts::TransmitAck;
-using com::gabecloud::hypercube::scripts::RemoteExec;
+using com::ibm::cloudland::scripts::ExecuteRequest;
+using com::ibm::cloudland::scripts::ExecuteReply;
+using com::ibm::cloudland::scripts::FileChunk;
+using com::ibm::cloudland::scripts::TransmitAck;
+using com::ibm::cloudland::scripts::RemoteExec;
 
 #include "netlayer.hpp"
 #include "exception.hpp"

@@ -7,7 +7,7 @@ import (
 	"github.com/soheilhy/cmux"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/gabecloud/sca/servers"
+	"github.com/IBM/cloudland/web/sca/servers"
 	"golang.org/x/sync/errgroup"
 )
 

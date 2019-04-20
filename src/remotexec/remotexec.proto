@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package="scripts";
 
-package com.gabecloud.hypercube.scripts;
+package com.ibm.cloudland.scripts;
 
 service RemoteExec {
   rpc Execute (ExecuteRequest) returns (ExecuteReply) {}
