@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gabecloud/sca/tables"
+	"github.com/IBM/cloudland/web/sca/tables"
 	"github.com/spf13/cobra"
 	context "golang.org/x/net/context"
 )

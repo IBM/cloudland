@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package="dbs";
 
-package com.gabecloud.sca.dbs;
+package com.ibm.cloudland.sca.dbs;
 
 service DBAdmin {
 

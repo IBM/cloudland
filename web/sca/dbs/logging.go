@@ -3,7 +3,7 @@ package dbs
 import (
 	context "context"
 
-	"github.com/gabecloud/sca/logs"
+	"github.com/IBM/cloudland/web/sca/logs"
 )
 
 var (

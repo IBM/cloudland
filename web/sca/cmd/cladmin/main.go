@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/gabecloud/sca/selfs"
+	"github.com/IBM/cloudland/web/sca/selfs"
 )
 
 var (
