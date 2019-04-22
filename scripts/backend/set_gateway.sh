@@ -16,7 +16,7 @@ bcast=$(ipcalc -b $addr | cut -d= -f2)
 cat /proc/net/dev | grep -q "^\<ln-$vni\>"
 if [ $? -ne 0 ]; then
     ip link add ln-$vni type veth peer name ns-$vni
-    apply_vnic -A ln-$vni
+#    apply_vnic -A ln-$vni
     ip link set ns-$vni netns $router
     ip netns exec $router ip link set ns-$vni mtu 1450 up
     ip link set ln-$vni mtu 1450 up
@@ -32,5 +32,4 @@ else
     sed -i "\#$addr dev ns-$vni#d" $vrrp_conf
     sed -i "/virtual_ipaddress {/a $addr dev ns-$vni" $vrrp_conf
     [ -f "$pid_file" ] && ip netns exec $router kill -HUP $(cat $pid_file)
-    [ "$RECOVER" = "true" ] || sql_exec "insert into gateway values ('$router', '$vni', 'ln-$vni', '$addr')"
 fi
