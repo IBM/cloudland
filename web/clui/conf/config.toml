@@ -11,7 +11,7 @@ endpoint = "cloudland:50051"
 
 [db]
 type = "postgres"
-uri = "host=postgres port=5432 user=postgres password=xiaobao12y dbname=hypercube sslmode=disable"
+uri = "host=postgres port=5432 user=postgres password=passw0rd dbname=hypercube sslmode=disable"
 debug = true
 open = 50
 lifetime = 30

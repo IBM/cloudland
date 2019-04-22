@@ -1,7 +1,14 @@
+/*
+Copyright <holder> All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package routes
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -19,6 +26,11 @@ var (
 	gatewayAdmin = &GatewayAdmin{}
 	gatewayView  = &GatewayView{}
 )
+
+type SubnetIface struct {
+	Address string `json:"ip_address"`
+	Vni     int64  `json:"vni"`
+}
 
 type GatewayAdmin struct{}
 type GatewayView struct{}
@@ -40,7 +52,7 @@ func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int
 	if pubID == 0 {
 		pubSubnet.Type = "public"
 	}
-	err = db.Model(pubSubnet).Take(pubSubnet).Error
+	err = db.Model(pubSubnet).Where(pubSubnet).Take(pubSubnet).Error
 	if err != nil {
 		log.Println("DB failed to query public subnet, %v", err)
 		return
@@ -54,7 +66,7 @@ func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int
 	if priID == 0 {
 		priSubnet.Type = "private"
 	}
-	err = db.Model(priSubnet).Take(priSubnet).Error
+	err = db.Model(priSubnet).Where(priSubnet).Take(priSubnet).Error
 	if err != nil {
 		log.Println("DB failed to query private subnet, %v", err)
 		return
@@ -64,35 +76,43 @@ func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int
 		log.Println("DB failed to create private interface, %v", err)
 		return
 	}
+	intIfaces := []*SubnetIface{}
+	for _, sID := range subnetIDs {
+		var subnet *model.Subnet
+		subnet, err = model.SetGateway(sID, gateway.ID)
+		if err != nil {
+			log.Println("DB failed to set gateway, %v", err)
+			return
+		}
+		intIfaces = append(intIfaces, &SubnetIface{Address: subnet.Gateway, Vni: subnet.Vlan})
+	}
+	jsonData, err := json.Marshal(intIfaces)
+	if err != nil {
+		log.Println("Failed to marshal gateway json data, %v", err)
+		return
+	}
 	pubmask := net.IPMask(net.ParseIP(pubIface.Address.Netmask).To4())
 	pubsize, _ := pubmask.Size()
 	primask := net.IPMask(net.ParseIP(priIface.Address.Netmask).To4())
 	prisize, _ := primask.Size()
 	control := fmt.Sprintf("inter=")
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh %d %s/%d %s/%d %d %s", gateway.ID, pubIface.Address.Address, pubsize, priIface.Address.Address, prisize, vni, gateway.VrrpAddr)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh %d %s/%d %s/%d %d %s 'MASTER' <<EOF\n%s\nEOF", gateway.ID, pubIface.Address.Address, pubsize, priIface.Address.Address, prisize, vni, gateway.VrrpAddr, jsonData)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Create master router command execution failed, %v", err)
 		return
 	}
 	control = fmt.Sprintf("inter=")
-	command = fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh %d %s/%d %s/%d %d %s", gateway.ID, pubIface.Address.Address, pubsize, priIface.Address.Address, prisize, vni, gateway.PeerAddr)
+	command = fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh %d %s/%d %s/%d %d %s 'SLAVE' <<EOF\n%s\nEOF", gateway.ID, pubIface.Address.Address, pubsize, priIface.Address.Address, prisize, vni, gateway.PeerAddr, jsonData)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Create peer router command execution failed, %v", err)
 		return
 	}
-	for _, sID := range subnetIDs {
-		_, err = model.SetGateway(sID, gateway.ID)
-		if err != nil {
-			log.Println("DB failed to set gateway, %v", err)
-			return
-		}
-	}
 	return
 }
 
-func (a *GatewayAdmin) Delete(id int64) (err error) {
+func (a *GatewayAdmin) Delete(ctx context.Context, id int64) (err error) {
 	db := DB()
 	db = db.Begin()
 	defer func() {
@@ -102,6 +122,20 @@ func (a *GatewayAdmin) Delete(id int64) (err error) {
 			db.Rollback()
 		}
 	}()
+	gateway := &model.Gateway{Model: model.Model{ID: id}}
+	if err = db.Set("gorm:auto_preload", true).Find(gateway).Error; err != nil {
+		log.Println("Failed to query gateway, %v", err)
+		return
+	}
+	intIfaces := []*SubnetIface{}
+	for _, subnet := range gateway.Subnets {
+		intIfaces = append(intIfaces, &SubnetIface{Address: subnet.Gateway, Vni: subnet.Vlan})
+	}
+	jsonData, err := json.Marshal(intIfaces)
+	if err != nil {
+		log.Println("Failed to marshal gateway json data, %v", err)
+		return
+	}
 	if err = db.Model(&model.Subnet{}).Where("router = ?", id).Update("router", 0).Error; err != nil {
 		log.Println("DB failed to update router for subnet, %v", err)
 		return
@@ -110,10 +144,16 @@ func (a *GatewayAdmin) Delete(id int64) (err error) {
 		log.Println("DB failed to delete interfaces, %v", err)
 		return
 	}
-	if err = db.Delete(&model.Gateway{Model: model.Model{ID: id}}).Error; err != nil {
+	if err = db.Model(&model.Gateway{Model: model.Model{ID: id}}).Error; err != nil {
 		log.Println("DB failed to delete gateway, %v", err)
 		return
 	}
+	control := fmt.Sprintf("inter=%d", gateway.Hyper)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_router.sh %d %d <<EOF\n%s\nEOF", gateway.ID, gateway.VrrpVni, jsonData)
+	err = hyperExecute(ctx, control, command)
+	control = fmt.Sprintf("inter=%d", gateway.Peer)
+	command = fmt.Sprintf("/opt/cloudland/scripts/backend/clear_router.sh %d %d <<EOF\n%s\nEOF", gateway.ID, gateway.VrrpVni, jsonData)
+	err = hyperExecute(ctx, control, command)
 	return
 }
 
@@ -175,7 +215,7 @@ func (v *GatewayView) Delete(c *macaron.Context, store session.Store) (err error
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	err = gatewayAdmin.Delete(int64(gatewayID))
+	err = gatewayAdmin.Delete(c.Req.Context(), int64(gatewayID))
 	if err != nil {
 		log.Println("Failed to delete gateway, %v", err)
 		code := http.StatusInternalServerError
