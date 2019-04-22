@@ -44,6 +44,7 @@
 /volume
 /xml
 /etc
+/conf
 build
 cloudland.sum
 cloudland.tgz
