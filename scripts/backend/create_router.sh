@@ -5,7 +5,7 @@ source ../cloudrc
 
 [ $# -lt 5 ] && echo "$0 <router> <ext_gw_cidr> <int_gw_cidr> <vrrp_vni> <vrrp_ip> <role>" && exit -1
 
-router=$1
+router=router-$1
 ext_ip=$2
 int_ip=$3
 vrrp_vni=$4
