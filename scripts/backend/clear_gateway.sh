@@ -18,7 +18,6 @@ sed -i "\#$addr dev ns-$vni#d" $vrrp_conf
 grep -q " dev ns-$vni" $vrrp_conf
 if [ $? -ne 0 ]; then
     ip link del ln-$vni
-    apply_vnic -D ln-$vni
+#    apply_vnic -D ln-$vni
     ./clear_link.sh $vni
 fi
-[ "$RECOVER" = "true" ] || sql_exec "delete from gateway where router='$router' and subnet_vni=$vni and gateway_ip='$addr'"

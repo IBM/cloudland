@@ -5,7 +5,7 @@ source ../cloudrc
 
 [ $# -lt 1 ] && die "$0 <vm_ID>"
 
-vm_ID=$1
+vm_ID=inst-$1
 vm_xml=$(virsh dumpxml $vm_ID)
 virsh undefine $vm_ID
 cmd="virsh destroy $vm_ID"

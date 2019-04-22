@@ -5,7 +5,7 @@ source ../cloudrc
 
 [ $# -lt 6 ] && die "$0 <vm_ID> <image> <name> <cpu> <memory> <disk_inc> [userdata] [pubkey]"
 
-vm_ID=$1
+vm_ID=inst-$1
 img_name=$2
 vm_name=$3
 vm_cpu=$4
