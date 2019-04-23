@@ -1,0 +1,93 @@
+.\"Copyright 2008-2010 IBM Corp.
+.TH SCI_Filter_bcast 3 "Dec 4, 2009" "1.0.0" "SCI"
+
+.SH NAME
+\fBSCI_Filter_bcast\fP \- Used in a message filter to broadcasts messages to some successors
+
+.SH SYNTAX
+.ft R
+
+.SH C Syntax
+.nf
+#include <sci.h>
+int SCI_Filter_bcast(int \fIfilter_id\fP, int \fInum_successors\fP, int *\fIsuccessor_list\fP, int \fInum_bufs\fP, void *\fIbufs\fP[], int \fIsizes\fP[])
+
+.SH INPUT PARAMETERS
+.ft R
+.TP 1i
+filter_id
+The filter id of the messages to be broadcasted (IN).
+.TP 1i
+num_successors
+Number of successors (IN).
+.TP 1i
+successor_list
+The successor id list (IN).
+.TP 1i
+num_bufs
+The number of buffers of current message segment (IN).
+.TP 1i
+bufs
+The array of buffer locations of current message segment (IN).
+.TP 1i
+sizes
+The array of buffer sizes of current message segment (IN).
+
+.SH DESCRIPTION
+.ft R
+This subroutine is used to broadcast messages to all or part of successors in a message
+filter. A \fBsuccessor\fP id can be an agent id or a back end id, because a SCI execution
+environment is organized in a tree style, \fBsuccessor\fP means children.
+.sp
+The agent id can be queried by \fBSCI_Query\fP using query type \fBAGENT_ID\fP, and
+the successor id list can be queried using query type \fBNUM_SUCCESSORS\fP and
+\fBSUCCESSOR_IDLIST\fP.
+.sp
+The \fIfilter_id\fP can be set to SCI_FILTER_NULL, means the downward messages will use
+the current filter id, otherwise the new filter id will be used.
+.sp
+This is a non-blocking call. The caller cannot assume that message transfer has completed
+upon the return of the function. Instead, the handler function defined in \fIsci_info_t\fP
+should be used to ensure the message arrival in the destination sides.
+.sp
+For more information, please refer to SCI's online documents.
+
+.SH EXAMPLE
+.ft R
+.nf
+        {
+                char msg[256];
+                int num_successors, *successor_list, sizes[1];
+                void *bufs[1];
+                ...
+                SCI_Query(NUM_SUCCESSORS, &num_successors);
+                successor_list = (int *)malloc(sizeof(int)*num_successors);
+                SCI_Query(SUCCESSOR_IDLIST, successor_list);
+                ...
+                bufs[0] = msg;
+                sizes[0] = strlen(msg) + 1;
+                SCI_Filter_bcast(SCI_FILTER_NULL, num_successors, successor_list, 1, bufs, sizes);
+        }
+.fi
+
+.SH ERRORS
+.ft R
+All SCI routines return an error value.
+.sp
+.TP 1i
+SCI_ERR_UNINTIALIZED
+Uninitialized SCI execution environment
+.TP 1i
+SCI_ERR_INVALID_CALLER
+Can only be called in the filter
+.TP 1i
+SCI_ERR_INVALID_SUCCESSOR
+The successor id list contains non-existed successor id
+.TP 1i
+SCI_ERR_NO_MEM
+Out of memory
+
+.SH SEE ALSO
+.ft R
+.nf
+\fBSCI_Filter_upload\fP(3)

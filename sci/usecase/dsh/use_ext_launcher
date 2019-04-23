@@ -1,0 +1,24 @@
+#!/usr/bin/perl -w
+
+my $hostlist = `cat ./host.list`;
+chomp($hostlist);
+my $key = `echo \$RANDOM`;
+chomp($key);
+
+print "Start back ends ...\n";
+
+my @hosts = split(/\n/, $hostlist);
+my $id = 0;
+foreach my $host (@hosts) {
+    print "export SCI_JOB_KEY=$key; export SCI_USE_EXTLAUNCHER=yes; export SCI_CLIENT_ID=$id; ./dsh_be64\n";
+    system("export SCI_JOB_KEY=$key; export SCI_USE_EXTLAUNCHER=yes; export SCI_CLIENT_ID=$id; ./dsh_be64 &");
+    $id = $id + 1;
+}
+
+print "Wait 5 seconds ...\n";
+#sleep(5);
+
+print "Start front end ...\n";
+print "export SCI_JOB_KEY=$key; export SCI_USE_EXTLAUNCHER=yes; ./dsh_fe64\n";
+system("export SCI_JOB_KEY=$key; export SCI_USE_EXTLAUNCHER=yes; ./dsh_fe64");
+

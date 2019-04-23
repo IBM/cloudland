@@ -1,0 +1,87 @@
+.\"Copyright 2008-2010 IBM Corp.
+.TH SCI_Group_query 3 "Dec 4, 2009" "1.0.0" "SCI"
+
+.SH NAME
+\fBSCI_Group_query\fP \- Queries runtime information of an existed group
+
+.SH SYNTAX
+.ft R
+
+.SH C Syntax
+.nf
+#include <sci.h>
+int SCI_Group_query(sci_group_t \fIgroup\fP, sci_group_query_t \fIquery\fP, void *\fIret_val\fP)
+
+.SH INPUT PARAMETERS
+.ft R
+.TP 1i
+group
+The group to be queried (IN).
+.TP 1i
+query
+Specifies the type of query you want to request (IN).
+.TP 1i
+ret_val
+Specifies the reference parameter for SCI to store as the result of the query. 
+The value of this parameter cannot be NULL (OUT).
+
+.SH DESCRIPTION
+.ft R
+This subroutine is used to query runtime statistics of an existed group.
+SCI defines a set of query types as an enumeration in \fIsci.h\fP.
+.sp
+For example, you can query the number of back ends in a group using the 
+query value of \fBGROUP_MEMBER_NUM\fP: SCI_Group_query(group, GROUP_MEMBER_NUM, &ret_val);
+.sp
+In SCI, sci_group_query_t defines the following valid query types:
+.sp
+.TP 1i
+GROUP_MEMBER_NUM
+Query the number of back ends in the \fIgroup\fP
+.TP 1i
+GROUP_MEMBER
+Query the back end id list in the \fIgroup\fP
+.TP 1i
+GROUP_SUCCESSOR_NUM
+Query the number of successors in the \fIgroup\fP
+.TP 1i
+GROUP_SUCCESSOR
+Query the successor id list in the \fIgroup\fP
+.TP 0i
+.sp
+For more information, please refer to SCI's online documents.
+
+.SH EXAMPLE
+.ft R
+.nf
+        {
+                int be_num, *be_list;
+                sci_group_t group;
+                ...
+                SCI_Group_query(group, GROUP_MEMBER_NUM, &be_num);
+                be_list = (int *)malloc(sizeof(int)*be_num);
+                SCI_Group_query(group, GROUP_MEMBER, be_list);
+        }
+.fi
+
+.SH ERRORS
+.ft R
+All SCI routines return an error value.
+.sp
+.TP 1i
+SCI_ERR_UNINTIALIZED
+Uninitialized SCI execution environment
+.TP 1i
+SCI_ERR_UNKNOWN_INFO
+Can't set NULL to \fIret_val\fP
+.TP 1i
+SCI_ERR_INVALID_CALLER
+Can't be called from back end
+.TP 1i
+SCI_ERR_GROUP_NOTFOUND
+The group to be freed does not exist
+
+.SH SEE ALSO
+.ft R
+.nf
+\fBSCI_Query\fP(3)

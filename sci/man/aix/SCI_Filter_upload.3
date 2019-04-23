@@ -1,0 +1,53 @@
+NAME
+    SCI_Filter_upload - Used in a message filter to uploads messages to another message filter or the parent
+
+C Syntax
+    #include <sci.h>
+    int SCI_Filter_upload(int filter_id, sci_group_t group, int num_bufs, void *bufs[], int sizes[])
+
+INPUT PARAMETERS
+    filter_id
+        The message filter id, set to SCI_FILTER_NULL means send to the parent directly (IN).
+    group
+        The group information of current message segment (IN).
+    num_bufs
+        The number of buffers of current message segment (IN).
+    bufs
+        The array of buffer locations of current message segment (IN).
+    sizes
+        The array of buffer sizes of current message segment (IN).
+
+DESCRIPTION
+    This subroutine is used to upload messages to another message filter or the parent. 
+    Set filter_id to SCI_FILTER_NULL means send the message to the parent directly, 
+    otherwise message filters can be used in a cascaded style.
+
+    This is a non-blocking call. The caller cannot assume that message transfer has 
+    completed upon the return of the function. Instead, the handler function defined in
+    sci_info_t should be used to ensure the message arrival in the destination sides.
+
+    For more information, please refer to SCI's online documents.
+
+EXAMPLE
+        {
+                char msg[256];
+                int sizes[1];
+                void *bufs[1];
+                ...
+                bufs[0] = msg;
+                sizes[0] = strlen(msg) + 1;
+                SCI_Filter_upload(SCI_FILTER_NULL, SCI_GROUP_ALL, 1, bufs, sizes);
+        }
+
+ERRORS
+    All SCI routines return an error value.
+    
+    SCI_ERR_UNINTIALIZED
+        Uninitialized SCI execution environment
+    SCI_ERR_INVALID_CALLER
+        Can only be called in the filter
+    SCI_ERR_NO_MEM
+        Out of memory
+
+SEE ALSO
+    SCI_Filter_bcast(3)

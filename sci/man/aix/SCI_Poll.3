@@ -1,0 +1,57 @@
+NAME
+    SCI_Poll - Check for arriving messages in polling mode
+
+C Syntax
+    #include <sci.h>
+    int SCI_Poll(int timeout)
+
+INPUT PARAMETERS
+    timeout
+        Timeout if no message arrives in timeout milliseconds, <0 means no timeout (IN).
+
+DESCRIPTION
+    This subroutine is used to check for arriving messages in polling mode. If a new
+    message is arrived, user-registered handler in sci_info_t will be called to handle 
+    the message, otherwise a timeout will occur after timeout milliseconds elapsed.
+
+    If timeout is set to a negative value, no timeout will occur, and SCI_Poll can only
+    return when a new message arrived or errors occurred.
+
+    For more information, please refer to SCI's online documents.
+
+EXAMPLE
+        {
+                int pollFd, extFd, maxFd;
+                fd_set fdSet;
+                SCI_Query(POLLING_FD, &pollFd);
+                ...
+                FD_ZERO(&fdSet);
+                FD_SET(pollFd, &fdSet);
+                FD_SET(extFd, &fdSet);
+                maxFd = (pollFd > extFd) ? pollFd : extFd;
+                select(maxFd+1, &fdSet, 0, 0, NULL);
+                if (FD_ISSET(pollFd, &fdSet)) {
+                        SCI_Poll(-1);
+                }
+                if (FD_ISSET(extFd, &fdSet)) {
+                        ...
+                }
+        }
+
+ERRORS
+    All SCI routines return an error value.
+
+    SCI_ERR_UNINTIALIZED
+        Uninitialized SCI execution environment
+    SCI_ERR_INVALID_CALLER
+        Can only be called in the front end
+    SCI_ERR_MODE
+        Can only be used in polling mode
+    SCI_ERR_POLL_INVALID
+        Invalid polling calls
+    SCI_ERR_POLL_TIMEOUT
+        A polling timeout occurs after timeout milliseconds elapsed
+
+SEE ALSO
+    SCI_Bcast(3)
+    SCI_Upload(3)
