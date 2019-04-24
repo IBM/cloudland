@@ -85,10 +85,15 @@ func DeallocateAddress(ifaces []*Interface) (err error) {
 func SetGateway(subnetID, routerID int64) (subnet *Subnet, err error) {
 	db := dbs.DB()
 	subnet = &Subnet{
-		Model:  Model{ID: subnetID},
-		Router: routerID,
+		Model: Model{ID: subnetID},
 	}
-	err = db.Model(subnet).Update(subnet).Error
+	err = db.Model(subnet).Take(subnet).Error
+	if err != nil {
+		log.Println("Failed to get subnet, %v", err)
+		return nil, err
+	}
+	subnet.Router = routerID
+	err = db.Model(subnet).Save(subnet).Error
 	if err != nil {
 		log.Println("Failed to set gateway, %v", err)
 		return nil, err

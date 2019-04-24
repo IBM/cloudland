@@ -77,7 +77,7 @@ func (a *SubnetAdmin) Create(name, vlan, network, netmask, gateway, start, end, 
 	}
 	inNet := &net.IPNet{
 		IP:   net.ParseIP(network),
-		Mask: net.IPMask(net.ParseIP(netmask)),
+		Mask: net.IPMask(net.ParseIP(netmask).To4()),
 	}
 	_, ipNet, err := net.ParseCIDR(inNet.String())
 	if err != nil {

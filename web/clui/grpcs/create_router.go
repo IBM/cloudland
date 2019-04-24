@@ -41,7 +41,7 @@ func CreateRouter(ctx context.Context, job *model.Job, args []string) (status st
 		return
 	}
 	if args[3] == "MASTER" {
-		err = db.Model(&gateway).Updates(map[string]interface{}{"hyper": int32(hyperID)}).Error
+		err = db.Model(&gateway).Updates(map[string]interface{}{"hyper": int32(hyperID), "status": "active"}).Error
 	} else if args[3] == "SLAVE" {
 		err = db.Model(&gateway).Updates(map[string]interface{}{"peer": int32(hyperID)}).Error
 	}

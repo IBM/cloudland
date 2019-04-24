@@ -26,6 +26,7 @@
 			                        <th>Name</th>
 			                        <th>Interfaces</th>
 			                        <th>Subnets</th>
+			                        <th>Status</th>
 			                        <th>Edit</th>
                                     <th>Delete</th>
 		                        </tr>
@@ -50,7 +51,7 @@
 											{{ end }}
 										{{ end }}
 									</td>
-			                        <td><span title="Tue, 18 Dec 2018 14:24:59 &#43;0800">{{.CreatedAt}}</span></td>
+			                        <td>{{ .Status }}</td>
 			                        <td><a href="{{$Link}}/{{.ID}}"><i class="fa fa-pencil-square-o"></i></a></td>
                                     <td><div class="ui red tiny button delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}">Delete</div></td>
 		                        </tr>

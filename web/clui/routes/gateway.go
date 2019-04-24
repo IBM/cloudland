@@ -148,12 +148,26 @@ func (a *GatewayAdmin) Delete(ctx context.Context, id int64) (err error) {
 		log.Println("DB failed to delete gateway, %v", err)
 		return
 	}
-	control := fmt.Sprintf("inter=%d", gateway.Hyper)
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_router.sh %d %d <<EOF\n%s\nEOF", gateway.ID, gateway.VrrpVni, jsonData)
-	err = hyperExecute(ctx, control, command)
-	control = fmt.Sprintf("inter=%d", gateway.Peer)
-	command = fmt.Sprintf("/opt/cloudland/scripts/backend/clear_router.sh %d %d <<EOF\n%s\nEOF", gateway.ID, gateway.VrrpVni, jsonData)
-	err = hyperExecute(ctx, control, command)
+	if gateway.Hyper != -1 {
+		control := fmt.Sprintf("inter=%d", gateway.Hyper)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_router.sh %d %d <<EOF\n%s\nEOF", gateway.ID, gateway.VrrpVni, jsonData)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Delete master failed")
+		}
+	}
+	if gateway.Peer != -1 {
+		control := fmt.Sprintf("inter=%d", gateway.Peer)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_router.sh %d %d <<EOF\n%s\nEOF", gateway.ID, gateway.VrrpVni, jsonData)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Delete slave failed")
+		}
+	}
+	if err = db.Delete(gateway).Error; err != nil {
+		log.Println("DB failed to delete gateway", err)
+		return
+	}
 	return
 }
 
