@@ -1,0 +1,40 @@
+NAME
+    SCI_Terminate - Terminates the SCI execution environment
+
+C Syntax
+    #include <sci.h>
+    int SCI_Terminate()
+
+INPUT PARAMETERS
+    none
+
+DESCRIPTION
+    Make sure this routine is the last SCI call. Any SCI calls made after
+    SCI_Terminate raise an error. You must be sure that all pending communications
+    have completed before calls SCI_Terminate.
+
+    Although SCI_Terminate terminates SCI processing, it does not terminate the
+    front end or back end. It is possible to continue with non-SCI processing
+    after calling SCI_Terminate, but no other SCI calls can be made unless
+    SCI_Initialize be called again.
+
+    For more information, please refer to SCI's online documents.
+
+EXAMPLE
+        {
+                /* declare variables */
+                SCI_Initialize(&info);
+                ...
+                SCI_Terminate();
+        }
+
+ERRORS
+    All SCI routines return an error value.
+
+    SCI_ERR_UNINTIALIZED
+        Uninitialized SCI execution environment
+    SCI_ERR_NO_MEM
+        Out of memory
+
+SEE ALSO
+    SCI_Initialize(3)

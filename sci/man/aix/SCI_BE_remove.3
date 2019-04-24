@@ -1,0 +1,41 @@
+NAME
+    SCI_BE_remove - Remove an existed back end at runtime
+
+C Syntax
+    #include <sci.h>
+    int SCI_BE_remove(int be_id)
+
+INPUT PARAMETERS
+    be_id
+        The id of the back end to be removed (IN).
+
+DESCRIPTION
+    This subroutine is used to remove an existed back end at runtime, once
+    removed, this back end id will be removed from all existed groups.
+
+    Together with SCI_BE_add, these two functions can be used to add/remove
+    back ends dynamically at runtime.
+
+    For more information, please refer to SCI's online documents.
+
+EXAMPLE
+        {
+                int be_id = 0;
+                ...
+                SCI_BE_remove(be_id);
+        }
+
+ERRORS
+    All SCI routines return an error value.
+
+    SCI_ERR_UNINTIALIZED
+        Uninitialized SCI execution environment
+    SCI_ERR_INVALID_CALLER
+        Can only be called in the front end
+    SCI_ERR_BACKEND_NOTFOUND
+        The back end specified by id does not exist
+    SCI_ERR_NO_MEM
+        Out of memory
+
+SEE ALSO
+    SCI_BE_add(3)

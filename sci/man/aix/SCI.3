@@ -1,0 +1,63 @@
+NAME
+    SCI - General information SCI 1.0.0
+
+SCI
+    SCI (Scalable Communication Infrastructure) is an open source project 
+    under the terms of the Eclipse Public License v1.0s, its aim is to 
+    provide a common, light-weight, scalable, portable, and extensible
+    run-time and communication infrastructure for the deployment of 
+    developer tools on the emerging peta- and exa-scale high performance
+    computing systems.
+
+    For more information about EPL, see the following URL:
+        http://www.eclipse.org/legal/epl-v10.html
+
+MAN PAGE SYNTAX
+    Man pages for SCI routines are named according to C syntax, that is, 
+    they begin with the prefix "SCI_",  all in uppercase, and the first 
+    letter following the "SCI_" prefix is also uppercase. The rest of the
+    letters in the routine are all lowercase, for example, "SCI_Group_create".
+
+GETTING STARTED
+    To compile and link SCI programs:
+    % gcc -o test test.c -lsci (Linux)
+    or
+    % xlc_r -o test test.c -lsci_r (AIX)
+
+    % g++ -o test test.cxx -lsci (Linux)
+    or
+    % xlC_r -o test test.cxx -lsci_r (AIX)
+
+DOCUMENTATION
+    TBD
+
+VERSION
+    SCI version 1.0.0
+
+LICENSE
+    TBD
+
+ERRORS
+    All SCI routines return an error value.
+    
+    For more information on SCI error codes, see \fIsci.h\fP in the include 
+    directory.
+
+SEE ALSO
+    SCI_Initialize(3)
+    SCI_Terminate(3)
+    SCI_Query(3)
+    SCI_Bcast(3)
+    SCI_Upload(3)
+    SCI_Poll(3)
+    SCI_Group_create(3)
+    SCI_Group_free(3)
+    SCI_Group_operate(3)
+    SCI_Group_operate_ext(3)
+    SCI_Group_query(3)
+    SCI_Filter_load(3)
+    SCI_Filter_unload(3)
+    SCI_Filter_bcast(3)
+    SCI_Filter_upload(3)
+    SCI_BE_add(3)
+    SCI_BE_remove(3)

@@ -1,0 +1,46 @@
+NAME
+    SCI_Group_free - Free an existed group
+
+C Syntax
+    #include <sci.h>
+    int SCI_Group_free(sci_group_t group)
+
+INPUT PARAMETERS
+    group
+        The group to be freed (IN).
+
+DESCRIPTION
+    This subroutine is used to free an existed group which was previously created by
+    SCI_Group_create, SCI_Group_operate or SCI_Group_operate_ext.
+
+    This is a blocking call. The caller can assume group can't be used again upon the
+    return of the function.
+
+    For more information, please refer to SCI's online documents.
+
+EXAMPLE
+        {
+                    sci_group_t odd_group, even_group;
+                    ...
+                    SCI_Group_free(odd_group);
+                    SCI_Group_free(even_group);
+        }
+
+ERRORS
+    All SCI routines return an error value.
+
+    SCI_ERR_UNINTIALIZED
+        Uninitialized SCI execution environment
+    SCI_ERR_INVALID_CALLER
+        Can only be called in the front end
+    SCI_ERR_GROUP_PREDEFINED
+        Can't free predefined group SCI_GROUP_ALL
+    SCI_ERR_GROUP_NOTFOUND
+        The group to be freed does not exist
+    SCI_ERR_NO_MEM
+        Out of memory
+
+SEE ALSO
+    SCI_Group_create(3)
+    SCI_Group_operate(3)
+    SCI_Group_operate_ext(3)

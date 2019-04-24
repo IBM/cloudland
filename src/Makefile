@@ -71,5 +71,3 @@ install:
 	mkdir -p /opt/cloudland/bin /opt/cloudland/lib64
 	cp cloudland cloudlet grpcmsg grpcfile /opt/cloudland/bin
 	cp filter/*.so /opt/cloudland/lib64/
-	cp -rf ../scripts /opt/cloudland/
-#	cp cloudland cloudlet grpcmsg grpcfile /opt/cloudland/bin-1

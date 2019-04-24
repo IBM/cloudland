@@ -1,0 +1,184 @@
+#!/bin/sh
+#
+# chkconfig: 2345 31 41
+# description: Scalable Communication Infrastructure (SCI) Service Daemon
+#
+### BEGIN INIT INFO
+# Provides:          IBM
+# Required-Start:    
+# Should-Start:      
+# Required-Stop:     
+# Should-Stop:       
+# Default-Start:     3 5
+# Default-Stop:      0 1 2 6
+# Short-Description: start/stop/restart scid daemon service
+# Description:       Scalable Communication Infrastructure 
+#	(SCI) Service Daemon, it's a daemon needed when initializing
+#	SCI sessions.
+#	pidfile: /var/run/scidv1.pid
+### END INIT INFO
+
+if [[ -a /etc/redhat-release ]] ; then
+    
+    # Source function library.
+    if [ -f /etc/init.d/functions ] ; then
+        . /etc/init.d/functions
+    elif [ -f /etc/rc.d/init.d/functions ] ; then
+        . /etc/rc.d/init.d/functions
+    else
+        exit 1
+    fi
+
+    # Avoid using root's TMPDIR
+    unset TMPDIR
+
+    RETVAL=0
+
+    start() {
+        KIND="SCI"
+        echo -n $"Starting $KIND services: "
+        daemon scidv1
+        RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && touch /var/lock/subsys/sciv1 || \
+            RETVAL=1
+        return $RETVAL
+    }
+
+    stop() {
+        KIND="SCI"
+        echo -n $"Shutting down $KIND services: "
+        killproc scidv1
+        RETVAL=$?
+        [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/sciv1
+        echo ""
+        return $RETVAL
+    }
+
+    restart() {
+        stop
+        start
+    }
+
+    rhstatus() {
+        status scidv1
+        RETVAL=$?
+        if [ $RETVAL -ne 0 ] ; then
+            return $RETVAL
+        fi
+    }
+
+    # Allow status as non-root.
+    if [ "$1" = status ]; then
+        rhstatus
+        exit $?
+    fi
+
+    case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        restart
+        ;;
+    status)
+        rhstatus
+        ;;
+    *)
+        echo $"Usage: $0 {start|stop|restart|status}"
+        exit 2
+    esac
+
+    exit $?
+
+elif [[ -a /etc/SuSE-release ]] ; then
+
+    SCID_BIN="/usr/sbin/scidv1"
+    PID_FILE="/var/run/scidv1.pid"
+    LOG_FILE="/tmp/*.scidv1.log.*"
+
+    . /etc/rc.status
+    rc_reset
+
+    # Check for missing binary
+    if [ ! -x ${SCID_BIN} ]; then
+        echo -n >&2 "SCI daemon, ${SCID_BIN} is not installed. "
+        rc_status -s
+        exit 5
+    fi
+
+    case "$1" in
+    start)
+        echo -n "Starting SCI daemon "
+        checkproc -p ${PID_FILE} ${SCID_BIN}
+        case $? in
+            0) echo -n "- Warning: daemon already running. " ;;
+            1) echo -n "- Warning: ${PID_FILE} exists. " ;;
+        esac
+        rm -f ${LOG_FILE} >/dev/null 2>&1
+        startproc -p ${PID_FILE} ${SCID_BIN}
+        rc_status -v
+        ;;
+    stop)
+        echo -n "Shutting down SCI daemon "
+        checkproc -p ${PID_FILE} ${SCID_BIN} || \
+            echo -n " Warning: daemon is not running. "
+        killproc -p ${PID_FILE} -t 10 ${SCID_BIN}
+        rc_status -v
+        ;;
+    restart)
+        $0 stop
+        $0 start
+        rc_status
+        ;;
+    status)
+        echo -n "Checking for SCI daemon "
+        checkproc -p ${PID_FILE} ${SCID_BIN}
+        rc_status -v
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
+    esac
+    rc_exit
+
+elif [[ -d /usr/share/ubuntu-docs ]] ; then
+
+    test -f /usr/sbin/scidv1 || exit 0
+
+    . /lib/lsb/init-functions
+
+    case "$1" in
+    start)  
+        log_begin_msg "Starting SCI service daemon..."
+        start-stop-daemon --start --quiet --pidfile /var/run/scidv1.pid --name scidv1 --startas /usr/sbin/scidv1
+        log_end_msg $?
+        ;;
+    stop)   
+        log_begin_msg "Stopping SCI service daemon..."
+        start-stop-daemon --stop --quiet --pidfile /var/run/scidv1.pid --name scidv1
+        log_end_msg $?
+        ;;
+    restart) 
+        log_begin_msg "Restarting SCI service daemon..."
+        start-stop-daemon --stop --retry 5 --quiet --pidfile /var/run/scidv1.pid --name scidv1
+        start-stop-daemon --start --quiet --pidfile /var/run/scidv1.pid --name sci --startas /usr/sbin/scidv1
+        log_end_msg $?
+        ;;
+    *) 
+        log_success_msg "Usage: $0 start|stop|restart"
+        exit 1 
+        ;;
+    esac
+    exit 0
+
+else
+    
+    echo "Error: requires Redhat, SUSE or Ubuntu"
+    exit 1
+    
+fi

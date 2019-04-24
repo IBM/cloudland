@@ -1,0 +1,4 @@
+*.64o
+.deps
+Makefile
+*.a
