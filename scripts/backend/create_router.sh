@@ -107,7 +107,7 @@ interfaces=$(cat)
 i=0
 n=$(jq length <<< $interfaces)
 while [ $i -lt $n ]; do
-    addr=$(jq -r .[$i].address <<< $interfaces)
+    addr=$(jq -r .[$i].ip_address <<< $interfaces)
     vni=$(jq -r .[$i].vni <<< $interfaces)
     ./set_gateway.sh $router $addr $vni
     let i=$i+1
