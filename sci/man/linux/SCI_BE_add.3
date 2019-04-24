@@ -1,0 +1,80 @@
+.\"Copyright 2008-2010 IBM Corp.
+.TH SCI_BE_add 3 "Dec 4, 2009" "1.0.0" "SCI"
+
+.SH NAME
+\fBSCI_BE_add\fP \- Add a new back end at runtime
+
+.SH SYNTAX
+.ft R
+
+.SH C Syntax
+.nf
+#include <sci.h>
+int SCI_BE_add(sci_be_t *\fIbe\fP)
+
+.SH INPUT PARAMETERS
+.ft R
+.TP 1i
+be
+The information of the back end to be added (INOUT).
+
+.SH DESCRIPTION
+.ft R
+This subroutine is used to add a new back end at runtime, once added,
+the id of the new back end id will be added to the predefined group
+\fBSCI_GROUP_ALL\fP.
+.sp
+In \fIsci_be_t\fP:
+.sp
+.nf
+        typedef struct {
+                int              id;
+                char             *hostname;
+        } sci_be_t;
+.fi
+.sp
+\fIid\fP indicates the id of the new back end, it can be -1 (means its id will be
+assigned by SCI) or a postive value, \fIhostname\fP specified the host to launch
+this new back end.
+.sp
+Together with \fBSCI_BE_remove\fP, these two functions can be used to add/remove
+back ends dynamically at runtime.
+.sp
+For more information, please refer to SCI's online documents.
+
+.SH EXAMPLE
+.ft R
+.nf
+        {
+                sci_be_t be;
+                be.id = -1;
+                be.hostname = "c890f1ec01.ppd.pok.ibm.com";
+                ...
+                SCI_BE_add(&be);
+        }
+.fi
+
+.SH ERRORS
+.ft R
+All SCI routines return an error value.
+.sp
+.TP 1i
+SCI_ERR_UNINTIALIZED
+Uninitialized SCI execution environment
+.TP 1i
+SCI_ERR_INVALID_CALLER
+Can only be called in the front end
+.TP 1i
+SCI_ERR_BACKEND_EXISTED
+The back id already existed
+.TP 1i
+SCI_ERR_LAUNCH_FAILED
+Unable to launch the back end
+.TP 1i
+SCI_ERR_NO_MEM
+Out of memory
+
+.SH SEE ALSO
+.ft R
+.nf
+\fBSCI_BE_remove\fP(3)

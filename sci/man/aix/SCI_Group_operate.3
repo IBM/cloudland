@@ -1,0 +1,55 @@
+NAME
+    SCI_Group_operate - Create a new group from two existed groups
+
+C Syntax
+    #include <sci.h>
+    int SCI_Group_operate(sci_group_t group1, sci_group_t group2, sci_op_t op, sci_group_t *newgroup)
+
+INPUT PARAMETERS
+    group1
+        Existed group 1 (IN).
+    group2
+        Existed group 2 (IN).
+    op
+        Indicates how to create the new group from two existed groups (IN).
+    newgroup
+        The output new group (OUT).
+
+DESCRIPTION
+    This subroutine is used to create a new group from two existed groups, group1 and group2
+    can be SCI_GROUP_ALL, and op can be SCI_UNION, SCI_INTERSECTION and SCI_DIFFERENCE. The 
+    new newgroup can be used for SCI_Bcast to specify destination receivers.
+
+    This is a blocking call. The caller can assume newgroup is ready to use upon the return
+    of the function.
+
+    For more information, please refer to SCI's online documents.
+
+EXAMPLE
+        {
+                    int i, num_bes;
+                    sci_group_t group1, group2, newgroup;
+                    ...
+                    SCI_Group_operate(group1, group2, SCI_UNION, &newgroup);
+        }
+
+ERRORS
+    All SCI routines return an error value.
+
+    SCI_ERR_UNINTIALIZED
+        Uninitialized SCI execution environment
+    SCI_ERR_INVALID_CALLER
+        Can only be called in the front end
+    SCI_ERR_GROUP_NOTFOUND
+        The group to be freed does not exist
+    SCI_ERR_INVALID_OPERATOR
+        Incorrect op specified
+    SCI_ERR_GROUP_EMPTY
+        The new group is an empty group
+    SCI_ERR_NO_MEM
+        Out of memory
+
+SEE ALSO
+    SCI_Group_create(3)
+    SCI_Group_free(3)
+    SCI_Group_operate_ext(3)

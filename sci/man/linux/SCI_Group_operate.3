@@ -1,0 +1,81 @@
+.\"Copyright 2008-2010 IBM Corp.
+.TH SCI_Group_operate 3 "Dec 4, 2009" "1.0.0" "SCI"
+
+.SH NAME
+\fBSCI_Group_operate\fP \- Create a new group from two existed groups
+
+.SH SYNTAX
+.ft R
+
+.SH C Syntax
+.nf
+#include <sci.h>
+int SCI_Group_operate(sci_group_t \fIgroup1\fP, sci_group_t \fIgroup2\fP, sci_op_t \fIop\fP, sci_group_t *\fInewgroup\fP)
+
+.SH INPUT PARAMETERS
+.ft R
+.TP 1i
+group1
+Existed group 1 (IN).
+.TP 1i
+group2
+Existed group 2 (IN).
+.TP 1i
+op
+Indicates how to create the new group from two existed groups (IN).
+.TP 1i
+newgroup
+The output new group (OUT).
+
+.SH DESCRIPTION
+.ft R
+This subroutine is used to create a new group from two existed groups, \fIgroup1\fP and
+\fIgroup2\fP can be \fBSCI_GROUP_ALL\fP, and \fIop\fP can be \fBSCI_UNION\fP, 
+\fBSCI_INTERSECTION\fP and \fBSCI_DIFFERENCE\fP. The new \fInewgroup\fP can be 
+used for \fBSCI_Bcast\fP to specify destination receivers.
+.sp
+This is a blocking call. The caller can assume \fInewgroup\fP is ready to use upon the return
+of the function.
+.sp
+For more information, please refer to SCI's online documents.
+
+.SH EXAMPLE
+.ft R
+.nf
+        {
+                    int i, num_bes;
+                    sci_group_t group1, group2, newgroup;
+                    ...
+                    SCI_Group_operate(group1, group2, SCI_UNION, &newgroup);
+        }
+.fi
+
+.SH ERRORS
+.ft R
+All SCI routines return an error value.
+.sp
+.TP 1i
+SCI_ERR_UNINTIALIZED
+Uninitialized SCI execution environment
+.TP 1i
+SCI_ERR_INVALID_CALLER
+Can only be called in the front end
+.TP 1i
+SCI_ERR_GROUP_NOTFOUND
+The group to be freed does not exist
+.TP 1i
+SCI_ERR_INVALID_OPERATOR
+Incorrect \fIop\fP specified
+.TP 1i
+SCI_ERR_GROUP_EMPTY
+The new group is an empty group
+.TP 1i
+SCI_ERR_NO_MEM
+Out of memory
+
+.SH SEE ALSO
+.ft R
+.nf
+\fBSCI_Group_create\fP(3)
+\fBSCI_Group_free\fP(3)
+\fBSCI_Group_operate_ext\fP(3)

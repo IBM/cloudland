@@ -1,0 +1,43 @@
+NAME
+    SCI_Filter_unload - Unload a previously loaded filter
+
+C Syntax
+    #include <sci.h>
+    int SCI_Filter_unload(int filter_id)
+
+INPUT PARAMETERS
+    filter_id
+        The id of the filter to be unloaded (IN).
+
+DESCRIPTION
+    This subroutine is used to unload a previously loaded filter specifed by
+    filter_id, if success, the termination handler defined in the filter will
+    be called.
+
+    Usually cleanup works can be performed in the termination handler.
+
+    For more information, please refer to SCI's online documents.
+
+EXAMPLE
+        {
+                int filter_id = 1;
+                ...
+                SCI_Filter_unload(filter_id);
+        }
+
+ERRORS
+    All SCI routines return an error value.
+
+    SCI_ERR_UNINTIALIZED
+        Uninitialized SCI execution environment
+    SCI_ERR_INVALID_CALLER
+        Can only be called in the front end
+    SCI_ERR_FILTER_PREDEFINED
+        Can't unload predefined filter SCI_FILTER_NULL
+    SCI_ERR_FILTER_ID
+        Unknown filter id or the filter is not loaded previously
+    SCI_ERR_NO_MEM
+        Out of memory
+
+SEE ALSO
+    SCI_Filter_load(3)
