@@ -1,0 +1,64 @@
+NAME
+    SCI_Group_operate_ext - Create a new group from an existed group and a back end list
+
+C Syntax
+    #include <sci.h>
+    int SCI_Group_operate(sci_group_t group, int num_bes, int *be_list, sci_op_t op, sci_group_t *newgroup)
+
+INPUT PARAMETERS
+    group
+        An existed group (IN).
+    num_bes
+        Number of back ends in another group (IN).
+    be_list
+        The back end id list of another group (IN).
+    op
+        Indicates how to create the new group (IN).
+    newgroup
+        The output new group (OUT).
+
+DESCRIPTION
+    This subroutine is used to create a new group from an existed group and a back end list, 
+    group can be SCI_GROUP_ALL, and op can be SCI_UNION, SCI_INTERSECTION and SCI_DIFFERENCE.
+    The new newgroup can be used for SCI_Bcast to specify destination receivers.
+
+    This is a blocking call. The caller can assume newgroup is ready to use upon the return
+    of the function.
+
+    For more information, please refer to SCI's online documents.
+
+EXAMPLE
+        {
+                    int i, num_bes, *be_list;
+                    sci_group_t group, newgroup;
+                    ...
+                    num_bes = 3;
+                    be_list = (int *)malloc(sizeof(int)*num_bes);
+                    for (i=0; i<num_bes; i++) {
+                            be_list[i] = i;
+                    }
+                    SCI_Group_operate_ext(group, num_bes, be_list, SCI_UNION, &newgroup);
+        }
+
+ERRORS
+    All SCI routines return an error value.
+
+    SCI_ERR_UNINTIALIZED
+        Uninitialized SCI execution environment
+    SCI_ERR_INVALID_CALLER
+        Can only be called in the front end
+    SCI_ERR_GROUP_NOTFOUND
+        The group to be freed does not exist
+    SCI_ERR_BACKEND_NOTFOUND
+        The back end id list contains non-existed back end id
+    SCI_ERR_INVALID_OPERATOR
+        Incorrect op specified
+    SCI_ERR_GROUP_EMPTY
+        The new group is an empty group
+    SCI_ERR_NO_MEM
+        Out of memory
+
+SEE ALSO
+    SCI_Group_create(3)
+    SCI_Group_free(3)
+    SCI_Group_operate(3)

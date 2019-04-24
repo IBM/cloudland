@@ -1,0 +1,186 @@
+.\"Copyright 2008-2010 IBM Corp.
+.TH SCI_Initialize 3 "Dec 4, 2009" "1.0.0" "SCI"
+
+.SH NAME
+\fBSCI_Initialize\fP \- Initializes the SCI execution environment
+
+.SH SYNTAX
+.ft R
+
+.SH C Syntax
+.nf
+#include <sci.h>
+int SCI_Initialize(sci_info_t *\fIinfo\fP)
+
+.SH INPUT PARAMETERS
+.ft R
+.TP 1i
+info
+Pointer to the SCI startup information (IN).
+
+.SH DESCRIPTION
+.ft R
+This routine must be called before any other SCI routines are called.
+SCI can be initialized more than once; subsequent calls to SCI_Initialize
+are erroneous unless SCI_Terminate be called.
+.sp
+All SCI programs must contain a call to SCI_Initialize. SCI_Initialize 
+accepts \fIinfo\fP as its argument:
+.sp
+.nf
+        typedef union {
+                sci_end_type_t   type;
+                sci_fe_info_t    fe_info;
+                sci_be_info_t    be_info;
+        } sci_info_t;
+.fi
+.sp
+\fItype\fP can be \fBSCI_FRONT_END\fP or \fBSCI_BACK_END\fP.
+.sp
+In \fIsci_fe_info_t\fP:
+.sp
+.nf
+        typedef struct {
+                sci_end_type_t   type;
+                sci_mode_t       mode;
+                SCI_msg_hndlr    *hndlr;
+                void             *param;
+                SCI_err_hndlr    *err_hndlr;
+                char             *hostfile;
+                char             *bepath;
+                char             **beenvp;
+                char             reserve[64];
+        } sci_fe_info_t;
+.fi
+.sp
+\fImode\fP indicates the working mode of the front end, can be interrupt mode
+(\fBSCI_INTERRUPT\fP) or polling mode (\fBSCI_POLLING\fP), \fIhndlr\fP specified
+the message handler and it can't be \fBNULL\fP, \fIparam\fP specifies user-defined 
+parameter in the message handler, \fIerr_hndlr\fP specifies the error handler when
+errors occur and it can be \fBNULL\fP, \fIhostfile\fP specifies the host list to initialize
+back ends, \fIbepath\fP specifies the command to run a back end, \fIbeenvp\fP specifies
+any additional environment variables user wants to pass to back ends and it should
+be ended with a \fBNULL\fP sign.
+.sp
+In \fIsci_be_info_t\fP:
+.sp
+.nf
+        typedef struct {
+                sci_end_type_t   type;
+                sci_mode_t       mode;
+                SCI_msg_hndlr    *hndlr;
+                void             *param;
+                SCI_err_hndlr    *err_hndlr;
+                char             reserve[64];
+        } sci_be_info_t;
+.fi
+.sp
+\fImode\fP indicates the working mode of the front end, can be interrupt mode
+(\fBSCI_INTERRUPT\fP) or polling mode (\fBSCI_POLLING\fP), \fIhndlr\fP specified
+the message handler and it can't be \fBNULL\fP, \fIparam\fP specifies user-defined 
+parameter in the message handler, \fIerr_hndlr\fP specifies the error handler when
+errors occur and it can be \fBNULL\fP.
+.sp
+Each program can be started as a front end or a back end, and can
+work in polling mode or interrupt mode, furthermore, besides sci_info_t,
+the following environment variables begin with the prefix "SCI_" can be 
+used to tune SCI programs (if a data field in sci_info_t indicates the same
+attribute as an environment variable, it will be overwritten):
+.sp
+.TP 1i
+SCI_HOST_FILE
+host file, same as fe_info.hostfile in sci_info_t
+.TP 1i
+SCI_BACKEND_NUM
+number of back ends when startup
+.TP 1i
+SCI_DEBUG_FANOUT
+fanout of the SCI tree structure, the default value is 32
+.TP 1i
+SCI_BACKEND_PATH
+command to start a back end, same as fe_info.bepath in sci_info_t, can contain 
+arguments, e.g., "/usr/bin/pdb_be 2"
+.TP 1i
+SCI_USE_EXTLAUNCHER
+set to "yes" to indicate all back ends are started by an external launcher, the
+default value is "no"
+.TP 1i
+SCI_ENABLE_FAILOVER
+set to "yes" to indicate SCI will try to recover connections when facing connection
+problems, the default value is "no"
+.TP 1i
+SCI_REMOTE_SHELL
+can be "rsh", "ssh" or "", indicates how underlying SCI processes (agents, back ends)
+will be started, "rsh" means using rshell, "ssh" means using ssh, "" means using sci
+daemon, it's the default value
+.TP 1i
+SCI_DEVICE_NAME
+can be "" or an ifconfig interface name, e.g., "ib0", if set to "", the connection path
+indicated by the first interface will be used, otherwise the specified connection path
+will be used, the default value is the first ifconfig device name
+.TP 1i
+SCI_SEGMENT_SIZE
+message segment size used in SCI pipeline mechanism, when the size of downstream
+messages exceed a threshold (1.5 * size), this mechanism will be enabled
+automatically by splitting the large message into smaller segments to 
+increase the overall bandwidth, the default size is 46720 (bytes)
+.TP 1i
+SCI_SYNC_INIT
+if set to yes, the SCI_Initilize will block until all the backends are launched, 
+otherwise it will return immediately. The default value is no.
+.TP 0i
+.sp
+For more information, please refer to SCI's online documents.
+
+.SH EXAMPLE
+.ft R
+.nf
+        void handler(void *user_param, sci_group_t group, void *buffer, int size)
+        {
+                ...
+        }
+        
+        {
+                sci_info_t info;
+                info.type = SCI_FRONT_END;
+                info.fe_info.mode = SCI_INTERRUPT;
+                info.fe_info.hostfile = "./host.list";
+                info.fe_info.bepath = "/usr/bin/pdb_be";
+                info.fe_info.hndlr = (SCI_msg_hndlr *)&handler;
+                info.fe_info.param = NULL;
+                SCI_Initialize(&info);
+                ... 
+                SCI_Terminate();
+        }
+.fi
+
+.SH ERRORS
+.ft R
+All SCI routines return an error value.
+.sp
+.TP 1i
+SCI_ERR_INVALID_ENDTYPE
+Invalid end type, can only be SCI_FRONT_END or SCI_BACK_END
+.TP 1i
+SCI_ERR_NO_MEM
+Out of memory
+.TP 1i
+SCI_ERR_INVALID_JOBKEY
+Invalid job key specified by SCI_JOB_KEY (only for BE)
+.TP 1i
+SCI_ERR_INVALID_HOSTFILE
+Invalid host file (only for FE)
+.TP 1i
+SCI_ERR_UNKNOWN_INFO
+Unknown back end info (only for FE)
+.TP 1i
+SCI_ERR_LAUNCH_FAILED
+Failed to launch client(s) (only for FE)
+.TP 1i
+SCI_ERR_INITIALIZE_FAILED
+Initialization failed
+
+.SH SEE ALSO
+.ft R
+.nf
+\fBSCI_Terminate\fP(3)

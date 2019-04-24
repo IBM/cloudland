@@ -1,0 +1,94 @@
+NAME
+    SCI_Filter_load - Load a new message filter
+
+C Syntax
+    #include <sci.h>
+    int SCI_Filter_load(sci_filter_info_t *filter_info)
+
+INPUT PARAMETERS
+    filter_info
+        The information of the filter to be loaded (IN).
+
+DESCRIPTION
+    This subroutine is used to load a new message with id specifed by filter_id,
+    if success, the initialization handler defined in the filter will be called.
+
+    In sci_filter_info_t:
+
+        typedef struct {
+                int              filter_id;
+                char             *so_file;
+        } sci_filter_info_t;
+
+    filter_id indicates the id of the new filter, and filter_id can be any positive
+    integers. so_file indicates the absolute path of the filter library.
+
+    In SCI, a message filter is specified by a shared library, in this shared 
+    library, at least the following three functions (name fixed) should be defined:
+    
+        // initialization handler
+        int filter_initialize(void **user_param);
+        // termination handler
+        int filter_terminate(void *user_param);
+        // message handler
+        int filter_input(void *user_param, sci_group_t group, void *buf, int size);
+        
+    The user-defined function filter_input will be called each time when a new
+    message is arrived. The filter_id can be used for SCI_Bcast, SCI_Upload or
+    SCI_Filter_upload once the filter has been loaded successfully.
+
+    For more information, please refer to SCI's online documents.
+
+EXAMPLE
+        int filter_initialize(void **user_param)
+        {
+                ...
+                return SCI_SUCCESS;
+        }
+
+        int filter_terminate(void *user_param) 
+        {
+                ...
+                return SCI_SUCCESS;
+        }
+
+        int filter_input(void *user_param, sci_group_t group, void *buf, int size) 
+        {
+                void *bufs[1];
+                int sizes[1];
+                int rc;
+        
+                bufs[0] = buf;
+                sizes[0] = size;
+    
+                rc = SCI_Filter_upload(SCI_FILTER_NULL, group, 1, bufs, sizes);
+                if (rc != SCI_SUCCESS) {
+                        ...
+                } 
+    
+                return SCI_SUCCESS;
+        }
+
+        {
+                sci_filter_info_t filter_info;
+                filter_info.filter_id = 1;
+                filter_info.so_file = "/usr/lib/myfilter.so";
+                SCI_Filter_load(&filter_info);
+        }
+
+ERRORS
+    All SCI routines return an error value.
+
+    SCI_ERR_UNINTIALIZED
+        Uninitialized SCI execution environment
+    SCI_ERR_INVALID_CALLER
+        Can only be called in the front end
+    SCI_ERR_FILTER_PREDEFINED
+        Can't load predefined filter SCI_FILTER_NULL
+    SCI_ERR_FILTER_ID
+        Can't set negative filter_id
+    SCI_ERR_NO_MEM
+        Out of memory
+
+SEE ALSO
+    SCI_Filter_unload(3)

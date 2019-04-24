@@ -1,0 +1,80 @@
+.\"Copyright 2008-2010 IBM Corp.
+.TH SCI 3 "Dec 4, 2009" "1.0.0" "SCI"
+
+.SH NAME
+\fBSCI\fP \- General information SCI 1.0.0
+
+.SH SCI
+.ft R
+SCI (Scalable Communication Infrastructure) is an open source project under
+under the terms of the Eclipse Public License v1.0s, its aim is to provide
+a common, light-weight, scalable, portable, and extensible run-time and
+communication infrastructure for the deployment of developer tools on the
+emerging peta- and exa-scale high performance computing systems.
+.sp
+For more information about EPL, see the following URL:
+.sp
+    http://www.eclipse.org/legal/epl-v10.html
+
+.SH MAN PAGE SYNTAX
+.ft R
+Man pages for SCI routines are named according to C syntax, that is, they 
+begin with the prefix "SCI_",  all in uppercase, and the first letter following
+the "SCI_" prefix is also uppercase. The rest of the letters in the routine are
+all lowercase, for example, "SCI_Group_create".
+
+.SH GETTING STARTED
+.ft R
+To compile and link SCI programs:
+.sp
+% gcc -o test test.c -lsci (Linux)
+.nf
+    or
+.nf
+% xlc_r -o test test.c -lsci_r (AIX)
+.sp
+% g++ -o test test.cxx -lsci (Linux)
+.nf
+    or
+.nf
+% xlC_r -o test test.cxx -lsci_r (AIX)
+
+.SH DOCUMENTATION
+.ft R
+TBD
+
+.SH VERSION
+.ft R
+SCI version 1.0.0
+
+.SH LICENSE
+.ft R
+TBD
+
+.SH ERRORS
+.ft R
+All SCI routines return an error value.
+.sp
+For more information on SCI error codes, see \fIsci.h\fP in the include 
+directory.
+
+.SH SEE ALSO
+.ft R
+.nf
+\fBSCI_Initialize\fP(3)
+\fBSCI_Terminate\fP(3)
+\fBSCI_Query\fP(3)
+\fBSCI_Bcast\fP(3)
+\fBSCI_Upload\fP(3)
+\fBSCI_Poll\fP(3)
+\fBSCI_Group_create\fP(3)
+\fBSCI_Group_free\fP(3)
+\fBSCI_Group_operate\fP(3)
+\fBSCI_Group_operate_ext\fP(3)
+\fBSCI_Group_query\fP(3)
+\fBSCI_Filter_load\fP(3)
+\fBSCI_Filter_unload\fP(3)
+\fBSCI_Filter_bcast\fP(3)
+\fBSCI_Filter_upload\fP(3)
+\fBSCI_BE_add\fP(3)
+\fBSCI_BE_remove\fP(3)

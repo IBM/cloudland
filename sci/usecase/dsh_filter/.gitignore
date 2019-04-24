@@ -1,0 +1,8 @@
+*.lo
+dsh_tests
+dsh_fe
+dsh_be
+.libs
+.deps
+*.la
+Makefile

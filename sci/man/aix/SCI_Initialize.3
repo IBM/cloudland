@@ -1,0 +1,147 @@
+NAME
+    SCI_Initialize - Initializes the SCI execution environment
+
+C Syntax
+    #include <sci.h>
+    int SCI_Initialize(sci_info_t *info)
+
+INPUT PARAMETERS
+    info
+        Pointer to the SCI startup information (IN).
+
+DESCRIPTION
+    This routine must be called before any other SCI routines are called. SCI
+    can be initialized more than once; subsequent calls to SCI_Initialize are
+    erroneous unless SCI_Terminate be called.
+
+    All SCI programs must contain a call to SCI_Initialize. SCI_Initialize 
+    accepts info as its argument:
+
+        typedef union {
+                sci_end_type_t   type;
+                sci_fe_info_t    fe_info;
+                sci_be_info_t    be_info;
+        } sci_info_t;
+
+    type can be SCI_FRONT_END or SCI_BACK_END.
+
+    In sci_fe_info_t:
+
+        typedef struct {
+                sci_end_type_t   type;
+                sci_mode_t       mode;
+                SCI_msg_hndlr    *hndlr;
+                void             *param;
+                SCI_err_hndlr    *err_hndlr;
+                char             *hostfile;
+                char             *bepath;
+                char             **beenvp;
+                char             reserve[64];
+        } sci_fe_info_t;
+
+    mode indicates the working mode of the front end, can be interrupt mode
+    (SCI_INTERRUPT) or polling mode (SCI_POLLING), hndlr specified the message 
+    handler and it can't be NULL, param specifies user-defined parameter in the 
+    message handler, err_hndlr specifies the error handler when errors occur and
+    it can be NULL, hostfile specifies the host list to initialize back ends, 
+    bepath specifies the command to run a back end, beenvp specifies any additional
+    environment variables user wants to pass to back ends and it should be ended 
+    with a NULL sign.
+
+    In sci_be_info_t:
+
+        typedef struct {
+                sci_end_type_t   type;
+                sci_mode_t       mode;
+                SCI_msg_hndlr    *hndlr;
+                void             *param;
+                SCI_err_hndlr    *err_hndlr;
+                char             reserve[64];
+        } sci_be_info_t;
+
+    mode indicates the working mode of the front end, can be interrupt mode
+    (SCI_INTERRUPT) or polling mode (SCI_POLLING), hndlr specified the message 
+    handler and it can't be NULL, param specifies user-defined parameter in the 
+    message handler, err_hndlr specifies the error handler when errors occur and 
+    it can be NULL.
+
+    Each program can be started as a front end or a back end, and can work in 
+    polling mode or interrupt mode, furthermore, besides sci_info_t, the following
+    environment variables begin with the prefix "SCI_" can be used to tune SCI 
+    programs (if a data field in sci_info_t indicates the same attribute as an 
+    environment variable, it will be overwritten):
+
+    SCI_HOST_FILE
+        host file, same as fe_info.hostfile in sci_info_t
+    SCI_BACKEND_NUM
+        number of back ends when startup
+    SCI_DEBUG_FANOUT
+        fanout of the SCI tree structure, the default value is 32
+    SCI_BACKEND_PATH
+        command to start a back end, same as fe_info.bepath in sci_info_t, can 
+        contain arguments, e.g., "/usr/bin/pdb_be 2"
+    SCI_USE_EXTLAUNCHER
+        set to "yes" to indicate all back ends are started by an external launcher, 
+        the default value is "no"
+    SCI_ENABLE_FAILOVER
+        set to "yes" to indicate SCI will try to recover connections when facing 
+        connection problems, the default value is "no"
+    SCI_REMOTE_SHELL
+        can be "rsh", "ssh" or "", indicates how underlying SCI processes (agents, 
+        back ends) will be started, "rsh" means using rshell, "ssh" means using ssh, 
+        "" means using sci daemon, it's the default value
+    SCI_DEVICE_NAME
+        can be "" or an ifconfig interface name, e.g., "ib0", if set to "", the 
+        connection path indicated by the first interface will be used, otherwise the 
+        specified connection path will be used, the default value is the first ifconfig 
+        device name
+    SCI_SEGMENT_SIZE
+        message segment size used in SCI pipeline mechanism, when the size of downstream
+        messages exceed a threshold (1.5 * size), this mechanism will be enabled
+        automatically by splitting the large message into smaller segments to 
+        increase the overall bandwidth, the default size is 46720 (bytes)
+    SCI_SYNC_INIT
+        if set to yes, the SCI_Initilize will block until all the backends are launched, 
+        otherwise it will return immediately. The default value is no.
+
+    For more information, please refer to SCI's online documents.
+
+EXAMPLE
+        void handler(void *user_param, sci_group_t group, void *buffer, int size)
+        {
+                ...
+        }
+        
+        {
+                sci_info_t info;
+                info.type = SCI_FRONT_END;
+                info.fe_info.mode = SCI_INTERRUPT;
+                info.fe_info.hostfile = "./host.list";
+                info.fe_info.bepath = "/usr/bin/pdb_be";
+                info.fe_info.hndlr = (SCI_msg_hndlr *)&handler;
+                info.fe_info.param = NULL;
+                SCI_Initialize(&info);
+                ... 
+                SCI_Terminate();
+        }
+
+ERRORS
+    All SCI routines return an error value.
+
+    SCI_ERR_INVALID_ENDTYPE
+        Invalid end type, can only be SCI_FRONT_END or SCI_BACK_END
+    SCI_ERR_NO_MEM
+        Out of memory
+    SCI_ERR_INVALID_JOBKEY
+        Invalid job key specified by SCI_JOB_KEY (only for BE)
+    SCI_ERR_INVALID_HOSTFILE
+        Invalid host file (only for FE)
+    SCI_ERR_UNKNOWN_INFO
+        Unknown back end info (only for FE)
+    SCI_ERR_LAUNCH_FAILED
+        Failed to launch client(s) (only for FE)
+    SCI_ERR_INITIALIZE_FAILED
+        Initialization failed
+
+SEE ALSO
+    SCI_Terminate(3)

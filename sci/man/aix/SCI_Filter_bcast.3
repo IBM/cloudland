@@ -1,0 +1,70 @@
+NAME
+    SCI_Filter_bcast - Used in a message filter to broadcasts messages to some successors
+
+C Syntax
+    #include <sci.h>
+    int SCI_Filter_bcast(int filter_id, int num_successors, int *successor_list, int num_bufs, void *bufs[], int sizes[])
+
+INPUT PARAMETERS
+    filter_id
+        The filter id of the messages to be broadcasted (IN).
+    num_successors
+        Number of successors (IN).
+    successor_list
+        The successor id list (IN).
+    num_bufs
+        The number of buffers of current message segment (IN).
+    bufs
+        The array of buffer locations of current message segment (IN).
+    sizes
+        The array of buffer sizes of current message segment (IN).
+
+DESCRIPTION
+    This subroutine is used to broadcast messages to all or part of successors 
+    in a message filter. A successor id can be an agent id or a back end id, 
+    because a SCI execution environment is organized in a tree style, successor
+    means children.
+
+    The agent id can be queried by SCI_Query using query type AGENT_ID, and the
+    successor id list can be queried using query type NUM_SUCCESSORS and
+    SUCCESSOR_IDLIST.
+
+    The filter_id can be set to SCI_FILTER_NULL, means the downward messages will
+    use the current filter id, otherwise the new filter id will be used.
+
+    This is a non-blocking call. The caller cannot assume that message transfer
+    has completed upon the return of the function. Instead, the handler function
+    defined in sci_info_t should be used to ensure the message arrival in the 
+    destination sides.
+
+    For more information, please refer to SCI's online documents.
+
+EXAMPLE
+        {
+                char msg[256];
+                int num_successors, *successor_list, sizes[1];
+                void *bufs[1];
+                ...
+                SCI_Query(NUM_SUCCESSORS, &num_successors);
+                successor_list = (int *)malloc(sizeof(int)*num_successors);
+                SCI_Query(SUCCESSOR_IDLIST, successor_list);
+                ...
+                bufs[0] = msg;
+                sizes[0] = strlen(msg) + 1;
+                SCI_Filter_bcast(SCI_FILTER_NULL, num_successors, successor_list, 1, bufs, sizes);
+        }
+
+ERRORS
+    All SCI routines return an error value.
+
+    SCI_ERR_UNINTIALIZED
+        Uninitialized SCI execution environment
+    SCI_ERR_INVALID_CALLER
+        Can only be called in the filter
+    SCI_ERR_INVALID_SUCCESSOR
+        The successor id list contains non-existed successor id
+    SCI_ERR_NO_MEM
+        Out of memory
+
+SEE ALSO
+    SCI_Filter_upload(3)

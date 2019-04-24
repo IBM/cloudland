@@ -1,0 +1,82 @@
+.\"Copyright 2008-2010 IBM Corp.
+.TH SCI_Bcast 3 "Dec 4, 2009" "1.0.0" "SCI"
+
+.SH NAME
+\fBSCI_Bcast\fP \- Broadcasts messages from the front end to some back ends
+
+.SH SYNTAX
+.ft R
+
+.SH C Syntax
+.nf
+#include <sci.h>
+int SCI_Bcast(int \fIfilter_id\fP, sci_group_t \fIgroup\fP, int \fInum_bufs\fP, void *\fIbufs\fP[], int \fIsizes\fP[])
+
+.SH INPUT PARAMETERS
+.ft R
+.TP 1i
+filter_id
+The id of the message filter (IN).
+.TP 1i
+group
+The group which the message belongs to (IN).
+.TP 1i
+num_bufs
+The number of buffers of current message segment (IN).
+.TP 1i
+bufs
+The array of buffer locations of current message segment (IN).
+.TP 1i
+sizes
+The array of buffer sizes of current message segment (IN).
+
+.SH DESCRIPTION
+.ft R
+This subroutine is used to broadcast messages from the front end to all or part of back
+ends. The receivers can be determined by \fIgroup\fP if set \fIfilter_id\fP to
+\fBSCI_FILTER_NULL\fP, which means do not use message filter, and a predefined
+group named \fBSCI_GROUP_ALL\fP means all back ends, or can be determined
+by \fIfilter_id\fP if a new message filter is loaded by \fBSCI_Filter_load\fP.
+.sp
+This is a non-blocking call. The caller cannot assume that message transfer has completed
+upon the return of the function. Instead, the handler function defined in \fIsci_info_t\fP
+should be used to ensure the message arrival in the destination sides.
+.sp
+For more information, please refer to SCI's online documents.
+
+.SH EXAMPLE
+.ft R
+.nf
+        {
+                char msg[256];
+                int sizes[1];
+                void *bufs[1];
+                ...
+                bufs[0] = msg;
+                sizes[0] = strlen(msg) + 1;
+                SCI_Bcast(SCI_FILTER_NULL, SCI_GROUP_ALL, 1, bufs, sizes);
+        }
+.fi
+
+.SH ERRORS
+.ft R
+All SCI routines return an error value.
+.sp
+.TP 1i
+SCI_ERR_UNINTIALIZED
+Uninitialized SCI execution environment
+.TP 1i
+SCI_ERR_INVALID_CALLER
+Can only be called in the front end
+.TP 1i
+SCI_ERR_GROUP_NOTFOUND
+Undefined \fIgroup\fP
+.TP 1i
+SCI_ERR_NO_MEM
+Out of memory
+
+.SH SEE ALSO
+.ft R
+.nf
+\fBSCI_Upload\fP(3)
+\fBSCI_Poll\fP(3)
