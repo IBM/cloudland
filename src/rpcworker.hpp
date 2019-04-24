@@ -38,8 +38,9 @@ class RemoteExecServiceImpl final : public RemoteExec::Service
 
 class FrontBack {
     public:
+		shared_ptr<Channel> connChannel;
         FrontBack(shared_ptr<Channel> channel)
-            : stub_(RemoteExec::NewStub(channel)) {}
+            : stub_(RemoteExec::NewStub(channel)) { connChannel = channel; }
         string Execute(int be_id, int msg_id, char *ctl, char *cmd, char *trace);
         void ExecuteAsync(int be_id, int msg_id, char *ctl, char *cmd, char *trace);
     private:
@@ -52,6 +53,7 @@ class RpcWorker {
         NetLayer sciNet;
         RemoteExecServiceImpl service;
         FrontBack *rpcClient;
+        void initConn();
 
     public:
         RpcWorker();
