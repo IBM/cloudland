@@ -23,7 +23,7 @@ type Interface struct {
 	Device     int64
 	Address    *Address `gorm:"foreignkey:Interface"`
 	Hyper      int32    `gorm:"default:-1"`
-	Primary    bool     `gorm:"default:false"`
+	PrimaryIf  bool     `gorm:"default:false"`
 	Type       string
 	Mtu        int32
 }
@@ -56,11 +56,11 @@ func CreateInterface(subnetID, ID int64, ifaceName, ifType string) (iface *Inter
 		return
 	}
 	iface = &Interface{
-		Name:    ifaceName,
-		MacAddr: mac,
-		Primary: primary,
-		Type:    ifType,
-		Mtu:     1450,
+		Name:      ifaceName,
+		MacAddr:   mac,
+		PrimaryIf: primary,
+		Type:      ifType,
+		Mtu:       1450,
 	}
 	if ifType == "instance" {
 		iface.InstanceID = ID

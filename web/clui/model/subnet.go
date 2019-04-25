@@ -47,15 +47,19 @@ func init() {
 func AllocateAddress(subnetID, ifaceID int64, addrType string) (address *Address, err error) {
 	address = &Address{}
 	tx := dbs.DB().Begin()
-	err = tx.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ?", subnetID, 0).Take(address).Error
+	err = tx.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ?", subnetID, false).Take(address).Error
 	if err != nil {
 		tx.Rollback()
 		log.Println("Failed to query address, %v", err)
 		return nil, err
 	}
 	address.Allocated = true
-	address.Interface = ifaceID
 	address.Type = addrType
+	if addrType == "floating" {
+		address.FloatingIp = ifaceID
+	} else {
+		address.Interface = ifaceID
+	}
 	if err = tx.Model(address).Update(address).Error; err != nil {
 		tx.Rollback()
 		log.Println("Failed to Update address, %v", err)

@@ -244,7 +244,7 @@ func (a *InstanceAdmin) List(offset, limit int64, order string) (total int64, in
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Set("gorm:auto_preload", true).Find(&instances).Error; err != nil {
+	if err = db.Preload("FloatingIps").Preload("FloatingIps.FipAddress").Preload("Interfaces").Preload("Interfaces.Address").Preload("Flavor").Preload("Image").Find(&instances).Error; err != nil {
 		return
 	}
 

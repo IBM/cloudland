@@ -26,34 +26,35 @@ var (
 type FloatingIpAdmin struct{}
 type FloatingIpView struct{}
 
-func (a *FloatingIpAdmin) Create(ifaceID int64, types []string) (floatingips []*model.FloatingIp, err error) {
+func (a *FloatingIpAdmin) Create(instID int64, types []string) (floatingips []*model.FloatingIp, err error) {
 	db := DB()
-	iface := &model.Interface{Model: model.Model{ID: ifaceID}}
-	err = db.Set("gorm:auto_preload", true).Model(iface).Take(iface).Error
+	instance := &model.Instance{Model: model.Model{ID: instID}}
+	err = db.Set("gorm:auto_preload", true).Preload("Interfaces", "primary_if = ?", true).Model(instance).Take(instance).Error
 	if err != nil {
 		log.Println("DB failed to query subnet, %v", err)
 		return
 	}
+	iface := instance.Interfaces[0]
 	gateway := &model.Gateway{Model: model.Model{ID: iface.Address.Subnet.Router}}
 	err = db.Model(gateway).Set("gorm:auto_preload", true).Take(gateway).Error
 	if err != nil {
-		log.Println("DB failed to query gateway, %v", err)
+		log.Println("DB failed to query gateway", err)
 		return
 	}
 	for _, ftype := range types {
 		if ftype != "private" && ftype != "public" {
-			log.Println("Invalid floating ip type, %v", err)
+			log.Println("Invalid floating ip type", err)
 			return
 		}
-		floatingip := &model.FloatingIp{InterfaceID: iface.ID, Gateway: gateway.ID}
+		floatingip := &model.FloatingIp{Gateway: gateway.ID, InstanceID: instance.ID}
 		err = db.Create(floatingip).Error
 		if err != nil {
-			log.Println("DB failed to create floating ip, %v", err)
+			log.Println("DB failed to create floating ip", err)
 			return
 		}
 		_, err = model.AllocateFloatingIp(floatingip.ID, gateway, ftype)
 		if err != nil {
-			log.Println("DB failed to allocate floating ip, %v", err)
+			log.Println("DB failed to allocate floating ip", err)
 			return
 		}
 		floatingips = append(floatingips, floatingip)
@@ -99,7 +100,7 @@ func (a *FloatingIpAdmin) List(offset, limit int64, order string) (total int64, 
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Find(&floatingips).Error; err != nil {
+	if err = db.Preload("Instance").Preload("Interface").Preload("Interface.Address").Preload("FipAddress").Find(&floatingips).Error; err != nil {
 		log.Println("DB failed to query floating ip(s), %v", err)
 		return
 	}
@@ -155,29 +156,32 @@ func (v *FloatingIpView) Delete(c *macaron.Context, store session.Store) (err er
 
 func (v *FloatingIpView) New(c *macaron.Context, store session.Store) {
 	db := DB()
-	interfaces := []*model.Interface{}
-	if err := db.Preload("Instance").Where("primary = ?", true).Find(&interfaces).Error; err != nil {
+	instances := []*model.Instance{}
+	if err := db.Preload("Interfaces", "primary_if = ?", true).Preload("Interfaces.Address").Find(&instances).Error; err != nil {
 		return
 	}
-	c.Data["interfaces"] = interfaces
+	c.Data["Instances"] = instances
 	c.HTML(200, "floatingips_new")
 }
 
 func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 	redirectTo := "../floatingips"
-	iface := c.Query("iface")
+	instance := c.Query("instance")
 	ftype := c.Query("ftype")
-	ifaceID, err := strconv.Atoi(iface)
+	instID, err := strconv.Atoi(instance)
 	if err != nil {
-		log.Println("Invalid interface ID, %v", err)
+		log.Println("Invalid interface ID", err)
 		code := http.StatusBadRequest
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	if ftype == "" {
+		ftype = "public,private"
+	}
 	types := strings.Split(ftype, ",")
-	_, err = floatingipAdmin.Create(int64(ifaceID), types)
+	_, err = floatingipAdmin.Create(int64(instID), types)
 	if err != nil {
-		log.Println("Failed to create floating ip, %v", err)
+		log.Println("Failed to create floating ip", err)
 		c.HTML(500, "500")
 	}
 	c.Redirect(redirectTo)
