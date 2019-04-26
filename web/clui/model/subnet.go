@@ -22,21 +22,20 @@ type Subnet struct {
 	Start   string `gorm:"type:varchar(64)"`
 	End     string `gorm:"type:varchar(64)"`
 	Vlan    int64
-	Type    string `gorm:"default:'internal'"`
+	Type    string `gorm:"type:varchar(20);default:'internal'"`
 	Router  int64
 }
 
 type Address struct {
 	Model
-	Address    string `gorm:"type:varchar(64)"`
-	Netmask    string `gorm:"type:varchar(64)"`
-	Type       string `gorm:"default:'native'"`
-	Allocated  bool   `gorm:"default:false"`
-	Reserved   bool   `gorm:"default:false"`
-	SubnetID   int64
-	Subnet     *Subnet `gorm:"foreignkey:SubnetID"`
-	Interface  int64
-	FloatingIp int64
+	Address   string `gorm:"type:varchar(64)"`
+	Netmask   string `gorm:"type:varchar(64)"`
+	Type      string `gorm:"type:varchar(20);default:'native'"`
+	Allocated bool   `gorm:"default:false"`
+	Reserved  bool   `gorm:"default:false"`
+	SubnetID  int64
+	Subnet    *Subnet `gorm:"foreignkey:SubnetID"`
+	Interface int64
 }
 
 func init() {
@@ -47,15 +46,15 @@ func init() {
 func AllocateAddress(subnetID, ifaceID int64, addrType string) (address *Address, err error) {
 	address = &Address{}
 	tx := dbs.DB().Begin()
-	err = tx.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ?", subnetID, 0).Take(address).Error
+	err = tx.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ?", subnetID, false).Take(address).Error
 	if err != nil {
 		tx.Rollback()
 		log.Println("Failed to query address, %v", err)
 		return nil, err
 	}
 	address.Allocated = true
-	address.Interface = ifaceID
 	address.Type = addrType
+	address.Interface = ifaceID
 	if err = tx.Model(address).Update(address).Error; err != nil {
 		tx.Rollback()
 		log.Println("Failed to Update address, %v", err)
@@ -85,10 +84,15 @@ func DeallocateAddress(ifaces []*Interface) (err error) {
 func SetGateway(subnetID, routerID int64) (subnet *Subnet, err error) {
 	db := dbs.DB()
 	subnet = &Subnet{
-		Model:  Model{ID: subnetID},
-		Router: routerID,
+		Model: Model{ID: subnetID},
 	}
-	err = db.Model(subnet).Update(subnet).Error
+	err = db.Model(subnet).Take(subnet).Error
+	if err != nil {
+		log.Println("Failed to get subnet, %v", err)
+		return nil, err
+	}
+	subnet.Router = routerID
+	err = db.Model(subnet).Save(subnet).Error
 	if err != nil {
 		log.Println("Failed to set gateway, %v", err)
 		return nil, err

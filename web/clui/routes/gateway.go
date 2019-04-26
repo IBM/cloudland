@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -91,19 +90,15 @@ func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int
 		log.Println("Failed to marshal gateway json data, %v", err)
 		return
 	}
-	pubmask := net.IPMask(net.ParseIP(pubIface.Address.Netmask).To4())
-	pubsize, _ := pubmask.Size()
-	primask := net.IPMask(net.ParseIP(priIface.Address.Netmask).To4())
-	prisize, _ := primask.Size()
 	control := fmt.Sprintf("inter=")
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh %d %s/%d %s/%d %d %s 'MASTER' <<EOF\n%s\nEOF", gateway.ID, pubIface.Address.Address, pubsize, priIface.Address.Address, prisize, vni, gateway.VrrpAddr, jsonData)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh %d %s %s %d %s 'MASTER' <<EOF\n%s\nEOF", gateway.ID, pubIface.Address.Address, priIface.Address.Address, vni, gateway.VrrpAddr, jsonData)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Create master router command execution failed, %v", err)
 		return
 	}
 	control = fmt.Sprintf("inter=")
-	command = fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh %d %s/%d %s/%d %d %s 'SLAVE' <<EOF\n%s\nEOF", gateway.ID, pubIface.Address.Address, pubsize, priIface.Address.Address, prisize, vni, gateway.PeerAddr, jsonData)
+	command = fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh %d %s %s %d %s 'SLAVE' <<EOF\n%s\nEOF", gateway.ID, pubIface.Address.Address, priIface.Address.Address, vni, gateway.PeerAddr, jsonData)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Create peer router command execution failed, %v", err)
@@ -148,12 +143,30 @@ func (a *GatewayAdmin) Delete(ctx context.Context, id int64) (err error) {
 		log.Println("DB failed to delete gateway, %v", err)
 		return
 	}
-	control := fmt.Sprintf("inter=%d", gateway.Hyper)
+	control := "toall="
+	if gateway.Hyper != -1 {
+		control = fmt.Sprintf("inter=%d", gateway.Hyper)
+	}
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_router.sh %d %d <<EOF\n%s\nEOF", gateway.ID, gateway.VrrpVni, jsonData)
 	err = hyperExecute(ctx, control, command)
-	control = fmt.Sprintf("inter=%d", gateway.Peer)
-	command = fmt.Sprintf("/opt/cloudland/scripts/backend/clear_router.sh %d %d <<EOF\n%s\nEOF", gateway.ID, gateway.VrrpVni, jsonData)
-	err = hyperExecute(ctx, control, command)
+	if err != nil {
+		log.Println("Delete master failed")
+	}
+	if control != "toall=" {
+		control = "toall="
+		if gateway.Peer != -1 {
+			control = fmt.Sprintf("inter=%d", gateway.Peer)
+		}
+		command = fmt.Sprintf("/opt/cloudland/scripts/backend/clear_router.sh %d %d <<EOF\n%s\nEOF", gateway.ID, gateway.VrrpVni, jsonData)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Delete slave failed")
+		}
+	}
+	if err = db.Delete(gateway).Error; err != nil {
+		log.Println("DB failed to delete gateway", err)
+		return
+	}
 	return
 }
 
