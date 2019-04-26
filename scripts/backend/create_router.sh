@@ -6,8 +6,8 @@ source ../cloudrc
 [ $# -lt 5 ] && echo "$0 <router> <ext_defaut_gw> <int_defaut_gw> <ext_gw_cidr> <int_gw_cidr> <vrrp_vni> <vrrp_ip> <role>" && exit -1
 
 router=router-$1
-ext_gw=$2
-int_gw=$3
+ext_gw=${2%/*}
+int_gw=${3%/*}
 ext_ip=$4
 int_ip=$5
 vrrp_vni=$6
