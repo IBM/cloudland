@@ -28,14 +28,10 @@ ip link set ext$suffix netns $router
 ip link set te-$suffix up
 brctl addif br$external_vlan te-$suffix
 ip netns exec $router ip link set ext$suffix up
-#if [ -n "$ext_ip" ]; then
-#    ext_gw=$(ipcalc --minaddr $ext_ip | cut -d= -f2)
-#    eip=${ext_ip%/*}
-#    ip netns exec $router iptables -t nat -A POSTROUTING ! -d 10.0.0.0/8 -j SNAT -o ext$suffix --to-source $eip
-#fi
-
-[ -n "$ext_ip" ] && eip=${ext_ip%/*}
-[ -n "$int_ip" ] && iip=${int_ip%/*}
+if [ -n "$ext_ip" ]; then
+    eip=${ext_ip%/*}
+    ip netns exec $router iptables -t nat -A POSTROUTING ! -d 10.0.0.0/8 -j SNAT -o ext$suffix --to-source $eip
+fi
 
 ip link add int$suffix type veth peer name ti-$suffix
 #apply_vnic -A ti-$suffix
@@ -44,11 +40,10 @@ ip link set int$suffix netns $router
 ip link set ti-$suffix up
 brctl addif br$internal_vlan ti-$suffix
 ip netns exec $router ip link set int$suffix up
-#if [ -n "$int_ip" ]; then
-#    int_gw=$(ipcalc --minaddr $int_ip | cut -d= -f2)
-#    iip=${int_ip%/*}
-#    ip netns exec $router iptables -t nat -A POSTROUTING -d 10.0.0.0/8 -j SNAT -o int$suffix --to-source $iip
-#fi
+if [ -n "$int_ip" ]; then
+    iip=${int_ip%/*}
+    ip netns exec $router iptables -t nat -A POSTROUTING -d 10.0.0.0/8 -j SNAT -o int$suffix --to-source $iip
+fi
 
 router_dir=/opt/cloudland/cache/router/$router
 mkdir -p $router_dir
