@@ -5,7 +5,7 @@ source ../cloudrc
 
 [ $# -lt 4 ] && echo "$0 <router> <ext_type> <ext_ip> <int_ip>" && exit -1
 
-router=$1
+router=router-$1
 ext_type=$2
 ext_ip=$3
 int_ip=$4
@@ -24,9 +24,8 @@ elif [ "$ext_type" = "private" ]; then
     ext_gw=$(ip netns exec $router ip route | grep 10.0.0.0 | cut -d' ' -f3)
     ip netns exec $router iptables -t nat -I PREROUTING -d $ext_ip -i $ext_dev -j DNAT --to-destination $int_ip
     ip netns exec $router iptables -t nat -I POSTROUTING -s $int_ip -d 10.0.0.0/8 -o $ext_dev -j SNAT --to-source $ext_ip
-    ip netns exec $router arping -c 1 -S $ext_ip $ext_gw
 fi
-ip netns exec $router arping -c 1 -S $ext_ip $ext_gw
+ip netns exec $router arping -c 2 -S $ext_ip $ext_ip
 
 router_dir=/opt/cloudland/cache/router/$router
 vrrp_conf=$router_dir/keepalived.conf

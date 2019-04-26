@@ -67,4 +67,4 @@ virsh dumpxml --security-info $vm_ID 2>/dev/null | sed "s/autoport='yes'/autopor
 vnc_port=$(xmllint --xpath 'string(/domain/devices/graphics/@port)' $vm_xml)
 vm_vnc="$vnc_port:$vnc_pass"
 
-echo "|:-COMMAND-:| $(basename $0) '$vm_ID' '$state' '$SCI_CLIENT_ID'"
+echo "|:-COMMAND-:| $(basename $0) '$1' '$state' '$SCI_CLIENT_ID'"
