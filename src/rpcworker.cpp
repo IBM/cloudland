@@ -210,6 +210,15 @@ string FrontBack::Execute(int msg_id, int extra, char *ctl, char *cmd, char *tra
 	request.set_control(ctl);
 	request.set_command(cmd);
 	ExecuteReply reply;
+
+	grpc_connectivity_state state;
+	int retried = 0;
+	state = connChannel->GetState(true);
+	while ((state != GRPC_CHANNEL_READY) && (state != GRPC_CHANNEL_CONNECTING) && (retried < 10)) {
+		usleep(1000);
+		state = connChannel->GetState(true);
+		retried++;
+	} 
 	ClientContext context;
     context.AddMetadata("uber-trace-id", trace);
 	Status status = stub_->Execute(&context, request, &reply);
@@ -219,6 +228,7 @@ string FrontBack::Execute(int msg_id, int extra, char *ctl, char *cmd, char *tra
 		return reply.status();
 	} else {
         string errMsg = "RPC failed: " + status.error_message();
+		log_info("RPC failed with code = %d, message = %s", status.error_code(), status.error_message().c_str());
 		return errMsg;
 	}
 }
@@ -229,11 +239,18 @@ RemoteExecServiceImpl::RemoteExecServiceImpl(NetLayer & sci)
 }
 
 RpcWorker::RpcWorker()
-    : service(sciNet)
+    : service(sciNet), rpcClient(NULL)
 {
+    initConn();
+}
+
+void RpcWorker::initConn() {
     char *envp = getenv("GRPC_REMOTE_ENDPOINT");
     if (envp == NULL) {
         envp = GRPC_REMOTE_ENDPOINT;
+    }
+    if (rpcClient != NULL) {
+        delete rpcClient;
     }
     rpcClient = new FrontBack(grpc::CreateChannel(envp, grpc::InsecureChannelCredentials()));
 }
