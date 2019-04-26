@@ -3,14 +3,16 @@
 cd `dirname $0`
 source ../cloudrc
 
-[ $# -lt 5 ] && echo "$0 <router> <ext_gw_cidr> <int_gw_cidr> <vrrp_vni> <vrrp_ip> <role>" && exit -1
+[ $# -lt 5 ] && echo "$0 <router> <ext_defaut_gw> <int_defaut_gw> <ext_gw_cidr> <int_gw_cidr> <vrrp_vni> <vrrp_ip> <role>" && exit -1
 
 router=router-$1
-ext_ip=$2
-int_ip=$3
-vrrp_vni=$4
-vrrp_ip=$5
-role=$6
+ext_gw=$2
+int_gw=$3
+ext_ip=$4
+int_ip=$5
+vrrp_vni=$6
+vrrp_ip=$7
+role=$8
 
 [ -z "$router" -o -z "$ext_ip" -o -z "$int_ip" ] && exit 1
 
@@ -31,6 +33,9 @@ ip netns exec $router ip link set ext$suffix up
 #    eip=${ext_ip%/*}
 #    ip netns exec $router iptables -t nat -A POSTROUTING ! -d 10.0.0.0/8 -j SNAT -o ext$suffix --to-source $eip
 #fi
+
+[ -n "$ext_ip" ] && eip=${ext_ip%/*}
+[ -n "$int_ip" ] && iip=${int_ip%/*}
 
 ip link add int$suffix type veth peer name ti-$suffix
 #apply_vnic -A ti-$suffix
@@ -81,9 +86,9 @@ STATE=\$3
 case \$STATE in
    "MASTER") 
         ip netns exec $router route add default gw $ext_gw
-        ip netns exec $router arping -c 2 -I ext$suffix $eip 
+        ip netns exec $router arping -c 2 -I ext$suffix -s $eip $eip 
 #        ip netns exec $router route add -net 10.0.0.0/8 gw $int_gw
-        ip netns exec $router arping -c 2 -I int$suffix $iip
+        ip netns exec $router arping -c 2 -I int$suffix -s $iip $iip
         exit 0
         ;;
    "BACKUP") 
@@ -101,7 +106,6 @@ chmod +x $notify_sh
 ./set_gateway.sh $router $vrrp_ip $vrrp_vni hard
 pid_file=$router_dir/keepalived.pid
 ip netns exec $router keepalived -f $vrrp_conf -p $pid_file -r $router_dir/vrrp.pid -c $router_dir/checkers.pid
-[ "$RECOVER" = "true" ] || sql_exec "insert into router values ('$router', '$int_ip', 'int$suffix', '$ext_ip', 'ext$suffix', '$vrrp_vni', '$vrrp_ip')"
 
 interfaces=$(cat)
 i=0
