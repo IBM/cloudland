@@ -5,7 +5,7 @@ source ../cloudrc
 
 [ $# -lt 4 ] && echo "$0 <router> <ext_type> <ext_ip> <int_ip>" && exit -1
 
-router=$1
+router=router-$1
 ext_type=$2
 ext_ip=$3
 int_ip=$4
