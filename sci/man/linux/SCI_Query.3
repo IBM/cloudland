@@ -1,0 +1,102 @@
+.\"Copyright 2008-2010 IBM Corp.
+.TH SCI_Query 3 "Dec 4, 2009" "1.0.0" "SCI"
+
+.SH NAME
+\fBSCI_Query\fP \- Queries runtime information of the SCI execution environment
+
+.SH SYNTAX
+.ft R
+
+.SH C Syntax
+.nf
+#include <sci.h>
+int SCI_Query(sci_query_t \fIquery\fP, void *\fIret_val\fP)
+
+.SH INPUT PARAMETERS
+.ft R
+.TP 1i
+query
+Specifies the type of query you want to request (IN).
+.TP 1i
+ret_val
+Specifies the reference parameter for SCI to store as the result of the query. 
+The value of this parameter cannot be NULL (OUT).
+
+.SH DESCRIPTION
+.ft R
+This subroutine is used to query runtime settings and statistics from SCI.
+SCI defines a set of query types as an enumeration in \fIsci.h\fP.
+.sp
+For example, you can query the backend id using the query value of
+\fBBACKEND_ID\fP: SCI_Query(BACKEND_ID, &ret_val);
+.sp
+In SCI, sci_query_t defines the following valid query types:
+.sp
+.TP 1i
+JOB_KEY
+Query the job key of the current job
+.TP 1i
+NUM_BACKENDS
+Query the number of back ends in the job
+.TP 1i
+BACKEND_ID
+Query the back end id of current back end in the job
+.TP 1i
+POLLING_FD
+Query the external polling file descriptor in polling mode of the current job
+.TP 1i
+NUM_FILTERS
+Query the number of loaded filters in the current job
+.TP 1i
+FILTER_IDLIST
+Query the loaded filter id list of the current job
+.TP 1i
+AGENT_ID
+Query the agent id of current agent in the job
+.TP 1i
+NUM_SUCCESSORS
+Query the number of successors of current entity in the job
+.TP 1i
+SUCCESSOR_IDLIST
+Query the successor id list of current entity in the job
+.TP 1i
+HEALTH_STATUS
+Query the running status of current entity in the job, can be 0 (normal) or
+1 (exited)
+.TP 0i
+.sp
+For more information, please refer to SCI's online documents.
+
+.SH EXAMPLE
+.ft R
+.nf
+        {
+                int my_id;
+                SCI_Query(BACKEND_ID, &my_id);
+                int be_num;
+                SCI_Query(NUM_BACKENDS, &be_num);
+        }
+.fi
+
+.SH ERRORS
+.ft R
+All SCI routines return an error value.
+.sp
+.TP 1i
+SCI_ERR_UNINTIALIZED
+Uninitialized SCI execution environment
+.TP 1i
+SCI_ERR_UNKNOWN_INFO
+Can't set NULL to \fIret_val\fP
+.TP 1i
+SCI_ERR_INVALID_CALLER
+Invalid query type for current entity. e.g., \fBBACKEND_NUM\fP can only be
+used for back end
+.TP 1i
+SCI_ERR_MODE
+For \fBPOLLING_FD\fP only, can only be used in polling mode
+
+.SH SEE ALSO
+.ft R
+.nf
+\fBSCI_Group_query\fP(3)

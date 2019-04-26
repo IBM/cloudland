@@ -1,10 +1,16 @@
+/*
+Copyright <holder> All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package main
 
 import (
 	"context"
 
-	"github.com/gabecloud/sca/releases"
-	"github.com/gabecloud/sca/clients"
+	"github.com/IBM/cloudland/web/sca/releases"
+	"github.com/IBM/cloudland/web/sca/clients"
 	"google.golang.org/grpc"
 )
 

@@ -1,3 +1,9 @@
+/*
+Copyright <holder> All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package clients
 
 import (
@@ -6,7 +12,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/gabecloud/sca/interceptors/xrequestid"
+	"github.com/IBM/cloudland/web/sca/interceptors/xrequestid"
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc"
 	opentracing "github.com/opentracing/opentracing-go"

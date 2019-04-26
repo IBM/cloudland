@@ -12,11 +12,11 @@ using grpc::Channel;
 using grpc::ClientContext;
 using grpc::ClientWriter;
 using grpc::Status;
-using com::gabecloud::hypercube::scripts::ExecuteRequest;
-using com::gabecloud::hypercube::scripts::ExecuteReply;
-using com::gabecloud::hypercube::scripts::FileChunk;
-using com::gabecloud::hypercube::scripts::TransmitAck;
-using com::gabecloud::hypercube::scripts::RemoteExec;
+using com::ibm::cloudland::scripts::ExecuteRequest;
+using com::ibm::cloudland::scripts::ExecuteReply;
+using com::ibm::cloudland::scripts::FileChunk;
+using com::ibm::cloudland::scripts::TransmitAck;
+using com::ibm::cloudland::scripts::RemoteExec;
 
 #include "netlayer.hpp"
 #include "exception.hpp"
@@ -38,8 +38,9 @@ class RemoteExecServiceImpl final : public RemoteExec::Service
 
 class FrontBack {
     public:
+		shared_ptr<Channel> connChannel;
         FrontBack(shared_ptr<Channel> channel)
-            : stub_(RemoteExec::NewStub(channel)) {}
+            : stub_(RemoteExec::NewStub(channel)) { connChannel = channel; }
         string Execute(int be_id, int msg_id, char *ctl, char *cmd, char *trace);
         void ExecuteAsync(int be_id, int msg_id, char *ctl, char *cmd, char *trace);
     private:
@@ -52,6 +53,7 @@ class RpcWorker {
         NetLayer sciNet;
         RemoteExecServiceImpl service;
         FrontBack *rpcClient;
+        void initConn();
 
     public:
         RpcWorker();

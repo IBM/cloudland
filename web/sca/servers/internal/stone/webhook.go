@@ -1,3 +1,9 @@
+/*
+Copyright <holder> All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package stone
 
 import (
@@ -7,8 +13,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/IBM/cloudland/web/sca/pkgs"
 	"github.com/spf13/viper"
-	"github.com/gabecloud/sca/pkgs"
 )
 
 var (

@@ -1,3 +1,9 @@
+/*
+Copyright <holder> All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package routes
 
 import (
@@ -10,9 +16,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/apparentlymart/go-cidr/cidr"
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/sca/dbs"
+	"github.com/apparentlymart/go-cidr/cidr"
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -20,7 +26,7 @@ import (
 var (
 	subnetAdmin = &SubnetAdmin{}
 	subnetView  = &SubnetView{}
-	vniMax      = 2<<24 - 1
+	vniMax      = 16777215
 	vniMin      = 4096
 )
 
@@ -71,7 +77,7 @@ func (a *SubnetAdmin) Create(name, vlan, network, netmask, gateway, start, end, 
 	}
 	inNet := &net.IPNet{
 		IP:   net.ParseIP(network),
-		Mask: net.IPMask(net.ParseIP(netmask)),
+		Mask: net.IPMask(net.ParseIP(netmask).To4()),
 	}
 	_, ipNet, err := net.ParseCIDR(inNet.String())
 	if err != nil {
@@ -79,6 +85,7 @@ func (a *SubnetAdmin) Create(name, vlan, network, netmask, gateway, start, end, 
 		return
 	}
 	first, last := cidr.AddressRange(ipNet)
+	preSize, _ := inNet.Mask.Size()
 	if gateway == "" {
 		gateway = cidr.Inc(first).String()
 	}
@@ -97,6 +104,7 @@ func (a *SubnetAdmin) Create(name, vlan, network, netmask, gateway, start, end, 
 	if rtype == "" {
 		rtype = "internal"
 	}
+	gateway = fmt.Sprintf("%s/%d", gateway, preSize)
 	subnet = &model.Subnet{Name: name, Network: first.String(), Netmask: netmask, Gateway: gateway, Start: start, End: end, Vlan: int64(vlanNo), Type: rtype}
 	err = db.Create(subnet).Error
 	if err != nil {

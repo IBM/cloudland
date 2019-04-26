@@ -1,0 +1,67 @@
+.\"Copyright 2008-2010 IBM Corp.
+.TH SCI_Group_free 3 "Dec 4, 2009" "1.0.0" "SCI"
+
+.SH NAME
+\fBSCI_Group_free\fP \- Free an existed group
+
+.SH SYNTAX
+.ft R
+
+.SH C Syntax
+.nf
+#include <sci.h>
+int SCI_Group_free(sci_group_t \fIgroup\fP)
+
+.SH INPUT PARAMETERS
+.ft R
+.TP 1i
+group
+The group to be freed (IN).
+
+.SH DESCRIPTION
+.ft R
+This subroutine is used to free an existed group which was previously created by \fBSCI_Group_create\fP,
+\fBSCI_Group_operate\fP or \fBSCI_Group_operate_ext\fP.
+.sp
+This is a blocking call. The caller can assume \fIgroup\fP can't be used again upon the return
+of the function.
+.sp
+For more information, please refer to SCI's online documents.
+
+.SH EXAMPLE
+.ft R
+.nf
+        {
+                    sci_group_t odd_group, even_group;
+                    ...
+                    SCI_Group_free(odd_group);
+                    SCI_Group_free(even_group);
+        }
+.fi
+
+.SH ERRORS
+.ft R
+All SCI routines return an error value.
+.sp
+.TP 1i
+SCI_ERR_UNINTIALIZED
+Uninitialized SCI execution environment
+.TP 1i
+SCI_ERR_INVALID_CALLER
+Can only be called in the front end
+.TP 1i
+SCI_ERR_GROUP_PREDEFINED
+Can't free predefined group \fBSCI_GROUP_ALL\fP
+.TP 1i
+SCI_ERR_GROUP_NOTFOUND
+The group to be freed does not exist
+.TP 1i
+SCI_ERR_NO_MEM
+Out of memory
+
+.SH SEE ALSO
+.ft R
+.nf
+\fBSCI_Group_create\fP(3)
+\fBSCI_Group_operate\fP(3)
+\fBSCI_Group_operate_ext\fP(3)

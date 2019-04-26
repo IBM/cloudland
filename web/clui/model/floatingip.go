@@ -1,3 +1,9 @@
+/*
+Copyright <holder> All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package model
 
 import (
@@ -32,6 +38,7 @@ func AllocateFloatingIp(floatingipID int64, gateway *Gateway, ftype string) (add
 	}
 	if subnet == nil {
 		err = fmt.Errorf("Invalid gateway subnet")
+		return
 	}
 	address, err = AllocateAddress(subnet.ID, floatingipID, "floating")
 	if err != nil {

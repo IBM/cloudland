@@ -1,3 +1,9 @@
+/*
+Copyright <holder> All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package selfs
 
 import (
@@ -7,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gabecloud/sca/logs"
-	"github.com/gabecloud/sca/pkgs"
+	"github.com/IBM/cloudland/web/sca/logs"
+	"github.com/IBM/cloudland/web/sca/pkgs"
 	grpc "google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )

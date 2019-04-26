@@ -1,0 +1,107 @@
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+
+AC_PREREQ(2.59)
+AC_INIT(SCI, 2.0, ronglli@cn.ibm.com)
+AC_CONFIG_HEADER([config.h])
+AM_INIT_AUTOMAKE(SCI, 2.0)
+
+# Checks for programs.
+AC_PROG_CXX
+AC_PROG_CC
+AC_PROG_LIBTOOL
+AM_PROG_CC_C_O
+
+AC_PREFIX_DEFAULT("/opt/sci")
+
+UNAME_SYSTEM=`(uname -s) 2>/dev/null`  || UNAME_SYSTEM=unknown
+UNAME_MACHINE=`(uname -m) 2>/dev/null` || UNAME_MACHINE=unknown
+UNAME_BIT=32
+AC_DEFINE(_SCI_DEBUG, 1, "for debugging")
+case "${UNAME_SYSTEM}" in
+    Linux)
+    AC_DEFINE(_SCI_LINUX, 1, "define if linux")
+    AC_DEFINE(_LINUX, 1, "define if linux")
+    ;;
+    AIX)
+    AC_DEFINE(_AIX, 1, "define if linux")
+    AC_DEFINE(POWER_ARCH, 1, "define if ppc")
+    UNAME_BIT=64
+    CC=xlc_r
+    ;;
+    Darwin)
+    # Nothing required yet
+    ;;
+esac
+case "${UNAME_MACHINE}" in
+    *86*)
+    AC_DEFINE(INTEL_ARCH, 1, "define if x86")
+    ;;
+    *ppc*)
+    AC_DEFINE(POWER_ARCH, 1, "define if ppc")
+    ;;
+esac
+case "${UNAME_MACHINE}" in
+    *64*)
+    libdir="\${exec_prefix}/lib64" 
+    UNAME_BIT=64
+    ;;
+esac
+
+AC_MSG_CHECKING([whether to compile with Open SSL support])
+AC_ARG_ENABLE(openssl,
+[  --enable-openssl            enable Open SSL client and server support [default is disabled]], [
+  if test "$enableval" = yes ; then
+    AC_MSG_RESULT(enabled)
+    AC_DEFINE(PSEC_OPEN_SSL, 1, "define if enable openssl support")
+    openssl=yes
+    AC_CHECK_HEADERS([openssl/pem.h openssl/bio.h openssl/md5.h openssl/aes.h])
+  else
+    openssl=no
+  fi
+],[
+  openssl=no
+])
+AM_CONDITIONAL(OPEN_SSL, test $openssl = yes)
+AM_CONDITIONAL(SYSTEM_LINUX, test $UNAME_SYSTEM = Linux)
+AM_CONDITIONAL(SYSTEM_AIX, test $UNAME_SYSTEM = AIX)
+AM_CONDITIONAL(SYSTEM_DARWIN, test $UNAME_SYSTEM = Darwin)
+AM_CONDITIONAL(BIT64, test $UNAME_BIT = 64)
+
+
+# Checks for header files.
+# AC_HEADER_STDC
+# AC_HEADER_SYS_WAIT
+# AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stddef.h stdlib.h string.h strings.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h unistd.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+# AC_HEADER_STDBOOL
+# AC_C_CONST
+# AC_TYPE_PID_T
+# AC_TYPE_SIZE_T
+# AC_HEADER_TIME
+# AC_STRUCT_TM
+# AC_C_VOLATILE
+
+# Checks for library functions.
+# AC_FUNC_FORK
+# AC_PROG_GCC_TRADITIONAL
+# AC_FUNC_MEMCMP
+# AC_FUNC_SELECT_ARGTYPES
+# AC_FUNC_STAT
+# AC_FUNC_STRFTIME
+# AC_FUNC_VPRINTF
+# AC_CHECK_FUNCS([clock_gettime dup2 getcwd gethostname gettimeofday localtime_r memmove memset pow select setenv socket strcasecmp strchr strdup strerror strrchr strstr strtol])
+
+AC_CONFIG_FILES([Makefile
+                 common/Makefile
+                 libsci/Makefile
+                 scia/Makefile
+                 scid/Makefile
+                 secmod/Makefile
+				 usecase/Makefile
+				 usecase/dsh/Makefile
+				 usecase/dsh_2/Makefile
+				 usecase/dsh_filter/Makefile
+				 usecase/dsh_filter2/Makefile])
+AC_OUTPUT

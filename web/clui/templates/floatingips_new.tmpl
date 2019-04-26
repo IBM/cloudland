@@ -8,15 +8,15 @@
                 </h3>
                 <div class="ui attached segment">
                     <div class="required inline field">
-                        <label for="iface">For Instance Address</label>
+                        <label for="instance">Instance Address</label>
 						<div class="ui selection dropdown">
-						  <input id="iface" name="iface" type="hidden">
+						  <input id="instance" name="instance" type="hidden">
 						  <i class="dropdown icon"></i>
 						  <div class="default text">Address</div>
 						  <div class="menu">
-                            {{ range .Interfaces }}
-							<div class="item" data-value={{.ID}} data-text={{.Instance.Name}}--{{.Address.Address}}>
-							  {{.Instance.Name}}--{{.Address.Address}}
+                            {{ range .Instances }}
+							<div class="item" data-value={{.ID}} data-text={{.Hostname}}-{{(index .Interfaces 0).Address.Address}}>
+							  {{.Hostname}}-{{(index .Interfaces 0).Address.Address}}
 							</div>
                             {{ end }}
 						  </div>

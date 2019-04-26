@@ -1,3 +1,9 @@
+/*
+Copyright <holder> All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package targets
 
 import (
@@ -6,7 +12,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gabecloud/sca/pkgs"
+	"github.com/IBM/cloudland/web/sca/pkgs"
 )
 
 var (

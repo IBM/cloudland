@@ -1,3 +1,9 @@
+/*
+Copyright <holder> All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package pkgs
 
 import (
@@ -11,7 +17,7 @@ import (
 	"context"
 
 	"github.com/coduno/netrc"
-	"github.com/gabecloud/sca/logs"
+	"github.com/IBM/cloudland/web/sca/logs"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )

@@ -1,7 +1,13 @@
+/*
+Copyright <holder> All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package dbs
 
 import (
-	"github.com/gabecloud/sca/configs"
+	"github.com/IBM/cloudland/web/sca/configs"
 	"github.com/spf13/viper"
 )
 

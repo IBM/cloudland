@@ -1,0 +1,57 @@
+NAME
+    SCI_BE_add - Add a new back end at runtime
+
+C Syntax
+    #include <sci.h>
+    int SCI_BE_add(sci_be_t *be)
+
+INPUT PARAMETERS
+    be
+        The information of the back end to be added (INOUT).
+
+DESCRIPTION
+    This subroutine is used to add a new back end at runtime, once added,
+    the id of the new back end id will be added to the predefined group
+    SCI_GROUP_ALL.
+
+    In sci_be_t:
+
+        typedef struct {
+                int              id;
+                char             *hostname;
+        } sci_be_t;
+
+    id indicates the id of the new back end, it can be -1 (means its id 
+    will be assigned by SCI) or a postive value, hostname specified the 
+    host to launch this new back end.
+
+    Together with SCI_BE_remove, these two functions can be used to 
+    add/remove back ends dynamically at runtime.
+
+    For more information, please refer to SCI's online documents.
+
+EXAMPLE
+        {
+                sci_be_t be;
+                be.id = -1;
+                be.hostname = "c890f1ec01.ppd.pok.ibm.com";
+                ...
+                SCI_BE_add(&be);
+        }
+
+ERRORS
+    All SCI routines return an error value.
+
+    SCI_ERR_UNINTIALIZED
+        Uninitialized SCI execution environment
+    SCI_ERR_INVALID_CALLER
+        Can only be called in the front end
+    SCI_ERR_BACKEND_EXISTED
+        The back id already existed
+    SCI_ERR_LAUNCH_FAILED
+        Unable to launch the back end
+    SCI_ERR_NO_MEM
+        Out of memory
+
+SEE ALSO
+    SCI_BE_remove(3)

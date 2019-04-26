@@ -1,3 +1,9 @@
+/*
+Copyright <holder> All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package servers
 
 import (
@@ -5,13 +11,13 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/gabecloud/sca/interceptors/xrequestid"
-	"github.com/gabecloud/sca/logs"
-	"github.com/gabecloud/sca/pkgs"
-	"github.com/gabecloud/sca/releases"
-	"github.com/gabecloud/sca/selfs"
-	"github.com/gabecloud/sca/servers/internal/stone"
-	"github.com/gabecloud/sca/targets"
+	"github.com/IBM/cloudland/web/sca/interceptors/xrequestid"
+	"github.com/IBM/cloudland/web/sca/logs"
+	"github.com/IBM/cloudland/web/sca/pkgs"
+	"github.com/IBM/cloudland/web/sca/releases"
+	"github.com/IBM/cloudland/web/sca/selfs"
+	"github.com/IBM/cloudland/web/sca/servers/internal/stone"
+	"github.com/IBM/cloudland/web/sca/targets"
 	mid "github.com/grpc-ecosystem/go-grpc-middleware"
 	recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc"

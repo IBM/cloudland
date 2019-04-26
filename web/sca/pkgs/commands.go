@@ -1,3 +1,9 @@
+/*
+Copyright <holder> All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package pkgs
 
 import (
@@ -6,7 +12,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/gabecloud/sca/tables"
+	"github.com/IBM/cloudland/web/sca/tables"
 	"github.com/spf13/cobra"
 	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"

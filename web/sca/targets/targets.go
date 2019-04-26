@@ -1,3 +1,9 @@
+/*
+Copyright <holder> All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package targets
 
 import (
@@ -6,9 +12,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gabecloud/sca/logs"
-	"github.com/gabecloud/sca/pkgs"
-	"github.com/gabecloud/sca/releases"
+	"github.com/IBM/cloudland/web/sca/logs"
+	"github.com/IBM/cloudland/web/sca/pkgs"
+	"github.com/IBM/cloudland/web/sca/releases"
 	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

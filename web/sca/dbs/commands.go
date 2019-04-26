@@ -1,3 +1,9 @@
+/*
+Copyright <holder> All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package dbs
 
 import (
@@ -6,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gabecloud/sca/tables"
+	"github.com/IBM/cloudland/web/sca/tables"
 	"github.com/spf13/cobra"
 	context "golang.org/x/net/context"
 )

@@ -1,0 +1,60 @@
+NAME
+    SCI_Group_query - Queries runtime information of an existed group
+
+C Syntax
+    #include <sci.h>
+    int SCI_Group_query(sci_group_t group, sci_group_query_t query, void *ret_val)
+
+INPUT PARAMETERS
+    group
+        The group to be queried (IN).
+    query
+        Specifies the type of query you want to request (IN).
+    ret_val
+        Specifies the reference parameter for SCI to store as the result of the query. 
+        The value of this parameter cannot be NULL (OUT).
+
+DESCRIPTION
+    This subroutine is used to query runtime statistics of an existed group. SCI defines
+    a set of query types as an enumeration in sci.h.
+
+    For example, you can query the number of back ends in a group using the query value 
+    of GROUP_MEMBER_NUM: SCI_Group_query(group, GROUP_MEMBER_NUM, &ret_val);
+
+    In SCI, sci_group_query_t defines the following valid query types:
+
+    GROUP_MEMBER_NUM
+        Query the number of back ends in the group
+    GROUP_MEMBER
+        Query the back end id list in the group
+    GROUP_SUCCESSOR_NUM
+        Query the number of successors in the group
+    GROUP_SUCCESSOR
+        Query the successor id list in the group
+
+    For more information, please refer to SCI's online documents.
+
+EXAMPLE
+        {
+                int be_num, *be_list;
+                sci_group_t group;
+                ...
+                SCI_Group_query(group, GROUP_MEMBER_NUM, &be_num);
+                be_list = (int *)malloc(sizeof(int)*be_num);
+                SCI_Group_query(group, GROUP_MEMBER, be_list);
+        }
+
+ERRORS
+    All SCI routines return an error value.
+
+    SCI_ERR_UNINTIALIZED
+        Uninitialized SCI execution environment
+    SCI_ERR_UNKNOWN_INFO
+        Can't set NULL to ret_val
+    SCI_ERR_INVALID_CALLER
+        Can't be called from back end
+    SCI_ERR_GROUP_NOTFOUND
+        The group to be freed does not exist
+
+SEE ALSO
+    SCI_Query(3)
