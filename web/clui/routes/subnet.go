@@ -113,6 +113,7 @@ func (a *SubnetAdmin) Create(name, vlan, network, netmask, gateway, start, end, 
 	}
 	ip := net.ParseIP(start)
 	for {
+		ipstr := fmt.Sprintf("%s/%d", ip.String(), preSize)
 		address := &model.Address{Address: ip.String(), Netmask: netmask, Type: "ipv4", SubnetID: subnet.ID}
 		err = db.Create(address).Error
 		if err != nil {
@@ -122,7 +123,7 @@ func (a *SubnetAdmin) Create(name, vlan, network, netmask, gateway, start, end, 
 			break
 		}
 		ip = cidr.Inc(ip)
-		if ip.String() == gateway {
+		if ipstr == gateway {
 			ip = cidr.Inc(ip)
 		}
 	}

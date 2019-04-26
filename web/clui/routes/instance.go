@@ -201,8 +201,8 @@ func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
 		return
 	}
 	if instance.FloatingIps != nil {
-		for _, floatingIp := range instance.FloatingIps {
-			err = db.Delete(floatingIp).Error
+		for _, fip := range instance.FloatingIps {
+			err = model.DeallocateFloatingIp(fip.FloatingIp)
 			if err != nil {
 				log.Println("Failed to delete floating ip, %v", err)
 				return
@@ -244,7 +244,7 @@ func (a *InstanceAdmin) List(offset, limit int64, order string) (total int64, in
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Preload("FloatingIps").Preload("FloatingIps.FipAddress").Preload("Interfaces").Preload("Interfaces.Address").Preload("Flavor").Preload("Image").Find(&instances).Error; err != nil {
+	if err = db.Set("gorm:auto_preload", true).Find(&instances).Error; err != nil {
 		return
 	}
 
