@@ -36,11 +36,7 @@
 		                        <tr>
 			                        <td>{{.ID}}</td>
 			                        <td>{{.FipAddress}}</td>
-			                        <td>
-										{{ if .Instance }}
-										{{(index .Instance.Interfaces 0).Address.Address}}
-										{{ end }}
-										</td>
+			                        <td>{{.IntAddress}}</td>
 			                        <td>
 										{{ if .Instance }}
 										{{.Instance.Hostname}}

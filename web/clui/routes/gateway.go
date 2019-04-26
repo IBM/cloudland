@@ -91,14 +91,14 @@ func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int
 		return
 	}
 	control := fmt.Sprintf("inter=")
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh %d %s %s %d %s 'MASTER' <<EOF\n%s\nEOF", gateway.ID, pubIface.Address.Address, priIface.Address.Address, vni, gateway.VrrpAddr, jsonData)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh %d %s %s %s %s %d %s 'MASTER' <<EOF\n%s\nEOF", gateway.ID, pubSubnet.Gateway, priSubnet.Gateway, pubIface.Address.Address, priIface.Address.Address, vni, gateway.VrrpAddr, jsonData)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Create master router command execution failed, %v", err)
 		return
 	}
 	control = fmt.Sprintf("inter=")
-	command = fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh %d %s %s %d %s 'SLAVE' <<EOF\n%s\nEOF", gateway.ID, pubIface.Address.Address, priIface.Address.Address, vni, gateway.PeerAddr, jsonData)
+	command = fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh %d %s %s %s %s %d %s 'SLAVE' <<EOF\n%s\nEOF", gateway.ID, pubSubnet.Gateway, priSubnet.Gateway, pubIface.Address.Address, priIface.Address.Address, vni, gateway.PeerAddr, jsonData)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Create peer router command execution failed, %v", err)

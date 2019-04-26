@@ -46,7 +46,7 @@
 			                        <td>
 										{{ if .FloatingIps }}
 											{{ range .FloatingIps }}
-												{{.FipAddress.Address }}
+												{{.FipAddress }}
 											{{ end }}
 										{{ end }}
 										{{ if .Interfaces }}

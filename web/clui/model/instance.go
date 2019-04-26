@@ -12,12 +12,12 @@ import (
 
 type Instance struct {
 	Model
-	Hostname    string       `gorm:"type:varchar(128)"`
-	Domain      string       `gorm:"type:varchar(128)"`
-	Status      string       `gorm:"type:varchar(32)"`
-	Reason      string       `gorm:"type:text"`
-	FloatingIps []*Interface `gorm:"foreignkey:FloatingIp"`
-	Interfaces  []*Interface `gorm:"foreignkey:Instance"`
+	Hostname    string        `gorm:"type:varchar(128)"`
+	Domain      string        `gorm:"type:varchar(128)"`
+	Status      string        `gorm:"type:varchar(32)"`
+	Reason      string        `gorm:"type:text"`
+	FloatingIps []*FloatingIp `gorm:"PRELOAD:false"`
+	Interfaces  []*Interface  `gorm:"foreignkey:Instance"`
 	FlavorID    int64
 	Flavor      *Flavor `gorm:"foreignkey:FlavorID"`
 	ImageID     int64
