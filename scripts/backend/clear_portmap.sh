@@ -14,6 +14,5 @@ router_dir=/opt/cloudland/cache/router/$router
 notify_sh=$router_dir/notify.sh
 ssh_cmd="ip netns exec $router ssh -i /home/centos/.ssh/id_rsa -f -N -T -o StrictHostKeyChecking=no -R $rport:$inst_ip:$inst_port root@$portmap_remote_ip"
 sed -i "\#$ssh_cmd#d" $notify_sh
-sed -i "/\"MASTER\")/a $ssh_cmd" $notify_sh
-eval $ssh_cmd
-[ $? -eq 0 ] && echo "|:-COMMAND-:| `basename $0` '$portmap_remote_ip' '$rport'"
+ssh_pid=$(ip netns exec $router ps -ef | grep "ssh .* $rport:.*$portmap_remote_ip" | awk '{print $2}')
+kill $ssh_pid
