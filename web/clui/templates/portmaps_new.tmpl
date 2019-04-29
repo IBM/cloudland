@@ -1,0 +1,39 @@
+{{template "_head" .}}
+<div class="user signup">
+	<div class="ui middle very relaxed page grid">
+        <div class="column" >
+            <form class="ui form" action="{{.Link}}" method="post">
+                <h3 class="ui top attached header">
+                    Create New Portmap
+                </h3>
+                <div class="ui attached segment">
+                    <div class="required inline field">
+                        <label for="instance">Instance Address</label>
+						<div class="ui selection dropdown">
+						  <input id="instance" name="instance" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">Address</div>
+						  <div class="menu">
+                            {{ range .Instances }}
+							<div class="item" data-value={{.ID}} data-text={{.Hostname}}-{{(index .Interfaces 0).Address.Address}}>
+							  {{.Hostname}}-{{(index .Interfaces 0).Address.Address}}
+							</div>
+                            {{ end }}
+						  </div>
+						</div>
+                    </div>
+                    <div class="required inline field">
+                        <label for="port">Instance Port</label>
+                        <input id="port" name="port" required>
+                    </div>
+                    <div class="inline field">
+                        <label></label>
+                        <button class="ui green button">Create New Portmap</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+	</div>
+</div>
+{{template "_footer" .}}
+

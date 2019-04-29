@@ -33,7 +33,7 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID int64, types []stri
 	instance := &model.Instance{Model: model.Model{ID: instID}}
 	err = db.Set("gorm:auto_preload", true).Preload("Interfaces", "primary_if = ?", true).Model(instance).Take(instance).Error
 	if err != nil {
-		log.Println("DB failed to query subnet, %v", err)
+		log.Println("DB failed to query instance, %v", err)
 		return
 	}
 	iface := instance.Interfaces[0]
@@ -146,7 +146,7 @@ func (v *FloatingIpView) List(c *macaron.Context, store session.Store) {
 	if err != nil {
 		log.Println("Failed to list floating ip(s), %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(500, "500")
+		c.HTML(500, err.Error())
 		return
 	}
 	c.Data["FloatingIps"] = floatingips
@@ -209,7 +209,7 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 	_, err = floatingipAdmin.Create(c.Req.Context(), int64(instID), types)
 	if err != nil {
 		log.Println("Failed to create floating ip", err)
-		c.HTML(500, "500")
+		c.HTML(500, err.Error())
 	}
 	c.Redirect(redirectTo)
 }

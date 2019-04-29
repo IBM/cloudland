@@ -56,7 +56,7 @@ func getValidVni() (vni int, err error) {
 	for count > 0 {
 		vni = rand.Intn(vniMax-vniMin) + vniMin
 		if err = db.Model(&model.Subnet{}).Where("vlan = ?", vni).Count(&count).Error; err != nil {
-			log.Println("Failed to query existing, %v", err)
+			log.Println("Failed to query existing vlan, %v", err)
 			return
 		}
 	}
