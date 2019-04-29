@@ -13,8 +13,8 @@ import (
 
 	"math/rand"
 
-	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/IBM/cloudland/web/clui/model"
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/spf13/viper"
 )
 
@@ -39,7 +39,7 @@ func NewClaims(u, o string, uid, oid int64, role model.Role) (claims jwt.Claims)
 			ExpiresAt: now.Add(time.Hour * 2).Unix(),
 			Id:        claimsID(now),
 			IssuedAt:  issuedAt,
-			Issuer:    "hypercube",
+			Issuer:    "Cloudland",
 			NotBefore: issuedAt,
 			Subject:   o,
 		},
