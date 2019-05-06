@@ -1,0 +1,13 @@
+---
+# tasks file for gluster_brick
+- name: Add bricks to a volume
+  import_tasks: add_brick.yml
+  when: gluster_cluster_new_bricks is defined
+  tags:
+    - cluster_add_brick
+
+- name: Remove bricks from a volume
+  import_tasks: remove_brick.yml
+  when: gluster_cluster_remove_bricks is defined
+  tags:
+    - cluster_remove_brick

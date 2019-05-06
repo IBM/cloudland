@@ -1,0 +1,62 @@
+---
+- name: Setting up backend
+  hosts: hyper
+  vars:
+     # Firewall setup
+     gluster_infra_fw_ports:
+        - 2049/tcp
+        - 54321/tcp
+        - 5900/tcp
+        - 5900-6923/tcp
+        - 5666/tcp
+        - 16514/tcp
+        - 24007/tcp
+     # Set a disk type, Options: JBOD, RAID6, RAID10
+     gluster_infra_disktype: JBOD
+     # RAID6 and RAID10 diskcount (Needed only when disktype is raid)
+     gluster_infra_diskcount: 12
+     # Stripe unit size always in KiB
+     gluster_infra_stripe_unit_size: 128
+     # Variables for creating volume group
+     gluster_infra_volume_groups:
+       - { vgname: 'vg_vdb', pvname: '/dev/vdb' }
+       - { vgname: 'vg_vdc', pvname: '/dev/vdc' }
+       - { vgname: 'vg_vdd', pvname: '/dev/vdd' }
+     # Create thinpools
+     gluster_infra_thinpools:
+       - {vgname: 'vg_vdb', thinpoolname: 'vdb_thinpool', thinpoolsize: '45G', poolmetadatasize: '1G'}
+       - {vgname: 'vg_vdc', thinpoolname: 'vdc_thinpool', thinpoolsize: '45G', poolmetadatasize: '1G'}
+       - {vgname: 'vg_vdd', thinpoolname: 'vdd_thinpool', thinpoolsize: '45G', poolmetadatasize: '1G'}
+     # Create a thin volume
+     gluster_infra_lv_logicalvols:
+       - { vgname: 'vg_vdb', thinpool: 'vdb_thinpool', lvname: 'vg_vdb_thinlv', lvsize: '50G' }
+       - { vgname: 'vg_vdc', thinpool: 'vdc_thinpool', lvname: 'vg_vdc_thinlv', lvsize: '50G' }
+       - { vgname: 'vg_vdd', thinpool: 'vdd_thinpool', lvname: 'vg_vdd_thinlv', lvsize: '50G' }
+     # Mount the devices
+     gluster_infra_mount_devices:
+       - { path: '/gluster/thinlv1', vgname: 'vg_vdb', lvname: 'vg_vdb_thinlv' }
+       - { path: '/gluster/thinlv2', vgname: 'vg_vdc', lvname: 'vg_vdc_thinlv' }
+       - { path: '/gluster/thinlv3', vgname: 'vg_vdd', lvname: 'vg_vdd_thinlv' }
+  roles:
+     - ginfra
+
+- name: Create Gluster cluster
+  hosts: hyper
+  vars:
+    # gluster volume
+    gluster_cluster_hosts:
+      - cath-test0
+      - cath-test1
+      - cath-test2
+      - cath-test3
+    gluster_cluster_volume: testvol
+    gluster_cluster_transport: 'tcp'
+    gluster_cluster_force: 'yes'
+    gluster_cluster_bricks: '/gluster/thinlv1,/gluster/thinlv2,/gluster/thinlv3'
+    # variables to create specific type of the volume
+    gluster_cluster_replica_count: 3
+    gluster_cluster_arbiter_count: 1
+    # variables to set specific volume options
+    #gluster_cluster_options: 'performance.cache-size:256MB'
+  roles:
+    - gcluster

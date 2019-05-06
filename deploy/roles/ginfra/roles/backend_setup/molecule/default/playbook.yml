@@ -1,0 +1,57 @@
+---
+- name: Converge
+  hosts: all
+  roles:
+    - role: backend_setup
+      vars:
+        # Set a disk type, Options: JBOD, RAID6, RAID10
+        gluster_infra_disktype: JBOD
+
+        # RAID6 and RAID10 diskcount (Needed only when disktype is raid)
+        gluster_infra_diskcount: 10
+        # Stripe unit size always in KiB
+        gluster_infra_stripe_unit_size: 128
+
+        # Variables for creating volume group
+        gluster_infra_volume_groups:
+          - vgname: vg_vdb
+            pvname: /dev/loop0
+          - vgname: vg_vdc
+            pvname: /dev/loop1
+
+        # Create a thick volume name
+        gluster_infra_thick_lvs:
+          - vgname: vg_vdb
+            lvname: thicklv_1
+            size: 500M
+
+        # Create thinpools
+        gluster_infra_thinpools:
+          - vgname: vg_vdc
+            thinpoolname: foo_thinpool
+            thinpoolsize: 100M
+            poolmetadatasize: 80M
+
+        # Create a thin volume
+        gluster_infra_lv_logicalvols:
+          - lvname: vg_vdc_thinlv1
+            lvsize: 60M
+            thinpool: foo_thinpool
+            vgname: vg_vdc
+          - lvname: vg_vdc_thinlv2
+            lvsize: 60M
+            thinpool: foo_thinpool
+            vgname: vg_vdc
+        # Mount the devices
+        gluster_infra_mount_devices:
+          - path: /mnt/thicklv
+            vgname: vg_vdb
+            lvname: thicklv_1
+          - path: /mnt/thinlv1
+            vgname: vg_vdc
+            lvname: vg_vdc_thinlv1
+          - path: /mnt/thinlv2
+            vgname: vg_vdc
+            lvname: vg_vdc_thinlv2
+        # gluster_set_selinux_labels: false
+        gluster_infra_fs_force: false

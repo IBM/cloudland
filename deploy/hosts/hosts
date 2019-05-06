@@ -1,0 +1,5 @@
+[hyper]
+server-0 ansible_host=192.168.10.25
+
+[cland]
+allinone ansible_host=192.168.10.25

@@ -1,0 +1,15 @@
+---
+# defaults: For GlusterFS we need to enable these ports
+# gluster_infra_fw_ports:
+#    - 111/tcp
+#    - 2049/tcp
+#    - 139/tcp
+#    - 445/tcp
+#    - 24007-24108/tcp
+#    - 38465-38469/tcp
+#    - 39543/tcp
+#    - 49152-49251/tcp
+#    - 54321/tcp
+#    - 55863/tcp
+# gluster_infra_fw_services:
+#    - glusterfs
