@@ -1,0 +1,4 @@
+- name: base
+  hosts: hyper:cland
+  roles:
+    - {role: base, tags: [base]}

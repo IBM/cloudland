@@ -56,7 +56,7 @@ func getValidVni() (vni int, err error) {
 	for count > 0 {
 		vni = rand.Intn(vniMax-vniMin) + vniMin
 		if err = db.Model(&model.Subnet{}).Where("vlan = ?", vni).Count(&count).Error; err != nil {
-			log.Println("Failed to query existing, %v", err)
+			log.Println("Failed to query existing vlan, %v", err)
 			return
 		}
 	}
@@ -113,7 +113,8 @@ func (a *SubnetAdmin) Create(name, vlan, network, netmask, gateway, start, end, 
 	}
 	ip := net.ParseIP(start)
 	for {
-		address := &model.Address{Address: ip.String(), Netmask: netmask, Type: "ipv4", SubnetID: subnet.ID}
+		ipstr := fmt.Sprintf("%s/%d", ip.String(), preSize)
+		address := &model.Address{Address: ipstr, Netmask: netmask, Type: "ipv4", SubnetID: subnet.ID}
 		err = db.Create(address).Error
 		if err != nil {
 			log.Println("Database create address failed, %v", err)
@@ -122,7 +123,7 @@ func (a *SubnetAdmin) Create(name, vlan, network, netmask, gateway, start, end, 
 			break
 		}
 		ip = cidr.Inc(ip)
-		if ip.String() == gateway {
+		if ipstr == gateway {
 			ip = cidr.Inc(ip)
 		}
 	}

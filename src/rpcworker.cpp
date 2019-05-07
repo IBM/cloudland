@@ -213,13 +213,12 @@ string FrontBack::Execute(int msg_id, int extra, char *ctl, char *cmd, char *tra
 
 	grpc_connectivity_state state;
 	int retried = 0;
-	do {
-		state = connChannel->GetState(true);
+	state = connChannel->GetState(true);
+	while ((state != GRPC_CHANNEL_READY) && (state != GRPC_CHANNEL_CONNECTING) && (retried < 10)) {
 		usleep(1000);
+		state = connChannel->GetState(true);
 		retried++;
-	} while ((state != GRPC_CHANNEL_READY) &&
-		   	(state != GRPC_CHANNEL_CONNECTING) &&
-			(retried < 10)); 
+	} 
 	ClientContext context;
     context.AddMetadata("uber-trace-id", trace);
 	Status status = stub_->Execute(&context, request, &reply);

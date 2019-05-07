@@ -1,0 +1,74 @@
+# gluster_infra_disktype
+# Set a disk type. Options: JBOD, RAID6, RAID10 - Default: JBOD
+#
+
+gluster_infra_disktype: RAID10
+
+
+# gluster_infra_dalign
+# Dataalignment, for JBOD default is 256K if not provided.
+# For RAID{6,10} dataalignment is computed by multiplying
+# gluster_infra_diskcount and gluster_infra_stripe_unit_size.
+
+gluster_infra_dalign: 256K
+
+
+# gluster_infra_diskcount
+# Required only for RAID6 and RAID10.
+
+gluster_infra_diskcount: 10
+
+
+# gluster_infra_stripe_unit_size
+# Required only in case of RAID6 and RAID10. Stripe unit size always in KiB, do
+# not provide the trailing `K' in the value.
+
+gluster_infra_stripe_unit_size: 128
+
+
+# gluster_infra_volume_groups
+# Variables for creating volume group
+
+gluster_infra_volume_groups:
+   - { vgname: 'vg_vdb', pvname: '/dev/vdb' }
+   - { vgname: 'vg_vdc', pvname: '/dev/vdc' }
+
+
+# gluster_infra_thick_lvs
+# Variable for thick lv creation
+gluster_infra_thick_lvs:
+  - { vgname: 'vg_vdb', lvname: 'vg_vdb_thicklv1', size: '10G' }
+
+
+# gluster_infra_thinpools
+# thinpoolname is optional, if not provided `vgname' followed by _thinpool is
+# used for name. poolmetadatasize is optional, default 16G is used
+
+gluster_infra_thinpools:
+  - {vgname: 'vg_vdb', thinpoolname: 'foo_thinpool', thinpoolsize: '10G', poolmetadatasize: '1G' }
+  - {vgname: 'vg_vdc', thinpoolname: 'bar_thinpool', thinpoolsize: '20G', poolmetadatasize: '1G' }
+
+
+# gluster_infra_lv_logicalvols
+# Thinvolumes for the brick. `thinpoolname' is optional, if omitted `vgname'
+# followed by _thinpool is used
+
+gluster_infra_lv_logicalvols:
+   - { vgname: 'vg_vdb', thinpool: 'foo_thinpool', lvname: 'vg_vdb_thinlv', lvsize: '500G' }
+   - { vgname: 'vg_vdc', thinpool: 'bar_thinpool', lvname: 'vg_vdc_thinlv', lvsize: '500G' }
+
+
+# Setting up cache using SSD disks
+gluster_infra_cache_vars:
+   - { vgname: 'vg_vdb', cachedisk: '/dev/vdd',
+       cachethinpoolname: 'foo_thinpool', cachelvname: 'cachelv',
+       cachelvsize: '20G', cachemetalvname: 'cachemeta',
+       cachemetalvsize: '100M', cachemode: 'writethrough' }
+
+
+# gluster_infra_mount_devices
+#
+gluster_infra_mount_devices:
+   - { path: '/mnt/thicklv', vgname: 'vg_vdb', lvname: 'vg_vdb_thicklv1' }
+   - { path: '/mnt/thinlv1', vgname: 'vg_vdb', lvname: 'vg_vdb_thinlv' }
+   - { path: '/mnt/thinlv2', vgname: 'vg_vdc', lvname: 'vg_vdc_thinlv' }

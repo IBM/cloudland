@@ -22,21 +22,20 @@ type Subnet struct {
 	Start   string `gorm:"type:varchar(64)"`
 	End     string `gorm:"type:varchar(64)"`
 	Vlan    int64
-	Type    string `gorm:"default:'internal'"`
+	Type    string `gorm:"type:varchar(20);default:'internal'"`
 	Router  int64
 }
 
 type Address struct {
 	Model
-	Address    string `gorm:"type:varchar(64)"`
-	Netmask    string `gorm:"type:varchar(64)"`
-	Type       string `gorm:"default:'native'"`
-	Allocated  bool   `gorm:"default:false"`
-	Reserved   bool   `gorm:"default:false"`
-	SubnetID   int64
-	Subnet     *Subnet `gorm:"foreignkey:SubnetID"`
-	Interface  int64
-	FloatingIp int64
+	Address   string `gorm:"type:varchar(64)"`
+	Netmask   string `gorm:"type:varchar(64)"`
+	Type      string `gorm:"type:varchar(20);default:'native'"`
+	Allocated bool   `gorm:"default:false"`
+	Reserved  bool   `gorm:"default:false"`
+	SubnetID  int64
+	Subnet    *Subnet `gorm:"foreignkey:SubnetID"`
+	Interface int64
 }
 
 func init() {
@@ -55,11 +54,7 @@ func AllocateAddress(subnetID, ifaceID int64, addrType string) (address *Address
 	}
 	address.Allocated = true
 	address.Type = addrType
-	if addrType == "floating" {
-		address.FloatingIp = ifaceID
-	} else {
-		address.Interface = ifaceID
-	}
+	address.Interface = ifaceID
 	if err = tx.Model(address).Update(address).Error; err != nil {
 		tx.Rollback()
 		log.Println("Failed to Update address, %v", err)

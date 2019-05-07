@@ -1,0 +1,14 @@
+[Unit]
+Description=cloudland service
+After=network.target
+
+[Service]
+Type=simple
+User=centos
+EnvironmentFile=/etc/sysconfig/cloudland
+ExecStart=/opt/cloudland/bin/cloudland
+KillMode=process
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

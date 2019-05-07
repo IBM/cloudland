@@ -1,0 +1,14 @@
+[Unit]
+Description=Cloudlet service
+After=network.target
+
+[Service]
+Type=simple
+User=centos
+EnvironmentFile=/etc/sysconfig/cloudlet
+ExecStart=/opt/cloudland/bin/cloudlet
+KillMode=process
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

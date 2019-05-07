@@ -1,0 +1,21 @@
+galaxy_info:
+  author: Sachidananda Urs
+  description: https://github.com/sac
+  company: Red Hat Inc.
+
+  license: GPLv3
+  min_ansible_version: 2.5
+  github_branch: master
+
+  platforms:
+  - name: Fedora
+    versions:
+      - all
+  - name: RHEL
+    versions:
+      - 7.3 or above
+  galaxy_tags:
+    - firewall
+    - backend_setup
+
+dependencies: []

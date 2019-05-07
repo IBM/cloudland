@@ -1,0 +1,9 @@
+---
+# defaults file for gluster_volume
+
+gluster_cluster_volume: glustervol
+gluster_cluster_transport: tcp
+gluster_cluster_disperse_count: 0
+gluster_cluster_arbiter_count: 0
+gluster_cluster_redundancy_count: 0
+gluster_cluster_force: yes

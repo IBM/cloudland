@@ -1,0 +1,17 @@
+---
+# defaults file for gluster.cluster
+
+# defaults for gluster_volume
+gluster_cluster_volume: glustervol
+gluster_cluster_transport: tcp
+gluster_cluster_disperse_count: 0
+gluster_cluster_arbiter_count: 0
+gluster_cluster_redundancy_count: 0
+gluster_cluster_state: present
+gluster_cluster_force: yes
+
+# defaults for gluster_add_brick
+
+# defaults for gluster_remove_brick
+
+# defaults for gluster_replace_brick

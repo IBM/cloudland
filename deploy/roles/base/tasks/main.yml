@@ -1,0 +1,55 @@
+- name: disable selinux
+  selinux:
+    state: disabled
+  register: se
+  tags: [selinux]
+
+- name: reboot host and wait for it to return
+  shell: sleep 3 && shutdown -r now "reboot for disable selinux"
+  async: 1
+  poll: 0
+  ignore_errors: true
+  when:
+    se.reboot_required == True
+  tags: [selinux]
+
+- name: Wait for the server to finish rebooting
+  wait_for_connection:
+    delay: 5
+  tags: [selinux]
+
+- name: ensure hostname set correctly
+  hostname: name={{inventory_hostname}}
+  tags: [hosts]
+
+- name: ensure hosts set correctly
+  template: src=hosts.j2 dest=/etc/hosts
+  tags: [hosts]
+
+- name: change system max open files
+  copy:
+    src: files/limits.conf
+    dest: /etc/security/limits.d/hypercube.conf
+  tags: [sysfd]
+
+- name: install repo package
+  yum: 
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - epel-release
+    - centos-release-gluster41
+
+- name: install ntp service
+  yum: name=ntp state=latest
+  tags: [ntp]
+
+- name: start ntp service
+  service: name=ntpd state=started enabled=yes
+  tags: [ntp]
+
+- name: upgrade all packages
+  yum: 
+    name: '*'
+    state: latest
+  tags: upgrade

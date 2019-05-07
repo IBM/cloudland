@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/IBM/cloudland/web/sca/dbs"
@@ -19,12 +20,13 @@ type Interface struct {
 	Model
 	Name       string `gorm:"type:varchar(32)"`
 	MacAddr    string `gorm:"type:varchar(32)"`
-	InstanceID int64
+	Instance   int64
 	Device     int64
+	FloatingIp int64
 	Address    *Address `gorm:"foreignkey:Interface"`
 	Hyper      int32    `gorm:"default:-1"`
 	PrimaryIf  bool     `gorm:"default:false"`
-	Type       string
+	Type       string   `gorm:"type:varchar(20)"`
 	Mtu        int32
 }
 
@@ -63,8 +65,10 @@ func CreateInterface(subnetID, ID int64, ifaceName, ifType string) (iface *Inter
 		Mtu:       1450,
 	}
 	if ifType == "instance" {
-		iface.InstanceID = ID
-	} else {
+		iface.Instance = ID
+	} else if ifType == "floating" {
+		iface.FloatingIp = ID
+	} else if strings.Contains(ifType, "gateway") {
 		iface.Device = ID
 	}
 	err = db.Create(iface).Error
@@ -84,7 +88,9 @@ func DeleteInterfaces(masterID int64, ifType string) (err error) {
 	db := dbs.DB()
 	ifaces := []*Interface{}
 	if ifType == "instance" {
-		err = db.Where("instance_id = ? and type = ?", masterID, "instance").Find(&ifaces).Error
+		err = db.Where("instance = ? and type = ?", masterID, "instance").Find(&ifaces).Error
+	} else if ifType == "floating" {
+		err = db.Where("floating_ip = ? and type = ?", masterID, "floating").Find(&ifaces).Error
 	} else {
 		err = db.Where("device = ? and type like ?", masterID, "%gateway%").Find(&ifaces).Error
 	}
@@ -98,7 +104,9 @@ func DeleteInterfaces(masterID int64, ifType string) (err error) {
 		return
 	}
 	if ifType == "instance" {
-		err = db.Where("instance_id = ? and type = ?", masterID, "instance").Delete(&Interface{}).Error
+		err = db.Where("instance = ? and type = ?", masterID, "instance").Delete(&Interface{}).Error
+	} else if ifType == "floating" {
+		err = db.Where("floating_ip = ? and type = ?", masterID, "floating").Delete(&Interface{}).Error
 	} else {
 		err = db.Where("device = ? and type like ?", masterID, "%gateway%").Delete(&Interface{}).Error
 	}

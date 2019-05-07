@@ -4,8 +4,8 @@
 	    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 	    {{if not .PageIsAdmin}}
-		<meta name="author" content="{{if .Repository}}{{.Owner.Name}}{{else}}hypercube{{end}}" />
-		<meta name="keywords" content="go, cloud, self-hosted, hypercube">
+		<meta name="author" content="{{if .Repository}}{{.Owner.Name}}{{else}}cloudland{{end}}" />
+		<meta name="keywords" content="go, cloud, self-hosted, cloudland">
 	    {{end}}
 	    <meta name="referrer" content="no-referrer" />
 	    <meta name="_csrf" content="{{.CSRFToken}}" />
@@ -26,13 +26,13 @@
 		<meta property="og:image" content="{{.Repository.Owner.AvatarLink}}" />
 	    {{else}}
 		<meta property="og:type" content="website" />
-		<meta property="og:title" content="Hypercube">
-		<meta property="og:description" content="Hypercube is a painless self-hosted cloud service.">
-		<meta property="og:image" content="img/hypercube.png" />
-		<meta property="og:site_name" content="Hypercube">
+		<meta property="og:title" content="cloudland">
+		<meta property="og:description" content="Cloudland is a painless self-hosted cloud service.">
+		<meta property="og:image" content="img/logo.jpg" />
+		<meta property="og:site_name" content="cloudland">
 	    {{end}}
 
-	    <link rel="shortcut icon" href="/img/favicon.png" />
+	    <link rel="shortcut icon" href="/img/logo.jpg" />
 
 	    <script src="/js/jquery-1.11.3.min.js"></script>
 	    <script src="/js/libs/jquery.are-you-sure.js"></script>
@@ -57,7 +57,7 @@
 
 	    <!-- Stylesheet -->
 	    <link rel="stylesheet" href="/css/semantic-2.3.1.min.css">
-	    <link rel="stylesheet" href="/css/hypercube.css">
+	    <link rel="stylesheet" href="/css/cloudland.css">
 	    <noscript>
 		    <style>
 			 .dropdown:hover > .menu { display: block; }
@@ -67,8 +67,8 @@
 
 	    <!-- JavaScript -->
 	    <script src="/js/semantic-2.3.1.min.js"></script>
-        <script src="/js/hypercube.js"></script>
-	    <title>{{if .Title}}{{.Title}} - {{end}}Hypercube</title>
+        <script src="/js/cloudland.js"></script>
+	    <title>{{if .Title}}{{.Title}} - {{end}}cloudland</title>
 	    <meta name="theme-color" content="#ff5343">
     </head>
     <body>
@@ -82,7 +82,7 @@
 					    <div class="column">
 						    <div class="ui top secondary menu">
 							    <a class="item brand" href="/">
-								    <img class="ui mini image" src="/img/favicon.png">
+								    <img class="ui image" src="/img/logo.png">
 							    </a>
 							    <a class="item" target="_blank" rel="noopener noreferrer" href="/docs" rel="noreferrer">Help</a>
 							    <div class="right menu">

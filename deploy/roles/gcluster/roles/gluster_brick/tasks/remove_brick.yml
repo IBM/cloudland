@@ -1,0 +1,15 @@
+---
+- name: Set remove brick option gluster volume module
+  set_fact:
+    remove_bricks_flag: true
+  when: gluster_cluster_remove_bricks is defined
+# TODO: Handle the remove_brick_flag in the upstream gluster_volume module.
+
+- name: Add bricks to a volume
+  gluster_volume:
+        state: present
+        volume: "{{ gluster_cluster_volume }}"
+        bricks: "{{ gluster_cluster_remove_bricks }}"
+        remove_bricks: "{{ remove_bricks_flag | default('false') }}"
+        cluster: "{{ gluster_cluster_hosts }}"
+        force: "{{ gluster_cluster_force | default('no') }}"

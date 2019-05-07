@@ -136,14 +136,16 @@ func (a *InstanceAdmin) buildMetadata(primary *model.Subnet, subnets []*model.Su
 	vlans := []*VlanInfo{}
 	instNetworks := []*InstanceNetwork{}
 	instLinks := []*NetworkLink{}
-	instRoute := &NetworkRoute{Network: "0.0.0.0", Netmask: "0.0.0.0", Gateway: primary.Gateway}
+	gateway := strings.Split(primary.Gateway, "/")[0]
+	instRoute := &NetworkRoute{Network: "0.0.0.0", Netmask: "0.0.0.0", Gateway: gateway}
 	iface, err := model.CreateInterface(primary.ID, instance.ID, "eth0", "instance")
 	if err != nil {
 		log.Println("Allocate address for primary subnet %s--%s/%s failed, %v", primary.Name, primary.Network, primary.Netmask, err)
 		return
 	}
 	interfaces = append(interfaces, iface)
-	instNetwork := &InstanceNetwork{Address: iface.Address.Address, Netmask: primary.Netmask, Type: "ipv4", Link: iface.Name, ID: "network0"}
+	address := strings.Split(iface.Address.Address, "/")[0]
+	instNetwork := &InstanceNetwork{Address: address, Netmask: primary.Netmask, Type: "ipv4", Link: iface.Name, ID: "network0"}
 	instNetwork.Routes = append(instNetwork.Routes, instRoute)
 	instNetworks = append(instNetworks, instNetwork)
 	instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
@@ -156,8 +158,9 @@ func (a *InstanceAdmin) buildMetadata(primary *model.Subnet, subnets []*model.Su
 			return
 		}
 		interfaces = append(interfaces, iface)
+		address = strings.Split(iface.Address.Address, "/")[0]
 		instNetworks = append(instNetworks, &InstanceNetwork{
-			Address: iface.Address.Address,
+			Address: address,
 			Netmask: subnet.Netmask,
 			Type:    "ipv4",
 			Link:    iface.Name,
@@ -200,9 +203,14 @@ func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
 		log.Println("Failed to query instance, %v", err)
 		return
 	}
+	if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
+		log.Println("Failed to query floating ip(s), %v", err)
+		return
+	}
 	if instance.FloatingIps != nil {
-		for _, floatingIp := range instance.FloatingIps {
-			err = db.Delete(floatingIp).Error
+		for _, fip := range instance.FloatingIps {
+			fip.InstanceID = 0
+			err = db.Save(fip).Error
 			if err != nil {
 				log.Println("Failed to delete floating ip, %v", err)
 				return
@@ -244,8 +252,15 @@ func (a *InstanceAdmin) List(offset, limit int64, order string) (total int64, in
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Preload("FloatingIps").Preload("FloatingIps.FipAddress").Preload("Interfaces").Preload("Interfaces.Address").Preload("Flavor").Preload("Image").Find(&instances).Error; err != nil {
+	if err = db.Set("gorm:auto_preload", true).Find(&instances).Error; err != nil {
+		log.Println("Failed to query instance(s), %v", err)
 		return
+	}
+	for _, instance := range instances {
+		if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
+			log.Println("Failed to query floating ip(s), %v", err)
+			return
+		}
 	}
 
 	return

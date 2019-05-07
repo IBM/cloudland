@@ -1,0 +1,26 @@
+---
+# tasks file for gluster.infra
+- name: Add firewall rules
+  import_role:
+    name: "gluster.infra/roles/firewall_config"
+  when: >
+     gluster_infra_fw_ports is defined or
+     gluster_infra_fw_services is defined
+  tags:
+    - firewall
+
+- name: Configure the bricks
+  import_role:
+    name: "gluster.infra/roles/backend_setup"
+  tags:
+    - backend_setup
+
+- name: Reset backend
+  import_role:
+    name: "gluster.infra/roles/backend_reset"
+  when: >
+    gluster_infra_reset_mnt_paths is defined or
+    gluster_infra_reset_volume_groups is defined or
+    gluster_infra_reset_vdos is defined
+  tags:
+    - backend_reset

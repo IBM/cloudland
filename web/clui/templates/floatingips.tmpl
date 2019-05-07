@@ -35,9 +35,13 @@
                                 {{ range .FloatingIps }}
 		                        <tr>
 			                        <td>{{.ID}}</td>
-			                        <td>{{.FipAddress.Address}}</td>
-			                        <td>{{.Interface.Address.Address}}</td>
-			                        <td>{{.Instance.Hostname}}</td>
+			                        <td>{{.FipAddress}}</td>
+			                        <td>{{.IntAddress}}</td>
+			                        <td>
+										{{ if .Instance }}
+										{{.Instance.Hostname}}
+										{{ end }}
+									</td>
 			                        <td><a href="{{$Link}}/{{.ID}}"><i class="fa fa-pencil-square-o"></i></a></td>
                                     <td><div class="ui red tiny button delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}">Delete</div></td>
 		                        </tr>
