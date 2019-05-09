@@ -1,0 +1,10 @@
+---
+- name: Reset the bricks
+  remote_user: root
+  gather_facts: no
+  hosts: all
+  vars_files:
+    - brick_reset_vars.yml
+
+  roles:
+    - gluster.infra

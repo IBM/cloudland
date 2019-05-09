@@ -1,0 +1,37 @@
+---
+- name: Prepare
+  hosts: all
+  tasks:
+  - name: unmount device
+    mount:
+      path: "/mnt/{{item}}"
+      state: absent
+    with_items:
+      - thicklv
+      - thinlv1
+      - thinlv2
+  - name: Remove volume groups
+    lvol:
+      vg: vg_vdb
+      state: absent
+      pvs: /dev/loop0
+      lv: thicklv_1
+      force: true
+    ignore_errors: true
+  - name: Remove thinpool
+    lvol:
+      vg: vg_vdc
+      state: absent
+      pvs: /dev/loop1
+      thinpool: foo_thinpool
+      force: true
+    ignore_errors: true
+  - name: Clean up loopback devices
+    command: "losetup -D"
+  - name: Remove data files
+    file:
+      path: "/var/{{item}}"
+      state: absent
+    with_items:
+      - data0
+      - data1

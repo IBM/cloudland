@@ -1,0 +1,18 @@
+---
+- name: Prepare
+  hosts: all
+  tasks:
+  - name: Allocate space to a file
+    command: "fallocate -l 1G /var/{{item}}"
+    args:
+      creates: "/var/{{item}}"
+    with_items:
+      - data0
+      - data1
+  - name: Create loopback devices
+    command: "losetup -f /var/{{item.1}}"
+    with_together:
+      - ['loop0', 'loop1']
+      - ['data0', 'data1']
+    loop_control:
+      pause: 5

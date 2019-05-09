@@ -1,0 +1,67 @@
+---
+# This playbook sets up lvm cache. Primarily written for the hyperconverged
+# setup.
+
+# Create PV for setting up cache with dataalignment of 256K for SSDs.
+# Extend the existing volume group with the SSD (assuming SSD is used for
+# caching)
+
+- name: Extend volume group
+  lvg:
+     state: present
+     vg: "{{ item.vgname }}"
+     pvs: "{{ item.cachedisk }}"
+     pv_options: "--dataalignment 256K"
+  with_items: "{{ gluster_infra_cache_vars }}"
+
+- name: Change attributes of LV
+  lvol:
+     state: present
+     vg: "{{ item.vgname }}"
+     thinpool: "{{ item.cachethinpoolname }}"
+     opts: " --zero n "
+  with_items: "{{ gluster_infra_cache_vars }}"
+
+- name: Create LV for cache
+  lvol:
+     state: present
+     vg: "{{ item.vgname }}"
+     lv: "{{ item.cachelvname }}"
+     size: "{{ item.cachelvsize }}"
+  with_items: "{{ gluster_infra_cache_vars }}"
+
+- name: Create metadata LV for cache
+  lvol:
+     state: present
+     vg: "{{ item.vgname }}"
+     lv: "{{ item.cachemetalvname }}"
+     size: "{{ item.cachemetalvsize }}"
+  with_items: "{{ gluster_infra_cache_vars }}"
+  when: item.cachemetalvname is defined
+
+- name: Convert logical volume to a cache pool LV
+  command: >
+     lvconvert -y --type cache-pool --poolmetadata {{ item.cachemetalvname }}
+        --poolmetadataspare n
+        --cachemode {{item.cachemode | default('writethrough')}}
+        "/dev/{{item.vgname}}/{{item.cachelvname}}"
+  with_items: "{{ gluster_infra_cache_vars }}"
+  when: item.cachemetalvname is defined
+
+# It is valid not to have cachemetalvname! Writing a separate task not to
+# complicate things.
+- name: Convert logical volume to a cache pool LV without cachemetalvname
+  command: >
+     lvconvert -y --type cache-pool
+        --poolmetadataspare n
+        --cachemode {{item.cachemode | default('writethrough')}}
+        "/dev/{{item.vgname}}/{{item.cachelvname}}"
+  with_items: "{{ gluster_infra_cache_vars }}"
+  when: item.cachemetalvname is not defined
+
+# Run lvs -a -o +devices to see the cache settings
+- name: Convert an existing logical volume to a cache LV
+  command: >
+     lvconvert -y --type cache --cachepool "/dev/{{item.vgname}}/{{item.cachelvname}}"
+     "/dev/{{item.vgname}}/{{item.cachethinpoolname}}"
+  with_items: "{{ gluster_infra_cache_vars }}"

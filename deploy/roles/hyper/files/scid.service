@@ -1,0 +1,13 @@
+[Unit]
+Description=SCI daemon
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/bin/sh -c /opt/sci/sbin/scidv1
+ExecStop=/usr/bin/killall scidv1
+KillMode=process
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
