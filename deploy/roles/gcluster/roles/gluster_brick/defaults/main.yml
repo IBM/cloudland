@@ -1,0 +1,4 @@
+---
+# defaults file for gluster_brick
+
+gluster_cluster_force: yes

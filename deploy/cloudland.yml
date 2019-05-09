@@ -1,0 +1,11 @@
+# deploy hypers
+- name: install hyper
+  hosts: hyper
+  roles:
+    - {role: hyper, tags: [hyper]}
+
+# deploy root node
+- name: install cland
+  hosts: cland
+  roles:
+    - {role: cland, tags: [cland]}

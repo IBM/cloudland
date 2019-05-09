@@ -1,0 +1,23 @@
+---
+# List of variables supported in the firewall role for GlusterFS
+# gluster_infra_fw_ports is a list and the values are to be given in
+# port/protocol type: For example
+
+# gluster_infra_fw_ports:
+#    - 111/tcp
+#    - 445/tcp
+# gluster_infra_fw_ports:
+
+# Whether the rules added are permanent true/false are the allowed values
+# gluster_infra_fw_permanent:
+
+# Firewall state: enabled, disabled
+# gluster_infra_fw_state:
+
+# Zone choices (work, drop, internal, external, trusted, home, dmz, public,
+#               block)
+# gluster_infra_fw_zone:
+
+# This is a list variable, list of services to be enabled/disabled
+# (default: glusterfs)
+# gluster_infra_fw_services:

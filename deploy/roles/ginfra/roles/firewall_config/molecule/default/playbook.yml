@@ -1,0 +1,18 @@
+---
+- name: Converge
+  hosts: all
+  roles:
+    - role: firewall_config
+      vars:
+        gluster_infra_fw_ports:
+          - 2049/tcp
+          - 54321/tcp
+          - 5900/tcp
+          - 5900-6923/tcp
+          - 5666/tcp
+          - 16514/tcp
+        gluster_infra_fw_permanent: true
+        gluster_infra_fw_state: enabled
+        gluster_infra_fw_zone: public
+        gluster_infra_fw_services:
+          - glusterfs

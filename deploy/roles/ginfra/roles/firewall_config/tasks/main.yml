@@ -1,0 +1,33 @@
+---
+# tasks file for firewall_config
+- name: Start firewalld if not already started
+  service:
+        state: started
+        name: firewalld
+
+- name: check if required variables are set
+  fail:
+        msg: "gluster_infra_fw_state is undefined"
+  when: gluster_infra_fw_state is not defined
+
+- name: Open/Close firewalld ports
+  firewalld:
+        port: "{{ item }}"
+        permanent: "{{ gluster_infra_fw_permanent | default('false') }}"
+        state: "{{ gluster_infra_fw_state }}"
+        zone: "{{ gluster_infra_fw_zone | default('public') }}"
+        immediate: "{{ item.immediate | default('yes') }}"
+  with_items: "{{ gluster_infra_fw_ports }}"
+  when: gluster_infra_fw_ports is defined
+  notify: Reload firewall
+
+- name: Add/Delete services to firewalld rules
+  firewalld:
+        service: "{{ item }}"
+        permanent: "{{ gluster_infra_fw_permanent | default('false') }}"
+        state: "{{ gluster_infra_fw_state }}"
+        zone: "{{ gluster_infra_fw_zone | default('public') }}"
+        immediate: "{{ gluster_infra_fw_immediate | default('yes') }}"
+  with_items: "{{ gluster_infra_fw_services }}"
+  when: gluster_infra_fw_services is defined
+  notify: Reload firewall

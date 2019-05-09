@@ -1,0 +1,10 @@
+---
+- name: Create a GlusterFS brick on the servers
+  remote_user: root
+  hosts: all
+  gather_facts: false
+  vars_files:
+    - bricks.yml
+
+  roles:
+    - gluster.infra

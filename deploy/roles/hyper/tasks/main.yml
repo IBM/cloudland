@@ -1,0 +1,91 @@
+- name: install packages
+  yum: 
+    name: "{{ item }}" 
+    state: present
+  with_items:
+    - '@^Virtualization Host'
+    - 'genisoimage'
+    - 'sqlite'
+    - 'keepalived'
+    - 'jq'
+    - 'vconfig'
+    - 'git'
+    - 'glusterfs-server'
+  tags: [be_pkg]
+
+- name: git clone cloudland
+  git:
+    repo: git@github.com:gabecloud/cloudland.git
+    dest: /opt/cloudland
+    accept_hostkey: yes
+    key_file: /home/centos/.ssh/id_rsa
+  tags: [git]
+
+- name: create directores
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: centos
+    group: centos
+    recurse: yes
+  with_items:
+    - '/opt/cloudland'
+    - '/opt/cloudland/bin'
+    - '/opt/cloudland/cache'
+    - '/opt/cloudland/db'
+    - '/opt/cloudland/lib64'
+    - '/opt/cloudland/log'
+    - '/opt/cloudland/run'
+    - '/opt/cloudland/cache/instance'
+    - '/opt/cloudland/cache/volume'
+    - '/opt/cloudland/cache/meta'
+    - '/opt/cloudland/cache/router'
+    - '/opt/cloudland/cache/xml'
+    - '/opt/cloudland/cache/image'
+  tags: [be_dir]
+
+- name: copy cloudland and sci binaries
+  copy: 
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.owner }}"
+    mode: preserve
+  with_items:
+    - {src: '/opt/cloudland/lib64', dest: '/opt/cloudland', owner: 'centos'}
+    - {src: '/opt/cloudland/bin', dest: '/opt/cloudland', owner: 'centos'}
+    - {src: '/opt/sci', dest: '/opt', owner: 'root'}
+  tags: [be_bin]
+
+- name: copy service file
+  copy: 
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: preserve
+  with_items:
+    - {src: 'cloudlet.service', dest: '/lib/systemd/system', owner: 'root'}
+    - {src: 'scid.service', dest: '/lib/systemd/system', owner: 'root'}
+  tags: [be_srv]
+
+- name: get SCI_CLIENT_ID environment variable
+  shell: "hostname -s | tr -dc '0-9'"
+  register: beid
+  tags: [be_srv]
+
+- name: create cloudlet environment file
+  template:
+    src: cloudlet.j2
+    dest: /etc/sysconfig/cloudlet
+  tags: [be_srv]
+ 
+- name: start cloudland services
+  systemd: 
+    name: "{{ item }}"
+    enabled: yes
+    daemon_reload: yes
+    state: restarted
+  with_items:
+    - 'scid'
+    - 'cloudlet'
+    - 'glusterd'
+  tags: [be_srv]

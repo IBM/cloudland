@@ -1,0 +1,53 @@
+- name: create directores
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: centos
+    group: centos
+  with_items:
+    - '/opt/cloudland'
+    - '/opt/cloudland/bin'
+    - '/opt/cloudland/etc'
+    - '/opt/cloudland/lib64'
+    - '/opt/cloudland/log'
+    - '/opt/cloudland/run'
+    - '/opt/cloudland/scripts'
+  tags: [fe_dir]
+
+- name: copy cloudland and sci binaries
+  copy: 
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.owner }}"
+    mode: preserve
+  with_items:
+    - {src: '/opt/cloudland/lib64', dest: '/opt/cloudland', owner: 'centos'}
+    - {src: '/opt/cloudland/bin', dest: '/opt/cloudland', owner: 'centos'}
+    - {src: '/opt/cloudland/scripts', dest: '/opt/cloudland', owner: 'centos'}
+    - {src: '/opt/sci', dest: '/opt', owner: 'root'}
+  tags: [fe_bin]
+
+- name: generate host file
+  template:
+    src: host.list.j2
+    dest: /opt/cloudland/etc/host.list
+  tags: [hlist]
+
+- name: copy service file
+  copy: 
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: preserve
+  with_items:
+    - {src: 'cloudland.service', dest: '/lib/systemd/system', owner: 'root'}
+    - {src: 'cloudland.default', dest: '/etc/sysconfig/cloudland', owner: 'root'}
+  tags: [fe_srv]
+
+- name: start cloudland
+  systemd: 
+    name: cloudland
+    enabled: yes
+    daemon_reload: yes
+    state: restarted
+  tags: [fe_srv]
