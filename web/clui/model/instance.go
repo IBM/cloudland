@@ -17,6 +17,7 @@ type Instance struct {
 	Status      string        `gorm:"type:varchar(32)"`
 	Reason      string        `gorm:"type:text"`
 	FloatingIps []*FloatingIp `gorm:"PRELOAD:false"`
+	Volumes     []*Volume     `gorm:"PRELOAD:false"`
 	Interfaces  []*Interface  `gorm:"foreignkey:Instance"`
 	Portmaps    []*Portmap    `gorm:"foreignkey:instanceID"`
 	FlavorID    int64
