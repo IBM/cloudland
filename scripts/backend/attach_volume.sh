@@ -7,8 +7,13 @@ source ../cloudrc
 
 vm_ID=inst-$1
 vol_ID=$2
-vol_path=$3
+vol_path=$gluster_volume/$3
 vol_xml=$xml_dir/$vm_ID/disk-${vol_ID}.xml
+cp $template_dir/volume.xml $vol_xml
+count=$(virsh dumpxml $vm_ID | grep -c "<disk type='file' device='disk'>")
+let letter=97+$count
+device=vd$(printf "\\$(printf '%03o' "$letter")")
+sed -i "s#VOLUME_SOURCE#$vol_path#g;s#VOLUME_TARGET#$device#g;" $vol_xml
 virsh attach-device $vm_ID $vol_xml --config --persistent
 if [ $? -eq 0 ]; then
     echo "|:-COMMAND-:| `basename $0` $vm_ID $vol_ID $device"
