@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd `dirname $0`
+cd $(dirname $0)
 source ../cloudrc
 
 [ $# -lt 1 ] && die "$0 <vm_ID>"
@@ -33,4 +33,4 @@ rm -f ${image_dir}/$vm_ID.disk
 rm -f ${cache_dir}/meta/$vm_ID.iso
 rm -rf $xml_dir/$vm_ID
 sidecar span log $span "Callback: `basename $0` '$vm_ID'"
-echo "|:-COMMAND-:| `basename $0` '$vm_ID'"
+echo "|:-COMMAND-:| $(basename $0) '$vm_ID'"
