@@ -219,7 +219,6 @@ func (v *VolumeView) Edit(c *macaron.Context, store session.Store) {
 }
 
 func (v *VolumeView) Patch(c *macaron.Context, store session.Store) {
-	log.Println("Enter patch method $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
 	redirectTo := "../volumes"
 	id := c.Params(":id")
 	name := c.Query("name")

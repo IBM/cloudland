@@ -15,10 +15,11 @@ func init() {
 }
 
 func AttachVolume(ctx context.Context, job *model.Job, args []string) (status string, err error) {
-	//|:-COMMAND-:| create_volume.sh 5 7 vdb
+	//|:-COMMAND-:| attach_volume.sh 5 7 vdb
 	db := dbs.DB()
 	argn := len(args)
 	if argn < 4 {
+		db.Model(&model.Volume{}).Updates(map[string]interface{}{"instance_id": 0})
 		err = fmt.Errorf("Wrong params")
 		log.Println("Invalid args", err)
 		return

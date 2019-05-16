@@ -21,7 +21,7 @@ func init() {
 }
 
 func ClearVM(ctx context.Context, job *model.Job, args []string) (status string, err error) {
-	//|:-COMMAND-:| launch_vm.sh '127' 'running' '3'
+	//|:-COMMAND-:| clear_vm.sh '127'
 	db := dbs.DB()
 	argn := len(args)
 	if argn < 2 {
