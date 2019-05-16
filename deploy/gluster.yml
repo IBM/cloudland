@@ -19,24 +19,16 @@
      gluster_infra_stripe_unit_size: 128
      # Variables for creating volume group
      gluster_infra_volume_groups:
-       - { vgname: 'vg_vdb', pvname: '/dev/vdb' }
-       - { vgname: 'vg_vdc', pvname: '/dev/vdc' }
-       - { vgname: 'vg_vdd', pvname: '/dev/vdd' }
+       - { vgname: 'vg_sdb', pvname: '/dev/sdb' }
      # Create thinpools
      gluster_infra_thinpools:
-       - {vgname: 'vg_vdb', thinpoolname: 'vdb_thinpool', thinpoolsize: '45G', poolmetadatasize: '1G'}
-       - {vgname: 'vg_vdc', thinpoolname: 'vdc_thinpool', thinpoolsize: '45G', poolmetadatasize: '1G'}
-       - {vgname: 'vg_vdd', thinpoolname: 'vdd_thinpool', thinpoolsize: '45G', poolmetadatasize: '1G'}
+       - {vgname: 'vg_sdb', thinpoolname: 'sdb_thinpool', thinpoolsize: '1500G', poolmetadatasize: '2G'}
      # Create a thin volume
      gluster_infra_lv_logicalvols:
-       - { vgname: 'vg_vdb', thinpool: 'vdb_thinpool', lvname: 'vg_vdb_thinlv', lvsize: '50G' }
-       - { vgname: 'vg_vdc', thinpool: 'vdc_thinpool', lvname: 'vg_vdc_thinlv', lvsize: '50G' }
-       - { vgname: 'vg_vdd', thinpool: 'vdd_thinpool', lvname: 'vg_vdd_thinlv', lvsize: '50G' }
+       - { vgname: 'vg_sdb', thinpool: 'sdb_thinpool', lvname: 'vg_sdb_thinlv', lvsize: '2000G' }
      # Mount the devices
      gluster_infra_mount_devices:
-       - { path: '/gluster/thinlv1', vgname: 'vg_vdb', lvname: 'vg_vdb_thinlv' }
-       - { path: '/gluster/thinlv2', vgname: 'vg_vdc', lvname: 'vg_vdc_thinlv' }
-       - { path: '/gluster/thinlv3', vgname: 'vg_vdd', lvname: 'vg_vdd_thinlv' }
+       - { path: '/gluster/thinlv1', vgname: 'vg_sdb', lvname: 'vg_sdb_thinlv' }
   roles:
      - ginfra
 

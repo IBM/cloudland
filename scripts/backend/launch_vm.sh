@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd `dirname $0`
+cd $(dirname $0)
 source ../cloudrc
 
 [ $# -lt 6 ] && die "$0 <vm_ID> <image> <name> <cpu> <memory> <disk_inc> [userdata] [pubkey]"

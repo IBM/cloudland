@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd `dirname $0`
+cd $(dirname $0)
 source ../cloudrc
 
 [ $# -lt 1 ] && die "$0 <vlan>"
