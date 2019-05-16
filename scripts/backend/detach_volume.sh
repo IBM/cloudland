@@ -10,7 +10,7 @@ vol_ID=$2
 vol_xml=$xml_dir/$vm_ID/disk-${vol_ID}.xml
 virsh detach-device $vm_ID $vol_xml --config --persistent
 if [ $? -eq 0 ]; then
-    echo "|:-COMMAND-:| $(basename $0) '$vm_ID' '$vol_ID'"
+    echo "|:-COMMAND-:| $(basename $0) '$1' '$vol_ID'"
 else
     echo "|:-COMMAND-:| $(basename $0) '' '$vol_ID'"
 fi

@@ -16,7 +16,7 @@ device=vd$(printf "\\$(printf '%03o' "$letter")")
 sed -i "s#VOLUME_SOURCE#$vol_path#g;s#VOLUME_TARGET#$device#g;" $vol_xml
 virsh attach-device $vm_ID $vol_xml --config --persistent
 if [ $? -eq 0 ]; then
-    echo "|:-COMMAND-:| $(basename $0) '$vm_ID' '$vol_ID' '$device'"
+    echo "|:-COMMAND-:| $(basename $0) '$1' '$vol_ID' '$device'"
 else
     echo "|:-COMMAND-:| $(basename $0) '' '$vol_ID' ''"
 fi
