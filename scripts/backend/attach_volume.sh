@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd `dirname $0`
+cd $(dirname $0)
 source ../cloudrc
 
 [ $# -lt 3 ] && echo "$0 <vm_ID> <volume_ID> <volume_path>" && exit -1
@@ -16,9 +16,9 @@ device=vd$(printf "\\$(printf '%03o' "$letter")")
 sed -i "s#VOLUME_SOURCE#$vol_path#g;s#VOLUME_TARGET#$device#g;" $vol_xml
 virsh attach-device $vm_ID $vol_xml --config --persistent
 if [ $? -eq 0 ]; then
-    echo "|:-COMMAND-:| `basename $0` $vm_ID $vol_ID $device"
+    echo "|:-COMMAND-:| $(basename $0) '$1' '$vol_ID' '$device'"
 else
-    echo "|:-COMMAND-:| `basename $0` '' '$vol_ID' ''"
+    echo "|:-COMMAND-:| $(basename $0) '' '$vol_ID' ''"
 fi
 vm_xml=$xml_dir/$vm_ID/$vm_ID.xml
 virsh dumpxml --security-info $vm_ID 2>/dev/null | sed "s/autoport='yes'/autoport='no'/g" > $vm_xml.dump && mv -f $vm_xml.dump $vm_xml
