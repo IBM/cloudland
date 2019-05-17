@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd `dirname $0`
+cd $(dirname $0)
 source ../cloudrc
 
 [ $# -lt 5 ] && echo "$0 <router> <ext_defaut_gw> <int_defaut_gw> <ext_gw_cidr> <int_gw_cidr> <vrrp_vni> <vrrp_ip> <role>" && exit -1
@@ -113,4 +113,4 @@ while [ $i -lt $n ]; do
 done
 
 ip netns exec $router bash -c "echo 1 >/proc/sys/net/ipv4/ip_forward"
-echo "|:-COMMAND-:| `basename $0` '$1' '$SCI_CLIENT_ID' '$role'"
+echo "|:-COMMAND-:| $(basename $0) '$1' '$SCI_CLIENT_ID' '$role'"

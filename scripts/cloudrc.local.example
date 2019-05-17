@@ -14,3 +14,5 @@ vol_limit=100
 disk_inc_limit=100
 resolver_addr=192.168.1.125
 use_lb=false
+portmap_remote_ip=47.92.116.39
+gluster_volume=virt-volume

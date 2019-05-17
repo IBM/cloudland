@@ -3,7 +3,7 @@ localrc="${BASH_SOURCE[0]}.local"
 source "$localrc"
 cache_dir=/opt/cloudland/cache
 cache_tmp_dir=$cache_dir/tmp
-volume_dir=/opt/cloudland/volume
+volume_dir=/opt/cloudland/cache/volume
 image_dir=$cache_dir/instance
 xml_dir=/opt/cloudland/cache/xml
 template_dir=/opt/cloudland/scripts/xml

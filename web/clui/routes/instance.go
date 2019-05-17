@@ -68,7 +68,7 @@ type InstanceData struct {
 	Keys     []string           `json:"keys"`
 }
 
-func (a *InstanceAdmin) Create(ctx context.Context, hostname, userdata string, imageID, flavorID, primaryID int64, subnetIDs, keyIDs []int64) (instance *model.Instance, err error) {
+func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, imageID, flavorID, primaryID int64, subnetIDs, keyIDs []int64) (instance *model.Instance, err error) {
 	db := DB()
 	image := &model.Image{Model: model.Model{ID: imageID}}
 	if err = db.Take(image).Error; err != nil {
@@ -95,23 +95,32 @@ func (a *InstanceAdmin) Create(ctx context.Context, hostname, userdata string, i
 		log.Println("Keys query failed, %v", err)
 		return
 	}
-	instance = &model.Instance{Hostname: hostname, ImageID: imageID, Image: image, FlavorID: flavorID, Flavor: flavor, Keys: keys, Userdata: userdata, Status: "pending"}
-	err = db.Create(instance).Error
-	if err != nil {
-		log.Println("DB create instance failed, %v", err)
-		return
-	}
-	_, metadata, err := a.buildMetadata(primary, subnets, keys, instance, userdata)
-	if err != nil {
-		log.Println("Build instance metadata failed, %v", err)
-		return
-	}
-	control := fmt.Sprintf("inter= cpu=%d memory=%d disk=%d network=%d", 0, 0, 0, 0)
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh %d %s %s %d %d %d <<EOF\n%s\nEOF", instance.ID, image.Name, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, metadata)
-	err = hyperExecute(ctx, control, command)
-	if err != nil {
-		log.Println("Launch vm command execution failed, %v", err)
-		return
+	i := 0
+	hostname := prefix
+	for i < count {
+		if count > 1 {
+			hostname = fmt.Sprintf("%s-%d", prefix, i+1)
+		}
+		instance = &model.Instance{Hostname: hostname, ImageID: imageID, Image: image, FlavorID: flavorID, Flavor: flavor, Keys: keys, Userdata: userdata, Status: "pending"}
+		err = db.Create(instance).Error
+		if err != nil {
+			log.Println("DB create instance failed, %v", err)
+			return
+		}
+		metadata := ""
+		_, metadata, err = a.buildMetadata(primary, subnets, keys, instance, userdata)
+		if err != nil {
+			log.Println("Build instance metadata failed, %v", err)
+			return
+		}
+		control := fmt.Sprintf("inter= cpu=%d memory=%d disk=%d network=%d", 0, 0, 0, 0)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh %d %s %s %d %d %d <<EOF\n%s\nEOF", instance.ID, image.Name, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, metadata)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Launch vm command execution failed, %v", err)
+			return
+		}
+		i++
 	}
 	return
 }
@@ -345,6 +354,14 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	redirectTo := "../instances"
 	hostname := c.Query("hostname")
+	cnt := c.Query("count")
+	count, err := strconv.Atoi(cnt)
+	if err != nil {
+		log.Println("Invalid instance count", err)
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	image := c.Query("image")
 	imageID, err := strconv.Atoi(image)
 	if err != nil {
@@ -392,7 +409,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		keyIDs = append(keyIDs, int64(kID))
 	}
 	userdata := c.Query("userdata")
-	_, err = instanceAdmin.Create(c.Req.Context(), hostname, userdata, int64(imageID), int64(flavorID), int64(primaryID), subnetIDs, keyIDs)
+	_, err = instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, int64(imageID), int64(flavorID), int64(primaryID), subnetIDs, keyIDs)
 	if err != nil {
 		log.Println("Create instance failed, %v", err)
 		c.HTML(http.StatusBadRequest, err.Error())

@@ -1,0 +1,28 @@
+{{template "_head" .}}
+<div class="user signup">
+	<div class="ui middle very relaxed page grid">
+        <div class="column" >
+            <form class="ui form" action="{{.Link}}" method="post">
+                <h3 class="ui top attached header">
+                    Create New Volume
+                </h3>
+                <div class="ui attached segment">
+                    <div class="required inline field">
+                        <label for="name">Name</label>
+                        <input id="name" name="name" autofocus required>
+                    </div>
+                    <div class="required inline field">
+                        <label for="size">Size (G)</label>
+                        <input id="size"  name="size" autocomplete="off" required>
+                    </div>
+                    <div class="inline field">
+                        <label></label>
+                        <button class="ui green button">Create New Volume</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+	</div>
+</div>
+{{template "_footer" .}}
+
