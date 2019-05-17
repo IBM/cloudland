@@ -9,3 +9,15 @@
   hosts: cland
   roles:
     - {role: cland, tags: [cland]}
+
+# deploy web
+- name: install web
+  hosts: web
+  roles:
+    - {role: web, tags: [web]}
+
+# deploy database
+- name: install database
+  hosts: database
+  roles:
+    - {role: database, tags: [database]}

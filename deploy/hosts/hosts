@@ -1,5 +1,11 @@
 [hyper]
-server-0 ansible_host=192.168.10.25
+inst-dev ansible_host=192.168.1.128 client_id=0
 
 [cland]
-allinone ansible_host=192.168.10.25
+inst-dev ansible_host=192.168.1.128
+
+[web]
+inst-dev ansible_host=192.168.1.128
+
+[database]
+inst-dev ansible_host=192.168.1.128

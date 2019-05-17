@@ -1,5 +1,8 @@
 #!/bin/bash
 
+DB_PASSWD=passw0rd
+NET_DEV=eth0
+
 cland_root_dir=/opt/cloudland
 cd $(dirname $0)
 
@@ -47,10 +50,23 @@ EOF
 }
 
 # Install web
-function install_web()
+function inst_web()
 {
-    sudo yum -y install golang postgresql
+    cd $cland_root_dir/deploy
+    ansible-playbook cloudland.yml --tags database --extra-vars "db_passwd=$DB_PASSWD"
+    sudo yum -y install golang 
     sudo chown -R centos.centos /usr/local
+    sed -i '/export GO/d' ~/.bashrc
+    echo 'export GOPATH=/usr/local' >> ~/.bashrc
+    echo 'export GOPROXY=https://goproxy.io' >> ~/.bashrc
+    source ~/.bashrc
+    go get github.com/IBM/cloudland
+    cd /usr/local/src/github.com/IBM/cloudland/web/clui
+    echo 'export GO111MODULE=on' >> ~/.bashrc
+    source ~/.bashrc
+    go build
+    cd $cland_root_dir/deploy
+    ansible-playbook cloudland.yml --tags web --extra-vars "db_passwd=$DB_PASSWD"
 }
 
 # Install cloudland
@@ -62,9 +78,36 @@ function inst_cland()
     make install
 }
 
+# Generate host file
+function gen_hosts()
+{
+    myip=$(ifconfig $NET_DEV | grep 'inet ' | awk '{print $2}')
+    sudo bash -c "sed -i '/$myip $hname/d' /etc/hosts"
+    hname=$(hostname -s)
+    sudo bash -c "echo '$myip $hname' >> /etc/hosts"
+    mkdir $cland_root_dir/{etc,log}
+    echo $hname > $cland_root_dir/etc/host.list
+    cat > $cland_root_dir/deploy/hosts/hosts <<EOF
+[hyper]
+$hname ansible_host=$myip client_id=0
+
+[cland]
+$hname ansible_host=$myip
+
+[web]
+$hname ansible_host=$myip
+
+[database]
+$hname ansible_host=$myip
+EOF
+}
+
 diff /opt/sci/lib64/libsci.so.0.0.0 $cland_root_dir/sci/libsci/.libs/libsci.so.0.0.0
 [ $? -ne 0 ] && inst_sci
 [ ! -f "$cland_root_dir/grpc/activate.sh" ] && inst_grpc
 diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 [ $? -ne 0 ] && inst_cland
 
+gen_hosts
+ansible-playbook cloudland.yml --tags be_srv,fe_srv
+inst_web

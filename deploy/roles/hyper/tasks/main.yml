@@ -67,11 +67,6 @@
     - {src: 'scid.service', dest: '/lib/systemd/system', owner: 'root'}
   tags: [be_srv]
 
-- name: get SCI_CLIENT_ID environment variable
-  shell: "hostname -s | tr -dc '0-9'"
-  register: beid
-  tags: [be_srv]
-
 - name: create cloudlet environment file
   template:
     src: cloudlet.j2
@@ -87,5 +82,4 @@
   with_items:
     - 'scid'
     - 'cloudlet'
-    - 'glusterd'
   tags: [be_srv]
