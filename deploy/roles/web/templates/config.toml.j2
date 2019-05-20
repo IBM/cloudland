@@ -11,7 +11,7 @@ endpoint = "{{ hostvars[groups['cland'][0]]['inventory_hostname'] }}:50051"
 
 [db]
 type = "postgres"
-uri = "host=postgres port=5432 user=postgres password={{ db_passwd }} dbname=hypercube sslmode=disable"
+uri = "host={{ hostvars[groups['database'][0]]['inventory_hostname'] }} port=5432 user=postgres password={{ db_passwd }} dbname=hypercube sslmode=disable"
 debug = true
 open = 50
 lifetime = 30

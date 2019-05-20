@@ -3,3 +3,21 @@
     src: config.toml.j2
     dest: /usr/local/src/github.com/IBM/cloudland/web/clui/conf/config.toml
   tags: [web_conf]
+
+- name: copy service files
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: preserve
+  with_items:
+    - {src: 'hypercube.service', dest: '/lib/systemd/system', owner: 'root'}
+    - {src: 'hypercube.sh', dest: '/usr/local/bin', owner: 'centos'}
+  tags: [web_srv]
+
+- name: start hypercube service
+  systemd: 
+    name: hypercube
+    enabled: yes
+    state: restarted
+  tags: [web_srv]
+

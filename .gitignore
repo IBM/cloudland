@@ -33,6 +33,8 @@
 *.sum
 
 #Others
+*.retry
+.ssh
 *.log
 *.status
 /bin

@@ -81,6 +81,12 @@ function inst_cland()
 # Generate host file
 function gen_hosts()
 {
+    cland_ssh_dir=$cland_root_dir/deploy/.ssh
+    mkdir -p $cland_ssh_dir
+    chmod 700 $cland_ssh_dir
+    yes y | ssh-keygen -t rsa -N "" -f $cland_ssh_dir/cland.key
+    cat $cland_ssh_dir/cland.key.pub >> ~/.ssh/authorized_keys
+
     myip=$(ifconfig $NET_DEV | grep 'inet ' | awk '{print $2}')
     sudo bash -c "sed -i '/$myip $hname/d' /etc/hosts"
     hname=$(hostname -s)
@@ -89,16 +95,16 @@ function gen_hosts()
     echo $hname > $cland_root_dir/etc/host.list
     cat > $cland_root_dir/deploy/hosts/hosts <<EOF
 [hyper]
-$hname ansible_host=$myip client_id=0
+$hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key client_id=0
 
 [cland]
-$hname ansible_host=$myip
+$hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key
 
 [web]
-$hname ansible_host=$myip
+$hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key
 
 [database]
-$hname ansible_host=$myip
+$hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key
 EOF
 }
 
@@ -109,5 +115,6 @@ diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 [ $? -ne 0 ] && inst_cland
 
 gen_hosts
+cd $cland_root_dir/deploy
 ansible-playbook cloudland.yml --tags be_srv,fe_srv
 inst_web
