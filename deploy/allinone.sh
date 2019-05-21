@@ -8,7 +8,8 @@ cd $(dirname $0)
 
 [ $PWD != "$cland_root_dir/deploy" ] && echo "Please clone cloudland into /opt" && exit 1
 
-sudo chown -R centos.centos /opt/cloudland
+sudo chown -R centos.centos $cland_root_dir
+mkdir $cland_root_dir/{bin,deploy,etc,lib6,run,sci,scripts,src,web}
 
 # Install development tools
 sudo yum install -y ansible vim git wget epel-release
@@ -57,13 +58,10 @@ function inst_web()
     sudo yum -y install golang 
     sudo chown -R centos.centos /usr/local
     sed -i '/export GO/d' ~/.bashrc
-    echo 'export GOPATH=/usr/local' >> ~/.bashrc
     echo 'export GOPROXY=https://goproxy.io' >> ~/.bashrc
-    source ~/.bashrc
-    go get github.com/IBM/cloudland
-    cd /usr/local/src/github.com/IBM/cloudland/web/clui
     echo 'export GO111MODULE=on' >> ~/.bashrc
     source ~/.bashrc
+    cd $cland_root_dir/web/clui
     go build
     cd $cland_root_dir/deploy
     ansible-playbook cloudland.yml --tags web --extra-vars "db_passwd=$DB_PASSWD"
@@ -118,5 +116,5 @@ diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 
 gen_hosts
 cd $cland_root_dir/deploy
-ansible-playbook cloudland.yml --tags be_srv,fe_srv
+ansible-playbook cloudland.yml --tags be_pkg,be_srv,fe_srv
 inst_web

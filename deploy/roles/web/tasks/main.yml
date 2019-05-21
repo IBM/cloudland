@@ -1,7 +1,7 @@
 - name: cland ui config file
   template:
     src: config.toml.j2
-    dest: /usr/local/src/github.com/IBM/cloudland/web/clui/conf/config.toml
+    dest: /opt/cloudland/web/clui/conf/config.toml
   tags: [web_conf]
 
 - name: copy service files
@@ -20,4 +20,3 @@
     enabled: yes
     state: restarted
   tags: [web_srv]
-

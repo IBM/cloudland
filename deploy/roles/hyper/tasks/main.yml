@@ -1,16 +1,7 @@
 - name: install packages
   yum: 
-    name: "{{ item }}" 
+    name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'vconfig', 'git']
     state: present
-  with_items:
-    - '@^Virtualization Host'
-    - 'genisoimage'
-    - 'sqlite'
-    - 'keepalived'
-    - 'jq'
-    - 'vconfig'
-    - 'git'
-    - 'glusterfs-server'
   tags: [be_pkg]
 
 - name: git clone cloudland
