@@ -33,6 +33,8 @@
 *.sum
 
 #Others
+/deploy/hosts/hosts
+/web/clui/clui
 *.retry
 .ssh
 *.log
