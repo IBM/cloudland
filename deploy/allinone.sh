@@ -84,8 +84,10 @@ function gen_hosts()
     cland_ssh_dir=$cland_root_dir/deploy/.ssh
     mkdir -p $cland_ssh_dir
     chmod 700 $cland_ssh_dir
-    yes y | ssh-keygen -t rsa -N "" -f $cland_ssh_dir/cland.key
-    cat $cland_ssh_dir/cland.key.pub >> ~/.ssh/authorized_keys
+    if [ ! -f $cland_ssh_dir/cland.key ]; then
+        yes y | ssh-keygen -t rsa -N "" -f $cland_ssh_dir/cland.key
+        cat $cland_ssh_dir/cland.key.pub >> ~/.ssh/authorized_keys
+    fi
 
     myip=$(ifconfig $NET_DEV | grep 'inet ' | awk '{print $2}')
     sudo bash -c "sed -i '/$myip $hname/d' /etc/hosts"
