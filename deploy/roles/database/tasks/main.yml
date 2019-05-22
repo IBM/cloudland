@@ -1,0 +1,32 @@
+- name: install postgresql packages
+  yum: 
+    name: ['postgresql', 'postgresql-server', 'postgresql-contrib']
+    state: present
+
+- name: init database
+  command: postgresql-setup initdb
+  ignore_errors: yes
+
+- name: cland ui config file
+  template:
+    src: pg_hba.conf.j2
+    dest: /var/lib/pgsql/data/pg_hba.conf
+  tags: [db_conf]
+
+- name: copy pg config file
+  copy: 
+    src: postgresql.conf
+    dest: /var/lib/pgsql/data
+    mode: preserve
+
+- name: start postgresql service
+  systemd: 
+    name: postgresql
+    enabled: yes
+    state: restarted
+  tags: [pg_srv]
+
+- name: run pg script
+  script: postgres.sh {{ db_passwd }}
+  tags: [pg_sh]
+  ignore_errors: yes

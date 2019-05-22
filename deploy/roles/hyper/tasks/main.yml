@@ -1,16 +1,7 @@
 - name: install packages
   yum: 
-    name: "{{ item }}" 
+    name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'vconfig', 'git']
     state: present
-  with_items:
-    - '@^Virtualization Host'
-    - 'genisoimage'
-    - 'sqlite'
-    - 'keepalived'
-    - 'jq'
-    - 'vconfig'
-    - 'git'
-    - 'glusterfs-server'
   tags: [be_pkg]
 
 - name: git clone cloudland
@@ -67,15 +58,14 @@
     - {src: 'scid.service', dest: '/lib/systemd/system', owner: 'root'}
   tags: [be_srv]
 
-- name: get SCI_CLIENT_ID environment variable
-  shell: "hostname -s | tr -dc '0-9'"
-  register: beid
-  tags: [be_srv]
-
 - name: create cloudlet environment file
   template:
-    src: cloudlet.j2
-    dest: /etc/sysconfig/cloudlet
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}"
+  with_items:
+    - {src: 'cloudlet.j2', dest: '/etc/sysconfig/cloudlet', owner: 'root'}
+    - {src: 'cloudrc.local.j2', dest: '/opt/cloudland/scripts/cloudrc.local', owner: 'centos'}
   tags: [be_srv]
  
 - name: start cloudland services
@@ -87,5 +77,4 @@
   with_items:
     - 'scid'
     - 'cloudlet'
-    - 'glusterd'
   tags: [be_srv]
