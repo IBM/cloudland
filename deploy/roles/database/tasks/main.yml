@@ -1,14 +1,11 @@
 - name: install postgresql packages
   yum: 
-    name: "{{ item }}" 
+    name: ['postgresql', 'postgresql-server', 'postgresql-contrib']
     state: present
-  with_items:
-    - 'postgresql'
-    - 'postgresql-server'
-    - 'postgresql-contrib'
 
 - name: init database
   command: postgresql-setup initdb
+  ignore_errors: yes
 
 - name: cland ui config file
   template:

@@ -9,7 +9,7 @@ cd $(dirname $0)
 [ $PWD != "$cland_root_dir/deploy" ] && echo "Please clone cloudland into /opt" && exit 1
 
 sudo chown -R centos.centos $cland_root_dir
-mkdir $cland_root_dir/{bin,deploy,etc,lib6,run,sci,scripts,src,web}
+mkdir $cland_root_dir/{bin,deploy,etc,lib6,run,sci,scripts,src,web,cache} $cland_root_dir/cache/{image,instance,meta,router,volume,xml} 2>/dev/null
 
 # Install development tools
 sudo yum install -y ansible vim git wget epel-release
@@ -91,7 +91,6 @@ function gen_hosts()
     sudo bash -c "sed -i '/$myip $hname/d' /etc/hosts"
     hname=$(hostname -s)
     sudo bash -c "echo '$myip $hname' >> /etc/hosts"
-    mkdir $cland_root_dir/{etc,log}
     echo $hname > $cland_root_dir/etc/host.list
     cat > $cland_root_dir/deploy/hosts/hosts <<EOF
 [hyper]
@@ -105,6 +104,9 @@ $hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key
 
 [database]
 $hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key
+
+[imgrepo]
+$hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key
 EOF
 }
 
@@ -116,5 +118,5 @@ diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 
 gen_hosts
 cd $cland_root_dir/deploy
-ansible-playbook cloudland.yml --tags be_pkg,be_srv,fe_srv
+ansible-playbook cloudland.yml --tags be_pkg,be_srv,fe_srv,imgrepo --extra-vars "network_device=$NET_DEV"
 inst_web

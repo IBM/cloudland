@@ -1,0 +1,25 @@
+- name: install nginx
+  yum:
+    name: ['nginx']
+  tags: [nginx]
+
+- name: nginx config
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+  tags: [nginx]
+
+- name: start nginx service
+  systemd:
+    name: nginx
+    enabled: yes
+    daemon_reload: yes
+    state: restarted
+  tags: [nginx]
+
+- name: get cirros image
+  get_url:
+    url: http://download.cirros-cloud.net/0.4.0/cirros-0.4.0-x86_64-disk.img
+    dest: /opt/cloudland/cache/image/cirros.qcow2
+    owner: centos
+  tags: [cirros]

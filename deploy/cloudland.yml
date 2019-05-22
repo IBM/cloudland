@@ -21,3 +21,9 @@
   hosts: database
   roles:
     - {role: database, tags: [database]}
+
+# deploy image repository
+- name: install image repo
+  hosts: imgrepo
+  roles:
+    - {role: imgrepo, tags: [imgrepo]}

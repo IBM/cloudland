@@ -1,0 +1,15 @@
+# -*- mode: sh -*-
+cloud_no=0
+cloud_domain=hypercube.bluecat.net
+image_repo=http://{{ hostvars[groups['imgrepo'][0]]['inventory_hostname'] }}
+dns_server=114.114.114.114
+external_vlan=100
+internal_vlan=110
+vxlan_mcast_addr=225.10.10.1
+vxlan_interface={{ network_device }}
+vlan_interface={{ network_device }}
+cpu_limit=10
+mem_limit=32768
+vol_limit=100
+disk_inc_limit=100
+use_lb=true
