@@ -9,7 +9,7 @@ cd $(dirname $0)
 [ $PWD != "$cland_root_dir/deploy" ] && echo "Please clone cloudland into /opt" && exit 1
 
 sudo chown -R centos.centos $cland_root_dir
-mkdir $cland_root_dir/{bin,deploy,etc,lib6,run,sci,scripts,src,web,cache} $cland_root_dir/cache/{image,instance,meta,router,volume,xml} 2>/dev/null
+mkdir $cland_root_dir/{bin,deploy,etc,lib6,log,run,sci,scripts,src,web,cache} $cland_root_dir/cache/{image,instance,meta,router,volume,xml} 2>/dev/null
 
 # Install development tools
 sudo yum install -y ansible vim git wget epel-release

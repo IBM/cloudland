@@ -1,3 +1,8 @@
+- name: install postgresql packages
+  yum: 
+    name: ['postgresql']
+    state: present
+
 - name: cland ui config file
   template:
     src: config.toml.j2
@@ -20,3 +25,8 @@
     enabled: yes
     state: restarted
   tags: [web_srv]
+
+- name: init test data
+  script: testdata.sh {{ db_passwd }} {{ hostvars[groups['database'][0]]['inventory_hostname'] }}
+  tags: [test]
+  ignore_errors: yes
