@@ -12,6 +12,7 @@ db_file=/opt/cloudland/db/resource-${SCI_CLIENT_ID}.db
 dmasq_dir=/opt/cloudland/cache/dnsmasq
 mudata_dir=/opt/cloudland/mudata
 snapshot_dir=/var/snapshot
+cland_private_key=/opt/cloudland/deploy/.ssh/cland.key
 db_lock=/opt/cloudland/run/db-${SCI_CLIENT_ID}.lock
 export JAEGER_SERVICE_NAME="SCI-Backend"
 span=$(basename $0 .sh)

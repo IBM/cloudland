@@ -72,6 +72,7 @@ function inst_cland()
 {
     cd $cland_root_dir/src
     source $cland_root_dir/grpc/activate.sh
+    make clean
     make
     make install
 }
