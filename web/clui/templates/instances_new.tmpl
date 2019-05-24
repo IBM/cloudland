@@ -86,6 +86,23 @@
 						</div>
 					</div>
                     <div class="inline field">
+                        <label for="secgroups">Security Groups</label>
+						<div class="ui multiple selection dropdown">
+						  <input id="secgroups" name="secgroups" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">Security Groups</div>
+						  <div class="menu">
+							{{ if .Secgroups }}
+                            {{ range .Secgroups }}
+							<div class="item" data-value={{.ID}} data-text={{.Name}}>
+							  {{.Name}}
+							</div>
+                            {{ end }}
+                            {{ end }}
+						  </div>
+						</div>
+                    </div>
+                    <div class="inline field">
                         <label for="keys">Keys</label>
 						<div class="ui multiple selection dropdown">
 						  <input id="keys" name="keys" type="hidden">

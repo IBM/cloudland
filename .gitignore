@@ -36,7 +36,7 @@
 deploy/hosts/hosts
 web/clui/clui
 deploy/*.retry
-web/clui/conf
+web/clui/conf/config.toml
 .ssh
 *.log
 *.status
