@@ -11,17 +11,17 @@
                         <label for="name">Name</label>
                         <input id="name" name="name" autofocus required>
                     </div>
-                    <div class="required inline field">
+                    <div class="inline field">
                         <label for="isdefault">IsDefault</label>
 						<div class="ui selection dropdown">
 						  <input id="isdefault" name="isdefault" type="hidden">
 						  <i class="dropdown icon"></i>
-						  <div class="default text">IsDefault</div>
+						  <div data-value="false" class="default text">false</div>
 						  <div class="menu">
-							<div class="item" data-value=true data-text=true>
+							<div class="item" data-value="true" data-text="true">
 							  true
 							</div>
-							<div class="item" data-value=false data-text=false>
+							<div class="item" data-value="false" data-text="false">
 							  false
 							</div>
 						  </div>

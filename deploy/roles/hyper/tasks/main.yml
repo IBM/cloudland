@@ -4,49 +4,25 @@
     state: present
   tags: [be_pkg]
 
-- name: git clone cloudland
-  git:
-    repo: git@github.com:gabecloud/cloudland.git
-    dest: /opt/cloudland
-    accept_hostkey: yes
-    key_file: /home/centos/.ssh/id_rsa
-  tags: [git]
-
-- name: create directores
+- name: creates cloudland directory
   file:
-    path: "{{ item }}"
+    path: /opt/cloudland
     state: directory
-    owner: centos
-    group: centos
-    recurse: yes
-  with_items:
-    - '/opt/cloudland'
-    - '/opt/cloudland/bin'
-    - '/opt/cloudland/cache'
-    - '/opt/cloudland/db'
-    - '/opt/cloudland/lib64'
-    - '/opt/cloudland/log'
-    - '/opt/cloudland/run'
-    - '/opt/cloudland/cache/instance'
-    - '/opt/cloudland/cache/volume'
-    - '/opt/cloudland/cache/meta'
-    - '/opt/cloudland/cache/router'
-    - '/opt/cloudland/cache/xml'
-    - '/opt/cloudland/cache/image'
-  tags: [be_dir]
+  tags: [sync]
 
-- name: copy cloudland and sci binaries
+- name: synchronize cloudland
+  synchronize:
+    src: /opt/cloudland
+    dest: /opt
+    rsync_opts: "--exclude=cache,--exclude=log"
+  tags: [sync]
+
+- name: copy sci binaries
   copy: 
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    owner: "{{ item.owner }}"
-    group: "{{ item.owner }}"
+    src: /opt/sci
+    dest: /opt
     mode: preserve
-  with_items:
-    - {src: '/opt/cloudland/lib64', dest: '/opt/cloudland', owner: 'centos'}
-    - {src: '/opt/cloudland/bin', dest: '/opt/cloudland', owner: 'centos'}
-    - {src: '/opt/sci', dest: '/opt', owner: 'root'}
-  tags: [be_bin]
+  tags: [sci]
 
 - name: copy service file
   copy: 
@@ -68,13 +44,14 @@
     - {src: 'cloudrc.local.j2', dest: '/opt/cloudland/scripts/cloudrc.local', owner: 'centos'}
   tags: [be_srv]
  
-- name: start cloudland services
+- name: start cloudlet services
   systemd: 
     name: "{{ item }}"
     enabled: yes
     daemon_reload: yes
     state: restarted
   with_items:
+    - 'libvirtd'
     - 'scid'
     - 'cloudlet'
   tags: [be_srv]

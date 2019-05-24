@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package routes
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -27,7 +28,7 @@ type SecgroupView struct{}
 
 func (a *SecgroupAdmin) Create(name string, isDefault bool) (secgroup *model.SecurityGroup, err error) {
 	db := DB()
-	secgroup = &model.SecurityGroup{Name: name}
+	secgroup = &model.SecurityGroup{Name: name, IsDefault: isDefault}
 	err = db.Create(secgroup).Error
 	if err != nil {
 		log.Println("DB failed to create security group, %v", err)
@@ -46,9 +47,15 @@ func (a *SecgroupAdmin) Delete(id int64) (err error) {
 			db.Rollback()
 		}
 	}()
-	err = db.Model(&model.SecurityRule{}).Delete("secgroup = ?", id).Error
+	count := 0
+	err = db.Model(&model.SecurityRule{}).Where("secgroup = ?", id).Count(&count).Error
 	if err != nil {
 		log.Println("DB failed to delete security rules, %v", err)
+		return
+	}
+	if count > 0 {
+		log.Println("Security group has rules")
+		err = fmt.Errorf("Security group has rules")
 		return
 	}
 	if err = db.Delete(&model.SecurityGroup{Model: model.Model{ID: id}}).Error; err != nil {
@@ -135,8 +142,10 @@ func (v *SecgroupView) New(c *macaron.Context, store session.Store) {
 func (v *SecgroupView) Create(c *macaron.Context, store session.Store) {
 	redirectTo := "../secgroups"
 	name := c.Query("name")
-	isdefStr := c.Query("is_default")
-	isDef := false
+	isdefStr := c.Query("isdefault")
+	if isdefStr == "" {
+		isdefStr = "false"
+	}
 	isDef, err := strconv.ParseBool(isdefStr)
 	if err != nil {
 		log.Println("Invalid default value, %v", err)
@@ -144,6 +153,7 @@ func (v *SecgroupView) Create(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
+
 	_, err = secgroupAdmin.Create(name, isDef)
 	if err != nil {
 		log.Println("Failed to create security group, %v", err)

@@ -338,6 +338,12 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	secgroups := []*model.SecurityGroup{}
+	if err := db.Find(&secgroups).Error; err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+		return
+	}
 	keys := []*model.Key{}
 	if err := db.Find(&keys).Error; err != nil {
 		c.Data["ErrorMsg"] = err.Error()
@@ -347,6 +353,7 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 	c.Data["Images"] = images
 	c.Data["Flavors"] = flavors
 	c.Data["Subnets"] = subnets
+	c.Data["Secgroups"] = secgroups
 	c.Data["Keys"] = keys
 	c.HTML(200, "instances_new")
 }

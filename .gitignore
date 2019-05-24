@@ -33,9 +33,10 @@
 *.sum
 
 #Others
-/deploy/hosts/hosts
-/web/clui/clui
-*.retry
+deploy/hosts/hosts
+web/clui/clui
+deploy/*.retry
+web/clui/conf/config.toml
 .ssh
 *.log
 *.status
@@ -62,18 +63,4 @@ sci/Makefile
 /sci/libtool
 /sci/scia/scia64
 /sci/stamp-h1
-/sci/usecase/dsh/ddsh_fe64
-/sci/usecase/dsh/dsh_be64
-/sci/usecase/dsh/dsh_fe64
-/sci/usecase/dsh/edsh_fe64
-/sci/usecase/dsh/gdsh_fe64
-/sci/usecase/dsh_2/dsh_be64
-/sci/usecase/dsh_2/dsh_fe64
-/sci/usecase/dsh_2/edsh_fe64
-/sci/usecase/dsh_2/gdsh_fe64
-/sci/usecase/dsh_2/sdsh_fe64
-/sci/usecase/dsh_filter/dsh_be64
-/sci/usecase/dsh_filter/dsh_fe64
-/sci/usecase/dsh_filter/dsh_tests64
-/sci/usecase/dsh_filter2/dsh_be64
-/sci/usecase/dsh_filter2/dsh_fe64
+/sci/usecase

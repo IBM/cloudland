@@ -1,17 +1,17 @@
 [api]
-listen = "inst-dev:4000"
-endpoint = "inst-dev:4000"
+listen = "hypercube:4000"
+endpoint = "hypercube:4000"
 
 [grpc]
-listen = "inst-dev:5000"
-endpoint = "inst-dev:5000"
+listen = "hypercube:5000"
+endpoint = "hypercube:5000"
 
 [sci]
-endpoint = "inst-dev:50051"
+endpoint = "cloudland:50051"
 
 [db]
 type = "postgres"
-uri = "host=inst-dev port=5432 user=postgres password=passw0rd dbname=hypercube sslmode=disable"
+uri = "host=postgres port=5432 user=postgres password=passw0rd dbname=hypercube sslmode=disable"
 debug = true
 open = 50
 lifetime = 30
