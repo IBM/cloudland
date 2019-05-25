@@ -1,6 +1,6 @@
 - name: install packages
   yum: 
-    name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'vconfig', 'git']
+    name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'vconfig', 'git', 'NetworkManager']
     state: present
   tags: [be_pkg]
 
@@ -52,6 +52,7 @@
     state: restarted
   with_items:
     - 'libvirtd'
+    - 'NetworkManager'
     - 'scid'
     - 'cloudlet'
   tags: [be_srv]

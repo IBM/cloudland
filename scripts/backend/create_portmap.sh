@@ -12,7 +12,7 @@ rport=$4
 
 router_dir=/opt/cloudland/cache/router/$router
 notify_sh=$router_dir/notify.sh
-ssh_cmd="ip netns exec $router ssh -i $cland_private_key -f -N -T -o StrictHostKeyChecking=no -R $rport:$inst_ip:$inst_port root@$portmap_remote_ip"
+ssh_cmd="ip netns exec $router ssh -i $cland_private_key -f -N -T -o StrictHostKeyChecking=no -R $rport:$inst_ip:$inst_port centos@$portmap_remote_ip"
 sed -i "\#$ssh_cmd#d" $notify_sh
 sed -i "/\"MASTER\")/a $ssh_cmd" $notify_sh
 eval $ssh_cmd

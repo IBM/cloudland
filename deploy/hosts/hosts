@@ -1,15 +1,14 @@
 [hyper]
-inst-test ansible_host=192.168.1.134 ansible_ssh_private_key_file=/opt/cloudland/deploy/.ssh/cland.key client_id=0
-inst-dev ansible_host=192.168.1.128 ansible_ssh_private_key_file=/opt/cloudland/deploy/.ssh/cland.key client_id=1
+cath-inst ansible_host=192.168.10.13 ansible_ssh_private_key_file=/opt/cloudland/deploy/.ssh/cland.key client_id=0
 
 [cland]
-inst-test ansible_host=192.168.1.134 ansible_ssh_private_key_file=/opt/cloudland/deploy/.ssh/cland.key
+cath-inst ansible_host=192.168.10.13 ansible_ssh_private_key_file=/opt/cloudland/deploy/.ssh/cland.key
 
 [web]
-inst-test ansible_host=192.168.1.134 ansible_ssh_private_key_file=/opt/cloudland/deploy/.ssh/cland.key
+cath-inst ansible_host=192.168.10.13 ansible_ssh_private_key_file=/opt/cloudland/deploy/.ssh/cland.key
 
 [database]
-inst-test ansible_host=192.168.1.134 ansible_ssh_private_key_file=/opt/cloudland/deploy/.ssh/cland.key
+cath-inst ansible_host=192.168.10.13 ansible_ssh_private_key_file=/opt/cloudland/deploy/.ssh/cland.key
 
 [imgrepo]
-inst-test ansible_host=192.168.1.134 ansible_ssh_private_key_file=/opt/cloudland/deploy/.ssh/cland.key
+cath-inst ansible_host=192.168.10.13 ansible_ssh_private_key_file=/opt/cloudland/deploy/.ssh/cland.key

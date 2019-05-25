@@ -111,6 +111,17 @@ $hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key
 EOF
 }
 
+function demo_router()
+{
+    sudo brctl addbr br100
+    sudo brctl addbr br110
+    sudo ifconfig br100 192.168.1.1/24 up
+    sudo ifconfig br110 172.16.20.1/24 up
+    sudo grep -q "^GatewayPorts yes" /etc/ssh/sshd_config
+    [ $? -ne 0 ] && sudo bash -c "echo 'GatewayPorts yes' >> /etc/ssh/sshd_config"
+    sudo systemctl restart sshd
+}
+
 diff /opt/sci/lib64/libsci.so.0.0.0 $cland_root_dir/sci/libsci/.libs/libsci.so.0.0.0
 [ $? -ne 0 ] && inst_sci
 [ ! -f "$cland_root_dir/grpc/activate.sh" ] && inst_grpc
@@ -119,5 +130,6 @@ diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 
 gen_hosts
 cd $cland_root_dir/deploy
-ansible-playbook cloudland.yml --tags be_pkg,be_srv,fe_srv,imgrepo --extra-vars "network_device=$NET_DEV"
+ansible-playbook cloudland.yml --tags be_pkg,be_srv,fe_srv,imgrepo --extra-vars "network_device=$NET_DEV cland_portmap_ip=$myip"
 inst_web
+demo_router
