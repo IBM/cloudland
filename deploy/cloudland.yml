@@ -1,29 +1,38 @@
+- name: base
+  hosts: all
+  roles:
+    - {role: base, become: yes, tags: [base]}
+
 # deploy hypers
 - name: install hyper
   hosts: hyper
+  become_user: root
   roles:
-    - {role: hyper, tags: [hyper]}
+    - {role: hyper, become: yes, tags: [hyper]}
 
 # deploy root node
 - name: install cland
   hosts: cland
   roles:
-    - {role: cland, tags: [cland]}
+    - {role: cland, become: yes, tags: [cland]}
 
 # deploy web
 - name: install web
   hosts: web
+  become_user: root
   roles:
-    - {role: web, tags: [web]}
+    - {role: web, become: yes, tags: [web]}
 
 # deploy database
 - name: install database
   hosts: database
+  become_user: root
   roles:
-    - {role: database, tags: [database]}
+    - {role: database, become: yes, tags: [database]}
 
 # deploy image repository
 - name: install image repo
   hosts: imgrepo
+  become_user: root
   roles:
-    - {role: imgrepo, tags: [imgrepo]}
+    - {role: imgrepo, become: yes, tags: [imgrepo]}

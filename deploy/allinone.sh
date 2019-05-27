@@ -89,7 +89,6 @@ function gen_hosts()
     fi
 
     myip=$(ifconfig $NET_DEV | grep 'inet ' | awk '{print $2}')
-    sudo bash -c "sed -i '/$myip $hname/d' /etc/hosts"
     hname=$(hostname -s)
     sudo bash -c "echo '$myip $hname' >> /etc/hosts"
     echo $hname > $cland_root_dir/etc/host.list
@@ -130,6 +129,6 @@ diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 
 gen_hosts
 cd $cland_root_dir/deploy
-ansible-playbook cloudland.yml --tags be_pkg,be_srv,fe_srv,imgrepo --extra-vars "network_device=$NET_DEV cland_portmap_ip=$myip"
+ansible-playbook cloudland.yml --tags hosts,ntp,be_pkg,be_srv,fe_srv,imgrepo --extra-vars "network_device=$NET_DEV cland_portmap_ip=$myip"
 inst_web
 demo_router

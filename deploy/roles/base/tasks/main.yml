@@ -34,11 +34,9 @@
 
 - name: install repo package
   yum: 
-    name: "{{ item }}"
+    name: epel-release
     state: latest
-  with_items:
-    - epel-release
-    - centos-release-gluster41
+  tags: [epel]
 
 - name: install ntp service
   yum: name=ntp state=latest

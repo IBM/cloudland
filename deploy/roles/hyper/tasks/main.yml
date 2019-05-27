@@ -6,15 +6,22 @@
 
 - name: creates cloudland directory
   file:
-    path: /opt/cloudland
+    path: "{{ item }}"
     state: directory
+    owner: centos
+  with_items:
+    - /opt/cloudland
+    - /usr/local
   tags: [sync]
 
-- name: synchronize cloudland
+- name: synchronize cloudland and grpc
   synchronize:
-    src: /opt/cloudland
-    dest: /opt
-    rsync_opts: "--exclude=cache,--exclude=log"
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    rsync_opts: "--exclude=cache,--exclude=log,--exclude=db"
+  with_items:
+    - {src: '/opt/cloudland', dest: '/opt', owner: 'centos'}
+    - {src: '/usr/local', dest: '/usr', owner: 'centos'}
   tags: [sync]
 
 - name: copy sci binaries

@@ -32,7 +32,7 @@
   template:
     src: host.list.j2
     dest: /opt/cloudland/etc/host.list
-  tags: [hlist]
+  tags: [fe_srv]
 
 - name: copy service file
   copy: 
