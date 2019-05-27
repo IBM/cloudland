@@ -92,6 +92,7 @@ function gen_hosts()
     hname=$(hostname -s)
     sudo bash -c "echo '$myip $hname' >> /etc/hosts"
     echo $hname > $cland_root_dir/etc/host.list
+    mkdir -p $cland_root_dir/deploy/hosts
     cat > $cland_root_dir/deploy/hosts/hosts <<EOF
 [hyper]
 $hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key client_id=0
@@ -129,6 +130,6 @@ diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 
 gen_hosts
 cd $cland_root_dir/deploy
-ansible-playbook cloudland.yml --tags hosts,ntp,be_pkg,be_srv,fe_srv,imgrepo --extra-vars "network_device=$NET_DEV cland_portmap_ip=$myip"
+ansible-playbook cloudland.yml --tags hosts,epel,ntp,be_pkg,be_srv,fe_srv,imgrepo --extra-vars "network_device=$NET_DEV"
 inst_web
 demo_router

@@ -3,6 +3,13 @@
     name: ['postgresql']
     state: present
 
+- name: create conf directory
+  file:
+    path: /opt/cloudland/web/clui/conf
+    state: directory
+    owner: centos
+    group: centos
+
 - name: cland ui config file
   template:
     src: config.toml.j2
