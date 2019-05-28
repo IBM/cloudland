@@ -33,12 +33,12 @@
 *.sum
 
 #Others
-deploy/hosts/hosts
-web/clui/clui
-deploy/*.retry
-web/clui/conf/config.toml
+/deploy/hosts/hosts
+/web/clui/clui
+/deploy/*.retry
+/web/clui/conf/config.toml
 .ssh
-*.log
+/deploy/.ssh
 *.status
 /bin
 /grpc
@@ -58,7 +58,8 @@ cloudland.sum
 cloudland.tgz
 ipcalc
 cloudrc.local
-sci/Makefile
+/sci/Makefile
+/sci/*.log
 /sci/config.h
 /sci/libtool
 /sci/scia/scia64
