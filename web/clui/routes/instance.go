@@ -114,7 +114,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			return
 		}
 		control := fmt.Sprintf("inter= cpu=%d memory=%d disk=%d network=%d", 0, 0, 0, 0)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh %d %s %s %d %d %d <<EOF\n%s\nEOF", instance.ID, image.Name, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, metadata)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh %d image-%d.%s %s %d %d %d <<EOF\n%s\nEOF", instance.ID, image.ID, image.Format, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, metadata)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Launch vm command execution failed, %v", err)

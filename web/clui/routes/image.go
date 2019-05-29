@@ -7,6 +7,9 @@ SPDX-License-Identifier: Apache-2.0
 package routes
 
 import (
+	"context"
+	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -24,14 +27,24 @@ var (
 type ImageAdmin struct{}
 type ImageView struct{}
 
-func (a *ImageAdmin) Create(name, oscode, format, architecture string) (image *model.Image, err error) {
+func (a *ImageAdmin) Create(ctx context.Context, name, url, oscode, format, architecture string) (image *model.Image, err error) {
 	db := DB()
-	image = &model.Image{Name: name, OSCode: oscode, Format: format, Architecture: architecture}
+	image = &model.Image{Name: name, OSCode: oscode, Format: format, Status: "creating", Architecture: architecture}
 	err = db.Create(image).Error
+	if err != nil {
+		log.Println("DB create image failed, %v", err)
+	}
+	control := "inter="
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_image.sh %d %s", image.ID, url)
+	err = hyperExecute(ctx, control, command)
+	if err != nil {
+		log.Println("Create image command execution failed", err)
+		return
+	}
 	return
 }
 
-func (a *ImageAdmin) Delete(id int64) (err error) {
+func (a *ImageAdmin) Delete(ctx context.Context, id int64) (err error) {
 	db := DB()
 	db = db.Begin()
 	defer func() {
@@ -41,6 +54,20 @@ func (a *ImageAdmin) Delete(id int64) (err error) {
 			db.Rollback()
 		}
 	}()
+	image := &model.Image{Model: model.Model{ID: id}}
+	if err = db.Take(image).Error; err != nil {
+		log.Println("Image query failed, %v", err)
+		return
+	}
+	if image.Format == "available" {
+		control := "inter="
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_image.sh '%d', '%s'", image.ID, image.Format)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Clear image command execution failed", err)
+			return
+		}
+	}
 	if err = db.Delete(&model.Image{Model: model.Model{ID: id}}).Error; err != nil {
 		return
 	}
@@ -100,7 +127,7 @@ func (v *ImageView) Delete(c *macaron.Context, store session.Store) (err error) 
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	err = imageAdmin.Delete(int64(imageID))
+	err = imageAdmin.Delete(c.Req.Context(), int64(imageID))
 	if err != nil {
 		code := http.StatusInternalServerError
 		c.Error(code, http.StatusText(code))
@@ -119,10 +146,11 @@ func (v *ImageView) New(c *macaron.Context, store session.Store) {
 func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	redirectTo := "../images"
 	name := c.Query("name")
+	url := c.Query("url")
 	oscode := c.Query("oscode")
 	format := c.Query("format")
 	architecture := c.Query("architecture")
-	_, err := imageAdmin.Create(name, oscode, format, architecture)
+	_, err := imageAdmin.Create(c.Req.Context(), name, url, oscode, format, architecture)
 	if err != nil {
 		c.HTML(500, "500")
 	}
