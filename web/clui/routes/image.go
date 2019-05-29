@@ -34,7 +34,7 @@ func (a *ImageAdmin) Create(ctx context.Context, name, url, oscode, format, arch
 	if err != nil {
 		log.Println("DB create image failed, %v", err)
 	}
-	control := "inter="
+	control := "inter=0"
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_image.sh %d %s", image.ID, url)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {

@@ -1,7 +1,7 @@
 # -*- mode: sh -*-
 cloud_no=0
 cloud_domain=hypercube.bluecat.net
-image_repo=http://{{ hostvars[groups['imgrepo'][0]]['inventory_hostname'] }}
+image_repo=http://{{ hostvars[groups['hyper'][0]]['inventory_hostname'] }}
 dns_server=114.114.114.114
 external_vlan=100
 internal_vlan=110

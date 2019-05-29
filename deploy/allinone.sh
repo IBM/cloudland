@@ -105,9 +105,6 @@ $hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key
 
 [database]
 $hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key
-
-[imgrepo]
-$hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key
 EOF
 }
 
