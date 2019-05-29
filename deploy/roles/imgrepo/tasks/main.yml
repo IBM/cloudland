@@ -20,6 +20,6 @@
 - name: get cirros image
   get_url:
     url: http://download.cirros-cloud.net/0.4.0/cirros-0.4.0-x86_64-disk.img
-    dest: /opt/cloudland/cache/image/cirros.qcow2
+    dest: /opt/cloudland/cache/image/image-1.qcow2
     owner: centos
   tags: [cirros]
