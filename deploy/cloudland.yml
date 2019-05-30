@@ -9,6 +9,7 @@
   become_user: root
   roles:
     - {role: hyper, become: yes, tags: [hyper]}
+    - {role: imgrepo, become: yes, tags: [imgrepo], when client_id == 0}
 
 # deploy root node
 - name: install cland
@@ -29,10 +30,3 @@
   become_user: root
   roles:
     - {role: database, become: yes, tags: [database]}
-
-# deploy image repository
-- name: install image repo
-  hosts: imgrepo
-  become_user: root
-  roles:
-    - {role: imgrepo, become: yes, tags: [imgrepo]}

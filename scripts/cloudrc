@@ -5,6 +5,7 @@ cache_dir=/opt/cloudland/cache
 cache_tmp_dir=$cache_dir/tmp
 volume_dir=/opt/cloudland/cache/volume
 image_dir=$cache_dir/instance
+image_cache=$cache_dir/image
 xml_dir=/opt/cloudland/cache/xml
 template_dir=/opt/cloudland/scripts/xml
 container_dir=/var/lib/lxd/containers

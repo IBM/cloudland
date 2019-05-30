@@ -1,7 +1,8 @@
 #!/bin/bash
 
-DB_PASSWD=passw0rd
+ADMIN_PASSWD=passw0rd
 NET_DEV=eth0
+DB_PASSWD=d6Passwd
 
 cland_root_dir=/opt/cloudland
 cd $(dirname $0)
@@ -54,7 +55,7 @@ EOF
 function inst_web()
 {
     cd $cland_root_dir/deploy
-    ansible-playbook cloudland.yml --tags database --extra-vars "db_passwd=$DB_PASSWD"
+    ansible-playbook cloudland.yml --tags database --extra-vars "db_passwd=$DB_PASSWD,admin_passwd=$ADMIN_PASSWD"
     sudo yum -y install golang 
     sudo chown -R centos.centos /usr/local
     sed -i '/export GO/d' ~/.bashrc
@@ -92,6 +93,7 @@ function gen_hosts()
     hname=$(hostname -s)
     sudo bash -c "echo '$myip $hname' >> /etc/hosts"
     echo $hname > $cland_root_dir/etc/host.list
+    mkdir -p $cland_root_dir/deploy/hosts
     cat > $cland_root_dir/deploy/hosts/hosts <<EOF
 [hyper]
 $hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key client_id=0
@@ -104,18 +106,15 @@ $hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key
 
 [database]
 $hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key
-
-[imgrepo]
-$hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key
 EOF
 }
 
 function demo_router()
 {
-    sudo brctl addbr br100
-    sudo brctl addbr br110
-    sudo ifconfig br100 192.168.1.1/24 up
-    sudo ifconfig br110 172.16.20.1/24 up
+    sudo /opt/cloudland/scripts/backend/create_link.sh 5000
+    sudo /opt/cloudland/scripts/backend/create_link.sh 5010
+    sudo ifconfig br5000 192.168.1.1/24 up
+    sudo ifconfig br5010 172.16.20.1/24 up
     sudo grep -q "^GatewayPorts yes" /etc/ssh/sshd_config
     [ $? -ne 0 ] && sudo bash -c "echo 'GatewayPorts yes' >> /etc/ssh/sshd_config"
     sudo systemctl restart sshd
@@ -129,6 +128,6 @@ diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 
 gen_hosts
 cd $cland_root_dir/deploy
-ansible-playbook cloudland.yml --tags hosts,ntp,be_pkg,be_srv,fe_srv,imgrepo --extra-vars "network_device=$NET_DEV cland_portmap_ip=$myip"
+ansible-playbook cloudland.yml --tags hosts,epel,ntp,be_pkg,be_srv,fe_srv,imgrepo --extra-vars "network_device=$NET_DEV"
 inst_web
 demo_router

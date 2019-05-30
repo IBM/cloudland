@@ -24,15 +24,15 @@ if [ ! -f "$vm_img" ]; then
     vm_img=$image_dir/$vm_ID.disk
     vm_meta=$cache_dir/meta/$vm_ID.iso
     is_vol="false"
-    if [ ! -f "$cache_dir/$img_name" ]; then
-        wget -q $image_repo/$img_name -O $cache_dir/$img_name
+    if [ ! -f "$image_cache/$img_name" ]; then
+        wget -q $image_repo/$img_name -O $image_cache/$img_name
     fi
-    if [ ! -f "$cache_dir/$img_name" ]; then
+    if [ ! -f "$image_cache/$img_name" ]; then
         echo "Image $img_name downlaod failed!"
         echo "|:-COMMAND-:| `basename $0` '$vm_ID' '$vm_stat' '$SCI_CLIENT_ID'"
         exit -1
     fi
-    cmd="qemu-img convert -f qcow2 -O raw $cache_dir/$img_name $vm_img"
+    cmd="qemu-img convert -f qcow2 -O raw $image_cache/$img_name $vm_img"
     result=$(eval "$cmd")
     sidecar span log $span "Internal: $cmd, result: $result"
     qemu-img resize -q $vm_img "${disk_inc}G" &> /dev/null
