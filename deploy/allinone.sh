@@ -55,7 +55,7 @@ EOF
 function inst_web()
 {
     cd $cland_root_dir/deploy
-    ansible-playbook cloudland.yml --tags database --extra-vars "db_passwd=$DB_PASSW"
+    ansible-playbook cloudland.yml --tags database --extra-vars "db_passwd=$DB_PASSWD"
     sudo yum -y install golang 
     sudo chown -R centos.centos /usr/local
     sed -i '/export GO/d' ~/.bashrc
@@ -113,8 +113,10 @@ function demo_router()
 {
     sudo /opt/cloudland/scripts/backend/create_link.sh 5000
     sudo /opt/cloudland/scripts/backend/create_link.sh 5010
-    sudo ifconfig br5000 192.168.1.1/24 up
-    sudo ifconfig br5010 172.16.20.1/24 up
+    sudo nmcli connection modify br5000 ipv4.addresses 192.168.1.1/24
+    sudo nmcli connection modify br5010 ipv4.addresses 172.16.20.1/24
+    sudo nmcli connection up br5000
+    sudo nmcli connection up br5010
     sudo grep -q "^GatewayPorts yes" /etc/ssh/sshd_config
     [ $? -ne 0 ] && sudo bash -c "echo 'GatewayPorts yes' >> /etc/ssh/sshd_config"
     sudo systemctl restart sshd
