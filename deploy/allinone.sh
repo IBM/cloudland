@@ -55,7 +55,7 @@ EOF
 function inst_web()
 {
     cd $cland_root_dir/deploy
-    ansible-playbook cloudland.yml --tags database --extra-vars "db_passwd=$DB_PASSWD,admin_passwd=$ADMIN_PASSWD"
+    ansible-playbook cloudland.yml --tags database --extra-vars "db_passwd=$DB_PASSW"
     sudo yum -y install golang 
     sudo chown -R centos.centos /usr/local
     sed -i '/export GO/d' ~/.bashrc
@@ -65,7 +65,7 @@ function inst_web()
     cd $cland_root_dir/web/clui
     go build
     cd $cland_root_dir/deploy
-    ansible-playbook cloudland.yml --tags web --extra-vars "db_passwd=$DB_PASSWD"
+    ansible-playbook cloudland.yml --tags web --extra-vars "db_passwd=$DB_PASSWD" --extra-vars "admin_passwd=$ADMIN_PASSWD"
 }
 
 # Install cloudland
