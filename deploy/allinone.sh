@@ -13,7 +13,7 @@ sudo chown -R centos.centos $cland_root_dir
 mkdir $cland_root_dir/{bin,deploy,etc,lib6,log,run,sci,scripts,src,web,cache} $cland_root_dir/cache/{image,instance,meta,router,volume,xml} 2>/dev/null
 
 # Install development tools
-sudo yum install -y ansible vim git wget epel-release
+sudo yum install -y ansible vim git git-lfs wget epel-release
 sudo yum groupinstall -y "Development Tools"
 
 # Install SCI
@@ -28,27 +28,9 @@ function inst_sci()
 # Install GRPC
 function inst_grpc() {
     cd $cland_root_dir
-    git clone https://github.com/grpc/grpc.git
-    cd grpc
-    git submodule update --init
-    cd third_party/protobuf/
-    ./autogen.sh
-    ./configure
-    make
-    sudo make install
+    sudo tar -zxf grpc.tgz -C /
     sudo bash -c 'echo /usr/local/lib > /etc/ld.so.conf.d/protobuf.conf'
     sudo ldconfig
-    cd ../../
-    make
-    sudo make install
-    DIR=$PWD
-    cat > activate.sh <<EOF
-export PATH=$PATH:/usr/local/bin:$DIR/bins/opt:$DIR/bins/opt/protobuf
-export CPATH=$DIR/include:$DIR/third_party/protobuf/src
-export LIBRARY_PATH=$DIR/libs/opt:$DIR/libs/opt/protobuf
-export PKG_CONFIG_PATH=$DIR/libs/opt/pkgconfig:$DIR/third_party/protobuf
-export LD_LIBRARY_PATH=$DIR/libs/opt
-EOF
 }
 
 # Install web
@@ -73,6 +55,7 @@ function inst_cland()
 {
     cd $cland_root_dir/src
     source $cland_root_dir/grpc/activate.sh
+    export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
     make clean
     make
     make install
