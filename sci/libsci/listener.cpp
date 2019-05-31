@@ -258,7 +258,6 @@ void Listener::run()
                 clearStream(stream);
                 continue;
             }
-            gCtrlBlock->clearRecover(hndl);
         } catch (Exception &e) {
             log_error("Listener: exception %s", e.getErrMsg());
             break;

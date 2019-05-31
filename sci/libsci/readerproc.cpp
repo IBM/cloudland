@@ -158,7 +158,6 @@ int ReaderProcessor::recover()
         log_debug("reader%d: recover error: freeze_i failed for the stream %p, recoverID = %d", handle, st, recoverID);
         return -1;
     }
-    gCtrlBlock->clearRecover(handle);
     log_debug("reader%d: finish freeze for the stream %p, recoverID = %d", handle, st, recoverID);
     recoverID = gNotifier->allocate();
     log_debug("reader%d: begin to notify notifyID %d", handle, notifyID);
@@ -198,7 +197,7 @@ void ReaderProcessor::setInStream(Stream * stream)
         log_debug("reader%d: finish freeze the notifyID %d", handle, notifyID);
         notifyID = gNotifier->allocate();
     }
-
+    gCtrlBlock->clearRecover(handle);
 }
 
 void ReaderProcessor::setOutQueue(MessageQueue * queue)

@@ -445,17 +445,8 @@ int CtrlBlock::getRecoverChildren(int *children)
     RECOVER_MAP::iterator it;
 
     lock();
-    for (it = recoverChildren.begin(); it != recoverChildren.end(); ) {
-        int hndl = it->first;
-        RoutingList *rtList = findAgent(hndl)->getRoutingList();
-        bool rt = checkRouting(hndl);
-        if (rt == false) {
-            children[i] = hndl;
-            ++it;
-        } else {
-            recoverChildren.erase(it++);
-        }
-        i++;
+    for (it = recoverChildren.begin(); it != recoverChildren.end(); it++) {
+        children[i] = it->first;
     }
     unlock();
 
@@ -476,19 +467,10 @@ int CtrlBlock::getRecoverChildren(vector<int> & children)
     }
 
     lock();
-    for (it = recoverChildren.begin(); it != recoverChildren.end();) {
-        int hndl = it->first;
-        RoutingList *rtList = findAgent(hndl)->getRoutingList();
-        bool rt = checkRouting(hndl);
+    for (it = recoverChildren.begin(); it != recoverChildren.end(); it++) {
         it->second++;
-
-        if (rt == true) {
-            recoverChildren.erase(it++);
-        } else {
-            if (it->second > times) {
-                children.push_back(hndl);
-            }
-            ++it;
+        if (it->second > times) {
+            children.push_back(it->first);
         }
     }
     unlock();
