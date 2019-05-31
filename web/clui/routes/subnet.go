@@ -84,6 +84,15 @@ func (a *SubnetAdmin) Create(name, vlan, network, netmask, gateway, start, end, 
 		log.Println("CIDR parsing failed, %v", err)
 		return
 	}
+	addrCount := cidr.AddressCount(ipNet)
+	if addrCount < 5 || addrCount > 1000 {
+		err = fmt.Errorf("Network/mask must have more than 5 but less than 1000 addresses")
+		log.Println("Invalid address count", err)
+		return
+	}
+	if rtype == "" {
+		rtype = "internal"
+	}
 	first, last := cidr.AddressRange(ipNet)
 	preSize, _ := inNet.Mask.Size()
 	if gateway == "" {
@@ -235,6 +244,7 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 	_, err := subnetAdmin.Create(name, vlan, network, netmask, gateway, start, end, rtype)
 	if err != nil {
 		log.Println("Create subnet failed, %v", err)
+		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 	}
 	c.Redirect(redirectTo)

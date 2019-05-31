@@ -27,9 +27,9 @@ var (
 type ImageAdmin struct{}
 type ImageView struct{}
 
-func (a *ImageAdmin) Create(ctx context.Context, name, url, oscode, format, architecture string) (image *model.Image, err error) {
+func (a *ImageAdmin) Create(ctx context.Context, name, url, format, architecture string) (image *model.Image, err error) {
 	db := DB()
-	image = &model.Image{Name: name, OSCode: oscode, Format: format, Status: "creating", Architecture: architecture}
+	image = &model.Image{Name: name, OSCode: name, Format: format, Status: "creating", Architecture: architecture}
 	err = db.Create(image).Error
 	if err != nil {
 		log.Println("DB create image failed, %v", err)
@@ -147,10 +147,9 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	redirectTo := "../images"
 	name := c.Query("name")
 	url := c.Query("url")
-	oscode := c.Query("oscode")
 	format := c.Query("format")
 	architecture := c.Query("architecture")
-	_, err := imageAdmin.Create(c.Req.Context(), name, url, oscode, format, architecture)
+	_, err := imageAdmin.Create(c.Req.Context(), name, url, format, architecture)
 	if err != nil {
 		c.HTML(500, "500")
 	}

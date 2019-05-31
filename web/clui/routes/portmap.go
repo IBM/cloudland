@@ -45,6 +45,11 @@ func (a *PortmapAdmin) Create(ctx context.Context, instID int64, port int) (port
 		return
 	}
 	iface := instance.Interfaces[0]
+	if iface.Address.Subnet.Router == 0 {
+		err = fmt.Errorf("Portmap can not be created without a gateway")
+		log.Println("Portmap can not be created without a gateway")
+		return
+	}
 	gateway := &model.Gateway{Model: model.Model{ID: iface.Address.Subnet.Router}}
 	err = db.Model(gateway).Set("gorm:auto_preload", true).Take(gateway).Error
 	if err != nil {
@@ -210,7 +215,8 @@ func (v *PortmapView) Create(c *macaron.Context, store session.Store) {
 	_, err = portmapAdmin.Create(c.Req.Context(), int64(instID), portNo)
 	if err != nil {
 		log.Println("Failed to create port map", err)
-		c.HTML(500, err.Error())
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
 	}
 	c.Redirect(redirectTo)
 }

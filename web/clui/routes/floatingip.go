@@ -37,6 +37,11 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID int64, types []stri
 		return
 	}
 	iface := instance.Interfaces[0]
+	if iface.Address.Subnet.Router == 0 {
+		err = fmt.Errorf("Floating IP can not be created without a gateway")
+		log.Println("Floating IP can not be created without a gateway")
+		return
+	}
 	gateway := &model.Gateway{Model: model.Model{ID: iface.Address.Subnet.Router}}
 	err = db.Model(gateway).Set("gorm:auto_preload", true).Take(gateway).Error
 	if err != nil {
@@ -209,7 +214,8 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 	_, err = floatingipAdmin.Create(c.Req.Context(), int64(instID), types)
 	if err != nil {
 		log.Println("Failed to create floating ip", err)
-		c.HTML(500, err.Error())
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
 	}
 	c.Redirect(redirectTo)
 }
