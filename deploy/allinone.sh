@@ -13,7 +13,7 @@ sudo chown -R centos.centos $cland_root_dir
 mkdir $cland_root_dir/{bin,deploy,etc,lib6,log,run,sci,scripts,src,web,cache} $cland_root_dir/cache/{image,instance,meta,router,volume,xml} 2>/dev/null
 
 # Install development tools
-sudo yum install -y ansible vim git git-lfs wget epel-release
+sudo yum install -y ansible vim git wget epel-release
 sudo yum groupinstall -y "Development Tools"
 
 # Install SCI
@@ -28,7 +28,10 @@ function inst_sci()
 # Install GRPC
 function inst_grpc() {
     cd $cland_root_dir
-    sudo tar -zxf grpc.tgz -C /
+    grpc_pkg=/tmp/grpc.tar.gz
+    wget https://github.com/Catherine2019/grpcbin/raw/master/grpc.tar.gz -O $grpc_pkg
+    sudo tar -zxf $grpc_pkg -C /
+    rm -f $grpc_pkg
     sudo bash -c 'echo /usr/local/lib > /etc/ld.so.conf.d/protobuf.conf'
     sudo ldconfig
 }
@@ -54,7 +57,6 @@ function inst_web()
 function inst_cland()
 {
     cd $cland_root_dir/src
-    source $cland_root_dir/grpc/activate.sh
     export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
     make clean
     make
@@ -107,7 +109,7 @@ function demo_router()
 
 diff /opt/sci/lib64/libsci.so.0.0.0 $cland_root_dir/sci/libsci/.libs/libsci.so.0.0.0
 [ $? -ne 0 ] && inst_sci
-[ ! -f "$cland_root_dir/grpc/activate.sh" ] && inst_grpc
+[ ! -f "/usr/local/lib/pkgconfig" ] && inst_grpc
 diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 [ $? -ne 0 ] && inst_cland
 

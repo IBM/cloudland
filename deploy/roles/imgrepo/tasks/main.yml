@@ -17,9 +17,9 @@
     state: restarted
   tags: [nginx]
 
-- name: get cirros image
+- name: get centos image
   get_url:
     url: http://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2
     dest: /opt/cloudland/cache/image/image-1.qcow2
     owner: centos
-  tags: [cirros]
+  tags: [image]
