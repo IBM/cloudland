@@ -34,7 +34,7 @@
                                 {{ $Link := .Link }}
                                 {{ range .SecurityGroups }}
 		                        <tr>
-			                        <td>{{.ID}}</td>
+			                        <td><a href="{{$Link}}/{{.ID}}/secrules">{{.ID}}</a></td>
 			                        <td><a href="/{{.Name}}">{{.Name}}</a></td>
 			                        <td><a href="/{{.IsDefault}}">{{.IsDefault}}</a></td>
 			                        <td><span title="Tue, 18 Dec 2018 14:24:59 &#43;0800">{{.CreatedAt}}</span></td>

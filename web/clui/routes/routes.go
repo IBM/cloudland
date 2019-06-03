@@ -113,10 +113,10 @@ func New() (m *macaron.Macaron) {
 	m.Get("/secgroups/new", secgroupView.New)
 	m.Post("/secgroups/new", secgroupView.Create)
 	m.Delete("/secgroups/:id", secgroupView.Delete)
-	m.Get("/secrules", secruleView.List)
-	m.Get("/secrules/new", secruleView.New)
-	m.Post("/secrules/new", secruleView.Create)
-	m.Delete("/secrules/:id", secruleView.Delete)
+	m.Get("/secgroups/:sgid/secrules", secruleView.List)
+	m.Get("/secgroups/:sgid/secrules/new", secruleView.New)
+	m.Post("/secgroups/:sgid/secrules/new", secruleView.Create)
+	m.Delete("/secgroups/:sgid/secrules/:id", secruleView.Delete)
 	m.NotFound(func(c *macaron.Context) { c.HTML(404, "404") })
 	return
 }

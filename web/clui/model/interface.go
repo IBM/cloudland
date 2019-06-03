@@ -23,10 +23,12 @@ type Interface struct {
 	Instance   int64
 	Device     int64
 	FloatingIp int64
-	Address    *Address `gorm:"foreignkey:Interface"`
-	Hyper      int32    `gorm:"default:-1"`
-	PrimaryIf  bool     `gorm:"default:false"`
-	Type       string   `gorm:"type:varchar(20)"`
+	SecgroupID int64
+	Secgroup   *SecurityGroup `gorm:"foreignkey:SecgroupID"`
+	Address    *Address       `gorm:"foreignkey:Interface"`
+	Hyper      int32          `gorm:"default:-1"`
+	PrimaryIf  bool           `gorm:"default:false"`
+	Type       string         `gorm:"type:varchar(20)"`
 	Mtu        int32
 }
 

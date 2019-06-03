@@ -338,5 +338,11 @@ func (v *UserView) Create(c *macaron.Context, store session.Store) {
 		log.Println("Failed to create organization, %v", err)
 		c.HTML(500, "500")
 	}
+	sgName := username + ":default"
+	_, err = secgroupAdmin.Create(sgName, true)
+	if err != nil {
+		log.Println("Failed to create organization, %v", err)
+		c.HTML(500, "500")
+	}
 	c.Redirect(redirectTo)
 }

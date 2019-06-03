@@ -34,6 +34,26 @@ func (a *SecgroupAdmin) Create(name string, isDefault bool) (secgroup *model.Sec
 		log.Println("DB failed to create security group, %v", err)
 		return
 	}
+	_, err = secruleAdmin.Create(secgroup.ID, "0.0.0.0/0", "egress", "tcp", 1, 65535)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
+	_, err = secruleAdmin.Create(secgroup.ID, "0.0.0.0/0", "ingress", "tcp", 22, 22)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
+	_, err = secruleAdmin.Create(secgroup.ID, "0.0.0.0/0", "egress", "icmp", -1, -1)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
+	_, err = secruleAdmin.Create(secgroup.ID, "0.0.0.0/0", "ingress", "icmp", -1, -1)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
 	return
 }
 

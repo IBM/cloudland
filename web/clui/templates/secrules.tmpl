@@ -29,7 +29,6 @@
 			                        <th>Protocol</th>
 			                        <th>PortMin | Type</th>
 			                        <th>PortMax | Code</th>
-			                        <th>Created At</th>
 			                        <th>Edit</th>
                                     <th>Delete</th>
 		                        </tr>
@@ -45,7 +44,6 @@
 			                        <td><a href="/{{.Protocol}}">{{.Protocol}}</a></td>
 			                        <td><a href="/{{.PortMin}}">{{.PortMin}}</a></td>
 			                        <td><a href="/{{.PortMax}}">{{.PortMax}}</a></td>
-			                        <td><span title="Tue, 18 Dec 2018 14:24:59 &#43;0800">{{.CreatedAt}}</span></td>
 			                        <td><a href="{{$Link}}/{{.ID}}"><i class="fa fa-pencil-square-o"></i></a></td>
                                     <td><div class="ui red tiny button delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}">Delete</div></td>
 		                        </tr>
