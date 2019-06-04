@@ -1,0 +1,78 @@
+swagger: '2.0'
+basePath: /v3
+info: {title: Cloudland API, version: v3, description: Clandland API to compatible openstack API}
+paths:
+  /auth/tokens:
+    post:
+      consumes: [application/json]
+      produces: [application/json]
+      tags: [keystone]
+      description: Create a new token
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            auth:
+              type: object
+              properties:
+                identity:
+                  type: object
+                  properties:
+                    methods:
+                      type: array
+                      items: {type: string, enum: [password], example: password}
+                    password:
+                      type: object
+                      properties:
+                        user:
+                          type: object
+                          properties:
+                            name: {type: string,  pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: admin}
+                            domain:
+                              type: object
+                              properties:
+                                id: {type: string,format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
+                                name: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
+                                password: {type: string, example: adminpwd}
+      responses:
+        201:
+          description: successful operation
+          headers:
+            Vary:
+              type: string
+              description: X-Auth-Token
+              default: X-Auth-Token
+              enum:
+              - X-Auth-Token
+            Content-Length:
+              type: integer
+            X-Subject-Token:
+              type: string
+          schema:
+            type: object
+            required:
+            - token
+            properties:
+              token:
+                $ref: '#/definitions/token'
+definitions:
+  token:
+    type: object
+    properties:
+      methods:
+        type: array
+        items: {type: string, enum: [password], example: password}
+      password:
+        type: object
+        properties:
+          user:
+            type: object
+            properties:
+              id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
+              name: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
+          id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '423f19a4ac1e4f48bbb4180756e6eb6c'}
+          password_expires_at: {type: string, format: date, example: "2015-11-06T14:32:17.893797Z"}
+      audit_ids: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'ZzZwkUflQfygX7pdYDBCQQ'}
+      issued_at: {type: string, format: data, example: "2015-11-06T14:32:17.893797Z"}

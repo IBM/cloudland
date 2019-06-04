@@ -1,0 +1,175 @@
+---
+swagger: "2.0"
+info:
+  description: Clandland API to compatible openstack
+  version: v3
+  title: Authentication and token management
+basePath: /v3
+paths:
+  /auth/tokens:
+    post:
+      summary: Creates a new token.
+      description: |
+        Lists keypairs that are associated with the account.
+      operationId: getKeypair
+      produces:
+      - application/json
+      parameters:
+      - in: body
+        name: auth-body
+        required: false
+        schema:
+          $ref: '#/definitions/auth-body'
+      responses:
+        201:
+          description: successful operation
+          headers:
+            Vary:
+              type: string
+              description: X-Auth-Token
+              default: X-Auth-Token
+              enum:
+              - X-Auth-Token
+            Content-Length:
+              type: integer
+            X-Subject-Token:
+              type: string
+          schema:
+            type: object
+            required:
+            - token
+            properties:
+              token:
+                $ref: '#/definitions/token'
+    delete:
+      summary: revoke a token
+      description: token is immediately not valid, regardless of the expires_at attribute value
+      parameters:
+      - name: X-Subject-Token
+        in: header
+        required: false
+        type: string
+      responses:
+        200:
+          description: OK
+definitions:
+  auth-body:
+    properties:
+      auth:
+        $ref: '#/definitions/authbody_auth'
+  identity:
+    required:
+    - methods
+    - password
+    properties:
+      methods:
+        $ref: '#/definitions/methods'
+      password:
+        $ref: '#/definitions/identity_password'
+  user:
+    required:
+    - domain
+    - name
+    - password
+    properties:
+      name:
+        type: string
+        example: admin
+      domain:
+        $ref: '#/definitions/domain'
+      password:
+        type: string
+        example: adminpwd
+  domain:
+    type: object
+    required:
+    - id
+    - name
+    properties:
+      id:
+        type: string
+        example: default
+      name:
+        type: string
+        example: default
+  methods:
+    type: array
+    items:
+      type: string
+      example: password
+  token:
+    type: object
+    required:
+    - audit_ids
+    - expires_at
+    - issued_at
+    - methods
+    - user
+    properties:
+      methods:
+        $ref: '#/definitions/methods'
+      expires_at:
+        type: string
+        example: 2015-11-06T15:32:17.893769Z
+      user:
+        $ref: '#/definitions/user-response'
+      audit_ids:
+        type: string
+        example: ZzZwkUflQfygX7pdYDBCQQ
+      issued_at:
+        type: string
+        example: 2015-11-06T14:32:17.893797Z
+  user-response:
+    required:
+    - domain
+    - id
+    - name
+    properties:
+      name:
+        type: string
+        example: admin
+      domain:
+        $ref: '#/definitions/domain'
+      id:
+        type: string
+        example: 423f19a4ac1e4f48bbb4180756e6eb6c
+      password_expires_at:
+        type: string
+  inline_response_201:
+    required:
+    - token
+    properties:
+      token:
+        $ref: '#/definitions/token'
+  authbody_auth:
+    properties:
+      identity:
+        $ref: '#/definitions/identity'
+  identity_password:
+    properties:
+      user:
+        $ref: '#/definitions/user'
+
+
+
+/**
+{
+  "auth": {
+    "identity": {
+      "methods": [
+        "password"
+      ],
+      "password": {
+        "user": {
+          "name": "admin",
+          "domain": {
+            "id": "default",
+            "name": "default"
+          },
+          "password": "adminpwd"
+        }
+      }
+    }
+  }
+}
+*/
