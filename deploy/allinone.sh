@@ -113,8 +113,8 @@ diff /opt/sci/lib64/libsci.so.0.0.0 $cland_root_dir/sci/libsci/.libs/libsci.so.0
 diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 [ $? -ne 0 ] && inst_cland
 
-gen_hosts
-cd $cland_root_dir/deploy
-ansible-playbook cloudland.yml --tags hosts,epel,ntp,be_pkg,be_srv,fe_srv,imgrepo --extra-vars "network_device=$NET_DEV"
-inst_web
-demo_router
+#gen_hosts
+#cd $cland_root_dir/deploy
+#ansible-playbook cloudland.yml --tags hosts,epel,ntp,be_pkg,be_srv,fe_srv,imgrepo --extra-vars "network_device=$NET_DEV"
+#inst_web
+#demo_router

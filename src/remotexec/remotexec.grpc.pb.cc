@@ -42,19 +42,11 @@ RemoteExec::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel
 }
 
 void RemoteExec::Stub::experimental_async::Execute(::grpc::ClientContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, std::function<void(::grpc::Status)> f) {
-  ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_Execute_, context, request, response, std::move(f));
+  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_Execute_, context, request, response, std::move(f));
 }
 
 void RemoteExec::Stub::experimental_async::Execute(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, std::function<void(::grpc::Status)> f) {
-  ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_Execute_, context, request, response, std::move(f));
-}
-
-void RemoteExec::Stub::experimental_async::Execute(::grpc::ClientContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
-  ::grpc::internal::ClientCallbackUnaryFactory::Create(stub_->channel_.get(), stub_->rpcmethod_Execute_, context, request, response, reactor);
-}
-
-void RemoteExec::Stub::experimental_async::Execute(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
-  ::grpc::internal::ClientCallbackUnaryFactory::Create(stub_->channel_.get(), stub_->rpcmethod_Execute_, context, request, response, reactor);
+  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_Execute_, context, request, response, std::move(f));
 }
 
 ::grpc::ClientAsyncResponseReader< ::com::ibm::cloudland::scripts::ExecuteReply>* RemoteExec::Stub::AsyncExecuteRaw(::grpc::ClientContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest& request, ::grpc::CompletionQueue* cq) {
