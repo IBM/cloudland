@@ -1,8 +1,0 @@
----
-user_name: "ubuntu"
-user_group: "ubuntu"
-user_homedir: "/home/ubuntu"
-user_password: "ubuntu"
-user_is_sudoer: True
-user_public_key_path: "/home/ubuntu/.ssh/authorized_keys"
-...

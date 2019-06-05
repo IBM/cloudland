@@ -33,6 +33,7 @@
 *.sum
 
 #Others
+wget-log
 /deploy/hosts/hosts
 /web/clui/clui
 /deploy/*.retry
