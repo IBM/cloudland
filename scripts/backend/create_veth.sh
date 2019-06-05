@@ -11,7 +11,7 @@ peerdev=$3
 ip link add $device type veth peer name $peerdev
 ip link set $device up
 ip link set $peerdev netns $router
-ip netns exec $router ip link set $peerdev up
+ip netns exec $router ip link set $peerdev mtu 1450 up
 prefix=${device%%-*}
 if [ "$prefix" == "ext" ]; then
     bridge=br$external_vlan

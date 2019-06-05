@@ -15,12 +15,7 @@ bcast=$(ipcalc -b $addr | cut -d= -f2)
 ./create_link.sh $vni
 cat /proc/net/dev | grep -q "^\<ln-$vni\>"
 if [ $? -ne 0 ]; then
-    ip link add ln-$vni type veth peer name ns-$vni
-#    apply_vnic -A ln-$vni
-    ip link set ns-$vni netns $router
-    ip netns exec $router ip link set ns-$vni mtu 1450 up
-    ip link set ln-$vni mtu 1450 up
-    brctl addif br$vni ln-$vni
+    ./create_veth.sh $router ln-$vni ns-$vni
 fi
 
 if [ "$mode" = "hard" ]; then

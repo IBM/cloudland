@@ -37,6 +37,7 @@
   with_items:
     - {src: 'cloudlet.service', dest: '/lib/systemd/system', owner: 'root'}
     - {src: 'scid.service', dest: '/lib/systemd/system', owner: 'root'}
+    - {src: 'recover_onboot.service', dest: '/lib/systemd/system', owner: 'root'}
   tags: [be_srv]
 
 - name: create cloudlet environment file
@@ -60,4 +61,5 @@
     - 'NetworkManager'
     - 'scid'
     - 'cloudlet'
+    - 'recover_boot'
   tags: [be_srv]

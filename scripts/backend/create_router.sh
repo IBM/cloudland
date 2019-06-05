@@ -33,12 +33,12 @@ if [ -n "$int_ip" ]; then
     ip netns exec $router iptables -t nat -A POSTROUTING -d 10.0.0.0/8 -j SNAT -o int-$suffix --to-source $iip
 fi
 
-router_dir=/opt/cloudland/cache/router/$router
+router_dir=$cache_dir/router/$router
 mkdir -p $router_dir
 vrrp_conf=$router_dir/keepalived.conf
 notify_sh=$router_dir/notify.sh
 cat > $vrrp_conf <<EOF
-vrrp_instance vrouter {
+vrrp_instance $router {
     interface ns-${vrrp_vni}
     track_interface {
         ns-${vrrp_vni}

@@ -109,19 +109,21 @@ def tokenize_config(configfile):
 #        print(configfile)
         tokens = allconfig.parseString(configfile)
         vni = tokens['vrrp_instance']['interface'].split('-', 1)[1]
+        router = tokens['vrrp_instance'][0]
+        os.system("ip netns add %s" % (router))
         if tokens['vrrp_instance']['state'] == 'MASTER':
-            os.system("/opt/cloudland/scripts/backend/set_gateway.sh %s %s %s hard" % ("router-10", "169.254.169.250/24", vni))
+            os.system("/opt/cloudland/scripts/backend/set_gateway.sh %s %s %s hard" % (router, "169.254.169.250/24", vni))
         elif tokens['vrrp_instance']['state'] == 'SLAVE':
-            os.system("/opt/cloudland/scripts/backend/set_gateway.sh %s %s %s hard" % ("router-10", "169.254.169.251/24", vni))
+            os.system("/opt/cloudland/scripts/backend/set_gateway.sh %s %s %s hard" % (router, "169.254.169.251/24", vni))
         for i in range(len(tokens['vrrp_instance']['virtual_ipaddress'])):
             if i % 3 == 2:
                 device = tokens['vrrp_instance']['virtual_ipaddress'][i].split('-', 1)
                 if device[0] == 'te':
-                    os.system("/opt/cloudland/scripts/backend/create_veth.sh %s ext-%s te-%s" % ("router-10", device[1], device[1]))
+                    os.system("/opt/cloudland/scripts/backend/create_veth.sh %s ext-%s te-%s" % (router, device[1], device[1]))
                 elif device[0] == 'ti':
-                    os.system("/opt/cloudland/scripts/backend/create_veth.sh %s int-%s ti-%s" % ("router-10", device[1], device[1]))
+                    os.system("/opt/cloudland/scripts/backend/create_veth.sh %s int-%s ti-%s" % (router, device[1], device[1]))
                 elif device[0] == 'ns':
-                    os.system("/opt/cloudland/scripts/backend/create_veth.sh %s ln-%s ns-%s" % ("router-10", device[1], device[1]))
+                    os.system("/opt/cloudland/scripts/backend/create_veth.sh %s ln-%s ns-%s" % (router, device[1], device[1]))
         return tokens
     except ParseException as e:
         logger.error("Exception")

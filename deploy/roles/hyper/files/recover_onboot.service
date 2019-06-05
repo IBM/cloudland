@@ -1,0 +1,10 @@
+[Unit]
+Description=recover on boot
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/cloudland/scripts/backend/recover_onboot.sh
+
+[Install]
+WantedBy=multi-user.target
