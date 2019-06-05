@@ -25,30 +25,58 @@ type Client struct {
 }
 
 /*
-PostAuthTokens Create a new token
+GetIdentity redirect to identity auth point
 */
-func (a *Client) PostAuthTokens(params *PostAuthTokensParams) (*PostAuthTokensCreated, error) {
+func (a *Client) GetIdentity(params *GetIdentityParams) error {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewPostAuthTokensParams()
+		params = NewGetIdentityParams()
 	}
 
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "PostAuthTokens",
-		Method:             "POST",
-		PathPattern:        "/auth/tokens",
+	_, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "GetIdentity",
+		Method:             "GET",
+		PathPattern:        "/identity",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http"},
 		Params:             params,
-		Reader:             &PostAuthTokensReader{formats: a.formats},
+		Reader:             &GetIdentityReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
+/*
+PostIdentityV3AuthTokens Create a new token
+*/
+func (a *Client) PostIdentityV3AuthTokens(params *PostIdentityV3AuthTokensParams) (*PostIdentityV3AuthTokensCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPostIdentityV3AuthTokensParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "PostIdentityV3AuthTokens",
+		Method:             "POST",
+		PathPattern:        "/identity/v3/auth/tokens",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &PostIdentityV3AuthTokensReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return result.(*PostAuthTokensCreated), nil
+	return result.(*PostIdentityV3AuthTokensCreated), nil
 
 }
 

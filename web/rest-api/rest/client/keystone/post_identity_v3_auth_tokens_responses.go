@@ -18,17 +18,17 @@ import (
 	models "github.com/IBM/cloudland/web/rest-api/rest/models"
 )
 
-// PostAuthTokensReader is a Reader for the PostAuthTokens structure.
-type PostAuthTokensReader struct {
+// PostIdentityV3AuthTokensReader is a Reader for the PostIdentityV3AuthTokens structure.
+type PostIdentityV3AuthTokensReader struct {
 	formats strfmt.Registry
 }
 
 // ReadResponse reads a server response into the received o.
-func (o *PostAuthTokensReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
+func (o *PostIdentityV3AuthTokensReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
 
 	case 201:
-		result := NewPostAuthTokensCreated()
+		result := NewPostIdentityV3AuthTokensCreated()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
@@ -39,18 +39,18 @@ func (o *PostAuthTokensReader) ReadResponse(response runtime.ClientResponse, con
 	}
 }
 
-// NewPostAuthTokensCreated creates a PostAuthTokensCreated with default headers values
-func NewPostAuthTokensCreated() *PostAuthTokensCreated {
-	return &PostAuthTokensCreated{
+// NewPostIdentityV3AuthTokensCreated creates a PostIdentityV3AuthTokensCreated with default headers values
+func NewPostIdentityV3AuthTokensCreated() *PostIdentityV3AuthTokensCreated {
+	return &PostIdentityV3AuthTokensCreated{
 		Vary: "X-Auth-Token",
 	}
 }
 
-/*PostAuthTokensCreated handles this case with default header values.
+/*PostIdentityV3AuthTokensCreated handles this case with default header values.
 
 successful operation
 */
-type PostAuthTokensCreated struct {
+type PostIdentityV3AuthTokensCreated struct {
 	ContentLength int64
 	/*X-Auth-Token
 	 */
@@ -58,14 +58,14 @@ type PostAuthTokensCreated struct {
 
 	XSubjectToken string
 
-	Payload *models.PostAuthTokensCreatedBody
+	Payload *models.PostIdentityV3AuthTokensCreatedBody
 }
 
-func (o *PostAuthTokensCreated) Error() string {
-	return fmt.Sprintf("[POST /auth/tokens][%d] postAuthTokensCreated  %+v", 201, o.Payload)
+func (o *PostIdentityV3AuthTokensCreated) Error() string {
+	return fmt.Sprintf("[POST /identity/v3/auth/tokens][%d] postIdentityV3AuthTokensCreated  %+v", 201, o.Payload)
 }
 
-func (o *PostAuthTokensCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+func (o *PostIdentityV3AuthTokensCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response header Content-Length
 	contentLength, err := swag.ConvertInt64(response.GetHeader("Content-Length"))
@@ -80,7 +80,7 @@ func (o *PostAuthTokensCreated) readResponse(response runtime.ClientResponse, co
 	// response header X-Subject-Token
 	o.XSubjectToken = response.GetHeader("X-Subject-Token")
 
-	o.Payload = new(models.PostAuthTokensCreatedBody)
+	o.Payload = new(models.PostIdentityV3AuthTokensCreatedBody)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

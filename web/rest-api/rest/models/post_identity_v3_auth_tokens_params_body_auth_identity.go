@@ -16,19 +16,19 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// PostAuthTokensParamsBodyAuthIdentity post auth tokens params body auth identity
-// swagger:model postAuthTokensParamsBodyAuthIdentity
-type PostAuthTokensParamsBodyAuthIdentity struct {
+// PostIdentityV3AuthTokensParamsBodyAuthIdentity post identity v3 auth tokens params body auth identity
+// swagger:model postIdentityV3AuthTokensParamsBodyAuthIdentity
+type PostIdentityV3AuthTokensParamsBodyAuthIdentity struct {
 
 	// methods
 	Methods []string `json:"methods"`
 
 	// password
-	Password *PostAuthTokensParamsBodyAuthIdentityPassword `json:"password,omitempty"`
+	Password *PostIdentityV3AuthTokensParamsBodyAuthIdentityPassword `json:"password,omitempty"`
 }
 
-// Validate validates this post auth tokens params body auth identity
-func (m *PostAuthTokensParamsBodyAuthIdentity) Validate(formats strfmt.Registry) error {
+// Validate validates this post identity v3 auth tokens params body auth identity
+func (m *PostIdentityV3AuthTokensParamsBodyAuthIdentity) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateMethods(formats); err != nil {
@@ -45,7 +45,7 @@ func (m *PostAuthTokensParamsBodyAuthIdentity) Validate(formats strfmt.Registry)
 	return nil
 }
 
-var postAuthTokensParamsBodyAuthIdentityMethodsItemsEnum []interface{}
+var postIdentityV3AuthTokensParamsBodyAuthIdentityMethodsItemsEnum []interface{}
 
 func init() {
 	var res []string
@@ -53,18 +53,18 @@ func init() {
 		panic(err)
 	}
 	for _, v := range res {
-		postAuthTokensParamsBodyAuthIdentityMethodsItemsEnum = append(postAuthTokensParamsBodyAuthIdentityMethodsItemsEnum, v)
+		postIdentityV3AuthTokensParamsBodyAuthIdentityMethodsItemsEnum = append(postIdentityV3AuthTokensParamsBodyAuthIdentityMethodsItemsEnum, v)
 	}
 }
 
-func (m *PostAuthTokensParamsBodyAuthIdentity) validateMethodsItemsEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, postAuthTokensParamsBodyAuthIdentityMethodsItemsEnum); err != nil {
+func (m *PostIdentityV3AuthTokensParamsBodyAuthIdentity) validateMethodsItemsEnum(path, location string, value string) error {
+	if err := validate.Enum(path, location, value, postIdentityV3AuthTokensParamsBodyAuthIdentityMethodsItemsEnum); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (m *PostAuthTokensParamsBodyAuthIdentity) validateMethods(formats strfmt.Registry) error {
+func (m *PostIdentityV3AuthTokensParamsBodyAuthIdentity) validateMethods(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Methods) { // not required
 		return nil
@@ -82,7 +82,7 @@ func (m *PostAuthTokensParamsBodyAuthIdentity) validateMethods(formats strfmt.Re
 	return nil
 }
 
-func (m *PostAuthTokensParamsBodyAuthIdentity) validatePassword(formats strfmt.Registry) error {
+func (m *PostIdentityV3AuthTokensParamsBodyAuthIdentity) validatePassword(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Password) { // not required
 		return nil
@@ -101,7 +101,7 @@ func (m *PostAuthTokensParamsBodyAuthIdentity) validatePassword(formats strfmt.R
 }
 
 // MarshalBinary interface implementation
-func (m *PostAuthTokensParamsBodyAuthIdentity) MarshalBinary() ([]byte, error) {
+func (m *PostIdentityV3AuthTokensParamsBodyAuthIdentity) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -109,8 +109,8 @@ func (m *PostAuthTokensParamsBodyAuthIdentity) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *PostAuthTokensParamsBodyAuthIdentity) UnmarshalBinary(b []byte) error {
-	var res PostAuthTokensParamsBodyAuthIdentity
+func (m *PostIdentityV3AuthTokensParamsBodyAuthIdentity) UnmarshalBinary(b []byte) error {
+	var res PostIdentityV3AuthTokensParamsBodyAuthIdentity
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

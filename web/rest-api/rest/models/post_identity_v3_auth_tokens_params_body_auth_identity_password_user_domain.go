@@ -13,9 +13,9 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// PostAuthTokensParamsBodyAuthIdentityPasswordUserDomain post auth tokens params body auth identity password user domain
-// swagger:model postAuthTokensParamsBodyAuthIdentityPasswordUserDomain
-type PostAuthTokensParamsBodyAuthIdentityPasswordUserDomain struct {
+// PostIdentityV3AuthTokensParamsBodyAuthIdentityPasswordUserDomain post identity v3 auth tokens params body auth identity password user domain
+// swagger:model postIdentityV3AuthTokensParamsBodyAuthIdentityPasswordUserDomain
+type PostIdentityV3AuthTokensParamsBodyAuthIdentityPasswordUserDomain struct {
 
 	// id
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
@@ -29,8 +29,8 @@ type PostAuthTokensParamsBodyAuthIdentityPasswordUserDomain struct {
 	Password string `json:"password,omitempty"`
 }
 
-// Validate validates this post auth tokens params body auth identity password user domain
-func (m *PostAuthTokensParamsBodyAuthIdentityPasswordUserDomain) Validate(formats strfmt.Registry) error {
+// Validate validates this post identity v3 auth tokens params body auth identity password user domain
+func (m *PostIdentityV3AuthTokensParamsBodyAuthIdentityPasswordUserDomain) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateID(formats); err != nil {
@@ -47,7 +47,7 @@ func (m *PostAuthTokensParamsBodyAuthIdentityPasswordUserDomain) Validate(format
 	return nil
 }
 
-func (m *PostAuthTokensParamsBodyAuthIdentityPasswordUserDomain) validateID(formats strfmt.Registry) error {
+func (m *PostIdentityV3AuthTokensParamsBodyAuthIdentityPasswordUserDomain) validateID(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.ID) { // not required
 		return nil
@@ -60,7 +60,7 @@ func (m *PostAuthTokensParamsBodyAuthIdentityPasswordUserDomain) validateID(form
 	return nil
 }
 
-func (m *PostAuthTokensParamsBodyAuthIdentityPasswordUserDomain) validateName(formats strfmt.Registry) error {
+func (m *PostIdentityV3AuthTokensParamsBodyAuthIdentityPasswordUserDomain) validateName(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Name) { // not required
 		return nil
@@ -74,7 +74,7 @@ func (m *PostAuthTokensParamsBodyAuthIdentityPasswordUserDomain) validateName(fo
 }
 
 // MarshalBinary interface implementation
-func (m *PostAuthTokensParamsBodyAuthIdentityPasswordUserDomain) MarshalBinary() ([]byte, error) {
+func (m *PostIdentityV3AuthTokensParamsBodyAuthIdentityPasswordUserDomain) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -82,8 +82,8 @@ func (m *PostAuthTokensParamsBodyAuthIdentityPasswordUserDomain) MarshalBinary()
 }
 
 // UnmarshalBinary interface implementation
-func (m *PostAuthTokensParamsBodyAuthIdentityPasswordUserDomain) UnmarshalBinary(b []byte) error {
-	var res PostAuthTokensParamsBodyAuthIdentityPasswordUserDomain
+func (m *PostIdentityV3AuthTokensParamsBodyAuthIdentityPasswordUserDomain) UnmarshalBinary(b []byte) error {
+	var res PostIdentityV3AuthTokensParamsBodyAuthIdentityPasswordUserDomain
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

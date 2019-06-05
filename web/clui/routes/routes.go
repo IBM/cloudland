@@ -118,6 +118,8 @@ func New() (m *macaron.Macaron) {
 	m.Post("/secgroups/:sgid/secrules/new", secruleView.Create)
 	m.Delete("/secgroups/:sgid/secrules/:id", secruleView.Delete)
 	m.NotFound(func(c *macaron.Context) { c.HTML(404, "404") })
+	//rest part
+	m.Get("/identity",versionInstance.listVersion)
 	return
 }
 

@@ -12,16 +12,16 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// PostAuthTokensParamsBodyAuth post auth tokens params body auth
-// swagger:model postAuthTokensParamsBodyAuth
-type PostAuthTokensParamsBodyAuth struct {
+// PostIdentityV3AuthTokensParamsBodyAuth post identity v3 auth tokens params body auth
+// swagger:model postIdentityV3AuthTokensParamsBodyAuth
+type PostIdentityV3AuthTokensParamsBodyAuth struct {
 
 	// identity
-	Identity *PostAuthTokensParamsBodyAuthIdentity `json:"identity,omitempty"`
+	Identity *PostIdentityV3AuthTokensParamsBodyAuthIdentity `json:"identity,omitempty"`
 }
 
-// Validate validates this post auth tokens params body auth
-func (m *PostAuthTokensParamsBodyAuth) Validate(formats strfmt.Registry) error {
+// Validate validates this post identity v3 auth tokens params body auth
+func (m *PostIdentityV3AuthTokensParamsBodyAuth) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateIdentity(formats); err != nil {
@@ -34,7 +34,7 @@ func (m *PostAuthTokensParamsBodyAuth) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *PostAuthTokensParamsBodyAuth) validateIdentity(formats strfmt.Registry) error {
+func (m *PostIdentityV3AuthTokensParamsBodyAuth) validateIdentity(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Identity) { // not required
 		return nil
@@ -53,7 +53,7 @@ func (m *PostAuthTokensParamsBodyAuth) validateIdentity(formats strfmt.Registry)
 }
 
 // MarshalBinary interface implementation
-func (m *PostAuthTokensParamsBodyAuth) MarshalBinary() ([]byte, error) {
+func (m *PostIdentityV3AuthTokensParamsBodyAuth) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -61,8 +61,8 @@ func (m *PostAuthTokensParamsBodyAuth) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *PostAuthTokensParamsBodyAuth) UnmarshalBinary(b []byte) error {
-	var res PostAuthTokensParamsBodyAuth
+func (m *PostIdentityV3AuthTokensParamsBodyAuth) UnmarshalBinary(b []byte) error {
+	var res PostIdentityV3AuthTokensParamsBodyAuth
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}
