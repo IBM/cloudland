@@ -108,8 +108,11 @@ def tokenize_config(configfile):
     try: 
 #        print(configfile)
         tokens = allconfig.parseString(configfile)
+        print(tokens)
         vni = tokens['vrrp_instance']['interface'].split('-', 1)[1]
+        print(vni)
         router = tokens['vrrp_instance'][0]
+        print(router)
         os.system("ip netns add %s" % (router))
         if tokens['vrrp_instance']['state'] == 'MASTER':
             os.system("/opt/cloudland/scripts/backend/set_gateway.sh %s %s %s hard" % (router, "169.254.169.250/24", vni))
@@ -118,12 +121,16 @@ def tokenize_config(configfile):
         for i in range(len(tokens['vrrp_instance']['virtual_ipaddress'])):
             if i % 3 == 2:
                 device = tokens['vrrp_instance']['virtual_ipaddress'][i].split('-', 1)
+                print(device)
                 if device[0] == 'te':
                     os.system("/opt/cloudland/scripts/backend/create_veth.sh %s ext-%s te-%s" % (router, device[1], device[1]))
+                    print("/opt/cloudland/scripts/backend/create_veth.sh %s ext-%s te-%s" % (router, device[1], device[1]))
                 elif device[0] == 'ti':
                     os.system("/opt/cloudland/scripts/backend/create_veth.sh %s int-%s ti-%s" % (router, device[1], device[1]))
+                    print("/opt/cloudland/scripts/backend/create_veth.sh %s int-%s ti-%s" % (router, device[1], device[1]))
                 elif device[0] == 'ns':
                     os.system("/opt/cloudland/scripts/backend/create_veth.sh %s ln-%s ns-%s" % (router, device[1], device[1]))
+                    print("/opt/cloudland/scripts/backend/create_veth.sh %s ln-%s ns-%s" % (router, device[1], device[1]))
         return tokens
     except ParseException as e:
         logger.error("Exception")
@@ -132,8 +139,8 @@ def tokenize_config(configfile):
         logger.error("FatalException")
         logger.error(e)
     else:
-        json_string = json.dumps(tokens.asDict())
-        print(json_string)
+#        json_string = json.dumps(tokens.asDict())
+#        print(json_string)
         return tokens
 
 def main():
