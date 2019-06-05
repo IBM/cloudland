@@ -1,7 +1,11 @@
 - name: install packages
   yum: 
-    name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'vconfig', 'git', 'NetworkManager', 'bridge-utils']
+    name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'vconfig', 'git', 'NetworkManager', 'bridge-utils', 'python-pip']
     state: present
+  tags: [be_pkg]
+
+- pip:
+    name: pyparsing
   tags: [be_pkg]
 
 - name: creates cloudland directory
@@ -61,5 +65,12 @@
     - 'NetworkManager'
     - 'scid'
     - 'cloudlet'
-    - 'recover_boot'
+  tags: [be_srv]
+
+- name: start cloudlet services
+  systemd: 
+    name: recover_onboot
+    enabled: yes
+    daemon_reload: yes
+    state: stopped
   tags: [be_srv]

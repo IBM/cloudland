@@ -1,9 +1,10 @@
 [Unit]
 Description=recover on boot
-After=network.target
+After=NetworkManager.service opt-cloudland-cache-volume.mount libvirtd.service
 
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 ExecStart=/opt/cloudland/scripts/backend/recover_onboot.sh
 
 [Install]
