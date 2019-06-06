@@ -52,7 +52,7 @@
   with_items:
     - {src: 'cloudlet.j2', dest: '/etc/sysconfig/cloudlet', owner: 'root'}
     - {src: 'cloudrc.local.j2', dest: '/opt/cloudland/scripts/cloudrc.local', owner: 'centos'}
-  tags: [be_srv]
+  tags: [be_conf]
  
 - name: start cloudlet services
   systemd: 
