@@ -149,9 +149,15 @@ func (a *SubnetAdmin) Delete(id int64) (err error) {
 			db.Rollback()
 		}
 	}()
-	err = db.Where("subnet_id = ?", id).Delete(&model.Address{}).Error
+	count := 0
+	err = db.Model(&model.Address{}).Where("subnet_id = ? and allocated = ?", id, true).Count(&count).Error
 	if err != nil {
 		log.Println("Database delete addresses failed, %v", err)
+		return
+	}
+	if count > 0 {
+		err = fmt.Errorf("Some addresses of this subnet in use")
+		log.Println("There are addresses of this subnet still in use")
 		return
 	}
 	err = db.Delete(&model.Subnet{Model: model.Model{ID: id}}).Error
