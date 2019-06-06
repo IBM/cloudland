@@ -22,8 +22,8 @@ type TokenPassword struct {
 	ID string `json:"id,omitempty"`
 
 	// password expires at
-	// Format: date
-	PasswordExpiresAt strfmt.Date `json:"password_expires_at,omitempty"`
+	// Format: date-time
+	PasswordExpiresAt strfmt.DateTime `json:"password_expires_at,omitempty"`
 
 	// user
 	User *TokenPasswordUser `json:"user,omitempty"`
@@ -70,7 +70,7 @@ func (m *TokenPassword) validatePasswordExpiresAt(formats strfmt.Registry) error
 		return nil
 	}
 
-	if err := validate.FormatOf("password_expires_at", "body", "date", m.PasswordExpiresAt.String(), formats); err != nil {
+	if err := validate.FormatOf("password_expires_at", "body", "date-time", m.PasswordExpiresAt.String(), formats); err != nil {
 		return err
 	}
 

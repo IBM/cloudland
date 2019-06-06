@@ -36,8 +36,8 @@ type VersionsValuesItems struct {
 	Status string `json:"status,omitempty"`
 
 	// updated
-	// Format: date
-	Updated strfmt.Date `json:"updated,omitempty"`
+	// Format: date-time
+	Updated strfmt.DateTime `json:"updated,omitempty"`
 }
 
 // Validate validates this versions values items
@@ -210,7 +210,7 @@ func (m *VersionsValuesItems) validateUpdated(formats strfmt.Registry) error {
 		return nil
 	}
 
-	if err := validate.FormatOf("updated", "body", "date", m.Updated.String(), formats); err != nil {
+	if err := validate.FormatOf("updated", "body", "date-time", m.Updated.String(), formats); err != nil {
 		return err
 	}
 

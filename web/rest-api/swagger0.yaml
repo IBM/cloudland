@@ -99,7 +99,7 @@ definitions:
               id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
               name: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
           id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '423f19a4ac1e4f48bbb4180756e6eb6c'}
-          password_expires_at: {type: string, format: date, example: "2015-11-06T14:32:17.893797Z"}
+          password_expires_at: {type: string, format: date-time, example: "2015-11-06T14:32:17.893797Z"}
       audit_ids: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'ZzZwkUflQfygX7pdYDBCQQ'}
       issued_at: {type: string, format: data, example: "2015-11-06T14:32:17.893797Z"}
   versions:
@@ -111,7 +111,7 @@ definitions:
           type: object
           properties:
             status: {type: string, enum: [stable], pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: stable}
-            updated: {type: string, format: date, example: "2015-11-06T14:32:17.893797Z"}
+            updated: {type: string, format: date-time, example: "2015-11-06T14:32:17.893797Z"}
             media-types:
               type: array
               items:
@@ -126,4 +126,4 @@ definitions:
                 type: object
                 properties:
                   href: {type: string, pattern: '^http(s)?:\/\/([^\/?#]*)([^?#]*)(\?([^#]*))?(#(.*))?$', example: 'http://192.168.10.16/identity/v3/'}
-                  rel: {type: string, enum: [self, remote], example: "self"}  
+                  rel: {type: string, enum: [self, remote], example: "self"}

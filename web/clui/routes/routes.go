@@ -37,7 +37,25 @@ func runArgs() (args []interface{}) {
 }
 
 func Run() (err error) {
-	New().Run(runArgs()...)
+	// New().Run(runArgs()...)
+	Rest().Run(runArgs()...)
+	return
+}
+
+func Rest() (m *macaron.Macaron) {
+	m = macaron.Classic()
+	m.Use(session.Sessioner())
+	m.Use(macaron.Renderer(
+		macaron.RenderOptions{
+			Funcs: []template.FuncMap{
+				template.FuncMap{
+					"GetString": viper.GetString,
+					"Title":     func(v interface{}) string { return strings.Title(fmt.Sprint(v)) },
+				},
+			},
+		},
+	))
+	m.Get("/identity", versionInstance.ListVersion)
 	return
 }
 
@@ -119,7 +137,7 @@ func New() (m *macaron.Macaron) {
 	m.Delete("/secgroups/:sgid/secrules/:id", secruleView.Delete)
 	m.NotFound(func(c *macaron.Context) { c.HTML(404, "404") })
 	//rest part
-	m.Get("/identity",versionInstance.listVersion)
+	//	r.Get("/identity", versionInstance.ListVersion)
 	return
 }
 
