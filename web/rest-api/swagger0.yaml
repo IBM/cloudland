@@ -26,7 +26,6 @@ paths:
               versions:
                 $ref: '#/definitions/versions'
 
-
   /identity/v3/auth/tokens:
     post:
       consumes: [application/json]
@@ -42,6 +41,17 @@ paths:
             auth:
               type: object
               properties:
+                scope:
+                  type: object
+                  properties:
+                    project:
+                      type: object
+                      properties:
+                        domain:
+                          type: object
+                          properties:
+                            id: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
+                        name: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: demo}
                 identity:
                   type: object
                   properties:
@@ -55,12 +65,11 @@ paths:
                           type: object
                           properties:
                             name: {type: string,  pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: admin}
+                            password: {type: string, example: adminpwd}
                             domain:
                               type: object
                               properties:
-                                id: {type: string,format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
-                                name: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
-                                password: {type: string, example: adminpwd}
+                                id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
       responses:
         201:
           description: successful operation
@@ -87,21 +96,58 @@ definitions:
   token:
     type: object
     properties:
+      is_domain: {type: boolean, example: false}
       methods:
         type: array
-        items: {type: string, enum: [password], example: password}
-      password:
+        items: {type: string, enum: [password], example: 'password'}
+      roles:
+        type: array
+        items:
+          type: object
+          properties:
+            id: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '1841f2adad3a4b4aa6485fb4e3a3fda1'}
+            name: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'member'}
+      expires_at: {type: string, format: data, example: "2015-11-06T14:32:17.893797Z"}
+      project:
         type: object
         properties:
-          user:
+          domain:
+            type: object
+            properties:
+              id: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '1841f2adad3a4b4aa6485fb4e3a3fda1'}
+              name: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'member'}
+          id: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '1841f2adad3a4b4aa6485fb4e3a3fda1'}
+          name: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'member'}
+      catalog:
+        type: array
+        items:
+          type: object
+          properties:
+            endpoints:
+              type: array
+              items:
+                type: object
+                properties:
+                  url: {type: string, format: url, pattern: '^http(s)?:\/\/([^\/?#]*)([^?#]*)(\?([^#]*))?(#(.*))?$', example: "http://192.168.10.16/volume/v3/3b6825911eaa44059c525888dc32713b"}
+                  interface: {type: string, enum: [public, private], pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: public}
+                  region: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'RegionOne'}
+                  region_id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'RegionOne'}
+                  id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'Regdb9895a3f6b840d98581dbee86f49069ionOne'}
+            type: {type: string, enum: ["volumev3"], example: "volumev3"}
+            id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'db9895a3f6b840d98581dbee86f49069'}
+            name: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'member'}
+      user:
+        type: object
+        properties:
+          password_expires_at: {type: string, format: date-time, example: "2015-11-06T14:32:17.893797Z"}
+          domain:
             type: object
             properties:
               id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
               name: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
-          id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '423f19a4ac1e4f48bbb4180756e6eb6c'}
-          password_expires_at: {type: string, format: date-time, example: "2015-11-06T14:32:17.893797Z"}
-      audit_ids: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'ZzZwkUflQfygX7pdYDBCQQ'}
-      issued_at: {type: string, format: data, example: "2015-11-06T14:32:17.893797Z"}
+          id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
+          name: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
+
   versions:
     type: object
     properties:

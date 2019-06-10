@@ -1,4 +1,3 @@
-basePath: /v1
 definitions:
   NameReference:
     description: The name identity of the resource

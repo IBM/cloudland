@@ -20,25 +20,33 @@ import (
 // swagger:model token
 type Token struct {
 
-	// audit ids
-	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
-	AuditIds string `json:"audit_ids,omitempty"`
+	// catalog
+	Catalog []*TokenCatalogItems `json:"catalog"`
 
-	// issued at
-	IssuedAt string `json:"issued_at,omitempty"`
+	// expires at
+	ExpiresAt string `json:"expires_at,omitempty"`
+
+	// is domain
+	IsDomain bool `json:"is_domain,omitempty"`
 
 	// methods
 	Methods []string `json:"methods"`
 
-	// password
-	Password *TokenPassword `json:"password,omitempty"`
+	// project
+	Project *TokenProject `json:"project,omitempty"`
+
+	// roles
+	Roles []*TokenRolesItems `json:"roles"`
+
+	// user
+	User *TokenUser `json:"user,omitempty"`
 }
 
 // Validate validates this token
 func (m *Token) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateAuditIds(formats); err != nil {
+	if err := m.validateCatalog(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -46,7 +54,15 @@ func (m *Token) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validatePassword(formats); err != nil {
+	if err := m.validateProject(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRoles(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateUser(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -56,14 +72,26 @@ func (m *Token) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *Token) validateAuditIds(formats strfmt.Registry) error {
+func (m *Token) validateCatalog(formats strfmt.Registry) error {
 
-	if swag.IsZero(m.AuditIds) { // not required
+	if swag.IsZero(m.Catalog) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("audit_ids", "body", string(m.AuditIds), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
-		return err
+	for i := 0; i < len(m.Catalog); i++ {
+		if swag.IsZero(m.Catalog[i]) { // not required
+			continue
+		}
+
+		if m.Catalog[i] != nil {
+			if err := m.Catalog[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("catalog" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
 	}
 
 	return nil
@@ -106,16 +134,59 @@ func (m *Token) validateMethods(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *Token) validatePassword(formats strfmt.Registry) error {
+func (m *Token) validateProject(formats strfmt.Registry) error {
 
-	if swag.IsZero(m.Password) { // not required
+	if swag.IsZero(m.Project) { // not required
 		return nil
 	}
 
-	if m.Password != nil {
-		if err := m.Password.Validate(formats); err != nil {
+	if m.Project != nil {
+		if err := m.Project.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("password")
+				return ve.ValidateName("project")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Token) validateRoles(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Roles) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Roles); i++ {
+		if swag.IsZero(m.Roles[i]) { // not required
+			continue
+		}
+
+		if m.Roles[i] != nil {
+			if err := m.Roles[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("roles" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *Token) validateUser(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.User) { // not required
+		return nil
+	}
+
+	if m.User != nil {
+		if err := m.User.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("user")
 			}
 			return err
 		}

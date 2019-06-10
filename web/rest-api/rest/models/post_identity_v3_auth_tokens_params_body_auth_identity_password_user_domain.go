@@ -20,13 +20,6 @@ type PostIdentityV3AuthTokensParamsBodyAuthIdentityPasswordUserDomain struct {
 	// id
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	ID string `json:"id,omitempty"`
-
-	// name
-	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
-	Name string `json:"name,omitempty"`
-
-	// password
-	Password string `json:"password,omitempty"`
 }
 
 // Validate validates this post identity v3 auth tokens params body auth identity password user domain
@@ -34,10 +27,6 @@ func (m *PostIdentityV3AuthTokensParamsBodyAuthIdentityPasswordUserDomain) Valid
 	var res []error
 
 	if err := m.validateID(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateName(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -54,19 +43,6 @@ func (m *PostIdentityV3AuthTokensParamsBodyAuthIdentityPasswordUserDomain) valid
 	}
 
 	if err := validate.Pattern("id", "body", string(m.ID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *PostIdentityV3AuthTokensParamsBodyAuthIdentityPasswordUserDomain) validateName(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.Name) { // not required
-		return nil
-	}
-
-	if err := validate.Pattern("name", "body", string(m.Name), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 

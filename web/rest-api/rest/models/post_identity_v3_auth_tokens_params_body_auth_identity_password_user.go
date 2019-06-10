@@ -23,6 +23,9 @@ type PostIdentityV3AuthTokensParamsBodyAuthIdentityPasswordUser struct {
 	// name
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	Name string `json:"name,omitempty"`
+
+	// password
+	Password string `json:"password,omitempty"`
 }
 
 // Validate validates this post identity v3 auth tokens params body auth identity password user

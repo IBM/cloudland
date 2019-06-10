@@ -18,6 +18,9 @@ type PostIdentityV3AuthTokensParamsBodyAuth struct {
 
 	// identity
 	Identity *PostIdentityV3AuthTokensParamsBodyAuthIdentity `json:"identity,omitempty"`
+
+	// scope
+	Scope *PostIdentityV3AuthTokensParamsBodyAuthScope `json:"scope,omitempty"`
 }
 
 // Validate validates this post identity v3 auth tokens params body auth
@@ -25,6 +28,10 @@ func (m *PostIdentityV3AuthTokensParamsBodyAuth) Validate(formats strfmt.Registr
 	var res []error
 
 	if err := m.validateIdentity(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateScope(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -44,6 +51,24 @@ func (m *PostIdentityV3AuthTokensParamsBodyAuth) validateIdentity(formats strfmt
 		if err := m.Identity.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("identity")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PostIdentityV3AuthTokensParamsBodyAuth) validateScope(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Scope) { // not required
+		return nil
+	}
+
+	if m.Scope != nil {
+		if err := m.Scope.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("scope")
 			}
 			return err
 		}
