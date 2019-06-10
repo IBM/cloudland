@@ -13,3 +13,5 @@ done
 for inst in $(virsh list --all | grep 'shut off' | awk '{print $2}'); do
     virsh start $inst
 done
+
+exit 0
