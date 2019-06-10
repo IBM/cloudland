@@ -218,8 +218,20 @@ func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
 	}
 	if instance.FloatingIps != nil {
 		for _, fip := range instance.FloatingIps {
-			fip.InstanceID = 0
-			err = db.Save(fip).Error
+			err = floatingipAdmin.Delete(ctx, fip.ID)
+			if err != nil {
+				log.Println("Failed to delete floating ip, %v", err)
+				return
+			}
+		}
+	}
+	if err = db.Where("instance_id = ?", instance.ID).Find(&instance.Volumes).Error; err != nil {
+		log.Println("Failed to query floating ip(s), %v", err)
+		return
+	}
+	if instance.Volumes != nil {
+		for _, vol := range instance.Volumes {
+			_, err = volumeAdmin.Update(ctx, vol.ID, "", 0)
 			if err != nil {
 				log.Println("Failed to delete floating ip, %v", err)
 				return
