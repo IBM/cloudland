@@ -183,11 +183,11 @@ func (v *SecruleView) Create(c *macaron.Context, store session.Store) {
 	}
 	direction := c.Query("direction")
 	protocol := c.Query("protocol")
-	max := c.Query("portmax")
 	min := c.Query("portmin")
-	portMax, err := strconv.Atoi(max)
+	max := c.Query("portmax")
 	portMin, err := strconv.Atoi(min)
-	_, err = secruleAdmin.Create(int64(secgroupID), remoteIp, direction, protocol, portMax, portMin)
+	portMax, err := strconv.Atoi(max)
+	_, err = secruleAdmin.Create(int64(secgroupID), remoteIp, direction, protocol, portMin, portMax)
 	if err != nil {
 		log.Println("Failed to create security rule, %v", err)
 		c.HTML(500, "500")

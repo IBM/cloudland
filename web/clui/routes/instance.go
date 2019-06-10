@@ -60,15 +60,27 @@ type VlanInfo struct {
 	MacAddr string `json:"mac_address"`
 }
 
+type SecurityData struct {
+	Secgroup    int64
+	RemoteIp    string `json:"remote_ip"`
+	RemoteGroup string `json:"remote_group"`
+	Direction   string `json:"direction"`
+	IpVersion   string `json:"ip_version"`
+	Protocol    string `json:"protocol"`
+	PortMin     int32  `json:"port_min"`
+	PortMax     int32  `json:"port_max"`
+}
+
 type InstanceData struct {
 	Userdata string             `json:"userdata"`
 	Vlans    []*VlanInfo        `json:"vlans"`
 	Networks []*InstanceNetwork `json:"networks"`
 	Links    []*NetworkLink     `json:"links"`
 	Keys     []string           `json:"keys"`
+	SecRules []*SecurityData    `json:"security"`
 }
 
-func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, imageID, flavorID, primaryID int64, subnetIDs, keyIDs []int64) (instance *model.Instance, err error) {
+func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, imageID, flavorID, primaryID int64, subnetIDs, keyIDs []int64, sgIDs []int64) (instance *model.Instance, err error) {
 	db := DB()
 	image := &model.Image{Model: model.Model{ID: imageID}}
 	if err = db.Take(image).Error; err != nil {
@@ -108,7 +120,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			return
 		}
 		metadata := ""
-		_, metadata, err = a.buildMetadata(primary, subnets, keys, instance, userdata)
+		_, metadata, err = a.buildMetadata(primary, subnets, keys, instance, userdata, sgIDs)
 		if err != nil {
 			log.Println("Build instance metadata failed, %v", err)
 			return
@@ -141,7 +153,7 @@ func hyperExecute(ctx context.Context, control, command string) (err error) {
 	return
 }
 
-func (a *InstanceAdmin) buildMetadata(primary *model.Subnet, subnets []*model.Subnet, keys []*model.Key, instance *model.Instance, userdata string) (interfaces []*model.Interface, metadata string, err error) {
+func (a *InstanceAdmin) buildMetadata(primary *model.Subnet, subnets []*model.Subnet, keys []*model.Key, instance *model.Instance, userdata string, sgIDs []int64) (interfaces []*model.Interface, metadata string, err error) {
 	vlans := []*VlanInfo{}
 	instNetworks := []*InstanceNetwork{}
 	instLinks := []*NetworkLink{}
@@ -182,12 +194,33 @@ func (a *InstanceAdmin) buildMetadata(primary *model.Subnet, subnets []*model.Su
 	for _, key := range keys {
 		instKeys = append(instKeys, key.PublicKey)
 	}
+	secRules, err := model.GetSecurityRules(sgIDs)
+	if err != nil {
+		log.Println("Failed to get security rules", err)
+		return
+	}
+	log.Println("$$$$$$$$$$$$$$$$$$$$ security rule IDs", sgIDs)
+	securityData := []*SecurityData{}
+	for _, rule := range secRules {
+		sgr := &SecurityData{
+			Secgroup:    rule.Secgroup,
+			RemoteIp:    rule.RemoteIp,
+			RemoteGroup: rule.RemoteGroup,
+			Direction:   rule.Direction,
+			IpVersion:   rule.IpVersion,
+			Protocol:    rule.Protocol,
+			PortMin:     rule.PortMin,
+			PortMax:     rule.PortMax,
+		}
+		securityData = append(securityData, sgr)
+	}
 	instData := &InstanceData{
 		Userdata: userdata,
 		Vlans:    vlans,
 		Networks: instNetworks,
 		Links:    instLinks,
 		Keys:     instKeys,
+		SecRules: securityData,
 	}
 	jsonData, err := json.Marshal(instData)
 	if err != nil {
@@ -427,8 +460,24 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		}
 		keyIDs = append(keyIDs, int64(kID))
 	}
+	secgroups := c.Query("secgroups")
+	var sgIDs []int64
+	if secgroups != "" {
+		sg := strings.Split(secgroups, ",")
+		for i := 0; i < len(sg); i++ {
+			sgID, err := strconv.Atoi(sg[i])
+			if err != nil {
+				log.Println("Invalid security group ID", err)
+				continue
+			}
+			sgIDs = append(sgIDs, int64(sgID))
+		}
+	} else {
+		sgIDs = append(sgIDs, store.Get("defsg").(int64))
+		log.Print("$$$$$$$$$$$$$$$$$$$$$$", sgIDs[0])
+	}
 	userdata := c.Query("userdata")
-	_, err = instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, int64(imageID), int64(flavorID), int64(primaryID), subnetIDs, keyIDs)
+	_, err = instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, int64(imageID), int64(flavorID), int64(primaryID), subnetIDs, keyIDs, sgIDs)
 	if err != nil {
 		log.Println("Create instance failed, %v", err)
 		c.HTML(http.StatusBadRequest, err.Error())

@@ -119,6 +119,6 @@ diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 
 gen_hosts
 cd $cland_root_dir/deploy
-ansible-playbook cloudland.yml --tags hosts,epel,ntp,be_pkg,be_srv,be_conf,fe_srv,imgrepo --extra-vars "network_device=$NET_DEV"
+ansible-playbook cloudland.yml --tags hosts,epel,ntp,hyper,fe_srv,imgrepo --extra-vars "network_device=$NET_DEV"
 inst_web
 demo_router

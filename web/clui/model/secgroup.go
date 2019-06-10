@@ -7,6 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 package model
 
 import (
+	"log"
+
 	"github.com/IBM/cloudland/web/sca/dbs"
 )
 
@@ -34,4 +36,20 @@ type SecurityRule struct {
 
 func init() {
 	dbs.AutoMigrate(&SecurityGroup{}, &SecurityRule{})
+}
+
+func GetSecurityRules(secGroups []int64) (securityRules []*SecurityRule, err error) {
+	db := dbs.DB()
+	securityRules = []*SecurityRule{}
+	for _, sgID := range secGroups {
+		secrules := []*SecurityRule{}
+		err = db.Model(&SecurityRule{}).Where("secgroup = ?", sgID).Find(&secrules).Error
+		if err != nil {
+			log.Println("DB failed to query security rules", err)
+			return
+		}
+		log.Println("$$$$$$$$$$$$$$$$$$$", secrules)
+		securityRules = append(securityRules, secrules...)
+	}
+	return
 }
