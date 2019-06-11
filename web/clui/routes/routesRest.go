@@ -15,6 +15,16 @@ import (
 	"gopkg.in/macaron.v1"
 )
 
+var (
+	resourceEndpoints = map[string]string{
+		"volume":   `/volume/v3`,
+		"compute":  `/compute/v2.1`,
+		"image":    `/image`,
+		"network":  `/network`,
+		"identity": `/identity`,
+	}
+)
+
 func RunRest() (err error) {
 	Rest().Run(runArgs("rest.listen")...)
 	return
@@ -33,7 +43,7 @@ func Rest() (m *macaron.Macaron) {
 		},
 	))
 	//	m.Use(macaron.Renderer())
-	m.Get("/identity", versionInstance.ListVersion)
+	m.Get(resourceEndpoints["identity"], versionInstance.ListVersion)
 	m.Post("/identity/v3/auth/tokens", tokenInstance.IssueTokenByPasswd)
 	return
 }

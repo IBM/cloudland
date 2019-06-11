@@ -118,19 +118,26 @@ func (t *Token) IssueTokenByPasswd(c *macaron.Context) {
 	c.Header().Add(`X-Subject-Token`, token)
 	c.Header().Add(`Vary`, `X-Auth-Token`)
 	respInstance := restModels.PostIdentityV3AuthTokensCreatedBody{}
-	respInstance.Token = restModels.Token{
-		Catalog: []*restModels.TokenCatalogItems{
-			&restModels.TokenCatalogItems{
-				Endpoints: []*restModels.TokenCatalogItemsEndpointsItems{
-					&restModels.TokenCatalogItemsEndpointsItems{
-						ID:        `d111111`,
-						Interface: `public`,
-						Region:    `RegionOne`,
-						RegionID:  `RegionOne`,
-						URL:       `self`,
-					},
-				},
+	respInstance.Token = &restModels.Token{
+		Catalog:  catLog(),
+		IsDomain: false,
+		Methods:  []string{"password"},
+		Roles:    []*restModels.TokenRolesItems{&restModels.TokenRolesItems{Name: "member", ID: "1841f2adad3a4b4aa6485fb4e3a3fda1"}},
+		Project: &restModels.TokenProject{
+			Domain: &restModels.TokenProjectDomain{
+				ID:   "default",
+				Name: "default",
 			},
+			ID:   "default",
+			Name: "default",
+		},
+		User: &restModels.TokenUser{
+			Domain: &restModels.TokenUserDomain{
+				ID:   "default",
+				Name: "default",
+			},
+			ID:   "b6c55db5d9294824bac2d2d535db92a4",
+			Name: "demo",
 		},
 	}
 	c.JSON(200, respInstance)
@@ -195,4 +202,103 @@ func NewResponseError(title, msg string, code int) ResponseError {
 			Message: msg,
 		},
 	}
+}
+
+func catLog() (items []*restModels.TokenCatalogItems) {
+	//hard code resrouce ID , do we need to support this function ?
+	url := &url.URL{
+		Scheme: "http", //todo : need to get scheme by config file
+		Host:   viper.GetString("rest.listen"),
+	}
+	// add volume endpint
+	items = append(
+		items,
+		&restModels.TokenCatalogItems{
+			Endpoints: []*restModels.TokenCatalogItemsEndpointsItems{
+				&restModels.TokenCatalogItemsEndpointsItems{
+					ID:        "c4d6fd85cdb643b0bde67ad891a074f6",
+					Interface: "public",
+					Region:    "default",
+					RegionID:  "default",
+					URL:       url.String() + resourceEndpoints["volume"],
+				},
+			},
+			Type: "block-storage",
+			ID:   "09e58e3d2207402c84578a6ff1b798cd",
+			Name: "cinder",
+		},
+	)
+	//add compute resource
+	items = append(
+		items,
+		&restModels.TokenCatalogItems{
+			Endpoints: []*restModels.TokenCatalogItemsEndpointsItems{
+				&restModels.TokenCatalogItemsEndpointsItems{
+					ID:        "eec0d5080b334f70bc00cd787d5269f6",
+					Interface: "public",
+					Region:    "default",
+					RegionID:  "default",
+					URL:       url.String() + resourceEndpoints["compute"],
+				},
+			},
+			Type: "compute",
+			ID:   "182b9192d5854c289cff7adb98415e0f",
+			Name: "nova",
+		},
+	)
+	//add image resource
+	items = append(
+		items,
+		&restModels.TokenCatalogItems{
+			Endpoints: []*restModels.TokenCatalogItemsEndpointsItems{
+				&restModels.TokenCatalogItemsEndpointsItems{
+					ID:        "0c04e1ff2cbc4fe29a58ae8efe743be4",
+					Interface: "public",
+					Region:    "default",
+					RegionID:  "default",
+					URL:       url.String() + resourceEndpoints["image"],
+				},
+			},
+			Type: "image",
+			ID:   "58e590825bbc416fa230b6bc73344375",
+			Name: "glance",
+		},
+	)
+	//add network resource
+	items = append(
+		items,
+		&restModels.TokenCatalogItems{
+			Endpoints: []*restModels.TokenCatalogItemsEndpointsItems{
+				&restModels.TokenCatalogItemsEndpointsItems{
+					ID:        "e825c6eafa3343aa83d10b370a6667a2",
+					Interface: "public",
+					Region:    "default",
+					RegionID:  "default",
+					URL:       url.String() + resourceEndpoints["network"],
+				},
+			},
+			Type: "network",
+			ID:   "44713bed353d4684a608901dfb6f20e6",
+			Name: "neutron",
+		},
+	)
+	//add keystone resource
+	items = append(
+		items,
+		&restModels.TokenCatalogItems{
+			Endpoints: []*restModels.TokenCatalogItemsEndpointsItems{
+				&restModels.TokenCatalogItemsEndpointsItems{
+					ID:        "09cef1a83c36456987dd7e1c09b21014",
+					Interface: "public",
+					Region:    "default",
+					RegionID:  "default",
+					URL:       url.String() + resourceEndpoints["identity"],
+				},
+			},
+			Type: "identity",
+			ID:   "d8d0f669f8cc4ff5a5633d6ad5746e63",
+			Name: "keystone",
+		},
+	)
+	return
 }
