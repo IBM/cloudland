@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strconv"
+	"time"
 
 	restModels "github.com/IBM/cloudland/web/rest-api/rest/models"
 	strfmt "github.com/go-openapi/strfmt"
@@ -106,7 +108,7 @@ func (t *Token) IssueTokenByPasswd(c *macaron.Context) {
 	}
 	organization := username
 	uid := user.ID
-	_, _, token, err := userAdmin.AccessToken(uid, username, organization)
+	uid, _, token, issueAt, expiresAt, err := userAdmin.AccessToken(uid, username, organization)
 	//	oid, role, token, err := userAdmin.AccessToken(uid, username, organization)
 
 	if err != nil {
@@ -115,27 +117,31 @@ func (t *Token) IssueTokenByPasswd(c *macaron.Context) {
 	}
 	c.Header().Add(`X-Subject-Token`, token)
 	c.Header().Add(`Vary`, `X-Auth-Token`)
+	expire, _ := strfmt.ParseDateTime(time.Unix(expiresAt, 0).Format(time.RFC3339))
+	issue, _ := strfmt.ParseDateTime(time.Unix(issueAt, 0).Format(time.RFC3339))
 	respInstance := restModels.PostIdentityV3AuthTokensCreatedBody{}
 	respInstance.Token = &restModels.Token{
-		Catalog:  catLog(),
-		IsDomain: false,
-		Methods:  []string{"password"},
-		Roles:    []*restModels.TokenRolesItems{&restModels.TokenRolesItems{Name: "member", ID: "1841f2adad3a4b4aa6485fb4e3a3fda1"}},
+		Catalog:   catLog(),
+		ExpiresAt: expire,
+		IssuedAt:  issue,
+		IsDomain:  false,
+		Methods:   []string{"password"},
+		Roles:     []*restModels.TokenRolesItems{&restModels.TokenRolesItems{Name: "member", ID: "1841f2adad3a4b4aa6485fb4e3a3fda1"}},
 		Project: &restModels.TokenProject{
 			Domain: &restModels.TokenProjectDomain{
 				ID:   "default",
 				Name: "default",
 			},
-			ID:   "default",
-			Name: "default",
+			ID:   organization,
+			Name: organization,
 		},
 		User: &restModels.TokenUser{
 			Domain: &restModels.TokenUserDomain{
 				ID:   "default",
 				Name: "default",
 			},
-			ID:   "b6c55db5d9294824bac2d2d535db92a4",
-			Name: "demo",
+			ID:   strconv.Itoa(int(uid)),
+			Name: username,
 		},
 	}
 	c.JSON(200, respInstance)

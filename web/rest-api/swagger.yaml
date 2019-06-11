@@ -107,7 +107,8 @@ definitions:
           properties:
             id: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '1841f2adad3a4b4aa6485fb4e3a3fda1'}
             name: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'member'}
-      expires_at: {type: string, format: data, example: "2015-11-06T14:32:17.893797Z"}
+      expires_at: {type: string, format: date-time, example: "2015-11-06T14:32:17.893797Z"}
+      issued_at: {type: string, format: date-time, example: "2015-11-06T14:32:17.893797Z"}
       project:
         type: object
         properties:
