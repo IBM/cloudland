@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/go-macaron/session"
@@ -17,10 +18,10 @@ import (
 	"gopkg.in/macaron.v1"
 )
 
-func runArgs() (args []interface{}) {
+func runArgs(cfg string) (args []interface{}) {
 	host := "127.0.0.1"
-	port := "4000"
-	listen := viper.GetString("api.listen")
+	port := 4000
+	listen := viper.GetString(cfg)
 	if listen != "" {
 		items := strings.Split(listen, ":")
 		if len(items) == 2 {
@@ -28,7 +29,7 @@ func runArgs() (args []interface{}) {
 				host = items[0]
 			}
 			if items[1] != "" {
-				port = items[1]
+				port, _ = strconv.Atoi(items[1])
 			}
 		}
 	}
@@ -37,25 +38,7 @@ func runArgs() (args []interface{}) {
 }
 
 func Run() (err error) {
-	// New().Run(runArgs()...)
-	Rest().Run(runArgs()...)
-	return
-}
-
-func Rest() (m *macaron.Macaron) {
-	m = macaron.Classic()
-	m.Use(session.Sessioner())
-	m.Use(macaron.Renderer(
-		macaron.RenderOptions{
-			Funcs: []template.FuncMap{
-				template.FuncMap{
-					"GetString": viper.GetString,
-					"Title":     func(v interface{}) string { return strings.Title(fmt.Sprint(v)) },
-				},
-			},
-		},
-	))
-	m.Get("/identity", versionInstance.ListVersion)
+	New().Run(runArgs("api.listen")...)
 	return
 }
 
@@ -136,8 +119,6 @@ func New() (m *macaron.Macaron) {
 	m.Post("/secgroups/:sgid/secrules/new", secruleView.Create)
 	m.Delete("/secgroups/:sgid/secrules/:id", secruleView.Delete)
 	m.NotFound(func(c *macaron.Context) { c.HTML(404, "404") })
-	//rest part
-	//	r.Get("/identity", versionInstance.ListVersion)
 	return
 }
 
