@@ -1,0 +1,176 @@
+swagger: '2.0'
+info: {title: Cloudland API, version: v3, description: Clandland API to compatible openstack API}
+paths:
+  /identity:
+    get:
+      consumes: [application/json]
+      produces: [application/json]
+      tags: [keystone]
+      description: 'redirect to identity auth point'
+      responses:
+        300:
+          description: redirect connection
+          headers:
+            Vary:
+              type: string
+              description: X-Auth-Token
+              default: X-Auth-Token
+              enum:
+              - X-Auth-Token
+            x-openstack-request-id: {type: string, description: 'request-id'}
+          schema:
+            type: object
+            required:
+            - versions
+            properties:
+              versions:
+                $ref: '#/definitions/versions'
+
+  /identity/v3/auth/tokens:
+    post:
+      consumes: [application/json]
+      produces: [application/json]
+      tags: [keystone]
+      description: Create a new token
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            auth:
+              type: object
+              properties:
+                scope:
+                  type: object
+                  properties:
+                    project:
+                      type: object
+                      properties:
+                        domain:
+                          type: object
+                          properties:
+                            id: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
+                        name: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: demo}
+                identity:
+                  type: object
+                  properties:
+                    methods:
+                      type: array
+                      items: {type: string, enum: [password], example: password}
+                    password:
+                      type: object
+                      properties:
+                        user:
+                          type: object
+                          properties:
+                            name: {type: string,  pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: admin}
+                            password: {type: string, example: adminpwd}
+                            domain:
+                              type: object
+                              properties:
+                                id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
+      responses:
+        201:
+          description: successful operation
+          headers:
+            Vary:
+              type: string
+              description: X-Auth-Token
+              default: X-Auth-Token
+              enum:
+              - X-Auth-Token
+            Content-Length:
+              type: integer
+            X-Subject-Token:
+              type: string
+          schema:
+            type: object
+            required:
+            - token
+            properties:
+              token:
+                $ref: '#/definitions/token'
+
+definitions:
+  token:
+    type: object
+    properties:
+      is_domain: {type: boolean, example: false}
+      methods:
+        type: array
+        items: {type: string, enum: [password], example: 'password'}
+      roles:
+        type: array
+        items:
+          type: object
+          properties:
+            id: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '1841f2adad3a4b4aa6485fb4e3a3fda1'}
+            name: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'member'}
+      expires_at: {type: string, format: date-time, example: "2015-11-06T14:32:17.893797Z"}
+      issued_at: {type: string, format: date-time, example: "2015-11-06T14:32:17.893797Z"}
+      project:
+        type: object
+        properties:
+          domain:
+            type: object
+            properties:
+              id: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '1841f2adad3a4b4aa6485fb4e3a3fda1'}
+              name: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'member'}
+          id: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '1841f2adad3a4b4aa6485fb4e3a3fda1'}
+          name: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'member'}
+      catalog:
+        type: array
+        items:
+          type: object
+          properties:
+            endpoints:
+              type: array
+              items:
+                type: object
+                properties:
+                  url: {type: string, format: url, pattern: '^http(s)?:\/\/([^\/?#]*)([^?#]*)(\?([^#]*))?(#(.*))?$', example: "http://192.168.10.16/volume/v3/3b6825911eaa44059c525888dc32713b"}
+                  interface: {type: string, enum: [public, private], pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: public}
+                  region: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'RegionOne'}
+                  region_id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'RegionOne'}
+                  id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'Regdb9895a3f6b840d98581dbee86f49069ionOne'}
+            type: {type: string, enum: ["volumev3"], example: "volumev3"}
+            id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'db9895a3f6b840d98581dbee86f49069'}
+            name: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'member'}
+      user:
+        type: object
+        properties:
+          password_expires_at: {type: string, format: date-time, example: "2015-11-06T14:32:17.893797Z"}
+          domain:
+            type: object
+            properties:
+              id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
+              name: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
+          id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
+          name: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
+
+  versions:
+    type: object
+    properties:
+      values:
+        type: array
+        items:
+          type: object
+          properties:
+            status: {type: string, enum: [stable], pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: stable}
+            updated: {type: string, format: date-time, example: "2015-11-06T14:32:17.893797Z"}
+            media-types:
+              type: array
+              items:
+                type: object
+                properties:
+                  base: {type: string, enum: ['application/json'], example: 'application/json'}
+                  type: {type: string, enum: ['application/json'], example: 'application/vnd.openstack.identity-v3+json'}
+            id: {type: string, enum: ['v3.10'], example: 'v3.10'}
+            links:
+              type: array
+              items:
+                type: object
+                properties:
+                  href: {type: string, pattern: '^http(s)?:\/\/([^\/?#]*)([^?#]*)(\?([^#]*))?(#(.*))?$', example: 'http://192.168.10.16/identity/v3/'}
+                  rel: {type: string, enum: [self, remote], example: "self"}

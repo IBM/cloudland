@@ -1,0 +1,12 @@
+export OS_PROJECT_DOMAIN_ID=default
+export OS_REGION_NAME=default
+export OS_USER_DOMAIN_ID=default
+export OS_PROJECT_NAME=default
+export OS_IDENTITY_API_VERSION=3
+export OS_PASSWORD=passw0rd
+export OS_AUTH_TYPE=password
+export OS_AUTH_URL=http://127.0.0.1:4001/identity
+export OS_USERNAME=admin
+export OS_TENANT_NAME=defaul
+export OS_VOLUME_API_VERSION=3
+export OS_CACERT=
