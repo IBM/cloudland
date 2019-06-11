@@ -1,6 +1,6 @@
 - name: install packages
   yum: 
-    name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'vconfig', 'git', 'NetworkManager', 'bridge-utils', 'python-pip']
+    name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'vconfig', 'git', 'NetworkManager', 'bridge-utils', 'python-pip', 'fail2ban-firewalld', 'firewalld']
     state: present
   tags: [be_pkg]
 
@@ -65,6 +65,8 @@
     - 'NetworkManager'
     - 'scid'
     - 'cloudlet'
+    - 'firewalld'
+    - 'fail2ban'
   tags: [be_srv]
 
 - name: start cloudlet services
@@ -74,3 +76,19 @@
     daemon_reload: yes
     state: stopped
   tags: [be_srv]
+
+- name: add firewalld service
+  firewalld:
+    service: glusterfs
+    permanent: yes
+    state: enabled
+  tags: [firewall]
+  ignore_errors: yes
+
+- name: enable vxlan in firewall
+  firewalld:
+    port: 8472/udp
+    permanent: yes
+    state: enabled
+  tags: [firewall]
+  ignore_errors: yes

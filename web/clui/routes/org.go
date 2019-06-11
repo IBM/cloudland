@@ -31,9 +31,15 @@ func (a *OrgAdmin) Create(name, owner string) (org *model.Organization, err erro
 	db := DB()
 	user := &model.User{Username: owner}
 	err = db.Model(user).Take(user).Error
+	sgName := name + "-default"
+	secGroup, err := secgroupAdmin.Create(sgName, true)
+	if err != nil {
+		log.Println("Failed to create security group", err)
+	}
 	org = &model.Organization{
-		Name:  name,
-		Owner: user.ID,
+		Name:      name,
+		Owner:     user.ID,
+		DefaultSG: secGroup.ID,
 	}
 	err = db.Create(org).Error
 	if err != nil {
