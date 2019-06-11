@@ -11,9 +11,9 @@ mac=$3
 
 apply_fw -P FORWARD DROP
 apply_fw -N secgroup-chain
-apply_fw -A FORWARD -m physdev --physdev-out $vnic --physdev-is-bridged -j secgroup-chain
-apply_fw -A FORWARD -m physdev --physdev-in $vnic --physdev-is-bridged -j secgroup-chain
-apply_fw -A secgroup-chain -j ACCEPT
+apply_fw -I secgroup-chain -j ACCEPT
+apply_fw -I FORWARD -m physdev --physdev-out $vnic --physdev-is-bridged -j secgroup-chain
+apply_fw -I FORWARD -m physdev --physdev-in $vnic --physdev-is-bridged -j secgroup-chain
 
 chain_in=secgroup-in-$vnic
 apply_fw -N $chain_in

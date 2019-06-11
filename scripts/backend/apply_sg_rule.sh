@@ -24,7 +24,7 @@ function allow_ipv4()
         apply_fw $action $chain -p $proto $args -m conntrack --ctstate NEW -j RETURN
     elif [ "$max" -eq "$min" ]; then
         apply_fw $action $chain -p $proto -m $proto -m conntrack --ctstate NEW --dport $max $args -j RETURN
-    elif ["$max" -gt "$min" ]; then
+    elif [ "$max" -gt "$min" ]; then
         apply_fw $action $chain -p $proto -m $proto -m conntrack --ctstate NEW --dport $min:$max $args -j RETURN
     fi
 }
@@ -59,13 +59,13 @@ while [ $i -lt $len ]; do
     port_min=$(jq -r .[$i].port_min <<< $sec_data)
     port_max=$(jq -r .[$i].port_max <<< $sec_data)
     case "$protocol" in
-        "TCP")
+        "tcp")
             allow_ipv4 "$chain" "$args" "tcp" "$port_min" "$port_max"
             ;;
-        "UDP")
+        "udp")
             allow_ipv4 "$chain" "$args" "udp" "$port_min" "$port_max"
             ;;
-        "ICMP")
+        "icmp")
             ptype=$port_min
             pcode=$port_max
             allow_icmp "$chain" "$args" "$ptype" "$pcode"
