@@ -29,7 +29,7 @@ if [ ! -f "$vm_img" ]; then
     fi
     if [ ! -f "$image_cache/$img_name" ]; then
         echo "Image $img_name downlaod failed!"
-        echo "|:-COMMAND-:| `basename $0` '$vm_ID' '$vm_stat' '$SCI_CLIENT_ID'"
+        echo "|:-COMMAND-:| `basename $0` '$1' '$vm_stat' '$SCI_CLIENT_ID'"
         exit -1
     fi
     cmd="qemu-img convert -f qcow2 -O raw $image_cache/$img_name $vm_img"

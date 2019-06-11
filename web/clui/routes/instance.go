@@ -57,6 +57,7 @@ type NetworkLink struct {
 type VlanInfo struct {
 	Device  string `json:"device"`
 	Vlan    int64  `json:"vlan"`
+	IpAddr  string `json:"ip_address"`
 	MacAddr string `json:"mac_address"`
 }
 
@@ -170,7 +171,7 @@ func (a *InstanceAdmin) buildMetadata(primary *model.Subnet, subnets []*model.Su
 	instNetwork.Routes = append(instNetwork.Routes, instRoute)
 	instNetworks = append(instNetworks, instNetwork)
 	instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, MacAddr: iface.MacAddr})
+	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, IpAddr: address, MacAddr: iface.MacAddr})
 	for i, subnet := range subnets {
 		ifname := fmt.Sprintf("eth%d", i+1)
 		iface, err = model.CreateInterface(subnet.ID, instance.ID, ifname, "instance")
@@ -188,7 +189,7 @@ func (a *InstanceAdmin) buildMetadata(primary *model.Subnet, subnets []*model.Su
 			ID:      fmt.Sprintf("network%d", i+1),
 		})
 		instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, MacAddr: iface.MacAddr})
+		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, IpAddr: address, MacAddr: iface.MacAddr})
 	}
 	var instKeys []string
 	for _, key := range keys {
