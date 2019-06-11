@@ -60,8 +60,6 @@ func (v *VersionsAdmin) v3(c *macaron.Context) {
 		Path:   "/identity/v3/",
 	}
 	rel := "self"
-	fmt.Println(viper.GetString("rest.listen"))
-	fmt.Println("111111")
 	updatedDate, _ := strfmt.ParseDateTime(`2015-11-06T14:32:17.893797Z`)
 	v.Versions = &restModels.Versions{}
 	v.Versions.Values = append(
