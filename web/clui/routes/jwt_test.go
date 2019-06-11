@@ -10,14 +10,15 @@ import (
 	"crypto/rsa"
 	"testing"
 
-	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/IBM/cloudland/web/clui/model"
+	jwt "github.com/dgrijalva/jwt-go"
 )
 
 func TestSigningMethodRS256(t *testing.T) {
 	idrsa := testdata["key.private"].(*rsa.PrivateKey)
 	idrsaPub := testdata["key.public"].(*rsa.PublicKey)
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, NewClaims("admin", "admin", 1, 1, model.Reader))
+	claim, _, _ := NewClaims("admin", "admin", 1, 1, model.Reader)
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claim)
 	s, err := token.SignedString(idrsa)
 	if err != nil {
 		t.Fatal(err)

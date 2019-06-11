@@ -24,10 +24,15 @@ type Token struct {
 	Catalog []*TokenCatalogItems `json:"catalog"`
 
 	// expires at
-	ExpiresAt string `json:"expires_at,omitempty"`
+	// Format: date-time
+	ExpiresAt strfmt.DateTime `json:"expires_at,omitempty"`
 
 	// is domain
 	IsDomain bool `json:"is_domain,omitempty"`
+
+	// issued at
+	// Format: date-time
+	IssuedAt strfmt.DateTime `json:"issued_at,omitempty"`
 
 	// methods
 	Methods []string `json:"methods"`
@@ -47,6 +52,14 @@ func (m *Token) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCatalog(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateExpiresAt(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateIssuedAt(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -92,6 +105,32 @@ func (m *Token) validateCatalog(formats strfmt.Registry) error {
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *Token) validateExpiresAt(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.ExpiresAt) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("expires_at", "body", "date-time", m.ExpiresAt.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Token) validateIssuedAt(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.IssuedAt) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("issued_at", "body", "date-time", m.IssuedAt.String(), formats); err != nil {
+		return err
 	}
 
 	return nil
