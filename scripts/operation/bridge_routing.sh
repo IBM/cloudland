@@ -11,6 +11,9 @@ device=$2
 bridge=br$number
 vxlan=v-$number
 
+cat /proc/net/dev | grep -q "\<$bridge\>:"
+[ $? -eq 0 ] && exit 1
+
 addresses=$(ip addr show $device | grep 'inet ' | awk '{print $2}')
 routes=$(ip route | grep $device | grep via | cut -d' ' -f1-3)
 echo $addresses
