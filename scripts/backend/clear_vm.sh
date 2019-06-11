@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -xv
 
 cd $(dirname $0)
 source ../cloudrc
@@ -14,8 +14,7 @@ result=$(eval "$cmd")
 count=$(echo $vm_xml | xmllint --xpath 'count(/domain/devices/interface)' -)
 for (( i=1; i <= $count; i++ )); do
     vif_dev=$(echo $vm_xml | xmllint --xpath "string(/domain/devices/interface[$i]/target/@dev)" -)
-	br_name=$(echo $vm_xml | xmllint --xpath "string(/domain/devices/interface[$i]/source/@bridge)" -)
-#    sql_exec "delete from vtep where instance='$vif_dev'"
+    br_name=$(echo $vm_xml | xmllint --xpath "string(/domain/devices/interface[$i]/source/@bridge)" -)
     if [ "$use_lb" = "false" ]; then
         br_name=br$SCI_CLIENT_ID
         result=$(icp-tower --ovs-bridge=$br_name gate remove --interface $vif_dev)
@@ -23,7 +22,7 @@ for (( i=1; i <= $count; i++ )); do
     else
         vni=${br_name#br}
         ./clear_link.sh $vni
-#        ./clear_sg_chain.sh $vif_dev
+        ./clear_sg_chain.sh $vif_dev
     fi
     sidecar span log $span "Callback: clear_vnic.sh '$vif_dev'"
     [ -n "$vif_dev" ] && echo "|:-COMMAND-:| clear_vnic.sh '$vif_dev'"

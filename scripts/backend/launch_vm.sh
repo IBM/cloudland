@@ -57,8 +57,9 @@ nvlan=$(jq length <<< $vlans)
 i=0
 while [ $i -lt $nvlan ]; do
     vlan=$(jq -r .[$i].vlan <<< $vlans)
+    ip=$(jq -r .[$i].ip_address <<< $vlans)
     mac=$(jq -r .[$i].mac_address <<< $vlans)
-    ./attach_nic.sh $vm_ID $vlan $mac
+    jq .security <<< $metadata | ./attach_nic.sh $vm_ID $vlan $ip $mac 
     let i=$i+1
 done
 virsh start $vm_ID
