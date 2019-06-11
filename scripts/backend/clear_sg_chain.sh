@@ -22,3 +22,5 @@ apply_fw -F $chain_out
 apply_fw -X $chain_in
 apply_fw -X $chain_as
 apply_fw -X $chain_out
+
+service iptables save

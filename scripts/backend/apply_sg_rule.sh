@@ -76,3 +76,5 @@ while [ $i -lt $len ]; do
     esac
     let i=$i+1
 done
+
+service iptables save

@@ -30,7 +30,7 @@ apply_fw -A $chain_as -j DROP
 
 apply_fw -N $chain_out
 apply_fw -I secgroup-chain -m physdev --physdev-in $vnic --physdev-is-bridged -j $chain_out
-apply_fw -A INPUT -m physdev --physdev-in $vnic --physdev-is-bridged -j $chain_out
+apply_fw -I INPUT -m physdev --physdev-in $vnic --physdev-is-bridged -j $chain_out
 apply_fw -A $chain_out -j $chain_as
 apply_fw -A $chain_out -m state --state RELATED,ESTABLISHED -j RETURN
 apply_fw -A $chain_out -m state --state INVALID -j DROP
