@@ -66,7 +66,7 @@ func TestUserAdminAccessToken(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	oid, role, accessToken, err := userAdmin.AccessToken(user.ID, "admin", "admin")
+	oid, role, accessToken, _, _, err := userAdmin.AccessToken(user.ID, "admin", "admin")
 	if err != nil || oid == 0 || role == model.None {
 		t.Fatal(err, oid, role)
 	}

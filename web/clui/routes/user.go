@@ -131,7 +131,7 @@ func (a *UserAdmin) Validate(username, password string) (user *model.User, err e
 	return
 }
 
-func (a *UserAdmin) AccessToken(uid int64, username, organization string) (oid int64, role model.Role, token string, err error) {
+func (a *UserAdmin) AccessToken(uid int64, username, organization string) (oid int64, role model.Role, token string, issueAt, expiresAt int64, err error) {
 	db := DB()
 	member := &model.Member{}
 	err = db.Take(member, "user_name = ? and org_name = ?", username, organization).Error
@@ -144,7 +144,7 @@ func (a *UserAdmin) AccessToken(uid int64, username, organization string) (oid i
 		return
 	}
 	oid = member.OrgID
-	token, err = NewToken(username, organization, uid, oid, role)
+	token, issueAt, expiresAt, err = NewToken(username, organization, uid, oid, role)
 	return
 }
 
@@ -184,7 +184,7 @@ func (v *UserView) LoginPost(c *macaron.Context, store session.Store) {
 	}
 	organization := username
 	uid := user.ID
-	oid, role, token, err := userAdmin.AccessToken(uid, username, organization)
+	oid, role, token, _, _, err := userAdmin.AccessToken(uid, username, organization)
 	if err != nil {
 		log.Println("Failed to get token", err)
 		c.Data["ErrorMsg"] = err.Error()
