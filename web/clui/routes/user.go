@@ -131,7 +131,7 @@ func (a *UserAdmin) Validate(username, password string) (user *model.User, err e
 	return
 }
 
-func (a *UserAdmin) AccessToken(uid int64, username, organization string) (oid int64, role model.Role, token string, err error) {
+func (a *UserAdmin) AccessToken(uid int64, username, organization string) (oid int64, role model.Role, token string, issueAt, expiresAt int64, err error) {
 	db := DB()
 	member := &model.Member{}
 	err = db.Take(member, "user_name = ? and org_name = ?", username, organization).Error
@@ -144,7 +144,7 @@ func (a *UserAdmin) AccessToken(uid int64, username, organization string) (oid i
 		return
 	}
 	oid = member.OrgID
-	token, err = NewToken(username, organization, uid, oid, role)
+	token, issueAt, expiresAt, err = NewToken(username, organization, uid, oid, role)
 	return
 }
 
@@ -184,19 +184,21 @@ func (v *UserView) LoginPost(c *macaron.Context, store session.Store) {
 	}
 	organization := username
 	uid := user.ID
-	oid, role, token, err := userAdmin.AccessToken(uid, username, organization)
+	oid, role, token, _, _, err := userAdmin.AccessToken(uid, username, organization)
 	if err != nil {
-		log.Println("Failed to get token, %v", err)
+		log.Println("Failed to get token", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(403, "403")
 		return
 	}
+	org, err := orgAdmin.Get(organization)
 	store.Set("login", username)
 	store.Set("uid", uid)
 	store.Set("oid", oid)
 	store.Set("role", role)
 	store.Set("act", token)
 	store.Set("org", organization)
+	store.Set("defsg", org.DefaultSG)
 	redirectTo := "/instances"
 	c.Redirect(redirectTo)
 }
@@ -210,7 +212,7 @@ func (v *UserView) List(c *macaron.Context, store session.Store) {
 	}
 	total, users, err := userAdmin.List(offset, limit, order)
 	if err != nil {
-		log.Println("Failed to list user(s), %v", err)
+		log.Println("Failed to list user(s)", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -334,12 +336,6 @@ func (v *UserView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 	}
 	_, err = orgAdmin.Create(username, username)
-	if err != nil {
-		log.Println("Failed to create organization, %v", err)
-		c.HTML(500, "500")
-	}
-	sgName := username + ":default"
-	_, err = secgroupAdmin.Create(sgName, true)
 	if err != nil {
 		log.Println("Failed to create organization, %v", err)
 		c.HTML(500, "500")

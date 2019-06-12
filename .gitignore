@@ -33,6 +33,7 @@
 *.sum
 
 #Others
+wget-log
 /deploy/hosts/hosts
 /web/clui/clui
 /deploy/*.retry
@@ -65,3 +66,4 @@ cloudrc.local
 /sci/scia/scia64
 /sci/stamp-h1
 /sci/usecase
+.vscode

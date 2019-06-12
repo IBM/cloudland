@@ -18,6 +18,6 @@ sed -i "\#$addr dev ns-$vni#d" $vrrp_conf
 grep -q " dev ns-$vni" $vrrp_conf
 if [ $? -ne 0 ]; then
     ip link del ln-$vni
-#    apply_vnic -D ln-$vni
+    apply_vnic -D ln-$vni
     ./clear_link.sh $vni
 fi

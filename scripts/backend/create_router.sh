@@ -19,43 +19,35 @@ role=$8
 ip netns add $router
 #ip netns exec $router iptables -A INPUT -m mark --mark 0x1/0xffff -j ACCEPT
 ip netns exec $router ip link set lo up
-suffix=${router%%-*}
+suffix=$1
 
-ip link add ext$suffix type veth peer name te-$suffix
-#apply_vnic -A te-$suffix
-#ip netns exec $router iptables -A FORWARD -o ext$suffix -m mark ! --mark 0x4000000/0xffff0000 -j DROP
-ip link set ext$suffix netns $router
-ip link set te-$suffix up
-brctl addif br$external_vlan te-$suffix
-ip netns exec $router ip link set ext$suffix up
+./create_veth.sh $router ext-$suffix te-$suffix
 if [ -n "$ext_ip" ]; then
     eip=${ext_ip%/*}
-    ip netns exec $router iptables -t nat -A POSTROUTING ! -d 10.0.0.0/8 -j SNAT -o ext$suffix --to-source $eip
+    ip netns exec $router iptables -t nat -A POSTROUTING ! -d 10.0.0.0/8 -j SNAT -o te-$suffix --to-source $eip
 fi
+apply_vnic -I ext-$suffix
 
-ip link add int$suffix type veth peer name ti-$suffix
-#apply_vnic -A ti-$suffix
-#ip netns exec $router iptables -A FORWARD -o int$suffix -m mark ! --mark 0x4000000/0xffff0000 -j DROP
-ip link set int$suffix netns $router
-ip link set ti-$suffix up
-brctl addif br$internal_vlan ti-$suffix
-ip netns exec $router ip link set int$suffix up
+./create_veth.sh $router int-$suffix ti-$suffix
 if [ -n "$int_ip" ]; then
     iip=${int_ip%/*}
-    ip netns exec $router iptables -t nat -A POSTROUTING -d 10.0.0.0/8 -j SNAT -o int$suffix --to-source $iip
+    ip netns exec $router iptables -t nat -A POSTROUTING -d 10.0.0.0/8 -j SNAT -o ti-$suffix --to-source $iip
 fi
+apply_vnic -I int-$suffix
 
-router_dir=/opt/cloudland/cache/router/$router
+router_dir=$cache_dir/router/$router
 mkdir -p $router_dir
+ip netns exec $router iptables-save > $router_dir/iptables.save
+
 vrrp_conf=$router_dir/keepalived.conf
 notify_sh=$router_dir/notify.sh
 cat > $vrrp_conf <<EOF
-vrrp_instance vrouter {
+vrrp_instance $router {
     interface ns-${vrrp_vni}
     track_interface {
         ns-${vrrp_vni}
-        int$suffix
-        ext$suffix
+        ti-$suffix
+        te-$suffix
     }
     dont_track_primary
     state $role
@@ -65,8 +57,8 @@ vrrp_instance vrouter {
     advert_int 1
 
     virtual_ipaddress {
-        $int_ip dev int$suffix
-        $ext_ip dev ext$suffix
+        $int_ip dev ti-$suffix
+        $ext_ip dev te-$suffix
     }
     notify $notify_sh
 }
@@ -81,9 +73,9 @@ STATE=\$3
 case \$STATE in
    "MASTER") 
         ip netns exec $router route add default gw $ext_gw
-        ip netns exec $router arping -c 2 -I ext$suffix -s $eip $eip 
+        ip netns exec $router arping -c 2 -I te-$suffix -s $eip $eip 
 #        ip netns exec $router route add -net 10.0.0.0/8 gw $int_gw
-        ip netns exec $router arping -c 2 -I int$suffix -s $iip $iip
+        ip netns exec $router arping -c 2 -I ti-$suffix -s $iip $iip
         exit 0
         ;;
    "BACKUP") 

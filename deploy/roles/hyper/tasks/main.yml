@@ -1,7 +1,11 @@
 - name: install packages
   yum: 
-    name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'vconfig', 'git', 'NetworkManager', 'bridge-utils']
+    name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'vconfig', 'git', 'NetworkManager', 'bridge-utils', 'python-pip', 'fail2ban-firewalld', 'firewalld']
     state: present
+  tags: [be_pkg]
+
+- pip:
+    name: pyparsing
   tags: [be_pkg]
 
 - name: creates cloudland directory
@@ -11,7 +15,6 @@
     owner: centos
   with_items:
     - /opt/cloudland
-    - /usr/local
   tags: [sync]
 
 - name: synchronize cloudland and grpc
@@ -21,7 +24,6 @@
     rsync_opts: "--exclude=cache,--exclude=log,--exclude=db"
   with_items:
     - {src: '/opt/cloudland', dest: '/opt', owner: 'centos'}
-    - {src: '/usr/local', dest: '/usr', owner: 'centos'}
   tags: [sync]
 
 - name: copy sci binaries
@@ -39,6 +41,7 @@
   with_items:
     - {src: 'cloudlet.service', dest: '/lib/systemd/system', owner: 'root'}
     - {src: 'scid.service', dest: '/lib/systemd/system', owner: 'root'}
+    - {src: 'recover_onboot.service', dest: '/lib/systemd/system', owner: 'root'}
   tags: [be_srv]
 
 - name: create cloudlet environment file
@@ -49,7 +52,7 @@
   with_items:
     - {src: 'cloudlet.j2', dest: '/etc/sysconfig/cloudlet', owner: 'root'}
     - {src: 'cloudrc.local.j2', dest: '/opt/cloudland/scripts/cloudrc.local', owner: 'centos'}
-  tags: [be_srv]
+  tags: [be_conf]
  
 - name: start cloudlet services
   systemd: 
@@ -62,4 +65,30 @@
     - 'NetworkManager'
     - 'scid'
     - 'cloudlet'
+    - 'firewalld'
+    - 'fail2ban'
   tags: [be_srv]
+
+- name: start cloudlet services
+  systemd: 
+    name: recover_onboot
+    enabled: yes
+    daemon_reload: yes
+    state: stopped
+  tags: [be_srv]
+
+- name: add firewalld service
+  firewalld:
+    service: glusterfs
+    permanent: yes
+    state: enabled
+  tags: [firewall]
+  ignore_errors: yes
+
+- name: enable vxlan in firewall
+  firewalld:
+    port: 8472/udp
+    permanent: yes
+    state: enabled
+  tags: [firewall]
+  ignore_errors: yes

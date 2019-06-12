@@ -56,7 +56,9 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 		err = fmt.Errorf("Pease detach volume before attach it to new instance")
 		return
 	}
-	volume.Name = name
+	if name != "" {
+		volume.Name = name
+	}
 	if volume.InstanceID > 0 && instID == 0 && volume.Status == "attached" {
 		control := fmt.Sprintf("inter=%d", volume.Instance.Hyper)
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/detach_volume.sh %d %d", volume.Instance.ID, volume.ID)

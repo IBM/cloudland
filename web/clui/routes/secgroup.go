@@ -163,18 +163,14 @@ func (v *SecgroupView) Create(c *macaron.Context, store session.Store) {
 	redirectTo := "../secgroups"
 	name := c.Query("name")
 	isdefStr := c.Query("isdefault")
-	if isdefStr == "" {
-		isdefStr = "false"
-	}
-	isDef, err := strconv.ParseBool(isdefStr)
-	if err != nil {
-		log.Println("Invalid default value, %v", err)
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
-		return
+	isDef := false
+	if isdefStr == "" || isdefStr == "no" {
+		isDef = false
+	} else if isdefStr == "yes" {
+		isDef = true
 	}
 
-	_, err = secgroupAdmin.Create(name, isDef)
+	_, err := secgroupAdmin.Create(name, isDef)
 	if err != nil {
 		log.Println("Failed to create security group, %v", err)
 		c.HTML(500, "500")

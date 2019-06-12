@@ -21,11 +21,11 @@ function allow_ipv4()
     min=$4
     max=$5
     if [ -z "$min" -a -z "$max" ]; then
-        apply_fw $action $chain -p $proto $args -j RETURN
+        apply_fw $action $chain -p $proto $args -m conntrack --ctstate NEW -j RETURN
     elif [ "$max" -eq "$min" ]; then
-        apply_fw $action $chain -p $proto -m $proto --dport $max $args -j RETURN
-    elif ["$max" -gt "$min" ]; then
-        apply_fw $action $chain -p $proto -m $proto -m multiport --dport $min:$max $args -j RETURN
+        apply_fw $action $chain -p $proto -m $proto -m conntrack --ctstate NEW --dport $max $args -j RETURN
+    elif [ "$max" -gt "$min" ]; then
+        apply_fw $action $chain -p $proto -m $proto -m conntrack --ctstate NEW --dport $min:$max $args -j RETURN
     fi
 }
 
@@ -43,27 +43,29 @@ function allow_icmp()
     apply_fw $action $chain -p icmp $args -j RETURN
 }
 
-while read line; do
-    [ -z "$line" ] && continue
-    direction=$(echo $line | cut -d' ' -f1 | xargs)
-    remote=$(echo $line | cut -d' ' -f2 | xargs)
-    protocol=$(echo $line | cut -d' ' -f3 | xargs)
+sec_data=$(cat)
+i=0
+len=$(jq length <<< $sec_data)
+while [ $i -lt $len ]; do
+    direction=$(jq -r .[$i].direction <<< $sec_data)
+    remote_ip=$(jq -r .[$i].remote_ip <<< $sec_data)
+    protocol=$(jq -r .[$i].protocol <<< $sec_data)
     chain=$chain_in
     [ "$direction" = "egress" ] && chain=$chain_out
-    if [ -n "$remote" ]; then
-        [ "$direction" = "ingress" ] && args="-s $remote"
-        [ "$direction" = "egress" ] && args="-d $remote"
+    if [ -n "$remote_ip" ]; then
+        [ "$direction" = "ingress" ] && args="-s $remote_ip"
+        [ "$direction" = "egress" ] && args="-d $remote_ip"
     fi
-    port_min=$(echo $line | cut -d' ' -f4 | xargs)
-    port_max=$(echo $line | cut -d' ' -f5 | xargs)
+    port_min=$(jq -r .[$i].port_min <<< $sec_data)
+    port_max=$(jq -r .[$i].port_max <<< $sec_data)
     case "$protocol" in
-        "TCP")
+        "tcp")
             allow_ipv4 "$chain" "$args" "tcp" "$port_min" "$port_max"
             ;;
-        "UDP")
+        "udp")
             allow_ipv4 "$chain" "$args" "udp" "$port_min" "$port_max"
             ;;
-        "ICMP")
+        "icmp")
             ptype=$port_min
             pcode=$port_max
             allow_icmp "$chain" "$args" "$ptype" "$pcode"
@@ -72,4 +74,7 @@ while read line; do
             apply_fw "$action" "$chain" "-p" "$protocol" "$args" -j RETURN
             ;;
     esac
+    let i=$i+1
 done
+
+service iptables save

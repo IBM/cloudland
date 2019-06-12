@@ -29,7 +29,7 @@ if [ ! -f "$vm_img" ]; then
     fi
     if [ ! -f "$image_cache/$img_name" ]; then
         echo "Image $img_name downlaod failed!"
-        echo "|:-COMMAND-:| `basename $0` '$vm_ID' '$vm_stat' '$SCI_CLIENT_ID'"
+        echo "|:-COMMAND-:| `basename $0` '$1' '$vm_stat' '$SCI_CLIENT_ID'"
         exit -1
     fi
     cmd="qemu-img convert -f qcow2 -O raw $image_cache/$img_name $vm_img"
@@ -57,8 +57,9 @@ nvlan=$(jq length <<< $vlans)
 i=0
 while [ $i -lt $nvlan ]; do
     vlan=$(jq -r .[$i].vlan <<< $vlans)
+    ip=$(jq -r .[$i].ip_address <<< $vlans)
     mac=$(jq -r .[$i].mac_address <<< $vlans)
-    ./attach_nic.sh $vm_ID $vlan $mac
+    jq .security <<< $metadata | ./attach_nic.sh $vm_ID $vlan $ip $mac 
     let i=$i+1
 done
 virsh start $vm_ID

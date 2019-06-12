@@ -20,16 +20,10 @@
 #include <grpcpp/impl/codegen/stub_options.h>
 #include <grpcpp/impl/codegen/sync_stream.h>
 
-namespace grpc_impl {
-class CompletionQueue;
-class ServerCompletionQueue;
-}  // namespace grpc_impl
-
 namespace grpc {
-namespace experimental {
-template <typename RequestT, typename ResponseT>
-class MessageAllocator;
-}  // namespace experimental
+class CompletionQueue;
+class Channel;
+class ServerCompletionQueue;
 class ServerContext;
 }  // namespace grpc
 
@@ -67,8 +61,6 @@ class RemoteExec final {
       virtual ~experimental_async_interface() {}
       virtual void Execute(::grpc::ClientContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, std::function<void(::grpc::Status)>) = 0;
       virtual void Execute(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void Execute(::grpc::ClientContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) = 0;
-      virtual void Execute(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) = 0;
       virtual void Transmit(::grpc::ClientContext* context, ::com::ibm::cloudland::scripts::TransmitAck* response, ::grpc::experimental::ClientWriteReactor< ::com::ibm::cloudland::scripts::FileChunk>* reactor) = 0;
     };
     virtual class experimental_async_interface* experimental_async() { return nullptr; }
@@ -103,8 +95,6 @@ class RemoteExec final {
      public:
       void Execute(::grpc::ClientContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, std::function<void(::grpc::Status)>) override;
       void Execute(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, std::function<void(::grpc::Status)>) override;
-      void Execute(::grpc::ClientContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) override;
-      void Execute(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) override;
       void Transmit(::grpc::ClientContext* context, ::com::ibm::cloudland::scripts::TransmitAck* response, ::grpc::experimental::ClientWriteReactor< ::com::ibm::cloudland::scripts::FileChunk>* reactor) override;
      private:
       friend class Stub;
@@ -189,12 +179,6 @@ class RemoteExec final {
                  ::grpc::experimental::ServerCallbackRpcController* controller) {
                    return this->Execute(context, request, response, controller);
                  }));
-    }
-    void SetMessageAllocatorFor_Execute(
-        ::grpc::experimental::MessageAllocator< ::com::ibm::cloudland::scripts::ExecuteRequest, ::com::ibm::cloudland::scripts::ExecuteReply>* allocator) {
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::com::ibm::cloudland::scripts::ExecuteRequest, ::com::ibm::cloudland::scripts::ExecuteReply>*>(
-          ::grpc::Service::experimental().GetHandler(0))
-              ->SetMessageAllocator(allocator);
     }
     ~ExperimentalWithCallbackMethod_Execute() override {
       BaseClassMustBeDerivedFromService(this);
