@@ -19,19 +19,21 @@ role=$8
 ip netns add $router
 #ip netns exec $router iptables -A INPUT -m mark --mark 0x1/0xffff -j ACCEPT
 ip netns exec $router ip link set lo up
-suffix=${router##*-}
+suffix=$1
 
 ./create_veth.sh $router ext-$suffix te-$suffix
 if [ -n "$ext_ip" ]; then
     eip=${ext_ip%/*}
     ip netns exec $router iptables -t nat -A POSTROUTING ! -d 10.0.0.0/8 -j SNAT -o te-$suffix --to-source $eip
 fi
+apply_vnic -I ext-$suffix
 
 ./create_veth.sh $router int-$suffix ti-$suffix
 if [ -n "$int_ip" ]; then
     iip=${int_ip%/*}
     ip netns exec $router iptables -t nat -A POSTROUTING -d 10.0.0.0/8 -j SNAT -o ti-$suffix --to-source $iip
 fi
+apply_vnic -I int-$suffix
 
 router_dir=$cache_dir/router/$router
 mkdir -p $router_dir
