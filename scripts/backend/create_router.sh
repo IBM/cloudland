@@ -35,6 +35,8 @@ fi
 
 router_dir=$cache_dir/router/$router
 mkdir -p $router_dir
+ip netns exec $router iptables-save > $router_dir/iptables.save
+
 vrrp_conf=$router_dir/keepalived.conf
 notify_sh=$router_dir/notify.sh
 cat > $vrrp_conf <<EOF
