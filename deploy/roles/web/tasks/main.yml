@@ -7,8 +7,8 @@
   file:
     path: /opt/cloudland/web/clui/conf
     state: directory
-    owner: centos
-    group: centos
+    owner: cland
+    group: cland
 
 - name: cland ui config file
   template:
@@ -23,7 +23,7 @@
     mode: preserve
   with_items:
     - {src: 'hypercube.service', dest: '/lib/systemd/system', owner: 'root'}
-    - {src: 'hypercube.sh', dest: '/usr/local/bin', owner: 'centos'}
+    - {src: 'hypercube.sh', dest: '/usr/local/bin', owner: 'cland'}
   tags: [web_srv]
 
 - name: start hypercube service
