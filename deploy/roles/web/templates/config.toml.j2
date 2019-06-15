@@ -2,6 +2,10 @@
 listen = "{{ hostvars[groups['web'][0]]['inventory_hostname'] }}:4000"
 endpoint = "{{ hostvars[groups['web'][0]]['inventory_hostname'] }}:4000"
 
+[api]
+listen = "{{ hostvars[groups['web'][0]]['inventory_hostname'] }}:4001"
+endpoint = "{{ hostvars[groups['web'][0]]['inventory_hostname'] }}:4001"
+
 [grpc]
 listen = "{{ hostvars[groups['web'][0]]['inventory_hostname'] }}:5000"
 endpoint = "{{ hostvars[groups['web'][0]]['inventory_hostname'] }}:5000"

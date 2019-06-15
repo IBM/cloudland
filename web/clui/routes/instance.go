@@ -85,27 +85,32 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 	db := DB()
 	image := &model.Image{Model: model.Model{ID: imageID}}
 	if err = db.Take(image).Error; err != nil {
-		log.Println("Image query failed, %v", err)
+		log.Println("Image query failed", err)
 		return
 	}
 	flavor := &model.Flavor{Model: model.Model{ID: flavorID}}
 	if err = db.Find(flavor).Error; err != nil {
-		log.Println("Flavor query failed, %v", err)
+		log.Println("Flavor query failed", err)
 		return
 	}
 	primary := &model.Subnet{Model: model.Model{ID: primaryID}}
 	if err = db.Find(primary).Error; err != nil {
-		log.Println("Primary subnet query failed, %v", err)
+		log.Println("Primary subnet query failed", err)
 		return
 	}
 	subnets := []*model.Subnet{}
 	if err = db.Where(subnetIDs).Take(&subnets).Error; err != nil {
-		log.Println("Secondary subnets query failed, %v", err)
+		log.Println("Secondary subnets query failed", err)
 		return
 	}
 	keys := []*model.Key{}
 	if err = db.Where(keyIDs).Find(&keys).Error; err != nil {
-		log.Println("Keys query failed, %v", err)
+		log.Println("Keys query failed", err)
+		return
+	}
+	secGroups := []*model.SecurityGroup{}
+	if err = db.Where(sgIDs).Find(&secGroups).Error; err != nil {
+		log.Println("Security group query failed", err)
 		return
 	}
 	i := 0
@@ -117,20 +122,20 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		instance = &model.Instance{Hostname: hostname, ImageID: imageID, Image: image, FlavorID: flavorID, Flavor: flavor, Keys: keys, Userdata: userdata, Status: "pending"}
 		err = db.Create(instance).Error
 		if err != nil {
-			log.Println("DB create instance failed, %v", err)
+			log.Println("DB create instance failed", err)
 			return
 		}
 		metadata := ""
-		_, metadata, err = a.buildMetadata(primary, subnets, keys, instance, userdata, sgIDs)
+		_, metadata, err = a.buildMetadata(primary, subnets, keys, instance, userdata, secGroups)
 		if err != nil {
-			log.Println("Build instance metadata failed, %v", err)
+			log.Println("Build instance metadata failed", err)
 			return
 		}
 		control := fmt.Sprintf("inter= cpu=%d memory=%d disk=%d network=%d", 0, 0, 0, 0)
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh %d image-%d.%s %s %d %d %d <<EOF\n%s\nEOF", instance.ID, image.ID, image.Format, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, metadata)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
-			log.Println("Launch vm command execution failed, %v", err)
+			log.Println("Launch vm command execution failed", err)
 			return
 		}
 		i++
@@ -154,13 +159,13 @@ func hyperExecute(ctx context.Context, control, command string) (err error) {
 	return
 }
 
-func (a *InstanceAdmin) buildMetadata(primary *model.Subnet, subnets []*model.Subnet, keys []*model.Key, instance *model.Instance, userdata string, sgIDs []int64) (interfaces []*model.Interface, metadata string, err error) {
+func (a *InstanceAdmin) buildMetadata(primary *model.Subnet, subnets []*model.Subnet, keys []*model.Key, instance *model.Instance, userdata string, secGroups []*model.SecurityGroup) (interfaces []*model.Interface, metadata string, err error) {
 	vlans := []*VlanInfo{}
 	instNetworks := []*InstanceNetwork{}
 	instLinks := []*NetworkLink{}
 	gateway := strings.Split(primary.Gateway, "/")[0]
 	instRoute := &NetworkRoute{Network: "0.0.0.0", Netmask: "0.0.0.0", Gateway: gateway}
-	iface, err := model.CreateInterface(primary.ID, instance.ID, "eth0", "instance")
+	iface, err := model.CreateInterface(primary.ID, instance.ID, "eth0", "instance", secGroups)
 	if err != nil {
 		log.Println("Allocate address for primary subnet %s--%s/%s failed, %v", primary.Name, primary.Network, primary.Netmask, err)
 		return
@@ -174,7 +179,7 @@ func (a *InstanceAdmin) buildMetadata(primary *model.Subnet, subnets []*model.Su
 	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, IpAddr: address, MacAddr: iface.MacAddr})
 	for i, subnet := range subnets {
 		ifname := fmt.Sprintf("eth%d", i+1)
-		iface, err = model.CreateInterface(subnet.ID, instance.ID, ifname, "instance")
+		iface, err = model.CreateInterface(subnet.ID, instance.ID, ifname, "instance", nil)
 		if err != nil {
 			log.Println("Allocate address for secondary subnet %s--%s/%s failed, %v", subnet.Name, subnet.Network, subnet.Netmask, err)
 			return
@@ -195,12 +200,11 @@ func (a *InstanceAdmin) buildMetadata(primary *model.Subnet, subnets []*model.Su
 	for _, key := range keys {
 		instKeys = append(instKeys, key.PublicKey)
 	}
-	secRules, err := model.GetSecurityRules(sgIDs)
+	secRules, err := model.GetSecurityRules(secGroups)
 	if err != nil {
 		log.Println("Failed to get security rules", err)
 		return
 	}
-	log.Println("$$$$$$$$$$$$$$$$$$$$ security rule IDs", sgIDs)
 	securityData := []*SecurityData{}
 	for _, rule := range secRules {
 		sgr := &SecurityData{

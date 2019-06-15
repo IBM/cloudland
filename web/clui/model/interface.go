@@ -23,13 +23,12 @@ type Interface struct {
 	Instance   int64
 	Device     int64
 	FloatingIp int64
-	SecgroupID int64
-	Secgroup   *SecurityGroup `gorm:"foreignkey:SecgroupID"`
-	Address    *Address       `gorm:"foreignkey:Interface"`
-	Hyper      int32          `gorm:"default:-1"`
-	PrimaryIf  bool           `gorm:"default:false"`
-	Type       string         `gorm:"type:varchar(20)"`
+	Address    *Address `gorm:"foreignkey:Interface"`
+	Hyper      int32    `gorm:"default:-1"`
+	PrimaryIf  bool     `gorm:"default:false"`
+	Type       string   `gorm:"type:varchar(20)"`
 	Mtu        int32
+	Secgroups  []*SecurityGroup `gorm:"many2many:secgroup_ifaces;"`
 }
 
 func init() {
@@ -48,7 +47,7 @@ func genMacaddr() (mac string, err error) {
 	return mac, nil
 }
 
-func CreateInterface(subnetID, ID int64, ifaceName, ifType string) (iface *Interface, err error) {
+func CreateInterface(subnetID, ID int64, ifaceName, ifType string, secGroups []*SecurityGroup) (iface *Interface, err error) {
 	db := dbs.DB()
 	primary := false
 	if ifaceName == "eth0" {
@@ -65,6 +64,7 @@ func CreateInterface(subnetID, ID int64, ifaceName, ifType string) (iface *Inter
 		PrimaryIf: primary,
 		Type:      ifType,
 		Mtu:       1450,
+		Secgroups: secGroups,
 	}
 	if ifType == "instance" {
 		iface.Instance = ID
