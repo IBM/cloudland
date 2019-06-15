@@ -107,7 +107,7 @@ function demo_router()
     sudo nmcli connection up br5000
     sudo nmcli connection up br5010
     sudo grep -q "^GatewayPorts yes" /etc/ssh/sshd_config
-    [ $? -ne 0 ] && sudo bash -c "echo 'GatewayPorts yes' >> /etc/ssh/sshd_config"
+    [ $? -ne 0 ] && sudo bash -c "echo -e '\nGatewayPorts yes' >> /etc/ssh/sshd_config"
     sudo systemctl restart sshd
 }
 
