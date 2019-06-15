@@ -24,4 +24,7 @@ iptables -A INPUT -p udp -m udp --dport 8472 -m conntrack --ctstate NEW -j ACCEP
 iptables -A INPUT -j REJECT --reject-with icmp-host-prohibited
 iptables -A FORWARD -j REJECT --reject-with icmp-host-prohibited
 
+iptables -P FORWARD DROP
+iptables -N secgroup-chain && iptables -A secgroup-chain -j ACCEPT
+
 service iptables save
