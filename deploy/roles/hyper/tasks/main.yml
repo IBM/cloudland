@@ -1,6 +1,6 @@
 - name: install packages
   yum: 
-    name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'vconfig', 'git', 'NetworkManager', 'bridge-utils', 'python-pip', 'fail2ban-firewalld', 'firewalld']
+    name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'vconfig', 'git', 'NetworkManager', 'bridge-utils', 'python-pip', 'net-tools', 'iptables-services']
     state: present
   tags: [be_pkg]
 
@@ -12,7 +12,7 @@
   file:
     path: "{{ item }}"
     state: directory
-    owner: centos
+    owner: cland
   with_items:
     - /opt/cloudland
   tags: [sync]
@@ -23,7 +23,7 @@
     dest: "{{ item.dest }}"
     rsync_opts: "--exclude=cache,--exclude=log,--exclude=db"
   with_items:
-    - {src: '/opt/cloudland', dest: '/opt', owner: 'centos'}
+    - {src: '/opt/cloudland', dest: '/opt', owner: 'cland'}
   tags: [sync]
 
 - name: copy sci binaries
@@ -33,6 +33,16 @@
     mode: preserve
   tags: [sci]
 
+- name: create cloudlet environment file
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}"
+  with_items:
+    - {src: 'cloudlet.j2', dest: '/etc/sysconfig/cloudlet', owner: 'root'}
+    - {src: 'cloudrc.local.j2', dest: '/opt/cloudland/scripts/cloudrc.local', owner: 'cland'}
+  tags: [be_conf]
+ 
 - name: copy service file
   copy: 
     src: "{{ item.src }}"
@@ -44,16 +54,6 @@
     - {src: 'recover_onboot.service', dest: '/lib/systemd/system', owner: 'root'}
   tags: [be_srv]
 
-- name: create cloudlet environment file
-  template:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    owner: "{{ item.owner }}"
-  with_items:
-    - {src: 'cloudlet.j2', dest: '/etc/sysconfig/cloudlet', owner: 'root'}
-    - {src: 'cloudrc.local.j2', dest: '/opt/cloudland/scripts/cloudrc.local', owner: 'centos'}
-  tags: [be_conf]
- 
 - name: start cloudlet services
   systemd: 
     name: "{{ item }}"
@@ -65,8 +65,6 @@
     - 'NetworkManager'
     - 'scid'
     - 'cloudlet'
-    - 'firewalld'
-    - 'fail2ban'
   tags: [be_srv]
 
 - name: start cloudlet services
@@ -77,18 +75,15 @@
     state: stopped
   tags: [be_srv]
 
-- name: add firewalld service
-  firewalld:
-    service: glusterfs
-    permanent: yes
-    state: enabled
+- name: mask firewalld service
+  systemd:
+    service: firewalld
+    masked: yes
+    state: stopped
   tags: [firewall]
   ignore_errors: yes
 
-- name: enable vxlan in firewall
-  firewalld:
-    port: 8472/udp
-    permanent: yes
-    state: enabled
+- name: Allow cland necessary ports
+  script: firewall.sh
   tags: [firewall]
   ignore_errors: yes

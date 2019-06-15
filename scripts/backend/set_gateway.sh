@@ -17,6 +17,7 @@ cat /proc/net/dev | grep -q "^\<ln-$vni\>"
 if [ $? -ne 0 ]; then
     ./create_veth.sh $router ln-$vni ns-$vni
 fi
+apply_vnic -I ln-$vni
 
 if [ "$mode" = "hard" ]; then
     ip netns exec $router ip addr add $addr brd $bcast dev ns-$vni

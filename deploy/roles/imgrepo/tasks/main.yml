@@ -21,5 +21,5 @@
   get_url:
     url: http://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2
     dest: /opt/cloudland/cache/image/image-1.qcow2
-    owner: centos
+    owner: cland
   tags: [image]

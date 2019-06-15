@@ -66,6 +66,7 @@ function apply_vnic()
     vnic=$2
     apply_fw $action FORWARD -m physdev --physdev-in $vnic --physdev-is-bridged -j ACCEPT
     apply_fw $action FORWARD -m physdev --physdev-out $vnic --physdev-is-bridged -j ACCEPT
+    service iptables save
 }
 
 function sql_exec()

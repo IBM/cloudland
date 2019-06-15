@@ -29,3 +29,4 @@ pid_file=$router_dir/keepalived.pid
 sed -i "\#$ext_ip/32 dev $ext_dev#d" $vrrp_conf
 sed -i "\#ip netns exec $router arping -c 1 -S $ext_ip $ext_gw#d" $notify_sh
 [ -f "$pid_file" ] && ip netns exec $router kill -HUP $(cat $pid_file)
+ip netns exec $router iptables-save > $router_dir/iptables.save

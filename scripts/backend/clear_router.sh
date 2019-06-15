@@ -9,12 +9,12 @@ router=router-$1
 vrrp_vni=$2
 [ -z "$router" ] && exit 1
 
-suffix=${router%%-*}
+suffix=$1
 ip netns exec $router ip link set lo down
-ip link del te-$suffix
-#apply_vnic -D te-$suffix
-ip link del ti-$suffix
-#apply_vnic -D ti-$suffix
+ip link del ext-$suffix
+apply_vnic -D ext-$suffix
+ip link del int-$suffix
+apply_vnic -D int-$suffix
 ./clear_link.sh $vrrp_vni
 interfaces=$(cat)
 i=0

@@ -20,7 +20,7 @@ import (
 
 func runArgs(cfg string) (args []interface{}) {
 	host := "127.0.0.1"
-	port := 4000
+	port := 80
 	listen := viper.GetString(cfg)
 	if listen != "" {
 		items := strings.Split(listen, ":")

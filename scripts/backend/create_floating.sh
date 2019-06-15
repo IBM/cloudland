@@ -35,3 +35,4 @@ sed -i "/virtual_ipaddress {/a $ext_ip/32 dev $ext_dev" $vrrp_conf
 sed -i "\#ip netns exec $router arping -c 2 -I $ext_dev -s $ext_ip $ext_ip#d" $notify_sh
 sed -i "/\"MASTER\")/a ip netns exec $router arping -c 1 -s $ext_ip $ext_ip" $notify_sh
 [ -f "$pid_file" ] && ip netns exec $router kill -HUP $(cat $pid_file)
+ip netns exec $router iptables-save > $router_dir/iptables.save
