@@ -4,7 +4,6 @@ iptables -D INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 iptables -D INPUT -p icmp -j ACCEPT
 iptables -D INPUT -i lo -j ACCEPT
 iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT
-iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
 iptables -D INPUT -p tcp -m tcp --dport 24007:24009 -m conntrack --ctstate NEW -j ACCEPT
 iptables -D INPUT -p tcp -m tcp --dport 6188 -m conntrack --ctstate NEW -j ACCEPT
 iptables -D INPUT -p tcp -m tcp --dport 49152:49664 -m conntrack --ctstate NEW -j ACCEPT
@@ -17,7 +16,6 @@ iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 iptables -A INPUT -p icmp -j ACCEPT
 iptables -A INPUT -i lo -j ACCEPT
 iptables -A INPUT -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT
-iptables -A INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
 iptables -A INPUT -p tcp -m tcp --dport 24007:24009 -m conntrack --ctstate NEW -j ACCEPT
 iptables -A INPUT -p tcp -m tcp --dport 6188 -m conntrack --ctstate NEW -j ACCEPT
 iptables -A INPUT -p tcp -m tcp --dport 49152:49664 -m conntrack --ctstate NEW -j ACCEPT

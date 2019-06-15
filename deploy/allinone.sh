@@ -111,6 +111,14 @@ function demo_router()
     sudo systemctl restart sshd
 }
 
+function allinone_firewall()
+{
+    sudo iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
+    sudo iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
+    sudo iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 18000:20000 -j ACCEPT
+    sudo iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 18000:20000 -j ACCEPT
+}
+
 diff /opt/sci/lib64/libsci.so.0.0.0 $cland_root_dir/sci/libsci/.libs/libsci.so.0.0.0
 [ $? -ne 0 ] && inst_sci
 [ ! -f "/usr/local/lib/pkgconfig" ] && inst_grpc
@@ -122,3 +130,4 @@ cd $cland_root_dir/deploy
 ansible-playbook cloudland.yml --tags hosts,epel,ntp,be_pkg,be_conf,be_srv,firewall,fe_srv,imgrepo --extra-vars "network_device=$NET_DEV"
 inst_web
 demo_router
+
