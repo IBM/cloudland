@@ -14,6 +14,7 @@ Cloudland's main distinguishing features as compared to other IaaS systems are:
 ![](https://raw.githubusercontent.com/wiki/IBM/cloudland/images/architecture.svg?sanitize=true)   
    
 To support ultra-large scale, the hypervisors are organized into a tree hierarchy, the agents (scia are launched on demand)   
+>>>>>>> 74659345a66f25e33210fccc3f37e18db922b00b
 ![](https://raw.githubusercontent.com/wiki/IBM/cloudland/images/tree.svg?sanitize=true)
 ## Install
 
