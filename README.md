@@ -11,11 +11,11 @@ Cloudland's main distinguishing features as compared to other IaaS systems are:
 - Easy to customize to implement your own feature
 
 ## Architecture overview
-![](https://raw.githubusercontent.com/wiki/IBM/cloudland/images/architecture.svg?sanitize=true)   
+![](https://raw.githubusercontent.com/wiki/IBM/cloudland/images/architecture.svg)   
    
 To support ultra-large scale, the hypervisors are organized into a tree hierarchy, the agents (scia are launched on demand)   
    
-![](https://raw.githubusercontent.com/wiki/IBM/cloudland/images/tree.svg?sanitize=true)
+![](https://raw.githubusercontent.com/wiki/IBM/cloudland/images/tree.svg)
 ## Install
 
 There are two purposes of installing Cloudland
