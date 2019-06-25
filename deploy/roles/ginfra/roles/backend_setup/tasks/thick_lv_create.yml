@@ -1,9 +1,0 @@
----
-# Create a thick logical volume.
-- name: Create thick logical volume
-  lvol:
-    state: present
-    vg: "{{ item.vgname }}"
-    lv: "{{ item.lvname }}"
-    size: "{{ item.size }}"
-  with_items: "{{ gluster_infra_thick_lvs }}"

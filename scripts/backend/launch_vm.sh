@@ -63,9 +63,10 @@ while [ $i -lt $nvlan ]; do
     let i=$i+1
 done
 virsh start $vm_ID
-[ $? -eq 0 ] && state=running
-virsh dumpxml --security-info $vm_ID 2>/dev/null | sed "s/autoport='yes'/autoport='no'/g" > $vm_xml.dump && mv -f $vm_xml.dump $vm_xml
-vnc_port=$(xmllint --xpath 'string(/domain/devices/graphics/@port)' $vm_xml)
-vm_vnc="$vnc_port:$vnc_pass"
-
+if [ $? -eq 0 ]; then
+    state=running
+    virsh dumpxml --security-info $vm_ID 2>/dev/null | sed "s/autoport='yes'/autoport='no'/g" > $vm_xml.dump && mv -f $vm_xml.dump $vm_xml
+    vnc_port=$(xmllint --xpath 'string(/domain/devices/graphics/@port)' $vm_xml)
+    vm_vnc="$vnc_port:$vnc_pass"
+fi
 echo "|:-COMMAND-:| $(basename $0) '$1' '$state' '$SCI_CLIENT_ID'"

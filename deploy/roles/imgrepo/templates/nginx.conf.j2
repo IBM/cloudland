@@ -36,8 +36,8 @@ http {
     include /etc/nginx/conf.d/*.conf;
 
     server {
-        listen       80 default_server;
-        listen       [::]:80 default_server;
+        listen       4000 default_server;
+        listen       [::]:4000 default_server;
         server_name  _;
         root         /opt/cloudland/cache/image;
 

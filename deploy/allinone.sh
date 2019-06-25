@@ -9,11 +9,11 @@ cd $(dirname $0)
 
 [ $PWD != "$cland_root_dir/deploy" ] && echo "Please clone cloudland into /opt" && exit 1
 
-sudo chown -R centos.centos $cland_root_dir
+sudo chown -R cland.cland $cland_root_dir
 mkdir $cland_root_dir/{bin,deploy,etc,lib6,log,run,sci,scripts,src,web,cache} $cland_root_dir/cache/{image,instance,meta,router,volume,xml} 2>/dev/null
 
 # Install development tools
-sudo yum install -y ansible vim git wget epel-release
+sudo yum install -y ansible vim git wget epel-release net-tools
 sudo yum groupinstall -y "Development Tools"
 
 # Install SCI
@@ -42,7 +42,7 @@ function inst_web()
     cd $cland_root_dir/deploy
     ansible-playbook cloudland.yml --tags database --extra-vars "db_passwd=$DB_PASSWD"
     sudo yum -y install golang 
-    sudo chown -R centos.centos /usr/local
+    sudo chown -R cland.cland /usr/local
     sed -i '/export GO/d' ~/.bashrc
     echo 'export GOPROXY=https://goproxy.io' >> ~/.bashrc
     echo 'export GO111MODULE=on' >> ~/.bashrc
@@ -107,8 +107,16 @@ function demo_router()
     sudo nmcli connection up br5000
     sudo nmcli connection up br5010
     sudo grep -q "^GatewayPorts yes" /etc/ssh/sshd_config
-    [ $? -ne 0 ] && sudo bash -c "echo 'GatewayPorts yes' >> /etc/ssh/sshd_config"
+    [ $? -ne 0 ] && sudo bash -c "echo -e '\nGatewayPorts yes' >> /etc/ssh/sshd_config"
     sudo systemctl restart sshd
+}
+
+function allinone_firewall()
+{
+    sudo iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
+    sudo iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
+    sudo iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 18000:20000 -j ACCEPT
+    sudo iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 18000:20000 -j ACCEPT
 }
 
 diff /opt/sci/lib64/libsci.so.0.0.0 $cland_root_dir/sci/libsci/.libs/libsci.so.0.0.0
@@ -119,6 +127,7 @@ diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 
 gen_hosts
 cd $cland_root_dir/deploy
-ansible-playbook cloudland.yml --tags hosts,epel,ntp,hyper,fe_srv,imgrepo --extra-vars "network_device=$NET_DEV"
+ansible-playbook cloudland.yml --tags hosts,epel,ntp,be_pkg,be_conf,be_srv,firewall,fe_srv,imgrepo --extra-vars "network_device=$NET_DEV"
 inst_web
 demo_router
+allinone_firewall

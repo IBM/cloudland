@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=centos
+User=cland
 EnvironmentFile=/etc/sysconfig/cloudlet
 ExecStart=/opt/cloudland/bin/cloudlet
 KillMode=process

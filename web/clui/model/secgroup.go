@@ -18,8 +18,9 @@ func init() {
 
 type SecurityGroup struct {
 	Model
-	Name      string `gorm:"type:varchar(32)"`
-	IsDefault bool   `gorm:"default:false"`
+	Name       string       `gorm:"type:varchar(32)"`
+	IsDefault  bool         `gorm:"default:false"`
+	Interfaces []*Interface `gorm:"many2many:secgroup_ifaces;"`
 }
 
 type SecurityRule struct {
@@ -38,17 +39,16 @@ func init() {
 	dbs.AutoMigrate(&SecurityGroup{}, &SecurityRule{})
 }
 
-func GetSecurityRules(secGroups []int64) (securityRules []*SecurityRule, err error) {
+func GetSecurityRules(secGroups []*SecurityGroup) (securityRules []*SecurityRule, err error) {
 	db := dbs.DB()
 	securityRules = []*SecurityRule{}
-	for _, sgID := range secGroups {
+	for _, sg := range secGroups {
 		secrules := []*SecurityRule{}
-		err = db.Model(&SecurityRule{}).Where("secgroup = ?", sgID).Find(&secrules).Error
+		err = db.Model(&SecurityRule{}).Where("secgroup = ?", sg.ID).Find(&secrules).Error
 		if err != nil {
 			log.Println("DB failed to query security rules", err)
 			return
 		}
-		log.Println("$$$$$$$$$$$$$$$$$$$", secrules)
 		securityRules = append(securityRules, secrules...)
 	}
 	return

@@ -2,7 +2,7 @@
   file:
     path: "{{ item }}"
     state: directory
-    owner: centos
+    owner: cland
   with_items:
     - /opt/cloudland
     - /usr/bin
@@ -14,8 +14,8 @@
     dest: "{{ item.dest }}"
     rsync_opts: "--exclude=cache,--exclude=log,--exclude=db"
   with_items:
-    - {src: '/opt/cloudland', dest: '/opt', owner: 'centos'}
-    - {src: '/usr/local', dest: '/usr', owner: 'centos'}
+    - {src: '/opt/cloudland', dest: '/opt', owner: 'cland'}
+    - {src: '/usr/local', dest: '/usr', owner: 'cland'}
   tags: [sync]
 
 - name: copy sci binaries
@@ -29,8 +29,8 @@
   file:
     path: "{{ item }}"
     state: directory
-    owner: centos
-    group: centos
+    owner: cland
+    group: cland
   with_items:
     - '/opt/cloudland/cache'
     - '/opt/cloudland/cache/image'
@@ -46,9 +46,9 @@
     group: "{{ item.owner }}"
     mode: preserve
   with_items:
-    - {src: '/opt/cloudland/lib64', dest: '/opt/cloudland', owner: 'centos'}
-    - {src: '/opt/cloudland/bin', dest: '/opt/cloudland', owner: 'centos'}
-    - {src: '/opt/cloudland/scripts', dest: '/opt/cloudland', owner: 'centos'}
+    - {src: '/opt/cloudland/lib64', dest: '/opt/cloudland', owner: 'cland'}
+    - {src: '/opt/cloudland/bin', dest: '/opt/cloudland', owner: 'cland'}
+    - {src: '/opt/cloudland/scripts', dest: '/opt/cloudland', owner: 'cland'}
     - {src: '/opt/sci', dest: '/opt', owner: 'root'}
   tags: [fe_bin]
 
@@ -78,3 +78,8 @@
     daemon_reload: yes
     state: restarted
   tags: [fe_srv]
+
+- name: Allow cland necessary ports
+  script: firewall.sh
+  tags: [firewall]
+  ignore_errors: yes
