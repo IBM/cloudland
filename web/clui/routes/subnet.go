@@ -110,9 +110,6 @@ func (a *SubnetAdmin) Create(name, vlan, network, netmask, gateway, start, end, 
 	if end == gateway {
 		end = cidr.Dec(net.ParseIP(end)).String()
 	}
-	if rtype == "" {
-		rtype = "internal"
-	}
 	gateway = fmt.Sprintf("%s/%d", gateway, preSize)
 	subnet = &model.Subnet{Name: name, Network: first.String(), Netmask: netmask, Gateway: gateway, Start: start, End: end, Vlan: int64(vlanNo), Type: rtype}
 	err = db.Create(subnet).Error
