@@ -63,6 +63,20 @@ func getValidVni() (vni int, err error) {
 	return
 }
 
+func checkIfExistVni(vni int64) (result bool, err error) {
+	db := DB()
+	count := 0
+	if err = db.Model(&model.Subnet{}).Where("vlan = ?", vni).Count(&count).Error; err != nil {
+		log.Println("Failed to query existing vlan, %v", err)
+		return
+	}
+	if count > 0 {
+		return true, nil
+	} else {
+		return false, nil
+	}
+}
+
 func (a *SubnetAdmin) Create(name, vlan, network, netmask, gateway, start, end, rtype string) (subnet *model.Subnet, err error) {
 	db := DB()
 	vlanNo := 0

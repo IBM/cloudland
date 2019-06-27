@@ -255,7 +255,6 @@ definitions:
                 properties:
                   href: {type: string, pattern: '^http(s)?:\/\/([^\/?#]*)([^?#]*)(\?([^#]*))?(#(.*))?$', example: 'http://192.168.10.16/identity/v3/'}
                   rel: {type: string, enum: [self, remote], example: "self"}
-
   networks:
    type: array
    items:
@@ -278,7 +277,7 @@ definitions:
         revision_number: {type: integer, example: 1}
         router:external: {type: boolean, example: false}
         shared: {type: boolean, example: false}
-        status: {type: string, enum: ['ACTIVE', 'DISABLE'], example: "ACTIVE"}
+        status: {type: string, enum: ['ACTIVE', 'DISABLE', 'INACTIVE'], example: "ACTIVE"}
         subnets: {type: array, items: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '54d6f61d-db07-451c-9ab3-b9609b6b6f0b'}}
         tenant_id: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '4fd44f30292945e481c7b8a0c8908869'}
         updated_at: {type: string, format: date-time, example: '2016-03-08T20:19:41'}
