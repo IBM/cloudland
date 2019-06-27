@@ -393,8 +393,8 @@ definitions:
       id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'd32019d3-bc6e-4319-9c1d-6722fc136a22'}
       created_at: {type: string, format: date-time, example: '2016-03-08T20:19:41'}
       description: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: ''}
-      ipv6_address_mode: {type: string, enum: ['slaac', 'dhcpv6-stateful', 'dhcpv6-stateless', null]}
-      ipv6_ra_mode: {type: string, enum: ['slaac', 'dhcpv6-stateful', 'dhcpv6-stateless', null]}
+      ipv6_address_mode: {type: string, enum: ['slaac', 'dhcpv6-stateful', 'dhcpv6-stateless', 'null']}
+      ipv6_ra_mode: {type: string, enum: ['slaac', 'dhcpv6-stateful', 'dhcpv6-stateless', 'null']}
       revision_number: {type: integer, example: 0}
       service_types: {type: array, items: {type: string}, example: []}
       subnetpool_id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'd32019d3-bc6e-4319-9c1d-6722fc136a22'}
