@@ -21,8 +21,9 @@ var (
 		"volume":   `/volume/v3`,
 		"compute":  `/compute/v2.1`,
 		"image":    `/image`,
-		"network":  `/network`,
+		"network":  `/v2.0/networks`,
 		"identity": `/identity`,
+		"subnet":   `/v2.0/subnets`,
 	}
 )
 
@@ -46,5 +47,14 @@ func Rest() (m *macaron.Macaron) {
 	//	m.Use(macaron.Renderer())
 	m.Get(resourceEndpoints["identity"], versionInstance.ListVersion)
 	m.Post("/identity/v3/auth/tokens", tokenInstance.IssueTokenByPasswd)
+	//neutron network api
+	m.Get(resourceEndpoints["network"], subnetInstance.ListNetworks)
+	m.Post(resourceEndpoints["network"], subnetInstance.CreateNetwork)
+	m.Delete(resourceEndpoints["network"]+`/:id`, subnetInstance.DeleteNetwork)
+	//neutron subnet API
+	m.Get(resourceEndpoints["subnet"], subnetInstance.ListSubnet)
+	m.Post(resourceEndpoints["subnet"], subnetInstance.CreateSubnet)
+	m.Delete(resourceEndpoints["subnet"]+`/:id`, subnetInstance.DeleteSubnet)
+
 	return
 }
