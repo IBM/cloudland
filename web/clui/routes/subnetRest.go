@@ -13,6 +13,7 @@ import (
 
 	restModels "github.com/IBM/cloudland/web/rest-api/rest/models"
 	"github.com/go-macaron/session"
+	"github.com/go-openapi/strfmt"
 	macaron "gopkg.in/macaron.v1"
 )
 
@@ -30,7 +31,7 @@ func (v *SubnetRest) List(c *macaron.Context) {
 	if reverse {
 		order = "-created_at"
 	}
-	total, subnets, err := subnetAdmin.List(offset, limit, order)
+	_, subnets, err := subnetAdmin.List(offset, limit, order)
 	if err != nil {
 		c.JSON(500, NewResponseError("List subnets fail", err.Error(), 500))
 		return
@@ -38,8 +39,25 @@ func (v *SubnetRest) List(c *macaron.Context) {
 
 	networks := &restModels.ListNetworksOKBody{}
 	networkItems := []*restModels.NetworksItems{}
-	for i := 0; i < len(subnets); i++ {
-		network := &restModels.NetworksItems{}
+	for _, subnet := range subnets {
+		creatAt, _ := strfmt.ParseDateTime(subnet.CreatedAt.String())
+		updateAt, _ := strfmt.ParseDateTime(subnet.UpdatedAt.String())
+		network := &restModels.NetworksItems{
+			AdminStateUp:      true,
+			CreatedAt:         creatAt,
+			AvailabilityZones: []string{"nova"},
+			ID:                strconv.FormatInt(subnet.ID, 10),
+			Name:              subnet.Name,
+			Status:            "Active",
+			UpdatedAt:         updateAt,
+			Provider: &restModels.NetworksItemsProvider{
+				NetworkType:    "vxlan",
+				SegmentationID: &subnet.Vlan,
+			},
+			Subnets: []string{
+				strconv.FormatInt(subnet.ID, 10),
+			},
+		}
 		networkItems = append(networkItems, network)
 	}
 	networks.Networks = networkItems
@@ -71,7 +89,19 @@ func (v *SubnetRest) Delete(c *macaron.Context, store session.Store) (err error)
 	return
 }
 
-func (v *SubnetRest) Create(c *macaron.Context, store session.Store) {
+func (v *SubnetRest) Create(c *macaron.Context) {
+	body, _ := c.Req.Body().Bytes()
+	if err := JsonSchemeCheck(`token.json`, body); err != nil {
+		c.JSON(err.Code, ResponseError{
+			Error: *err,
+		})
+		return
+	}
+	requestStruct := &restModels.{}
+	if err := json.Unmarshal(body, requestStruct); err != nil {
+		c.JSON(500, NewResponseError("Unmarshal fail", err.Error(), 403))
+	}
+
 	redirectTo := "../subnets"
 	name := c.Query("name")
 	vlan := c.Query("vlan")

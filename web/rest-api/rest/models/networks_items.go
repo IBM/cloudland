@@ -71,8 +71,14 @@ type NetworksItems struct {
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	ProjectID string `json:"project_id,omitempty"`
 
-	// provider
-	Provider *NetworksItemsProvider `json:"provider,omitempty"`
+	// provider network type
+	// Enum: [vlan vxlan gre flat]
+	ProviderNetworkType string `json:"provider:network_type,omitempty"`
+
+	// provider segmentation id
+	// Maximum: 1.6777215e+07
+	// Minimum: 0
+	ProviderSegmentationID *int64 `json:"provider:segmentation_id,omitempty"`
 
 	// qos policy id
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
@@ -130,7 +136,11 @@ func (m *NetworksItems) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateProvider(formats); err != nil {
+	if err := m.validateProviderNetworkType(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateProviderSegmentationID(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -256,19 +266,67 @@ func (m *NetworksItems) validateProjectID(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *NetworksItems) validateProvider(formats strfmt.Registry) error {
+var networksItemsTypeProviderNetworkTypePropEnum []interface{}
 
-	if swag.IsZero(m.Provider) { // not required
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["vlan","vxlan","gre","flat"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		networksItemsTypeProviderNetworkTypePropEnum = append(networksItemsTypeProviderNetworkTypePropEnum, v)
+	}
+}
+
+const (
+
+	// NetworksItemsProviderNetworkTypeVlan captures enum value "vlan"
+	NetworksItemsProviderNetworkTypeVlan string = "vlan"
+
+	// NetworksItemsProviderNetworkTypeVxlan captures enum value "vxlan"
+	NetworksItemsProviderNetworkTypeVxlan string = "vxlan"
+
+	// NetworksItemsProviderNetworkTypeGre captures enum value "gre"
+	NetworksItemsProviderNetworkTypeGre string = "gre"
+
+	// NetworksItemsProviderNetworkTypeFlat captures enum value "flat"
+	NetworksItemsProviderNetworkTypeFlat string = "flat"
+)
+
+// prop value enum
+func (m *NetworksItems) validateProviderNetworkTypeEnum(path, location string, value string) error {
+	if err := validate.Enum(path, location, value, networksItemsTypeProviderNetworkTypePropEnum); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *NetworksItems) validateProviderNetworkType(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.ProviderNetworkType) { // not required
 		return nil
 	}
 
-	if m.Provider != nil {
-		if err := m.Provider.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("provider")
-			}
-			return err
-		}
+	// value enum
+	if err := m.validateProviderNetworkTypeEnum("provider:network_type", "body", m.ProviderNetworkType); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *NetworksItems) validateProviderSegmentationID(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.ProviderSegmentationID) { // not required
+		return nil
+	}
+
+	if err := validate.MinimumInt("provider:segmentation_id", "body", int64(*m.ProviderSegmentationID), 0, false); err != nil {
+		return err
+	}
+
+	if err := validate.MaximumInt("provider:segmentation_id", "body", int64(*m.ProviderSegmentationID), 1.6777215e+07, false); err != nil {
+		return err
 	}
 
 	return nil
