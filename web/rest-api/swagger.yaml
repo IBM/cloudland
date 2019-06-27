@@ -222,6 +222,7 @@ paths:
                   network_id: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '1841f2adad3a4b4aa6485fb4e3a3fda1'}
                   ip_version: {type: integer, enum: [4, 6], example: 6}
                   cidr: {type: string, example: '10.0.0.1/24'}
+                  name: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'net1'}
       responses:
           200:
             description: 200 response

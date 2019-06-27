@@ -1,0 +1,54 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$id": "http://github.com/IBM/cloudland/blob/master/web/rest-api/scheme/subnet.json",
+  "type": "object",
+  "title": "The Root Schema",
+  "required": [
+    "subnet"
+  ],
+  "properties": {
+    "subnet": {
+      "$id": "#/properties/subnet",
+      "type": "object",
+      "title": "The Subnet Schema",
+      "required": [
+        "network_id",
+        "ip_version",
+        "cidr"
+      ],
+      "properties": {
+        "network_id": {
+          "$id": "#/properties/subnet/properties/network_id",
+          "type": "string",
+          "title": "The Network_id Schema",
+          "default": "",
+          "examples": [
+            "1841f2adad3a4b4aa6485fb4e3a3fda1"
+          ],
+          "pattern": "^(.*)$"
+        },
+        "ip_version": {
+          "$id": "#/properties/subnet/properties/ip_version",
+          "type": "integer",
+          "title": "The Ip_version Schema",
+          "default": 0,
+          "examples": [
+            6
+          ]
+        },
+        "cidr": {
+          "$id": "#/properties/subnet/properties/cidr",
+          "type": "string",
+          "title": "The Cidr Schema",
+          "default": "",
+          "format": "ipv4"
+          "examples": [
+            "10.0.0.1/24"
+          ],
+          "pattern": "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\/[0-9]+$"
+        }
+      }
+    }
+  }
+}
