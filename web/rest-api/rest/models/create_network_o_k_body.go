@@ -16,15 +16,15 @@ import (
 // swagger:model createNetworkOKBody
 type CreateNetworkOKBody struct {
 
-	// networks
-	Networks Networks `json:"networks,omitempty"`
+	// network
+	Network *Network `json:"network,omitempty"`
 }
 
 // Validate validates this create network o k body
 func (m *CreateNetworkOKBody) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateNetworks(formats); err != nil {
+	if err := m.validateNetwork(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -34,17 +34,19 @@ func (m *CreateNetworkOKBody) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *CreateNetworkOKBody) validateNetworks(formats strfmt.Registry) error {
+func (m *CreateNetworkOKBody) validateNetwork(formats strfmt.Registry) error {
 
-	if swag.IsZero(m.Networks) { // not required
+	if swag.IsZero(m.Network) { // not required
 		return nil
 	}
 
-	if err := m.Networks.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("networks")
+	if m.Network != nil {
+		if err := m.Network.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("network")
+			}
+			return err
 		}
-		return err
 	}
 
 	return nil

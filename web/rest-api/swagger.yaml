@@ -171,8 +171,8 @@ paths:
             required:
             - token
             properties:
-              networks:
-                $ref: '#/definitions/networks'
+              network:
+                $ref: '#/definitions/network'
 definitions:
   token:
     type: object
@@ -258,31 +258,33 @@ definitions:
   networks:
    type: array
    items:
-      type: object
-      properties:
-        admin_state_up: {type: boolean, example: true}
-        availability_zone_hints: {type: array, items: {type: string, example: 'nova'}}
-        availability_zones: {type: array, items: {type: string, example: 'nova'}}
-        created_at: {type: string, format: date-time, example: '2016-03-08T20:19:41'}
-        dns_domain: {type: string, example: 'my-domain.org.'}
-        id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'd32019d3-bc6e-4319-9c1d-6722fc136a22'}
-        ipv4_address_scope: {type: string, example: null}
-        ipv6_address_scope:  {type: string, example: null}
-        l2_adjacency: {type: boolean, example: false}
-        mtu: {type: integer, example: 1500}
-        name: {type: string, enum: [stable], pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: net1}
-        port_security_enabled:  {type: boolean, example: true}
-        project_id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 4fd44f30292945e481c7b8a0c8908869}
-        qos_policy_id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '6a8454ade84346f59e8d40665f878b2e'}
-        revision_number: {type: integer, example: 1}
-        router:external: {type: boolean, example: false}
-        shared: {type: boolean, example: false}
-        status: {type: string, enum: ['ACTIVE', 'DISABLE', 'INACTIVE'], example: "ACTIVE"}
-        subnets: {type: array, items: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '54d6f61d-db07-451c-9ab3-b9609b6b6f0b'}}
-        tenant_id: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '4fd44f30292945e481c7b8a0c8908869'}
-        updated_at: {type: string, format: date-time, example: '2016-03-08T20:19:41'}
-        vlan_transparent: {type: boolean, example: false}
-        description: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: ''}
-        is_default: {type: boolean, example: false}
-        provider:network_type: {type: string, enum: ['vlan', 'vxlan', 'gre', 'flat'], example: 'vxlan'}
-        provider:segmentation_id: {type: integer, format: int64, minimum: 0, maximum: 16777215, example: 190190}
+      $ref: '#/definitions/network'
+  network:
+    type: object
+    properties:
+      admin_state_up: {type: boolean, example: true}
+      availability_zone_hints: {type: array, items: {type: string, example: 'nova'}}
+      availability_zones: {type: array, items: {type: string, example: 'nova'}}
+      created_at: {type: string, format: date-time, example: '2016-03-08T20:19:41'}
+      dns_domain: {type: string, example: 'my-domain.org.'}
+      id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'd32019d3-bc6e-4319-9c1d-6722fc136a22'}
+      ipv4_address_scope: {type: string, example: null}
+      ipv6_address_scope:  {type: string, example: null}
+      l2_adjacency: {type: boolean, example: false}
+      mtu: {type: integer, example: 1500}
+      name: {type: string, enum: [stable], pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: net1}
+      port_security_enabled:  {type: boolean, example: true}
+      project_id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 4fd44f30292945e481c7b8a0c8908869}
+      qos_policy_id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '6a8454ade84346f59e8d40665f878b2e'}
+      revision_number: {type: integer, example: 1}
+      router:external: {type: boolean, example: false}
+      shared: {type: boolean, example: false}
+      status: {type: string, enum: ['ACTIVE', 'DISABLE', 'INACTIVE'], example: "ACTIVE"}
+      subnets: {type: array, items: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '54d6f61d-db07-451c-9ab3-b9609b6b6f0b'}}
+      tenant_id: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '4fd44f30292945e481c7b8a0c8908869'}
+      updated_at: {type: string, format: date-time, example: '2016-03-08T20:19:41'}
+      vlan_transparent: {type: boolean, example: false}
+      description: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: ''}
+      is_default: {type: boolean, example: false}
+      provider:network_type: {type: string, enum: ['vlan', 'vxlan', 'gre', 'flat'], example: 'vxlan'}
+      provider:segmentation_id: {type: integer, format: int64, minimum: 0, maximum: 16777215, example: 190190}

@@ -16,7 +16,7 @@ import (
 
 // Networks networks
 // swagger:model networks
-type Networks []*NetworksItems
+type Networks []*Network
 
 // Validate validates this networks
 func (m Networks) Validate(formats strfmt.Registry) error {

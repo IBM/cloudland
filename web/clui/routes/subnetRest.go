@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/IBM/cloudland/web/clui/model"
 	restModels "github.com/IBM/cloudland/web/rest-api/rest/models"
@@ -41,11 +42,11 @@ func (v *SubnetRest) List(c *macaron.Context) {
 	}
 
 	networks := &restModels.ListNetworksOKBody{}
-	networkItems := []*restModels.NetworksItems{}
+	networkItems := []*restModels.Network{}
 	for _, subnet := range subnets {
-		creatAt, _ := strfmt.ParseDateTime(subnet.CreatedAt.String())
-		updateAt, _ := strfmt.ParseDateTime(subnet.UpdatedAt.String())
-		network := &restModels.NetworksItems{
+		creatAt, _ := strfmt.ParseDateTime(subnet.CreatedAt.Format(time.RFC3339))
+		updateAt, _ := strfmt.ParseDateTime(subnet.UpdatedAt.Format(time.RFC3339))
+		network := &restModels.Network{
 			AdminStateUp:           true,
 			CreatedAt:              creatAt,
 			AvailabilityZones:      []string{"nova"},
@@ -93,36 +94,105 @@ func (v *SubnetRest) Delete(c *macaron.Context, store session.Store) (err error)
 func (v *SubnetRest) Create(c *macaron.Context) {
 	db := DB()
 	body, _ := c.Req.Body().Bytes()
-	if err := JsonSchemeCheck(`token.json`, body); err != nil {
+	log.Println(string(body))
+	if err := JsonSchemeCheck(`network.json`, body); err != nil {
+		log.Println(string(body))
 		c.JSON(err.Code, ResponseError{
 			Error: *err,
 		})
 		return
 	}
-	requestData := &restModels.CreateNetworkParamsBodyNetwork{}
+	requestData := &restModels.CreateNetworkParamsBody{}
 	if err := json.Unmarshal(body, requestData); err != nil {
 		c.JSON(500, NewResponseError("Unmarshal fail", err.Error(), 500))
 		return
 	}
-	if result, err := checkIfExistVni(requestData.ProviderSegmentationID); err != nil {
+	if result, err := checkIfExistVni(requestData.Network.ProviderSegmentationID); err != nil {
 		c.JSON(500, NewResponseError("check vni fail", err.Error(), 500))
 	} else if result {
 		c.JSON(
 			400,
 			NewResponseError(
 				"duplicate vni",
-				fmt.Sprintf("the vni %d has been used", requestData.ProviderSegmentationID),
+				fmt.Sprintf("the vni %d has been used", requestData.Network.ProviderSegmentationID),
 				400,
 			),
 		)
 		return
 	}
-	subnet := &model.Subnet{Name: requestData.Name, Vlan: requestData.ProviderSegmentationID, Type: "internal"}
+	subnet := &model.Subnet{Name: requestData.Network.Name, Vlan: requestData.Network.ProviderSegmentationID, Type: "internal"}
 	err := db.Create(subnet).Error
 	if err != nil {
 		log.Println("Database create subnet failed, %v", err)
 		c.JSON(500, NewResponseError("create network fail", err.Error(), 500))
 		return
 	}
-
+	creatAt, _ := strfmt.ParseDateTime(subnet.CreatedAt.Format(time.RFC3339))
+	updateAt, _ := strfmt.ParseDateTime(subnet.UpdatedAt.Format(time.RFC3339))
+	/*
+		// simulate network response body
+		{
+		    "network": {
+		        "status": "ACTIVE",
+		        "subnets": [],
+		        "availability_zone_hints": [],
+		        "availability_zones": [
+		            "nova"
+		        ],
+		        "created_at": "2016-03-08T20:19:41",
+		        "name": "net1",
+		        "admin_state_up": true,
+		        "dns_domain": "",
+		        "ipv4_address_scope": null,
+		        "ipv6_address_scope": null,
+		        "l2_adjacency": true,
+		        "mtu": 1500,
+		        "port_security_enabled": true,
+		        "project_id": "9bacb3c5d39d41a79512987f338cf177",
+		        "tags": ["tag1,tag2"],
+		        "tenant_id": "9bacb3c5d39d41a79512987f338cf177",
+		        "updated_at": "2016-03-08T20:19:41",
+		        "qos_policy_id": "6a8454ade84346f59e8d40665f878b2e",
+		        "revision_number": 1,
+		        "segments": [
+		            {
+		                "provider:segmentation_id": 2,
+		                "provider:physical_network": "public",
+		                "provider:network_type": "vlan"
+		            },
+		            {
+		                "provider:segmentation_id": null,
+		                "provider:physical_network": "default",
+		                "provider:network_type": "flat"
+		            }
+		        ],
+		        "shared": false,
+		        "id": "4e8e5957-649f-477b-9e5b-f1f75b21c03c",
+		        "description": "",
+		        "is_default": false
+		    }
+		}
+	*/
+	responseBody := &restModels.CreateNetworkOKBody{
+		Network: &restModels.Network{
+			AdminStateUp:           true,
+			AvailabilityZones:      []string{"nova"},
+			CreatedAt:              creatAt,
+			ID:                     strconv.FormatInt(subnet.ID, 10),
+			IsDefault:              false,
+			Mtu:                    1500,
+			Name:                   subnet.Name,
+			PortSecurityEnabled:    false,
+			ProviderNetworkType:    "vxlan",
+			ProviderSegmentationID: &subnet.Vlan,
+			QosPolicyID:            strconv.FormatInt(subnet.ID, 10),
+			RouterExternal:         false,
+			Shared:                 false,
+			Status:                 "ACTIVCE",
+			Subnets:                []string{},
+			UpdatedAt:              updateAt,
+			VlanTransparent:        false,
+		},
+	}
+	c.JSON(200, responseBody)
 }
