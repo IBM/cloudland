@@ -173,6 +173,76 @@ paths:
             properties:
               network:
                 $ref: '#/definitions/network'
+  /v2.0/subnets:
+    get:
+      tags: [neutron]
+      operationId: listSubnets
+      summary: list subnets
+      description: |
+        List subnets
+      produces: [application/json]
+      responses:
+        200:
+          description: 200 response
+          headers:
+            Vary:
+              type: string
+              description: X-Auth-Token
+              default: X-Auth-Token
+              enum:
+              - X-Auth-Token
+            Content-Length:
+              type: integer
+            X-Subject-Token:
+              type: string
+          schema:
+              type: object
+              required:
+              - subnets
+              properties:
+                subnets:
+                  $ref: '#/definitions/subnets'
+    post:
+      tags: [neutron]
+      operationId: createSubnet
+      summary: create subnets
+      description: |
+        create a subnet with network_id
+      consumes: [application/json]
+      produces: [application/json]
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            properties:
+              subnet:
+                type: object
+                properties:
+                  network_id: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '1841f2adad3a4b4aa6485fb4e3a3fda1'}
+                  ip_version: {type: integer, enum: [4, 6], example: 6}
+                  cidr: {type: string, example: '10.0.0.1/24'}
+      responses:
+          200:
+            description: 200 response
+            headers:
+              Vary:
+                type: string
+                description: X-Auth-Token
+                default: X-Auth-Token
+                enum:
+                - X-Auth-Token
+              Content-Length:
+                type: integer
+              X-Subject-Token:
+                type: string
+            schema:
+              type: object
+              required:
+              - subnet
+              properties:
+                subnet:
+                  $ref: '#/definitions/subnet'
 definitions:
   token:
     type: object
@@ -288,3 +358,44 @@ definitions:
       is_default: {type: boolean, example: false}
       provider:network_type: {type: string, enum: ['vlan', 'vxlan', 'gre', 'flat'], example: 'vxlan'}
       provider:segmentation_id: {type: integer, format: int64, minimum: 0, maximum: 16777215, example: 190190}
+  subnets:
+    type: array
+    items:
+       $ref: '#/definitions/subnet'
+  subnet:
+    type: object
+    properties:
+      name: {type: string, enum: [stable], pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: net1}
+      enable_dhcp: {type: boolean, example: true}
+      network_id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'd32019d3-bc6e-4319-9c1d-6722fc136a22'}
+      segment_id: {type: string, example: null}
+      project_id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 4fd44f30292945e481c7b8a0c8908869}
+      tenant_id: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '4fd44f30292945e481c7b8a0c8908869'}
+      dns_nameservers: {type: array, items: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: '54d6f61d-db07-451c-9ab3-b9609b6b6f0b'}}
+      dns_publish_fixed_ip: {type: boolean, example: true}
+      allocation_pools:
+        type: array
+        items:
+          type: object
+          properties:
+            start: {type: string, format: ipv4, example: '10.0.0.2'}
+            end: {type: string, format: ipv4, example: '10.0.0.5'}
+      host_routes:
+        type: array
+        items:
+          type: object
+          properties:
+             destination: {type: string, format: ipv4, example: '10.0.0.2'}
+             nexthop: {type: string, format: ipv4, example: '10.0.0.2'}
+      ip_version: {type: integer, enum: [4, 6], example: 6}
+      gateway_ip: {type: string, format: ipv4, example: '10.0.0.1'}
+      cidr: {type: string, example: '10.0.0.1/24'}
+      id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'd32019d3-bc6e-4319-9c1d-6722fc136a22'}
+      created_at: {type: string, format: date-time, example: '2016-03-08T20:19:41'}
+      description: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: ''}
+      ipv6_address_mode: {type: string, enum: ['slaac', 'dhcpv6-stateful', 'dhcpv6-stateless', null]}
+      ipv6_ra_mode: {type: string, enum: ['slaac', 'dhcpv6-stateful', 'dhcpv6-stateless', null]}
+      revision_number: {type: integer, example: 0}
+      service_types: {type: array, items: {type: string}, example: []}
+      subnetpool_id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'd32019d3-bc6e-4319-9c1d-6722fc136a22'}
+      updated_at: {type: string, format: date-time, example: '2016-03-08T20:19:41'}

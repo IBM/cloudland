@@ -22,6 +22,7 @@ var (
 		"image":    `/image`,
 		"network":  `v2.0/networks`,
 		"identity": `/identity`,
+		"subnet":   `v2.0/subnets`,
 	}
 )
 
