@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package routes
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/IBM/cloudland/web/clui/model"
@@ -62,7 +63,7 @@ func TestUserAdminAccessToken(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = orgAdmin.Create("admin", user.ID)
+	_, err = orgAdmin.Create("admin", strconv.FormatInt(user.ID, 10))
 	if err != nil {
 		t.Fatal(err)
 	}

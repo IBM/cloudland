@@ -20,6 +20,7 @@ import (
 	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/apparentlymart/go-cidr/cidr"
 	"github.com/go-macaron/session"
+	uuidPk "github.com/google/uuid"
 	macaron "gopkg.in/macaron.v1"
 )
 
@@ -63,9 +64,26 @@ func getValidVni() (vni int, err error) {
 	return
 }
 
-func (a *SubnetAdmin) Create(name, vlan, network, netmask, gateway, start, end, rtype string) (subnet *model.Subnet, err error) {
+func checkIfExistVni(vni int64) (result bool, err error) {
+	db := DB()
+	count := 0
+	if err = db.Model(&model.Subnet{}).Where("vlan = ?", vni).Count(&count).Error; err != nil {
+		log.Println("Failed to query existing vlan, %v", err)
+		return
+	}
+	if count > 0 {
+		return true, nil
+	} else {
+		return false, nil
+	}
+}
+
+func (a *SubnetAdmin) Create(name, vlan, network, netmask, gateway, start, end, rtype, uuid string) (subnet *model.Subnet, err error) {
 	db := DB()
 	vlanNo := 0
+	if uuid == "" {
+		uuid = uuidPk.New().String()
+	}
 	if vlan == "" {
 		vlanNo, err = getValidVni()
 	} else {
@@ -110,11 +128,18 @@ func (a *SubnetAdmin) Create(name, vlan, network, netmask, gateway, start, end, 
 	if end == gateway {
 		end = cidr.Dec(net.ParseIP(end)).String()
 	}
-	if rtype == "" {
-		rtype = "internal"
-	}
 	gateway = fmt.Sprintf("%s/%d", gateway, preSize)
-	subnet = &model.Subnet{Name: name, Network: first.String(), Netmask: netmask, Gateway: gateway, Start: start, End: end, Vlan: int64(vlanNo), Type: rtype}
+	subnet = &model.Subnet{
+		Model:   model.Model{UUID: uuid},
+		Name:    name,
+		Network: first.String(),
+		Netmask: netmask,
+		Gateway: gateway,
+		Start:   start,
+		End:     end,
+		Vlan:    int64(vlanNo),
+		Type:    rtype,
+	}
 	err = db.Create(subnet).Error
 	if err != nil {
 		log.Println("Database create subnet failed, %v", err)
@@ -164,6 +189,51 @@ func (a *SubnetAdmin) Delete(id int64) (err error) {
 	if err != nil {
 		log.Println("Database delete subnet failed, %v", err)
 		return
+	}
+	//delete ip address
+	err = db.Where("subnetid = ?", id).Delete(model.Address{}).Error
+	if err != nil {
+		log.Println("Database delete ip address failed, %v", err)
+		return
+	}
+	return
+}
+
+func (a *SubnetAdmin) DeleteByUUID(uuid string) (err error) {
+	db := DB()
+	db = db.Begin()
+	defer func() {
+		if err == nil {
+			db.Commit()
+		} else {
+			db.Rollback()
+		}
+	}()
+	count := 0
+	subnets := []*model.Subnet{}
+	db.Where("uuid = ?", uuid).Find(&subnets)
+	for _, subnet := range subnets {
+		err = db.Model(&model.Address{}).Where("subnet_id = ? and allocated = ?", subnet.ID, true).Count(&count).Error
+		if err != nil {
+			log.Println("Database delete addresses failed, %v", err)
+			return
+		}
+		if count > 0 {
+			err = fmt.Errorf("Some addresses of this subnet in use")
+			log.Println("There are addresses of this subnet still in use")
+			return
+		}
+		err = db.Delete(&model.Subnet{Model: model.Model{ID: subnet.ID}}).Error
+		if err != nil {
+			log.Println("Database delete subnet failed, %v", err)
+			return
+		}
+		//delete ip address
+		err = db.Where("subnet_id = ?", subnet.ID).Delete(model.Address{}).Error
+		if err != nil {
+			log.Println("Database delete ip address failed, %v", err)
+			return
+		}
 	}
 	return
 }
@@ -247,7 +317,7 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 	gateway := c.Query("gateway")
 	start := c.Query("start")
 	end := c.Query("end")
-	_, err := subnetAdmin.Create(name, vlan, network, netmask, gateway, start, end, rtype)
+	_, err := subnetAdmin.Create(name, vlan, network, netmask, gateway, start, end, rtype, "")
 	if err != nil {
 		log.Println("Create subnet failed, %v", err)
 		c.Data["ErrorMsg"] = err.Error()

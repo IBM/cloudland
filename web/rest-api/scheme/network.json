@@ -1,0 +1,85 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$id": "http://github.com/IBM/cloudland/blob/master/web/rest-api/scheme/netowork.json",
+  "type": "object",
+  "title": "The Network Request Body Schema",
+  "required": [
+    "network"
+  ],
+  "properties": {
+    "network": {
+      "$id": "#/properties/network",
+      "type": "object",
+      "title": "The Network Schema",
+      "required": [
+        "admin_state_up",
+        "name",
+        "provider:network_type",
+        "provider:physical_network",
+        "provider:segmentation_id",
+        "qos_policy_id"
+      ],
+      "properties": {
+        "admin_state_up": {
+          "$id": "#/properties/network/properties/admin_state_up",
+          "type": "boolean",
+          "title": "The Admin_state_up Schema",
+          "default": false,
+          "examples": [
+            true
+          ]
+        },
+        "name": {
+          "$id": "#/properties/network/properties/name",
+          "type": "string",
+          "title": "The Name Schema",
+          "default": "",
+          "examples": [
+            "net1"
+          ],
+          "pattern": "^(.*)$"
+        },
+        "provider:network_type": {
+          "$id": "#/properties/network/properties/provider:network_type",
+          "type": "string",
+          "title": "The Provider:network_type Schema",
+          "default": "",
+          "examples": [
+            "vlan"
+          ],
+          "pattern": "^(.*)$"
+        },
+        "provider:physical_network": {
+          "$id": "#/properties/network/properties/provider:physical_network",
+          "type": "string",
+          "title": "The Provider:physical_network Schema",
+          "default": "",
+          "examples": [
+            "public"
+          ],
+          "pattern": "^(.*)$"
+        },
+        "provider:segmentation_id": {
+          "$id": "#/properties/network/properties/provider:segmentation_id",
+          "type": "integer",
+          "title": "The Provider:segmentation_id Schema",
+          "default": 0,
+          "examples": [
+            2
+          ]
+        },
+        "qos_policy_id": {
+          "$id": "#/properties/network/properties/qos_policy_id",
+          "type": "string",
+          "title": "The Qos_policy_id Schema",
+          "default": "",
+          "examples": [
+            "6a8454ade84346f59e8d40665f878b2e"
+          ],
+          "pattern": "^(.*)$"
+        }
+      }
+    }
+  }
+}
