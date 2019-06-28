@@ -273,7 +273,7 @@ func catLog() (items []*restModels.TokenCatalogItems) {
 					Interface: "public",
 					Region:    "default",
 					RegionID:  "default",
-					URL:       url.String() + resourceEndpoints["network"],
+					URL:       url.String(),
 				},
 			},
 			Type: "network",
