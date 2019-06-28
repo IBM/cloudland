@@ -47,8 +47,8 @@ func Rest() (m *macaron.Macaron) {
 	m.Get(resourceEndpoints["identity"], versionInstance.ListVersion)
 	m.Post("/identity/v3/auth/tokens", tokenInstance.IssueTokenByPasswd)
 	//neutron network api
-	m.Get(resourceEndpoints["network"], subnetInstance.List)
-	m.Post(resourceEndpoints["network"], subnetInstance.Create)
+	m.Get(resourceEndpoints["network"], subnetInstance.ListNetworks)
+	m.Post(resourceEndpoints["network"], subnetInstance.CreateNetwork)
 	//neutron subnet API
 	m.Get(resourceEndpoints["subnet"], subnetInstance.ListSubnet)
 	m.Post(resourceEndpoints["subnet"], subnetInstance.CreateSubnet)

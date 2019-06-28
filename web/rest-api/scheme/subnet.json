@@ -46,7 +46,7 @@
           "examples": [
             "10.0.0.1/24"
           ],
-          "pattern": "^(.*)$"
+          "pattern": "^[0-9]{1,3}(\\.[0-9]{1,3}){3}\\/[0-9]{1,3}$"
         },
         "name": {
           "$id": "#/properties/subnet/properties/name",
