@@ -49,9 +49,11 @@ func Rest() (m *macaron.Macaron) {
 	//neutron network api
 	m.Get(resourceEndpoints["network"], subnetInstance.ListNetworks)
 	m.Post(resourceEndpoints["network"], subnetInstance.CreateNetwork)
+	m.Delete(resourceEndpoints["network"]+`/:id`, subnetInstance.DeleteNetwork)
 	//neutron subnet API
 	m.Get(resourceEndpoints["subnet"], subnetInstance.ListSubnet)
 	m.Post(resourceEndpoints["subnet"], subnetInstance.CreateSubnet)
+	m.Delete(resourceEndpoints["subnet"]+`/:id`, subnetInstance.DeleteSubnet)
 
 	return
 }

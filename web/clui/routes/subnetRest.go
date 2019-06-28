@@ -70,28 +70,24 @@ func (v *SubnetRest) ListNetworks(c *macaron.Context) {
 	c.JSON(200, networks)
 }
 
-func (v *SubnetRest) Delete(c *macaron.Context, store session.Store) (err error) {
-	id := c.Params("id")
-	if id == "" {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+func (v *SubnetRest) DeleteNetwork(c *macaron.Context, store session.Store) (err error) {
+	uuid := c.Params("id")
+	if uuid == "" {
+		log.Println("empty network uuid")
+		c.JSON(400, NewResponseError("empty network uuid", "uuid is empty", 400))
 		return
 	}
-	subnetID, err := strconv.Atoi(id)
-	if err != nil {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+	subnetID := findIDbyUUID(&model.Subnet{}, uuid)
+	if subnetID < 0 {
+		c.Resp.WriteHeader(404)
 		return
 	}
 	err = subnetAdmin.Delete(int64(subnetID))
 	if err != nil {
-		code := http.StatusInternalServerError
-		c.Error(code, http.StatusText(code))
+		c.Resp.WriteHeader(412)
 		return
 	}
-	c.JSON(200, map[string]interface{}{
-		"redirect": "subnets",
-	})
+	c.Resp.WriteHeader(204)
 	return
 }
 
@@ -362,4 +358,36 @@ func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
 	}
 	c.JSON(200, subnetRespons)
 	return
+}
+
+func (v *SubnetRest) DeleteSubnet(c *macaron.Context, store session.Store) (err error) {
+	id := c.Params("id")
+	if id == "" {
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	subnetID, err := strconv.Atoi(id)
+	if err != nil {
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	err = subnetAdmin.Delete(int64(subnetID))
+	if err != nil {
+		code := http.StatusInternalServerError
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	c.JSON(200, map[string]interface{}{
+		"redirect": "subnets",
+	})
+	return
+}
+
+// findIDbyUUID find ID (int )by UUID (string)
+// if can't find ID in database, return number less than zero
+func findIDbyUUID(obj interface{}, uuid string) (id int) {
+
+	return 0
 }
