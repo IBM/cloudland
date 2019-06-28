@@ -26,6 +26,10 @@ type CreateSubnetParamsBodySubnet struct {
 	// Enum: [4 6]
 	IPVersion int64 `json:"ip_version,omitempty"`
 
+	// name
+	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
+	Name string `json:"name,omitempty"`
+
 	// network id
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	NetworkID string `json:"network_id,omitempty"`
@@ -36,6 +40,10 @@ func (m *CreateSubnetParamsBodySubnet) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateIPVersion(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateName(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -77,6 +85,19 @@ func (m *CreateSubnetParamsBodySubnet) validateIPVersion(formats strfmt.Registry
 
 	// value enum
 	if err := m.validateIPVersionEnum("ip_version", "body", m.IPVersion); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *CreateSubnetParamsBodySubnet) validateName(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Name) { // not required
+		return nil
+	}
+
+	if err := validate.Pattern("name", "body", string(m.Name), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 

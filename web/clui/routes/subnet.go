@@ -20,6 +20,7 @@ import (
 	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/apparentlymart/go-cidr/cidr"
 	"github.com/go-macaron/session"
+	uuidPk "github.com/google/uuid"
 	macaron "gopkg.in/macaron.v1"
 )
 
@@ -77,9 +78,12 @@ func checkIfExistVni(vni int64) (result bool, err error) {
 	}
 }
 
-func (a *SubnetAdmin) Create(name, vlan, network, netmask, gateway, start, end, rtype string) (subnet *model.Subnet, err error) {
+func (a *SubnetAdmin) Create(name, vlan, network, netmask, gateway, start, end, rtype, uuid string) (subnet *model.Subnet, err error) {
 	db := DB()
 	vlanNo := 0
+	if uuid == "" {
+		uuid = uuidPk.New().String()
+	}
 	if vlan == "" {
 		vlanNo, err = getValidVni()
 	} else {
@@ -125,7 +129,17 @@ func (a *SubnetAdmin) Create(name, vlan, network, netmask, gateway, start, end, 
 		end = cidr.Dec(net.ParseIP(end)).String()
 	}
 	gateway = fmt.Sprintf("%s/%d", gateway, preSize)
-	subnet = &model.Subnet{Name: name, Network: first.String(), Netmask: netmask, Gateway: gateway, Start: start, End: end, Vlan: int64(vlanNo), Type: rtype}
+	subnet = &model.Subnet{
+		Model:   model.Model{UUID: uuid},
+		Name:    name,
+		Network: first.String(),
+		Netmask: netmask,
+		Gateway: gateway,
+		Start:   start,
+		End:     end,
+		Vlan:    int64(vlanNo),
+		Type:    rtype,
+	}
 	err = db.Create(subnet).Error
 	if err != nil {
 		log.Println("Database create subnet failed, %v", err)
@@ -258,7 +272,7 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 	gateway := c.Query("gateway")
 	start := c.Query("start")
 	end := c.Query("end")
-	_, err := subnetAdmin.Create(name, vlan, network, netmask, gateway, start, end, rtype)
+	_, err := subnetAdmin.Create(name, vlan, network, netmask, gateway, start, end, rtype, "")
 	if err != nil {
 		log.Println("Create subnet failed, %v", err)
 		c.Data["ErrorMsg"] = err.Error()

@@ -20,9 +20,9 @@ var (
 		"volume":   `/volume/v3`,
 		"compute":  `/compute/v2.1`,
 		"image":    `/image`,
-		"network":  `v2.0/networks`,
+		"network":  `/v2.0/networks`,
 		"identity": `/identity`,
-		"subnet":   `v2.0/subnets`,
+		"subnet":   `/v2.0/subnets`,
 	}
 )
 

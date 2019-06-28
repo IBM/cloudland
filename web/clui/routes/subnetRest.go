@@ -17,10 +17,11 @@ import (
 
 	"github.com/IBM/cloudland/web/clui/model"
 	restModels "github.com/IBM/cloudland/web/rest-api/rest/models"
+	cidrFun "github.com/apparentlymart/go-cidr/cidr"
 	"github.com/go-macaron/session"
 	"github.com/go-openapi/strfmt"
+	uuidPk "github.com/google/uuid"
 	macaron "gopkg.in/macaron.v1"
-	cidrFun	 "github.com/apparentlymart/go-cidr/cidr"
 )
 
 var (
@@ -238,8 +239,15 @@ func (v *SubnetRest) ListSubnet(c *macaron.Context) {
 	c.JSON(200, subnetsResponse)
 }
 
+//CreateSubnet : create subnet in db with network id
+// netweork ID  and subnet ID is same
+//if network ID is empty , create subnet with new network ID
+//if network ID has been created and subnet address is empty , update subnet ID with new subnet infor
+// if network ID has been created and subnet address is not empyt, the subnet and network has been create. return duplicate error msg
 func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
 	db := DB()
+	var cidr *net.IPNet
+	var err error
 	body, _ := c.Req.Body().Bytes()
 	log.Println(string(body))
 	if err := JsonSchemeCheck(`subnet.json`, body); err != nil {
@@ -254,39 +262,62 @@ func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
 		c.JSON(500, NewResponseError("Unmarshal fail", err.Error(), 500))
 		return
 	}
-	id := requestData.Subnet.NetworkID
-	var cidr *net.IPNet
-	if cidr, err = net.ParseCIDR(requestData.Subnet.Cidr); err != nil {
+	if _, cidr, err = net.ParseCIDR(requestData.Subnet.Cidr); err != nil {
 		c.JSON(500, NewResponseError("parse Cidr fail", err.Error(), 500))
 		return
 	}
-	 _, gatewaynNet := cidrFun.AddressRange(ipNet)
-	gateway := cidrFun.Dec(gatewayNet).String()
+	name := requestData.Subnet.Name
+	networkUUID := requestData.Subnet.NetworkID
+	network, end := cidrFun.AddressRange(cidr)
+	first := cidrFun.Inc(network)
+	gateway := cidrFun.Dec(end)
+	last := cidrFun.Dec(gateway)
+	netmask := net.IP(cidr.Mask).String()
 
 	var subnet *model.Subnet
-	if id == "" {
-		subnet, err = subnetAdmin.Create(requestData.Subnet.Name, "", cidr.IP.String(), cidr.Mask.Size(), gateway, "", "", "")
-    if err != nil {
+	var count int
+	existingSubnet := &model.Subnet{}
+	if networkUUID == "" {
+		// if netID is empty, create subnet with random network ID
+		networkUUID = uuidPk.New().String()
+		subnet, err = subnetAdmin.Create(name, "", network.String(), netmask, gateway.String(), first.String(), last.String(), "internal", networkUUID)
+		if err != nil {
+			log.Println(fmt.Sprintf("Failed to create subnet with error: %v", err))
 			c.JSON(500, NewResponseError("create subnet fail", err.Error(), 500))
+			return
 		}
-	}
-  var count int
-	if err = db.Model(&model.Subnet{}).Where("id = ?", id).Count(&count).Error; err != nil {
-		log.Println("Failed to query existing vlan, %v", err)
-		c.JSON(500, NewResponseError("create subnet fail", err.Error(), 500))
-		return
-	}
-	if count == 0 {
-			subnet, err = subnetAdmin.Create(requestData.Subnet.Name, "", cidr.IP.String(), cidr.Mask.Size(), gateway, "", "", "")
-		  if err != nil {
-				log.Println("Failed to query existing vlan, %v", err)
+		log.Println("success to create subnet: %s", networkUUID)
+	} else {
+		if err := db.Model(existingSubnet).Where("uuid = ?", networkUUID).Count(&count).Error; err != nil {
+			log.Println(fmt.Sprintf("Failed to query existing vlan, %v", err))
+			c.JSON(500, NewResponseError("create subnet fail", err.Error(), 500))
+			return
+		}
+		if count == 0 {
+			// if network don't created, create subnet directly with specified network ID
+			subnet, err = subnetAdmin.Create(name, "", network.String(), netmask, gateway.String(), first.String(), last.String(), "internal", networkUUID)
+			if err != nil {
+				log.Println(fmt.Sprintf("Failed to create subnet with error: %v", err))
 				c.JSON(500, NewResponseError("create subnet fail", err.Error(), 500))
 				return
 			}
+			log.Println(fmt.Sprintf("success to create subnet: %s", networkUUID))
+		}
 	}
-	if subnet == nil {
-		//update subnet
 
+	if existingSubnet.Netmask != "" {
+		log.Println(fmt.Sprintf("duplicated subnet: %s", existingSubnet.UUID))
+		c.JSON(500, NewResponseError("create subnet fail", err.Error(), 500))
+		return
+	}
+	//if network has been created with empty subnet , update subnet
+	if subnet == nil && existingSubnet.Network == "" {
+		//update subnet
+		existingSubnet.Start = first.String()
+		existingSubnet.End = last.String()
+		existingSubnet.Gateway = gateway.String()
+		db.Save(existingSubnet)
+		log.Println(fmt.Sprintf("success update subnet: %s", networkUUID))
 	}
 	creatAt, _ := strfmt.ParseDateTime(subnet.CreatedAt.Format(time.RFC3339))
 	updateAt, _ := strfmt.ParseDateTime(subnet.UpdatedAt.Format(time.RFC3339))
@@ -296,16 +327,16 @@ func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
 			CreatedAt:      creatAt,
 			EnableDhcp:     true,
 			GatewayIP:      strfmt.IPv4(subnet.Gateway),
-			ID:             strconv.FormatInt(subnet.ID, 10),
+			ID:             subnet.UUID,
 			IPVersion:      4,
 			Name:           subnet.Name,
-			NetworkID:      strconv.FormatInt(subnet.ID, 10),
+			NetworkID:      subnet.UUID,
 			ProjectID:      "default",
 			RevisionNumber: 0,
 			TenantID:       "default",
 			UpdatedAt:      updateAt,
-
-		}
+		},
 	}
 	c.JSON(200, subnetRespons)
+	return
 }

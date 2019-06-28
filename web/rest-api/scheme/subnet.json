@@ -1,7 +1,7 @@
 {
   "definitions": {},
   "$schema": "http://json-schema.org/draft-06/schema#",
-  "$id": "http://github.com/IBM/cloudland/blob/master/web/rest-api/scheme/subnet.json",
+  "$id": "http://example.com/root.json",
   "type": "object",
   "title": "The Root Schema",
   "required": [
@@ -15,7 +15,8 @@
       "required": [
         "network_id",
         "ip_version",
-        "cidr"
+        "cidr",
+        "name"
       ],
       "properties": {
         "network_id": {
@@ -42,11 +43,20 @@
           "type": "string",
           "title": "The Cidr Schema",
           "default": "",
-          "format": "ipv4"
           "examples": [
             "10.0.0.1/24"
           ],
-          "pattern": "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\/[0-9]+$"
+          "pattern": "^(.*)$"
+        },
+        "name": {
+          "$id": "#/properties/subnet/properties/name",
+          "type": "string",
+          "title": "The Name Schema",
+          "default": "",
+          "examples": [
+            "net1"
+          ],
+          "pattern": "^(.*)$"
         }
       }
     }
