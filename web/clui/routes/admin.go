@@ -7,6 +7,9 @@ SPDX-License-Identifier: Apache-2.0
 package routes
 
 import (
+	"log"
+	"time"
+
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/jinzhu/gorm"
@@ -14,7 +17,9 @@ import (
 )
 
 func adminPassword() (password string) {
-	password = viper.GetString("admin.password")
+	time.Sleep(time.Second * 5)
+	passwd := viper.GetString("admin.password")
+	log.Println("$$$$$$$$$$$$$$$$$$--password = ", passwd)
 	if password == "" {
 		password = "passw0rd"
 	}
