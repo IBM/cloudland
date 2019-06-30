@@ -30,7 +30,7 @@ function inst_grpc() {
     sudo yum install -y axel
     cd $cland_root_dir
     grpc_pkg=/tmp/grpc.tar.gz
-    axel -n 20 https://github.com/Catherine2019/grpcbin/raw/master/grpc.tar.gz -o $grpc_pkg
+    axel -q -n 20 http://www.bluecat.ltd/repo/grpc.tar.gz -o $grpc_pkg
     sudo tar -zxf $grpc_pkg -C /
     rm -f $grpc_pkg
     sudo bash -c 'echo /usr/local/lib > /etc/ld.so.conf.d/protobuf.conf'
