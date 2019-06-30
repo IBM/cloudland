@@ -27,9 +27,10 @@ function inst_sci()
 
 # Install GRPC
 function inst_grpc() {
+    sudo yum install -y axel
     cd $cland_root_dir
     grpc_pkg=/tmp/grpc.tar.gz
-    wget https://github.com/Catherine2019/grpcbin/raw/master/grpc.tar.gz -O $grpc_pkg
+    axel -n 20 https://github.com/Catherine2019/grpcbin/raw/master/grpc.tar.gz -o $grpc_pkg
     sudo tar -zxf $grpc_pkg -C /
     rm -f $grpc_pkg
     sudo bash -c 'echo /usr/local/lib > /etc/ld.so.conf.d/protobuf.conf'
@@ -102,7 +103,7 @@ function demo_router()
 {
     sudo /opt/cloudland/scripts/backend/create_link.sh 5000
     sudo /opt/cloudland/scripts/backend/create_link.sh 5010
-    sudo nmcli connection modify br5000 ipv4.addresses 192.168.1.1/24
+    sudo nmcli connection modify br5000 ipv4.addresses 192.168.71.1/24
     sudo nmcli connection modify br5010 ipv4.addresses 172.16.20.1/24
     sudo nmcli connection up br5000
     sudo nmcli connection up br5010
