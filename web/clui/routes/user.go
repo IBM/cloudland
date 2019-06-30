@@ -165,6 +165,7 @@ func (a *UserAdmin) CompareHashAndPassword(hash, password string) (err error) {
 }
 
 func (v *UserView) LoginGet(c *macaron.Context, store session.Store) {
+	adminInit()
 	logout := c.Query("logout")
 	if logout == "" {
 		c.Data["PageIsSignIn"] = true

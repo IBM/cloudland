@@ -19,21 +19,20 @@ import (
 func adminPassword() (password string) {
 	time.Sleep(time.Second * 5)
 	passwd := viper.GetString("admin.password")
-	log.Println("$$$$$$$$$$$$$$$$$$--password = ", passwd)
 	if password == "" {
 		password = "passw0rd"
 	}
 	return
 }
 
-func init() {
+func adminInit() {
 	username := "admin"
-	password := adminPassword()
 	dbs.AutoUpgrade("01-admin-upgrade", func(db *gorm.DB) (err error) {
 		if err = db.Take(&model.User{}, "username = ?", username).Error; err != nil {
 			dbFunc := DB
 			defer func() { DB = dbFunc }()
 			DB = func() *gorm.DB { return db }
+			password := adminPassword()
 			_, err = userAdmin.Create(username, password)
 			if err != nil {
 				return
