@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package routes
 
 import (
+	"context"
 	"time"
 
 	"github.com/IBM/cloudland/web/clui/model"
@@ -24,7 +25,7 @@ func adminPassword() (password string) {
 	return
 }
 
-func adminInit() {
+func adminInit(ctx context.Context) {
 	username := "admin"
 	dbs.AutoUpgrade("01-admin-upgrade", func(db *gorm.DB) (err error) {
 		if err = db.Take(&model.User{}, "username = ?", username).Error; err != nil {
@@ -36,7 +37,7 @@ func adminInit() {
 			if err != nil {
 				return
 			}
-			_, err = orgAdmin.Create(username, username)
+			_, err = orgAdmin.Create(ctx, username, username)
 			if err != nil {
 				return
 			}

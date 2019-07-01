@@ -165,7 +165,7 @@ func (a *UserAdmin) CompareHashAndPassword(hash, password string) (err error) {
 }
 
 func (v *UserView) LoginGet(c *macaron.Context, store session.Store) {
-	adminInit()
+	adminInit(c.Req.Context())
 	logout := c.Query("logout")
 	if logout == "" {
 		c.Data["PageIsSignIn"] = true
@@ -336,7 +336,7 @@ func (v *UserView) Create(c *macaron.Context, store session.Store) {
 		log.Println("Failed to create user, %v", err)
 		c.HTML(500, "500")
 	}
-	_, err = orgAdmin.Create(username, username)
+	_, err = orgAdmin.Create(c.Req.Context(), username, username)
 	if err != nil {
 		log.Println("Failed to create organization, %v", err)
 		c.HTML(500, "500")
