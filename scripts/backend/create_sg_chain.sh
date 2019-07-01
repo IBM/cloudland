@@ -33,3 +33,4 @@ apply_fw -A $chain_out -m state --state RELATED,ESTABLISHED -j RETURN
 apply_fw -A $chain_out -m state --state INVALID -j DROP
 apply_fw -A $chain_out -j DROP
 
+service iptables save
