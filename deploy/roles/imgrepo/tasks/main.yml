@@ -20,3 +20,10 @@
 - name: get centos image
   script: init_image.sh
   tags: [image]
+
+- name: get centos image
+  get_url:
+    url: http://www.bluecat.ltd/repo/CentOS-7-x86_64-GenericCloud.qcow2
+    dest: /opt/cloudland/cache/image/image-1.qcow2
+    owner: cland
+  tags: [image]
