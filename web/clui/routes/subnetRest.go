@@ -37,7 +37,8 @@ type networkType string
 
 const INTERNAL networkType = `internal`
 const PUBLICE networkType = `public`
-var totalSubnets = 50
+
+var totalSubnets int64 = 50
 
 func (v networkType) String() string {
 	return string(v)
@@ -51,8 +52,8 @@ func (v networkType) GetBool() bool {
 }
 
 func (v *SubnetRest) ListNetworks(c *macaron.Context) {
-	offset := c.QueryInt64("marker")
-	limit := c.QueryInt64("limit")
+	// offset := c.QueryInt64("marker")
+	// limit := c.QueryInt64("limit")
 	reverse := c.QueryBool("page_reverse")
 	order := "uuid,created_at"
 	if reverse {
@@ -73,17 +74,17 @@ func (v *SubnetRest) ListNetworks(c *macaron.Context) {
 	for _, subnet := range subnets {
 		creatAt, _ := strfmt.ParseDateTime(subnet.CreatedAt.Format(time.RFC3339))
 		updateAt, _ := strfmt.ParseDateTime(subnet.UpdatedAt.Format(time.RFC3339))
-	  if subnet.UUID == networkUUID {
-			  networkItems[index].Subnets = append(
-					networkItems[index].Subnets,
-					subnet.ID,
-				 )
+		if subnet.UUID == networkUUID {
+			networkItems[index].Subnets = append(
+				networkItems[index].Subnets,
+				strconv.FormatInt(subnet.ID, 10),
+			)
 		} else {
 			index++
-			networkUUID =  subnet.UUID
+			networkUUID = subnet.UUID
 			networkType := restModels.CreateNetworkParamsBodyNetworkProviderNetworkTypeVxlan
 			if subnet.Vlan > 4096 {
-				networkType := restModels.CreateNetworkParamsBodyNetworkProviderNetworkTypeVlan
+				networkType = restModels.CreateNetworkParamsBodyNetworkProviderNetworkTypeVlan
 			}
 			network := &restModels.Network{
 				AdminStateUp:           true,
@@ -98,7 +99,7 @@ func (v *SubnetRest) ListNetworks(c *macaron.Context) {
 				Subnets:                []string{},
 			}
 			if subnet.Netmask != "" {
-				network.Subnets = append(network.Subnets, subnet.id)
+				network.Subnets = append(network.Subnets, strconv.FormatInt(subnet.ID, 10))
 			}
 			networkItems = append(networkItems, network)
 		}
@@ -376,59 +377,61 @@ func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
 		} else {
 			// if network has been created and network type is vxlan, check subnet is unique
 			db.Where("uuid = ?", networkUUID).First(existingSubnet)
+			log.Println(fmt.Sprintf("%+v", existingSubnet))
 			if existingSubnet.Vlan > MAXVLAN && existingSubnet.Network != "" {
-						log.Println(fmt.Sprintf("duplicated subnet: %s", existingSubnet.UUID))
-						c.JSON(
-							500,
-							NewResponseError(
-								"create subnet fail",
-								fmt.Sprintf("duplicate subnet: %s", existingSubnet.UUID),
-								500,
-							),
-						)
-						return
-			}
-		 }
-
-	//if network has been created with empty subnet, update subnet
-	if subnet == nil && existingSubnet.Network == "" {
-		//update subnet with vxlan and vlan type
-		existingSubnet.Start = first.String()
-		existingSubnet.End = last.String()
-		existingSubnet.Gateway = gatewayStr
-		existingSubnet.Netmask = netmask
-		existingSubnet.Network = network.String()
-		db.Save(existingSubnet)
-		//create ipaddress for subnet
-		ip := first
-		for {
-			ipstr := fmt.Sprintf("%s/%d", ip.String(), netmaskSize)
-			address := &model.Address{Address: ipstr, Netmask: netmask, Type: "ipv4", SubnetID: subnet.ID}
-			err = db.Create(address).Error
-			if err != nil {
-				log.Println("Database create address failed, %v", err)
-			}
-			if ip.String() == last.String() {
-				break
-			}
-			ip = cidr.Inc(ip)
-			if ipstr == gatewayStr {
-				ip = cidr.Inc(ip)
+				log.Println(fmt.Sprintf("duplicated subnet: %s", existingSubnet.UUID))
+				c.JSON(
+					500,
+					NewResponseError(
+						"create subnet fail",
+						fmt.Sprintf("duplicate subnet: %s", existingSubnet.UUID),
+						500,
+					),
+				)
+				return
 			}
 		}
-		log.Println(fmt.Sprintf("success update subnet: %s", networkUUID))
-		subnet = existingSubnet
-	}
-	// if network type is vlan and network has been created with a no-empty subnet, create a subnet with same network uuid
-	if subnet == nil && existingSubnet.Network != "" &&
-		(existingSubnet.Vlan < MAXVLAN && existingSubnet.Vlan>= MINVLAN){
+
+		//if network has been created with empty subnet, update subnet
+		if subnet == nil && existingSubnet.Network == "" && existingSubnet.Vlan != 0 {
+			//update subnet with vxlan and vlan type
+			existingSubnet.Start = first.String()
+			existingSubnet.End = last.String()
+			existingSubnet.Gateway = gatewayStr
+			existingSubnet.Netmask = netmask
+			existingSubnet.Network = network.String()
+			db.Save(existingSubnet)
+			//create ipaddress for subnet
+			subnet = existingSubnet
+			// ip := first
+			// for {
+			// 	ipstr := fmt.Sprintf("%s/%d", ip.String(), netmaskSize)
+			// 	address := &model.Address{Address: ipstr, Netmask: netmask, Type: "ipv4", SubnetID: subnet.ID}
+			// 	err = db.Create(address).Error
+			// 	if err != nil {
+			// 		log.Println("Database create address failed, %v", err)
+			// 	}
+			// 	if ip.String() == last.String() {
+			// 		break
+			// 	}
+			// 	ip = cidrFun.Inc(ip)
+			// 	if ipstr == gatewayStr {
+			// 		ip = cidrFun.Inc(ip)
+			// 	}
+			// }
+			log.Println(fmt.Sprintf("success update subnet: %s", networkUUID))
+		}
+		// if network type is vlan and network has been created with a no-empty subnet, create a subnet with same network uuid
+		if subnet == nil && existingSubnet.Network != "" &&
+			(existingSubnet.Vlan < MAXVLAN && existingSubnet.Vlan >= MINVLAN) {
 			//before created vlan subnet with existing network UUID , check the subnet is unique
 			subnets := []*model.Subnet{}
-			db.Model(&model.Subnet{}).Where("uuid = ?", networkUUID).Find(subnets)
+			db.Where("uuid = ?", networkUUID).Find(&subnets)
 			for _, sub := range subnets {
 				//check subnet conflict issue
-				subNet, _ := net.ParseCIDR(sub.Gateway)
-				if  err := cidrFun.VerifyNoOverlap([]*net.IPNet{subNet}, cidr); err != nil {
+				_, subNet, _ := net.ParseCIDR(sub.Gateway)
+				log.frm
+				if err := cidrFun.VerifyNoOverlap([]*net.IPNet{subNet}, cidr); err != nil {
 					c.JSON(
 						500,
 						NewResponseError(
@@ -447,6 +450,7 @@ func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
 				return
 			}
 			log.Println(fmt.Sprintf("success to create subnet: %s", networkUUID))
+		}
 	}
 
 	creatAt, _ := strfmt.ParseDateTime(subnet.CreatedAt.Format(time.RFC3339))
