@@ -30,15 +30,37 @@ var (
 
 type SubnetRest struct{}
 
+const MAXVLAN int64 = 4096
+const MINVLAN int64 = 1
+
+type networkType string
+
+const INTERNAL networkType = `internal`
+const PUBLICE networkType = `public`
+var totalSubnets = 50
+
+func (v networkType) String() string {
+	return string(v)
+}
+
+func (v networkType) GetBool() bool {
+	if v == INTERNAL {
+		return false
+	}
+	return true
+}
+
 func (v *SubnetRest) ListNetworks(c *macaron.Context) {
 	offset := c.QueryInt64("marker")
 	limit := c.QueryInt64("limit")
 	reverse := c.QueryBool("page_reverse")
-	order := "created_at"
+	order := "uuid,created_at"
 	if reverse {
-		order = "-created_at"
+		order = "uuid,-created_at"
 	}
-	_, subnets, err := subnetAdmin.List(offset, limit, order)
+	var subnets []*model.Subnet
+	var err error
+	totalSubnets, subnets, err = subnetAdmin.List(0, totalSubnets, order)
 	if err != nil {
 		c.JSON(500, NewResponseError("List subnets fail", err.Error(), 500))
 		return
@@ -46,25 +68,40 @@ func (v *SubnetRest) ListNetworks(c *macaron.Context) {
 
 	networks := &restModels.ListNetworksOKBody{}
 	networkItems := []*restModels.Network{}
+	var networkUUID string
+	var index int
 	for _, subnet := range subnets {
 		creatAt, _ := strfmt.ParseDateTime(subnet.CreatedAt.Format(time.RFC3339))
 		updateAt, _ := strfmt.ParseDateTime(subnet.UpdatedAt.Format(time.RFC3339))
-		network := &restModels.Network{
-			AdminStateUp:           true,
-			CreatedAt:              creatAt,
-			AvailabilityZones:      []string{"nova"},
-			ID:                     subnet.UUID,
-			Name:                   subnet.Name,
-			Status:                 "Active",
-			UpdatedAt:              updateAt,
-			ProviderNetworkType:    "vxlan",
-			ProviderSegmentationID: &subnet.Vlan,
-			Subnets:                []string{},
+	  if subnet.UUID == networkUUID {
+			  networkItems[index].Subnets = append(
+					networkItems[index].Subnets,
+					subnet.ID,
+				 )
+		} else {
+			index++
+			networkUUID =  subnet.UUID
+			networkType := restModels.CreateNetworkParamsBodyNetworkProviderNetworkTypeVxlan
+			if subnet.Vlan > 4096 {
+				networkType := restModels.CreateNetworkParamsBodyNetworkProviderNetworkTypeVlan
+			}
+			network := &restModels.Network{
+				AdminStateUp:           true,
+				CreatedAt:              creatAt,
+				AvailabilityZones:      []string{"cloudland"},
+				ID:                     subnet.UUID,
+				Name:                   subnet.Name,
+				Status:                 "Active",
+				UpdatedAt:              updateAt,
+				ProviderNetworkType:    networkType,
+				ProviderSegmentationID: &subnet.Vlan,
+				Subnets:                []string{},
+			}
+			if subnet.Netmask != "" {
+				network.Subnets = append(network.Subnets, subnet.id)
+			}
+			networkItems = append(networkItems, network)
 		}
-		if subnet.Netmask != "" {
-			network.Subnets = append(network.Subnets, subnet.UUID)
-		}
-		networkItems = append(networkItems, network)
 	}
 	networks.Networks = networkItems
 	c.JSON(200, networks)
@@ -108,6 +145,32 @@ func (v *SubnetRest) CreateNetwork(c *macaron.Context) {
 		c.JSON(500, NewResponseError("Unmarshal fail", err.Error(), 500))
 		return
 	}
+
+	if requestData.Network.ProviderNetworkType == "" {
+		requestData.Network.ProviderNetworkType = restModels.CreateNetworkParamsBodyNetworkProviderNetworkTypeVxlan
+	}
+	if requestData.Network.ProviderNetworkType == restModels.CreateNetworkParamsBodyNetworkProviderNetworkTypeVxlan &&
+		requestData.Network.ProviderSegmentationID == 0 {
+		vlanNo, err := getValidVni()
+		if err != nil {
+			c.JSON(500, NewResponseError("create vni fail", err.Error(), 500))
+			return
+		}
+		requestData.Network.ProviderSegmentationID = int64(vlanNo)
+	}
+	if requestData.Network.ProviderNetworkType == restModels.CreateNetworkParamsBodyNetworkProviderNetworkTypeVlan {
+		if requestData.Network.ProviderSegmentationID == 0 {
+			c.JSON(500, NewResponseError("must provide vlan ID", "empty vlan id", 500))
+		}
+		if requestData.Network.ProviderSegmentationID > MAXVLAN || requestData.Network.ProviderSegmentationID < MINVLAN {
+			c.JSON(500, NewResponseError("invalid vlan range", "vlan range must be in 1-4096", 500))
+		}
+	}
+	networkType := INTERNAL
+	if requestData.Network.RouterExternal {
+		networkType = PUBLICE
+	}
+	//check vni and vlan network whether has been created priviously
 	if result, err := checkIfExistVni(requestData.Network.ProviderSegmentationID); err != nil {
 		c.JSON(500, NewResponseError("check vni fail", err.Error(), 500))
 	} else if result {
@@ -127,7 +190,7 @@ func (v *SubnetRest) CreateNetwork(c *macaron.Context) {
 		},
 		Name: requestData.Network.Name,
 		Vlan: requestData.Network.ProviderSegmentationID,
-		Type: "internal",
+		Type: networkType.String(),
 	}
 	err := db.Create(subnet).Error
 	if err != nil {
@@ -191,12 +254,12 @@ func (v *SubnetRest) CreateNetwork(c *macaron.Context) {
 			Mtu:                    1500,
 			Name:                   subnet.Name,
 			PortSecurityEnabled:    false,
-			ProviderNetworkType:    "vxlan",
+			ProviderNetworkType:    requestData.Network.ProviderNetworkType,
 			ProviderSegmentationID: &subnet.Vlan,
 			QosPolicyID:            subnet.UUID,
-			RouterExternal:         false,
+			RouterExternal:         networkType.GetBool(),
 			Shared:                 false,
-			Status:                 "ACTIVCE",
+			Status:                 "ACTIVE",
 			Subnets:                []string{},
 			UpdatedAt:              updateAt,
 			VlanTransparent:        false,
@@ -279,14 +342,15 @@ func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
 	last := cidrFun.Dec(gateway)
 	netmask := net.IP(cidr.Mask).String()
 	netmaskSize, _ := cidr.Mask.Size()
+	gatewayStr := fmt.Sprintf("%s/%d", gateway, netmaskSize)
 
 	var subnet *model.Subnet
 	var count int
 	existingSubnet := &model.Subnet{}
 	if networkUUID == "" {
-		// if netID is empty, create subnet with random network ID
+		// if netID is empty, create subnet with random vni ID and network type is internal
 		networkUUID = uuidPk.New().String()
-		subnet, err = subnetAdmin.Create(name, "", network.String(), netmask, gateway.String(), first.String(), last.String(), "internal", networkUUID)
+		subnet, err = subnetAdmin.Create(name, "", network.String(), netmask, gateway.String(), first.String(), last.String(), INTERNAL.String(), networkUUID)
 		if err != nil {
 			log.Println(fmt.Sprintf("Failed to create subnet with error: %v", err))
 			c.JSON(500, NewResponseError("create subnet fail", err.Error(), 500))
@@ -294,6 +358,7 @@ func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
 		}
 		log.Println("success to create subnet: %s", networkUUID)
 	} else {
+		// if network is unexisting, create subnet with vlxan network type and internal
 		if err := db.Model(&model.Subnet{}).Where("uuid = ?", networkUUID).Count(&count).Error; err != nil {
 			log.Println(fmt.Sprintf("Failed to query existing vlan, %v", err))
 			c.JSON(500, NewResponseError("create subnet fail", err.Error(), 500))
@@ -309,35 +374,81 @@ func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
 			}
 			log.Println(fmt.Sprintf("success to create subnet: %s", networkUUID))
 		} else {
+			// if network has been created and network type is vxlan, check subnet is unique
 			db.Where("uuid = ?", networkUUID).First(existingSubnet)
-			if existingSubnet.Network != "" {
-				log.Println(fmt.Sprintf("duplicated subnet: %s", existingSubnet.UUID))
-				c.JSON(
-					500,
-					NewResponseError(
-						"create subnet fail",
-						fmt.Sprintf("duplicate subnet: %s", existingSubnet.UUID),
-						500,
-					),
-				)
-				return
+			if existingSubnet.Vlan > MAXVLAN && existingSubnet.Network != "" {
+						log.Println(fmt.Sprintf("duplicated subnet: %s", existingSubnet.UUID))
+						c.JSON(
+							500,
+							NewResponseError(
+								"create subnet fail",
+								fmt.Sprintf("duplicate subnet: %s", existingSubnet.UUID),
+								500,
+							),
+						)
+						return
 			}
-		}
-	}
+		 }
 
-	//if network has been created with empty subnet , update subnet
+	//if network has been created with empty subnet, update subnet
 	if subnet == nil && existingSubnet.Network == "" {
-		//update subnet
-		gatewayStr := fmt.Sprintf("%s/%d", gateway, netmaskSize)
+		//update subnet with vxlan and vlan type
 		existingSubnet.Start = first.String()
 		existingSubnet.End = last.String()
 		existingSubnet.Gateway = gatewayStr
 		existingSubnet.Netmask = netmask
 		existingSubnet.Network = network.String()
 		db.Save(existingSubnet)
+		//create ipaddress for subnet
+		ip := first
+		for {
+			ipstr := fmt.Sprintf("%s/%d", ip.String(), netmaskSize)
+			address := &model.Address{Address: ipstr, Netmask: netmask, Type: "ipv4", SubnetID: subnet.ID}
+			err = db.Create(address).Error
+			if err != nil {
+				log.Println("Database create address failed, %v", err)
+			}
+			if ip.String() == last.String() {
+				break
+			}
+			ip = cidr.Inc(ip)
+			if ipstr == gatewayStr {
+				ip = cidr.Inc(ip)
+			}
+		}
 		log.Println(fmt.Sprintf("success update subnet: %s", networkUUID))
 		subnet = existingSubnet
 	}
+	// if network type is vlan and network has been created with a no-empty subnet, create a subnet with same network uuid
+	if subnet == nil && existingSubnet.Network != "" &&
+		(existingSubnet.Vlan < MAXVLAN && existingSubnet.Vlan>= MINVLAN){
+			//before created vlan subnet with existing network UUID , check the subnet is unique
+			subnets := []*model.Subnet{}
+			db.Model(&model.Subnet{}).Where("uuid = ?", networkUUID).Find(subnets)
+			for _, sub := range subnets {
+				//check subnet conflict issue
+				subNet, _ := net.ParseCIDR(sub.Gateway)
+				if  err := cidrFun.VerifyNoOverlap([]*net.IPNet{subNet}, cidr); err != nil {
+					c.JSON(
+						500,
+						NewResponseError(
+							"create subnet fail",
+							fmt.Sprintf("duplicate subnet: %s", existingSubnet.ID),
+							500,
+						),
+					)
+					return
+				}
+			}
+			subnet, err = subnetAdmin.Create(name, "", network.String(), netmask, gateway.String(), first.String(), last.String(), existingSubnet.Type, existingSubnet.UUID)
+			if err != nil {
+				log.Println(fmt.Sprintf("Failed to create subnet with error: %v", err))
+				c.JSON(500, NewResponseError("create subnet fail", err.Error(), 500))
+				return
+			}
+			log.Println(fmt.Sprintf("success to create subnet: %s", networkUUID))
+	}
+
 	creatAt, _ := strfmt.ParseDateTime(subnet.CreatedAt.Format(time.RFC3339))
 	updateAt, _ := strfmt.ParseDateTime(subnet.UpdatedAt.Format(time.RFC3339))
 	subnetRespons := &restModels.CreateSubnetOKBody{
@@ -360,7 +471,7 @@ func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
 	return
 }
 
-func (v *SubnetRest) DeleteSubnet(c *macaron.Context, store session.Store) (err error) {
+func (v *SubnetRest) DeleteSubnet(c *macaron.Context) {
 	id := c.Params("id")
 	if id == "" {
 		code := http.StatusBadRequest

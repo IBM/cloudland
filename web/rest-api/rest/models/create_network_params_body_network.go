@@ -38,6 +38,9 @@ type CreateNetworkParamsBodyNetwork struct {
 
 	// qos policy id
 	QosPolicyID string `json:"qos_policy_id,omitempty"`
+
+	// router external
+	RouterExternal bool `json:"router:external,omitempty"`
 }
 
 // Validate validates this create network params body network
