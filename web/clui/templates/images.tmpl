@@ -35,9 +35,9 @@
                                 {{ range .Images }}
 		                        <tr>
 			                        <td>{{.ID}}</td>
-			                        <td><a href="/{{.Name}}">{{.Name}}</a></td>
-			                        <td><a href="/{{.Name}}">{{.Format}}</a></td>
-			                        <td><a href="/{{.Name}}">{{.Status}}</a></td>
+			                        <td>{{.Name}}</td>
+			                        <td>{{.Format}}</td>
+			                        <td>{{.Status}}</td>
 			                        <td><a href="{{$Link}}/{{.ID}}"><i class="fa fa-pencil-square-o"></i></a></td>
                                     <td><div class="ui red tiny button delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}">Delete</div></td>
 		                        </tr>

@@ -19,7 +19,7 @@
 
 - name: get centos image
   get_url:
-    url: http://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2
+    url: http://www.bluecat.ltd/repo/CentOS-7-x86_64-GenericCloud.qcow2
     dest: /opt/cloudland/cache/image/image-1.qcow2
     owner: cland
   tags: [image]

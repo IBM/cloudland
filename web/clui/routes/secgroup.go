@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package routes
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -26,7 +27,7 @@ var (
 type SecgroupAdmin struct{}
 type SecgroupView struct{}
 
-func (a *SecgroupAdmin) Create(name string, isDefault bool) (secgroup *model.SecurityGroup, err error) {
+func (a *SecgroupAdmin) Create(ctx context.Context, name string, isDefault bool) (secgroup *model.SecurityGroup, err error) {
 	db := DB()
 	secgroup = &model.SecurityGroup{Name: name, IsDefault: isDefault}
 	err = db.Create(secgroup).Error
@@ -34,22 +35,27 @@ func (a *SecgroupAdmin) Create(name string, isDefault bool) (secgroup *model.Sec
 		log.Println("DB failed to create security group, %v", err)
 		return
 	}
-	_, err = secruleAdmin.Create(secgroup.ID, "0.0.0.0/0", "egress", "tcp", 1, 65535)
+	_, err = secruleAdmin.Create(ctx, secgroup.ID, "0.0.0.0/0", "egress", "tcp", 1, 65535)
 	if err != nil {
 		log.Println("Failed to create security rule", err)
 		return
 	}
-	_, err = secruleAdmin.Create(secgroup.ID, "0.0.0.0/0", "ingress", "tcp", 22, 22)
+	_, err = secruleAdmin.Create(ctx, secgroup.ID, "0.0.0.0/0", "egress", "udp", 1, 65535)
 	if err != nil {
 		log.Println("Failed to create security rule", err)
 		return
 	}
-	_, err = secruleAdmin.Create(secgroup.ID, "0.0.0.0/0", "egress", "icmp", -1, -1)
+	_, err = secruleAdmin.Create(ctx, secgroup.ID, "0.0.0.0/0", "ingress", "tcp", 22, 22)
 	if err != nil {
 		log.Println("Failed to create security rule", err)
 		return
 	}
-	_, err = secruleAdmin.Create(secgroup.ID, "0.0.0.0/0", "ingress", "icmp", -1, -1)
+	_, err = secruleAdmin.Create(ctx, secgroup.ID, "0.0.0.0/0", "egress", "icmp", -1, -1)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
+	_, err = secruleAdmin.Create(ctx, secgroup.ID, "0.0.0.0/0", "ingress", "icmp", -1, -1)
 	if err != nil {
 		log.Println("Failed to create security rule", err)
 		return
@@ -67,19 +73,23 @@ func (a *SecgroupAdmin) Delete(id int64) (err error) {
 			db.Rollback()
 		}
 	}()
-	count := 0
-	err = db.Model(&model.SecurityRule{}).Where("secgroup = ?", id).Count(&count).Error
+	secgroup := &model.SecurityGroup{Model: model.Model{ID: id}}
+	err = db.Model(secgroup).Related(&secgroup.Interfaces, "Interfaces").Error
 	if err != nil {
-		log.Println("DB failed to delete security rules, %v", err)
+		log.Println("DB failed to query security group", err)
 		return
 	}
-	if count > 0 {
-		log.Println("Security group has rules")
-		err = fmt.Errorf("Security group has rules")
+	if len(secgroup.Interfaces) > 0 {
+		log.Println("Security group has associated interfaces")
+		err = fmt.Errorf("Security group has associated interfaces")
 		return
+	}
+	err = db.Where("secgroup = ?", id).Delete(&model.SecurityRule{}).Error
+	if err != nil {
+		log.Println("DB failed to delete security group rules", err)
 	}
 	if err = db.Delete(&model.SecurityGroup{Model: model.Model{ID: id}}).Error; err != nil {
-		log.Println("DB failed to delete security group, %v", err)
+		log.Println("DB failed to delete security group", err)
 		return
 	}
 	return
@@ -170,7 +180,7 @@ func (v *SecgroupView) Create(c *macaron.Context, store session.Store) {
 		isDef = true
 	}
 
-	_, err := secgroupAdmin.Create(name, isDef)
+	_, err := secgroupAdmin.Create(c.Req.Context(), name, isDef)
 	if err != nil {
 		log.Println("Failed to create security group, %v", err)
 		c.HTML(500, "500")

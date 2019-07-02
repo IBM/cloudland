@@ -2,11 +2,18 @@
 Copyright <holder> All Rights Reserved.
 
 SPDX-License-Identifier: Apache-2.0
+
+History:
+   Date     Who ID    Description
+   -------- --- ---   -----------
+   01/13/19 nanjj  Initial code
+
 */
 
 package routes
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -27,12 +34,12 @@ type OrgAdmin struct {
 
 type OrgView struct{}
 
-func (a *OrgAdmin) Create(name, owner string) (org *model.Organization, err error) {
+func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.Organization, err error) {
 	db := DB()
 	user := &model.User{Username: owner}
 	err = db.Model(user).Take(user).Error
 	sgName := name + "-default"
-	secGroup, err := secgroupAdmin.Create(sgName, true)
+	secGroup, err := secgroupAdmin.Create(ctx, sgName, true)
 	if err != nil {
 		log.Println("Failed to create security group", err)
 	}
@@ -169,7 +176,7 @@ func (v *OrgView) Create(c *macaron.Context, store session.Store) {
 	redirectTo := "../orgs"
 	name := c.Query("name")
 	owner := c.Query("owner")
-	_, err := orgAdmin.Create(name, owner)
+	_, err := orgAdmin.Create(c.Req.Context(), name, owner)
 	if err != nil {
 		log.Println("Failed to create organization, %v", err)
 		c.HTML(500, "500")

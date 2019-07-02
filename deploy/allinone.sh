@@ -13,7 +13,8 @@ sudo chown -R cland.cland $cland_root_dir
 mkdir $cland_root_dir/{bin,deploy,etc,lib6,log,run,sci,scripts,src,web,cache} $cland_root_dir/cache/{image,instance,meta,router,volume,xml} 2>/dev/null
 
 # Install development tools
-sudo yum install -y ansible vim git wget epel-release net-tools
+sudo yum install -y epel-release
+sudo yum install -y ansible vim git wget net-tools
 sudo yum groupinstall -y "Development Tools"
 
 # Install SCI
@@ -27,9 +28,10 @@ function inst_sci()
 
 # Install GRPC
 function inst_grpc() {
+    sudo yum install -y axel
     cd $cland_root_dir
     grpc_pkg=/tmp/grpc.tar.gz
-    wget https://github.com/Catherine2019/grpcbin/raw/master/grpc.tar.gz -O $grpc_pkg
+    wget http://www.bluecat.ltd/repo/grpc.tar.gz -O $grpc_pkg
     sudo tar -zxf $grpc_pkg -C /
     rm -f $grpc_pkg
     sudo bash -c 'echo /usr/local/lib > /etc/ld.so.conf.d/protobuf.conf'
@@ -102,7 +104,7 @@ function demo_router()
 {
     sudo /opt/cloudland/scripts/backend/create_link.sh 5000
     sudo /opt/cloudland/scripts/backend/create_link.sh 5010
-    sudo nmcli connection modify br5000 ipv4.addresses 192.168.1.1/24
+    sudo nmcli connection modify br5000 ipv4.addresses 192.168.71.1/24
     sudo nmcli connection modify br5010 ipv4.addresses 172.16.20.1/24
     sudo nmcli connection up br5000
     sudo nmcli connection up br5010
@@ -115,8 +117,11 @@ function allinone_firewall()
 {
     sudo iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
     sudo iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
+    sudo iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 4000 -j ACCEPT
+    sudo iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 4000 -j ACCEPT
     sudo iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 18000:20000 -j ACCEPT
     sudo iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 18000:20000 -j ACCEPT
+    sudo service iptables save
 }
 
 diff /opt/sci/lib64/libsci.so.0.0.0 $cland_root_dir/sci/libsci/.libs/libsci.so.0.0.0
@@ -127,7 +132,7 @@ diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 
 gen_hosts
 cd $cland_root_dir/deploy
-ansible-playbook cloudland.yml --tags hosts,epel,ntp,be_pkg,be_conf,be_srv,firewall,fe_srv,imgrepo --extra-vars "network_device=$NET_DEV"
+ansible-playbook cloudland.yml --tags hosts,epel,ntp,be_pkg,be_conf,be_srv,fe_srv,firewall,imgrepo --extra-vars "network_device=$NET_DEV"
 inst_web
 demo_router
 allinone_firewall

@@ -2,6 +2,7 @@
 Copyright <holder> All Rights Reserved.
 
 SPDX-License-Identifier: Apache-2.0
+
 */
 
 package routes
@@ -479,7 +480,6 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		}
 	} else {
 		sgIDs = append(sgIDs, store.Get("defsg").(int64))
-		log.Print("$$$$$$$$$$$$$$$$$$$$$$", sgIDs[0])
 	}
 	userdata := c.Query("userdata")
 	_, err = instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, int64(imageID), int64(flavorID), int64(primaryID), subnetIDs, keyIDs, sgIDs)
