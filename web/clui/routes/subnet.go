@@ -190,6 +190,12 @@ func (a *SubnetAdmin) Delete(id int64) (err error) {
 		log.Println("Database delete subnet failed, %v", err)
 		return
 	}
+	//delete ip address
+	err = db.Where("subnetid = ?", id).Delete(model.Address{}).Error
+	if err != nil {
+		log.Println("Database delete ip address failed, %v", err)
+		return
+	}
 	return
 }
 
@@ -220,6 +226,12 @@ func (a *SubnetAdmin) DeleteByUUID(uuid string) (err error) {
 		err = db.Delete(&model.Subnet{Model: model.Model{ID: subnet.ID}}).Error
 		if err != nil {
 			log.Println("Database delete subnet failed, %v", err)
+			return
+		}
+		//delete ip address
+		err = db.Where("subnet_id = ?", subnet.ID).Delete(model.Address{}).Error
+		if err != nil {
+			log.Println("Database delete ip address failed, %v", err)
 			return
 		}
 	}
