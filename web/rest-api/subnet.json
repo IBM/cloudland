@@ -1,8 +1,8 @@
 {
   "subnet": {
-    "network_id": "d7448bad-6b48-4976-8a35-f4adc0a7599e",
+    "network_id": "f5976080-f3b8-45aa-946e-2e328d96bde9",
     "ip_version": 4,
-    "cidr": "10.0.0.1/24",
+    "cidr": "10.0.0.1/28",
     "name": "net1"
   }
 }

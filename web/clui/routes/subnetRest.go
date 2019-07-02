@@ -13,12 +13,12 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/IBM/cloudland/web/clui/model"
 	restModels "github.com/IBM/cloudland/web/rest-api/rest/models"
 	cidrFun "github.com/apparentlymart/go-cidr/cidr"
-	"github.com/go-macaron/session"
 	"github.com/go-openapi/strfmt"
 	uuidPk "github.com/google/uuid"
 	macaron "gopkg.in/macaron.v1"
@@ -75,15 +75,15 @@ func (v *SubnetRest) ListNetworks(c *macaron.Context) {
 		creatAt, _ := strfmt.ParseDateTime(subnet.CreatedAt.Format(time.RFC3339))
 		updateAt, _ := strfmt.ParseDateTime(subnet.UpdatedAt.Format(time.RFC3339))
 		if subnet.UUID == networkUUID {
-			networkItems[index].Subnets = append(
-				networkItems[index].Subnets,
+			networkItems[index-1].Subnets = append(
+				networkItems[index-1].Subnets,
 				strconv.FormatInt(subnet.ID, 10),
 			)
 		} else {
 			index++
 			networkUUID = subnet.UUID
 			networkType := restModels.CreateNetworkParamsBodyNetworkProviderNetworkTypeVxlan
-			if subnet.Vlan > 4096 {
+			if subnet.Vlan < 4096 {
 				networkType = restModels.CreateNetworkParamsBodyNetworkProviderNetworkTypeVlan
 			}
 			network := &restModels.Network{
@@ -108,24 +108,18 @@ func (v *SubnetRest) ListNetworks(c *macaron.Context) {
 	c.JSON(200, networks)
 }
 
-func (v *SubnetRest) DeleteNetwork(c *macaron.Context, store session.Store) (err error) {
+func (v *SubnetRest) DeleteNetwork(c *macaron.Context) {
 	uuid := c.Params("id")
 	if uuid == "" {
 		log.Println("empty network uuid")
 		c.JSON(400, NewResponseError("empty network uuid", "uuid is empty", 400))
 		return
 	}
-	subnetID := findIDbyUUID(&model.Subnet{}, uuid)
-	if subnetID < 0 {
-		c.Resp.WriteHeader(404)
+	if err := subnetAdmin.DeleteByUUID(uuid); err != nil {
+		c.JSON(500, NewResponseError("Delete network fail", err.Error(), 500))
 		return
 	}
-	err = subnetAdmin.Delete(int64(subnetID))
-	if err != nil {
-		c.Resp.WriteHeader(412)
-		return
-	}
-	c.Resp.WriteHeader(204)
+	c.Status(204)
 	return
 }
 
@@ -286,12 +280,14 @@ func (v *SubnetRest) ListSubnet(c *macaron.Context) {
 	for _, subnet := range subnets {
 		creatAt, _ := strfmt.ParseDateTime(subnet.CreatedAt.Format(time.RFC3339))
 		updateAt, _ := strfmt.ParseDateTime(subnet.UpdatedAt.Format(time.RFC3339))
+		gateSub := strings.Split(subnet.Gateway, `/`)
+		network := fmt.Sprintf(`%s/%s`, subnet.Network, gateSub[1])
 		subnetItem := &restModels.Subnet{
-			Cidr:           subnet.Network,
+			Cidr:           network,
 			CreatedAt:      creatAt,
 			EnableDhcp:     true,
-			GatewayIP:      strfmt.IPv4(subnet.Gateway),
-			ID:             subnet.UUID,
+			GatewayIP:      strfmt.IPv4(gateSub[0]),
+			ID:             strconv.FormatInt(subnet.ID, 10),
 			IPVersion:      4,
 			Name:           subnet.Name,
 			NetworkID:      subnet.UUID,
@@ -403,22 +399,22 @@ func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
 			db.Save(existingSubnet)
 			//create ipaddress for subnet
 			subnet = existingSubnet
-			// ip := first
-			// for {
-			// 	ipstr := fmt.Sprintf("%s/%d", ip.String(), netmaskSize)
-			// 	address := &model.Address{Address: ipstr, Netmask: netmask, Type: "ipv4", SubnetID: subnet.ID}
-			// 	err = db.Create(address).Error
-			// 	if err != nil {
-			// 		log.Println("Database create address failed, %v", err)
-			// 	}
-			// 	if ip.String() == last.String() {
-			// 		break
-			// 	}
-			// 	ip = cidrFun.Inc(ip)
-			// 	if ipstr == gatewayStr {
-			// 		ip = cidrFun.Inc(ip)
-			// 	}
-			// }
+			ip := first
+			for {
+				ipstr := fmt.Sprintf("%s/%d", ip.String(), netmaskSize)
+				address := &model.Address{Address: ipstr, Netmask: netmask, Type: "ipv4", SubnetID: subnet.ID}
+				err = db.Create(address).Error
+				if err != nil {
+					log.Println("Database create address failed, %v", err)
+				}
+				if ip.String() == last.String() {
+					break
+				}
+				ip = cidrFun.Inc(ip)
+				if ipstr == gatewayStr {
+					ip = cidrFun.Inc(ip)
+				}
+			}
 			log.Println(fmt.Sprintf("success update subnet: %s", networkUUID))
 		}
 		// if network type is vlan and network has been created with a no-empty subnet, create a subnet with same network uuid
@@ -430,20 +426,25 @@ func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
 			for _, sub := range subnets {
 				//check subnet conflict issue
 				_, subNet, _ := net.ParseCIDR(sub.Gateway)
-				log.frm
-				if err := cidrFun.VerifyNoOverlap([]*net.IPNet{subNet}, cidr); err != nil {
+				log.Printf("%+v", cidr)
+				log.Printf("%+v", subNet)
+				if cidr.Contains(net.ParseIP(sub.Start)) ||
+					cidr.Contains(net.ParseIP(sub.End)) ||
+					subNet.Contains(first) ||
+					subNet.Contains(last) {
+					//	if err := cidrFun.VerifyNoOverlap([]*net.IPNet{cidr}, subNet); err != nil {
 					c.JSON(
 						500,
 						NewResponseError(
 							"create subnet fail",
-							fmt.Sprintf("duplicate subnet: %s", existingSubnet.ID),
+							fmt.Sprintf("duplicate subnet: %d", existingSubnet.ID),
 							500,
 						),
 					)
 					return
 				}
 			}
-			subnet, err = subnetAdmin.Create(name, "", network.String(), netmask, gateway.String(), first.String(), last.String(), existingSubnet.Type, existingSubnet.UUID)
+			subnet, err = subnetAdmin.Create(name, strconv.FormatInt(existingSubnet.Vlan, 10), network.String(), netmask, gateway.String(), first.String(), last.String(), existingSubnet.Type, existingSubnet.UUID)
 			if err != nil {
 				log.Println(fmt.Sprintf("Failed to create subnet with error: %v", err))
 				c.JSON(500, NewResponseError("create subnet fail", err.Error(), 500))
@@ -461,7 +462,7 @@ func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
 			CreatedAt:      creatAt,
 			EnableDhcp:     true,
 			GatewayIP:      strfmt.IPv4(subnet.Gateway),
-			ID:             subnet.UUID,
+			ID:             strconv.FormatInt(subnet.ID, 10),
 			IPVersion:      4,
 			Name:           subnet.Name,
 			NetworkID:      subnet.UUID,
@@ -498,11 +499,4 @@ func (v *SubnetRest) DeleteSubnet(c *macaron.Context) {
 		"redirect": "subnets",
 	})
 	return
-}
-
-// findIDbyUUID find ID (int )by UUID (string)
-// if can't find ID in database, return number less than zero
-func findIDbyUUID(obj interface{}, uuid string) (id int) {
-
-	return 0
 }
