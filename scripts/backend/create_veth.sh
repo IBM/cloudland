@@ -14,8 +14,10 @@ ip link set $peerdev netns $router
 ip netns exec $router ip link set $peerdev mtu 1450 up
 prefix=${device%%-*}
 if [ "$prefix" == "ext" ]; then
+    ./create_link.sh $external_vlan
     bridge=br$external_vlan
 elif [ "$prefix" == "int" ]; then
+    ./create_link.sh $internal_vlan
     bridge=br$internal_vlan
 elif [ "$prefix" == "ln" ]; then
     vni=${device##*-}
