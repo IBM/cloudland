@@ -278,6 +278,10 @@ func (v *SubnetRest) ListSubnet(c *macaron.Context) {
 	}
 	subnetItems := restModels.Subnets{}
 	for _, subnet := range subnets {
+		// process empty network
+		if subnet.Network == "" {
+			continue
+		}
 		creatAt, _ := strfmt.ParseDateTime(subnet.CreatedAt.Format(time.RFC3339))
 		updateAt, _ := strfmt.ParseDateTime(subnet.UpdatedAt.Format(time.RFC3339))
 		gateSub := strings.Split(subnet.Gateway, `/`)
@@ -476,27 +480,72 @@ func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
 	return
 }
 
+//DeleteSubnet with following logica
+//if subnet type is vxlan , reset subnet infor to nil
+//if subnet type is vlan, and network include more than 1 subnet ,
+//directly delete this subnet ,otherwise reset network of subnet to nil
 func (v *SubnetRest) DeleteSubnet(c *macaron.Context) {
+	db := DB()
+	db = db.Begin()
+	var err error
+	defer func() {
+		if err == nil {
+			db.Commit()
+		} else {
+			db.Rollback()
+		}
+	}()
 	id := c.Params("id")
 	if id == "" {
 		code := http.StatusBadRequest
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	subnetID, err := strconv.Atoi(id)
+	subnet := &model.Subnet{}
+	if err = db.Where("id = ?", id).First(subnet).Error; err != nil {
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+
+	if subnet.Vlan > MAXVLAN {
+		// reset subnet infor  if vlan type is vxlan
+		newSubnet := &model.Subnet{
+			Model:  subnet.Model,
+			Name:   subnet.Name,
+			Vlan:   subnet.Vlan,
+			Type:   subnet.Type,
+			Router: subnet.Router,
+		}
+		db.Save(newSubnet)
+	} else {
+		subnets := []*model.Subnet{}
+		db.Where("uuid = ?", subnet.UUID).Find(&subnets)
+		if len(subnets) == 1 {
+			//reset subnet infor if just only have one subnet in network
+			newSubnet := &model.Subnet{
+				Model:  subnet.Model,
+				Name:   subnet.Name,
+				Vlan:   subnet.Vlan,
+				Type:   subnet.Type,
+				Router: subnet.Router,
+			}
+			db.Save(newSubnet)
+		} else {
+			db.Delete(&subnet)
+		}
+	}
+	// start delete ip address
+	err = db.Where("subnet_id = ?", subnet.ID).Delete(model.Address{}).Error
+	if err != nil {
+		log.Println("Database delete ip address failed, %v", err)
+		return
+	}
 	if err != nil {
 		code := http.StatusBadRequest
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	err = subnetAdmin.Delete(int64(subnetID))
-	if err != nil {
-		code := http.StatusInternalServerError
-		c.Error(code, http.StatusText(code))
-		return
-	}
-	c.JSON(200, map[string]interface{}{
-		"redirect": "subnets",
-	})
+	c.Status(204)
 	return
 }
