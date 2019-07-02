@@ -15,6 +15,13 @@
     owner: cland
   with_items:
     - /opt/cloudland
+    - /opt/cloudland/cache
+    - /opt/cloudland/cache/image
+    - /opt/cloudland/cache/instance
+    - /opt/cloudland/cache/meta
+    - /opt/cloudland/cache/router
+    - /opt/cloudland/cache/volume
+    - /opt/cloudland/cache/xml
   tags: [sync]
 
 - name: synchronize cloudland and grpc
