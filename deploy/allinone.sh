@@ -13,7 +13,8 @@ sudo chown -R cland.cland $cland_root_dir
 mkdir $cland_root_dir/{bin,deploy,etc,lib6,log,run,sci,scripts,src,web,cache} $cland_root_dir/cache/{image,instance,meta,router,volume,xml} 2>/dev/null
 
 # Install development tools
-sudo yum install -y ansible vim git wget epel-release net-tools
+sudo yum install -y epel-release
+sudo yum install -y ansible vim git wget net-tools
 sudo yum groupinstall -y "Development Tools"
 
 # Install SCI
@@ -30,7 +31,7 @@ function inst_grpc() {
     sudo yum install -y axel
     cd $cland_root_dir
     grpc_pkg=/tmp/grpc.tar.gz
-    axel -q -n 20 http://www.bluecat.ltd/repo/grpc.tar.gz -o $grpc_pkg
+    wget http://www.bluecat.ltd/repo/grpc.tar.gz -O $grpc_pkg
     sudo tar -zxf $grpc_pkg -C /
     rm -f $grpc_pkg
     sudo bash -c 'echo /usr/local/lib > /etc/ld.so.conf.d/protobuf.conf'
@@ -131,7 +132,7 @@ diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 
 gen_hosts
 cd $cland_root_dir/deploy
-ansible-playbook cloudland.yml --tags hosts,epel,ntp,be_pkg,be_conf,be_srv,firewall,fe_srv,imgrepo --extra-vars "network_device=$NET_DEV"
+ansible-playbook cloudland.yml --tags hosts,epel,ntp,be_pkg,be_conf,be_srv,fe_srv,firewall,imgrepo --extra-vars "network_device=$NET_DEV"
 inst_web
 demo_router
 allinone_firewall
