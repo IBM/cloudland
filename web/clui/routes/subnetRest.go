@@ -21,6 +21,7 @@ import (
 	cidrFun "github.com/apparentlymart/go-cidr/cidr"
 	"github.com/go-openapi/strfmt"
 	uuidPk "github.com/google/uuid"
+	"github.com/jinzhu/gorm"
 	macaron "gopkg.in/macaron.v1"
 )
 
@@ -501,6 +502,18 @@ func (v *SubnetRest) DeleteSubnet(c *macaron.Context) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	// check all of ipaddress in this subnet is idle status
+	if isUsed, err := checkIPaddresIsUnused(db, id); err != nil {
+		code := http.StatusInternalServerError
+		c.Error(code, http.StatusText(code))
+		return
+	} else if isUsed {
+		errMsg := fmt.Sprintf("Failed to delete subnet: %s, ipaddress in subnet is used", id)
+		log.Println(errMsg)
+		c.JSON(http.StatusInternalServerError, NewResponseError("Delete subnet fail", errMsg, http.StatusInternalServerError))
+		return
+	}
+
 	subnet := &model.Subnet{}
 	if err = db.Where("id = ?", id).First(subnet).Error; err != nil {
 		code := http.StatusBadRequest
@@ -544,5 +557,20 @@ func (v *SubnetRest) DeleteSubnet(c *macaron.Context) {
 		return
 	}
 	c.Status(204)
+	return
+}
+
+func checkIPaddresIsUnused(db *gorm.DB, subnetID string) (isUsed bool, err error) {
+	count := 0
+	err = db.Model(&model.Address{}).Where("subnet_id = ? and allocated = ?", subnetID, true).Count(&count).Error
+	if err != nil {
+		log.Println("Database delete addresses failed, %v", err)
+		return
+	}
+	if count > 0 {
+		err = fmt.Errorf("Some addresses of this subnet in use")
+		log.Println("There are addresses of this subnet still in use")
+		return true, err
+	}
 	return
 }

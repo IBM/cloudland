@@ -192,7 +192,7 @@ func (a *SubnetAdmin) Delete(id int64) (err error) {
 		return
 	}
 	//delete ip address
-	err = db.Where("subnetid = ?", id).Delete(model.Address{}).Error
+	err = db.Where("subnet_id = ?", id).Delete(model.Address{}).Error
 	if err != nil {
 		log.Println("Database delete ip address failed, %v", err)
 		return
@@ -220,13 +220,23 @@ func (a *SubnetAdmin) DeleteByUUID(uuid string) (err error) {
 			return
 		}
 		if count > 0 {
-			err = fmt.Errorf("Some addresses of this subnet in use")
-			log.Println("There are addresses of this subnet still in use")
+			err = fmt.Errorf("Some addresses of this network in use")
+			log.Println("There are addresses of this network still in use")
 			return
 		}
 		err = db.Delete(&model.Subnet{Model: model.Model{ID: subnet.ID}}).Error
 		if err != nil {
-			log.Println("Database delete subnet failed, %v", err)
+			log.Println("Database delete network failed, %v", err)
+			return
+		}
+		var isUsed bool
+		isUsed, err = checkIPaddresIsUnused(db, strconv.FormatInt(subnet.ID, 10))
+		if err != nil {
+			log.Println("Database delete network failed, %v", err)
+			return
+		}
+		if isUsed {
+			err = fmt.Errorf("ip address in this network is used %s", uuid)
 			return
 		}
 		//delete ip address
