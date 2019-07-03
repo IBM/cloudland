@@ -14,6 +14,7 @@ package routes
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/IBM/cloudland/web/clui/model"
@@ -45,7 +46,7 @@ func TestOrgCreate(t *testing.T) {
 	owner := admin.ID
 	defer userAdmin.Delete(0)
 	defer orgAdmin.Delete(0)
-	org, err := orgAdmin.Create("admin", owner)
+	org, err := orgAdmin.Create("admin", strconv.FormatInt(owner, 10))
 	if err != nil {
 		t.Fatal(err)
 	}
