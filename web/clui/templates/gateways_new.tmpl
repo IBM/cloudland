@@ -54,11 +54,13 @@
 						  <i class="dropdown icon"></i>
 						  <div class="default text">Subnets</div>
 						  <div class="menu">
+							{{ if .Subnets }}
 							{{ range .Subnets }}
 							{{ if eq .Type "internal" }}
 							<div class="item" data-value={{.ID}} data-text={{.Name}}>
 							  {{.Name}}-{{.Network}}/{{.Netmask}}
 							</div>
+							{{ end }}
 							{{ end }}
 							{{ end }}
 						  </div>

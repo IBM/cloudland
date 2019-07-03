@@ -108,6 +108,56 @@ func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int
 	return
 }
 
+func (a *GatewayAdmin) Update(ctx context.Context, id int64, name string, pubID, priID int64, subnetIDs []int64) (gateway *model.Gateway, err error) {
+	db := DB()
+	gateway = &model.Gateway{Model: model.Model{ID: id}}
+	if err = db.Set("gorm:auto_preload", true).Find(gateway).Error; err != nil {
+		log.Println("Failed to query gateway, %v", err)
+		return
+	}
+	for _, gsub := range gateway.Subnets {
+		found := false
+		for _, sID := range subnetIDs {
+			if gsub.ID == sID {
+				found = true
+				break
+			}
+		}
+		if found == false {
+			control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
+			command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_gateway.sh %d %s %d", gateway.ID, gsub.Gateway, gsub.Vlan)
+			err = hyperExecute(ctx, control, command)
+			if err != nil {
+				log.Println("Clear gateway failed")
+			}
+		}
+	}
+	for _, sID := range subnetIDs {
+		found := false
+		for _, gsub := range gateway.Subnets {
+			if gsub.ID == sID {
+				found = true
+				break
+			}
+		}
+		if found == false {
+			sub := &model.Subnet{Model: model.Model{ID: sID}}
+			err = db.Model(sub).Take(sub).Error
+			if err != nil {
+				log.Println("DB failed to query subnet, %v", err)
+				continue
+			}
+			control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
+			command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_gateway.sh %d %s %d soft", gateway.ID, sub.Gateway, sub.Vlan)
+			err = hyperExecute(ctx, control, command)
+			if err != nil {
+				log.Println("Clear gateway failed")
+			}
+		}
+	}
+	return
+}
+
 func (a *GatewayAdmin) Delete(ctx context.Context, id int64) (err error) {
 	db := DB()
 	db = db.Begin()
@@ -253,6 +303,79 @@ func (v *GatewayView) New(c *macaron.Context, store session.Store) {
 	}
 	c.Data["Subnets"] = subnets
 	c.HTML(200, "gateways_new")
+}
+
+func (v *GatewayView) Edit(c *macaron.Context, store session.Store) {
+	db := dbs.DB()
+	id := c.Params("id")
+	gatewayID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Invalid gateway id, %v", err)
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	gateway := &model.Gateway{Model: model.Model{ID: int64(gatewayID)}}
+	if err = db.Set("gorm:auto_preload", true).Find(gateway).Error; err != nil {
+		log.Println("Failed to query gateway, %v", err)
+		return
+	}
+	subnets := []*model.Subnet{}
+	where := "type = 'internal'"
+	for _, gsub := range gateway.Subnets {
+		where = fmt.Sprintf("%s and id != %d", where, gsub.ID)
+	}
+	if err := db.Where(where).Find(&subnets).Error; err != nil {
+		log.Println("DB failed to query subnets, %v", err)
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+		return
+	}
+	c.Data["Gateway"] = gateway
+	c.Data["Subnets"] = subnets
+	c.HTML(200, "gateways_patch")
+}
+
+func (v *GatewayView) Patch(c *macaron.Context, store session.Store) {
+	redirectTo := "../gateways"
+	id := c.Params("id")
+	gatewayID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Invalid gateway id, %v", err)
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	name := c.Query("name")
+	pubSubnet := c.Query("public")
+	priSubnet := c.Query("private")
+	subnets := c.Query("subnets")
+	pubID, err := strconv.Atoi(pubSubnet)
+	if err != nil {
+		log.Println("Invalid public subnet id, %v", err)
+		pubID = 0
+	}
+	priID, err := strconv.Atoi(priSubnet)
+	if err != nil {
+		log.Println("Invalid private subnet id, %v", err)
+		priID = 0
+	}
+	s := strings.Split(subnets, ",")
+	var subnetIDs []int64
+	for i := 0; i < len(s); i++ {
+		sID, err := strconv.Atoi(s[i])
+		if err != nil {
+			log.Println("Invalid secondary subnet ID, %v", err)
+			continue
+		}
+		subnetIDs = append(subnetIDs, int64(sID))
+	}
+	_, err = gatewayAdmin.Update(c.Req.Context(), int64(gatewayID), name, int64(pubID), int64(priID), subnetIDs)
+	if err != nil {
+		log.Println("Failed to create gateway, %v", err)
+		c.HTML(500, "500")
+	}
+	c.Redirect(redirectTo)
 }
 
 func (v *GatewayView) Create(c *macaron.Context, store session.Store) {

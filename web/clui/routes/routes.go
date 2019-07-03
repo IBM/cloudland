@@ -116,6 +116,8 @@ func New() (m *macaron.Macaron) {
 	m.Get("/gateways/new", gatewayView.New)
 	m.Post("/gateways/new", gatewayView.Create)
 	m.Delete("/gateways/:id", gatewayView.Delete)
+	m.Get("/gateways/:id", gatewayView.Edit)
+	m.Post("/gateways/:id", gatewayView.Patch)
 	m.Get("/secgroups", secgroupView.List)
 	m.Get("/secgroups/new", secgroupView.New)
 	m.Post("/secgroups/new", secgroupView.Create)
