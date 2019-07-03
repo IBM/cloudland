@@ -229,16 +229,6 @@ func (a *SubnetAdmin) DeleteByUUID(uuid string) (err error) {
 			log.Println("Database delete network failed, %v", err)
 			return
 		}
-		var isUsed bool
-		isUsed, err = checkIPaddresIsUnused(db, strconv.FormatInt(subnet.ID, 10))
-		if err != nil {
-			log.Println("Database delete network failed, %v", err)
-			return
-		}
-		if isUsed {
-			err = fmt.Errorf("ip address in this network is used %s", uuid)
-			return
-		}
 		//delete ip address
 		err = db.Where("subnet_id = ?", subnet.ID).Delete(model.Address{}).Error
 		if err != nil {
