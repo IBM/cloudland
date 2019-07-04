@@ -5,7 +5,7 @@ source ../cloudrc
 
 [ $# -lt 3 ] && echo "$0 <router> <gateway> <vni>" && exit -1
 
-router=$1
+router=router-$1
 addr=$2
 vni=$3
 

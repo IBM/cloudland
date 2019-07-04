@@ -90,7 +90,7 @@ case \$STATE in
 esac
 EOF
 chmod +x $notify_sh
-./set_gateway.sh $router $vrrp_ip $vrrp_vni hard
+./set_gateway.sh $1 $vrrp_ip $vrrp_vni hard
 pid_file=$router_dir/keepalived.pid
 ip netns exec $router keepalived -f $vrrp_conf -p $pid_file -r $router_dir/vrrp.pid -c $router_dir/checkers.pid
 
@@ -100,7 +100,7 @@ n=$(jq length <<< $interfaces)
 while [ $i -lt $n ]; do
     addr=$(jq -r .[$i].ip_address <<< $interfaces)
     vni=$(jq -r .[$i].vni <<< $interfaces)
-    ./set_gateway.sh $router $addr $vni
+    ./set_gateway.sh $1 $addr $vni
     let i=$i+1
 done
 
