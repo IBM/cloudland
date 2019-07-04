@@ -9,6 +9,7 @@ package routes
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"strconv"
@@ -117,6 +118,7 @@ func (t *Token) IssueTokenByPasswd(c *macaron.Context) {
 	}
 	c.Header().Add(`X-Subject-Token`, token)
 	c.Header().Add(`Vary`, `X-Auth-Token`)
+	log.Print(token)
 	expire, _ := strfmt.ParseDateTime(time.Unix(expiresAt, 0).Format(time.RFC3339))
 	issue, _ := strfmt.ParseDateTime(time.Unix(issueAt, 0).Format(time.RFC3339))
 	respInstance := restModels.PostIdentityV3AuthTokensCreatedBody{}

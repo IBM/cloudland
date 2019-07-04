@@ -104,3 +104,15 @@ func NewToken(u, o string, uid, oid int64, role model.Role) (signed string, issu
 	signed, err = token.SignedString(privateKey())
 	return
 }
+
+func ParseToken(tokenString string) (tokenClaims *HypercubeClaims, err error) {
+	tokenClaims = &HypercubeClaims{}
+	_, err = jwt.ParseWithClaims(
+		tokenString,
+		tokenClaims,
+		func(token *jwt.Token) (interface{}, error) {
+			return publicKey(), nil
+		},
+	)
+	return
+}
