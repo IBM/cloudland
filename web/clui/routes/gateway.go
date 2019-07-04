@@ -112,14 +112,22 @@ func (a *GatewayAdmin) Update(ctx context.Context, id int64, name string, pubID,
 	db := DB()
 	gateway = &model.Gateway{Model: model.Model{ID: id}}
 	if err = db.Set("gorm:auto_preload", true).Find(gateway).Error; err != nil {
-		log.Println("Failed to query gateway, %v", err)
+		log.Println("Failed to query gateway ", err)
 		return
+	}
+	if gateway.Name != name {
+		gateway.Name = name
+		if err = db.Save(gateway).Error; err != nil {
+			log.Println("Failed to save gateway", err)
+			return
+		}
 	}
 	for _, gsub := range gateway.Subnets {
 		found := false
 		for _, sID := range subnetIDs {
 			if gsub.ID == sID {
 				found = true
+				log.Println("Found SID ", sID)
 				break
 			}
 		}
@@ -129,6 +137,12 @@ func (a *GatewayAdmin) Update(ctx context.Context, id int64, name string, pubID,
 			err = hyperExecute(ctx, control, command)
 			if err != nil {
 				log.Println("Clear gateway failed")
+				continue
+			}
+			err = model.UnsetGateway(gsub)
+			if err != nil {
+				log.Println("DB failed to update router for subnet", err)
+				continue
 			}
 		}
 	}
@@ -148,10 +162,16 @@ func (a *GatewayAdmin) Update(ctx context.Context, id int64, name string, pubID,
 				continue
 			}
 			control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
-			command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_gateway.sh %d %s %d soft", gateway.ID, sub.Gateway, sub.Vlan)
+			command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_gateway.sh %d %s %d soft", gateway.ID, sub.Gateway, sub.Vlan)
 			err = hyperExecute(ctx, control, command)
 			if err != nil {
-				log.Println("Clear gateway failed")
+				log.Println("Set gateway failed")
+				continue
+			}
+			_, err = model.SetGateway(sub.ID, gateway.ID)
+			if err != nil {
+				log.Println("DB failed to update router for subnet", err)
+				continue
 			}
 		}
 	}
@@ -190,8 +210,8 @@ func (a *GatewayAdmin) Delete(ctx context.Context, id int64) (err error) {
 		log.Println("DB failed to delete interfaces, %v", err)
 		return
 	}
-	if err = db.Model(&model.Gateway{Model: model.Model{ID: id}}).Error; err != nil {
-		log.Println("DB failed to delete gateway, %v", err)
+	if err = db.Take(&model.Gateway{Model: model.Model{ID: id}}).Error; err != nil {
+		log.Println("DB failed to find gateway, %v", err)
 		return
 	}
 	control := "toall="
@@ -349,7 +369,7 @@ func (v *GatewayView) Patch(c *macaron.Context, store session.Store) {
 	name := c.Query("name")
 	pubSubnet := c.Query("public")
 	priSubnet := c.Query("private")
-	subnets := c.Query("subnets")
+	subnets := c.QueryStrings("subnets")
 	pubID, err := strconv.Atoi(pubSubnet)
 	if err != nil {
 		log.Println("Invalid public subnet id, %v", err)
@@ -360,10 +380,9 @@ func (v *GatewayView) Patch(c *macaron.Context, store session.Store) {
 		log.Println("Invalid private subnet id, %v", err)
 		priID = 0
 	}
-	s := strings.Split(subnets, ",")
 	var subnetIDs []int64
-	for i := 0; i < len(s); i++ {
-		sID, err := strconv.Atoi(s[i])
+	for _, s := range subnets {
+		sID, err := strconv.Atoi(s)
 		if err != nil {
 			log.Println("Invalid secondary subnet ID, %v", err)
 			continue

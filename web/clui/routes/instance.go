@@ -144,6 +144,90 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 	return
 }
 
+func (a *InstanceAdmin) Update(ctx context.Context, id int64, hostname string, subnetIDs, sgIDs []int64) (instance *model.Instance, err error) {
+	db := DB()
+	instance = &model.Instance{Model: model.Model{ID: id}}
+	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
+		log.Println("Failed to query instance ", err)
+		return
+	}
+	if instance.Hostname != hostname {
+		instance.Hostname = hostname
+		if err = db.Save(instance).Error; err != nil {
+			log.Println("Failed to save instance", err)
+			return
+		}
+	}
+	secGroups := []*model.SecurityGroup{}
+	if err = db.Where(sgIDs).Find(&secGroups).Error; err != nil {
+		log.Println("Security group query failed", err)
+		return
+	}
+	secRules, err := model.GetSecurityRules(secGroups)
+	if err != nil {
+		log.Println("Failed to get security rules", err)
+		return
+	}
+	securityData := []*SecurityData{}
+	for _, rule := range secRules {
+		sgr := &SecurityData{
+			Secgroup:    rule.Secgroup,
+			RemoteIp:    rule.RemoteIp,
+			RemoteGroup: rule.RemoteGroup,
+			Direction:   rule.Direction,
+			IpVersion:   rule.IpVersion,
+			Protocol:    rule.Protocol,
+			PortMin:     rule.PortMin,
+			PortMax:     rule.PortMax,
+		}
+		securityData = append(securityData, sgr)
+	}
+	for _, iface := range instance.Interfaces {
+		found := false
+		for _, sID := range subnetIDs {
+			if iface.Address.SubnetID == sID {
+				found = true
+				log.Println("Found SID ", sID)
+				break
+			}
+		}
+		if found == false {
+			control := fmt.Sprintf("inter=%d", instance.Hyper)
+			command := fmt.Sprintf("/opt/cloudland/scripts/backend/detach_nic.sh %d %d", instance.ID, iface.Address.Subnet.Vlan, iface.Address.Address, iface.MacAddr)
+			err = hyperExecute(ctx, control, command)
+			if err != nil {
+				log.Println("Delete vm command execution failed", err)
+				return
+			}
+			err = model.DeleteInterface(iface)
+		}
+	}
+	index := len(instance.Interfaces)
+	for i, sID := range subnetIDs {
+		found := false
+		for _, iface := range instance.Interfaces {
+			if iface.Address.SubnetID == sID {
+				found = true
+				log.Println("Found SID ", sID)
+				break
+			}
+		}
+		if found == false {
+			var iface *model.Interface
+			ifname := fmt.Sprintf("eth%d", i+index)
+			iface, err = model.CreateInterface(sID, instance.ID, ifname, "instance", secGroups)
+			control := fmt.Sprintf("inter=%d", instance.Hyper)
+			command := fmt.Sprintf("/opt/cloudland/scripts/backend/attach_nic.sh %d %d", instance.ID, iface.Address.Subnet.Vlan, iface.Address.Address, iface.MacAddr)
+			err = hyperExecute(ctx, control, command)
+			if err != nil {
+				log.Println("Delete vm command execution failed", err)
+				return
+			}
+		}
+	}
+	return
+}
+
 func hyperExecute(ctx context.Context, control, command string) (err error) {
 	sciClient := grpcs.RemoteExecClient()
 	sciReq := &scripts.ExecuteRequest{
@@ -407,6 +491,84 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 	c.Data["Secgroups"] = secgroups
 	c.Data["Keys"] = keys
 	c.HTML(200, "instances_new")
+}
+
+func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
+	db := DB()
+	id := c.Params("id")
+	if id == "" {
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	instanceID, err := strconv.Atoi(id)
+	if err != nil {
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	instance := &model.Instance{Model: model.Model{ID: int64(instanceID)}}
+	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
+		log.Println("Image query failed", err)
+		return
+	}
+	if err = db.Where("instance_id = ?", instanceID).Find(&instance.FloatingIps).Error; err != nil {
+		log.Println("Failed to query floating ip(s), %v", err)
+		return
+	}
+	subnets := []*model.Subnet{}
+	where := ""
+	for i, iface := range instance.Interfaces {
+		if i == 0 {
+			where = fmt.Sprintf("id != %d", iface.Address.Subnet.ID)
+		} else {
+			where = fmt.Sprintf("%s and id != %d", where, iface.Address.Subnet.ID)
+		}
+	}
+	if err := db.Where(where).Find(&subnets).Error; err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+		return
+	}
+	c.Data["Instance"] = instance
+	c.Data["Subnets"] = subnets
+	c.HTML(200, "instances_patch")
+}
+
+func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
+	redirectTo := "../instances"
+	id := c.Params("id")
+	if id == "" {
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	instanceID, err := strconv.Atoi(id)
+	if err != nil {
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	hostname := c.Query("hostname")
+	ifaces := c.Query("ifaces")
+	s := strings.Split(ifaces, ",")
+	var subnetIDs []int64
+	for i := 0; i < len(s); i++ {
+		sID, err := strconv.Atoi(s[i])
+		if err != nil {
+			log.Println("Invalid secondary subnet ID, %v", err)
+			continue
+		}
+		subnetIDs = append(subnetIDs, int64(sID))
+	}
+	var sgIDs []int64
+	sgIDs = append(sgIDs, store.Get("defsg").(int64))
+	_, err = instanceAdmin.Update(c.Req.Context(), int64(instanceID), hostname, subnetIDs, sgIDs)
+	if err != nil {
+		log.Println("Create instance failed, %v", err)
+		c.HTML(http.StatusBadRequest, err.Error())
+	}
+	c.Redirect(redirectTo)
 }
 
 func (v *InstanceView) Create(c *macaron.Context, store session.Store) {

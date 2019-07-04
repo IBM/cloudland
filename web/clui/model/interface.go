@@ -118,3 +118,12 @@ func DeleteInterfaces(masterID int64, ifType string) (err error) {
 	}
 	return
 }
+
+func DeleteInterface(iface *Interface) (err error) {
+	db := dbs.DB()
+	if err = db.Model(&Address{}).Where("interface = ?", iface.ID).Update(map[string]interface{}{"allocated": false, "interface": 0}).Error; err != nil {
+		log.Println("Failed to Update addresses, %v", err)
+		return
+	}
+	return
+}

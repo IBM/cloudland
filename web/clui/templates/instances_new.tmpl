@@ -75,7 +75,7 @@
 								{{ end }}
 								{{ else }}
 								{{ range .Subnets }}
-								{{ if eq .Type "normal" }}
+								{{ if eq .Type "internal" }}
 								<div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
 								  {{.Name}}
 								</div>

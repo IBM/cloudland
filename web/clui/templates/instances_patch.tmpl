@@ -1,0 +1,45 @@
+{{template "_head" .}}
+<div class="user signup">
+	<div class="ui middle very relaxed page grid">
+        <div class="column" >
+            <form class="ui form" action="{{.Link}}" method="post">
+                <h3 class="ui top attached header">
+                    Update Instance
+                </h3>
+                <div class="ui attached segment">
+                    <div class="required inline field">
+                        <label for="hostname">Hostname (prefix)</label>
+                        <input id="hostname" name="hostname" value="{{ .Instance.Hostname }}" required>
+                    </div>
+                    <div class="inline field">
+					    <label for="ifaces">Interfaces</label>
+                        <select name="ifaces" id="ifaces" multiple="" class="ui multiple selection dropdown">
+							{{ if .Instance.Interfaces }}
+							  {{ range .Instance.Interfaces }}
+                                 <option value="{{ .Address.SubnetID }}" selected>{{.Address.Subnet.Name}}-{{.Address.Address}}</option>
+							  {{ end }}
+							{{ end }}
+							{{ if .Subnets }}
+							  {{ if .IsAdmin }}
+							    {{ range .Subnets }}
+                                   <option value="{{ .ID }}" >{{.Name}}-{{.Network}}/{{.Netmask}}</option>
+							    {{ end }}
+							  {{ else }}
+								{{ if eq .Type "internal" }}
+                                   <option value="{{ .ID }}" >{{.Name}}-{{.Network}}/{{.Netmask}}</option>
+							    {{ end }}
+							  {{ end }}
+							{{ end }}
+                        </select>
+					</div>
+                    <div class="inline field">
+                        <label></label>
+                        <button class="ui green button">Update Instance</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+	</div>
+</div>
+{{template "_footer" .}}
+

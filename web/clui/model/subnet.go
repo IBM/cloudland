@@ -100,12 +100,10 @@ func SetGateway(subnetID, routerID int64) (subnet *Subnet, err error) {
 	return
 }
 
-func UnsetGateway(subnetID int64) (err error) {
+func UnsetGateway(subnet *Subnet) (err error) {
 	db := dbs.DB()
-	subnet := &Subnet{
-		Model: Model{ID: subnetID},
-	}
-	err = db.Model(subnet).Update("router = ?", "").Error
+	subnet.Router = 0
+	err = db.Save(subnet).Error
 	if err != nil {
 		log.Println("Failed to unset gateway, %v", err)
 		return
