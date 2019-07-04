@@ -1,0 +1,13 @@
+[Unit]
+Description=VXLAN ARP resolver
+After=network.target
+
+[Service]
+ExecStart=/opt/cloudland/bin/vxresolver -d /opt/cloudland/db/cloudland.db -x 4789 -p 4789
+ExecStop=/usr/bin/killall vxresolver
+KillMode=process
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
