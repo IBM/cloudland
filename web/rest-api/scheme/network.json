@@ -13,12 +13,9 @@
       "type": "object",
       "title": "The Network Schema",
       "required": [
-        "admin_state_up",
         "name",
         "provider:network_type",
-        "provider:physical_network",
-        "provider:segmentation_id",
-        "qos_policy_id"
+        "provider:segmentation_id"
       ],
       "properties": {
         "admin_state_up": {
@@ -62,9 +59,9 @@
         },
         "provider:segmentation_id": {
           "$id": "#/properties/network/properties/provider:segmentation_id",
-          "type": "integer",
+          "type": "string",
           "title": "The Provider:segmentation_id Schema",
-          "default": 0,
+          "default": "",
           "examples": [
             2
           ]

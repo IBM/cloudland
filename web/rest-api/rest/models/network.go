@@ -76,9 +76,7 @@ type Network struct {
 	ProviderNetworkType string `json:"provider:network_type,omitempty"`
 
 	// provider segmentation id
-	// Maximum: 1.6777215e+07
-	// Minimum: 0
-	ProviderSegmentationID *int64 `json:"provider:segmentation_id,omitempty"`
+	ProviderSegmentationID string `json:"provider:segmentation_id,omitempty"`
 
 	// qos policy id
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
@@ -137,10 +135,6 @@ func (m *Network) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateProviderNetworkType(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateProviderSegmentationID(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -309,23 +303,6 @@ func (m *Network) validateProviderNetworkType(formats strfmt.Registry) error {
 
 	// value enum
 	if err := m.validateProviderNetworkTypeEnum("provider:network_type", "body", m.ProviderNetworkType); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *Network) validateProviderSegmentationID(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.ProviderSegmentationID) { // not required
-		return nil
-	}
-
-	if err := validate.MinimumInt("provider:segmentation_id", "body", int64(*m.ProviderSegmentationID), 0, false); err != nil {
-		return err
-	}
-
-	if err := validate.MaximumInt("provider:segmentation_id", "body", int64(*m.ProviderSegmentationID), 1.6777215e+07, false); err != nil {
 		return err
 	}
 
