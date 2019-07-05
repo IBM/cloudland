@@ -12,5 +12,5 @@ vm_mac=$4
 nic_name=tap$(echo $vm_mac | cut -d: -f4- | tr -d :)
 vm_br=br$vlan
 ./clear_link.sh $vlan
-virsh detach-interface $vm_ID bridge --mac $vm_mac --config --current
+virsh detach-interface $vm_ID bridge --mac $vm_mac --config --live
 ./clear_sg_chain.sh $nic_name
