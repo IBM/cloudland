@@ -11,7 +11,6 @@ vm_ip=$3
 vm_mac=$4
 nic_name=tap$(echo $vm_mac | cut -d: -f4- | tr -d :)
 vm_br=br$vlan
-./create_link.sh $vlan
-virsh attach-interface $vm_ID bridge $vm_br --model virtio --mac $vm_mac --config --target $nic_name
-./create_sg_chain.sh $nic_name $vm_ip $vm_mac
-./apply_sg_rule.sh $nic_name
+./clear_link.sh $vlan
+virsh detach-interface $vm_ID bridge --mac $vm_mac --config --current
+./clear_sg_chain.sh $nic_name
