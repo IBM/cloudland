@@ -14,4 +14,4 @@ if [ "$state" = "running" -a "$action" = "shutdown" ]; then
     virsh destroy $vm_ID
     state=$(virsh dominfo $vm_ID | grep State | cut -d: -f2 | xargs)
 fi
-echo "|:-COMMAND-:| $(basename $0) $vm_ID $state"
+echo "|:-COMMAND-:| $(basename $0) '$1' '$state'"
