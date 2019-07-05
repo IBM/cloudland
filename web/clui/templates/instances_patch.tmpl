@@ -8,9 +8,18 @@
                 </h3>
                 <div class="ui attached segment">
                     <div class="required inline field">
-                        <label for="hostname">Hostname (prefix)</label>
+                        <label for="hostname">Hostname</label>
                         <input id="hostname" name="hostname" value="{{ .Instance.Hostname }}" required>
                     </div>
+                    <div class="inline field">
+                        <label for="action">Action</label>
+                        <select name="action" id="action" class="ui selection dropdown">
+                            <option value="">{{ .Instance.Status }}</option>
+                            <option value="shutdown">shutdown</option>
+                            <option value="start">start</option>
+                            <option value="suspend">suspend</option>
+                            <option value="resume">resume</option>
+                        </select>
                     <div class="inline field">
 					    <label for="ifaces">Interfaces</label>
                         <select name="ifaces" id="ifaces" multiple="" class="ui multiple selection dropdown">

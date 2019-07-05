@@ -125,5 +125,10 @@ func DeleteInterface(iface *Interface) (err error) {
 		log.Println("Failed to Update addresses, %v", err)
 		return
 	}
+	err = db.Delete(iface).Error
+	if err != nil {
+		log.Println("Failed to delete interface", err)
+		return
+	}
 	return
 }

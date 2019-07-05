@@ -44,7 +44,14 @@ func init() {
 }
 
 func AllocateAddress(subnetID, ifaceID int64, addrType string) (address *Address, err error) {
-	address = &Address{}
+	db := dbs.DB()
+	subnet := &Subnet{Model: Model{ID: subnetID}}
+	err = db.Take(subnet).Error
+	if err != nil {
+		log.Println("Failed to query subnet", err)
+		return
+	}
+	address = &Address{Subnet: subnet}
 	tx := dbs.DB().Begin()
 	err = tx.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ?", subnetID, false).Take(address).Error
 	if err != nil {

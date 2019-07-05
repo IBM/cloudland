@@ -17,10 +17,10 @@ import (
 )
 
 func init() {
-	Add("clear_vm", ClearVM)
+	Add("action_vm", ActionVM)
 }
 
-func ClearVM(ctx context.Context, job *model.Job, args []string) (status string, err error) {
+func ActionVM(ctx context.Context, job *model.Job, args []string) (status string, err error) {
 	//|:-COMMAND-:| clear_vm.sh '127'
 	db := dbs.DB()
 	argn := len(args)
@@ -34,17 +34,16 @@ func ClearVM(ctx context.Context, job *model.Job, args []string) (status string,
 		log.Println("Invalid instance ID", err)
 		return
 	}
-	reason := ""
 	instance := &model.Instance{Model: model.Model{ID: int64(instID)}}
 	err = db.Take(instance).Error
 	if err != nil {
 		log.Println("Invalid instance ID", err)
-		reason = err.Error()
 		return
 	}
+	status = args[2]
 	err = db.Model(&instance).Updates(map[string]interface{}{
-		"status": "deleted",
-		"reason": reason}).Error
+		"status": status,
+	}).Error
 	if err != nil {
 		return
 	}

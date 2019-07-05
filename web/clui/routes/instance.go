@@ -144,7 +144,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 	return
 }
 
-func (a *InstanceAdmin) Update(ctx context.Context, id int64, hostname string, subnetIDs, sgIDs []int64) (instance *model.Instance, err error) {
+func (a *InstanceAdmin) Update(ctx context.Context, id int64, hostname, action string, subnetIDs, sgIDs []int64) (instance *model.Instance, err error) {
 	db := DB()
 	instance = &model.Instance{Model: model.Model{ID: id}}
 	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
@@ -155,6 +155,17 @@ func (a *InstanceAdmin) Update(ctx context.Context, id int64, hostname string, s
 		instance.Hostname = hostname
 		if err = db.Save(instance).Error; err != nil {
 			log.Println("Failed to save instance", err)
+			return
+		}
+	}
+	log.Println("$$$$$$$$$$$$$$$$$$ action = ", action)
+	if action == "shutdown" || action == "start" || action == "suspend" || action == "resume" {
+		log.Println("$$$$$$$$$$$$$$$$$$ action = ", action)
+		control := fmt.Sprintf("inter=%d", instance.Hyper)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh %d %s", instance.ID, action)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Delete vm command execution failed", err)
 			return
 		}
 	}
@@ -182,6 +193,11 @@ func (a *InstanceAdmin) Update(ctx context.Context, id int64, hostname string, s
 		}
 		securityData = append(securityData, sgr)
 	}
+	jsonData, err := json.Marshal(securityData)
+	if err != nil {
+		log.Println("Failed to marshal security json data, %v", err)
+		return
+	}
 	for _, iface := range instance.Interfaces {
 		found := false
 		for _, sID := range subnetIDs {
@@ -193,7 +209,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, id int64, hostname string, s
 		}
 		if found == false {
 			control := fmt.Sprintf("inter=%d", instance.Hyper)
-			command := fmt.Sprintf("/opt/cloudland/scripts/backend/detach_nic.sh %d %d", instance.ID, iface.Address.Subnet.Vlan, iface.Address.Address, iface.MacAddr)
+			command := fmt.Sprintf("/opt/cloudland/scripts/backend/detach_nic.sh %d %d %s %s", instance.ID, iface.Address.Subnet.Vlan, iface.Address.Address, iface.MacAddr)
 			err = hyperExecute(ctx, control, command)
 			if err != nil {
 				log.Println("Delete vm command execution failed", err)
@@ -217,7 +233,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, id int64, hostname string, s
 			ifname := fmt.Sprintf("eth%d", i+index)
 			iface, err = model.CreateInterface(sID, instance.ID, ifname, "instance", secGroups)
 			control := fmt.Sprintf("inter=%d", instance.Hyper)
-			command := fmt.Sprintf("/opt/cloudland/scripts/backend/attach_nic.sh %d %d", instance.ID, iface.Address.Subnet.Vlan, iface.Address.Address, iface.MacAddr)
+			command := fmt.Sprintf("/opt/cloudland/scripts/backend/attach_nic.sh %d %d %s %s <<EOF\n%s\nEOF", instance.ID, iface.Address.Subnet.Vlan, iface.Address.Address, iface.MacAddr, jsonData)
 			err = hyperExecute(ctx, control, command)
 			if err != nil {
 				log.Println("Delete vm command execution failed", err)
@@ -550,11 +566,11 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 		return
 	}
 	hostname := c.Query("hostname")
-	ifaces := c.Query("ifaces")
-	s := strings.Split(ifaces, ",")
+	action := c.Query("action")
+	ifaces := c.QueryStrings("ifaces")
 	var subnetIDs []int64
-	for i := 0; i < len(s); i++ {
-		sID, err := strconv.Atoi(s[i])
+	for _, s := range ifaces {
+		sID, err := strconv.Atoi(s)
 		if err != nil {
 			log.Println("Invalid secondary subnet ID, %v", err)
 			continue
@@ -563,7 +579,7 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 	}
 	var sgIDs []int64
 	sgIDs = append(sgIDs, store.Get("defsg").(int64))
-	_, err = instanceAdmin.Update(c.Req.Context(), int64(instanceID), hostname, subnetIDs, sgIDs)
+	_, err = instanceAdmin.Update(c.Req.Context(), int64(instanceID), hostname, action, subnetIDs, sgIDs)
 	if err != nil {
 		log.Println("Create instance failed, %v", err)
 		c.HTML(http.StatusBadRequest, err.Error())
