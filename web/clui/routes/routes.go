@@ -84,6 +84,8 @@ func New() (m *macaron.Macaron) {
 	m.Delete("/instances/:id", instanceView.Delete)
 	m.Get("/instances/:id", instanceView.Edit)
 	m.Post("/instances/:id", instanceView.Patch)
+	m.Get("/interfaces/:id", interfaceView.Edit)
+	m.Post("/interfaces/:id", interfaceView.Patch)
 	m.Get("/flavors", flavorView.List)
 	m.Get("/flavors", flavorView.List)
 	m.Get("/flavors/new", flavorView.New)

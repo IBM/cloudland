@@ -158,9 +158,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, id int64, hostname, action s
 			return
 		}
 	}
-	log.Println("$$$$$$$$$$$$$$$$$$ action = ", action)
 	if action == "shutdown" || action == "start" || action == "suspend" || action == "resume" {
-		log.Println("$$$$$$$$$$$$$$$$$$ action = ", action)
 		control := fmt.Sprintf("inter=%d", instance.Hyper)
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh %d %s", instance.ID, action)
 		err = hyperExecute(ctx, control, command)

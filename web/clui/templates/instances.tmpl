@@ -38,6 +38,7 @@
 	                        <tbody>
                                 {{ $Link := .Link }}
                                 {{ range .Instances }}
+                                {{ $InstanceID := .ID }}
 		                        <tr>
 			                        <td>{{.ID}}</td>
 			                        <td>{{.Hostname}}</td>
@@ -52,7 +53,7 @@
 										{{ if .Interfaces }}
 											{{ range .Interfaces }}
 												{{ if .Address}}
-												{{ .Address.Address }}
+												<a href="{{$Link}}/../interfaces/{{.ID}}">{{ .Address.Address }}</a>
 												{{ end }}
 											{{ end }}
 										{{ end }}

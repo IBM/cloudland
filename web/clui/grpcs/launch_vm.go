@@ -59,6 +59,12 @@ func LaunchVM(ctx context.Context, job *model.Job, args []string) (status string
 		"hyper":  int32(hyperID),
 		"reason": reason}).Error
 	if err != nil {
+		log.Println("Failed to update instance", err)
+		return
+	}
+	err = db.Model(&model.Interface{}).Where("instance = ?", instance.ID).Update(map[string]interface{}{"hyper": int32(hyperID)}).Error
+	if err != nil {
+		log.Println("Failed to update interface", err)
 		return
 	}
 	return
