@@ -7,6 +7,7 @@ source ../cloudrc
 
 vlan=$1
 network=$2
+tag_id=$3
 
 dmasq_cmd=`ps -ef | grep dnsmasq | grep "\<interface=ns-$vlan\>" | awk '{print $2}'`
 dns_pid=`echo "$dmasq_cmd" | awk '{print $2}'`
@@ -17,6 +18,11 @@ if [ -n "$exist_ranges" ]; then
     dns_host=$dmasq_dir/vlan$vlan.host
     dns_opt=$dmasq_dir/vlan$vlan.opts
     ip netns exec vlan$vlan /usr/sbin/dnsmasq --no-hosts --no-resolv --strict-order --bind-interfaces --interface=ns-$vlan --except-interface=lo --pid-file=$pid_file --dhcp-hostsfile=$dns_host --dhcp-optsfile=$dns_opt --leasefile-ro --dhcp-ignore='tag:!known' $exist_ranges
+else
+    ./clear_link.sh $vlan
+    ip link del tap-$vlan
+    ip netns exec vlan$vlan ip link set lo down
+    ip netns del vlan$vlan
 fi
 
 echo "Network $network was cleared."

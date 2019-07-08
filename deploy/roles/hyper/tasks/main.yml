@@ -21,6 +21,7 @@
     - /opt/cloudland/cache/meta
     - /opt/cloudland/cache/router
     - /opt/cloudland/cache/volume
+    - /opt/cloudland/cache/dnsmasq
     - /opt/cloudland/cache/xml
   tags: [sync]
 
