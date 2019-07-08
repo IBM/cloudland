@@ -96,7 +96,7 @@ func (v *SubnetRest) ListNetworks(c *macaron.Context) {
 				Status:                 "Active",
 				UpdatedAt:              updateAt,
 				ProviderNetworkType:    networkType,
-				ProviderSegmentationID: &subnet.Vlan,
+				ProviderSegmentationID: strconv.FormatInt(subnet.Vlan, 10),
 				Subnets:                []string{},
 			}
 			if subnet.Netmask != "" {
@@ -141,24 +141,27 @@ func (v *SubnetRest) CreateNetwork(c *macaron.Context) {
 		c.JSON(500, NewResponseError("Unmarshal fail", err.Error(), 500))
 		return
 	}
-
+	vlanID, err := formateStringToInt64(c, requestData.Network.ProviderSegmentationID)
+	if err != nil {
+		return
+	}
 	if requestData.Network.ProviderNetworkType == "" {
 		requestData.Network.ProviderNetworkType = restModels.CreateNetworkParamsBodyNetworkProviderNetworkTypeVxlan
 	}
 	if requestData.Network.ProviderNetworkType == restModels.CreateNetworkParamsBodyNetworkProviderNetworkTypeVxlan &&
-		requestData.Network.ProviderSegmentationID == 0 {
+		vlanID == 0 {
 		vlanNo, err := getValidVni()
 		if err != nil {
 			c.JSON(500, NewResponseError("create vni fail", err.Error(), 500))
 			return
 		}
-		requestData.Network.ProviderSegmentationID = int64(vlanNo)
+		vlanID = int64(vlanNo)
 	}
 	if requestData.Network.ProviderNetworkType == restModels.CreateNetworkParamsBodyNetworkProviderNetworkTypeVlan {
-		if requestData.Network.ProviderSegmentationID == 0 {
+		if requestData.Network.ProviderSegmentationID == "" {
 			c.JSON(500, NewResponseError("must provide vlan ID", "empty vlan id", 500))
 		}
-		if requestData.Network.ProviderSegmentationID > MAXVLAN || requestData.Network.ProviderSegmentationID < MINVLAN {
+		if vlanID > MAXVLAN || vlanID < MINVLAN {
 			c.JSON(500, NewResponseError("invalid vlan range", "vlan range must be in 1-4096", 500))
 		}
 	}
@@ -167,7 +170,7 @@ func (v *SubnetRest) CreateNetwork(c *macaron.Context) {
 		networkType = PUBLICE
 	}
 	//check vni and vlan network whether has been created priviously
-	if result, err := checkIfExistVni(requestData.Network.ProviderSegmentationID); err != nil {
+	if result, err := checkIfExistVni(vlanID); err != nil {
 		c.JSON(500, NewResponseError("check vni fail", err.Error(), 500))
 	} else if result {
 		c.JSON(
@@ -185,10 +188,10 @@ func (v *SubnetRest) CreateNetwork(c *macaron.Context) {
 			UUID: uuid,
 		},
 		Name: requestData.Network.Name,
-		Vlan: requestData.Network.ProviderSegmentationID,
+		Vlan: vlanID,
 		Type: networkType.String(),
 	}
-	err := db.Create(subnet).Error
+	err = db.Create(subnet).Error
 	if err != nil {
 		log.Println("Database create subnet failed, %v", err)
 		c.JSON(500, NewResponseError("create network fail", err.Error(), 500))
@@ -196,54 +199,11 @@ func (v *SubnetRest) CreateNetwork(c *macaron.Context) {
 	}
 	creatAt, _ := strfmt.ParseDateTime(subnet.CreatedAt.Format(time.RFC3339))
 	updateAt, _ := strfmt.ParseDateTime(subnet.UpdatedAt.Format(time.RFC3339))
-	/*
-		// simulate network response body
-		{
-		    "network": {
-		        "status": "ACTIVE",
-		        "subnets": [],
-		        "availability_zone_hints": [],
-		        "availability_zones": [
-		            "nova"
-		        ],
-		        "created_at": "2016-03-08T20:19:41",
-		        "name": "net1",
-		        "admin_state_up": true,
-		        "dns_domain": "",
-		        "ipv4_address_scope": null,
-		        "ipv6_address_scope": null,
-		        "l2_adjacency": true,
-		        "mtu": 1500,
-		        "port_security_enabled": true,
-		        "project_id": "9bacb3c5d39d41a79512987f338cf177",
-		        "tags": ["tag1,tag2"],
-		        "tenant_id": "9bacb3c5d39d41a79512987f338cf177",
-		        "updated_at": "2016-03-08T20:19:41",
-		        "qos_policy_id": "6a8454ade84346f59e8d40665f878b2e",
-		        "revision_number": 1,
-		        "segments": [
-		            {
-		                "provider:segmentation_id": 2,
-		                "provider:physical_network": "public",
-		                "provider:network_type": "vlan"
-		            },
-		            {
-		                "provider:segmentation_id": null,
-		                "provider:physical_network": "default",
-		                "provider:network_type": "flat"
-		            }
-		        ],
-		        "shared": false,
-		        "id": "4e8e5957-649f-477b-9e5b-f1f75b21c03c",
-		        "description": "",
-		        "is_default": false
-		    }
-		}
-	*/
+
 	responseBody := &restModels.CreateNetworkOKBody{
 		Network: &restModels.Network{
 			AdminStateUp:           true,
-			AvailabilityZones:      []string{"nova"},
+			AvailabilityZones:      []string{"cloudland"},
 			CreatedAt:              creatAt,
 			ID:                     subnet.UUID,
 			IsDefault:              false,
@@ -251,8 +211,7 @@ func (v *SubnetRest) CreateNetwork(c *macaron.Context) {
 			Name:                   subnet.Name,
 			PortSecurityEnabled:    false,
 			ProviderNetworkType:    requestData.Network.ProviderNetworkType,
-			ProviderSegmentationID: &subnet.Vlan,
-			QosPolicyID:            subnet.UUID,
+			ProviderSegmentationID: strconv.FormatInt(subnet.Vlan, 10),
 			RouterExternal:         networkType.GetBool(),
 			Shared:                 false,
 			Status:                 "ACTIVE",
@@ -573,4 +532,17 @@ func checkIPaddresIsUnused(db *gorm.DB, subnetID string) (isUsed bool, err error
 		return true, err
 	}
 	return
+}
+
+func formateStringToInt64(c *macaron.Context, t string) (result int64, err error) {
+	if t == "" {
+		return result, nil
+	}
+	changed, err := strconv.Atoi(t)
+	if err != nil {
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return result, err
+	}
+	return int64(changed), nil
 }

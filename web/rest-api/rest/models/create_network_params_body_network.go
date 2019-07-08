@@ -34,7 +34,7 @@ type CreateNetworkParamsBodyNetwork struct {
 	ProviderPhysicalNetwork string `json:"provider:physical_network,omitempty"`
 
 	// provider segmentation id
-	ProviderSegmentationID int64 `json:"provider:segmentation_id,omitempty"`
+	ProviderSegmentationID string `json:"provider:segmentation_id,omitempty"`
 
 	// qos policy id
 	QosPolicyID string `json:"qos_policy_id,omitempty"`
