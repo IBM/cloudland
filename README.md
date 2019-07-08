@@ -12,9 +12,9 @@ Cloudland's main distinguishing features as compared to other IaaS systems are:
 
 ## Architecture overview
 ![](https://raw.githubusercontent.com/wiki/IBM/cloudland/images/architecture.svg?sanitize=true)   
-   
+
 To support ultra-large scale, the hypervisors are organized into a tree hierarchy, the agents (scia are launched on demand)   
-   
+
 ![](https://raw.githubusercontent.com/wiki/IBM/cloudland/images/tree.svg?sanitize=true)
 ## Install
 
@@ -31,6 +31,10 @@ Refer to [deployment guide](http//github.com/IBM/cloudland/wiki/Deployment) for 
 ## Contributing
 
 Refer to [CONTRIBUTING.md](https://github.com/IBM/cloudland/wiki/contribution)
+
+### Compatibility Between [CloudLand API](https://ibm.github.io/cloudland/) and Native OpenStack
+OpenStack APIs have become the de facto standard in cloud computing. Therefore, being compatible with OpenStack API standards has become a necessity for CloudLand APIs.
+Refer to [CloudLand API](https://ibm.github.io/cloudland/)
 
 ## License
 
