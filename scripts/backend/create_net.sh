@@ -3,16 +3,15 @@
 cd `dirname $0`
 source ../cloudrc
 
-[ $# -lt 6 ] && echo "$0 <vlan> <network> <netmask> <gateway> <start_ip> <end_ip> [tag_id] [role]" && exit -1
+[ $# -lt 6 ] && echo "$0 <vlan> <network> <netmask> <gateway> <dhcp_ip> [tag_id] [role]" && exit -1
 
 vlan=$1
 network=$2
 netmask=$3
 gateway=$4
-start_ip=$5
-end_ip=$6
-tag_id=$7
-role=$8
+dhcp_ip=$5
+tag_id=$6
+role=$7
 
 vm_br=br$vlan
 ./create_link.sh $vlan
@@ -24,9 +23,9 @@ ip link set tap-$vlan up
 ip link set ns-$vlan netns vlan$vlan
 ip netns exec vlan$vlan ip link set ns-$vlan up
 ip netns exec vlan$vlan ip link set lo up
-pfix=`ipcalc -p $start_ip $netmask | cut -d'=' -f2`
-brd=`ipcalc -b $start_ip $netmask | cut -d'=' -f2`
-ip netns exec vlan$vlan ip addr add $start_ip/$pfix brd $brd dev ns-$vlan
+pfix=`ipcalc -p $dhcp_ip | cut -d'=' -f2`
+brd=`ipcalc -b $dhcp_ip | cut -d'=' -f2`
+ip netns exec vlan$vlan ip addr add $dhcp_ip brd $brd dev ns-$vlan
 
 dns_host=$dmasq_dir/vlan$vlan.host
 dns_opt=$dmasq_dir/vlan$vlan.opts
