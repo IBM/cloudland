@@ -95,12 +95,12 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		return
 	}
 	primary := &model.Subnet{Model: model.Model{ID: primaryID}}
-	if err = db.Find(primary).Error; err != nil {
+	if err = db.Preload("Netlink").Take(primary).Error; err != nil {
 		log.Println("Primary subnet query failed", err)
 		return
 	}
 	subnets := []*model.Subnet{}
-	if err = db.Where(subnetIDs).Take(&subnets).Error; err != nil {
+	if err = db.Where(subnetIDs).Preload("Netlink").Find(&subnets).Error; err != nil {
 		log.Println("Secondary subnets query failed", err)
 		return
 	}
@@ -127,7 +127,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			return
 		}
 		metadata := ""
-		_, metadata, err = a.buildMetadata(primary, subnets, keys, instance, userdata, secGroups)
+		_, metadata, err = a.buildMetadata(ctx, primary, subnets, keys, instance, userdata, secGroups)
 		if err != nil {
 			log.Println("Build instance metadata failed", err)
 			return
@@ -213,7 +213,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, id int64, hostname, action s
 				log.Println("Delete vm command execution failed", err)
 				return
 			}
-			err = model.DeleteInterface(iface)
+			err = a.deleteInterface(ctx, iface)
 		}
 	}
 	index := len(instance.Interfaces)
@@ -229,7 +229,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, id int64, hostname, action s
 		if found == false {
 			var iface *model.Interface
 			ifname := fmt.Sprintf("eth%d", i+index)
-			iface, err = model.CreateInterface(sID, instance.ID, ifname, "instance", secGroups)
+			iface, err = a.createInterface(ctx, iface.Address.Subnet, instance, ifname, secGroups)
 			control := fmt.Sprintf("inter=%d", instance.Hyper)
 			command := fmt.Sprintf("/opt/cloudland/scripts/backend/attach_nic.sh %d %d %s %s <<EOF\n%s\nEOF", instance.ID, iface.Address.Subnet.Vlan, iface.Address.Address, iface.MacAddr, jsonData)
 			err = hyperExecute(ctx, control, command)
@@ -258,13 +258,105 @@ func hyperExecute(ctx context.Context, control, command string) (err error) {
 	return
 }
 
-func (a *InstanceAdmin) buildMetadata(primary *model.Subnet, subnets []*model.Subnet, keys []*model.Key, instance *model.Instance, userdata string, secGroups []*model.SecurityGroup) (interfaces []*model.Interface, metadata string, err error) {
+func (a *InstanceAdmin) deleteInterfaces(ctx context.Context, instance *model.Instance) (err error) {
+	if err = model.DeleteInterfaces(instance.ID, "instance"); err != nil {
+		log.Println("DB failed to delete interfaces", err)
+		return
+	}
+	for _, iface := range instance.Interfaces {
+		err = a.deleteInterface(ctx, iface)
+		if err != nil {
+			log.Println("Failed to delete interface", err)
+			continue
+		}
+	}
+	return
+}
+
+func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interface) (err error) {
+	db := DB()
+	err = model.DeleteInterface(iface)
+	if err != nil {
+		log.Println("Failed to create interface")
+		return
+	}
+	vlan := iface.Address.Subnet.Vlan
+	netlink := &model.Network{Vlan: vlan}
+	err = db.Where(netlink).Take(netlink).Error
+	if err != nil {
+		log.Println("Failed to query network")
+		return
+	}
+	control := ""
+	if netlink.Hyper >= 0 {
+		control = fmt.Sprintf("toall=vlan-%d:%d", iface.Address.Subnet.Vlan, netlink.Hyper)
+		if netlink.Peer >= 0 {
+			control = fmt.Sprintf("%s,%d", control, netlink.Peer)
+		}
+	} else if netlink.Peer >= 0 {
+		control = fmt.Sprintf("inter=%d", netlink.Peer)
+	} else {
+		log.Println("Network has no valid hypers")
+		err = fmt.Errorf("Network has no valid hypers")
+		return
+	}
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/del_host.sh %d %s %s", vlan, iface.MacAddr, iface.Address.Address)
+	err = hyperExecute(ctx, control, command)
+	if err != nil {
+		log.Println("Delete interface failed")
+		return
+	}
+	return
+}
+
+func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subnet, instance *model.Instance, ifname string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
+	db := DB()
+	iface, err = model.CreateInterface(subnet.ID, instance.ID, ifname, "instance", secGroups)
+	if err != nil {
+		log.Println("Failed to create interface")
+		return
+	}
+	netlink := subnet.Netlink
+	if netlink == nil {
+		netlink = &model.Network{Vlan: subnet.Vlan}
+		err = db.Create(netlink).Error
+		if err != nil {
+			log.Println("Failed to query network")
+			return
+		}
+	}
+	err = execNetwork(ctx, netlink, subnet)
+	if err != nil {
+		log.Println("Failed to execute network creation")
+		return
+	}
+	control := ""
+	if netlink.Hyper >= 0 {
+		control = fmt.Sprintf("toall=vlan-%d:%d", subnet.Vlan, netlink.Hyper)
+		if netlink.Peer >= 0 {
+			control = fmt.Sprintf("%s,%d", control, netlink.Peer)
+		}
+	} else if netlink.Peer >= 0 {
+		control = fmt.Sprintf("inter=%d", netlink.Peer)
+	} else {
+		log.Println("Network has no valid hypers")
+		return
+	}
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_host.sh %d %s %s %s", subnet.Vlan, iface.MacAddr, instance.Hostname, iface.Address.Address)
+	err = hyperExecute(ctx, control, command)
+	if err != nil {
+		log.Println("Delete slave failed")
+	}
+	return
+}
+
+func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet, subnets []*model.Subnet, keys []*model.Key, instance *model.Instance, userdata string, secGroups []*model.SecurityGroup) (interfaces []*model.Interface, metadata string, err error) {
 	vlans := []*VlanInfo{}
 	instNetworks := []*InstanceNetwork{}
 	instLinks := []*NetworkLink{}
 	gateway := strings.Split(primary.Gateway, "/")[0]
 	instRoute := &NetworkRoute{Network: "0.0.0.0", Netmask: "0.0.0.0", Gateway: gateway}
-	iface, err := model.CreateInterface(primary.ID, instance.ID, "eth0", "instance", secGroups)
+	iface, err := a.createInterface(ctx, primary, instance, "eth0", secGroups)
 	if err != nil {
 		log.Println("Allocate address for primary subnet %s--%s/%s failed, %v", primary.Name, primary.Network, primary.Netmask, err)
 		return
@@ -278,7 +370,7 @@ func (a *InstanceAdmin) buildMetadata(primary *model.Subnet, subnets []*model.Su
 	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, IpAddr: address, MacAddr: iface.MacAddr})
 	for i, subnet := range subnets {
 		ifname := fmt.Sprintf("eth%d", i+1)
-		iface, err = model.CreateInterface(subnet.ID, instance.ID, ifname, "instance", nil)
+		iface, err = a.createInterface(ctx, subnet, instance, ifname, secGroups)
 		if err != nil {
 			log.Println("Allocate address for secondary subnet %s--%s/%s failed, %v", subnet.Name, subnet.Network, subnet.Netmask, err)
 			return
@@ -384,7 +476,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
 			return
 		}
 	}
-	if err = model.DeleteInterfaces(id, "instance"); err != nil {
+	if err = a.deleteInterfaces(ctx, instance); err != nil {
 		log.Println("DB failed to delete interfaces, %v", err)
 		return
 	}

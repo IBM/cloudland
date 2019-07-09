@@ -8,6 +8,7 @@ SPDX-License-Identifier: Apache-2.0
 package routes
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"math/big"
@@ -79,7 +80,7 @@ func checkIfExistVni(vni int64) (result bool, err error) {
 	}
 }
 
-func (a *SubnetAdmin) Create(name, vlan, network, netmask, gateway, start, end, rtype, uuid string) (subnet *model.Subnet, err error) {
+func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, gateway, start, end, rtype, uuid string) (subnet *model.Subnet, err error) {
 	db := DB()
 	vlanNo := 0
 	if uuid == "" {
@@ -92,6 +93,12 @@ func (a *SubnetAdmin) Create(name, vlan, network, netmask, gateway, start, end, 
 	}
 	if err != nil {
 		log.Println("Failed to get valid vlan %s, %v", vlan, err)
+		return
+	}
+	count := 0
+	err = db.Model(&model.Subnet{}).Where("vlan = ?", vlanNo).Count(&count).Error
+	if err != nil {
+		log.Println("Database failed to count network", err)
 		return
 	}
 	inNet := &net.IPNet{
@@ -162,10 +169,64 @@ func (a *SubnetAdmin) Create(name, vlan, network, netmask, gateway, start, end, 
 			ip = cidr.Inc(ip)
 		}
 	}
+	netlink := &model.Network{Vlan: int64(vlanNo)}
+	if count < 1 {
+		netlink.UUID = uuid
+		err = db.Create(netlink).Error
+		if err != nil {
+			log.Println("Database failed to create network", err)
+			return
+		}
+	} else {
+		err = db.Where(network).Take(network).Error
+		if err != nil {
+			log.Println("Database failed to create network", err)
+			return
+		}
+	}
+	err = execNetwork(ctx, netlink, subnet)
+	if err != nil {
+		log.Println("Failed remote execute network creation", err)
+		return
+	}
 	return
 }
 
-func (a *SubnetAdmin) Delete(id int64) (err error) {
+func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subnet) (err error) {
+	if netlink.Hyper < 0 {
+		var dhcp1 *model.Interface
+		dhcp1, err = model.CreateInterface(subnet.ID, netlink.ID, "dhcp-1", "dhcp", nil)
+		if err != nil {
+			log.Println("Failed to allocate dhcp first address", err)
+			return
+		}
+		control := fmt.Sprintf("inter=")
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_net.sh %d %s %s %s %s %d FIRST", netlink.Vlan, subnet.Network, subnet.Netmask, subnet.Gateway, dhcp1.Address.Address, subnet.ID)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Failed to create first dhcp", err)
+			return
+		}
+	}
+	if netlink.Peer < 0 {
+		var dhcp2 *model.Interface
+		dhcp2, err = model.CreateInterface(subnet.ID, netlink.ID, "dhcp-2", "dhcp", nil)
+		if err != nil {
+			log.Println("Failed to allocate dhcp first address", err)
+			return
+		}
+		control := fmt.Sprintf("inter=")
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_net.sh %d %s %s %s %s %d SECOND", netlink.Vlan, subnet.Network, subnet.Netmask, subnet.Gateway, dhcp2.Address.Address, subnet.ID)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Failed to create second dhcp", err)
+			return
+		}
+	}
+	return
+}
+
+func (a *SubnetAdmin) Delete(ctx context.Context, id int64) (err error) {
 	db := DB()
 	db = db.Begin()
 	defer func() {
@@ -175,18 +236,34 @@ func (a *SubnetAdmin) Delete(id int64) (err error) {
 			db.Rollback()
 		}
 	}()
+	subnet := &model.Subnet{Model: model.Model{ID: id}}
+	err = db.Preload("Netlink").Take(subnet).Error
+	if err != nil {
+		log.Println("Database failed to query subnet", err)
+		return
+	}
+	if subnet.Router > 0 {
+		err = fmt.Errorf("Subnet belongs to a gateway")
+		log.Println("Subnet belongs to a gateway", err)
+		return
+	}
 	count := 0
 	err = db.Model(&model.Address{}).Where("subnet_id = ? and allocated = ?", id, true).Count(&count).Error
 	if err != nil {
 		log.Println("Database delete addresses failed, %v", err)
 		return
 	}
-	if count > 0 {
+	if count > 2 {
 		err = fmt.Errorf("Some addresses of this subnet in use")
 		log.Println("There are addresses of this subnet still in use")
 		return
 	}
-	err = db.Delete(&model.Subnet{Model: model.Model{ID: id}}).Error
+	err = db.Model(&model.Subnet{}).Where("vlan = ?", subnet.Vlan).Count(&count).Error
+	if err != nil {
+		log.Println("Database failed to count subnet", err)
+		return
+	}
+	err = db.Delete(subnet).Error
 	if err != nil {
 		log.Println("Database delete subnet failed, %v", err)
 		return
@@ -196,6 +273,37 @@ func (a *SubnetAdmin) Delete(id int64) (err error) {
 	if err != nil {
 		log.Println("Database delete ip address failed, %v", err)
 		return
+	}
+	netlink := subnet.Netlink
+	if count <= 1 && netlink != nil {
+		err = db.Where("dhcp = ?", netlink.ID).Delete(&model.Interface{}).Error
+		if err != nil {
+			log.Println("Failed to delete dhcp interfaces")
+			return
+		}
+		err = db.Delete(netlink).Error
+		if err != nil {
+			log.Println("Failed to delete network")
+			return
+		}
+		control := ""
+		if netlink.Hyper >= 0 {
+			control = fmt.Sprintf("toall=vlan-%d:%d", subnet.Vlan, netlink.Hyper)
+			if netlink.Peer >= 0 {
+				control = fmt.Sprintf("%s,%d", control, netlink.Peer)
+			}
+		} else if netlink.Peer >= 0 {
+			control = fmt.Sprintf("inter=%d", netlink.Peer)
+		} else {
+			log.Println("Network has no valid hypers")
+			return
+		}
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_net.sh %d %s %d", netlink.Vlan, subnet.Network, subnet.ID)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Delete interface failed")
+			return
+		}
 	}
 	return
 }
@@ -292,7 +400,7 @@ func (v *SubnetView) Delete(c *macaron.Context, store session.Store) (err error)
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	err = subnetAdmin.Delete(int64(subnetID))
+	err = subnetAdmin.Delete(c.Req.Context(), int64(subnetID))
 	if err != nil {
 		code := http.StatusInternalServerError
 		c.Error(code, http.StatusText(code))
@@ -318,7 +426,7 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 	gateway := c.Query("gateway")
 	start := c.Query("start")
 	end := c.Query("end")
-	_, err := subnetAdmin.Create(name, vlan, network, netmask, gateway, start, end, rtype, "")
+	_, err := subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, gateway, start, end, rtype, "")
 	if err != nil {
 		log.Println("Create subnet failed, %v", err)
 		c.Data["ErrorMsg"] = err.Error()

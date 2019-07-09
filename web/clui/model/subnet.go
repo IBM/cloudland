@@ -13,6 +13,15 @@ import (
 	"github.com/IBM/cloudland/web/sca/dbs"
 )
 
+type Network struct {
+	Model
+	Name    string `gorm:"type:varchar(100)"`
+	Hyper   int32  `gorm:"default:-1"`
+	Peer    int32  `gorm:"default:-1"`
+	Vlan    int64
+	Subnets []*Subnet `gorm:"foreignkey:Vlan;AssociationForeignKey:Vlan;PRELOAD:false"`
+}
+
 type Subnet struct {
 	Model
 	Name    string `gorm:"type:varchar(32)"`
@@ -22,7 +31,8 @@ type Subnet struct {
 	Start   string `gorm:"type:varchar(64)"`
 	End     string `gorm:"type:varchar(64)"`
 	Vlan    int64
-	Type    string `gorm:"type:varchar(20);default:'internal'"`
+	Netlink *Network `gorm:"foreignkey:Vlan;AssociationForeignKey:Vlan"`
+	Type    string   `gorm:"type:varchar(20);default:'internal'"`
 	Router  int64
 }
 
@@ -39,6 +49,7 @@ type Address struct {
 }
 
 func init() {
+	dbs.AutoMigrate(&Network{})
 	dbs.AutoMigrate(&Subnet{})
 	dbs.AutoMigrate(&Address{})
 }

@@ -22,6 +22,7 @@ type Interface struct {
 	MacAddr    string `gorm:"type:varchar(32)"`
 	Instance   int64
 	Device     int64
+	Dhcp       int64
 	FloatingIp int64
 	Address    *Address `gorm:"foreignkey:Interface"`
 	Hyper      int32    `gorm:"default:-1"`
@@ -70,6 +71,8 @@ func CreateInterface(subnetID, ID int64, ifaceName, ifType string, secGroups []*
 		iface.Instance = ID
 	} else if ifType == "floating" {
 		iface.FloatingIp = ID
+	} else if ifType == "dhcp" {
+		iface.Dhcp = ID
 	} else if strings.Contains(ifType, "gateway") {
 		iface.Device = ID
 	}

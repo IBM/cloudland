@@ -25,14 +25,12 @@ func AttachVolume(ctx context.Context, job *model.Job, args []string) (status st
 	db := dbs.DB()
 	argn := len(args)
 	if argn < 4 {
-		db.Model(&model.Volume{}).Updates(map[string]interface{}{"instance_id": 0})
 		err = fmt.Errorf("Wrong params")
 		log.Println("Invalid args", err)
 		return
 	}
 	_, err = strconv.Atoi(args[1])
 	if err != nil {
-		db.Model(&model.Volume{}).Updates(map[string]interface{}{"instance_id": 0})
 		log.Println("Invalid instance ID", err)
 		return
 	}
