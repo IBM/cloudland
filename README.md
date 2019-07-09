@@ -3,6 +3,7 @@
 Cloudland, a light weight infrastructure as a service project, is a system framework to manage VM instances, software defined networks (SDN), volumes ... It can handle over 10 thousand of hypervisors in one cluster so it can be a base of large scale public cloud. It has OpenStack compatible API so it can be a straightforward alternative for private cloud or as a hyper converged infrastructure (HCI) solution.
 
 Cloudland's main distinguishing features as compared to other IaaS systems are:
+- Compatibility with [Openstack API](https://ibm.github.io/cloudland/) (TBD)
 - Light weight, no tons of components
 - Flat learning curve for both developers and operators
 - Excellent performance for inside messages delivery
@@ -31,10 +32,6 @@ Refer to [deployment guide](http//github.com/IBM/cloudland/wiki/Deployment) for 
 ## Contributing
 
 Refer to [CONTRIBUTING.md](https://github.com/IBM/cloudland/wiki/contribution)
-
-### Compatibility Between [CloudLand API](https://ibm.github.io/cloudland/) and Native OpenStack
-OpenStack APIs have become the de facto standard in cloud computing. Therefore, being compatible with OpenStack API standards has become a necessity for CloudLand APIs.
-Refer to [CloudLand API](https://ibm.github.io/cloudland/)
 
 ## License
 
