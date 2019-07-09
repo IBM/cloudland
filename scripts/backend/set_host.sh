@@ -8,7 +8,7 @@ source ../cloudrc
 vlan=$1
 vm_mac=$2
 vm_name=$3
-vm_ip=$4
+vm_ip=${4%%/*}
 
 dns_host=$dmasq_dir/vlan$vlan.host
 sed -i "/\<$vm_ip\>/d" $dns_host
