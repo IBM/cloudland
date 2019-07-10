@@ -214,6 +214,10 @@ func (a *InstanceAdmin) Update(ctx context.Context, id int64, hostname, action s
 				return
 			}
 			err = a.deleteInterface(ctx, iface)
+			if err != nil {
+				log.Println("Failed to delete interface", err)
+				return
+			}
 		}
 	}
 	index := len(instance.Interfaces)
@@ -259,10 +263,6 @@ func hyperExecute(ctx context.Context, control, command string) (err error) {
 }
 
 func (a *InstanceAdmin) deleteInterfaces(ctx context.Context, instance *model.Instance) (err error) {
-	if err = model.DeleteInterfaces(instance.ID, "instance"); err != nil {
-		log.Println("DB failed to delete interfaces", err)
-		return
-	}
 	for _, iface := range instance.Interfaces {
 		err = a.deleteInterface(ctx, iface)
 		if err != nil {
@@ -274,17 +274,15 @@ func (a *InstanceAdmin) deleteInterfaces(ctx context.Context, instance *model.In
 }
 
 func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interface) (err error) {
-	db := DB()
 	err = model.DeleteInterface(iface)
 	if err != nil {
 		log.Println("Failed to create interface")
 		return
 	}
 	vlan := iface.Address.Subnet.Vlan
-	netlink := &model.Network{Vlan: vlan}
-	err = db.Where(netlink).Take(netlink).Error
-	if err != nil {
-		log.Println("Failed to query network")
+	netlink := iface.Address.Subnet.Netlink
+	if netlink == nil {
+		log.Println("Subnet doesn't have network")
 		return
 	}
 	control := ""
@@ -297,7 +295,6 @@ func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interf
 		control = fmt.Sprintf("inter=%d", netlink.Peer)
 	} else {
 		log.Println("Network has no valid hypers")
-		err = fmt.Errorf("Network has no valid hypers")
 		return
 	}
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/del_host.sh %d %s %s", vlan, iface.MacAddr, iface.Address.Address)

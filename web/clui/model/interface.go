@@ -96,6 +96,8 @@ func DeleteInterfaces(masterID int64, ifType string) (err error) {
 		err = db.Where("instance = ? and type = ?", masterID, "instance").Find(&ifaces).Error
 	} else if ifType == "floating" {
 		err = db.Where("floating_ip = ? and type = ?", masterID, "floating").Find(&ifaces).Error
+	} else if ifType == "dhcp" {
+		err = db.Where("dhcp = ? and type = ?", masterID, "dhcp").Find(&ifaces).Error
 	} else {
 		err = db.Where("device = ? and type like ?", masterID, "%gateway%").Find(&ifaces).Error
 	}
