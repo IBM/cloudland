@@ -12,6 +12,11 @@ for conf in $cache_dir/router/*; do
     ip netns exec $router bash -c "echo 1 >/proc/sys/net/ipv4/ip_forward"
 done
 
+for conf in $cache_dir/dnsmasq/*; do
+    nspace=$(basename $conf)
+    vlan=${nspace##vlan}
+done
+
 for inst in $(virsh list --all | grep 'shut off' | awk '{print $2}'); do
     virsh start $inst
 done
