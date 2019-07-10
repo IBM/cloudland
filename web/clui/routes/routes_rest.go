@@ -26,6 +26,7 @@ var (
 		"identity":      `/identity`,
 		"subnet":        `/v2.0/subnets`,
 		"identityToken": "/identity/v3/auth/tokens",
+		"flavor":        "/compute/v2.1/flavors",
 	}
 	unAuthenResources = []string{
 		resourceEndpoints["identityToken"],
@@ -63,7 +64,11 @@ func Rest() (m *macaron.Macaron) {
 	m.Get(resourceEndpoints["subnet"], subnetInstance.ListSubnet)
 	m.Post(resourceEndpoints["subnet"], subnetInstance.CreateSubnet)
 	m.Delete(resourceEndpoints["subnet"]+`/:id`, subnetInstance.DeleteSubnet)
-
+	//nova flavor
+	m.Get(resourceEndpoints["flavor"]+`/detail`, flavorInstance.ListFlavorsDetail)
+	m.Get(resourceEndpoints["flavor"], flavorInstance.ListFlavors)
+	m.Post(resourceEndpoints["flavor"], flavorInstance.Create)
+	m.Delete(resourceEndpoints["flavor"], flavorInstance.Delete)
 	return
 }
 

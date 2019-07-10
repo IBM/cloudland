@@ -31,7 +31,7 @@ random_seed=`cat /dev/urandom | head -c 512 | base64 -w 0`
             echo -n '"key'$i'": "'$key'\n"'
             let i=$i+1
         done
-        echo -n '},'
+        echo '},'
     fi
     echo '  "launch_index": 0,'
     echo '  "hostname": "'${vm_name}.${cloud_domain}'",'

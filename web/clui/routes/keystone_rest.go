@@ -8,10 +8,8 @@ package routes
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/url"
-	"os"
 	"strconv"
 	"time"
 
@@ -34,20 +32,6 @@ type tokenAdmin restModels.PostIdentityV3AuthTokensCreatedBody
 type Versions struct{}
 type Token struct{}
 
-type ResponseError struct {
-	Error Error `json:"error"`
-}
-
-type Error struct {
-	Message string `json:"message"`
-	Code    int    `json:"code"`
-	Title   string `json:"title"`
-}
-
-func (e *Error) Error() string {
-	return fmt.Sprintf("(%d): %d - %s", e.Title, e.Code, e.Message)
-}
-
 func (v *Versions) ListVersion(c *macaron.Context) {
 	va := &VersionsAdmin{}
 	va.v3(c)
@@ -59,20 +43,21 @@ func (v *Versions) ListVersion(c *macaron.Context) {
 func (v *VersionsAdmin) v3(c *macaron.Context) {
 	url := &url.URL{
 		Scheme: "http", //todo : need to get scheme by config file
-		Host:   viper.GetString("rest.listen"),
+		Host:   viper.GetString("rest.endpoint"),
 		Path:   "/identity/v3/",
 	}
-	rel := "self"
 	updatedDate, _ := strfmt.ParseDateTime(`2015-11-06T14:32:17.893797Z`)
 	v.Versions = &restModels.Versions{}
+	urlStr := url.String()
+	rel := restModels.LinkRelSelf
 	v.Versions.Values = append(
 		v.Versions.Values,
 		&restModels.VersionsValuesItems{
 			ID: `v3.10`,
-			Links: []*restModels.VersionsValuesItemsLinksItems{
-				&restModels.VersionsValuesItemsLinksItems{
-					Href: url.String(),
-					Rel:  rel,
+			Links: restModels.Links{
+				&restModels.Link{
+					Href: &urlStr,
+					Rel:  &rel,
 				},
 			},
 			MediaTypes: []*restModels.VersionsValuesItemsMediaTypesItems{
@@ -150,66 +135,11 @@ func (t *Token) IssueTokenByPasswd(c *macaron.Context) {
 	return
 }
 
-func JsonSchemeCheck(schemeName string, requestBody []byte) (e *Error) {
-	schemeLocation := `../rest-api/scheme/` + schemeName
-	if _, err := os.Stat(schemeLocation); os.IsNotExist(err) {
-		e = &Error{
-			Title:   "Load Json Scheme Fail",
-			Code:    500,
-			Message: fmt.Sprintf("locate json scheme fail with path %s", schemeLocation),
-		}
-		return
-	} else if err != nil {
-		e = &Error{
-			Title:   "Load Json Scheme Fail",
-			Code:    500,
-			Message: err.Error(),
-		}
-		return
-	}
-	if schemeLoaders[schemeName] == nil {
-		schemeLoaders[schemeName] = gojsonschema.NewReferenceLoader(`file://` + schemeLocation)
-	}
-	requestBodyLoader := gojsonschema.NewBytesLoader(requestBody)
-	if result, err := gojsonschema.Validate(schemeLoaders[schemeName], requestBodyLoader); err != nil {
-		e = &Error{
-			Title:   "Validate Json Scheme Internal Error",
-			Code:    500,
-			Message: err.Error(),
-		}
-	} else if !result.Valid() {
-		errMsg := ""
-		for index, desc := range result.Errors() {
-			if index == 0 {
-				errMsg = desc.String()
-				continue
-			}
-			errMsg = errMsg + ", " + desc.String()
-		}
-		e = &Error{
-			Title:   "Validate Json Scheme Fail",
-			Code:    400,
-			Message: errMsg,
-		}
-	}
-	return
-}
-
-func NewResponseError(title, msg string, code int) ResponseError {
-	return ResponseError{
-		Error: Error{
-			Title:   title,
-			Code:    code,
-			Message: msg,
-		},
-	}
-}
-
 func catLog() (items []*restModels.TokenCatalogItems) {
 	//hard code resrouce ID , do we need to support this function ?
 	url := &url.URL{
 		Scheme: "http", //todo : need to get scheme by config file
-		Host:   viper.GetString("rest.listen"),
+		Host:   viper.GetString("rest.endpoint"),
 	}
 	// add volume endpint
 	items = append(
