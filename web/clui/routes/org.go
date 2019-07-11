@@ -18,6 +18,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/go-macaron/session"
@@ -45,20 +46,24 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 	}
 	org = &model.Organization{
 		Name:      name,
-		Owner:     user.ID,
 		DefaultSG: secGroup.ID,
 	}
+	org.Owner = user.ID
 	err = db.Create(org).Error
 	if err != nil {
-		log.Println("DB failed to create organization, %v", err)
+		log.Println("DB failed to create organization ", err)
 		return
 	}
 	member := &model.Member{UserID: user.ID, UserName: owner, OrgID: org.ID, OrgName: name, Role: model.Owner}
 	err = db.Create(member).Error
 	if err != nil {
-		log.Println("DB failed to create organization member, %v", err)
+		log.Println("DB failed to create organization member ", err)
 		return
 	}
+	return
+}
+
+func (a *OrgAdmin) Update(ctx context.Context, ausers, dusers []string) (org *model.Organization, err error) {
 	return
 }
 
@@ -170,6 +175,42 @@ func (v *OrgView) Delete(c *macaron.Context, store session.Store) (err error) {
 
 func (v *OrgView) New(c *macaron.Context, store session.Store) {
 	c.HTML(200, "orgs_new")
+}
+
+func (v *OrgView) Edit(c *macaron.Context, store session.Store) {
+	db := DB()
+	id := c.Params("id")
+	if id == "" {
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	orgID, err := strconv.Atoi(id)
+	if err != nil {
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	org := &model.Organization{Model: model.Model{ID: int64(orgID)}}
+	if err = db.Set("gorm:auto_preload", true).Take(org).Error; err != nil {
+		log.Println("Image query failed", err)
+		return
+	}
+	c.Data["Organization"] = org
+	c.HTML(200, "orgs_patch")
+}
+
+func (v *OrgView) Patch(c *macaron.Context, store session.Store) {
+	redirectTo := "../orgs_patch"
+	ausers := c.Query("ausers")
+	dusers := c.QueryStrings("dusers")
+	userList := strings.Split(ausers, ",")
+	_, err := orgAdmin.Update(c.Req.Context(), userList, dusers)
+	if err != nil {
+		log.Println("Failed to create organization, %v", err)
+		c.HTML(500, "500")
+	}
+	c.Redirect(redirectTo)
 }
 
 func (v *OrgView) Create(c *macaron.Context, store session.Store) {

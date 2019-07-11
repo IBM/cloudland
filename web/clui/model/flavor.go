@@ -16,6 +16,7 @@ type Flavor struct {
 	Cpu    int32
 	Memory int32
 	Disk   int32
+	Swap   int32
 }
 
 func init() {

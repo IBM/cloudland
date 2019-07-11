@@ -49,8 +49,8 @@ func (r Role) String() string {
 type Organization struct {
 	Model
 	Name      string `gorm:"size:255;unique_index" json:"name,omitempty"`
-	Owner     int64
 	DefaultSG int64
+	Members   []*Member `gorm:"foreignkey:orgID"`
 }
 
 type Member struct {
