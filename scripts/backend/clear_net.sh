@@ -11,6 +11,7 @@ tag_id=$3
 dhcp_ip=$4
 
 nspace=vlan$vlan
+rm -rf $dmasq_dir/$nspace/tags/$tag_id
 dmasq_cmd=$(ps -ef | grep dnsmasq | grep "\<interface=ns-$vlan\>")
 dns_pid=$(echo "$dmasq_cmd" | awk '{print $2}')
 [ -z "$dns_pid" ] || kill $dns_pid ||  kill -9 $dns_pid

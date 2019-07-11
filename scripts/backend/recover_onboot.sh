@@ -13,8 +13,9 @@ for conf in $cache_dir/router/*; do
 done
 
 for conf in $cache_dir/dnsmasq/*; do
-    nspace=$(basename $conf)
-    vlan=${nspace##vlan}
+    for cmd in $conf/tags/*/cmd; do
+        sh $cmd
+    done
 done
 
 for inst in $(virsh list --all | grep 'shut off' | awk '{print $2}'); do
