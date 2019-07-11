@@ -36,6 +36,11 @@ type HypercubeClaims struct {
 	Role model.Role `json:"r,omitempty"`
 }
 
+func (*HypercubeClaims) verifyPrivilege(resource interface{}) (result bool) {
+	// TODO:  checkout authority
+	return true
+}
+
 func NewClaims(u, o string, uid, oid int64, role model.Role) (claims jwt.Claims, issuedAt, ExpiresAt int64) {
 	now := time.Now()
 	issuedAt = now.Unix()

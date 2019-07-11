@@ -68,7 +68,6 @@ type Subnet struct {
 
 	// name
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
-	// Enum: [stable]
 	Name string `json:"name,omitempty"`
 
 	// network id
@@ -426,32 +425,6 @@ func (m *Subnet) validateIPV6RaMode(formats strfmt.Registry) error {
 	return nil
 }
 
-var subnetTypeNamePropEnum []interface{}
-
-func init() {
-	var res []string
-	if err := json.Unmarshal([]byte(`["stable"]`), &res); err != nil {
-		panic(err)
-	}
-	for _, v := range res {
-		subnetTypeNamePropEnum = append(subnetTypeNamePropEnum, v)
-	}
-}
-
-const (
-
-	// SubnetNameStable captures enum value "stable"
-	SubnetNameStable string = "stable"
-)
-
-// prop value enum
-func (m *Subnet) validateNameEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, subnetTypeNamePropEnum); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (m *Subnet) validateName(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Name) { // not required
@@ -459,11 +432,6 @@ func (m *Subnet) validateName(formats strfmt.Registry) error {
 	}
 
 	if err := validate.Pattern("name", "body", string(m.Name), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
-		return err
-	}
-
-	// value enum
-	if err := m.validateNameEnum("name", "body", m.Name); err != nil {
 		return err
 	}
 
