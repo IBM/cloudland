@@ -127,7 +127,6 @@ func (v *SubnetRest) DeleteNetwork(c *macaron.Context) {
 func (v *SubnetRest) CreateNetwork(c *macaron.Context) {
 	db := DB()
 	body, _ := c.Req.Body().Bytes()
-	log.Println(string(body))
 	if err := JsonSchemeCheck(`network.json`, body); err != nil {
 		log.Println(string(body))
 		c.JSON(err.Code, ResponseError{
@@ -462,7 +461,7 @@ func (v *SubnetRest) DeleteSubnet(c *macaron.Context) {
 		return
 	}
 	// check all of ipaddress in this subnet is idle status
-	if isUsed, err := checkIPaddresIsUnused(db, id); err != nil {
+	if isUsed, err := v.checkIPaddresIsUnused(db, id); err != nil {
 		code := http.StatusInternalServerError
 		c.Error(code, http.StatusText(code))
 		return
@@ -519,7 +518,7 @@ func (v *SubnetRest) DeleteSubnet(c *macaron.Context) {
 	return
 }
 
-func checkIPaddresIsUnused(db *gorm.DB, subnetID string) (isUsed bool, err error) {
+func (v *SubnetRest) checkIPaddresIsUnused(db *gorm.DB, subnetID string) (isUsed bool, err error) {
 	count := 0
 	err = db.Model(&model.Address{}).Where("subnet_id = ? and allocated = ?", subnetID, true).Count(&count).Error
 	if err != nil {
@@ -532,17 +531,4 @@ func checkIPaddresIsUnused(db *gorm.DB, subnetID string) (isUsed bool, err error
 		return true, err
 	}
 	return
-}
-
-func formateStringToInt64(c *macaron.Context, t string) (result int64, err error) {
-	if t == "" {
-		return result, nil
-	}
-	changed, err := strconv.Atoi(t)
-	if err != nil {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
-		return result, err
-	}
-	return int64(changed), nil
 }

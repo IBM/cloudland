@@ -25,7 +25,7 @@ type VersionsValuesItems struct {
 	ID string `json:"id,omitempty"`
 
 	// links
-	Links []*VersionsValuesItemsLinksItems `json:"links"`
+	Links Links `json:"links,omitempty"`
 
 	// media types
 	MediaTypes []*VersionsValuesItemsMediaTypesItems `json:"media-types"`
@@ -116,20 +116,11 @@ func (m *VersionsValuesItems) validateLinks(formats strfmt.Registry) error {
 		return nil
 	}
 
-	for i := 0; i < len(m.Links); i++ {
-		if swag.IsZero(m.Links[i]) { // not required
-			continue
+	if err := m.Links.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("links")
 		}
-
-		if m.Links[i] != nil {
-			if err := m.Links[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("links" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-		}
-
+		return err
 	}
 
 	return nil

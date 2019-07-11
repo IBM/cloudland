@@ -1,0 +1,62 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$id": "http://github.com/IBM/cloudland/blob/master/web/rest-api/scheme/flavor.json",
+  "type": "object",
+  "title": "The Root Schema",
+  "required": [
+    "flavor"
+  ],
+  "properties": {
+    "flavor": {
+      "$id": "#/properties/flavor",
+      "type": "object",
+      "title": "The Flavor Schema",
+      "required": [
+        "name",
+        "raw",
+        "vcpus",
+        "disk"
+      ],
+      "properties": {
+        "name": {
+          "$id": "#/properties/flavor/properties/name",
+          "type": "string",
+          "title": "The Name Schema",
+          "default": "",
+          "examples": [
+            "net1"
+          ],
+          "pattern": "^(.*)$"
+        },
+        "raw": {
+          "$id": "#/properties/flavor/properties/raw",
+          "type": "integer",
+          "title": "The Raw Schema",
+          "default": 0,
+          "examples": [
+            1024
+          ]
+        },
+        "vcpus": {
+          "$id": "#/properties/flavor/properties/vcpus",
+          "type": "integer",
+          "title": "The Vcpus Schema",
+          "default": 0,
+          "examples": [
+            2
+          ]
+        },
+        "disk": {
+          "$id": "#/properties/flavor/properties/disk",
+          "type": "integer",
+          "title": "The Disk Schema",
+          "default": 0,
+          "examples": [
+            10
+          ]
+        }
+      }
+    }
+  }
+}

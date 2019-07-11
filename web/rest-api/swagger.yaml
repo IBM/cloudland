@@ -1,7 +1,7 @@
 swagger: '2.0'
 info:
-  title: Cloudland API compatible openstack API,
-  version: v3,
+  title: Cloudland API compatible openstack API
+  version: "1.0.0"
   description: Clandland API to compatible openstack API
   license:
     name: Apache 2.0
@@ -42,43 +42,43 @@ paths:
       tags: [keystone]
       description: Create a new token
       parameters:
-      - in: body
-        name: body
-        required: true
-        schema:
-          properties:
-            auth:
-              type: object
-              properties:
-                scope:
-                  type: object
-                  properties:
-                    project:
-                      type: object
-                      properties:
-                        domain:
-                          type: object
-                          properties:
-                            id: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
-                        name: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: demo}
-                identity:
-                  type: object
-                  properties:
-                    methods:
-                      type: array
-                      items: {type: string, enum: [password], example: password}
-                    password:
-                      type: object
-                      properties:
-                        user:
-                          type: object
-                          properties:
-                            name: {type: string,  pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: admin}
-                            password: {type: string, example: adminpwd}
-                            domain:
-                              type: object
-                              properties:
-                                id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
+        - in: body
+          name: body
+          required: true
+          schema:
+            properties:
+              auth:
+                type: object
+                properties:
+                  scope:
+                    type: object
+                    properties:
+                      project:
+                        type: object
+                        properties:
+                          domain:
+                            type: object
+                            properties:
+                              id: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
+                          name: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: demo}
+                  identity:
+                    type: object
+                    properties:
+                      methods:
+                        type: array
+                        items: {type: string, enum: [password], example: password}
+                      password:
+                        type: object
+                        properties:
+                          user:
+                            type: object
+                            properties:
+                              name: {type: string,  pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: admin}
+                              password: {type: string, example: adminpwd}
+                              domain:
+                                type: object
+                                properties:
+                                  id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
       responses:
         201:
           description: successful operation
@@ -245,6 +245,196 @@ paths:
               properties:
                 subnet:
                   $ref: '#/definitions/subnet'
+  /flavors:
+    get:
+      tags: [nova]
+      operationId: listFlavors
+      summary: List Flavors
+      description: |
+        Lists all flavors accessible to your project
+      produces: [application/json]
+      responses:
+        200:
+          description: 200 response
+          headers:
+            Vary:
+              type: string
+              description: X-Auth-Token
+              default: X-Auth-Token
+              enum:
+              - X-Auth-Token
+            Content-Length:
+              type: integer
+            X-Subject-Token:
+              type: string
+            X-Openstack-Request-Id:
+              type: string
+          schema:
+              type: object
+              required:
+              - flavors
+              properties:
+                flavors:
+                  $ref: '#/definitions/flavors'
+        401:
+          description: unauthorized(401)
+        403:
+          description: forbidden(403)
+    post:
+      tags: [nova]
+      operationId: createFlavor
+      summary: Creates a flavor
+      description: |
+        Creating a flavor is typically only available to administrators of a cloud because this has implications for scheduling efficiently in the cloud
+      consumes: [application/json]
+      produces: [application/json]
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            properties:
+              flavor:
+                type: object
+                properties:
+                  name: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'net1'}
+                  raw: {type: integer, format: int32, example: 1024}
+                  vcpus: {type: integer,format: int32, example: 2}
+                  disk: {type: integer, format: int32, example: 10}
+      responses:
+          200:
+            description: 200 response
+            headers:
+              Vary:
+                type: string
+                description: X-Auth-Token
+                default: X-Auth-Token
+                enum: [X-Auth-Token]
+              X-Subject-Token:
+                type: string
+              X-Openstack-Request-Id:
+                type: string
+            schema:
+              type: object
+              required:
+              - flavor
+              properties:
+                flavor: {$ref: '#/definitions/flavor'}
+  /flavors/detail:
+    get:
+      tags: [nova]
+      operationId: listFlavorsDetail
+      summary: Lists flavors with details.
+      description: |
+        Lists flavors with details.
+      produces: [application/json]
+      responses:
+        200:
+          description: 200 response
+          headers:
+            Vary:
+              type: string
+              description: X-Auth-Token
+              default: X-Auth-Token
+              enum:
+              - X-Auth-Token
+            Content-Length:
+              type: integer
+            X-Subject-Token:
+              type: string
+            X-Openstack-Request-Id:
+              type: string
+          schema:
+              type: object
+              required:
+              - flavors
+              properties:
+                flavors:
+                  $ref: '#/definitions/flavorsDetail'
+        400:
+          description:  badRequest(400)
+        401:
+          description: unauthorized(401)
+        403:
+          description: forbidden(403)
+  /flavors/{flavor_id}:
+    get:
+      tags: [nova]
+      operationId: getFlavorDetail
+      summary: Show Flavor Details
+      description: |
+        Shows details for a flavor
+      produces: [application/json]
+      parameters:
+        - in: path
+          name: flavor_id
+          required: true
+          type: integer
+          description: The flavor ID
+        - in: header
+          name: X-Openstack-Request-Id
+          type: string
+          required: false
+        - in: header
+          name: X-Subject-Token
+          type: string
+          required: true
+      responses:
+        200:
+          description: 200 response
+          headers:
+            Vary:
+              type: string
+              description: X-Auth-Token
+              default: X-Auth-Token
+              enum:
+              - X-Auth-Token
+            X-Subject-Token:
+              type: string
+            X-Openstack-Request-Id:
+              type: string
+          schema:
+              type: object
+              required: [ flavor ]
+              properties:
+                flavor:
+                  $ref: '#/definitions/flavor'
+        401:
+          description: unauthorized(401)
+        403:
+          description: forbidden(403)
+        404:
+          description: itemNotFound(404)
+    delete:
+      tags: [nova]
+      operationId: deleteFlavorDetail
+      summary: Deletes a flavor
+      description: |
+        Deletes a flavor
+      parameters:
+        - in: path
+          name: flavor_id
+          required: true
+          type: integer
+          minimum: 1
+          description: The flavor ID
+        - in: header
+          name: X-Openstack-Request-Id
+          type: string
+          required: false
+        - in: header
+          name: X-Subject-Token
+          type: string
+          required: true
+      responses:
+        202:
+          description: unauthorized(401)
+        401:
+          description: unauthorized(401)
+        403:
+          description: forbidden(403)
+        404:
+          description: itemNotFound(404)
 definitions:
   token:
     type: object
@@ -301,7 +491,6 @@ definitions:
               name: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
           id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
           name: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: default}
-
   versions:
     type: object
     properties:
@@ -320,13 +509,7 @@ definitions:
                   base: {type: string, enum: ['application/json'], example: 'application/json'}
                   type: {type: string, enum: ['application/json'], example: 'application/vnd.openstack.identity-v3+json'}
             id: {type: string, enum: ['v3.10'], example: 'v3.10'}
-            links:
-              type: array
-              items:
-                type: object
-                properties:
-                  href: {type: string, pattern: '^http(s)?:\/\/([^\/?#]*)([^?#]*)(\?([^#]*))?(#(.*))?$', example: 'http://192.168.10.16/identity/v3/'}
-                  rel: {type: string, enum: [self, remote], example: "self"}
+            links: {$ref: '#/definitions/links'}
   networks:
    type: array
    items:
@@ -367,7 +550,7 @@ definitions:
   subnet:
     type: object
     properties:
-      name: {type: string, enum: [stable], pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: net1}
+      name: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: net1}
       enable_dhcp: {type: boolean, example: true}
       network_id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'd32019d3-bc6e-4319-9c1d-6722fc136a22'}
       segment_id: {type: string, example: null}
@@ -401,3 +584,43 @@ definitions:
       service_types: {type: array, items: {type: string}, example: []}
       subnetpool_id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'd32019d3-bc6e-4319-9c1d-6722fc136a22'}
       updated_at: {type: string, format: date-time, example: '2016-03-08T20:19:41'}
+  flavors:
+    type: array
+    items:
+      type: object
+      required: [id, links]
+      properties:
+        id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'd32019d3-bc6e-4319-9c1d-6722fc136a22'}
+        links: {$ref: '#/definitions/links'}
+  flavorsDetail:
+    type: array
+    items: {$ref: '#/definitions/flavor'}
+  flavor:
+    type: object
+    properties:
+      disk: {type: integer, format: int32, example: 100}
+      OS-FLV-EXT-DATA:ephemeral: {type: integer, example: 0}
+      os-flavor-access:is_public: {type: boolean, example: false}
+      id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'd32019d3-bc6e-4319-9c1d-6722fc136a22'}
+      name: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'net1'}
+      ram: {type: integer, format: int32, example: 100}
+      swap: {type: integer, format: int32, example: 100}
+      rxtx_factor: {type: number, format: float, example: 2.0}
+      vcpus: {type: integer, format: int32, example: 2}
+      description: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: ''}
+      links: {$ref: '#/definitions/links'}
+  links:
+      type: array
+      items:
+        $ref: '#/definitions/link'
+  link:
+      type: object
+      required: [href, rel]
+      properties:
+        href: {type: string, format: url, pattern: '^http(s)?:\/\/([^\/?#]*)([^?#]*)(\?([^#]*))?(#(.*))?$', example: "http://openstack.example.com/v2/6f70656e737461636b20342065766572/flavors/1"}
+        rel: {type: string, enum: [self, bookmark], pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'self'}
+# Added by API Auto Mocking Plugin
+host: virtserver.swaggerhub.com
+basePath: /threen134/openstack-API/1.0.0
+schemes:
+ - https
