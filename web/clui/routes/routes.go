@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/go-macaron/session"
 	"github.com/spf13/viper"
 	"gopkg.in/macaron.v1"
@@ -148,6 +149,7 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 			c.Data["IsAdmin"] = true
 		}
 		c.Data["Organization"] = store.Get("org").(string)
+		c.Data["Members"] = store.Get("members").([]*model.Member)
 	} else if link != "" && link != "/" && !strings.HasPrefix(link, "/login") {
 		c.Redirect("/")
 	}

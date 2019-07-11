@@ -198,6 +198,13 @@ func (v *UserView) LoginPost(c *macaron.Context, store session.Store) {
 		c.HTML(403, "403")
 		return
 	}
+	members := []*model.Member{}
+	err = dbs.DB().Where("user_name = ?", username).Find(&members).Error
+	if err != nil {
+		log.Println("Failed to query organizations, ", err)
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(403, "403")
+	}
 	org, err := orgAdmin.Get(organization)
 	store.Set("login", username)
 	store.Set("uid", uid)
@@ -206,6 +213,7 @@ func (v *UserView) LoginPost(c *macaron.Context, store session.Store) {
 	store.Set("act", token)
 	store.Set("org", organization)
 	store.Set("defsg", org.DefaultSG)
+	store.Set("members", members)
 	redirectTo := "/instances"
 	c.Redirect(redirectTo)
 }

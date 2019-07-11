@@ -87,15 +87,33 @@
 							    <a class="item" target="_blank" rel="noopener noreferrer" href="/docs" rel="noreferrer">Help</a>
 							    <div class="right menu">
                                     {{if .IsSignedIn}}
-								    <a class="item{{if eq .Link "/login"}} active{{end}}" href="/?logout=true&redirect_to={{.Link}}">
-									    <i class="octicon octicon-sign-out"></i> Sign out
-								    </a>
+								    <div class="item{{if eq .Link "/login"}} active{{end}}">
+									    <i class="octicon octicon-sign-out"></i>
+                                                                            <div class="ui dropdown">
+                                                                                <div class="text">{{ .Organization }}</div>
+                                                                                <i class="dropdown icon"></i>
+                                                                                <div class="menu">
+                                                                                {{ range .Members }}
+                                                                                    <div class="item"> {{ .OrgName }}</div>
+                                    				                {{ end }}
+                                                                                    <div class="divider"></div>
+                                                                                    <div class="item"><a href="/?logout=true&redirect_to={{.Link}}"> Sign out</a></div>
+                                                                                </div>
+                                                                            </div>
+								    </div>
                                     {{else}}
-								    <a class="item{{if eq .Link "/login"}} active{{end}}" href="/login?redirect_to={{.Link}}">
-										<i class="octicon octicon-sign-in"></i> Sign in
-								    </a>
+								    <div class="item{{if eq .Link "/login"}} active{{end}}">
+									    <i class="octicon octicon-sign-in"></i>
+                                                                            <div class="text"><a href="/login?redirect_to={{.Link}}"> Sign in</a></div>
+                                                                            <div class="ui dropdown">
+                                                                                <i class="dropdown icon"></i>
+                                                                                <div class="menu">
+										   <div class="item"><a href="/login?redirect_to={{.Link}}"> Sign up</a></div>
+                                                                                </div>
+                                                                            </div>
+								    </div>
                                     {{end}}
-								</div><!-- end anonymous right menu -->
+							    </div><!-- end anonymous right menu -->
 							</div><!-- end top menu -->
 						</div><!-- end column -->
 					</div><!-- end grid -->
