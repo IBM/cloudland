@@ -435,6 +435,249 @@ paths:
           description: forbidden(403)
         404:
           description: itemNotFound(404)
+  /v2/images:
+    get:
+      operationId: listImages
+      summary: List images
+      tags: [glance]
+      description: |
+        Lists public virtual machine (VM) images. (Since Image API v2.0.)
+      produces:
+      - application/json
+      parameters:
+        - name: limit
+          required: false
+          in: query
+          type: string
+          format: date-time
+          description: |
+            Use to request a specific page size. Expect a response to a limited request to return between zero and limit items. The typical pattern of limit and marker is to make an initial limited request and then to use the ID of the last image from the response as the marker parameter in a subsequent limited request.
+        - name: marker
+          required: false
+          in: query
+          type: string
+          description: |
+            Specifies the ID of the last-seen image. The typical pattern of limit and marker is to make an initial limited request and then to use the ID of the last image from the response as the marker parameter in a subsequent limited request.
+        - name: sort_dir
+          required: false
+          in: query
+          type: string
+          description: |
+            Sort direction. Valid values are `asc` (ascending) and `desc` (descending). Default is `desc`.
+      responses:
+        200:
+          description: 200 response
+          headers:
+            Vary:
+              type: string
+              description: X-Auth-Token
+              default: X-Auth-Token
+              enum:
+              - X-Auth-Token
+            X-Subject-Token:
+              type: string
+            X-Openstack-Request-Id:
+              type: string
+          schema:
+              type: object
+              required: [ images, schema, first ]
+              properties:
+                scheme: {type: string, example: "/v2/schemas/images"}
+                fist: {type: string, example: "/v2/images"}
+                images:
+                  $ref: '#/definitions/images'
+    post:
+      operationId: createImage
+      summary: Create image
+      description: |
+        Creates a virtual machine (VM) image. (Since Image API v2.0.)
+      tags: [glance]
+      consumes: [application/json]
+      produces: [application/json]
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            type: object
+            properties:
+              container_format: {type: string, enum: ['bare'], example: 'bare'}
+              disk_format: {type: string, enum: ['qcow2', 'raw', 'iso'], example: 'raw'}
+              id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'd32019d3-bc6e-4319-9c1d-6722fc136a22'}
+              min_disk: {type: integer, format: int32, example: 10}
+              min_ram: {type: integer, format: int32, example: 512}
+              name: {type: string, enum: [stable], pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'ubuntu-1'}
+              protected: {type: boolean, example: false}
+              visibility: {type: string, enum: ['public', 'community', 'shared', 'private'], example: 'public'}
+      responses:
+         201:
+          description: 201 response
+          schema:
+            $ref: '#/definitions/image'
+  /v2/images/{image_id}:
+    parameters:
+    - in: path
+      name: image_id
+      required: true
+      type: integer
+      description: The image ID
+    get:
+      operationId: getImage
+      tags: [glance]
+      summary: Get image details
+      description: |
+        Gets details for a specified image. (Since Image API v2.0.)
+      produces:
+      - application/json
+      parameters:
+        - in: path
+          name: image_id
+          required: true
+          type: string
+          minimum: 1
+          description: The image ID
+      responses:
+        200:
+          description: 200 response
+          schema:
+            $ref: '#/definitions/image'
+    delete:
+      operationId: deleteImage
+      tags: [glance]
+      summary: Delete image
+      description: |
+        Deletes a specified image. (Since Image API v2.0.)
+      produces: []
+      responses:
+        204:
+          description: 204 response
+  /v2/images/{image_id}/file:
+    parameters:
+    - in: path
+      name: image_id
+      required: true
+      type: integer
+      description: The image ID
+    put:
+      operationId: uploadImage
+      summary: 'Upload binary image data'
+      tags: [glance]
+      description: |
+        Uploads binary image data. (Since Image API v2.0.)
+      produces: []
+      responses:
+        204:
+          description: 204 response
+    get:
+      operationId: DownloadImage
+      summary: 'Download binary image data'
+      tags: [glance]
+      description: |
+        Downloads binary image data. (Since Image API v2.0.)
+      produces: []
+      responses:
+        200:
+          description: 200 204 response
+        204:
+          description: 200 204 response
+  /v2/images/{image_id}/members:
+    parameters:
+    - in: path
+      name: image_id
+      required: true
+      type: integer
+      description: 'The image ID'
+    get:
+      operationId: listImageMembers
+      summary: 'List image members'
+      tags: [glance]
+      description: |
+        Lists the tenants with whom this image has been shared. (Since Image API v2.1.)
+      produces:
+      - application/json
+      responses:
+        200:
+          description: 200 response
+          schema: {$ref: '#/definitions/members'}
+    post:
+      operationId: createImageMember
+      summary: 'Create image member'
+      tags: [glance]
+      description: |
+        Adds a specified tenant ID as an image member. (Since Image API v2.1.)
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required: [member]
+          properties:
+            member: {type: string, example: '8989447062e04a818baf9e073fd04fa7'}
+      produces:
+      - application/json
+      responses:
+        200:
+          description: 200 response
+  /v2/images/{image_id}/members/{member_id}:
+    parameters:
+    - name: image_id
+      required: true
+      in: path
+      type: string
+      description: 'The image ID'
+    - name: member_id
+      required: true
+      in: path
+      type: string
+      description: |
+        Image member ID. For example, the tenant ID of the user with whom the image is being shared.
+    get:
+      operationId: getImageMember
+      summary: Show image member details
+      tags: [glance]
+      description: |
+        Shows image member details.
+      produces:
+      - application/json
+      responses:
+        200:
+          description: 200 response
+          schema: {$ref: '#/definitions/member'}
+    put:
+      operationId: updateImageMember
+      tags: [glance]
+      summary: Update image member
+      description: |
+        Sets the specified status for the specified member of the specified image. (Since Image API v2.1.)
+      produces:
+      - application/json
+      parameters:
+      - name: body
+        required: true
+        in: body
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [pending, accepted, rejected]
+              example: "accepted"
+          description: 'The image ID'
+      responses:
+        200:
+          description: 200 response
+          schema: {$ref: '#/definitions/member'}
+    delete:
+      operationId: deleteImageMember
+      summary: 'Delete image member'
+      tags: [glance]
+      description: |
+        Deletes a specified tenant ID from the member list of the specified image. (Since Image API v2.1.)
+      produces: []
+      responses:
+        204:
+          description: 204 response
 definitions:
   token:
     type: object
@@ -550,7 +793,7 @@ definitions:
   subnet:
     type: object
     properties:
-      name: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: net1}
+      name: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: subnet1}
       enable_dhcp: {type: boolean, example: true}
       network_id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'd32019d3-bc6e-4319-9c1d-6722fc136a22'}
       segment_id: {type: string, example: null}
@@ -619,6 +862,48 @@ definitions:
       properties:
         href: {type: string, format: url, pattern: '^http(s)?:\/\/([^\/?#]*)([^?#]*)(\?([^#]*))?(#(.*))?$', example: "http://openstack.example.com/v2/6f70656e737461636b20342065766572/flavors/1"}
         rel: {type: string, enum: [self, bookmark], pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'self'}
+  images:
+      type: array
+      items:
+        $ref: '#/definitions/image'
+  image:
+      type: object
+      properties:
+        status: {type: string, enum: [queued, saving, active, killed, deleted, pending_delete, deactivated, uploading, importing], example: 'active'}
+        name: {type: string, enum: [stable], pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'ubuntu-1'}
+        tags: {type: array, items: {type: string}}
+        container_format: {type: string, enum: ['bare'], example: 'bare'}
+        created_at: {type: string, format: date-time, example: '2016-03-08T20:19:41'}
+        disk_format: {type: string, enum: ['qcow2', 'raw', 'iso'], example: 'raw'}
+        updated_at:  {type: string, format: date-time, example: '2016-03-08T20:19:41'}
+        visibility: {type: string, enum: ['public', 'community', 'shared', 'private'], example: 'public'}
+        self: {type: string, example: "/v2/images/2b61ed2b-f800-4da0-99ff-396b742b8646"}
+        min_disk: {type: integer, format: int32, example: 10}
+        protected: {type: boolean, example: false}
+        file: {type: string, example: "/v2/images/2b61ed2b-f800-4da0-99ff-396b742b8646/file"}
+        id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'd32019d3-bc6e-4319-9c1d-6722fc136a22'}
+        checksum: {type: string, example: "afab0f79bac770d61d24b4d0560b5f70"}
+        os_hash_algo: {type: string, example: "sha512"}
+        os_hash_value: {type: string, example: "ea3e20140df1cc65f53d4c5b9ee3b38d0d6868f61bbe2230417b0f98cef0e0c7c37f0ebc5c6456fa47f013de48b452617d56c15fdba25e100379bd0e81ee15ec"}
+        os_hidden: {type: boolean, example: false}
+        owner: {type: string, example: '5ef70662f8b34079a6eddb8da9d75fe8'}
+        size: {type: integer, example: 476704768}
+        schema: {type: string, example: '/v2/schemas/image'}
+        virtual_size: {type: integer, example: 100}
+        min_ram: {type: integer, format: int32, example: 512}
+  member:
+       type: object
+       properties:
+          created_at: {type: string, format: date-time, example: '2016-03-08T20:19:41'}
+          image_id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'd32019d3-bc6e-4319-9c1d-6722fc136a22'}
+          member_id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'd32019d3-bc6e-4319-9c1d-6722fc136a22'}
+          schema: {type: string, example: '/v2/schemas/image'}
+          status: {type: string, enum: [queued, saving, active, killed, deleted, pending_delete, deactivated, uploading, importing], example: 'active'}
+          updated_at: {type: string, format: date-time, example: '2016-03-08T20:19:41'}
+  members:
+       type: array
+       items:
+         $ref: '#/definitions/member'
 # Added by API Auto Mocking Plugin
 host: virtserver.swaggerhub.com
 basePath: /threen134/openstack-API/1.0.0
