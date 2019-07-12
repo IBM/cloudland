@@ -3,14 +3,14 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 6 ] && die "$0 <vm_ID> <image> <name> <cpu> <memory> <disk_inc> [userdata] [pubkey]"
+[ $# -lt 6 ] && die "$0 <vm_ID> <image> <name> <cpu> <memory> <disk_size> [userdata] [pubkey]"
 
 vm_ID=inst-$1
 img_name=$2
 vm_name=$3
 vm_cpu=$4
 vm_mem=$5
-disk_inc=$6
+disk_size=$6
 userdata=$7
 pubkey=$8
 vm_stat=error
@@ -29,16 +29,21 @@ if [ ! -f "$vm_img" ]; then
     fi
     if [ ! -f "$image_cache/$img_name" ]; then
         echo "Image $img_name downlaod failed!"
-        echo "|:-COMMAND-:| `basename $0` '$1' '$vm_stat' '$SCI_CLIENT_ID'"
+        echo "|:-COMMAND-:| `basename $0` '$1' '$vm_stat' '$SCI_CLIENT_ID' 'Image $img_name downlaod failed!'"
         exit -1
     fi
     cmd="qemu-img convert -f qcow2 -O raw $image_cache/$img_name $vm_img"
     result=$(eval "$cmd")
     sidecar span log $span "Internal: $cmd, result: $result"
-    qemu-img resize -q $vm_img "${disk_inc}G" &> /dev/null
+    vsize=$(qemu-img info $vm_img | grep 'virtual size:' | cut -d' ' -f4 | tr -d '(')
+    let fsize=$disk_size*1024 *1024
+    if [ "$vsize" -gt "$fsize" ]; then
+        echo "|:-COMMAND-:| `basename $0` '$1' '$vm_stat' '$SCI_CLIENT_ID' 'Flavor is smaller than image size'"
+        exit -1
+    fi
+    qemu-img resize -q $vm_img "${disk_size}G" &> /dev/null
 fi
 
-vsize=`qemu-img info $vm_img | grep 'virtual size:' | cut -d' ' -f3`
 hyper_ip=$(ifconfig $vxlan_interface | grep 'inet addr:' | cut -d: -f2 | cut -d' ' -f1)
 [ -z "$vm_mem" ] && vm_mem='1024m'
 [ -z "$vm_cpu" ] && vm_cpu=1
@@ -69,4 +74,4 @@ if [ $? -eq 0 ]; then
     vnc_port=$(xmllint --xpath 'string(/domain/devices/graphics/@port)' $vm_xml)
     vm_vnc="$vnc_port:$vnc_pass"
 fi
-echo "|:-COMMAND-:| $(basename $0) '$1' '$state' '$SCI_CLIENT_ID'"
+echo "|:-COMMAND-:| $(basename $0) '$1' '$state' '$SCI_CLIENT_ID' ''"
