@@ -2,6 +2,6 @@
   "network": {
     "name": "net1",
     "provider:network_type": "vlan",
-    "provider:segmentation_id": "4095",
+    "provider:segmentation_id": "4095"
   }
 }

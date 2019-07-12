@@ -14,8 +14,7 @@
       "title": "The Network Schema",
       "required": [
         "name",
-        "provider:network_type",
-        "provider:segmentation_id"
+        "provider:network_type"
       ],
       "properties": {
         "admin_state_up": {
@@ -42,6 +41,10 @@
           "type": "string",
           "title": "The Provider:network_type Schema",
           "default": "",
+          "enum": [
+            "vlan",
+            "vxlan"
+          ],
           "examples": [
             "vlan"
           ],

@@ -11,8 +11,11 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"net/http"
 	"strings"
 
+	"github.com/IBM/cloudland/web/clui/model"
+	"github.com/google/uuid"
 	"github.com/spf13/viper"
 	"gopkg.in/macaron.v1"
 )
@@ -32,6 +35,8 @@ var (
 		resourceEndpoints["identityToken"],
 		resourceEndpoints["identity"],
 	}
+	ReqIDKey = "x-openstack-request-id"
+	ClaimKey = "claims"
 )
 
 func RunRest() (err error) {
@@ -52,16 +57,17 @@ func Rest() (m *macaron.Macaron) {
 		},
 	))
 	//token middleware
+	m.Use(AddRequestID)
 	m.Use(TokenProcess)
 	//	m.Use(macaron.Renderer())
 	m.Get(resourceEndpoints["identity"], versionInstance.ListVersion)
 	m.Post(resourceEndpoints["identityToken"], tokenInstance.IssueTokenByPasswd)
 	//neutron network api
-	m.Get(resourceEndpoints["network"], subnetInstance.ListNetworks)
-	m.Post(resourceEndpoints["network"], subnetInstance.CreateNetwork)
-	m.Delete(resourceEndpoints["network"]+`/:id`, subnetInstance.DeleteNetwork)
+	m.Get(resourceEndpoints["network"], networkInstance.ListNetworks)
+	m.Post(resourceEndpoints["network"], networkInstance.CreateNetwork)
+	m.Delete(resourceEndpoints["network"]+`/:id`, networkInstance.DeleteNetwork)
 	//neutron subnet API
-	m.Get(resourceEndpoints["subnet"], subnetInstance.ListSubnet)
+	m.Get(resourceEndpoints["subnet"], subnetInstance.ListSubnets)
 	m.Post(resourceEndpoints["subnet"], subnetInstance.CreateSubnet)
 	m.Delete(resourceEndpoints["subnet"]+`/:id`, subnetInstance.DeleteSubnet)
 	//nova flavor
@@ -78,16 +84,36 @@ func TokenProcess(c *macaron.Context) {
 			return
 		}
 	}
-	if claims, err := ParseToken(c.Req.Header.Get("X-Auth-Token")); err != nil {
+	claims, err := ParseToken(c.Req.Header.Get("X-Auth-Token"))
+	if err != nil {
 		log.Println(err.Error())
-		c.Error(403, "Unauthenticatins")
+		c.Error(http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 		return
 	} else {
-		log.Println(fmt.Sprintf("%+v", claims))
-		// TODO: check token's expire time
-		// TODO: save claims data to context  and check action and authority base on userID and orgID
-		c.Data["claims"] = claims
+		c.Data[ClaimKey] = claims
 	}
-
+	// check org whether existing
+	if err = CheckResWithErrorResponse(model.Organization{}.TableName(), claims.OID, c); err != nil {
+		// org is not exist, return error response
+		return
+	}
+	// check user whether existing
+	if err = CheckResWithErrorResponse(model.User{}.TableName(), claims.UID, c); err != nil {
+		// user is not exiit, return error response
+		return
+	}
+	memberShip.OrgID = c.Data[claims.OID].(int64)
+	memberShip.UserID = c.Data[claims.UID].(int64)
 	return
+}
+
+func AddRequestID(c *macaron.Context) {
+	requestID := c.Req.Header.Get(ReqIDKey)
+	if requestID == "" {
+		requestID = `req-` + uuid.New().String()
+		c.Req.Header.Set(ReqIDKey, requestID)
+		c.Resp.Header().Set(ReqIDKey, requestID)
+	} else {
+		c.Resp.Header().Set(ReqIDKey, requestID)
+	}
 }

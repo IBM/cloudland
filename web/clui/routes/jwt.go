@@ -31,9 +31,9 @@ var (
 
 type HypercubeClaims struct {
 	jwt.StandardClaims
-	UID  int64      `json:"uid,omitempty"`
-	OID  int64      `json:"oid,omitempty"`
-	Role model.Role `json:"r,omitempty"`
+	UID  string      `json:"uid,omitempty"`
+	OID  string      `json:"oid,omitempty"`
+	Role *model.Role `json:"r,omitempty"`
 }
 
 func (*HypercubeClaims) verifyPrivilege(resource interface{}) (result bool) {
@@ -41,7 +41,7 @@ func (*HypercubeClaims) verifyPrivilege(resource interface{}) (result bool) {
 	return true
 }
 
-func NewClaims(u, o string, uid, oid int64, role model.Role) (claims jwt.Claims, issuedAt, ExpiresAt int64) {
+func NewClaims(u, o, uid, oid string, role *model.Role) (claims jwt.Claims, issuedAt, ExpiresAt int64) {
 	now := time.Now()
 	issuedAt = now.Unix()
 	ExpiresAt = now.Add(time.Hour * 2).Unix()
@@ -102,7 +102,7 @@ func privateKey() *rsa.PrivateKey {
 	return _privateKey
 }
 
-func NewToken(u, o string, uid, oid int64, role model.Role) (signed string, issueAt, expiresAt int64, err error) {
+func NewToken(u, o, uid, oid string, role *model.Role) (signed string, issueAt, expiresAt int64, err error) {
 	var claims jwt.Claims
 	claims, issueAt, expiresAt = NewClaims(u, o, uid, oid, role)
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)

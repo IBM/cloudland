@@ -18,6 +18,7 @@ import (
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/go-macaron/session"
+	"github.com/jinzhu/gorm"
 	macaron "gopkg.in/macaron.v1"
 )
 
@@ -61,7 +62,7 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID int64, types []stri
 			return
 		}
 		var fipIface *model.Interface
-		fipIface, err = model.AllocateFloatingIp(floatingip.ID, gateway, ftype)
+		fipIface, err = AllocateFloatingIp(ctx, floatingip.ID, gateway, ftype)
 		if err != nil {
 			log.Println("DB failed to allocate floating ip", err)
 			return
@@ -109,7 +110,7 @@ func (a *FloatingIpAdmin) Delete(ctx context.Context, id int64) (err error) {
 			return
 		}
 	}
-	err = model.DeallocateFloatingIp(id)
+	err = DeallocateFloatingIp(ctx, id)
 	if err != nil {
 		log.Println("DB failed to deallocate floating ip", err)
 		return
@@ -247,4 +248,48 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 	}
 	c.Redirect(redirectTo)
+}
+
+func AllocateFloatingIp(ctx context.Context, floatingipID int64, gateway *model.Gateway, ftype string) (fipIface *model.Interface, err error) {
+	var db *gorm.DB
+	ctx, db = getCtxDB(ctx)
+	var subnet *model.Subnet
+	for _, iface := range gateway.Interfaces {
+		if strings.Contains(iface.Type, ftype) {
+			subnet = iface.Address.Subnet
+			break
+		}
+	}
+	if subnet == nil {
+		err = fmt.Errorf("Invalid gateway subnet")
+		return
+	}
+	name := ftype + "fip"
+	fipIface, err = CreateInterface(ctx, subnet.ID, floatingipID, name, "floating", nil)
+	if err != nil {
+		subnets := []*model.Subnet{}
+		err = db.Model(&model.Subnet{}).Where("vlan = ? and id <> ?", subnet.Vlan, subnet.ID).Find(subnets).Error
+		if err == nil && len(subnets) > 0 {
+			for _, s := range subnets {
+				fipIface, err = CreateInterface(ctx, s.ID, floatingipID, name, "floating", nil)
+				if err == nil {
+					break
+				}
+			}
+		}
+	}
+	return
+}
+
+func DeallocateFloatingIp(ctx context.Context, floatingipID int64) (err error) {
+	var db *gorm.DB
+	ctx, db = getCtxDB(ctx)
+	DeleteInterfaces(ctx, floatingipID, "floating")
+	floatingip := &model.FloatingIp{Model: model.Model{ID: floatingipID}}
+	err = db.Delete(floatingip).Error
+	if err != nil {
+		log.Println("Failed to delete floating ip, %v", err)
+		return
+	}
+	return
 }

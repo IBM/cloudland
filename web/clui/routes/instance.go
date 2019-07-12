@@ -274,7 +274,7 @@ func (a *InstanceAdmin) deleteInterfaces(ctx context.Context, instance *model.In
 }
 
 func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interface) (err error) {
-	err = model.DeleteInterface(iface)
+	err = DeleteInterface(ctx, iface)
 	if err != nil {
 		log.Println("Failed to create interface")
 		return
@@ -308,7 +308,7 @@ func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interf
 
 func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subnet, instance *model.Instance, ifname string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
 	db := DB()
-	iface, err = model.CreateInterface(subnet.ID, instance.ID, ifname, "instance", secGroups)
+	iface, err = CreateInterface(ctx, subnet.ID, instance.ID, ifname, "instance", secGroups)
 	if err != nil {
 		log.Println("Failed to create interface")
 		return
