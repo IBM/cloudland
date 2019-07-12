@@ -14,6 +14,8 @@ package model
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Model struct {
@@ -23,4 +25,11 @@ type Model struct {
 	DeletedAt *time.Time `sql:"index"`
 	UUID      string     `gorm:"type:varchar(64)"`
 	Owner     int64
+}
+
+func (m *Model) BeforeCreate() (err error) {
+	if m.UUID == "" {
+		m.UUID = uuid.New().String()
+	}
+	return
 }

@@ -58,7 +58,7 @@
 							{{ end }}
 					        {{ end }}
 						</td>
-			                        <td>{{.Status}}{{ if eq .Status "error" }}:{{ .Reason }}{{ end }}</td>
+			                        <td>{{.Status}}{{ if eq .Status "error" }}: {{ .Reason }}{{ end }}</td>
 						{{ if $.IsAdmin }}
 			                        <td>{{.Hyper}}</td>
 						{{ end }}
