@@ -24,6 +24,10 @@
 		                        <tr>
 			                        <th>ID</th>
 			                        <th>Name</th>
+			                        <th>CPU</th>
+			                        <th>Memory</th>
+			                        <th>Disk</th>
+			                        <th>Swap</th>
 			                        <th>Created At</th>
 			                        <th>Edit</th>
                                     <th>Delete</th>
@@ -35,6 +39,10 @@
 		                        <tr>
 			                        <td>{{.ID}}</td>
 			                        <td>{{.Name}}</td>
+			                        <td>{{.Cpu}}</td>
+			                        <td>{{.Memory}}</td>
+			                        <td>{{.Disk}}</td>
+			                        <td>{{.Swap}}</td>
 			                        <td><span title="Tue, 18 Dec 2018 14:24:59 &#43;0800">{{.CreatedAt}}</span></td>
 			                        <td><a href="{{$Link}}/{{.ID}}"><i class="fa fa-pencil-square-o"></i></a></td>
                                     <td><div class="ui red tiny button delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}">Delete</div></td>

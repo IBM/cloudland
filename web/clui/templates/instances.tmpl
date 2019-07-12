@@ -45,23 +45,23 @@
 			                        <td>{{.Flavor.Name}}</td>
 			                        <td>{{.Image.Name}}</td>
 			                        <td>
-										{{ if .FloatingIps }}
-											{{ range .FloatingIps }}
-												{{.FipAddress }}
-											{{ end }}
-										{{ end }}
-										{{ if .Interfaces }}
-											{{ range .Interfaces }}
-												{{ if .Address}}
-												<a href="{{$Link}}/../interfaces/{{.ID}}">{{ .Address.Address }}</a>
-												{{ end }}
-											{{ end }}
-										{{ end }}
-									</td>
-			                        <td>{{.Status}}</td>
-									{{ if $.IsAdmin }}
+						{{ if .FloatingIps }}
+							{{ range .FloatingIps }}
+								{{.FipAddress }}
+							{{ end }}
+						{{ end }}
+						{{ if .Interfaces }}
+							{{ range .Interfaces }}
+								{{ if .Address}}
+								<a href="{{$Link}}/../interfaces/{{.ID}}">{{ .Address.Address }}</a>
+								{{ end }}
+							{{ end }}
+					        {{ end }}
+						</td>
+			                        <td>{{.Status}}{{ if eq .Status "error" }}: {{ .Reason }}{{ end }}</td>
+						{{ if $.IsAdmin }}
 			                        <td>{{.Hyper}}</td>
-									{{ end }}
+						{{ end }}
 			                        <td><a href="{{$Link}}/{{.ID}}"><i class="fa fa-pencil-square-o"></i></a></td>
                                     <td><div class="ui red tiny button delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}">Delete</div></td>
 		                        </tr>

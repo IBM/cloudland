@@ -14,7 +14,6 @@ import (
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/go-macaron/session"
-	uuidPk "github.com/google/uuid"
 	macaron "gopkg.in/macaron.v1"
 )
 
@@ -26,19 +25,14 @@ var (
 type FlavorAdmin struct{}
 type FlavorView struct{}
 
-func (a *FlavorAdmin) Create(name string, cpu, memory, disk int32, uuid string) (flavor *model.Flavor, err error) {
+func (a *FlavorAdmin) Create(name string, cpu, memory, disk, swap int32) (flavor *model.Flavor, err error) {
 	db := DB()
-	if uuid == "" {
-		uuid = uuidPk.New().String()
-	}
 	flavor = &model.Flavor{
-		Model: model.Model{
-			UUID: uuid,
-		},
 		Name:   name,
 		Cpu:    cpu,
 		Disk:   disk,
 		Memory: memory,
+		Swap:   swap,
 	}
 	err = db.Create(flavor).Error
 	return
@@ -154,7 +148,17 @@ func (v *FlavorView) Create(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	_, err = flavorAdmin.Create(name, int32(cpu), int32(memory), int32(disk), "")
+	sSize := c.Query("swap")
+	swap := 0
+	if sSize != "" {
+		swap, err = strconv.Atoi(sSize)
+		if err != nil {
+			code := http.StatusBadRequest
+			c.Error(code, http.StatusText(code))
+			return
+		}
+	}
+	_, err = flavorAdmin.Create(name, int32(cpu), int32(memory), int32(disk), int32(swap))
 	if err != nil {
 		c.HTML(500, "500")
 	}
