@@ -24,7 +24,7 @@ type Model struct {
 	UpdatedAt time.Time
 	DeletedAt *time.Time `sql:"index"`
 	UUID      string     `gorm:"type:varchar(64)"`
-	Owner     int64
+	Owner     int64      `gorm:"default:1"`
 }
 
 func (m *Model) BeforeCreate() (err error) {

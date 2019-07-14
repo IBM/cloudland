@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/IBM/cloudland/web/clui/model"
+	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -39,16 +40,20 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 	db := DB()
 	user := &model.User{Username: owner}
 	err = db.Model(user).Take(user).Error
+	if err != nil {
+		log.Println("Failed to query user", err)
+		return
+	}
 	sgName := name + "-default"
 	secGroup, err := secgroupAdmin.Create(ctx, sgName, true)
 	if err != nil {
 		log.Println("Failed to create security group", err)
 	}
 	org = &model.Organization{
+		Model:     model.Model{Owner: user.ID},
 		Name:      name,
 		DefaultSG: secGroup.ID,
 	}
-	org.Owner = user.ID
 	err = db.Create(org).Error
 	if err != nil {
 		log.Println("DB failed to create organization ", err)
@@ -63,7 +68,77 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 	return
 }
 
-func (a *OrgAdmin) Update(ctx context.Context, ausers, dusers []string) (org *model.Organization, err error) {
+func (a *OrgAdmin) Update(ctx context.Context, orgID int64, members []string) (org *model.Organization, err error) {
+	db := DB()
+	org = &model.Organization{Model: model.Model{ID: orgID}}
+	err = db.Set("gorm:auto_preload", true).Take(org).Take(org).Error
+	if err != nil {
+		log.Println("Failed to query organization", err)
+		return
+	}
+	for _, name := range members {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+		found := false
+		for _, em := range org.Members {
+			if name == em.UserName {
+				found = true
+				break
+			}
+		}
+		if found == true {
+			continue
+		}
+		user := &model.User{Username: name}
+		err = db.Model(user).Take(user).Error
+		if err != nil {
+			log.Println("Failed to query user", err)
+			continue
+		}
+		if user.ID <= 0 {
+			continue
+		}
+		member := &model.Member{
+			Model:    model.Model{Owner: orgID},
+			UserName: name,
+			UserID:   user.ID,
+			OrgName:  org.Name,
+			OrgID:    orgID,
+			Role:     model.Reader,
+		}
+		err = db.Create(member).Error
+		if err != nil {
+			log.Println("Failed to create member", err)
+			continue
+		}
+	}
+	for _, em := range org.Members {
+		found := false
+		for _, name := range members {
+			name = strings.TrimSpace(name)
+			if name == "" {
+				continue
+			}
+			if name == em.UserName {
+				found = true
+				break
+			}
+		}
+		if found == true {
+			continue
+		}
+		member := &model.Member{
+			UserName: em.UserName,
+			OrgID:    orgID,
+		}
+		err = db.Where(member).Delete(member).Error
+		if err != nil {
+			log.Println("Failed to delete member", err)
+			continue
+		}
+	}
 	return
 }
 
@@ -98,28 +173,29 @@ func (a *OrgAdmin) Delete(id int64) (err error) {
 	return
 }
 
-func (a *OrgAdmin) List(owner string) (orgs []*model.Organization, err error) {
+func (a *OrgAdmin) List(offset, limit int64, order string, owner string) (total int64, orgs []*model.Organization, err error) {
 	db := DB()
 	user := &model.User{Username: owner}
-	err = db.Model(user).Take(user).Error
+	if limit == 0 {
+		limit = 20
+	}
+
+	if order == "" {
+		order = "created_at"
+	}
+
+	err = db.Model(user).Where(user).Take(user).Error
 	if err != nil {
 		log.Println("DB failed to query user, %v", err)
 		return
 	}
-	members := []*model.Member{}
-	err = db.Find(&members, &model.Member{UserID: user.ID}).Error
-	if err != nil {
-		log.Println("DB failed to query members, %v", err)
-		return
-	}
-	orgs = []*model.Organization{}
+	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
 	where := ""
-	for i, member := range members {
-		if i == 0 {
-			where = fmt.Sprintf("id = %d", member.OrgID)
-		} else {
-			where = fmt.Sprintf("%s or id = %d", where, member.OrgID)
-		}
+	if user.Username != "admin" {
+		where = fmt.Sprintf("owner = %d", user.ID)
+	}
+	if err = db.Model(&model.Organization{}).Where(where).Count(&total).Error; err != nil {
+		return
 	}
 	err = db.Where(where).Find(&orgs).Error
 	if err != nil {
@@ -130,11 +206,11 @@ func (a *OrgAdmin) List(owner string) (orgs []*model.Organization, err error) {
 }
 
 func (v *OrgView) List(c *macaron.Context, store session.Store) {
+	offset := c.QueryInt64("offset")
+	limit := c.QueryInt64("limit")
 	order := c.Query("order")
-	if order == "" {
-		order = "-created_at"
-	}
-	orgs, err := orgAdmin.List(order)
+	owner := store.Get("login").(string)
+	total, orgs, err := orgAdmin.List(offset, limit, order, owner)
 	if err != nil {
 		log.Println("Failed to list organizations, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
@@ -142,6 +218,7 @@ func (v *OrgView) List(c *macaron.Context, store session.Store) {
 		return
 	}
 	c.Data["Organizations"] = orgs
+	c.Data["Total"] = total
 	c.HTML(200, "orgs")
 }
 
@@ -196,16 +273,27 @@ func (v *OrgView) Edit(c *macaron.Context, store session.Store) {
 		log.Println("Image query failed", err)
 		return
 	}
-	c.Data["Organization"] = org
+	c.Data["Org"] = org
 	c.HTML(200, "orgs_patch")
 }
 
 func (v *OrgView) Patch(c *macaron.Context, store session.Store) {
-	redirectTo := "../orgs_patch"
-	ausers := c.Query("ausers")
-	dusers := c.QueryStrings("dusers")
-	userList := strings.Split(ausers, ",")
-	_, err := orgAdmin.Update(c.Req.Context(), userList, dusers)
+	id := c.Params("id")
+	if id == "" {
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	orgID, err := strconv.Atoi(id)
+	if err != nil {
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	redirectTo := "../orgs/" + id
+	members := c.Query("members")
+	memberList := strings.Split(members, " ")
+	_, err = orgAdmin.Update(c.Req.Context(), int64(orgID), memberList)
 	if err != nil {
 		log.Println("Failed to create organization, %v", err)
 		c.HTML(500, "500")

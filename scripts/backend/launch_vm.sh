@@ -29,16 +29,16 @@ if [ ! -f "$vm_img" ]; then
     fi
     if [ ! -f "$image_cache/$img_name" ]; then
         echo "Image $img_name downlaod failed!"
-        echo "|:-COMMAND-:| `basename $0` '$1' '$vm_stat' '$SCI_CLIENT_ID' 'Image $img_name downlaod failed!'"
+        echo "|:-COMMAND-:| `basename $0` '$1' '$vm_stat' '$SCI_CLIENT_ID' 'image $img_name downlaod failed!'"
         exit -1
     fi
     cmd="qemu-img convert -f qcow2 -O raw $image_cache/$img_name $vm_img"
     result=$(eval "$cmd")
     sidecar span log $span "Internal: $cmd, result: $result"
     vsize=$(qemu-img info $vm_img | grep 'virtual size:' | cut -d' ' -f4 | tr -d '(')
-    let fsize=$disk_size*1024 *1024
+    let fsize=$disk_size*1024*1024*1024
     if [ "$vsize" -gt "$fsize" ]; then
-        echo "|:-COMMAND-:| `basename $0` '$1' '$vm_stat' '$SCI_CLIENT_ID' 'Flavor is smaller than image size'"
+        echo "|:-COMMAND-:| `basename $0` '$1' '$vm_stat' '$SCI_CLIENT_ID' 'flavor is smaller than image size'"
         exit -1
     fi
     qemu-img resize -q $vm_img "${disk_size}G" &> /dev/null

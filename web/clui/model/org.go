@@ -51,6 +51,7 @@ type Organization struct {
 	Name      string `gorm:"size:255;unique_index" json:"name,omitempty"`
 	DefaultSG int64
 	Members   []*Member `gorm:"foreignkey:orgID"`
+	OwnerUser *User     `gorm:"foreignkey:ID";AssociationForeignKey:Owner`
 }
 
 type Member struct {

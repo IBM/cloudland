@@ -7,16 +7,20 @@
                     Update Organization
                 </h3>
                 <div class="ui attached segment">
-                    <div class="required inline field">
+                    <div class="inline field">
                         <label for="orgname">Organization Name</label>
-                        <input id="orgname" name="orgname" autofocus required>
+                        <input id="orgname" name="orgname" value="{{ .Org.Name }}" disabled>
                     </div>
 		    {{ if $.IsAdmin }}
                     <div class="required inline field">
                         <label for="owner">Owner</label>
-                        <input id="owner"  name="owner" value="{{ .Organization.Owner }}" required>
+                        <input id="owner"  name="owner" value="{{ .Org.OwnerUser.Username }}" required>
                     </div>
 		    {{ end }}
+                    <div class="inline field">
+                        <label for="members">Members</label>
+                        <input id="members"  name="members" value="{{ range .Org.Members }}{{ .UserName }} {{ end }}" required>
+                    </div>
                     <div class="inline field">
                         <label></label>
                         <button class="ui green button">Update Organization</button>
