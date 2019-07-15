@@ -68,7 +68,7 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 	return
 }
 
-func (a *OrgAdmin) Update(ctx context.Context, orgID int64, members []string) (org *model.Organization, err error) {
+func (a *OrgAdmin) Update(ctx context.Context, orgID int64, members, users, roles []string) (org *model.Organization, err error) {
 	db := DB()
 	org = &model.Organization{Model: model.Model{ID: orgID}}
 	err = db.Set("gorm:auto_preload", true).Take(org).Take(org).Error
@@ -136,6 +136,18 @@ func (a *OrgAdmin) Update(ctx context.Context, orgID int64, members []string) (o
 		err = db.Where(member).Delete(member).Error
 		if err != nil {
 			log.Println("Failed to delete member", err)
+			continue
+		}
+	}
+	for i, user := range users {
+		role, err := strconv.Atoi(roles[i])
+		if err != nil {
+			log.Println("Failed to convert role", err)
+			continue
+		}
+		err = db.Model(&model.Member{}).Where("user_name = ? and org_id = ?", user, orgID).Update("role", role).Error
+		if err != nil {
+			log.Println("Failed to update member", err)
 			continue
 		}
 	}
@@ -293,7 +305,9 @@ func (v *OrgView) Patch(c *macaron.Context, store session.Store) {
 	redirectTo := "../orgs/" + id
 	members := c.Query("members")
 	memberList := strings.Split(members, " ")
-	_, err = orgAdmin.Update(c.Req.Context(), int64(orgID), memberList)
+	userList := c.QueryStrings("names")
+	roleList := c.QueryStrings("roles")
+	_, err = orgAdmin.Update(c.Req.Context(), int64(orgID), memberList, userList, roleList)
 	if err != nil {
 		log.Println("Failed to create organization, %v", err)
 		c.HTML(500, "500")

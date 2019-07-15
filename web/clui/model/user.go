@@ -18,8 +18,9 @@ import (
 
 type User struct {
 	Model
-	Username string `gorm:"size:255;unique_index" json:"username,omitempty"`
-	Password string `gorm:"size:255" json:"password,omitempty"`
+	Username string    `gorm:"size:255;unique_index" json:"username,omitempty"`
+	Password string    `gorm:"size:255" json:"password,omitempty"`
+	Members  []*Member `gorm:"foreignkey:UserID"`
 }
 
 func init() {

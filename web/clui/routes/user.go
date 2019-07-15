@@ -17,6 +17,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/sca/dbs"
@@ -79,24 +80,40 @@ func (a *UserAdmin) Delete(id int64) (err error) {
 	return
 }
 
-func (a *UserAdmin) Update(id int64, password string) (user *model.User, err error) {
-	if password, err = a.GenerateFromPassword(password); err != nil {
+func (a *UserAdmin) Update(id int64, password string, members []string) (user *model.User, err error) {
+	db := DB()
+	user = &model.User{Model: model.Model{ID: id}}
+	err = db.Set("gorm:auto_preload", true).Take(user).Error
+	if err != nil {
+		log.Println("DB failed to query user", err)
 		return
 	}
-	db := DB()
-	err = db.Model(&model.User{Model: model.Model{ID: id}}).Update("password", password).Error
-	if err != nil {
-		log.Println("DB failed to update user password, %v", err)
+	password = strings.TrimSpace(password)
+	if password != "" {
+		if password, err = a.GenerateFromPassword(password); err != nil {
+			return
+		}
+		err = db.Model(user).Update("password", password).Error
+		if err != nil {
+			log.Println("DB failed to update user password", err)
+			return
+		}
 	}
-	return
-}
-
-func (a *UserAdmin) Show(id int64) (user *model.User, err error) {
-	db := DB()
-	user = &model.User{}
-	err = db.Take(user, id).Error
-	if err != nil {
-		log.Println("DB failed to get user, %v", err)
+	for _, em := range user.Members {
+		found := false
+		for _, name := range members {
+			if em.OrgName == name {
+				found = true
+				break
+			}
+		}
+		if found == false {
+			err = db.Where("user_name = ? and org_name = ?", user.Username, em.OrgName).Delete(&model.Member{}).Error
+			if err != nil {
+				log.Println("DB failed to delete member", err)
+				return
+			}
+		}
 	}
 	return
 }
@@ -237,7 +254,7 @@ func (v *UserView) List(c *macaron.Context, store session.Store) {
 	c.HTML(200, "users")
 }
 
-func (v *UserView) Show(c *macaron.Context, store session.Store) {
+func (v *UserView) Edit(c *macaron.Context, store session.Store) {
 	id := c.Params("id")
 	if id == "" {
 		code := http.StatusBadRequest
@@ -251,19 +268,20 @@ func (v *UserView) Show(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	user, err := userAdmin.Show(int64(userID))
+	db := DB()
+	user := &model.User{Model: model.Model{ID: int64(userID)}}
+	err = db.Set("gorm:auto_preload", true).Take(user).Error
 	if err != nil {
-		log.Println("Failed to show user, %v", err)
+		log.Println("Failed to query user", err)
 		code := http.StatusBadRequest
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	c.Data["Username"] = user.Username
-	c.Data["UserID"] = user.ID
-	c.HTML(200, "users_show")
+	c.Data["User"] = user
+	c.HTML(200, "users_patch")
 }
 
-func (v *UserView) Update(c *macaron.Context, store session.Store) {
+func (v *UserView) Patch(c *macaron.Context, store session.Store) {
 	id := c.Params("id")
 	if id == "" {
 		code := http.StatusBadRequest
@@ -277,15 +295,17 @@ func (v *UserView) Update(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	redirectTo := "../users/" + id
 	password := c.Query("password")
-	_, err = userAdmin.Update(int64(userID), password)
+	members := c.QueryStrings("members")
+	_, err = userAdmin.Update(int64(userID), password, members)
 	if err != nil {
 		log.Println("Failed to update password, %v", err)
 		code := http.StatusInternalServerError
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	c.Redirect("/admin/users")
+	c.Redirect(redirectTo)
 }
 
 func (v *UserView) Delete(c *macaron.Context, store session.Store) (err error) {
