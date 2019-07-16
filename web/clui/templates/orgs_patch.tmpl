@@ -21,9 +21,7 @@
                         <label for="members">Members</label>
 			<input id="members"  name="members" value="{{ range .Org.Members }}{{ .UserName }} {{ end }}" required>
                     </div>
-                    <h3 class="ui top attached header">
-                        Member List
-                    </h3>
+                    <h3 class="ui top attached header">{{ .Org.Name }} Member List</h3>
 		    <div class="ui divider"></div>
 		    {{ range .Org.Members }}
                     <div class="inline field">

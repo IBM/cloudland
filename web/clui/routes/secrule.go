@@ -147,13 +147,18 @@ func (a *SecruleAdmin) List(offset, limit int64, order string, secgroupID int64)
 		order = "created_at"
 	}
 
+	where := fmt.Sprintf("secgroup = %d", secgroupID)
+	wm := memberShip.GetWhere()
+	if wm != "" {
+		where = fmt.Sprintf("%s and %s", where, wm)
+	}
 	secrules = []*model.SecurityRule{}
-	if err = db.Model(&model.SecurityRule{}).Where("secgroup = ?", secgroupID).Count(&total).Error; err != nil {
+	if err = db.Model(&model.SecurityRule{}).Where(where).Count(&total).Error; err != nil {
 		log.Println("DB failed to count security rule(s), %v", err)
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Where("secgroup = ?", secgroupID).Find(&secrules).Error; err != nil {
+	if err = db.Where(where).Find(&secrules).Error; err != nil {
 		log.Println("DB failed to query security rule(s), %v", err)
 		return
 	}

@@ -128,13 +128,21 @@ func (a *UserAdmin) List(offset, limit int64, order string) (total int64, users 
 		order = "created_at"
 	}
 
-	users = []*model.User{}
-	if err = db.Model(&model.User{}).Count(&total).Error; err != nil {
-		log.Println("DB failed to count user, %v", err)
+	org := &model.Organization{Model: model.Model{ID: memberShip.OrgID}}
+	if err = db.Set("gorm:auto_preload", true).Take(org).Error; err != nil {
+		log.Println("Failed to query organization", err)
 		return
 	}
+	var userIDs []int64
+	if org.Members != nil {
+		total = int64(len(org.Members))
+		for _, member := range org.Members {
+			userIDs = append(userIDs, member.UserID)
+		}
+	}
+	log.Println("$$$$$$$$$$$$$$ userIDs = ", userIDs)
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Find(&users).Error; err != nil {
+	if err = db.Where(userIDs).Find(&users).Error; err != nil {
 		log.Println("DB failed to get user list, %v", err)
 		return
 	}
@@ -167,6 +175,7 @@ func (a *UserAdmin) AccessToken(uid int64, username, organization string) (oid i
 		return
 	}
 	oid = member.OrgID
+	role = member.Role
 	token, issueAt, expiresAt, err = NewToken(username, organization, uid, oid, role)
 	return
 }
@@ -279,6 +288,56 @@ func (v *UserView) Edit(c *macaron.Context, store session.Store) {
 	}
 	c.Data["User"] = user
 	c.HTML(200, "users_patch")
+}
+
+func (v *UserView) Change(c *macaron.Context, store session.Store) {
+	id := c.Params("id")
+	if id == "" {
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	userID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Failed to get input id, %v", err)
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	orgName := c.Query("org")
+	db := DB()
+	user := &model.User{Model: model.Model{ID: int64(userID)}}
+	err = db.Set("gorm:auto_preload", true).Take(user).Error
+	if err != nil {
+		log.Println("Failed to query user", err)
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	redirectTo := "/instances"
+	orgName = strings.TrimSpace(orgName)
+	if orgName != "" {
+		for _, em := range user.Members {
+			if em.OrgName == orgName {
+				org := &model.Organization{Model: model.Model{ID: em.OrgID}}
+				err = db.Take(org).Error
+				if err != nil {
+					log.Println("Failed to query organization")
+				} else {
+					store.Set("oid", org.ID)
+					store.Set("role", em.Role)
+					store.Set("org", org.Name)
+					store.Set("defsg", org.DefaultSG)
+					memberShip.OrgID = org.ID
+					memberShip.OrgName = org.Name
+					memberShip.Role = em.Role
+				}
+				break
+			}
+		}
+	}
+	c.Data["User"] = user
+	c.Redirect(redirectTo)
 }
 
 func (v *UserView) Patch(c *macaron.Context, store session.Store) {

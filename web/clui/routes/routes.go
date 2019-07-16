@@ -70,6 +70,7 @@ func New() (m *macaron.Macaron) {
 	m.Get("/users", userView.List)
 	m.Get("/users/:id", userView.Edit)
 	m.Post("/users/:id", userView.Patch)
+	m.Get("/users/:id/chorg", userView.Change)
 	m.Delete("/users/:id", userView.Delete)
 	m.Get("/users/new", userView.New)
 	m.Post("/users/new", userView.Create)
@@ -148,6 +149,11 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 		if login == "admin" {
 			c.Data["IsAdmin"] = true
 		}
+		memberShip.OrgID = store.Get("oid").(int64)
+		memberShip.UserID = store.Get("uid").(int64)
+		memberShip.UserName = store.Get("login").(string)
+		memberShip.OrgName = store.Get("org").(string)
+		memberShip.Role = store.Get("role").(model.Role)
 		c.Data["Organization"] = store.Get("org").(string)
 		c.Data["Members"] = store.Get("members").([]*model.Member)
 	} else if link != "" && link != "/" && !strings.HasPrefix(link, "/login") {

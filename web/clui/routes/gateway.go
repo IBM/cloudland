@@ -251,13 +251,14 @@ func (a *GatewayAdmin) List(offset, limit int64, order string) (total int64, gat
 		order = "created_at"
 	}
 
+	where := memberShip.GetWhere()
 	gateways = []*model.Gateway{}
-	if err = db.Model(&model.Gateway{}).Count(&total).Error; err != nil {
+	if err = db.Model(&model.Gateway{}).Where(where).Count(&total).Error; err != nil {
 		log.Println("DB failed to count gateway, %v", err)
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Set("gorm:auto_preload", true).Find(&gateways).Error; err != nil {
+	if err = db.Set("gorm:auto_preload", true).Where(where).Find(&gateways).Error; err != nil {
 		log.Println("DB failed to query gateways, %v", err)
 		return
 	}

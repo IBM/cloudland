@@ -135,12 +135,13 @@ func (a *VolumeAdmin) List(offset, limit int64, order string) (total int64, volu
 		order = "created_at"
 	}
 
+	where := memberShip.GetWhere()
 	volumes = []*model.Volume{}
-	if err = db.Model(&model.Volume{}).Count(&total).Error; err != nil {
+	if err = db.Model(&model.Volume{}).Where(where).Count(&total).Error; err != nil {
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Preload("Instance").Find(&volumes).Error; err != nil {
+	if err = db.Preload("Instance").Where(where).Find(&volumes).Error; err != nil {
 		return
 	}
 

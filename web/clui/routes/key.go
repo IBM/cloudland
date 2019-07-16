@@ -64,13 +64,14 @@ func (a *KeyAdmin) List(offset, limit int64, order string) (total int64, keys []
 		order = "created_at"
 	}
 
+	where := memberShip.GetWhere()
 	keys = []*model.Key{}
-	if err = db.Model(&model.Key{}).Count(&total).Error; err != nil {
+	if err = db.Model(&model.Key{}).Where(where).Count(&total).Error; err != nil {
 		log.Println("DB failed to count keys, %v", err)
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Find(&keys).Error; err != nil {
+	if err = db.Where(where).Find(&keys).Error; err != nil {
 		log.Println("DB failed to query keys, %v", err)
 		return
 	}

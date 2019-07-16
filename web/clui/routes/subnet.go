@@ -357,12 +357,17 @@ func (a *SubnetAdmin) List(offset, limit int64, order string) (total int64, subn
 		order = "created_at"
 	}
 
+	where := ""
+	wm := memberShip.GetWhere()
+	if wm != "" {
+		where = fmt.Sprintf("type != 'internal' or %s", wm)
+	}
 	subnets = []*model.Subnet{}
-	if err = db.Model(&model.Subnet{}).Count(&total).Error; err != nil {
+	if err = db.Model(&model.Subnet{}).Where(where).Count(&total).Error; err != nil {
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Find(&subnets).Error; err != nil {
+	if err = db.Where(where).Find(&subnets).Error; err != nil {
 		return
 	}
 

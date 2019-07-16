@@ -494,12 +494,13 @@ func (a *InstanceAdmin) List(offset, limit int64, order string) (total int64, in
 		order = "created_at"
 	}
 
+	where := memberShip.GetWhere()
 	instances = []*model.Instance{}
-	if err = db.Model(&model.Instance{}).Count(&total).Error; err != nil {
+	if err = db.Model(&model.Instance{}).Where(where).Count(&total).Error; err != nil {
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Set("gorm:auto_preload", true).Find(&instances).Error; err != nil {
+	if err = db.Set("gorm:auto_preload", true).Where(where).Find(&instances).Error; err != nil {
 		log.Println("Failed to query instance(s), %v", err)
 		return
 	}

@@ -124,13 +124,14 @@ func (a *PortmapAdmin) List(offset, limit int64, order string) (total int64, por
 		order = "created_at"
 	}
 
+	where := memberShip.GetWhere()
 	portmaps = []*model.Portmap{}
-	if err = db.Model(&model.Portmap{}).Count(&total).Error; err != nil {
+	if err = db.Model(&model.Portmap{}).Where(where).Count(&total).Error; err != nil {
 		log.Println("DB failed to count portmap(s), %v", err)
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Find(&portmaps).Error; err != nil {
+	if err = db.Where(where).Find(&portmaps).Error; err != nil {
 		log.Println("DB failed to query portmap(s), %v", err)
 		return
 	}

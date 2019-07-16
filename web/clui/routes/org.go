@@ -92,7 +92,7 @@ func (a *OrgAdmin) Update(ctx context.Context, orgID int64, members, users, role
 			continue
 		}
 		user := &model.User{Username: name}
-		err = db.Model(user).Take(user).Error
+		err = db.Model(user).Where(user).Take(user).Error
 		if err != nil {
 			log.Println("Failed to query user", err)
 			continue

@@ -105,13 +105,14 @@ func (a *SecgroupAdmin) List(offset, limit int64, order string) (total int64, se
 		order = "created_at"
 	}
 
+	where := memberShip.GetWhere()
 	secgroups = []*model.SecurityGroup{}
-	if err = db.Model(&model.SecurityGroup{}).Count(&total).Error; err != nil {
+	if err = db.Model(&model.SecurityGroup{}).Where(where).Count(&total).Error; err != nil {
 		log.Println("DB failed to count security group(s), %v", err)
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Find(&secgroups).Error; err != nil {
+	if err = db.Where(where).Find(&secgroups).Error; err != nil {
 		log.Println("DB failed to query security group(s), %v", err)
 		return
 	}
