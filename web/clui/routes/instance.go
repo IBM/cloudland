@@ -592,20 +592,20 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
-	subnets := []*model.Subnet{}
-	if err := db.Find(&subnets).Error; err != nil {
+	_, subnets, err := subnetAdmin.List(0, 0, "")
+	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
 	}
-	secgroups := []*model.SecurityGroup{}
-	if err := db.Find(&secgroups).Error; err != nil {
+	_, secgroups, err := secgroupAdmin.List(0, 0, "")
+	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
 	}
-	keys := []*model.Key{}
-	if err := db.Find(&keys).Error; err != nil {
+	_, keys, err := keyAdmin.List(0, 0, "")
+	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return

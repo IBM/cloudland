@@ -310,13 +310,6 @@ func (v *UserView) Change(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	permit, err := memberShip.CheckOwner(model.None, "users", int64(userID))
-	if !permit {
-		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
-		return
-	}
 	orgName := c.Query("org")
 	db := DB()
 	user := &model.User{Model: model.Model{ID: int64(userID)}}
