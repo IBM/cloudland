@@ -192,6 +192,13 @@ func (v *VolumeView) Delete(c *macaron.Context, store session.Store) (err error)
 }
 
 func (v *VolumeView) New(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	c.HTML(200, "volumes_new")
 }
 
@@ -247,6 +254,13 @@ func (v *VolumeView) Patch(c *macaron.Context, store session.Store) {
 }
 
 func (v *VolumeView) Create(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	redirectTo := "../volumes"
 	name := c.Query("name")
 	size := c.Query("size")

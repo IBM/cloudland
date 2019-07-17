@@ -140,7 +140,6 @@ func (a *UserAdmin) List(offset, limit int64, order string) (total int64, users 
 			userIDs = append(userIDs, member.UserID)
 		}
 	}
-	log.Println("$$$$$$$$$$$$$$ userIDs = ", userIDs)
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
 	if err = db.Where(userIDs).Find(&users).Error; err != nil {
 		log.Println("DB failed to get user list, %v", err)

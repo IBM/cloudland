@@ -126,10 +126,24 @@ func (v *KeyView) Delete(c *macaron.Context, store session.Store) (err error) {
 }
 
 func (v *KeyView) New(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	c.HTML(200, "keys_new")
 }
 
 func (v *KeyView) Create(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	redirectTo := "../keys"
 	name := c.Query("name")
 	pubkey := c.Query("pubkey")

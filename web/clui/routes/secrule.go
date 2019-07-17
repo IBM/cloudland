@@ -228,6 +228,20 @@ func (v *SecruleView) Delete(c *macaron.Context, store session.Store) (err error
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	permit, err := memberShip.CheckOwner(model.Writer, "security_groups", int64(secgroupID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	permit, err = memberShip.CheckOwner(model.Writer, "security_rules", int64(secruleID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	err = secruleAdmin.Delete(c.Req.Context(), int64(secgroupID), int64(secruleID))
 	if err != nil {
 		log.Println("Failed to delete security rule, %v", err)
@@ -242,10 +256,24 @@ func (v *SecruleView) Delete(c *macaron.Context, store session.Store) (err error
 }
 
 func (v *SecruleView) New(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	c.HTML(200, "secrules_new")
 }
 
 func (v *SecruleView) Create(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	redirectTo := "../secrules"
 	remoteIp := c.Query("remoteip")
 	sgid := c.Params("sgid")

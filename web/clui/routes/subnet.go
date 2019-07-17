@@ -418,10 +418,24 @@ func (v *SubnetView) Delete(c *macaron.Context, store session.Store) (err error)
 }
 
 func (v *SubnetView) New(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	c.HTML(200, "subnets_new")
 }
 
 func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	redirectTo := "../subnets"
 	name := c.Query("name")
 	vlan := c.Query("vlan")

@@ -8,6 +8,7 @@ SPDX-License-Identifier: Apache-2.0
 package routes
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -120,10 +121,22 @@ func (v *FlavorView) Delete(c *macaron.Context, store session.Store) (err error)
 }
 
 func (v *FlavorView) New(c *macaron.Context, store session.Store) {
+	if memberShip.UserName != "admin" {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	c.HTML(200, "flavors_new")
 }
 
 func (v *FlavorView) Create(c *macaron.Context, store session.Store) {
+	if memberShip.UserName != "admin" {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	redirectTo := "../flavors"
 	name := c.Query("name")
 	cores := c.Query("cpu")

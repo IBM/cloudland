@@ -24,6 +24,7 @@ type Model struct {
 	UpdatedAt time.Time
 	DeletedAt *time.Time `sql:"index"`
 	UUID      string     `gorm:"type:varchar(64)"`
+	Creater   int64      `gorm:"default:1"`
 	Owner     int64      `gorm:"default:1"`
 }
 

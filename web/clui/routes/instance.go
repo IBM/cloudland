@@ -545,6 +545,13 @@ func (v *InstanceView) Delete(c *macaron.Context, store session.Store) (err erro
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instanceID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	err = instanceAdmin.Delete(c.Req.Context(), int64(instanceID))
 	if err != nil {
 		code := http.StatusInternalServerError
@@ -558,6 +565,13 @@ func (v *InstanceView) Delete(c *macaron.Context, store session.Store) (err erro
 }
 
 func (v *InstanceView) New(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	db := DB()
 	images := []*model.Image{}
 	if err := db.Find(&images).Error; err != nil {
@@ -676,6 +690,13 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 }
 
 func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	redirectTo := "../instances"
 	hostname := c.Query("hostname")
 	cnt := c.Query("count")

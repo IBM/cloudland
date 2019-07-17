@@ -153,6 +153,13 @@ func (v *SecgroupView) Delete(c *macaron.Context, store session.Store) (err erro
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	permit, err := memberShip.CheckOwner(model.Writer, "security_groups", int64(secgroupID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	err = secgroupAdmin.Delete(int64(secgroupID))
 	if err != nil {
 		log.Println("Failed to delete security group, %v", err)
@@ -167,10 +174,24 @@ func (v *SecgroupView) Delete(c *macaron.Context, store session.Store) (err erro
 }
 
 func (v *SecgroupView) New(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	c.HTML(200, "secgroups_new")
 }
 
 func (v *SecgroupView) Create(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	redirectTo := "../secgroups"
 	name := c.Query("name")
 	isdefStr := c.Query("isdefault")

@@ -188,6 +188,13 @@ func (v *FloatingIpView) Delete(c *macaron.Context, store session.Store) (err er
 }
 
 func (v *FloatingIpView) New(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	db := DB()
 	instances := []*model.Instance{}
 	if err := db.Preload("Interfaces", "primary_if = ?", true).Preload("Interfaces.Address").Find(&instances).Error; err != nil {
@@ -198,6 +205,13 @@ func (v *FloatingIpView) New(c *macaron.Context, store session.Store) {
 }
 
 func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	redirectTo := "../floatingips"
 	instance := c.Query("instance")
 	ftype := c.Query("ftype")

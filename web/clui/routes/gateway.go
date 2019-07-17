@@ -300,6 +300,13 @@ func (v *GatewayView) Delete(c *macaron.Context, store session.Store) (err error
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	permit, err := memberShip.CheckOwner(model.Writer, "gateways", int64(gatewayID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	err = gatewayAdmin.Delete(c.Req.Context(), int64(gatewayID))
 	if err != nil {
 		log.Println("Failed to delete gateway, %v", err)
@@ -314,6 +321,13 @@ func (v *GatewayView) Delete(c *macaron.Context, store session.Store) (err error
 }
 
 func (v *GatewayView) New(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	db := dbs.DB()
 	subnets := []*model.Subnet{}
 	if err := db.Find(&subnets).Error; err != nil {
@@ -399,6 +413,13 @@ func (v *GatewayView) Patch(c *macaron.Context, store session.Store) {
 }
 
 func (v *GatewayView) Create(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	redirectTo := "../gateways"
 	name := c.Query("name")
 	pubSubnet := c.Query("public")
