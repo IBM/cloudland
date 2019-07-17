@@ -22,7 +22,6 @@ import (
 	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/apparentlymart/go-cidr/cidr"
 	"github.com/go-macaron/session"
-	uuidPk "github.com/google/uuid"
 	macaron "gopkg.in/macaron.v1"
 )
 
@@ -80,7 +79,7 @@ func checkIfExistVni(vni int64) (result bool, err error) {
 	}
 }
 
-func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, gateway, start, end, rtype string) (subnet *model.Subnet, err error) {
+func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, gateway, start, end, rtype, uuid string) (subnet *model.Subnet, err error) {
 	db := DB()
 	vlanNo := 0
 	if vlan == "" {
@@ -135,7 +134,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 	}
 	gateway = fmt.Sprintf("%s/%d", gateway, preSize)
 	subnet = &model.Subnet{
-		Model:   model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID},
+		Model:   model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID, UUID: uuid},
 		Name:    name,
 		Network: first.String(),
 		Netmask: netmask,
