@@ -145,15 +145,15 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 	log.Println(link)
 	c.Data["Link"] = link
 	if login, ok := store.Get("login").(string); ok {
-		c.Data["IsSignedIn"] = true
-		if login == "admin" {
-			c.Data["IsAdmin"] = true
-		}
 		memberShip.OrgID = store.Get("oid").(int64)
 		memberShip.UserID = store.Get("uid").(int64)
 		memberShip.UserName = store.Get("login").(string)
 		memberShip.OrgName = store.Get("org").(string)
 		memberShip.Role = store.Get("role").(model.Role)
+		c.Data["IsSignedIn"] = true
+		if login == "admin" || memberShip.Role == model.Admin {
+			c.Data["IsAdmin"] = true
+		}
 		c.Data["Organization"] = store.Get("org").(string)
 		c.Data["Members"] = store.Get("members").([]*model.Member)
 	} else if link != "" && link != "/" && !strings.HasPrefix(link, "/login") {

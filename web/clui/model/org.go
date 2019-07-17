@@ -25,11 +25,11 @@ func init() {
 type Role int
 
 const (
-	None Role = iota
-	Reader
-	Writer
-	Owner
-	Admin
+	None   Role = iota /* No permissions  */
+	Reader             /* Get List permissions */
+	Writer             /* Create Edit Patch permission */
+	Owner              /* Invite or Remove user to from org */
+	Admin              /* Create user and org */
 )
 
 func (r Role) String() string {

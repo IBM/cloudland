@@ -19,6 +19,7 @@ type Network struct {
 	Hyper   int32  `gorm:"default:-1"`
 	Peer    int32  `gorm:"default:-1"`
 	Vlan    int64
+	Type    string
 	Subnets []*Subnet `gorm:"foreignkey:Vlan;AssociationForeignKey:Vlan;PRELOAD:false"`
 }
 

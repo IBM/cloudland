@@ -80,12 +80,9 @@ func checkIfExistVni(vni int64) (result bool, err error) {
 	}
 }
 
-func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, gateway, start, end, rtype, uuid string) (subnet *model.Subnet, err error) {
+func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, gateway, start, end, rtype string) (subnet *model.Subnet, err error) {
 	db := DB()
 	vlanNo := 0
-	if uuid == "" {
-		uuid = uuidPk.New().String()
-	}
 	if vlan == "" {
 		vlanNo, err = getValidVni()
 	} else {
@@ -138,7 +135,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 	}
 	gateway = fmt.Sprintf("%s/%d", gateway, preSize)
 	subnet = &model.Subnet{
-		Model:   model.Model{UUID: uuid},
+		Model:   model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID},
 		Name:    name,
 		Network: first.String(),
 		Netmask: netmask,
@@ -156,7 +153,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 	ip := net.ParseIP(start)
 	for {
 		ipstr := fmt.Sprintf("%s/%d", ip.String(), preSize)
-		address := &model.Address{Address: ipstr, Netmask: netmask, Type: "ipv4", SubnetID: subnet.ID}
+		address := &model.Address{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Address: ipstr, Netmask: netmask, Type: "ipv4", SubnetID: subnet.ID}
 		err = db.Create(address).Error
 		if err != nil {
 			log.Println("Database create address failed, %v", err)
@@ -169,9 +166,11 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 			ip = cidr.Inc(ip)
 		}
 	}
-	netlink := &model.Network{Vlan: int64(vlanNo)}
+	netlink := &model.Network{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Vlan: int64(vlanNo), Type: "vxlan"}
+	if vlanNo < 4096 {
+		netlink.Type = "vlan"
+	}
 	if count < 1 {
-		netlink.UUID = uuid
 		err = db.Create(netlink).Error
 		if err != nil {
 			log.Println("Database failed to create network", err)

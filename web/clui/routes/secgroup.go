@@ -29,7 +29,7 @@ type SecgroupView struct{}
 
 func (a *SecgroupAdmin) Create(ctx context.Context, name string, isDefault bool) (secgroup *model.SecurityGroup, err error) {
 	db := DB()
-	secgroup = &model.SecurityGroup{Name: name, IsDefault: isDefault}
+	secgroup = &model.SecurityGroup{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Name: name, IsDefault: isDefault}
 	err = db.Create(secgroup).Error
 	if err != nil {
 		log.Println("DB failed to create security group, %v", err)

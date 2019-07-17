@@ -29,7 +29,7 @@ type VolumeView struct{}
 
 func (a *VolumeAdmin) Create(ctx context.Context, name string, size int) (volume *model.Volume, err error) {
 	db := DB()
-	volume = &model.Volume{Name: name, Format: "raw", Size: int32(size), Status: "pending"}
+	volume = &model.Volume{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Name: name, Format: "raw", Size: int32(size), Status: "pending"}
 	err = db.Create(volume).Error
 	if err != nil {
 		log.Println("DB failed to create volume", err)

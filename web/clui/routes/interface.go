@@ -194,7 +194,7 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 	}
 	_, err = interfaceAdmin.Update(c.Req.Context(), int64(ifaceID), name, sgIDs)
 	if err != nil {
-		log.Println("Create instance failed, %v", err)
+		log.Println("Failed to update interface", err)
 		c.HTML(http.StatusBadRequest, err.Error())
 	}
 	c.Redirect(redirectTo)

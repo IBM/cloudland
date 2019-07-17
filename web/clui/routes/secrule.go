@@ -88,6 +88,7 @@ func (a *SecruleAdmin) Create(ctx context.Context, sgID int64, remoteIp, directi
 		return
 	}
 	secrule = &model.SecurityRule{
+		Model:     model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID},
 		Secgroup:  sgID,
 		RemoteIp:  remoteIp,
 		Direction: direction,

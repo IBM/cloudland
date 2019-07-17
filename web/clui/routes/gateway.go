@@ -42,7 +42,7 @@ func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int
 		log.Println("Failed to get valid vrrp vni %s, %v", vni, err)
 		return
 	}
-	gateway = &model.Gateway{Name: name, VrrpVni: int64(vni), VrrpAddr: "169.254.169.250/24", PeerAddr: "169.254.169.251/24", Status: "pending"}
+	gateway = &model.Gateway{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Name: name, VrrpVni: int64(vni), VrrpAddr: "169.254.169.250/24", PeerAddr: "169.254.169.251/24", Status: "pending"}
 	err = db.Create(gateway).Error
 	if err != nil {
 		log.Println("DB failed to create gateway, %v", err)

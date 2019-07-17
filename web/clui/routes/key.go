@@ -28,7 +28,7 @@ type KeyView struct{}
 
 func (a *KeyAdmin) Create(name, pubkey string) (key *model.Key, err error) {
 	db := DB()
-	key = &model.Key{Name: name, PublicKey: pubkey}
+	key = &model.Key{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Name: name, PublicKey: pubkey}
 	err = db.Create(key).Error
 	if err != nil {
 		log.Println("DB failed to create key, %v", err)

@@ -120,7 +120,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		if count > 1 {
 			hostname = fmt.Sprintf("%s-%d", prefix, i+1)
 		}
-		instance = &model.Instance{Hostname: hostname, ImageID: imageID, Image: image, FlavorID: flavorID, Flavor: flavor, Keys: keys, Userdata: userdata, Status: "pending"}
+		instance = &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, ImageID: imageID, Image: image, FlavorID: flavorID, Flavor: flavor, Keys: keys, Userdata: userdata, Status: "pending"}
 		err = db.Create(instance).Error
 		if err != nil {
 			log.Println("DB create instance failed", err)
@@ -315,7 +315,7 @@ func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subne
 	}
 	netlink := subnet.Netlink
 	if netlink == nil {
-		netlink = &model.Network{Vlan: subnet.Vlan}
+		netlink = &model.Network{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Vlan: subnet.Vlan}
 		err = db.Create(netlink).Error
 		if err != nil {
 			log.Println("Failed to query network")

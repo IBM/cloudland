@@ -74,7 +74,7 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 	return
 }
 
-func (a *OrgAdmin) Update(ctx context.Context, orgID int64, members, users, roles []string) (org *model.Organization, err error) {
+func (a *OrgAdmin) Update(ctx context.Context, orgID int64, members, users []string, roles []model.Role) (org *model.Organization, err error) {
 	db := DB()
 	org = &model.Organization{Model: model.Model{ID: orgID}}
 	err = db.Set("gorm:auto_preload", true).Take(org).Take(org).Error
@@ -146,12 +146,7 @@ func (a *OrgAdmin) Update(ctx context.Context, orgID int64, members, users, role
 		}
 	}
 	for i, user := range users {
-		role, err := strconv.Atoi(roles[i])
-		if err != nil {
-			log.Println("Failed to convert role", err)
-			continue
-		}
-		err = db.Model(&model.Member{}).Where("user_name = ? and org_id = ?", user, orgID).Update("role", role).Error
+		err = db.Model(&model.Member{}).Where("user_name = ? and org_id = ?", user, orgID).Update("role", roles[i]).Error
 		if err != nil {
 			log.Println("Failed to update member", err)
 			continue
@@ -300,7 +295,7 @@ func (v *OrgView) Edit(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	if memberShip.Role != model.Owner || memberShip.OrgID != int64(orgID) {
+	if memberShip.Role < model.Owner || memberShip.OrgID != int64(orgID) {
 		log.Println("Not authorized for this operation")
 		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
@@ -328,7 +323,7 @@ func (v *OrgView) Patch(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	if memberShip.Role != model.Owner || memberShip.OrgID != int64(orgID) {
+	if memberShip.Role < model.Owner || memberShip.OrgID != int64(orgID) {
 		log.Println("Not authorized for this operation")
 		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
@@ -338,7 +333,23 @@ func (v *OrgView) Patch(c *macaron.Context, store session.Store) {
 	members := c.Query("members")
 	memberList := strings.Split(members, " ")
 	userList := c.QueryStrings("names")
-	roleList := c.QueryStrings("roles")
+	roles := c.QueryStrings("roles")
+	var roleList []model.Role
+	for _, role := range roles {
+		role, err := strconv.Atoi(role)
+		if err != nil {
+			log.Println("Failed to convert role", err)
+			code := http.StatusBadRequest
+			c.Error(code, http.StatusText(code))
+			return
+		}
+		if memberShip.Role < model.Role(role) {
+			log.Println("Not authorized for this operation")
+			code := http.StatusUnauthorized
+			c.Error(code, http.StatusText(code))
+			return
+		}
+	}
 	_, err = orgAdmin.Update(c.Req.Context(), int64(orgID), memberList, userList, roleList)
 	if err != nil {
 		log.Println("Failed to create organization, %v", err)
