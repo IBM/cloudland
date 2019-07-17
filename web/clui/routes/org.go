@@ -50,7 +50,7 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 		log.Println("Failed to create security group", err)
 	}
 	org = &model.Organization{
-		Model:     model.Model{Owner: user.ID},
+		Model:     model.Model{Owner: user.ID, Creater: memberShip.UserID},
 		Name:      name,
 		DefaultSG: secGroup.ID,
 	}
@@ -63,6 +63,12 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 	err = db.Create(member).Error
 	if err != nil {
 		log.Println("DB failed to create organization member ", err)
+		return
+	}
+	user.Owner = org.ID
+	err = db.Save(user).Error
+	if err != nil {
+		log.Println("DB failed to update user owner", err)
 		return
 	}
 	return
@@ -235,6 +241,13 @@ func (v *OrgView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *OrgView) Delete(c *macaron.Context, store session.Store) (err error) {
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	id := c.Params("id")
 	if id == "" {
 		log.Println("ID is empty, %v", err)
@@ -263,6 +276,13 @@ func (v *OrgView) Delete(c *macaron.Context, store session.Store) (err error) {
 }
 
 func (v *OrgView) New(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	c.HTML(200, "orgs_new")
 }
 
@@ -277,6 +297,12 @@ func (v *OrgView) Edit(c *macaron.Context, store session.Store) {
 	orgID, err := strconv.Atoi(id)
 	if err != nil {
 		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	if memberShip.Role != model.Owner || memberShip.OrgID != int64(orgID) {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
 		return
 	}
@@ -302,6 +328,12 @@ func (v *OrgView) Patch(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	if memberShip.Role != model.Owner || memberShip.OrgID != int64(orgID) {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	redirectTo := "../orgs/" + id
 	members := c.Query("members")
 	memberList := strings.Split(members, " ")
@@ -316,6 +348,13 @@ func (v *OrgView) Patch(c *macaron.Context, store session.Store) {
 }
 
 func (v *OrgView) Create(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	redirectTo := "../orgs"
 	name := c.Query("name")
 	owner := c.Query("owner")

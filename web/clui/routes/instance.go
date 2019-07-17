@@ -515,6 +515,13 @@ func (a *InstanceAdmin) List(offset, limit int64, order string) (total int64, in
 }
 
 func (v *InstanceView) List(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
 	order := c.Query("order")
@@ -625,6 +632,13 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instanceID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	instance := &model.Instance{Model: model.Model{ID: int64(instanceID)}}
 	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
 		log.Println("Image query failed", err)
@@ -664,6 +678,13 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 	instanceID, err := strconv.Atoi(id)
 	if err != nil {
 		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instanceID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
 		return
 	}

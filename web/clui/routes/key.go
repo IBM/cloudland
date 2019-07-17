@@ -80,6 +80,13 @@ func (a *KeyAdmin) List(offset, limit int64, order string) (total int64, keys []
 }
 
 func (v *KeyView) List(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
 	order := c.Query("order")
@@ -109,6 +116,13 @@ func (v *KeyView) Delete(c *macaron.Context, store session.Store) (err error) {
 	if err != nil {
 		log.Println("Invalid key id, %v", err)
 		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "keys", int64(keyID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
 		return
 	}

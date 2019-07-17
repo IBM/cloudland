@@ -125,6 +125,13 @@ func (v *InterfaceView) Edit(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	permit, err := memberShip.CheckOwner(model.Writer, "interfaces", int64(ifaceID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	iface := &model.Interface{Model: model.Model{ID: int64(ifaceID)}}
 	if err = db.Set("gorm:auto_preload", true).Take(iface).Error; err != nil {
 		log.Println("Image query failed", err)
@@ -160,6 +167,13 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 	ifaceID, err := strconv.Atoi(id)
 	if err != nil {
 		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "interfaces", int64(ifaceID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
 		return
 	}

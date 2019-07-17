@@ -149,6 +149,13 @@ func (a *VolumeAdmin) List(offset, limit int64, order string) (total int64, volu
 }
 
 func (v *VolumeView) List(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
 	order := c.Query("order")
@@ -176,6 +183,13 @@ func (v *VolumeView) Delete(c *macaron.Context, store session.Store) (err error)
 	volumeID, err := strconv.Atoi(id)
 	if err != nil {
 		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "volumes", int64(volumeID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
 		return
 	}
@@ -211,6 +225,13 @@ func (v *VolumeView) Edit(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	permit, err := memberShip.CheckOwner(model.Writer, "volumes", int64(volID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	volume := &model.Volume{Model: model.Model{ID: int64(volID)}}
 	if err := db.Preload("Instance").Take(volume).Error; err != nil {
 		c.Data["ErrorMsg"] = err.Error()
@@ -239,9 +260,23 @@ func (v *VolumeView) Patch(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	permit, err := memberShip.CheckOwner(model.Writer, "volumes", int64(volID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	instID, err := strconv.Atoi(instance)
 	if err != nil {
 		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	permit, err = memberShip.CheckOwner(model.Writer, "instances", int64(instID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
 		return
 	}

@@ -40,10 +40,18 @@ func (a *UserAdmin) Create(username, password string) (user *model.User, err err
 	if password, err = a.GenerateFromPassword(password); err != nil {
 		return
 	}
-	user = &model.User{Username: username, Password: password}
+	user = &model.User{Model: model.Model{Creater: memberShip.UserID}, Username: username, Password: password}
 	err = db.Create(user).Error
 	if err != nil {
 		log.Println("DB failed to create user, %v", err)
+	}
+	if memberShip.OrgName != "admin" {
+		member := &model.Member{UserID: user.ID, UserName: username, OrgID: memberShip.OrgID, OrgName: memberShip.OrgName, Role: model.Reader}
+		err = db.Create(member).Error
+		if err != nil {
+			log.Println("DB failed to create organization member ", err)
+			return
+		}
 	}
 	return
 }
@@ -58,24 +66,9 @@ func (a *UserAdmin) Delete(id int64) (err error) {
 			db.Rollback()
 		}
 	}()
-	ids := []int64{}
-	if id == 0 { // delete all
-		users := []model.User{}
-		if err = db.Select("id").Find(&users).Error; err != nil {
-			log.Println("DB failed to find users, %v", err)
-			return
-		}
-		for _, user := range users {
-			ids = append(ids, user.ID)
-		}
-	} else {
-		ids = append(ids, id)
-	}
-	for _, id = range ids {
-		if err = db.Delete(&model.User{Model: model.Model{ID: id}}).Error; err != nil {
-			log.Println("DB failed to delete user, %v", err)
-			return
-		}
+	if err = db.Delete(&model.User{Model: model.Model{ID: id}}).Error; err != nil {
+		log.Println("DB failed to delete user, %v", err)
+		return
 	}
 	return
 }
@@ -244,6 +237,13 @@ func (v *UserView) LoginPost(c *macaron.Context, store session.Store) {
 }
 
 func (v *UserView) List(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
 	order := c.Query("order")
@@ -276,6 +276,13 @@ func (v *UserView) Edit(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	permit, err := memberShip.CheckUser(int64(userID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	db := DB()
 	user := &model.User{Model: model.Model{ID: int64(userID)}}
 	err = db.Set("gorm:auto_preload", true).Take(user).Error
@@ -300,6 +307,13 @@ func (v *UserView) Change(c *macaron.Context, store session.Store) {
 	if err != nil {
 		log.Println("Failed to get input id, %v", err)
 		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.None, "users", int64(userID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
 		return
 	}
@@ -353,6 +367,13 @@ func (v *UserView) Patch(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	permit, err := memberShip.CheckUser(int64(userID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	redirectTo := "../users/" + id
 	password := c.Query("password")
 	members := c.QueryStrings("members")
@@ -367,6 +388,13 @@ func (v *UserView) Patch(c *macaron.Context, store session.Store) {
 }
 
 func (v *UserView) Delete(c *macaron.Context, store session.Store) (err error) {
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	id := c.Params("id")
 	if id == "" {
 		log.Println("User id is empty, %v", err)
@@ -388,21 +416,6 @@ func (v *UserView) Delete(c *macaron.Context, store session.Store) (err error) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	/*
-		orgs, err := orgAdmin.List(int64(userID))
-		if err != nil {
-			code := http.StatusInternalServerError
-			c.Error(code, http.StatusText(code))
-			return
-		}
-		for _, org := range orgs {
-			if err = orgAdmin.Delete(org.ID); err != nil {
-				code := http.StatusInternalServerError
-				c.Error(code, http.StatusText(code))
-				return
-			}
-		}
-	*/
 	c.JSON(200, map[string]interface{}{
 		"redirect": "/users",
 	})
@@ -410,10 +423,24 @@ func (v *UserView) Delete(c *macaron.Context, store session.Store) (err error) {
 }
 
 func (v *UserView) New(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	c.HTML(200, "users_new")
 }
 
 func (v *UserView) Create(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	redirectTo := "/users"
 	username := c.Query("username")
 	password := c.Query("password")

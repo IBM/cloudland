@@ -29,6 +29,7 @@ const (
 	Reader
 	Writer
 	Owner
+	Admin
 )
 
 func (r Role) String() string {
@@ -41,6 +42,8 @@ func (r Role) String() string {
 		return "Writer"
 	case Owner:
 		return "Owner"
+	case Admin:
+		return "Admin"
 	default:
 		return fmt.Sprintf("%d", int(r))
 	}

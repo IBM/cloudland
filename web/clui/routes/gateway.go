@@ -267,6 +267,13 @@ func (a *GatewayAdmin) List(offset, limit int64, order string) (total int64, gat
 }
 
 func (v *GatewayView) List(c *macaron.Context, store session.Store) {
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
 	order := c.Query("order")
@@ -350,6 +357,13 @@ func (v *GatewayView) Edit(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	permit, err := memberShip.CheckOwner(model.Writer, "gateways", int64(gatewayID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	gateway := &model.Gateway{Model: model.Model{ID: int64(gatewayID)}}
 	if err = db.Set("gorm:auto_preload", true).Find(gateway).Error; err != nil {
 		log.Println("Failed to query gateway, %v", err)
@@ -378,6 +392,13 @@ func (v *GatewayView) Patch(c *macaron.Context, store session.Store) {
 	if err != nil {
 		log.Println("Invalid gateway id, %v", err)
 		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "gateways", int64(gatewayID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
 		return
 	}
