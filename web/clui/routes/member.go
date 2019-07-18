@@ -49,7 +49,7 @@ func (m *MemberShip) CheckCreater(table string, id int64) (isCreater bool, err e
 		log.Println("Failed to query resource creater", err)
 		return
 	}
-	if memberShip.UserID == creater[0] || m.UserName == "admin" {
+	if memberShip.UserID == creater[0] || (m.OrgName == "admin" && m.Role == model.Admin) {
 		isCreater = true
 	}
 	return
@@ -64,7 +64,7 @@ func (m *MemberShip) CheckUser(id int64) (permit bool, err error) {
 		log.Println("Failed to query user", err)
 		return
 	}
-	if user.ID == m.UserID || m.Role == model.Admin {
+	if user.ID == m.UserID || (m.OrgName == "admin" && m.Role == model.Admin) {
 		permit = true
 	}
 	return
@@ -85,7 +85,7 @@ func (m *MemberShip) CheckOwner(reqRole model.Role, table string, id int64) (isO
 		log.Println("Failed to query resource owner", err)
 		return
 	}
-	if memberShip.OrgID == owner[0] || m.Role == model.Admin {
+	if memberShip.OrgID == owner[0] || (m.OrgName == "admin" && m.Role == model.Admin) {
 		isOwner = true
 	}
 	return

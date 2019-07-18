@@ -151,7 +151,7 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 		memberShip.OrgName = store.Get("org").(string)
 		memberShip.Role = store.Get("role").(model.Role)
 		c.Data["IsSignedIn"] = true
-		if login == "admin" || memberShip.Role == model.Admin {
+		if (memberShip.Role == model.Admin || login == "admin") && memberShip.OrgName == "admin" {
 			c.Data["IsAdmin"] = true
 			memberShip.Role = model.Admin
 		}
