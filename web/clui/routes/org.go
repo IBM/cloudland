@@ -295,7 +295,7 @@ func (v *OrgView) Edit(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	if memberShip.Role < model.Owner || memberShip.OrgID != int64(orgID) {
+	if memberShip.Role != model.Admin && (memberShip.Role < model.Owner || memberShip.OrgID != int64(orgID)) {
 		log.Println("Not authorized for this operation")
 		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
@@ -323,7 +323,7 @@ func (v *OrgView) Patch(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	if memberShip.Role < model.Owner || memberShip.OrgID != int64(orgID) {
+	if memberShip.Role != model.Admin && (memberShip.Role < model.Owner || memberShip.OrgID != int64(orgID)) {
 		log.Println("Not authorized for this operation")
 		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
@@ -335,8 +335,8 @@ func (v *OrgView) Patch(c *macaron.Context, store session.Store) {
 	userList := c.QueryStrings("names")
 	roles := c.QueryStrings("roles")
 	var roleList []model.Role
-	for _, role := range roles {
-		role, err := strconv.Atoi(role)
+	for _, r := range roles {
+		role, err := strconv.Atoi(r)
 		if err != nil {
 			log.Println("Failed to convert role", err)
 			code := http.StatusBadRequest
@@ -349,6 +349,7 @@ func (v *OrgView) Patch(c *macaron.Context, store session.Store) {
 			c.Error(code, http.StatusText(code))
 			return
 		}
+		roleList = append(roleList, model.Role(role))
 	}
 	_, err = orgAdmin.Update(c.Req.Context(), int64(orgID), memberList, userList, roleList)
 	if err != nil {

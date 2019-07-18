@@ -34,7 +34,7 @@ func (m *MemberShip) GetWhere() (where string) {
 
 func (m *MemberShip) CheckPermission(reqRole model.Role) (permit bool) {
 	permit = false
-	if m.Role >= reqRole || m.UserName == "admin" {
+	if m.Role >= reqRole || m.Role == model.Admin {
 		permit = true
 	}
 	return
@@ -64,7 +64,7 @@ func (m *MemberShip) CheckUser(id int64) (permit bool, err error) {
 		log.Println("Failed to query user", err)
 		return
 	}
-	if user.ID == m.UserID || m.UserName == "admin" {
+	if user.ID == m.UserID || m.Role == model.Admin {
 		permit = true
 	}
 	return
@@ -85,7 +85,7 @@ func (m *MemberShip) CheckOwner(reqRole model.Role, table string, id int64) (isO
 		log.Println("Failed to query resource owner", err)
 		return
 	}
-	if memberShip.OrgID == owner[0] || m.UserName == "admin" {
+	if memberShip.OrgID == owner[0] || m.Role == model.Admin {
 		isOwner = true
 	}
 	return
