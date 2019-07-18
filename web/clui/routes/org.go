@@ -298,8 +298,13 @@ func (v *OrgView) Edit(c *macaron.Context, store session.Store) {
 		return
 	}
 	org := &model.Organization{Model: model.Model{ID: int64(orgID)}}
-	if err = db.Set("gorm:auto_preload", true).Take(org).Error; err != nil {
-		log.Println("Image query failed", err)
+	if err = db.Preload("Members").Take(org).Error; err != nil {
+		log.Println("Organization query failed", err)
+		return
+	}
+	org.OwnerUser = &model.User{Model: model.Model{ID: org.Owner}}
+	if err = db.Take(org.OwnerUser).Error; err != nil {
+		log.Println("Owner user query failed", err)
 		return
 	}
 	c.Data["Org"] = org
