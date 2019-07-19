@@ -34,7 +34,7 @@ func (m *MemberShip) GetWhere() (where string) {
 
 func (m *MemberShip) CheckPermission(reqRole model.Role) (permit bool) {
 	permit = false
-	if m.Role >= reqRole || m.Role == model.Admin {
+	if m.Role >= reqRole || (m.OrgName == "admin" && m.Role == model.Admin) {
 		permit = true
 	}
 	return

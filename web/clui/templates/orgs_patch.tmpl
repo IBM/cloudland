@@ -33,9 +33,7 @@
                                <option value="2" {{ if eq .Role 2 }}selected{{ end }}>Writer</option>
                                <option value="3" {{ if eq .Role 3 }}selected{{ end }}>Owner</option>
 		               {{ if $.IsAdmin }}
-		               {{ if eq .OrgName "admin" }}
                                <option value="4" {{ if eq .Role 4 }}selected{{ end }}>Admin</option>
-		               {{ end }}
 		               {{ end }}
                         </select>
                     </div>
