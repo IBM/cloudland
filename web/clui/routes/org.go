@@ -39,7 +39,7 @@ type OrgView struct{}
 func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.Organization, err error) {
 	db := DB()
 	user := &model.User{Username: owner}
-	err = db.Model(user).Take(user).Error
+	err = db.Where(user).Take(user).Error
 	if err != nil {
 		log.Println("Failed to query user", err)
 		return
@@ -99,15 +99,12 @@ func (a *OrgAdmin) Update(ctx context.Context, orgID int64, members, users []str
 		}
 		user := &model.User{Username: name}
 		err = db.Model(user).Where(user).Take(user).Error
-		if err != nil {
+		if err != nil || user.ID <= 0 {
 			log.Println("Failed to query user", err)
 			continue
 		}
-		if user.ID <= 0 {
-			continue
-		}
 		member := &model.Member{
-			Model:    model.Model{Owner: orgID},
+			Model:    model.Model{Creater: memberShip.UserID, Owner: orgID},
 			UserName: name,
 			UserID:   user.ID,
 			OrgName:  org.Name,
@@ -186,9 +183,7 @@ func (a *OrgAdmin) Delete(id int64) (err error) {
 	return
 }
 
-func (a *OrgAdmin) List(offset, limit int64, order string, owner string) (total int64, orgs []*model.Organization, err error) {
-	db := DB()
-	user := &model.User{Username: owner}
+func (a *OrgAdmin) List(offset, limit int64, order string) (total int64, orgs []*model.Organization, err error) {
 	if limit == 0 {
 		limit = 20
 	}
@@ -197,14 +192,16 @@ func (a *OrgAdmin) List(offset, limit int64, order string, owner string) (total 
 		order = "created_at"
 	}
 
-	err = db.Model(user).Where(user).Take(user).Error
+	db := DB()
+	user := &model.User{Model: model.Model{ID: memberShip.UserID}}
+	err = db.Take(user).Error
 	if err != nil {
 		log.Println("DB failed to query user, %v", err)
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
 	where := ""
-	if user.Username != "admin" {
+	if memberShip.Role != model.Admin {
 		where = fmt.Sprintf("owner = %d", user.ID)
 	}
 	if err = db.Model(&model.Organization{}).Where(where).Count(&total).Error; err != nil {
@@ -222,8 +219,7 @@ func (v *OrgView) List(c *macaron.Context, store session.Store) {
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
 	order := c.Query("order")
-	owner := store.Get("login").(string)
-	total, orgs, err := orgAdmin.List(offset, limit, order, owner)
+	total, orgs, err := orgAdmin.List(offset, limit, order)
 	if err != nil {
 		log.Println("Failed to list organizations, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
@@ -302,8 +298,13 @@ func (v *OrgView) Edit(c *macaron.Context, store session.Store) {
 		return
 	}
 	org := &model.Organization{Model: model.Model{ID: int64(orgID)}}
-	if err = db.Set("gorm:auto_preload", true).Take(org).Error; err != nil {
-		log.Println("Image query failed", err)
+	if err = db.Preload("Members").Take(org).Error; err != nil {
+		log.Println("Organization query failed", err)
+		return
+	}
+	org.OwnerUser = &model.User{Model: model.Model{ID: org.Owner}}
+	if err = db.Take(org.OwnerUser).Error; err != nil {
+		log.Println("Owner user query failed", err)
 		return
 	}
 	c.Data["Org"] = org

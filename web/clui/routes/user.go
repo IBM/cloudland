@@ -121,22 +121,29 @@ func (a *UserAdmin) List(offset, limit int64, order string) (total int64, users 
 		order = "created_at"
 	}
 
-	org := &model.Organization{Model: model.Model{ID: memberShip.OrgID}}
-	if err = db.Set("gorm:auto_preload", true).Take(org).Error; err != nil {
-		log.Println("Failed to query organization", err)
-		return
-	}
-	var userIDs []int64
-	if org.Members != nil {
-		total = int64(len(org.Members))
-		for _, member := range org.Members {
-			userIDs = append(userIDs, member.UserID)
+	if memberShip.Role != model.Admin {
+		org := &model.Organization{Model: model.Model{ID: memberShip.OrgID}}
+		if err = db.Set("gorm:auto_preload", true).Take(org).Error; err != nil {
+			log.Println("Failed to query organization", err)
+			return
 		}
-	}
-	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Where(userIDs).Find(&users).Error; err != nil {
-		log.Println("DB failed to get user list, %v", err)
-		return
+		var userIDs []int64
+		if org.Members != nil {
+			total = int64(len(org.Members))
+			for _, member := range org.Members {
+				userIDs = append(userIDs, member.UserID)
+			}
+		}
+		db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
+		if err = db.Where(userIDs).Find(&users).Error; err != nil {
+			log.Println("DB failed to get user list, %v", err)
+			return
+		}
+	} else {
+		if err = db.Find(&users).Error; err != nil {
+			log.Println("DB failed to get user list, %v", err)
+			return
+		}
 	}
 
 	return
