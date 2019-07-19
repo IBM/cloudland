@@ -37,7 +37,7 @@ function sync_hyper()
     cd $cland_root_dir/deploy
     ansible hyper -b -a 'systemctl stop cloudlet'
     ansible hyper -b -a 'systemctl stop scid'
-    ansible-playbook cloudland.yml --tags sync,be_pkg
+    ansible-playbook cloudland.yml --tags sync,be_pkg,firewall
     ansible hyper -b -a 'systemctl start scid'
     ansible hyper -b -a 'systemctl start cloudlet'
 }
