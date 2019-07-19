@@ -61,7 +61,7 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID int64, types []stri
 			return
 		}
 		var fipIface *model.Interface
-		fipIface, err = model.AllocateFloatingIp(floatingip.ID, gateway, ftype)
+		fipIface, err = model.AllocateFloatingIp(floatingip.ID, memberShip.OrgID, gateway, ftype)
 		if err != nil {
 			log.Println("DB failed to allocate floating ip", err)
 			return

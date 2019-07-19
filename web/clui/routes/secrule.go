@@ -79,7 +79,7 @@ func (a *SecruleAdmin) ApplySecgroup(ctx context.Context, secgroup *model.Securi
 	return
 }
 
-func (a *SecruleAdmin) Create(ctx context.Context, sgID int64, remoteIp, direction, protocol string, portMin, portMax int) (secrule *model.SecurityRule, err error) {
+func (a *SecruleAdmin) Create(ctx context.Context, sgID, owner int64, remoteIp, direction, protocol string, portMin, portMax int) (secrule *model.SecurityRule, err error) {
 	db := DB()
 	secgroup := &model.SecurityGroup{Model: model.Model{ID: sgID}}
 	err = db.Model(secgroup).Preload("Address").Related(&secgroup.Interfaces, "Interfaces").Error
@@ -88,7 +88,7 @@ func (a *SecruleAdmin) Create(ctx context.Context, sgID int64, remoteIp, directi
 		return
 	}
 	secrule = &model.SecurityRule{
-		Model:     model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID},
+		Model:     model.Model{Creater: memberShip.UserID, Owner: owner},
 		Secgroup:  sgID,
 		RemoteIp:  remoteIp,
 		Direction: direction,
@@ -304,7 +304,7 @@ func (v *SecruleView) Create(c *macaron.Context, store session.Store) {
 	max := c.Query("portmax")
 	portMin, err := strconv.Atoi(min)
 	portMax, err := strconv.Atoi(max)
-	_, err = secruleAdmin.Create(c.Req.Context(), int64(secgroupID), remoteIp, direction, protocol, portMin, portMax)
+	_, err = secruleAdmin.Create(c.Req.Context(), int64(secgroupID), memberShip.OrgID, remoteIp, direction, protocol, portMin, portMax)
 	if err != nil {
 		log.Println("Failed to create security rule, %v", err)
 		c.HTML(500, "500")

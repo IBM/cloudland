@@ -44,20 +44,19 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 		log.Println("Failed to query user", err)
 		return
 	}
-	sgName := name + "-default"
-	secGroup, err := secgroupAdmin.Create(ctx, sgName, true)
-	if err != nil {
-		log.Println("Failed to create security group", err)
-	}
 	org = &model.Organization{
-		Model:     model.Model{Owner: user.ID, Creater: memberShip.UserID},
-		Name:      name,
-		DefaultSG: secGroup.ID,
+		Model: model.Model{Owner: user.ID, Creater: memberShip.UserID},
+		Name:  name,
 	}
 	err = db.Create(org).Error
 	if err != nil {
 		log.Println("DB failed to create organization ", err)
 		return
+	}
+	log.Println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$ org = ", org.Name, org.ID)
+	secGroup, err := secgroupAdmin.Create(ctx, name, true, org.ID)
+	if err != nil {
+		log.Println("Failed to create security group", err)
 	}
 	member := &model.Member{UserID: user.ID, UserName: owner, OrgID: org.ID, OrgName: name, Role: model.Owner}
 	err = db.Create(member).Error
@@ -69,6 +68,12 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 	err = db.Save(user).Error
 	if err != nil {
 		log.Println("DB failed to update user owner", err)
+		return
+	}
+	org.DefaultSG = secGroup.ID
+	err = db.Save(org).Error
+	if err != nil {
+		log.Println("DB failed to update orgabization default security group", err)
 		return
 	}
 	return

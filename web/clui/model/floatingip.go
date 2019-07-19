@@ -30,7 +30,7 @@ func init() {
 	dbs.AutoMigrate(&FloatingIp{})
 }
 
-func AllocateFloatingIp(floatingipID int64, gateway *Gateway, ftype string) (fipIface *Interface, err error) {
+func AllocateFloatingIp(floatingipID, owner int64, gateway *Gateway, ftype string) (fipIface *Interface, err error) {
 	db := dbs.DB()
 	var subnet *Subnet
 	for _, iface := range gateway.Interfaces {
@@ -44,13 +44,13 @@ func AllocateFloatingIp(floatingipID int64, gateway *Gateway, ftype string) (fip
 		return
 	}
 	name := ftype + "fip"
-	fipIface, err = CreateInterface(subnet.ID, floatingipID, "", name, "floating", nil)
+	fipIface, err = CreateInterface(subnet.ID, floatingipID, owner, "", name, "floating", nil)
 	if err != nil {
 		subnets := []*Subnet{}
 		err = db.Model(&Subnet{}).Where("vlan = ? and id <> ?", subnet.Vlan, subnet.ID).Find(subnets).Error
 		if err == nil && len(subnets) > 0 {
 			for _, s := range subnets {
-				fipIface, err = CreateInterface(s.ID, floatingipID, "", name, "floating", nil)
+				fipIface, err = CreateInterface(s.ID, floatingipID, owner, "", name, "floating", nil)
 				if err == nil {
 					break
 				}

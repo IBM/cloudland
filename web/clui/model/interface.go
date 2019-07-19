@@ -48,7 +48,7 @@ func genMacaddr() (mac string, err error) {
 	return mac, nil
 }
 
-func CreateInterface(subnetID, ID int64, address, ifaceName, ifType string, secGroups []*SecurityGroup) (iface *Interface, err error) {
+func CreateInterface(subnetID, ID, owner int64, address, ifaceName, ifType string, secGroups []*SecurityGroup) (iface *Interface, err error) {
 	db := dbs.DB()
 	primary := false
 	if ifaceName == "eth0" {
@@ -60,6 +60,7 @@ func CreateInterface(subnetID, ID int64, address, ifaceName, ifType string, secG
 		return
 	}
 	iface = &Interface{
+		Model:     Model{Owner: owner},
 		Name:      ifaceName,
 		MacAddr:   mac,
 		PrimaryIf: primary,
