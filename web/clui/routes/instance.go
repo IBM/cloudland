@@ -82,7 +82,7 @@ type InstanceData struct {
 	SecRules []*SecurityData    `json:"security"`
 }
 
-func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, imageID, flavorID, primaryID int64, subnetIDs, keyIDs []int64, sgIDs []int64) (instance *model.Instance, err error) {
+func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, imageID, flavorID, primaryID int64, primaryIP string, subnetIDs, keyIDs []int64, sgIDs []int64, hyper int) (instance *model.Instance, err error) {
 	db := DB()
 	image := &model.Image{Model: model.Model{ID: imageID}}
 	if err = db.Take(image).Error; err != nil {
@@ -127,12 +127,15 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			return
 		}
 		metadata := ""
-		_, metadata, err = a.buildMetadata(ctx, primary, subnets, keys, instance, userdata, secGroups)
+		_, metadata, err = a.buildMetadata(ctx, primary, primaryIP, subnets, keys, instance, userdata, secGroups)
 		if err != nil {
 			log.Println("Build instance metadata failed", err)
 			return
 		}
 		control := fmt.Sprintf("inter= cpu=%d memory=%d disk=%d network=%d", 0, 0, 0, 0)
+		if i == 0 && hyper >= 0 {
+			control = fmt.Sprintf("inter=%d cpu=%d memory=%d disk=%d network=%d", hyper, 0, 0, 0, 0)
+		}
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh %d image-%d.%s %s %d %d %d <<EOF\n%s\nEOF", instance.ID, image.ID, image.Format, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, metadata)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
@@ -233,7 +236,13 @@ func (a *InstanceAdmin) Update(ctx context.Context, id int64, hostname, action s
 		if found == false {
 			var iface *model.Interface
 			ifname := fmt.Sprintf("eth%d", i+index)
-			iface, err = a.createInterface(ctx, iface.Address.Subnet, instance, ifname, secGroups)
+			subnet := &model.Subnet{Model: model.Model{ID: sID}}
+			err = db.Take(subnet).Error
+			if err != nil {
+				log.Println("Failed to query subnet", err)
+				return
+			}
+			iface, err = a.createInterface(ctx, subnet, "", instance, ifname, secGroups)
 			control := fmt.Sprintf("inter=%d", instance.Hyper)
 			command := fmt.Sprintf("/opt/cloudland/scripts/backend/attach_nic.sh %d %d %s %s <<EOF\n%s\nEOF", instance.ID, iface.Address.Subnet.Vlan, iface.Address.Address, iface.MacAddr, jsonData)
 			err = hyperExecute(ctx, control, command)
@@ -306,9 +315,9 @@ func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interf
 	return
 }
 
-func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subnet, instance *model.Instance, ifname string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
+func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subnet, address string, instance *model.Instance, ifname string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
 	db := DB()
-	iface, err = model.CreateInterface(subnet.ID, instance.ID, ifname, "instance", secGroups)
+	iface, err = model.CreateInterface(subnet.ID, instance.ID, address, ifname, "instance", secGroups)
 	if err != nil {
 		log.Println("Failed to create interface")
 		return
@@ -347,13 +356,13 @@ func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subne
 	return
 }
 
-func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet, subnets []*model.Subnet, keys []*model.Key, instance *model.Instance, userdata string, secGroups []*model.SecurityGroup) (interfaces []*model.Interface, metadata string, err error) {
+func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet, primaryIP string, subnets []*model.Subnet, keys []*model.Key, instance *model.Instance, userdata string, secGroups []*model.SecurityGroup) (interfaces []*model.Interface, metadata string, err error) {
 	vlans := []*VlanInfo{}
 	instNetworks := []*InstanceNetwork{}
 	instLinks := []*NetworkLink{}
 	gateway := strings.Split(primary.Gateway, "/")[0]
 	instRoute := &NetworkRoute{Network: "0.0.0.0", Netmask: "0.0.0.0", Gateway: gateway}
-	iface, err := a.createInterface(ctx, primary, instance, "eth0", secGroups)
+	iface, err := a.createInterface(ctx, primary, primaryIP, instance, "eth0", secGroups)
 	if err != nil {
 		log.Println("Allocate address for primary subnet %s--%s/%s failed, %v", primary.Name, primary.Network, primary.Netmask, err)
 		return
@@ -367,7 +376,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet
 	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, IpAddr: address, MacAddr: iface.MacAddr})
 	for i, subnet := range subnets {
 		ifname := fmt.Sprintf("eth%d", i+1)
-		iface, err = a.createInterface(ctx, subnet, instance, ifname, secGroups)
+		iface, err = a.createInterface(ctx, subnet, "", instance, ifname, secGroups)
 		if err != nil {
 			log.Println("Allocate address for secondary subnet %s--%s/%s failed, %v", subnet.Name, subnet.Network, subnet.Netmask, err)
 			return
@@ -720,6 +729,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	}
 	redirectTo := "../instances"
 	hostname := c.Query("hostname")
+	hyper := c.QueryInt("hyper")
 	cnt := c.Query("count")
 	count, err := strconv.Atoi(cnt)
 	if err != nil {
@@ -752,6 +762,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	primaryIP := c.QueryTrim("primaryip")
 	subnets := c.Query("subnets")
 	s := strings.Split(subnets, ",")
 	var subnetIDs []int64
@@ -790,7 +801,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		sgIDs = append(sgIDs, store.Get("defsg").(int64))
 	}
 	userdata := c.Query("userdata")
-	_, err = instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, int64(imageID), int64(flavorID), int64(primaryID), subnetIDs, keyIDs, sgIDs)
+	_, err = instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, int64(imageID), int64(flavorID), int64(primaryID), primaryIP, subnetIDs, keyIDs, sgIDs, hyper)
 	if err != nil {
 		log.Println("Create instance failed, %v", err)
 		c.HTML(http.StatusBadRequest, err.Error())

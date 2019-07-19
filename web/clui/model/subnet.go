@@ -55,7 +55,7 @@ func init() {
 	dbs.AutoMigrate(&Address{})
 }
 
-func AllocateAddress(subnetID, ifaceID int64, addrType string) (address *Address, err error) {
+func AllocateAddress(subnetID, ifaceID int64, ipaddr, addrType string) (address *Address, err error) {
 	db := dbs.DB()
 	subnet := &Subnet{Model: Model{ID: subnetID}}
 	err = db.Take(subnet).Error
@@ -65,7 +65,11 @@ func AllocateAddress(subnetID, ifaceID int64, addrType string) (address *Address
 	}
 	address = &Address{Subnet: subnet}
 	tx := dbs.DB().Begin()
-	err = tx.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ?", subnetID, false).Take(address).Error
+	if ipaddr == "" {
+		err = tx.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ?", subnetID, false).Take(address).Error
+	} else {
+		err = tx.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ? and address = ?", subnetID, false, ipaddr).Take(address).Error
+	}
 	if err != nil {
 		tx.Rollback()
 		log.Println("Failed to query address, %v", err)

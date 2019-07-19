@@ -48,7 +48,7 @@ func genMacaddr() (mac string, err error) {
 	return mac, nil
 }
 
-func CreateInterface(subnetID, ID int64, ifaceName, ifType string, secGroups []*SecurityGroup) (iface *Interface, err error) {
+func CreateInterface(subnetID, ID int64, address, ifaceName, ifType string, secGroups []*SecurityGroup) (iface *Interface, err error) {
 	db := dbs.DB()
 	primary := false
 	if ifaceName == "eth0" {
@@ -81,9 +81,9 @@ func CreateInterface(subnetID, ID int64, ifaceName, ifType string, secGroups []*
 		log.Println("Failed to create interface, %v", err)
 		return
 	}
-	iface.Address, err = AllocateAddress(subnetID, iface.ID, "native")
+	iface.Address, err = AllocateAddress(subnetID, iface.ID, address, "native")
 	if err != nil {
-		log.Println("Failed to allocate address, %v", err)
+		log.Println("Failed to allocate address", err)
 		return
 	}
 	return iface, nil
