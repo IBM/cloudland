@@ -95,7 +95,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 		return
 	}
 	count := 0
-	err = tx.Model(&model.Subnet{}).Where("vlan = ?", vlanNo).Count(&count).Error
+	err = db.Model(&model.Subnet{}).Where("vlan = ?", vlanNo).Count(&count).Error
 	if err != nil {
 		log.Println("Database failed to count network", err)
 		return
@@ -147,7 +147,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 		Vlan:    int64(vlanNo),
 		Type:    rtype,
 	}
-	err = tx.Create(subnet).Error
+	err = db.Create(subnet).Error
 	if err != nil {
 		log.Println("Database create subnet failed, %v", err)
 		return
@@ -173,13 +173,13 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 		netlink.Type = "vlan"
 	}
 	if count < 1 {
-		err = tx.Create(netlink).Error
+		err = db.Create(netlink).Error
 		if err != nil {
 			log.Println("Database failed to create network", err)
 			return
 		}
 	} else {
-		err = tx.Where(network).Take(network).Error
+		err = db.Where(network).Take(network).Error
 		if err != nil {
 			log.Println("Database failed to create network", err)
 			return
