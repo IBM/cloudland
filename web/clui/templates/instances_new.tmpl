@@ -11,6 +11,12 @@
                         <label for="hostname">Hostname (prefix)</label>
                         <input id="hostname" name="hostname" autofocus required>
                     </div>
+	            {{ if .IsAdmin }}
+                    <div class="required inline field">
+                        <label for="hyper">Hyper</label>
+                        <input id="hyper" name="hyper" value="-1" required>
+                    </div>
+	            {{ end }}
                     <div class="required inline field">
                         <label for="count">Count</label>
                         <input id="count" name="count" value="1" required>
@@ -52,13 +58,27 @@
 						  <i class="dropdown icon"></i>
 						  <div class="default text">Subnet</div>
 						  <div class="menu">
-                            {{ range .Subnets }}
-							<div class="item" data-value={{.ID}} data-text={{.Name}}>
-							  {{.Name}}-{{.Network}}/{{.Netmask}}
+						    {{ if .IsAdmin }}
+							{{ range .Subnets }}
+							<div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
+							  {{.Name}}
 							</div>
-                            {{ end }}
+							{{ end }}
+						    {{ else }}
+							{{ range .Subnets }}
+							{{ if eq .Type "internal" }}
+							<div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
+							  {{.Name}}
+							</div>
+							{{ end }}
+							{{ end }}
+						     {{ end }}
 						  </div>
 						</div>
+                    </div>
+                    <div class="inline field">
+                        <label for="primaryip">Primary IP</label>
+                        <input id="primaryip" name="primaryip" placeholder="10.10.50.100/24">
                     </div>
                     <div class="inline field">
 					    <label for="secondary">Secondary Interfaces</label>
@@ -67,21 +87,21 @@
 						  <i class="dropdown icon"></i>
 						  <div class="default text">Subnets</div>
 						  <div class="menu">
-							    {{ if .IsAdmin }}
-								{{ range .Subnets }}
-								<div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
-								  {{.Name}}
-								</div>
-								{{ end }}
-								{{ else }}
-								{{ range .Subnets }}
-								{{ if eq .Type "internal" }}
-								<div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
-								  {{.Name}}
-								</div>
-								{{ end }}
-								{{ end }}
-								{{ end }}
+						    {{ if .IsAdmin }}
+							{{ range .Subnets }}
+							<div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
+							  {{.Name}}
+							</div>
+							{{ end }}
+						    {{ else }}
+							{{ range .Subnets }}
+							{{ if eq .Type "internal" }}
+							<div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
+							  {{.Name}}
+							</div>
+							{{ end }}
+							{{ end }}
+						     {{ end }}
 						  </div>
 						</div>
 					</div>

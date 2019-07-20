@@ -43,7 +43,7 @@
 			                        <td>{{.ID}}</td>
 			                        <td>{{.Hostname}}</td>
 			                        <td>{{.Flavor.Name}}</td>
-			                        <td>{{.Image.Name}}</td>
+			                        <td>{{ if .Image }}{{.Image.Name}}{{else}}{{.Hostname}}{{end}}</td>
 			                        <td>
 						{{ if .FloatingIps }}
 							{{ range .FloatingIps }}

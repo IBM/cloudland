@@ -74,4 +74,4 @@ if [ $? -eq 0 ]; then
     vnc_port=$(xmllint --xpath 'string(/domain/devices/graphics/@port)' $vm_xml)
     vm_vnc="$vnc_port:$vnc_pass"
 fi
-echo "|:-COMMAND-:| $(basename $0) '$1' '$state' '$SCI_CLIENT_ID' ''"
+echo "|:-COMMAND-:| $(basename $0) '$1' '$state' '$SCI_CLIENT_ID' 'unknown'"

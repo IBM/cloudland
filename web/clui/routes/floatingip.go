@@ -62,7 +62,7 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID int64, types []stri
 			return
 		}
 		var fipIface *model.Interface
-		fipIface, err = AllocateFloatingIp(ctx, floatingip.ID, gateway, ftype)
+		fipIface, err = AllocateFloatingIp(ctx, floatingip.ID, memberShip.OrgID, gateway, ftype)
 		if err != nil {
 			log.Println("DB failed to allocate floating ip", err)
 			return
@@ -128,13 +128,14 @@ func (a *FloatingIpAdmin) List(offset, limit int64, order string) (total int64, 
 		order = "created_at"
 	}
 
+	where := memberShip.GetWhere()
 	floatingips = []*model.FloatingIp{}
-	if err = db.Model(&model.FloatingIp{}).Count(&total).Error; err != nil {
+	if err = db.Model(&model.FloatingIp{}).Where(where).Count(&total).Error; err != nil {
 		log.Println("DB failed to count floating ip(s), %v", err)
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Set("gorm:auto_preload", true).Find(&floatingips).Error; err != nil {
+	if err = db.Set("gorm:auto_preload", true).Where(where).Find(&floatingips).Error; err != nil {
 		log.Println("DB failed to query floating ip(s), %v", err)
 		return
 	}
@@ -234,6 +235,13 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 	if err != nil {
 		log.Println("Invalid interface ID", err)
 		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	permit, err = memberShip.CheckOwner(model.Writer, "instances", int64(instID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
 		return
 	}

@@ -190,10 +190,25 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 				log.Println("Invalid secondary subnet ID, %v", err)
 				continue
 			}
+			permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sID))
+			if !permit {
+				log.Println("Not authorized for this operation")
+				code := http.StatusUnauthorized
+				c.Error(code, http.StatusText(code))
+				return
+			}
 			sgIDs = append(sgIDs, int64(sID))
 		}
 	} else {
-		sgIDs = append(sgIDs, store.Get("defsg").(int64))
+		sID := store.Get("defsg").(int64)
+		permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sID))
+		if !permit {
+			log.Println("Not authorized for this operation")
+			code := http.StatusUnauthorized
+			c.Error(code, http.StatusText(code))
+			return
+		}
+		sgIDs = append(sgIDs, sID)
 	}
 	_, err = interfaceAdmin.Update(c.Req.Context(), int64(ifaceID), name, sgIDs)
 	if err != nil {

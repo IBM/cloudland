@@ -25,6 +25,7 @@ if [ ! -f /var/run/netns/$nspace ]; then
     ip link add ns-$vlan type veth peer name tap-$vlan
     brctl addif $vm_br tap-$vlan
     ip link set tap-$vlan up
+    apply_vnic -I tap-$vlan
     ip link set ns-$vlan netns $nspace
     ip netns exec $nspace ip link set ns-$vlan up
     ip netns exec $nspace ip link set lo up

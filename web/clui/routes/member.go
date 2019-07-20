@@ -26,7 +26,7 @@ type MemberShip struct {
 }
 
 func (m *MemberShip) GetWhere() (where string) {
-	if m.UserName != "admin" {
+	if m.Role != model.Admin {
 		where = fmt.Sprintf("owner = %d", m.OrgID)
 	}
 	return
@@ -34,7 +34,7 @@ func (m *MemberShip) GetWhere() (where string) {
 
 func (m *MemberShip) CheckPermission(reqRole model.Role) (permit bool) {
 	permit = false
-	if m.Role >= reqRole || m.Role == model.Admin {
+	if m.Role >= reqRole || (m.OrgName == "admin" && m.Role == model.Admin) {
 		permit = true
 	}
 	return
@@ -43,13 +43,16 @@ func (m *MemberShip) CheckPermission(reqRole model.Role) (permit bool) {
 func (m *MemberShip) CheckCreater(table string, id int64) (isCreater bool, err error) {
 	isCreater = false
 	db := DB()
-	var creater []int64
-	err = db.Table(table).Select("creater").Where("id = ?", id).Scan(&creater).Error
-	if err != nil || len(creater) != 1 {
+	type Result struct {
+		Creater int64
+	}
+	var result Result
+	err = db.Table(table).Select("creater").Where("id = ?", id).Scan(&result).Error
+	if err != nil {
 		log.Println("Failed to query resource creater", err)
 		return
 	}
-	if memberShip.UserID == creater[0] || (m.OrgName == "admin" && m.Role == model.Admin) {
+	if memberShip.UserID == result.Creater || (m.OrgName == "admin" && m.Role == model.Admin) {
 		isCreater = true
 	}
 	return
@@ -58,7 +61,7 @@ func (m *MemberShip) CheckCreater(table string, id int64) (isCreater bool, err e
 func (m *MemberShip) CheckUser(id int64) (permit bool, err error) {
 	permit = false
 	db := DB()
-	user := &model.User{}
+	user := &model.User{Model: model.Model{ID: id}}
 	err = db.Take(&user).Error
 	if err != nil {
 		log.Println("Failed to query user", err)
@@ -78,14 +81,17 @@ func (m *MemberShip) CheckOwner(reqRole model.Role, table string, id int64) (isO
 	if m.Role < reqRole {
 		return
 	}
-	var owner []int64
+	type Result struct {
+		Owner int64
+	}
+	var result Result
 	db := DB()
-	err = db.Table(table).Select("owner").Where("id = ?", id).Scan(&owner).Error
-	if err != nil || len(owner) != 1 {
+	err = db.Table(table).Select("owner").Where("id = ?", id).Scan(&result).Error
+	if err != nil {
 		log.Println("Failed to query resource owner", err)
 		return
 	}
-	if memberShip.OrgID == owner[0] || (m.OrgName == "admin" && m.Role == model.Admin) {
+	if memberShip.OrgID == result.Owner || (m.OrgName == "admin" && m.Role == model.Admin) {
 		isOwner = true
 	}
 	return
