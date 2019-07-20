@@ -12,7 +12,6 @@ info:
 paths:
   /identity:
     get:
-      consumes: [application/json]
       produces: [application/json]
       tags: [keystone]
       description: 'redirect to identity auth point'
@@ -24,8 +23,7 @@ paths:
               type: string
               description: X-Auth-Token
               default: X-Auth-Token
-              enum:
-              - X-Auth-Token
+              enum: ['X-Auth-Token']
             x-openstack-request-id: {type: string, description: 'request-id'}
           schema:
             type: object
@@ -89,17 +87,24 @@ paths:
               default: X-Auth-Token
               enum:
               - X-Auth-Token
-            Content-Length:
-              type: integer
+            x-openstack-request-id: {type: string, description: 'request-id'}
             X-Subject-Token:
               type: string
-          schema:
-            type: object
-            required:
-            - token
-            properties:
-              token:
-                $ref: '#/definitions/token'
+              schema:
+                type: object
+                required:
+                - token
+                properties:
+                  token:
+                    $ref: '#/definitions/token'
+        400:
+          description: `Bad Request`
+        401:
+          description: `Unauthorized`
+        403:
+          description: `Forbidden`
+        404:
+          description: `Not Found`
   /v2.0/networks:
     get:
       tags: [neutron]
@@ -145,14 +150,14 @@ paths:
             properties:
               network:
                 type: object
+                required: [name, provider:network_type, router:external]
                 properties:
                   admin_state_up: {type: boolean, example: true}
                   name: {type: string, example: 'net1'}
-                  provider:network_type: {type: string, enum: ['vlan', 'vxlan', 'gre', 'flat']}
+                  provider:network_type: {type: string, enum: ['vlan', 'vxlan']}
                   provider:physical_network: {type: string, enum: ['public', 'private'], example: public}
                   provider:segmentation_id: {type: string, example: '16169'}
                   router:external: {type: boolean, example: false}
-                  qos_policy_id: {type: string, example: '6a8454ade84346f59e8d40665f878b2e'}
       responses:
         200:
           description: 200 response
@@ -905,7 +910,7 @@ definitions:
        items:
          $ref: '#/definitions/member'
 # Added by API Auto Mocking Plugin
-host: virtserver.swaggerhub.com
-basePath: /threen134/openstack-API/1.0.0
+host: localhost:4001
+basePath: /
 schemes:
  - https

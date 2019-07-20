@@ -1,7 +1,0 @@
-{
-  "network": {
-    "name": "net1",
-    "provider:network_type": "vxlan",
-    "provider:segmentation_id": "7070",
-  }
-}

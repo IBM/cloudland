@@ -23,6 +23,9 @@ type User struct {
 	Members  []*Member `gorm:"foreignkey:UserID"`
 }
 
+func (User) TableName() string {
+	return "users"
+}
 func init() {
 	dbs.AutoMigrate(&User{})
 }

@@ -60,7 +60,7 @@ func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int
 		log.Println("DB failed to query public subnet, %v", err)
 		return
 	}
-	pubIface, err := model.CreateInterface(pubSubnet.ID, gateway.ID, owner, "", fmt.Sprintf("pub%d", pubSubnet.ID), "gateway_public", nil)
+	pubIface, err := CreateInterface(ctx, pubSubnet.ID, gateway.ID, owner, "", fmt.Sprintf("pub%d", pubSubnet.ID), "gateway_public", nil)
 	if err != nil {
 		log.Println("DB failed to create public interface, %v", err)
 		return
@@ -74,7 +74,7 @@ func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int
 		log.Println("DB failed to query private subnet, %v", err)
 		return
 	}
-	priIface, err := model.CreateInterface(priSubnet.ID, gateway.ID, owner, "", fmt.Sprintf("pri%d", priSubnet.ID), "gateway_private", nil)
+	priIface, err := CreateInterface(ctx, priSubnet.ID, gateway.ID, owner, "", fmt.Sprintf("pri%d", priSubnet.ID), "gateway_private", nil)
 	if err != nil {
 		log.Println("DB failed to create private interface, %v", err)
 		return
@@ -82,7 +82,7 @@ func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int
 	intIfaces := []*SubnetIface{}
 	for _, sID := range subnetIDs {
 		var subnet *model.Subnet
-		subnet, err = model.SetGateway(sID, gateway.ID)
+		subnet, err = SetGateway(ctx, sID, gateway.ID)
 		if err != nil {
 			log.Println("DB failed to set gateway, %v", err)
 			return
@@ -142,7 +142,7 @@ func (a *GatewayAdmin) Update(ctx context.Context, id int64, name string, pubID,
 				log.Println("Clear gateway failed")
 				continue
 			}
-			err = model.UnsetGateway(gsub)
+			err = UnsetGateway(ctx, gsub)
 			if err != nil {
 				log.Println("DB failed to update router for subnet", err)
 				continue
@@ -171,7 +171,7 @@ func (a *GatewayAdmin) Update(ctx context.Context, id int64, name string, pubID,
 				log.Println("Set gateway failed")
 				continue
 			}
-			_, err = model.SetGateway(sub.ID, gateway.ID)
+			_, err = SetGateway(ctx, sub.ID, gateway.ID)
 			if err != nil {
 				log.Println("DB failed to update router for subnet", err)
 				continue
@@ -209,7 +209,7 @@ func (a *GatewayAdmin) Delete(ctx context.Context, id int64) (err error) {
 		log.Println("DB failed to update router for subnet, %v", err)
 		return
 	}
-	if err = model.DeleteInterfaces(id, "gateway"); err != nil {
+	if err = DeleteInterfaces(ctx, id, "gateway"); err != nil {
 		log.Println("DB failed to delete interfaces, %v", err)
 		return
 	}
@@ -265,7 +265,6 @@ func (a *GatewayAdmin) List(offset, limit int64, order string) (total int64, gat
 		log.Println("DB failed to query gateways, %v", err)
 		return
 	}
-
 	return
 }
 

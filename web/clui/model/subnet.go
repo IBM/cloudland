@@ -7,21 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 package model
 
 import (
-	"fmt"
-	"log"
-
 	"github.com/IBM/cloudland/web/sca/dbs"
 )
-
-type Network struct {
-	Model
-	Name    string `gorm:"type:varchar(100)"`
-	Hyper   int32  `gorm:"default:-1"`
-	Peer    int32  `gorm:"default:-1"`
-	Vlan    int64
-	Type    string
-	Subnets []*Subnet `gorm:"foreignkey:Vlan;AssociationForeignKey:Vlan;PRELOAD:false"`
-}
 
 type Subnet struct {
 	Model
@@ -50,7 +37,6 @@ type Address struct {
 }
 
 func init() {
-	dbs.AutoMigrate(&Network{})
 	dbs.AutoMigrate(&Subnet{})
 	dbs.AutoMigrate(&Address{})
 }

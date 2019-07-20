@@ -7,10 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package model
 
 import (
-	"fmt"
-	"log"
 	"math/rand"
-	"strings"
 	"time"
 
 	"github.com/IBM/cloudland/web/sca/dbs"

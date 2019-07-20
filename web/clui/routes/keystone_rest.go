@@ -8,13 +8,14 @@ package routes
 
 import (
 	"encoding/json"
-	"log"
+	"net/http"
 	"net/url"
-	"strconv"
 	"time"
 
+	"github.com/IBM/cloudland/web/clui/model"
 	restModels "github.com/IBM/cloudland/web/rest-api/rest/models"
 	strfmt "github.com/go-openapi/strfmt"
+	"github.com/jinzhu/gorm"
 	"github.com/spf13/viper"
 	"github.com/xeipuuv/gojsonschema"
 	macaron "gopkg.in/macaron.v1"
@@ -32,17 +33,22 @@ type tokenAdmin restModels.PostIdentityV3AuthTokensCreatedBody
 type Versions struct{}
 type Token struct{}
 
+// ListVersion : json home
 func (v *Versions) ListVersion(c *macaron.Context) {
 	va := &VersionsAdmin{}
 	va.v3(c)
 	c.Header().Add(`Vary`, `X-Auth-Token`)
-	c.JSON(300, va)
+	c.JSON(http.StatusMultipleChoices, va)
 	return
 }
 
 func (v *VersionsAdmin) v3(c *macaron.Context) {
+	scheme := viper.GetString("rest.scheme")
+	if scheme == "" {
+		scheme = defaultSchema
+	}
 	url := &url.URL{
-		Scheme: "http", //todo : need to get scheme by config file
+		Scheme: scheme,
 		Host:   viper.GetString("rest.endpoint"),
 		Path:   "/identity/v3/",
 	}
@@ -73,81 +79,84 @@ func (v *VersionsAdmin) v3(c *macaron.Context) {
 }
 
 func (t *Token) IssueTokenByPasswd(c *macaron.Context) {
+	db := DB()
 	body, _ := c.Req.Body().Bytes()
 	if err := JsonSchemeCheck(`token.json`, body); err != nil {
-		c.JSON(err.Code, ResponseError{
-			Error: *err,
-		})
+		c.JSON(err.Code, ResponseError{ErrorMsg: *err})
 		return
 	}
 	requestStruct := &restModels.PostIdentityV3AuthTokensParamsBody{}
 	if err := json.Unmarshal(body, requestStruct); err != nil {
-		c.JSON(500, NewResponseError("Unmarshal fail", err.Error(), 403))
-	}
-	//todo:
-	username := requestStruct.Auth.Identity.Password.User.Name
-	password := requestStruct.Auth.Identity.Password.User.Password
-	user, err := userAdmin.Validate(username, password)
-	if err != nil {
-		c.JSON(400, NewResponseError("Authen user fail", err.Error(), 400))
+		c.JSON(http.StatusInternalServerError, NewResponseError("Unmarshal fail", err.Error(), http.StatusInternalServerError))
 		return
 	}
-	organization := username
-	uid := user.ID
-	uid, _, token, issueAt, expiresAt, err := userAdmin.AccessToken(uid, username, organization)
-	//	oid, role, token, err := userAdmin.AccessToken(uid, username, organization)
-
+	username := requestStruct.Auth.Identity.Password.User.Name
+	password := requestStruct.Auth.Identity.Password.User.Password
+	org := requestStruct.Auth.Scope.Project.Name
+	user, err := userAdmin.Validate(username, password)
 	if err != nil {
-		c.JSON(403, NewResponseError("Failed to get token", err.Error(), 403))
+		c.JSON(http.StatusUnauthorized, NewResponseError("Authen user fail", err.Error(), http.StatusUnauthorized))
+		return
+	}
+	uid := user.ID
+	oid, role, token, issueAt, expiresAt, err := userAdmin.AccessToken(uid, user.Username, org)
+	if err != nil {
+		c.JSON(http.StatusNotFound, NewResponseError("Failed to get token", err.Error(), http.StatusNotFound))
 		return
 	}
 	c.Header().Add(`X-Subject-Token`, token)
 	c.Header().Add(`Vary`, `X-Auth-Token`)
-	log.Print(token)
 	expire, _ := strfmt.ParseDateTime(time.Unix(expiresAt, 0).Format(time.RFC3339))
 	issue, _ := strfmt.ParseDateTime(time.Unix(issueAt, 0).Format(time.RFC3339))
 	respInstance := restModels.PostIdentityV3AuthTokensCreatedBody{}
+
+	orgInstance := &model.Organization{Model: model.Model{ID: oid}}
+	if err := db.First(orgInstance).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			c.JSON(http.StatusNotFound, NewResponseError("Failed to get token", err.Error(), http.StatusNotFound))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, NewResponseError("Failed to get token", err.Error(), http.StatusInternalServerError))
+		return
+	}
 	respInstance.Token = &restModels.Token{
-		Catalog:   catLog(),
+		Catalog:   catLog(orgInstance.UUID),
 		ExpiresAt: expire,
 		IssuedAt:  issue,
 		IsDomain:  false,
 		Methods:   []string{"password"},
-		Roles:     []*restModels.TokenRolesItems{&restModels.TokenRolesItems{Name: "member", ID: "1841f2adad3a4b4aa6485fb4e3a3fda1"}},
+		Roles:     []*restModels.TokenRolesItems{&restModels.TokenRolesItems{Name: role.String(), ID: orgInstance.UUID}},
 		Project: &restModels.TokenProject{
 			Domain: &restModels.TokenProjectDomain{
 				ID:   "default",
 				Name: "default",
 			},
-			ID:   organization,
-			Name: organization,
+			ID:   orgInstance.UUID,
+			Name: org,
 		},
 		User: &restModels.TokenUser{
 			Domain: &restModels.TokenUserDomain{
 				ID:   "default",
 				Name: "default",
 			},
-			ID:   strconv.Itoa(int(uid)),
+			ID:   user.UUID,
 			Name: username,
 		},
 	}
-	c.JSON(200, respInstance)
+	c.JSON(http.StatusCreated, respInstance)
 	return
 }
 
-func catLog() (items []*restModels.TokenCatalogItems) {
+func catLog(orgID string) (items []*restModels.TokenCatalogItems) {
 	//hard code resrouce ID , do we need to support this function ?
-	url := &url.URL{
-		Scheme: "http", //todo : need to get scheme by config file
-		Host:   viper.GetString("rest.endpoint"),
-	}
+	url, _ := getRestEndpoint()
 	// add volume endpint
 	items = append(
 		items,
 		&restModels.TokenCatalogItems{
 			Endpoints: []*restModels.TokenCatalogItemsEndpointsItems{
 				&restModels.TokenCatalogItemsEndpointsItems{
-					ID:        "c4d6fd85cdb643b0bde67ad891a074f6",
+					ID:        orgID,
 					Interface: "public",
 					Region:    "default",
 					RegionID:  "default",
@@ -155,7 +164,7 @@ func catLog() (items []*restModels.TokenCatalogItems) {
 				},
 			},
 			Type: "block-storage",
-			ID:   "09e58e3d2207402c84578a6ff1b798cd",
+			ID:   orgID,
 			Name: "cinder",
 		},
 	)
@@ -165,7 +174,7 @@ func catLog() (items []*restModels.TokenCatalogItems) {
 		&restModels.TokenCatalogItems{
 			Endpoints: []*restModels.TokenCatalogItemsEndpointsItems{
 				&restModels.TokenCatalogItemsEndpointsItems{
-					ID:        "eec0d5080b334f70bc00cd787d5269f6",
+					ID:        orgID,
 					Interface: "public",
 					Region:    "default",
 					RegionID:  "default",
@@ -173,7 +182,7 @@ func catLog() (items []*restModels.TokenCatalogItems) {
 				},
 			},
 			Type: "compute",
-			ID:   "182b9192d5854c289cff7adb98415e0f",
+			ID:   orgID,
 			Name: "nova",
 		},
 	)
@@ -183,7 +192,7 @@ func catLog() (items []*restModels.TokenCatalogItems) {
 		&restModels.TokenCatalogItems{
 			Endpoints: []*restModels.TokenCatalogItemsEndpointsItems{
 				&restModels.TokenCatalogItemsEndpointsItems{
-					ID:        "0c04e1ff2cbc4fe29a58ae8efe743be4",
+					ID:        orgID,
 					Interface: "public",
 					Region:    "default",
 					RegionID:  "default",
@@ -191,7 +200,7 @@ func catLog() (items []*restModels.TokenCatalogItems) {
 				},
 			},
 			Type: "image",
-			ID:   "58e590825bbc416fa230b6bc73344375",
+			ID:   orgID,
 			Name: "glance",
 		},
 	)
@@ -201,7 +210,7 @@ func catLog() (items []*restModels.TokenCatalogItems) {
 		&restModels.TokenCatalogItems{
 			Endpoints: []*restModels.TokenCatalogItemsEndpointsItems{
 				&restModels.TokenCatalogItemsEndpointsItems{
-					ID:        "e825c6eafa3343aa83d10b370a6667a2",
+					ID:        orgID,
 					Interface: "public",
 					Region:    "default",
 					RegionID:  "default",
@@ -209,7 +218,7 @@ func catLog() (items []*restModels.TokenCatalogItems) {
 				},
 			},
 			Type: "network",
-			ID:   "44713bed353d4684a608901dfb6f20e6",
+			ID:   orgID,
 			Name: "neutron",
 		},
 	)
@@ -219,7 +228,7 @@ func catLog() (items []*restModels.TokenCatalogItems) {
 		&restModels.TokenCatalogItems{
 			Endpoints: []*restModels.TokenCatalogItemsEndpointsItems{
 				&restModels.TokenCatalogItemsEndpointsItems{
-					ID:        "09cef1a83c36456987dd7e1c09b21014",
+					ID:        orgID,
 					Interface: "public",
 					Region:    "default",
 					RegionID:  "default",
@@ -227,7 +236,7 @@ func catLog() (items []*restModels.TokenCatalogItems) {
 				},
 			},
 			Type: "identity",
-			ID:   "d8d0f669f8cc4ff5a5633d6ad5746e63",
+			ID:   orgID,
 			Name: "keystone",
 		},
 	)

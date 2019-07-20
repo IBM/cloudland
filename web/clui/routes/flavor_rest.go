@@ -9,7 +9,6 @@ package routes
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -27,8 +26,8 @@ type FlavorRest struct{}
 
 func (v *FlavorRest) Delete(c *macaron.Context) {
 	// just super used id 1  can delete flavor
-	claims := c.Data["claims"].(*HypercubeClaims)
-	if claims.UID != 1 {
+	claims := c.Data[ClaimKey].(*HypercubeClaims)
+	if claims.UID != "1" {
 		respError(c, http.StatusForbidden)
 		return
 	}
@@ -56,18 +55,18 @@ func (v *FlavorRest) Delete(c *macaron.Context) {
 }
 
 func (v *FlavorRest) Create(c *macaron.Context) {
-	// just super used id 1  can delete flavor
-	claims := c.Data["claims"].(*HypercubeClaims)
-	if claims.UID != 1 {
-		respError(c, http.StatusForbidden)
+	claims := c.Data[ClaimKey].(*HypercubeClaims)
+	//check role
+	if *claims.Role < model.Writer {
+		// if token was issued before promote user privilige, the user need to re-apply token
+		c.Error(http.StatusForbidden, http.StatusText(http.StatusForbidden))
 		return
 	}
+	// uid := c.Data[claims.UID].(int64)
+	// oid := c.Data[claims.OID].(int64)
 	body, _ := c.Req.Body().Bytes()
 	if err := JsonSchemeCheck(`flavor.json`, body); err != nil {
-		log.Println(string(body))
-		c.JSON(http.StatusBadRequest, ResponseError{
-			Error: *err,
-		})
+		c.JSON(err.Code, ResponseError{ErrorMsg: *err})
 		return
 	}
 	flavor := &restModels.CreateFlavorParamsBody{}

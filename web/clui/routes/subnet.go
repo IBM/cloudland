@@ -57,7 +57,7 @@ func getValidVni() (vni int, err error) {
 	count := 1
 	for count > 0 {
 		vni = rand.Intn(vniMax-vniMin) + vniMin
-		if err = db.Model(&model.Subnet{}).Where("vlan = ?", vni).Count(&count).Error; err != nil {
+		if err = db.Model(&model.Network{}).Where("vlan = ?", vni).Count(&count).Error; err != nil {
 			log.Println("Failed to query existing vlan, %v", err)
 			return
 		}
@@ -68,7 +68,7 @@ func getValidVni() (vni int, err error) {
 func checkIfExistVni(vni int64) (result bool, err error) {
 	db := DB()
 	count := 0
-	if err = db.Model(&model.Subnet{}).Where("vlan = ?", vni).Count(&count).Error; err != nil {
+	if err = db.Model(&model.Network{}).Where("vlan = ?", vni).Count(&count).Error; err != nil {
 		log.Println("Failed to query existing vlan, %v", err)
 		return
 	}
@@ -95,7 +95,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 		return
 	}
 	count := 0
-	err = db.Model(&model.Subnet{}).Where("vlan = ?", vlanNo).Count(&count).Error
+	err = tx.Model(&model.Subnet{}).Where("vlan = ?", vlanNo).Count(&count).Error
 	if err != nil {
 		log.Println("Database failed to count network", err)
 		return
@@ -147,7 +147,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 		Vlan:    int64(vlanNo),
 		Type:    rtype,
 	}
-	err = db.Create(subnet).Error
+	err = tx.Create(subnet).Error
 	if err != nil {
 		log.Println("Database create subnet failed, %v", err)
 		return
@@ -173,13 +173,13 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 		netlink.Type = "vlan"
 	}
 	if count < 1 {
-		err = db.Create(netlink).Error
+		err = tx.Create(netlink).Error
 		if err != nil {
 			log.Println("Database failed to create network", err)
 			return
 		}
 	} else {
-		err = db.Where(network).Take(network).Error
+		err = tx.Where(network).Take(network).Error
 		if err != nil {
 			log.Println("Database failed to create network", err)
 			return
@@ -196,7 +196,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subnet, owner int64) (err error) {
 	if netlink.Hyper < 0 {
 		var dhcp1 *model.Interface
-		dhcp1, err = model.CreateInterface(subnet.ID, netlink.ID, owner, "", "dhcp-1", "dhcp", nil)
+		dhcp1, err = CreateInterface(ctx, subnet.ID, netlink.ID, owner, "", "dhcp-1", "dhcp", nil)
 		if err != nil {
 			log.Println("Failed to allocate dhcp first address", err)
 			return
@@ -211,7 +211,7 @@ func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subn
 	}
 	if netlink.Peer < 0 {
 		var dhcp2 *model.Interface
-		dhcp2, err = model.CreateInterface(subnet.ID, netlink.ID, owner, "", "dhcp-2", "dhcp", nil)
+		dhcp2, err = CreateInterface(ctx, subnet.ID, netlink.ID, owner, "", "dhcp-2", "dhcp", nil)
 		if err != nil {
 			log.Println("Failed to allocate dhcp first address", err)
 			return

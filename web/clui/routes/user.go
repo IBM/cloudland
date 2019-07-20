@@ -161,7 +161,7 @@ func (a *UserAdmin) Validate(username, password string) (user *model.User, err e
 	return
 }
 
-func (a *UserAdmin) AccessToken(uid int64, username, organization string) (oid int64, role model.Role, token string, issueAt, expiresAt int64, err error) {
+func (a *UserAdmin) AccessToken(uid int64, username, organization string) (oid int64, role *model.Role, token string, issueAt, expiresAt int64, err error) {
 	db := DB()
 	member := &model.Member{}
 	err = db.Take(member, "user_name = ? and org_name = ?", username, organization).Error
@@ -174,8 +174,20 @@ func (a *UserAdmin) AccessToken(uid int64, username, organization string) (oid i
 		return
 	}
 	oid = member.OrgID
-	role = member.Role
-	token, issueAt, expiresAt, err = NewToken(username, organization, uid, oid, role)
+	role = &member.Role
+	orgInstance := &model.Organization{
+		Model: model.Model{ID: oid},
+	}
+	userInstance := &model.User{
+		Model: model.Model{ID: uid},
+	}
+	if err = db.First(orgInstance).Error; err != nil {
+		return
+	}
+	if err = db.First(userInstance).Error; err != nil {
+		return
+	}
+	token, issueAt, expiresAt, err = NewToken(username, organization, userInstance.UUID, orgInstance.UUID, role)
 	return
 }
 

@@ -19,6 +19,14 @@ type Image struct {
 	Status       string `gorm:"type:varchar(128)"`
 	Href         string `gorm:"type:varchar(256)"`
 	Checksum     string `gorm:"type:varchar(36)"`
+	OsHashAlgo   string `gorm:"type:varchar(36)"`
+	OsHashValue  string `gorm:"type:varchar(36)"`
+	Owner        string `gorm:"type:varchar(36)"`
+	Protected    bool
+	Visibility   string `gorm:"type:varchar(36)"`
+	MiniDisk     int32
+	MiniMem      int32
+	Size         int64
 }
 
 func init() {

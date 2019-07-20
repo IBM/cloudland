@@ -32,8 +32,8 @@ const (
 	Admin              /* Create user and org */
 )
 
-func (r Role) String() string {
-	switch r {
+func (r *Role) String() string {
+	switch *r {
 	case None:
 		return "None"
 	case Reader:
@@ -45,7 +45,7 @@ func (r Role) String() string {
 	case Admin:
 		return "Admin"
 	default:
-		return fmt.Sprintf("%d", int(r))
+		return fmt.Sprintf("%d", int(*r))
 	}
 }
 
@@ -55,6 +55,10 @@ type Organization struct {
 	DefaultSG int64
 	Members   []*Member `gorm:"foreignkey:OrgID"`
 	OwnerUser *User     `gorm:"foreignkey:ID";AssociationForeignKey:Owner`
+}
+
+func (Organization) TableName() string {
+	return "organizations"
 }
 
 type Member struct {
