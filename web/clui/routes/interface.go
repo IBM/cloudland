@@ -218,111 +218,7 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 	c.Redirect(redirectTo)
 }
 
-func CreateInterface(ctx context.Context, subnetID, ID int64, ifaceName, ifType string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
-	var db *gorm.DB
-	ctx, db = getCtxDB(ctx)
-	primary := false
-	if ifaceName == "eth0" {
-		primary = true
-	}
-	mac, err := genMacaddr()
-	if err != nil {
-		log.Println("Failed to generate random Mac address, %v", err)
-		return
-	}
-	iface = &model.Interface{
-		Name:      ifaceName,
-		MacAddr:   mac,
-		PrimaryIf: primary,
-		Type:      ifType,
-		Mtu:       1450,
-		Secgroups: secGroups,
-	}
-	if ifType == "instance" {
-		iface.Instance = ID
-	} else if ifType == "floating" {
-		iface.FloatingIp = ID
-	} else if ifType == "dhcp" {
-		iface.Dhcp = ID
-	} else if strings.Contains(ifType, "gateway") {
-		iface.Device = ID
-	}
-	err = db.Create(iface).Error
-	if err != nil {
-		log.Println("Failed to create interface, %v", err)
-		return
-	}
-	iface.Address, err = AllocateAddress(ctx, subnetID, iface.ID, "native")
-	if err != nil {
-		log.Println("Failed to allocate address, %v", err)
-		return
-	}
-	return iface, nil
-}
-
-func DeleteInterfaces(ctx context.Context, masterID int64, ifType string) (err error) {
-	var db *gorm.DB
-	ctx, db = getCtxDB(ctx)
-	ifaces := []*model.Interface{}
-	if ifType == "instance" {
-		err = db.Where("instance = ? and type = ?", masterID, "instance").Find(&ifaces).Error
-	} else if ifType == "floating" {
-		err = db.Where("floating_ip = ? and type = ?", masterID, "floating").Find(&ifaces).Error
-	} else if ifType == "dhcp" {
-		err = db.Where("dhcp = ? and type = ?", masterID, "dhcp").Find(&ifaces).Error
-	} else {
-		err = db.Where("device = ? and type like ?", masterID, "%gateway%").Find(&ifaces).Error
-	}
-	if err != nil {
-		log.Println("Failed to query interfaces, %v", err)
-		return
-	}
-	err = DeallocateAddress(ctx, ifaces)
-	if err != nil {
-		log.Println("Failed to deallocate address, %v", err)
-		return
-	}
-	if ifType == "instance" {
-		err = db.Where("instance = ? and type = ?", masterID, "instance").Delete(&model.Interface{}).Error
-	} else if ifType == "floating" {
-		err = db.Where("floating_ip = ? and type = ?", masterID, "floating").Delete(&model.Interface{}).Error
-	} else {
-		err = db.Where("device = ? and type like ?", masterID, "%gateway%").Delete(&model.Interface{}).Error
-	}
-	if err != nil {
-		log.Println("Failed to delete interface, %v", err)
-		return
-	}
-	return
-}
-
-func DeleteInterface(ctx context.Context, iface *model.Interface) (err error) {
-	var db *gorm.DB
-	ctx, db = getCtxDB(ctx)
-	if err = db.Model(&model.Address{}).Where("interface = ?", iface.ID).Update(map[string]interface{}{"allocated": false, "interface": 0}).Error; err != nil {
-		log.Println("Failed to Update addresses, %v", err)
-		return
-	}
-	err = db.Delete(iface).Error
-	if err != nil {
-		log.Println("Failed to delete interface", err)
-		return
-	}
-	return
-}
-
-func genMacaddr() (mac string, err error) {
-	buf := make([]byte, 4)
-	_, err = rand.Read(buf)
-	if err != nil {
-		log.Println("Failed to generate random numbers, %v", err)
-		return
-	}
-	mac = fmt.Sprintf("52:54:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3])
-	return mac, nil
-}
-
-func AllocateAddress(ctx context.Context, subnetID, ifaceID int64, addrType string) (address *model.Address, err error) {
+func AllocateAddress(ctx context.Context, subnetID, ifaceID int64, ipaddr, addrType string) (address *model.Address, err error) {
 	var db *gorm.DB
 	ctx, db = getCtxDB(ctx)
 	subnet := &model.Subnet{Model: model.Model{ID: subnetID}}
@@ -332,7 +228,11 @@ func AllocateAddress(ctx context.Context, subnetID, ifaceID int64, addrType stri
 		return
 	}
 	address = &model.Address{Subnet: subnet}
-	err = db.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ?", subnetID, false).Take(address).Error
+	if ipaddr == "" {
+		err = db.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ?", subnetID, false).Take(address).Error
+	} else {
+		err = db.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ? and address = ?", subnetID, false, ipaddr).Take(address).Error
+	}
 	if err != nil {
 		log.Println("Failed to query address, %v", err)
 		return nil, err
@@ -392,6 +292,111 @@ func UnsetGateway(ctx context.Context, subnet *model.Subnet) (err error) {
 	err = db.Save(subnet).Error
 	if err != nil {
 		log.Println("Failed to unset gateway, %v", err)
+		return
+	}
+	return
+}
+
+func genMacaddr() (mac string, err error) {
+	buf := make([]byte, 4)
+	_, err = rand.Read(buf)
+	if err != nil {
+		log.Println("Failed to generate random numbers, %v", err)
+		return
+	}
+	mac = fmt.Sprintf("52:54:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3])
+	return mac, nil
+}
+
+func CreateInterface(ctx context.Context, subnetID, ID, owner int64, address, ifaceName, ifType string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
+	var db *gorm.DB
+	ctx, db = getCtxDB(ctx)
+	primary := false
+	if ifaceName == "eth0" {
+		primary = true
+	}
+	mac, err := genMacaddr()
+	if err != nil {
+		log.Println("Failed to generate random Mac address, %v", err)
+		return
+	}
+	iface = &model.Interface{
+		Model:     model.Model{Owner: owner},
+		Name:      ifaceName,
+		MacAddr:   mac,
+		PrimaryIf: primary,
+		Type:      ifType,
+		Mtu:       1450,
+		Secgroups: secGroups,
+	}
+	if ifType == "instance" {
+		iface.Instance = ID
+	} else if ifType == "floating" {
+		iface.FloatingIp = ID
+	} else if ifType == "dhcp" {
+		iface.Dhcp = ID
+	} else if strings.Contains(ifType, "gateway") {
+		iface.Device = ID
+	}
+	err = db.Create(iface).Error
+	if err != nil {
+		log.Println("Failed to create interface, %v", err)
+		return
+	}
+	iface.Address, err = AllocateAddress(ctx, subnetID, iface.ID, address, "native")
+	if err != nil {
+		log.Println("Failed to allocate address", err)
+		return
+	}
+	return iface, nil
+}
+
+func DeleteInterfaces(ctx context.Context, masterID int64, ifType string) (err error) {
+	var db *gorm.DB
+	ctx, db = getCtxDB(ctx)
+	ifaces := []*model.Interface{}
+	if ifType == "instance" {
+		err = db.Where("instance = ? and type = ?", masterID, "instance").Find(&ifaces).Error
+	} else if ifType == "floating" {
+		err = db.Where("floating_ip = ? and type = ?", masterID, "floating").Find(&ifaces).Error
+	} else if ifType == "dhcp" {
+		err = db.Where("dhcp = ? and type = ?", masterID, "dhcp").Find(&ifaces).Error
+	} else {
+		err = db.Where("device = ? and type like ?", masterID, "%gateway%").Find(&ifaces).Error
+	}
+	if err != nil {
+		log.Println("Failed to query interfaces, %v", err)
+		return
+	}
+	err = DeallocateAddress(ctx, ifaces)
+	if err != nil {
+		log.Println("Failed to deallocate address, %v", err)
+		return
+	}
+	if ifType == "instance" {
+		err = db.Where("instance = ? and type = ?", masterID, "instance").Delete(&model.Interface{}).Error
+	} else if ifType == "floating" {
+		err = db.Where("floating_ip = ? and type = ?", masterID, "floating").Delete(&model.Interface{}).Error
+	} else {
+		err = db.Where("device = ? and type like ?", masterID, "%gateway%").Delete(&model.Interface{}).Error
+	}
+	if err != nil {
+		log.Println("Failed to delete interface, %v", err)
+		return
+	}
+	return
+}
+
+func DeleteInterface(ctx context.Context, iface *model.Interface) (err error) {
+	var db *gorm.DB
+	ctx, db = getCtxDB(ctx)
+	if err = db.Model(&model.Address{}).Where("interface = ?", iface.ID).Update(map[string]interface{}{"allocated": false, "interface": 0}).Error; err != nil {
+		log.Println("Failed to Update addresses, %v", err)
+		return
+	}
+	err = db.Delete(iface).Error
+	if err != nil {
+		log.Println("Failed to delete interface", err)
 		return
 	}
 	return

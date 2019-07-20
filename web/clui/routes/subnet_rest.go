@@ -315,7 +315,7 @@ func (v *subnetRestAdmin) createSubnet(ctx context.Context, network *model.Netwo
 			ip = cidrFun.Inc(ip)
 		}
 	}
-	err = execNetwork(ctx, network, v.Subnet)
+	err = execNetwork(ctx, network, v.Subnet, v.Subnet.Owner)
 	if err != nil {
 		log.Println("Failed remote execute network creation", err)
 		log.Print("Start calling back")

@@ -258,7 +258,7 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 	c.Redirect(redirectTo)
 }
 
-func AllocateFloatingIp(ctx context.Context, floatingipID int64, gateway *model.Gateway, ftype string) (fipIface *model.Interface, err error) {
+func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, gateway *model.Gateway, ftype string) (fipIface *model.Interface, err error) {
 	var db *gorm.DB
 	ctx, db = getCtxDB(ctx)
 	var subnet *model.Subnet
@@ -273,13 +273,13 @@ func AllocateFloatingIp(ctx context.Context, floatingipID int64, gateway *model.
 		return
 	}
 	name := ftype + "fip"
-	fipIface, err = CreateInterface(ctx, subnet.ID, floatingipID, name, "floating", nil)
+	fipIface, err = CreateInterface(ctx, subnet.ID, floatingipID, owner, "", name, "floating", nil)
 	if err != nil {
 		subnets := []*model.Subnet{}
 		err = db.Model(&model.Subnet{}).Where("vlan = ? and id <> ?", subnet.Vlan, subnet.ID).Find(subnets).Error
 		if err == nil && len(subnets) > 0 {
 			for _, s := range subnets {
-				fipIface, err = CreateInterface(ctx, s.ID, floatingipID, name, "floating", nil)
+				fipIface, err = CreateInterface(ctx, s.ID, floatingipID, owner, "", name, "floating", nil)
 				if err == nil {
 					break
 				}
