@@ -310,7 +310,7 @@ func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
 	if networkUUID == "" {
 		// if netID is empty, create subnet with random vni ID and network type is internal
 		networkUUID = uuidPk.New().String()
-		subnet, err = subnetAdmin.Create(c.Req.Context(), name, "", network.String(), netmask, gateway.String(), first.String(), last.String(), INTERNAL.String(), networkUUID)
+		subnet, err = subnetAdmin.Create(c.Req.Context(), name, "", network.String(), netmask, gateway.String(), first.String(), last.String(), INTERNAL.String(), networkUUID, 0)
 		if err != nil {
 			log.Println(fmt.Sprintf("Failed to create subnet with error: %v", err))
 			c.JSON(500, NewResponseError("create subnet fail", err.Error(), 500))
@@ -326,7 +326,7 @@ func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
 		}
 		if count == 0 {
 			// if network don't created, create subnet directly with specified network ID
-			subnet, err = subnetAdmin.Create(c.Req.Context(), name, "", network.String(), netmask, gateway.String(), first.String(), last.String(), "internal", networkUUID)
+			subnet, err = subnetAdmin.Create(c.Req.Context(), name, "", network.String(), netmask, gateway.String(), first.String(), last.String(), "internal", networkUUID, 0)
 			if err != nil {
 				log.Println(fmt.Sprintf("Failed to create subnet with error: %v", err))
 				c.JSON(500, NewResponseError("create subnet fail", err.Error(), 500))
@@ -407,7 +407,7 @@ func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
 					return
 				}
 			}
-			subnet, err = subnetAdmin.Create(c.Req.Context(), name, strconv.FormatInt(existingSubnet.Vlan, 10), network.String(), netmask, gateway.String(), first.String(), last.String(), existingSubnet.Type, existingSubnet.UUID)
+			subnet, err = subnetAdmin.Create(c.Req.Context(), name, strconv.FormatInt(existingSubnet.Vlan, 10), network.String(), netmask, gateway.String(), first.String(), last.String(), existingSubnet.Type, existingSubnet.UUID, 0)
 			if err != nil {
 				log.Println(fmt.Sprintf("Failed to create subnet with error: %v", err))
 				c.JSON(500, NewResponseError("create subnet fail", err.Error(), 500))

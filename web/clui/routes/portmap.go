@@ -234,6 +234,13 @@ func (v *PortmapView) Create(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	permit, err = memberShip.CheckOwner(model.Writer, "instances", int64(instID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	portNo, err := strconv.Atoi(port)
 	if err != nil {
 		log.Println("Invalid port number", err)

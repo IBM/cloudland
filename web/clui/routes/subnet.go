@@ -79,7 +79,10 @@ func checkIfExistVni(vni int64) (result bool, err error) {
 	}
 }
 
-func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, gateway, start, end, rtype, uuid string) (subnet *model.Subnet, err error) {
+func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, gateway, start, end, rtype, uuid string, owner int64) (subnet *model.Subnet, err error) {
+	if owner == 0 {
+		owner = memberShip.OrgID
+	}
 	db := DB()
 	vlanNo := 0
 	if vlan == "" {
@@ -134,7 +137,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 	}
 	gateway = fmt.Sprintf("%s/%d", gateway, preSize)
 	subnet = &model.Subnet{
-		Model:   model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID, UUID: uuid},
+		Model:   model.Model{Creater: memberShip.UserID, Owner: owner, UUID: uuid},
 		Name:    name,
 		Network: first.String(),
 		Netmask: netmask,
@@ -152,7 +155,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 	ip := net.ParseIP(start)
 	for {
 		ipstr := fmt.Sprintf("%s/%d", ip.String(), preSize)
-		address := &model.Address{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Address: ipstr, Netmask: netmask, Type: "ipv4", SubnetID: subnet.ID}
+		address := &model.Address{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Address: ipstr, Netmask: netmask, Type: "ipv4", SubnetID: subnet.ID}
 		err = db.Create(address).Error
 		if err != nil {
 			log.Println("Database create address failed, %v", err)
@@ -165,7 +168,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 			ip = cidr.Inc(ip)
 		}
 	}
-	netlink := &model.Network{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Vlan: int64(vlanNo), Type: "vxlan"}
+	netlink := &model.Network{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Vlan: int64(vlanNo), Type: "vxlan"}
 	if vlanNo < 4096 {
 		netlink.Type = "vlan"
 	}
@@ -182,7 +185,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 			return
 		}
 	}
-	err = execNetwork(ctx, netlink, subnet)
+	err = execNetwork(ctx, netlink, subnet, owner)
 	if err != nil {
 		log.Println("Failed remote execute network creation", err)
 		return
@@ -190,10 +193,10 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 	return
 }
 
-func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subnet) (err error) {
+func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subnet, owner int64) (err error) {
 	if netlink.Hyper < 0 {
 		var dhcp1 *model.Interface
-		dhcp1, err = model.CreateInterface(subnet.ID, netlink.ID, memberShip.OrgID, "", "dhcp-1", "dhcp", nil)
+		dhcp1, err = model.CreateInterface(subnet.ID, netlink.ID, owner, "", "dhcp-1", "dhcp", nil)
 		if err != nil {
 			log.Println("Failed to allocate dhcp first address", err)
 			return
@@ -208,7 +211,7 @@ func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subn
 	}
 	if netlink.Peer < 0 {
 		var dhcp2 *model.Interface
-		dhcp2, err = model.CreateInterface(subnet.ID, netlink.ID, memberShip.OrgID, "", "dhcp-2", "dhcp", nil)
+		dhcp2, err = model.CreateInterface(subnet.ID, netlink.ID, owner, "", "dhcp-2", "dhcp", nil)
 		if err != nil {
 			log.Println("Failed to allocate dhcp first address", err)
 			return
@@ -457,7 +460,7 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 	gateway := c.Query("gateway")
 	start := c.Query("start")
 	end := c.Query("end")
-	_, err := subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, gateway, start, end, rtype, "")
+	_, err := subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, gateway, start, end, rtype, "", memberShip.OrgID)
 	if err != nil {
 		log.Println("Create subnet failed, %v", err)
 		c.Data["ErrorMsg"] = err.Error()

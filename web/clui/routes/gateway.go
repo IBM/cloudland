@@ -35,14 +35,17 @@ type SubnetIface struct {
 type GatewayAdmin struct{}
 type GatewayView struct{}
 
-func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int64, subnetIDs []int64) (gateway *model.Gateway, err error) {
+func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int64, subnetIDs []int64, owner int64) (gateway *model.Gateway, err error) {
+	if owner == 0 {
+		owner = memberShip.OrgID
+	}
 	db := DB()
 	vni, err := getValidVni()
 	if err != nil {
 		log.Println("Failed to get valid vrrp vni %s, %v", vni, err)
 		return
 	}
-	gateway = &model.Gateway{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Name: name, VrrpVni: int64(vni), VrrpAddr: "169.254.169.250/24", PeerAddr: "169.254.169.251/24", Status: "pending"}
+	gateway = &model.Gateway{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Name: name, VrrpVni: int64(vni), VrrpAddr: "169.254.169.250/24", PeerAddr: "169.254.169.251/24", Status: "pending"}
 	err = db.Create(gateway).Error
 	if err != nil {
 		log.Println("DB failed to create gateway, %v", err)
@@ -57,7 +60,7 @@ func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int
 		log.Println("DB failed to query public subnet, %v", err)
 		return
 	}
-	pubIface, err := model.CreateInterface(pubSubnet.ID, gateway.ID, memberShip.OrgID, "", fmt.Sprintf("pub%d", pubSubnet.ID), "gateway_public", nil)
+	pubIface, err := model.CreateInterface(pubSubnet.ID, gateway.ID, owner, "", fmt.Sprintf("pub%d", pubSubnet.ID), "gateway_public", nil)
 	if err != nil {
 		log.Println("DB failed to create public interface, %v", err)
 		return
@@ -71,7 +74,7 @@ func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int
 		log.Println("DB failed to query private subnet, %v", err)
 		return
 	}
-	priIface, err := model.CreateInterface(priSubnet.ID, gateway.ID, memberShip.OrgID, "", fmt.Sprintf("pri%d", priSubnet.ID), "gateway_private", nil)
+	priIface, err := model.CreateInterface(priSubnet.ID, gateway.ID, owner, "", fmt.Sprintf("pri%d", priSubnet.ID), "gateway_private", nil)
 	if err != nil {
 		log.Println("DB failed to create private interface, %v", err)
 		return
@@ -423,6 +426,13 @@ func (v *GatewayView) Patch(c *macaron.Context, store session.Store) {
 			log.Println("Invalid secondary subnet ID, %v", err)
 			continue
 		}
+		permit, err = memberShip.CheckOwner(model.Writer, "subnets", int64(sID))
+		if !permit {
+			log.Println("Not authorized for this operation")
+			code := http.StatusUnauthorized
+			c.Error(code, http.StatusText(code))
+			return
+		}
 		subnetIDs = append(subnetIDs, int64(sID))
 	}
 	_, err = gatewayAdmin.Update(c.Req.Context(), int64(gatewayID), name, int64(pubID), int64(priID), subnetIDs)
@@ -464,9 +474,16 @@ func (v *GatewayView) Create(c *macaron.Context, store session.Store) {
 			log.Println("Invalid secondary subnet ID, %v", err)
 			continue
 		}
+		permit, err = memberShip.CheckOwner(model.Writer, "subnets", int64(sID))
+		if !permit {
+			log.Println("Not authorized for this operation")
+			code := http.StatusUnauthorized
+			c.Error(code, http.StatusText(code))
+			return
+		}
 		subnetIDs = append(subnetIDs, int64(sID))
 	}
-	_, err = gatewayAdmin.Create(c.Req.Context(), name, int64(pubID), int64(priID), subnetIDs)
+	_, err = gatewayAdmin.Create(c.Req.Context(), name, int64(pubID), int64(priID), subnetIDs, memberShip.OrgID)
 	if err != nil {
 		log.Println("Failed to create gateway, %v", err)
 		c.HTML(500, "500")

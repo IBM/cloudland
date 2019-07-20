@@ -331,7 +331,7 @@ func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subne
 			return
 		}
 	}
-	err = execNetwork(ctx, netlink, subnet)
+	err = execNetwork(ctx, netlink, subnet, memberShip.OrgID)
 	if err != nil {
 		log.Println("Failed to execute network creation")
 		return
@@ -707,6 +707,13 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 			log.Println("Invalid secondary subnet ID, %v", err)
 			continue
 		}
+		permit, err = memberShip.CheckOwner(model.Writer, "subnets", int64(sID))
+		if !permit {
+			log.Println("Not authorized for this operation")
+			code := http.StatusUnauthorized
+			c.Error(code, http.StatusText(code))
+			return
+		}
 		subnetIDs = append(subnetIDs, int64(sID))
 	}
 	var sgIDs []int64
@@ -762,6 +769,13 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	permit, err = memberShip.CheckOwner(model.Writer, "subnets", int64(primaryID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	primaryIP := c.QueryTrim("primaryip")
 	subnets := c.Query("subnets")
 	s := strings.Split(subnets, ",")
@@ -771,6 +785,13 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		if err != nil {
 			log.Println("Invalid secondary subnet ID, %v", err)
 			continue
+		}
+		permit, err = memberShip.CheckOwner(model.Writer, "subnets", int64(sID))
+		if !permit {
+			log.Println("Not authorized for this operation")
+			code := http.StatusUnauthorized
+			c.Error(code, http.StatusText(code))
+			return
 		}
 		subnetIDs = append(subnetIDs, int64(sID))
 	}
@@ -782,6 +803,13 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		if err != nil {
 			log.Println("Invalid key ID, %v", err)
 			continue
+		}
+		permit, err = memberShip.CheckOwner(model.Writer, "keys", int64(kID))
+		if !permit {
+			log.Println("Not authorized for this operation")
+			code := http.StatusUnauthorized
+			c.Error(code, http.StatusText(code))
+			return
 		}
 		keyIDs = append(keyIDs, int64(kID))
 	}
@@ -795,10 +823,25 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 				log.Println("Invalid security group ID", err)
 				continue
 			}
+			permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
+			if !permit {
+				log.Println("Not authorized for this operation")
+				code := http.StatusUnauthorized
+				c.Error(code, http.StatusText(code))
+				return
+			}
 			sgIDs = append(sgIDs, int64(sgID))
 		}
 	} else {
-		sgIDs = append(sgIDs, store.Get("defsg").(int64))
+		sgID := store.Get("defsg").(int64)
+		permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
+		if !permit {
+			log.Println("Not authorized for this operation")
+			code := http.StatusUnauthorized
+			c.Error(code, http.StatusText(code))
+			return
+		}
+		sgIDs = append(sgIDs, sgID)
 	}
 	userdata := c.Query("userdata")
 	_, err = instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, int64(imageID), int64(flavorID), int64(primaryID), primaryIP, subnetIDs, keyIDs, sgIDs, hyper)
