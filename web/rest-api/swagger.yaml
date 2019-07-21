@@ -90,21 +90,21 @@ paths:
             x-openstack-request-id: {type: string, description: 'request-id'}
             X-Subject-Token:
               type: string
-              schema:
-                type: object
-                required:
-                - token
-                properties:
-                  token:
-                    $ref: '#/definitions/token'
+          schema:
+            type: object
+            required:
+            - token
+            properties:
+              token:
+                $ref: '#/definitions/token'
         400:
-          description: `Bad Request`
+          description: "Bad Request"
         401:
-          description: `Unauthorized`
+          description: "Unauthorized"
         403:
-          description: `Forbidden`
+          description: "Forbidden"
         404:
-          description: `Not Found`
+          description: "Not Found"
   /v2.0/networks:
     get:
       tags: [neutron]
@@ -150,7 +150,6 @@ paths:
             properties:
               network:
                 type: object
-                required: [name, provider:network_type, router:external]
                 properties:
                   admin_state_up: {type: boolean, example: true}
                   name: {type: string, example: 'net1'}
@@ -229,6 +228,7 @@ paths:
                   ip_version: {type: integer, enum: [4, 6], example: 6}
                   cidr: {type: string, example: '10.0.0.1/24'}
                   name: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'net1'}
+                  gateway_ip: {type: string, example: "192.168.1.1"}
       responses:
           200:
             description: 200 response

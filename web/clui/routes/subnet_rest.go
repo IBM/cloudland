@@ -98,20 +98,30 @@ func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
 		return
 	}
 	_, cidr, err := net.ParseCIDR(requestData.Subnet.Cidr)
+	network, end := cidrFun.AddressRange(cidr)
 	if err != nil {
 		code := http.StatusBadRequest
 		c.JSON(code, NewResponseError("parse Cidr fail", err.Error(), code))
 		return
 	}
+	var gateway net.IP
+	if requestData.Subnet.GatewayIP != "" {
+		gateway = net.ParseIP(requestData.Subnet.GatewayIP)
+		if !cidr.Contains(gateway) {
+			code := http.StatusBadRequest
+			c.JSON(code, NewResponseError("gatway not in subnet range", err.Error(), code))
+			return
+		}
+	} else {
+		gateway = cidrFun.Dec(end)
+	}
 	subnetName := requestData.Subnet.Name
 	networkUUID := requestData.Subnet.NetworkID
-	network, end := cidrFun.AddressRange(cidr)
 	first := cidrFun.Inc(network)
-	gateway := cidrFun.Dec(end)
 	last := cidrFun.Dec(gateway)
 	netmask := net.IP(cidr.Mask).String()
 	netmaskSize, _ := cidr.Mask.Size()
-	gatewayStr := fmt.Sprintf("%s/%d", gateway, netmaskSize)
+	gatewayStr := fmt.Sprintf("%s/%d", gateway.String(), netmaskSize)
 	networkInstance := &model.Network{Model: model.Model{UUID: networkUUID}}
 	if err = db.Find(networkInstance).Error; err != nil {
 		code := http.StatusInternalServerError
@@ -293,6 +303,9 @@ func (v *subnetRestAdmin) createSubnet(ctx context.Context, network *model.Netwo
 	ip := net.ParseIP(v.Subnet.Start)
 	for {
 		ipstr := fmt.Sprintf("%s/%d", ip.String(), preSize)
+		if ipstr == v.Subnet.Gateway {
+			ip = cidrFun.Inc(ip)
+		}
 		address := &model.Address{
 			Model: model.Model{
 				Creater: v.Subnet.Creater,
@@ -307,12 +320,9 @@ func (v *subnetRestAdmin) createSubnet(ctx context.Context, network *model.Netwo
 		if err != nil {
 			log.Println("Database create address failed, %v", err)
 		}
+		ip = cidrFun.Inc(ip)
 		if ip.String() == v.Subnet.End {
 			break
-		}
-		ip = cidrFun.Inc(ip)
-		if ipstr == v.Subnet.Gateway {
-			ip = cidrFun.Inc(ip)
 		}
 	}
 	err = execNetwork(ctx, network, v.Subnet, v.Subnet.Owner)
