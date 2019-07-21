@@ -320,10 +320,10 @@ func (v *subnetRestAdmin) createSubnet(ctx context.Context, network *model.Netwo
 		if err != nil {
 			log.Println("Database create address failed, %v", err)
 		}
-		ip = cidrFun.Inc(ip)
 		if ip.String() == v.Subnet.End {
 			break
 		}
+		ip = cidrFun.Inc(ip)
 	}
 	err = execNetwork(ctx, network, v.Subnet, v.Subnet.Owner)
 	if err != nil {
