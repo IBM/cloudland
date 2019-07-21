@@ -26,7 +26,7 @@ type CreateNetworkParamsBodyNetwork struct {
 	Name string `json:"name,omitempty"`
 
 	// provider network type
-	// Enum: [vlan vxlan gre flat]
+	// Enum: [vlan vxlan]
 	ProviderNetworkType string `json:"provider:network_type,omitempty"`
 
 	// provider physical network
@@ -35,9 +35,6 @@ type CreateNetworkParamsBodyNetwork struct {
 
 	// provider segmentation id
 	ProviderSegmentationID string `json:"provider:segmentation_id,omitempty"`
-
-	// qos policy id
-	QosPolicyID string `json:"qos_policy_id,omitempty"`
 
 	// router external
 	RouterExternal bool `json:"router:external,omitempty"`
@@ -65,7 +62,7 @@ var createNetworkParamsBodyNetworkTypeProviderNetworkTypePropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["vlan","vxlan","gre","flat"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["vlan","vxlan"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -80,12 +77,6 @@ const (
 
 	// CreateNetworkParamsBodyNetworkProviderNetworkTypeVxlan captures enum value "vxlan"
 	CreateNetworkParamsBodyNetworkProviderNetworkTypeVxlan string = "vxlan"
-
-	// CreateNetworkParamsBodyNetworkProviderNetworkTypeGre captures enum value "gre"
-	CreateNetworkParamsBodyNetworkProviderNetworkTypeGre string = "gre"
-
-	// CreateNetworkParamsBodyNetworkProviderNetworkTypeFlat captures enum value "flat"
-	CreateNetworkParamsBodyNetworkProviderNetworkTypeFlat string = "flat"
 )
 
 // prop value enum

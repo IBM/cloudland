@@ -22,6 +22,9 @@ type CreateSubnetParamsBodySubnet struct {
 	// cidr
 	Cidr string `json:"cidr,omitempty"`
 
+	// gateway ip
+	GatewayIP string `json:"gateway_ip,omitempty"`
+
 	// ip version
 	// Enum: [4 6]
 	IPVersion int64 `json:"ip_version,omitempty"`
