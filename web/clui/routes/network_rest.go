@@ -45,7 +45,7 @@ func (v networkType) String() string {
 }
 
 func (v *NetworkRest) ListNetworks(c *macaron.Context) {
-	_, oid, err := ChecPermissionWithErrorResp(model.Writer, c)
+	_, oid, err := ChecKPermissionWithErrorResp(model.Reader, c)
 	if err != nil {
 		log.Print(err.Error())
 		return
@@ -92,7 +92,7 @@ func (v *NetworkRest) ListNetworks(c *macaron.Context) {
 
 func (v *NetworkRest) DeleteNetwork(c *macaron.Context) {
 	db := DB()
-	_, oid, err := ChecPermissionWithErrorResp(model.Writer, c)
+	_, oid, err := ChecKPermissionWithErrorResp(model.Writer, c)
 	if err != nil {
 		log.Print(err.Error())
 		return
@@ -107,7 +107,7 @@ func (v *NetworkRest) DeleteNetwork(c *macaron.Context) {
 	network := &model.Network{
 		Model: model.Model{Owner: oid, UUID: uuid},
 	}
-	err = db.Preload("Subnets").Where(network).First(network).Error
+	err = db.Preload("Subnets").Where(network).Take(network).Error
 	if err != nil {
 		code := http.StatusInternalServerError
 		if gorm.IsRecordNotFoundError(err) {
@@ -135,7 +135,7 @@ func (v *NetworkRest) DeleteNetwork(c *macaron.Context) {
 
 func (v *NetworkRest) CreateNetwork(c *macaron.Context) {
 	db := DB()
-	uid, oid, err := ChecPermissionWithErrorResp(model.Writer, c)
+	uid, oid, err := ChecKPermissionWithErrorResp(model.Writer, c)
 	if err != nil {
 		log.Print(err.Error())
 		return

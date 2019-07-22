@@ -188,7 +188,7 @@ func CheckRoleByUUID(uid, oid int64, expectRole model.Role) (passed bool, err er
 	return true, nil
 }
 
-func ChecPermissionWithErrorResp(expectRole model.Role, c *macaron.Context) (uid, oid int64, err error) {
+func ChecKPermissionWithErrorResp(expectRole model.Role, c *macaron.Context) (uid, oid int64, err error) {
 	claims := c.Data[ClaimKey].(*HypercubeClaims)
 	//check role
 	if claims.Role < expectRole {
