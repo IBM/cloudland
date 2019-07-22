@@ -258,7 +258,26 @@ func (v *SubnetRest) DeleteSubnet(c *macaron.Context) {
 	// 		return
 	// 	}
 	// }
-
+	network := subnet.Netlink
+	control := ""
+	if network.Hyper >= 0 {
+		control = fmt.Sprintf("toall=vlan-%d:%d", subnet.Vlan, network.Hyper)
+		if network.Peer >= 0 {
+			control = fmt.Sprintf("%s,%d", control, network.Peer)
+		}
+	} else if network.Peer >= 0 {
+		control = fmt.Sprintf("inter=%d", network.Peer)
+	} else {
+		log.Println("Network has no valid hypers")
+	}
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_net.sh %d %s %d", network.Vlan, subnet.Network, subnet.ID)
+	err = hyperExecute(c.Req.Context(), control, command)
+	if err != nil {
+		log.Println("Delete interface failed")
+		code := http.StatusInternalServerError
+		c.JSON(code, NewResponseError("Delete subnet fail", err.Error(), code))
+		return
+	}
 	if err = db.Delete(subnet).Error; err != nil {
 		code := http.StatusInternalServerError
 		c.JSON(code, NewResponseError("Delete subnet fail", err.Error(), code))
