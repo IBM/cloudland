@@ -26,7 +26,9 @@ type MemberShip struct {
 }
 
 func (m *MemberShip) GetWhere() (where string) {
-	if m.Role != model.Admin {
+	if m.OrgName == "admin" && m.Role == model.Admin {
+		where = ""
+	} else {
 		where = fmt.Sprintf("owner = %d", m.OrgID)
 	}
 	return
@@ -94,5 +96,15 @@ func (m *MemberShip) CheckOwner(reqRole model.Role, table string, id int64) (isO
 	if memberShip.OrgID == result.Owner || (m.OrgName == "admin" && m.Role == model.Admin) {
 		isOwner = true
 	}
+	return
+}
+
+func (m *MemberShip) CheckAdmin(reqRole model.Role, table string, id int64) (admin bool, err error) {
+	admin = false
+	if m.Role == model.Admin {
+		admin = true
+		return
+	}
+	admin, err = m.CheckOwner(reqRole, table, id)
 	return
 }

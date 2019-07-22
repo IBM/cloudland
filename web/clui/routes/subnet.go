@@ -289,24 +289,24 @@ func (a *SubnetAdmin) Delete(ctx context.Context, id int64) (err error) {
 			log.Println("Failed to delete network")
 			return
 		}
-		control := ""
-		if netlink.Hyper >= 0 {
-			control = fmt.Sprintf("toall=vlan-%d:%d", subnet.Vlan, netlink.Hyper)
-			if netlink.Peer >= 0 {
-				control = fmt.Sprintf("%s,%d", control, netlink.Peer)
-			}
-		} else if netlink.Peer >= 0 {
-			control = fmt.Sprintf("inter=%d", netlink.Peer)
-		} else {
-			log.Println("Network has no valid hypers")
-			return
+	}
+	control := ""
+	if netlink.Hyper >= 0 {
+		control = fmt.Sprintf("toall=vlan-%d:%d", subnet.Vlan, netlink.Hyper)
+		if netlink.Peer >= 0 {
+			control = fmt.Sprintf("%s,%d", control, netlink.Peer)
 		}
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_net.sh %d %s %d", netlink.Vlan, subnet.Network, subnet.ID)
-		err = hyperExecute(ctx, control, command)
-		if err != nil {
-			log.Println("Delete interface failed")
-			return
-		}
+	} else if netlink.Peer >= 0 {
+		control = fmt.Sprintf("inter=%d", netlink.Peer)
+	} else {
+		log.Println("Network has no valid hypers")
+		return
+	}
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_net.sh %d %s %d", netlink.Vlan, subnet.Network, subnet.ID)
+	err = hyperExecute(ctx, control, command)
+	if err != nil {
+		log.Println("Delete interface failed")
+		return
 	}
 	return
 }

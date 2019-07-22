@@ -120,7 +120,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		if count > 1 {
 			hostname = fmt.Sprintf("%s-%d", prefix, i+1)
 		}
-		instance = &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, ImageID: imageID, Image: image, FlavorID: flavorID, Flavor: flavor, Keys: keys, Userdata: userdata, Status: "pending"}
+		instance = &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, ImageID: imageID, FlavorID: flavorID, Userdata: userdata, Status: "pending"}
 		err = db.Create(instance).Error
 		if err != nil {
 			log.Println("DB create instance failed", err)
@@ -737,6 +737,15 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	redirectTo := "../instances"
 	hostname := c.Query("hostname")
 	hyper := c.QueryInt("hyper")
+	if hyper >= 0 {
+		permit := memberShip.CheckPermission(model.Admin)
+		if !permit {
+			log.Println("Not authorized for this operation")
+			code := http.StatusUnauthorized
+			c.Error(code, http.StatusText(code))
+			return
+		}
+	}
 	cnt := c.Query("count")
 	count, err := strconv.Atoi(cnt)
 	if err != nil {
@@ -769,7 +778,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	permit, err = memberShip.CheckOwner(model.Writer, "subnets", int64(primaryID))
+	permit, err = memberShip.CheckAdmin(model.Writer, "subnets", int64(primaryID))
 	if !permit {
 		log.Println("Not authorized for this operation")
 		code := http.StatusUnauthorized
@@ -786,7 +795,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			log.Println("Invalid secondary subnet ID, %v", err)
 			continue
 		}
-		permit, err = memberShip.CheckOwner(model.Writer, "subnets", int64(sID))
+		permit, err = memberShip.CheckAdmin(model.Writer, "subnets", int64(sID))
 		if !permit {
 			log.Println("Not authorized for this operation")
 			code := http.StatusUnauthorized
