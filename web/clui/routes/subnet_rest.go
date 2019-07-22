@@ -33,6 +33,12 @@ type subnetRestAdmin struct{ *model.Subnet }
 
 //ListSubnets : list subnets
 func (v *SubnetRest) ListSubnets(c *macaron.Context) {
+	// TODO: list oid, need to update subnetadmin function
+	_, _, err := ChecKPermissionWithErrorResp(model.Reader, c)
+	if err != nil {
+		log.Print(err.Error())
+		return
+	}
 	offset := c.QueryInt64("marker")
 	limit := c.QueryInt64("limit")
 	reverse := c.QueryBool("page_reverse")
@@ -80,7 +86,7 @@ func (v *SubnetRest) ListSubnets(c *macaron.Context) {
 
 //CreateSubnet : create subnet in db with network id
 func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
-	uid, oid, err := ChecPermissionWithErrorResp(model.Writer, c)
+	uid, oid, err := ChecKPermissionWithErrorResp(model.Writer, c)
 	if err != nil {
 		log.Print(err.Error())
 		return
@@ -191,9 +197,15 @@ func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
 
 //DeleteSubnet : delete subNet
 func (v *SubnetRest) DeleteSubnet(c *macaron.Context) {
+	var err error
+	var oid int64
+	_, oid, err = ChecKPermissionWithErrorResp(model.Writer, c)
+	if err != nil {
+		log.Print(err.Error())
+		return
+	}
 	db := DB()
 	db = db.Begin()
-	var err error
 	defer func() {
 		if err == nil {
 			db.Commit()
@@ -208,8 +220,8 @@ func (v *SubnetRest) DeleteSubnet(c *macaron.Context) {
 		return
 	}
 	//check subnet is existing
-	subnet := &model.Subnet{Model: model.Model{UUID: subnetUUID}}
-	if err = db.Where(subnet).First(subnet).Error; err != nil {
+	subnet := &model.Subnet{Model: model.Model{UUID: subnetUUID, Owner: oid}}
+	if err = db.Where(subnet).Take(subnet).Error; err != nil {
 		code := http.StatusInternalServerError
 		if gorm.IsRecordNotFoundError(err) {
 			code = http.StatusNotFound
