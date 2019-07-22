@@ -57,7 +57,7 @@ func (v *FlavorRest) Delete(c *macaron.Context) {
 func (v *FlavorRest) Create(c *macaron.Context) {
 	claims := c.Data[ClaimKey].(*HypercubeClaims)
 	//check role
-	if *claims.Role < model.Writer {
+	if claims.Role < model.Writer {
 		// if token was issued before promote user privilige, the user need to re-apply token
 		c.Error(http.StatusForbidden, http.StatusText(http.StatusForbidden))
 		return

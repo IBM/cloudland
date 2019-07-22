@@ -168,20 +168,22 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 			ip = cidr.Inc(ip)
 		}
 	}
-	netlink := &model.Network{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Vlan: int64(vlanNo), Type: "vxlan"}
+	netlink := &model.Network{Vlan: int64(vlanNo), Type: "vxlan"}
 	if vlanNo < 4096 {
 		netlink.Type = "vlan"
 	}
 	if count < 1 {
+		netlink.Creater = memberShip.UserID
+		netlink.Owner = owner
 		err = db.Create(netlink).Error
 		if err != nil {
 			log.Println("Database failed to create network", err)
 			return
 		}
 	} else {
-		err = db.Where(network).Take(network).Error
+		err = db.Where(netlink).Take(netlink).Error
 		if err != nil {
-			log.Println("Database failed to create network", err)
+			log.Println("Database failed to query network", err)
 			return
 		}
 	}
