@@ -17,8 +17,8 @@ import (
 
 	"github.com/IBM/cloudland/web/clui/model"
 	restModels "github.com/IBM/cloudland/web/rest-api/rest/models"
+	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/go-openapi/strfmt"
-	"github.ibm.com/cland/dbs"
 	macaron "gopkg.in/macaron.v1"
 )
 

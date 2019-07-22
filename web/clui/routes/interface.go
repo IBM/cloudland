@@ -348,7 +348,7 @@ func CreateInterface(ctx context.Context, subnetID, ID, owner int64, address, if
 		log.Println("Failed to allocate address", err)
 		return
 	}
-	return iface, nil
+	return
 }
 
 func DeleteInterfaces(ctx context.Context, masterID int64, ifType string) (err error) {

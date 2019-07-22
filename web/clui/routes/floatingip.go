@@ -212,8 +212,9 @@ func (v *FloatingIpView) New(c *macaron.Context, store session.Store) {
 		return
 	}
 	db := DB()
+	where := memberShip.GetWhere()
 	instances := []*model.Instance{}
-	if err := db.Preload("Interfaces", "primary_if = ?", true).Preload("Interfaces.Address").Find(&instances).Error; err != nil {
+	if err := db.Preload("Interfaces", "primary_if = ?", true).Preload("Interfaces.Address").Where(where).Find(&instances).Error; err != nil {
 		return
 	}
 	c.Data["Instances"] = instances
@@ -276,7 +277,7 @@ func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, gateway 
 	fipIface, err = CreateInterface(ctx, subnet.ID, floatingipID, owner, "", name, "floating", nil)
 	if err != nil {
 		subnets := []*model.Subnet{}
-		err = db.Model(&model.Subnet{}).Where("vlan = ? and id <> ?", subnet.Vlan, subnet.ID).Find(subnets).Error
+		err = db.Where("vlan = ? and id <> ?", subnet.Vlan, subnet.ID).Find(&subnets).Error
 		if err == nil && len(subnets) > 0 {
 			for _, s := range subnets {
 				fipIface, err = CreateInterface(ctx, s.ID, floatingipID, owner, "", name, "floating", nil)
@@ -284,6 +285,8 @@ func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, gateway 
 					break
 				}
 			}
+		} else {
+			err = fmt.Errorf("No valid external subnets")
 		}
 	}
 	return

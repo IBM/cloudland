@@ -32,8 +32,8 @@ const (
 	Admin              /* Create user and org */
 )
 
-func (r *Role) String() string {
-	switch *r {
+func (r Role) String() string {
+	switch r {
 	case None:
 		return "None"
 	case Reader:
@@ -45,7 +45,7 @@ func (r *Role) String() string {
 	case Admin:
 		return "Admin"
 	default:
-		return fmt.Sprintf("%d", int(*r))
+		return fmt.Sprintf("%d", int(r))
 	}
 }
 

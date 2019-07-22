@@ -191,7 +191,7 @@ func CheckRoleByUUID(uid, oid int64, expectRole model.Role) (passed bool, err er
 func ChecPermissionWithErrorResp(expectRole model.Role, c *macaron.Context) (uid, oid int64, err error) {
 	claims := c.Data[ClaimKey].(*HypercubeClaims)
 	//check role
-	if *claims.Role < expectRole {
+	if claims.Role < expectRole {
 		// if token was issued before promote user privilige, the user need to re-apply token
 		// old token will was refused
 		c.Error(http.StatusForbidden, http.StatusText(http.StatusForbidden))
