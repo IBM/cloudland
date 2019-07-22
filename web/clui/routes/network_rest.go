@@ -7,7 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package routes
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -19,6 +18,7 @@ import (
 	restModels "github.com/IBM/cloudland/web/rest-api/rest/models"
 	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/go-openapi/strfmt"
+	"github.com/jinzhu/gorm"
 	macaron "gopkg.in/macaron.v1"
 )
 
@@ -91,7 +91,8 @@ func (v *NetworkRest) ListNetworks(c *macaron.Context) {
 }
 
 func (v *NetworkRest) DeleteNetwork(c *macaron.Context) {
-	_, _, err := ChecPermissionWithErrorResp(model.Writer, c)
+	db := DB()
+	_, oid, err := ChecPermissionWithErrorResp(model.Writer, c)
 	if err != nil {
 		log.Print(err.Error())
 		return
@@ -99,14 +100,36 @@ func (v *NetworkRest) DeleteNetwork(c *macaron.Context) {
 	uuid := c.Params("id")
 	if uuid == "" {
 		log.Println("empty network uuid")
-		c.JSON(400, NewResponseError("empty network uuid", "uuid is empty", 400))
+		code := http.StatusBadRequest
+		c.JSON(code, NewResponseError("empty network uuid", "uuid is empty", code))
 		return
 	}
-	if err := subnetAdmin.DeleteByUUID(uuid); err != nil {
-		c.JSON(500, NewResponseError("Delete network fail", err.Error(), 500))
+	network := &model.Network{
+		Model: model.Model{Owner: oid, UUID: uuid},
+	}
+	err = db.Preload("Subnets").Where(network).First(network).Error
+	if err != nil {
+		code := http.StatusInternalServerError
+		if gorm.IsRecordNotFoundError(err) {
+			code = http.StatusNotFound
+		}
+		c.JSON(code, NewResponseError(fmt.Sprint("fail delete network: %d", uuid), err.Error(), code))
 		return
 	}
-	c.Status(204)
+	//check network without subnet attached
+	if len(network.Subnets) != 0 {
+		code := http.StatusConflict
+		c.JSON(code, NewResponseError(fmt.Sprint("fail delete network: %d", uuid), "network is not empty", code))
+		return
+	}
+	//start delete network
+	err = db.Delete(network).Error
+	if err != nil {
+		code := http.StatusInternalServerError
+		c.JSON(code, NewResponseError(fmt.Sprint("fail delete network: %d", uuid), err.Error(), code))
+		return
+	}
+	c.Status(http.StatusNoContent)
 	return
 }
 
@@ -160,7 +183,6 @@ func (v *NetworkRest) CreateNetwork(c *macaron.Context) {
 			return
 		}
 	}
-
 	//check vni and vlan network whether has been created priviously
 	if result, err := checkIfExistVni(vlanID); err != nil {
 		code := http.StatusInternalServerError
@@ -222,88 +244,6 @@ func (v *NetworkRest) CreateNetwork(c *macaron.Context) {
 	c.JSON(200, responseBody)
 }
 
-func (a *NetworkAdmin) Delete(ctx context.Context, id int64) (err error) {
-	db := DB()
-	db = db.Begin()
-	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
-		}
-	}()
-	subnet := &model.Subnet{Model: model.Model{ID: id}}
-	err = db.Preload("Netlink").Take(subnet).Error
-	if err != nil {
-		log.Println("Database failed to query subnet", err)
-		return
-	}
-	if subnet.Router > 0 {
-		err = fmt.Errorf("Subnet belongs to a gateway")
-		log.Println("Subnet belongs to a gateway", err)
-		return
-	}
-	count := 0
-	err = db.Model(&model.Address{}).Where("subnet_id = ? and allocated = ?", id, true).Count(&count).Error
-	if err != nil {
-		log.Println("Database delete addresses failed, %v", err)
-		return
-	}
-	if count > 2 {
-		err = fmt.Errorf("Some addresses of this subnet in use")
-		log.Println("There are addresses of this subnet still in use")
-		return
-	}
-	err = db.Model(&model.Subnet{}).Where("vlan = ?", subnet.Vlan).Count(&count).Error
-	if err != nil {
-		log.Println("Database failed to count subnet", err)
-		return
-	}
-	err = db.Delete(subnet).Error
-	if err != nil {
-		log.Println("Database delete subnet failed, %v", err)
-		return
-	}
-	//delete ip address
-	err = db.Where("subnet_id = ?", id).Delete(model.Address{}).Error
-	if err != nil {
-		log.Println("Database delete ip address failed, %v", err)
-		return
-	}
-	netlink := subnet.Netlink
-	if count <= 1 && netlink != nil {
-		err = db.Where("dhcp = ?", netlink.ID).Delete(&model.Interface{}).Error
-		if err != nil {
-			log.Println("Failed to delete dhcp interfaces")
-			return
-		}
-		err = db.Delete(netlink).Error
-		if err != nil {
-			log.Println("Failed to delete network")
-			return
-		}
-		control := ""
-		if netlink.Hyper >= 0 {
-			control = fmt.Sprintf("toall=vlan-%d:%d", subnet.Vlan, netlink.Hyper)
-			if netlink.Peer >= 0 {
-				control = fmt.Sprintf("%s,%d", control, netlink.Peer)
-			}
-		} else if netlink.Peer >= 0 {
-			control = fmt.Sprintf("inter=%d", netlink.Peer)
-		} else {
-			log.Println("Network has no valid hypers")
-			return
-		}
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_net.sh %d %s %d", netlink.Vlan, subnet.Network, subnet.ID)
-		err = hyperExecute(ctx, control, command)
-		if err != nil {
-			log.Println("Delete interface failed")
-			return
-		}
-	}
-	return
-}
-
 func (a *NetworkAdmin) List(orgID int64, offset, limit int64, order string) (total int64, networks []*model.Network, err error) {
 	db := DB()
 	if limit == 0 {
@@ -317,7 +257,8 @@ func (a *NetworkAdmin) List(orgID int64, offset, limit int64, order string) (tot
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Where("owner = ?", orgID).Find(&networks).Error; err != nil {
+	//subnet := &model.Subnet{}
+	if err = db.Preload("Subnets").Where("owner = ?", orgID).Find(&networks).Error; err != nil {
 		return
 	}
 	return

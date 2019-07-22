@@ -13,7 +13,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -43,7 +42,8 @@ func (v *SubnetRest) ListSubnets(c *macaron.Context) {
 	}
 	_, subnets, err := subnetAdmin.List(offset, limit, order)
 	if err != nil {
-		c.JSON(500, NewResponseError("List subnets fail", err.Error(), 500))
+		code := http.StatusInternalServerError
+		c.JSON(code, NewResponseError("List subnets fail", err.Error(), code))
 		return
 	}
 	subnetItems := restModels.Subnets{}
@@ -61,10 +61,10 @@ func (v *SubnetRest) ListSubnets(c *macaron.Context) {
 			CreatedAt:      creatAt,
 			EnableDhcp:     true,
 			GatewayIP:      strfmt.IPv4(gateSub[0]),
-			ID:             strconv.FormatInt(subnet.ID, 10),
+			ID:             subnet.UUID,
 			IPVersion:      4,
 			Name:           subnet.Name,
-			NetworkID:      subnet.UUID,
+			NetworkID:      subnet.Netlink.UUID,
 			ProjectID:      "default",
 			RevisionNumber: 0,
 			TenantID:       "default",
@@ -122,8 +122,8 @@ func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
 	netmask := net.IP(cidr.Mask).String()
 	netmaskSize, _ := cidr.Mask.Size()
 	gatewayStr := fmt.Sprintf("%s/%d", gateway.String(), netmaskSize)
-	networkInstance := &model.Network{Model: model.Model{UUID: networkUUID}}
-	if err = db.Find(networkInstance).Error; err != nil {
+	networkInstance := &model.Network{Model: model.Model{UUID: networkUUID, Owner: oid}}
+	if err = db.Where(networkInstance).Find(networkInstance).Error; err != nil {
 		code := http.StatusInternalServerError
 		if gorm.IsRecordNotFoundError(err) {
 			code = http.StatusNotFound
@@ -175,10 +175,10 @@ func (v *SubnetRest) CreateSubnet(c *macaron.Context) {
 			CreatedAt:      creatAt,
 			EnableDhcp:     true,
 			GatewayIP:      strfmt.IPv4(subnetInstance.Gateway),
-			ID:             strconv.FormatInt(subnetInstance.ID, 10),
+			ID:             subnetInstance.UUID,
 			IPVersion:      4,
 			Name:           subnetInstance.Name,
-			NetworkID:      subnetInstance.UUID,
+			NetworkID:      networkInstance.UUID,
 			ProjectID:      "default",
 			RevisionNumber: 0,
 			TenantID:       "default",
@@ -201,81 +201,88 @@ func (v *SubnetRest) DeleteSubnet(c *macaron.Context) {
 			db.Rollback()
 		}
 	}()
-	id := c.Params("id")
-	if id == "" {
+	subnetUUID := c.Params("id")
+	if subnetUUID == "" {
 		code := http.StatusBadRequest
 		c.Error(code, http.StatusText(code))
+		return
+	}
+	//check subnet is existing
+	subnet := &model.Subnet{Model: model.Model{UUID: subnetUUID}}
+	if err = db.Where(subnet).First(subnet).Error; err != nil {
+		code := http.StatusInternalServerError
+		if gorm.IsRecordNotFoundError(err) {
+			code = http.StatusNotFound
+		}
+		c.JSON(code, NewResponseError("Delete subnet fail", err.Error(), code))
+		return
+	}
+	// check no  gw-router was attached
+	if subnet.Router > 0 {
+		err = fmt.Errorf("Subnet belongs to a gateway")
+		log.Println("Subnet belongs to a gateway", err)
+		code := http.StatusConflict
+		c.JSON(code, NewResponseError("Delete subnet fail", err.Error(), code))
 		return
 	}
 	// check all of ipaddress in this subnet is idle status
-	if isUsed, err := v.checkIPaddresIsUnused(db, id); err != nil {
+	if isUsed, err := v.checkIPaddresIsUsed(subnet.ID); err != nil {
 		code := http.StatusInternalServerError
-		c.Error(code, http.StatusText(code))
+		c.JSON(code, NewResponseError("Delete subnet fail", err.Error(), code))
 		return
 	} else if isUsed {
-		errMsg := fmt.Sprintf("Failed to delete subnet: %s, ipaddress in subnet is used", id)
+		code := http.StatusConflict
+		errMsg := fmt.Sprintf("Failed to delete subnet: %s, ipaddress in subnet is used", subnetUUID)
 		log.Println(errMsg)
-		c.JSON(http.StatusInternalServerError, NewResponseError("Delete subnet fail", errMsg, http.StatusInternalServerError))
+		c.JSON(code, NewResponseError("Delete subnet fail", errMsg, code))
 		return
 	}
+	//  check whether need to delete dhcp
+	// TODO:  delete dhcp  Scope
+	// if subnet.Netlink.Hyper > 0 {
+	// 	err = db.Where("dhcp = ?", subnet.NetworkLink.ID).Delete(&model.Interface{}).Error
+	// 	if err != nil {
+	// 		log.Println("Failed to delete dhcp interfaces")
+	// 		return
+	// 	}
+	// }
 
-	subnet := &model.Subnet{}
-	if err = db.Where("id = ?", id).First(subnet).Error; err != nil {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+	if err = db.Delete(subnet).Error; err != nil {
+		code := http.StatusInternalServerError
+		c.JSON(code, NewResponseError("Delete subnet fail", err.Error(), code))
 		return
-	}
-
-	if subnet.Vlan > MAXVLAN {
-		// reset subnet infor  if vlan type is vxlan
-		newSubnet := &model.Subnet{
-			Model:  subnet.Model,
-			Name:   subnet.Name,
-			Vlan:   subnet.Vlan,
-			Type:   subnet.Type,
-			Router: subnet.Router,
-		}
-		db.Save(newSubnet)
-	} else {
-		subnets := []*model.Subnet{}
-		db.Where("uuid = ?", subnet.UUID).Find(&subnets)
-		if len(subnets) == 1 {
-			//reset subnet infor if just only have one subnet in network
-			newSubnet := &model.Subnet{
-				Model:  subnet.Model,
-				Name:   subnet.Name,
-				Vlan:   subnet.Vlan,
-				Type:   subnet.Type,
-				Router: subnet.Router,
-			}
-			db.Save(newSubnet)
-		} else {
-			db.Delete(&subnet)
-		}
 	}
 	// start delete ip address
-	err = db.Where("subnet_id = ?", subnet.ID).Delete(model.Address{}).Error
-	if err != nil {
+	if err = db.Where("subnet_id = ?", subnet.ID).Delete(model.Address{}).Error; err != nil {
 		log.Println("Database delete ip address failed, %v", err)
 		code := http.StatusInternalServerError
-		c.Error(code, http.StatusText(code))
+		c.JSON(code, NewResponseError("Delete subnet fail", err.Error(), code))
 		return
 	}
-	c.Status(204)
+	c.Status(http.StatusNoContent)
 	return
 }
 
-func (v *SubnetRest) checkIPaddresIsUnused(db *gorm.DB, subnetID string) (isUsed bool, err error) {
+func (v *SubnetRest) checkIPaddresIsUsed(id int64) (isUsed bool, err error) {
 	count := 0
-	err = db.Model(&model.Address{}).Where("subnet_id = ? and allocated = ?", subnetID, true).Count(&count).Error
+	db := DB()
+	err = db.Model(&model.Address{}).Where("subnet_id = ? and allocated = ?", id, true).Count(&count).Error
 	if err != nil {
 		log.Println("Database delete addresses failed, %v", err)
 		return
 	}
-	if count > 0 {
-		err = fmt.Errorf("Some addresses of this subnet in use")
-		log.Println("There are addresses of this subnet still in use")
-		return true, err
+	if count == 0 {
+		return false, nil
+	}
+	iface := &model.Interface{}
+	//check interface whether reserved by DHCP
+	err = db.Model(iface).Preload("Addresses", "subnet_id = ?", id).Where("type <> ?", "dhcp").Count(&count).Error
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
+	if count != 0 {
+		return true, nil
 	}
 	return
 }

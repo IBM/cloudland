@@ -8,7 +8,7 @@ body=$(jq  ".auth.scope.project.name = \"$username\"| .auth.identity.password.us
 # echo ${token}"  888"
 cmd="curl ${host}${token_endpoint} -d '$body'  -i -s | grep X-Subject-Token | cut -d\":\" -f2 | xargs"
 token=$(eval $cmd)
-echo $cmd
-echo $token
+# echo $cmd
+# echo $token
 echo $token > ./temp
 token=$(sed s/"\^M"//g <<< `cat -v ./temp`)
