@@ -198,7 +198,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subnet, owner int64) (err error) {
 	if netlink.Hyper < 0 {
 		var dhcp1 *model.Interface
-		dhcp1, err = CreateInterface(ctx, subnet.ID, netlink.ID, owner, "", "dhcp-1", "dhcp", nil)
+		dhcp1, err = CreateInterface(ctx, subnet.ID, subnet.ID, owner, "", "dhcp-1", "dhcp", nil)
 		if err != nil {
 			log.Println("Failed to allocate dhcp first address", err)
 			return
@@ -213,7 +213,7 @@ func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subn
 	}
 	if netlink.Peer < 0 {
 		var dhcp2 *model.Interface
-		dhcp2, err = CreateInterface(ctx, subnet.ID, netlink.ID, owner, "", "dhcp-2", "dhcp", nil)
+		dhcp2, err = CreateInterface(ctx, subnet.ID, subnet.ID, owner, "", "dhcp-2", "dhcp", nil)
 		if err != nil {
 			log.Println("Failed to allocate dhcp first address", err)
 			return
@@ -251,17 +251,22 @@ func (a *SubnetAdmin) Delete(ctx context.Context, id int64) (err error) {
 		return
 	}
 	count := 0
-	err = db.Model(&model.Address{}).Where("subnet_id = ? and allocated = ?", id, true).Count(&count).Error
+	err = db.Model(&model.Interface{}).Preload("Address", "subnet_id = ?", subnet.ID).Where("type <> ?", "dhcp").Count(&count).Error
 	if err != nil {
-		log.Println("Database delete addresses failed, %v", err)
+		log.Println("Failed to query interfaces", err)
 		return
 	}
-	if count > 2 {
+	if count > 0 {
 		err = fmt.Errorf("Some addresses of this subnet in use")
 		log.Println("There are addresses of this subnet still in use")
 		return
 	}
 	err = db.Model(&model.Subnet{}).Where("vlan = ?", subnet.Vlan).Count(&count).Error
+	if err != nil {
+		log.Println("Database failed to count subnet", err)
+		return
+	}
+	err = DeleteInterfaces(ctx, subnet.ID, "dhcp")
 	if err != nil {
 		log.Println("Database failed to count subnet", err)
 		return

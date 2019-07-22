@@ -377,8 +377,10 @@ func DeleteInterfaces(ctx context.Context, masterID int64, ifType string) (err e
 		err = db.Where("instance = ? and type = ?", masterID, "instance").Delete(&model.Interface{}).Error
 	} else if ifType == "floating" {
 		err = db.Where("floating_ip = ? and type = ?", masterID, "floating").Delete(&model.Interface{}).Error
-	} else {
+	} else if ifType == "gateway" {
 		err = db.Where("device = ? and type like ?", masterID, "%gateway%").Delete(&model.Interface{}).Error
+	} else if ifType == "dhcp" {
+		err = db.Where("dhcp = ? and type = ?", masterID, "dhcp").Delete(&model.Interface{}).Error
 	}
 	if err != nil {
 		log.Println("Failed to delete interface, %v", err)
