@@ -311,45 +311,6 @@ func (a *SubnetAdmin) Delete(ctx context.Context, id int64) (err error) {
 	return
 }
 
-func (a *SubnetAdmin) DeleteByUUID(uuid string) (err error) {
-	db := DB()
-	db = db.Begin()
-	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
-		}
-	}()
-	count := 0
-	subnets := []*model.Subnet{}
-	db.Where("uuid = ?", uuid).Find(&subnets)
-	for _, subnet := range subnets {
-		err = db.Model(&model.Address{}).Where("subnet_id = ? and allocated = ?", subnet.ID, true).Count(&count).Error
-		if err != nil {
-			log.Println("Database delete addresses failed, %v", err)
-			return
-		}
-		if count > 0 {
-			err = fmt.Errorf("Some addresses of this network in use")
-			log.Println("There are addresses of this network still in use")
-			return
-		}
-		err = db.Delete(&model.Subnet{Model: model.Model{ID: subnet.ID}}).Error
-		if err != nil {
-			log.Println("Database delete network failed, %v", err)
-			return
-		}
-		//delete ip address
-		err = db.Where("subnet_id = ?", subnet.ID).Delete(model.Address{}).Error
-		if err != nil {
-			log.Println("Database delete ip address failed, %v", err)
-			return
-		}
-	}
-	return
-}
-
 func (a *SubnetAdmin) List(offset, limit int64, order string) (total int64, subnets []*model.Subnet, err error) {
 	db := DB()
 	if limit == 0 {
@@ -370,7 +331,7 @@ func (a *SubnetAdmin) List(offset, limit int64, order string) (total int64, subn
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Where(where).Find(&subnets).Error; err != nil {
+	if err = db.Preload("Netlink").Where(where).Find(&subnets).Error; err != nil {
 		return
 	}
 
