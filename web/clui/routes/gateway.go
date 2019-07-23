@@ -36,6 +36,7 @@ type GatewayAdmin struct{}
 type GatewayView struct{}
 
 func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int64, subnetIDs []int64, owner int64) (gateway *model.Gateway, err error) {
+	memberShip := GetMemberShip(ctx)
 	if owner == 0 {
 		owner = memberShip.OrgID
 	}
@@ -191,9 +192,29 @@ func (a *GatewayAdmin) Delete(ctx context.Context, id int64) (err error) {
 			db.Rollback()
 		}
 	}()
+	count := 0
+	err = db.Model(&model.FloatingIp{}).Where("gateway_id = ?", id).Count(&count).Error
+	if err != nil {
+		log.Println("Failed to count floating ip")
+		return
+	}
+	if count > 0 {
+		log.Println("There are floating ips")
+		return
+	}
+	count = 0
+	err = db.Model(&model.Portmap{}).Where("gateway_id = ?", id).Count(&count).Error
+	if err != nil {
+		log.Println("Failed to count portmap")
+		return
+	}
+	if count > 0 {
+		log.Println("There are floating ips")
+		return
+	}
 	gateway := &model.Gateway{Model: model.Model{ID: id}}
-	if err = db.Set("gorm:auto_preload", true).Find(gateway).Error; err != nil {
-		log.Println("Failed to query gateway, %v", err)
+	if err = db.Set("gorm:auto_preload", true).Take(gateway).Error; err != nil {
+		log.Println("Failed to query gateway", err)
 		return
 	}
 	intIfaces := []*SubnetIface{}
@@ -209,12 +230,8 @@ func (a *GatewayAdmin) Delete(ctx context.Context, id int64) (err error) {
 		log.Println("DB failed to update router for subnet, %v", err)
 		return
 	}
-	if err = DeleteInterfaces(ctx, id, "gateway"); err != nil {
+	if err = DeleteInterfaces(ctx, id, 0, "gateway"); err != nil {
 		log.Println("DB failed to delete interfaces, %v", err)
-		return
-	}
-	if err = db.Take(&model.Gateway{Model: model.Model{ID: id}}).Error; err != nil {
-		log.Println("DB failed to find gateway, %v", err)
 		return
 	}
 	control := "toall="
@@ -244,7 +261,8 @@ func (a *GatewayAdmin) Delete(ctx context.Context, id int64) (err error) {
 	return
 }
 
-func (a *GatewayAdmin) List(offset, limit int64, order string) (total int64, gateways []*model.Gateway, err error) {
+func (a *GatewayAdmin) List(ctx context.Context, offset, limit int64, order string) (total int64, gateways []*model.Gateway, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
 		limit = 20
@@ -269,6 +287,7 @@ func (a *GatewayAdmin) List(offset, limit int64, order string) (total int64, gat
 }
 
 func (v *GatewayView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -282,7 +301,7 @@ func (v *GatewayView) List(c *macaron.Context, store session.Store) {
 	if order == "" {
 		order = "-created_at"
 	}
-	total, gateways, err := gatewayAdmin.List(offset, limit, order)
+	total, gateways, err := gatewayAdmin.List(c.Req.Context(), offset, limit, order)
 	if err != nil {
 		log.Println("Failed to list gateways, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
@@ -295,6 +314,7 @@ func (v *GatewayView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *GatewayView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
 		log.Println("Id is empty")
@@ -330,6 +350,7 @@ func (v *GatewayView) Delete(c *macaron.Context, store session.Store) (err error
 }
 
 func (v *GatewayView) New(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -350,6 +371,7 @@ func (v *GatewayView) New(c *macaron.Context, store session.Store) {
 }
 
 func (v *GatewayView) Edit(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	db := dbs.DB()
 	id := c.Params("id")
 	gatewayID, err := strconv.Atoi(id)
@@ -388,6 +410,7 @@ func (v *GatewayView) Edit(c *macaron.Context, store session.Store) {
 }
 
 func (v *GatewayView) Patch(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	redirectTo := "../gateways"
 	id := c.Params("id")
 	gatewayID, err := strconv.Atoi(id)
@@ -443,6 +466,7 @@ func (v *GatewayView) Patch(c *macaron.Context, store session.Store) {
 }
 
 func (v *GatewayView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")

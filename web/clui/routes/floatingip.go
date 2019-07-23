@@ -31,6 +31,7 @@ type FloatingIpAdmin struct{}
 type FloatingIpView struct{}
 
 func (a *FloatingIpAdmin) Create(ctx context.Context, instID int64, types []string) (floatingips []*model.FloatingIp, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	instance := &model.Instance{Model: model.Model{ID: instID}}
 	err = db.Set("gorm:auto_preload", true).Preload("Interfaces", "primary_if = ?", true).Model(instance).Take(instance).Error
@@ -118,7 +119,8 @@ func (a *FloatingIpAdmin) Delete(ctx context.Context, id int64) (err error) {
 	return
 }
 
-func (a *FloatingIpAdmin) List(offset, limit int64, order string) (total int64, floatingips []*model.FloatingIp, err error) {
+func (a *FloatingIpAdmin) List(ctx context.Context, offset, limit int64, order string) (total int64, floatingips []*model.FloatingIp, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
 		limit = 20
@@ -144,6 +146,7 @@ func (a *FloatingIpAdmin) List(offset, limit int64, order string) (total int64, 
 }
 
 func (v *FloatingIpView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -157,7 +160,7 @@ func (v *FloatingIpView) List(c *macaron.Context, store session.Store) {
 	if order == "" {
 		order = "-created_at"
 	}
-	total, floatingips, err := floatingipAdmin.List(offset, limit, order)
+	total, floatingips, err := floatingipAdmin.List(c.Req.Context(), offset, limit, order)
 	if err != nil {
 		log.Println("Failed to list floating ip(s), %v", err)
 		c.Data["ErrorMsg"] = err.Error()
@@ -170,6 +173,7 @@ func (v *FloatingIpView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *FloatingIpView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
 		code := http.StatusBadRequest
@@ -204,6 +208,7 @@ func (v *FloatingIpView) Delete(c *macaron.Context, store session.Store) (err er
 }
 
 func (v *FloatingIpView) New(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -222,6 +227,7 @@ func (v *FloatingIpView) New(c *macaron.Context, store session.Store) {
 }
 
 func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -295,7 +301,7 @@ func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, gateway 
 func DeallocateFloatingIp(ctx context.Context, floatingipID int64) (err error) {
 	var db *gorm.DB
 	ctx, db = getCtxDB(ctx)
-	DeleteInterfaces(ctx, floatingipID, "floating")
+	DeleteInterfaces(ctx, floatingipID, 0, "floating")
 	floatingip := &model.FloatingIp{Model: model.Model{ID: floatingipID}}
 	err = db.Delete(floatingip).Error
 	if err != nil {

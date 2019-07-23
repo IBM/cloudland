@@ -28,6 +28,7 @@ type VolumeAdmin struct{}
 type VolumeView struct{}
 
 func (a *VolumeAdmin) Create(ctx context.Context, name string, size int) (volume *model.Volume, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	volume = &model.Volume{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Name: name, Format: "raw", Size: int32(size), Status: "pending"}
 	err = db.Create(volume).Error
@@ -125,7 +126,8 @@ func (a *VolumeAdmin) Delete(ctx context.Context, id int64) (err error) {
 	return
 }
 
-func (a *VolumeAdmin) List(offset, limit int64, order string) (total int64, volumes []*model.Volume, err error) {
+func (a *VolumeAdmin) List(ctx context.Context, offset, limit int64, order string) (total int64, volumes []*model.Volume, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
 		limit = 20
@@ -149,6 +151,7 @@ func (a *VolumeAdmin) List(offset, limit int64, order string) (total int64, volu
 }
 
 func (v *VolumeView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -162,7 +165,7 @@ func (v *VolumeView) List(c *macaron.Context, store session.Store) {
 	if order == "" {
 		order = "-created_at"
 	}
-	total, volumes, err := volumeAdmin.List(offset, limit, order)
+	total, volumes, err := volumeAdmin.List(c.Req.Context(), offset, limit, order)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
@@ -174,6 +177,7 @@ func (v *VolumeView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *VolumeView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
 		code := http.StatusBadRequest
@@ -206,6 +210,7 @@ func (v *VolumeView) Delete(c *macaron.Context, store session.Store) (err error)
 }
 
 func (v *VolumeView) New(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -217,6 +222,7 @@ func (v *VolumeView) New(c *macaron.Context, store session.Store) {
 }
 
 func (v *VolumeView) Edit(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	db := DB()
 	id := c.Params(":id")
 	volID, err := strconv.Atoi(id)
@@ -238,7 +244,7 @@ func (v *VolumeView) Edit(c *macaron.Context, store session.Store) {
 		c.HTML(500, err.Error())
 		return
 	}
-	_, instances, err := instanceAdmin.List(0, 0, "")
+	_, instances, err := instanceAdmin.List(c.Req.Context(), 0, 0, "")
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, err.Error())
@@ -250,6 +256,7 @@ func (v *VolumeView) Edit(c *macaron.Context, store session.Store) {
 }
 
 func (v *VolumeView) Patch(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	redirectTo := "../volumes"
 	id := c.Params(":id")
 	name := c.Query("name")
@@ -289,6 +296,7 @@ func (v *VolumeView) Patch(c *macaron.Context, store session.Store) {
 }
 
 func (v *VolumeView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")

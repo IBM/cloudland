@@ -37,6 +37,7 @@ func init() {
 }
 
 func (a *PortmapAdmin) Create(ctx context.Context, instID int64, port int) (portmap *model.Portmap, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	instance := &model.Instance{Model: model.Model{ID: instID}}
 	err = db.Set("gorm:auto_preload", true).Preload("Interfaces", "primary_if = ?", true).Model(instance).Take(instance).Error
@@ -114,7 +115,8 @@ func (a *PortmapAdmin) Delete(ctx context.Context, id int64) (err error) {
 	return
 }
 
-func (a *PortmapAdmin) List(offset, limit int64, order string) (total int64, portmaps []*model.Portmap, err error) {
+func (a *PortmapAdmin) List(ctx context.Context, offset, limit int64, order string) (total int64, portmaps []*model.Portmap, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
 		limit = 20
@@ -140,6 +142,7 @@ func (a *PortmapAdmin) List(offset, limit int64, order string) (total int64, por
 }
 
 func (v *PortmapView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -153,7 +156,7 @@ func (v *PortmapView) List(c *macaron.Context, store session.Store) {
 	if order == "" {
 		order = "-created_at"
 	}
-	total, portmaps, err := portmapAdmin.List(offset, limit, order)
+	total, portmaps, err := portmapAdmin.List(c.Req.Context(), offset, limit, order)
 	if err != nil {
 		log.Println("Failed to list portmap(s), %v", err)
 		c.Data["ErrorMsg"] = err.Error()
@@ -166,6 +169,7 @@ func (v *PortmapView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *PortmapView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
 		code := http.StatusBadRequest
@@ -200,6 +204,7 @@ func (v *PortmapView) Delete(c *macaron.Context, store session.Store) (err error
 }
 
 func (v *PortmapView) New(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -217,6 +222,7 @@ func (v *PortmapView) New(c *macaron.Context, store session.Store) {
 }
 
 func (v *PortmapView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")

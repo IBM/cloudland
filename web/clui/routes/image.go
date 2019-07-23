@@ -98,6 +98,7 @@ func (a *ImageAdmin) List(offset, limit int64, order string) (total int64, image
 }
 
 func (v *ImageView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -123,6 +124,7 @@ func (v *ImageView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *ImageView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
 		code := http.StatusBadRequest
@@ -155,10 +157,19 @@ func (v *ImageView) Delete(c *macaron.Context, store session.Store) (err error) 
 }
 
 func (v *ImageView) New(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	c.HTML(200, "images_new")
 }
 
 func (v *ImageView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")

@@ -80,6 +80,7 @@ func checkIfExistVni(vni int64) (result bool, err error) {
 }
 
 func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, gateway, start, end, rtype, uuid string, owner int64) (subnet *model.Subnet, err error) {
+	memberShip := GetMemberShip(ctx)
 	if owner == 0 {
 		owner = memberShip.OrgID
 	}
@@ -198,7 +199,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subnet, owner int64) (err error) {
 	if netlink.Hyper < 0 {
 		var dhcp1 *model.Interface
-		dhcp1, err = CreateInterface(ctx, subnet.ID, subnet.ID, owner, "", "dhcp-1", "dhcp", nil)
+		dhcp1, err = CreateInterface(ctx, netlink.ID, subnet.ID, owner, "", "dhcp-1", "dhcp", nil)
 		if err != nil {
 			log.Println("Failed to allocate dhcp first address", err)
 			return
@@ -213,7 +214,7 @@ func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subn
 	}
 	if netlink.Peer < 0 {
 		var dhcp2 *model.Interface
-		dhcp2, err = CreateInterface(ctx, subnet.ID, subnet.ID, owner, "", "dhcp-2", "dhcp", nil)
+		dhcp2, err = CreateInterface(ctx, subnet.ID, netlink.ID, owner, "", "dhcp-2", "dhcp", nil)
 		if err != nil {
 			log.Println("Failed to allocate dhcp first address", err)
 			return
@@ -251,7 +252,7 @@ func (a *SubnetAdmin) Delete(ctx context.Context, id int64) (err error) {
 		return
 	}
 	count := 0
-	err = db.Model(&model.Interface{}).Preload("Address", "subnet_id = ?", subnet.ID).Where("type <> ?", "dhcp").Count(&count).Error
+	err = db.Model(&model.Interface{}).Where("subnet_id = ? and type <> ?", subnet.ID, "dhcp").Count(&count).Error
 	if err != nil {
 		log.Println("Failed to query interfaces", err)
 		return
@@ -262,11 +263,6 @@ func (a *SubnetAdmin) Delete(ctx context.Context, id int64) (err error) {
 		return
 	}
 	err = db.Model(&model.Subnet{}).Where("vlan = ?", subnet.Vlan).Count(&count).Error
-	if err != nil {
-		log.Println("Database failed to count subnet", err)
-		return
-	}
-	err = DeleteInterfaces(ctx, subnet.ID, "dhcp")
 	if err != nil {
 		log.Println("Database failed to count subnet", err)
 		return
@@ -283,40 +279,43 @@ func (a *SubnetAdmin) Delete(ctx context.Context, id int64) (err error) {
 		return
 	}
 	netlink := subnet.Netlink
-	if count <= 1 && netlink != nil {
-		err = db.Where("dhcp = ?", netlink.ID).Delete(&model.Interface{}).Error
+	if netlink != nil {
+		err = DeleteInterfaces(ctx, netlink.ID, subnet.ID, "dhcp")
 		if err != nil {
 			log.Println("Failed to delete dhcp interfaces")
 			return
 		}
+		control := ""
+		if netlink.Hyper >= 0 {
+			control = fmt.Sprintf("toall=vlan-%d:%d", subnet.Vlan, netlink.Hyper)
+			if netlink.Peer >= 0 {
+				control = fmt.Sprintf("%s,%d", control, netlink.Peer)
+			}
+		} else if netlink.Peer >= 0 {
+			control = fmt.Sprintf("inter=%d", netlink.Peer)
+		} else {
+			log.Println("Network has no valid hypers")
+			return
+		}
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_net.sh %d %s %d", netlink.Vlan, subnet.Network, subnet.ID)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Delete interface failed")
+			return
+		}
+	}
+	if count <= 1 {
 		err = db.Delete(netlink).Error
 		if err != nil {
 			log.Println("Failed to delete network")
 			return
 		}
 	}
-	control := ""
-	if netlink.Hyper >= 0 {
-		control = fmt.Sprintf("toall=vlan-%d:%d", subnet.Vlan, netlink.Hyper)
-		if netlink.Peer >= 0 {
-			control = fmt.Sprintf("%s,%d", control, netlink.Peer)
-		}
-	} else if netlink.Peer >= 0 {
-		control = fmt.Sprintf("inter=%d", netlink.Peer)
-	} else {
-		log.Println("Network has no valid hypers")
-		return
-	}
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_net.sh %d %s %d", netlink.Vlan, subnet.Network, subnet.ID)
-	err = hyperExecute(ctx, control, command)
-	if err != nil {
-		log.Println("Delete interface failed")
-		return
-	}
 	return
 }
 
-func (a *SubnetAdmin) List(offset, limit int64, order string) (total int64, subnets []*model.Subnet, err error) {
+func (a *SubnetAdmin) List(ctx context.Context, offset, limit int64, order string) (total int64, subnets []*model.Subnet, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
 		limit = 20
@@ -344,6 +343,7 @@ func (a *SubnetAdmin) List(offset, limit int64, order string) (total int64, subn
 }
 
 func (v *SubnetView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -357,7 +357,7 @@ func (v *SubnetView) List(c *macaron.Context, store session.Store) {
 	if order == "" {
 		order = "-created_at"
 	}
-	total, subnets, err := subnetAdmin.List(offset, limit, order)
+	total, subnets, err := subnetAdmin.List(c.Req.Context(), offset, limit, order)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
@@ -369,6 +369,7 @@ func (v *SubnetView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *SubnetView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
 		code := http.StatusBadRequest
@@ -401,6 +402,7 @@ func (v *SubnetView) Delete(c *macaron.Context, store session.Store) (err error)
 }
 
 func (v *SubnetView) New(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -412,6 +414,7 @@ func (v *SubnetView) New(c *macaron.Context, store session.Store) {
 }
 
 func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")

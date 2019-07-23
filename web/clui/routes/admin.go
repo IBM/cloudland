@@ -40,7 +40,7 @@ func adminInit(ctx context.Context) {
 			defer func() { DB = dbFunc }()
 			DB = func() *gorm.DB { return db }
 			password := adminPassword()
-			_, err = userAdmin.Create(username, password)
+			_, err = userAdmin.Create(ctx, username, password)
 			if err != nil {
 				return
 			}

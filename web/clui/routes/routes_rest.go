@@ -102,8 +102,11 @@ func TokenProcess(c *macaron.Context) {
 		// user is not exiit, return error response
 		return
 	}
-	memberShip.OrgID = c.Data[claims.OID].(int64)
-	memberShip.UserID = c.Data[claims.UID].(int64)
+	memberShip, err := GetDBMemberShip(c.Data[claims.OID].(int64), c.Data[claims.UID].(int64))
+	if err != nil {
+		return
+	}
+	c.Req.Request = c.Req.WithContext(memberShip.SetContext(c.Req.Context()))
 	return
 }
 

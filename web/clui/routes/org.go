@@ -37,6 +37,7 @@ type OrgAdmin struct {
 type OrgView struct{}
 
 func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.Organization, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	user := &model.User{Username: owner}
 	err = db.Where(user).Take(user).Error
@@ -86,6 +87,7 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 }
 
 func (a *OrgAdmin) Update(ctx context.Context, orgID int64, members, users []string, roles []model.Role) (org *model.Organization, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	org = &model.Organization{Model: model.Model{ID: orgID}}
 	err = db.Set("gorm:auto_preload", true).Take(org).Take(org).Error
@@ -170,7 +172,7 @@ func (a *OrgAdmin) Get(name string) (org *model.Organization, err error) {
 	return
 }
 
-func (a *OrgAdmin) Delete(id int64) (err error) {
+func (a *OrgAdmin) Delete(ctx context.Context, id int64) (err error) {
 	db := DB()
 	db = db.Begin()
 	defer func() {
@@ -218,7 +220,8 @@ func (a *OrgAdmin) Delete(id int64) (err error) {
 	return
 }
 
-func (a *OrgAdmin) List(offset, limit int64, order string) (total int64, orgs []*model.Organization, err error) {
+func (a *OrgAdmin) List(ctx context.Context, offset, limit int64, order string) (total int64, orgs []*model.Organization, err error) {
+	memberShip := GetMemberShip(ctx)
 	if limit == 0 {
 		limit = 20
 	}
@@ -254,7 +257,7 @@ func (v *OrgView) List(c *macaron.Context, store session.Store) {
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
 	order := c.Query("order")
-	total, orgs, err := orgAdmin.List(offset, limit, order)
+	total, orgs, err := orgAdmin.List(c.Req.Context(), offset, limit, order)
 	if err != nil {
 		log.Println("Failed to list organizations, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
@@ -267,6 +270,7 @@ func (v *OrgView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *OrgView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -288,7 +292,7 @@ func (v *OrgView) Delete(c *macaron.Context, store session.Store) (err error) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	err = orgAdmin.Delete(int64(orgID))
+	err = orgAdmin.Delete(c.Req.Context(), int64(orgID))
 	if err != nil {
 		log.Println("Failed to delete organization, %v", err)
 		code := http.StatusInternalServerError
@@ -302,6 +306,7 @@ func (v *OrgView) Delete(c *macaron.Context, store session.Store) (err error) {
 }
 
 func (v *OrgView) New(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -313,6 +318,7 @@ func (v *OrgView) New(c *macaron.Context, store session.Store) {
 }
 
 func (v *OrgView) Edit(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	db := DB()
 	id := c.Params("id")
 	if id == "" {
@@ -347,6 +353,7 @@ func (v *OrgView) Edit(c *macaron.Context, store session.Store) {
 }
 
 func (v *OrgView) Patch(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
 		code := http.StatusBadRequest
@@ -396,6 +403,7 @@ func (v *OrgView) Patch(c *macaron.Context, store session.Store) {
 }
 
 func (v *OrgView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
 		log.Println("Not authorized for this operation")

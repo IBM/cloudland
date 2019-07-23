@@ -83,6 +83,7 @@ type InstanceData struct {
 }
 
 func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, imageID, flavorID, primaryID int64, primaryIP string, subnetIDs, keyIDs []int64, sgIDs []int64, hyper int) (instance *model.Instance, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	image := &model.Image{Model: model.Model{ID: imageID}}
 	if err = db.Take(image).Error; err != nil {
@@ -316,6 +317,7 @@ func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interf
 }
 
 func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subnet, address string, instance *model.Instance, ifname string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	iface, err = CreateInterface(ctx, subnet.ID, instance.ID, memberShip.OrgID, address, ifname, "instance", secGroups)
 	if err != nil {
@@ -493,7 +495,8 @@ func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
 	return
 }
 
-func (a *InstanceAdmin) List(offset, limit int64, order string) (total int64, instances []*model.Instance, err error) {
+func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order string) (total int64, instances []*model.Instance, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
 		limit = 20
@@ -524,6 +527,7 @@ func (a *InstanceAdmin) List(offset, limit int64, order string) (total int64, in
 }
 
 func (v *InstanceView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -537,7 +541,7 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	if order == "" {
 		order = "-created_at"
 	}
-	total, instances, err := instanceAdmin.List(offset, limit, order)
+	total, instances, err := instanceAdmin.List(c.Req.Context(), offset, limit, order)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
@@ -549,6 +553,7 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *InstanceView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
 		code := http.StatusBadRequest
@@ -581,6 +586,7 @@ func (v *InstanceView) Delete(c *macaron.Context, store session.Store) (err erro
 }
 
 func (v *InstanceView) New(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -601,19 +607,20 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
-	_, subnets, err := subnetAdmin.List(0, 0, "")
+	ctx := c.Req.Context()
+	_, subnets, err := subnetAdmin.List(ctx, 0, 0, "")
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
 	}
-	_, secgroups, err := secgroupAdmin.List(0, 0, "")
+	_, secgroups, err := secgroupAdmin.List(ctx, 0, 0, "")
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
 	}
-	_, keys, err := keyAdmin.List(0, 0, "")
+	_, keys, err := keyAdmin.List(ctx, 0, 0, "")
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
@@ -628,6 +635,7 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 }
 
 func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	db := DB()
 	id := c.Params("id")
 	if id == "" {
@@ -677,6 +685,7 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 }
 
 func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	redirectTo := "../instances"
 	id := c.Params("id")
 	if id == "" {
@@ -727,6 +736,7 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 }
 
 func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")

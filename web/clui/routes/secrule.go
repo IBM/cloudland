@@ -80,6 +80,7 @@ func (a *SecruleAdmin) ApplySecgroup(ctx context.Context, secgroup *model.Securi
 }
 
 func (a *SecruleAdmin) Create(ctx context.Context, sgID, owner int64, remoteIp, direction, protocol string, portMin, portMax int) (secrule *model.SecurityRule, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	secgroup := &model.SecurityGroup{Model: model.Model{ID: sgID}}
 	err = db.Model(secgroup).Preload("Address").Related(&secgroup.Interfaces, "Interfaces").Error
@@ -138,7 +139,8 @@ func (a *SecruleAdmin) Delete(ctx context.Context, sgID, id int64) (err error) {
 	return
 }
 
-func (a *SecruleAdmin) List(offset, limit int64, order string, secgroupID int64) (total int64, secrules []*model.SecurityRule, err error) {
+func (a *SecruleAdmin) List(ctx context.Context, offset, limit int64, order string, secgroupID int64) (total int64, secrules []*model.SecurityRule, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
 		limit = 20
@@ -168,6 +170,7 @@ func (a *SecruleAdmin) List(offset, limit int64, order string, secgroupID int64)
 }
 
 func (v *SecruleView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -195,7 +198,7 @@ func (v *SecruleView) List(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	total, secrules, err := secruleAdmin.List(offset, limit, order, int64(secgroupID))
+	total, secrules, err := secruleAdmin.List(c.Req.Context(), offset, limit, order, int64(secgroupID))
 	if err != nil {
 		log.Println("Failed to list security rule(s)", err)
 		c.Data["ErrorMsg"] = err.Error()
@@ -208,6 +211,7 @@ func (v *SecruleView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *SecruleView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
 	sgid := c.Params("sgid")
 	if sgid == "" {
 		log.Println("Security group ID is empty")
@@ -264,6 +268,7 @@ func (v *SecruleView) Delete(c *macaron.Context, store session.Store) (err error
 }
 
 func (v *SecruleView) New(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -275,6 +280,7 @@ func (v *SecruleView) New(c *macaron.Context, store session.Store) {
 }
 
 func (v *SecruleView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")

@@ -96,6 +96,14 @@ func (v *FlavorView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *FlavorView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	id := c.Params("id")
 	if id == "" {
 		code := http.StatusBadRequest
@@ -121,7 +129,9 @@ func (v *FlavorView) Delete(c *macaron.Context, store session.Store) (err error)
 }
 
 func (v *FlavorView) New(c *macaron.Context, store session.Store) {
-	if memberShip.UserName != "admin" {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
 		log.Println("Not authorized for this operation")
 		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
@@ -131,6 +141,7 @@ func (v *FlavorView) New(c *macaron.Context, store session.Store) {
 }
 
 func (v *FlavorView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	if memberShip.UserName != "admin" {
 		log.Println("Not authorized for this operation")
 		code := http.StatusUnauthorized

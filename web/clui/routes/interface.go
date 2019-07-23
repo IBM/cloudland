@@ -115,6 +115,7 @@ func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name string, sgID
 }
 
 func (v *InterfaceView) Edit(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	db := DB()
 	id := c.Params("id")
 	if id == "" {
@@ -160,6 +161,7 @@ func (v *InterfaceView) Edit(c *macaron.Context, store session.Store) {
 }
 
 func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	redirectTo := "../instances"
 	id := c.Params("id")
 	if id == "" {
@@ -325,6 +327,7 @@ func CreateInterface(ctx context.Context, subnetID, ID, owner int64, address, if
 		Name:      ifaceName,
 		MacAddr:   mac,
 		PrimaryIf: primary,
+		Subnet:    subnetID,
 		Type:      ifType,
 		Mtu:       1450,
 		Secgroups: secGroups,
@@ -351,18 +354,22 @@ func CreateInterface(ctx context.Context, subnetID, ID, owner int64, address, if
 	return
 }
 
-func DeleteInterfaces(ctx context.Context, masterID int64, ifType string) (err error) {
+func DeleteInterfaces(ctx context.Context, masterID, subnetID int64, ifType string) (err error) {
 	var db *gorm.DB
 	ctx, db = getCtxDB(ctx)
 	ifaces := []*model.Interface{}
+	where := ""
+	if subnetID > 0 {
+		where = fmt.Sprintf("subnet_id = %d", subnetID)
+	}
 	if ifType == "instance" {
-		err = db.Where("instance = ? and type = ?", masterID, "instance").Find(&ifaces).Error
+		err = db.Where("instance = ? and type = ?", masterID, "instance").Where(where).Find(&ifaces).Error
 	} else if ifType == "floating" {
-		err = db.Where("floating_ip = ? and type = ?", masterID, "floating").Find(&ifaces).Error
+		err = db.Where("floating_ip = ? and type = ?", masterID, "floating").Where(where).Find(&ifaces).Error
 	} else if ifType == "dhcp" {
-		err = db.Where("dhcp = ? and type = ?", masterID, "dhcp").Find(&ifaces).Error
+		err = db.Where("dhcp = ? and type = ?", masterID, "dhcp").Where(where).Find(&ifaces).Error
 	} else {
-		err = db.Where("device = ? and type like ?", masterID, "%gateway%").Find(&ifaces).Error
+		err = db.Where("device = ? and type like ?", masterID, "%gateway%").Where(where).Find(&ifaces).Error
 	}
 	if err != nil {
 		log.Println("Failed to query interfaces, %v", err)
@@ -374,13 +381,13 @@ func DeleteInterfaces(ctx context.Context, masterID int64, ifType string) (err e
 		return
 	}
 	if ifType == "instance" {
-		err = db.Where("instance = ? and type = ?", masterID, "instance").Delete(&model.Interface{}).Error
+		err = db.Where("instance = ? and type = ?", masterID, "instance").Where(where).Delete(&model.Interface{}).Error
 	} else if ifType == "floating" {
-		err = db.Where("floating_ip = ? and type = ?", masterID, "floating").Delete(&model.Interface{}).Error
+		err = db.Where("floating_ip = ? and type = ?", masterID, "floating").Where(where).Delete(&model.Interface{}).Error
 	} else if ifType == "gateway" {
-		err = db.Where("device = ? and type like ?", masterID, "%gateway%").Delete(&model.Interface{}).Error
+		err = db.Where("device = ? and type like ?", masterID, "%gateway%").Where(where).Delete(&model.Interface{}).Error
 	} else if ifType == "dhcp" {
-		err = db.Where("dhcp = ? and type = ?", masterID, "dhcp").Delete(&model.Interface{}).Error
+		err = db.Where("dhcp = ? and type = ?", masterID, "dhcp").Where(where).Delete(&model.Interface{}).Error
 	}
 	if err != nil {
 		log.Println("Failed to delete interface, %v", err)

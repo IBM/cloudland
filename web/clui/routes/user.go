@@ -13,6 +13,7 @@ History:
 package routes
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -35,7 +36,8 @@ type UserAdmin struct{}
 
 type UserView struct{}
 
-func (a *UserAdmin) Create(username, password string) (user *model.User, err error) {
+func (a *UserAdmin) Create(ctx context.Context, username, password string) (user *model.User, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if password, err = a.GenerateFromPassword(password); err != nil {
 		return
@@ -73,7 +75,7 @@ func (a *UserAdmin) Delete(id int64) (err error) {
 	return
 }
 
-func (a *UserAdmin) Update(id int64, password string, members []string) (user *model.User, err error) {
+func (a *UserAdmin) Update(ctx context.Context, id int64, password string, members []string) (user *model.User, err error) {
 	db := DB()
 	user = &model.User{Model: model.Model{ID: id}}
 	err = db.Set("gorm:auto_preload", true).Take(user).Error
@@ -111,7 +113,8 @@ func (a *UserAdmin) Update(id int64, password string, members []string) (user *m
 	return
 }
 
-func (a *UserAdmin) List(offset, limit int64, order string) (total int64, users []*model.User, err error) {
+func (a *UserAdmin) List(ctx context.Context, offset, limit int64, order string) (total int64, users []*model.User, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
 		limit = 20
@@ -256,6 +259,7 @@ func (v *UserView) LoginPost(c *macaron.Context, store session.Store) {
 }
 
 func (v *UserView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -269,7 +273,7 @@ func (v *UserView) List(c *macaron.Context, store session.Store) {
 	if order == "" {
 		order = "-created_at"
 	}
-	total, users, err := userAdmin.List(offset, limit, order)
+	total, users, err := userAdmin.List(c.Req.Context(), offset, limit, order)
 	if err != nil {
 		log.Println("Failed to list user(s)", err)
 		c.Data["ErrorMsg"] = err.Error()
@@ -282,6 +286,7 @@ func (v *UserView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *UserView) Edit(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
 		code := http.StatusBadRequest
@@ -316,6 +321,7 @@ func (v *UserView) Edit(c *macaron.Context, store session.Store) {
 }
 
 func (v *UserView) Change(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
 		code := http.StatusBadRequest
@@ -366,6 +372,7 @@ func (v *UserView) Change(c *macaron.Context, store session.Store) {
 }
 
 func (v *UserView) Patch(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
 		code := http.StatusBadRequest
@@ -389,7 +396,7 @@ func (v *UserView) Patch(c *macaron.Context, store session.Store) {
 	redirectTo := "../users/" + id
 	password := c.Query("password")
 	members := c.QueryStrings("members")
-	_, err = userAdmin.Update(int64(userID), password, members)
+	_, err = userAdmin.Update(c.Req.Context(), int64(userID), password, members)
 	if err != nil {
 		log.Println("Failed to update password, %v", err)
 		code := http.StatusInternalServerError
@@ -400,6 +407,7 @@ func (v *UserView) Patch(c *macaron.Context, store session.Store) {
 }
 
 func (v *UserView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -435,6 +443,7 @@ func (v *UserView) Delete(c *macaron.Context, store session.Store) (err error) {
 }
 
 func (v *UserView) New(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -446,6 +455,7 @@ func (v *UserView) New(c *macaron.Context, store session.Store) {
 }
 
 func (v *UserView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -462,7 +472,7 @@ func (v *UserView) Create(c *macaron.Context, store session.Store) {
 		log.Println("Passwords do not match")
 		c.HTML(http.StatusBadRequest, "Passwords do not match")
 	}
-	_, err := userAdmin.Create(username, password)
+	_, err := userAdmin.Create(c.Req.Context(), username, password)
 	if err != nil {
 		log.Println("Failed to create user, %v", err)
 		c.HTML(500, "500")

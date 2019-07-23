@@ -28,6 +28,7 @@ type SecgroupAdmin struct{}
 type SecgroupView struct{}
 
 func (a *SecgroupAdmin) Create(ctx context.Context, name string, isDefault bool, owner int64) (secgroup *model.SecurityGroup, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	secgroup = &model.SecurityGroup{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Name: name, IsDefault: isDefault}
 	err = db.Create(secgroup).Error
@@ -95,7 +96,8 @@ func (a *SecgroupAdmin) Delete(id int64) (err error) {
 	return
 }
 
-func (a *SecgroupAdmin) List(offset, limit int64, order string) (total int64, secgroups []*model.SecurityGroup, err error) {
+func (a *SecgroupAdmin) List(ctx context.Context, offset, limit int64, order string) (total int64, secgroups []*model.SecurityGroup, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
 		limit = 20
@@ -121,6 +123,7 @@ func (a *SecgroupAdmin) List(offset, limit int64, order string) (total int64, se
 }
 
 func (v *SecgroupView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -134,7 +137,7 @@ func (v *SecgroupView) List(c *macaron.Context, store session.Store) {
 	if order == "" {
 		order = "-created_at"
 	}
-	total, secgroups, err := secgroupAdmin.List(offset, limit, order)
+	total, secgroups, err := secgroupAdmin.List(c.Req.Context(), offset, limit, order)
 	if err != nil {
 		log.Println("Failed to list security group(s), %v", err)
 		c.Data["ErrorMsg"] = err.Error()
@@ -147,6 +150,7 @@ func (v *SecgroupView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *SecgroupView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
 		code := http.StatusBadRequest
@@ -181,6 +185,7 @@ func (v *SecgroupView) Delete(c *macaron.Context, store session.Store) (err erro
 }
 
 func (v *SecgroupView) New(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -192,6 +197,7 @@ func (v *SecgroupView) New(c *macaron.Context, store session.Store) {
 }
 
 func (v *SecgroupView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")

@@ -145,11 +145,14 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 	log.Println(link)
 	c.Data["Link"] = link
 	if login, ok := store.Get("login").(string); ok {
-		memberShip.OrgID = store.Get("oid").(int64)
-		memberShip.UserID = store.Get("uid").(int64)
-		memberShip.UserName = store.Get("login").(string)
-		memberShip.OrgName = store.Get("org").(string)
-		memberShip.Role = store.Get("role").(model.Role)
+		memberShip := &MemberShip{
+			OrgID:    store.Get("oid").(int64),
+			UserID:   store.Get("uid").(int64),
+			UserName: store.Get("login").(string),
+			OrgName:  store.Get("org").(string),
+			Role:     store.Get("role").(model.Role),
+		}
+		c.Req.Request = c.Req.WithContext(memberShip.SetContext(c.Req.Context()))
 		c.Data["IsSignedIn"] = true
 		if memberShip.Role == model.Admin || login == "admin" {
 			c.Data["IsAdmin"] = true

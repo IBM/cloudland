@@ -21,6 +21,7 @@ type Interface struct {
 	Device     int64
 	Dhcp       int64
 	FloatingIp int64
+	Subnet     int64
 	Address    *Address `gorm:"foreignkey:Interface"`
 	Hyper      int32    `gorm:"default:-1"`
 	PrimaryIf  bool     `gorm:"default:false"`

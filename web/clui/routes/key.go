@@ -8,6 +8,7 @@ SPDX-License-Identifier: Apache-2.0
 package routes
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"strconv"
@@ -26,7 +27,8 @@ var (
 type KeyAdmin struct{}
 type KeyView struct{}
 
-func (a *KeyAdmin) Create(name, pubkey string) (key *model.Key, err error) {
+func (a *KeyAdmin) Create(ctx context.Context, name, pubkey string) (key *model.Key, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	key = &model.Key{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Name: name, PublicKey: pubkey}
 	err = db.Create(key).Error
@@ -54,7 +56,8 @@ func (a *KeyAdmin) Delete(id int64) (err error) {
 	return
 }
 
-func (a *KeyAdmin) List(offset, limit int64, order string) (total int64, keys []*model.Key, err error) {
+func (a *KeyAdmin) List(ctx context.Context, offset, limit int64, order string) (total int64, keys []*model.Key, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
 		limit = 20
@@ -80,6 +83,7 @@ func (a *KeyAdmin) List(offset, limit int64, order string) (total int64, keys []
 }
 
 func (v *KeyView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -93,7 +97,7 @@ func (v *KeyView) List(c *macaron.Context, store session.Store) {
 	if order == "" {
 		order = "-created_at"
 	}
-	total, keys, err := keyAdmin.List(offset, limit, order)
+	total, keys, err := keyAdmin.List(c.Req.Context(), offset, limit, order)
 	if err != nil {
 		log.Println("Failed to list keys, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
@@ -106,6 +110,7 @@ func (v *KeyView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *KeyView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
 		code := http.StatusBadRequest
@@ -140,6 +145,7 @@ func (v *KeyView) Delete(c *macaron.Context, store session.Store) (err error) {
 }
 
 func (v *KeyView) New(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -151,6 +157,7 @@ func (v *KeyView) New(c *macaron.Context, store session.Store) {
 }
 
 func (v *KeyView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -161,7 +168,7 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 	redirectTo := "../keys"
 	name := c.Query("name")
 	pubkey := c.Query("pubkey")
-	_, err := keyAdmin.Create(name, pubkey)
+	_, err := keyAdmin.Create(c.Req.Context(), name, pubkey)
 	if err != nil {
 		log.Println("Failed to create key, %v", err)
 		c.HTML(500, "500")
