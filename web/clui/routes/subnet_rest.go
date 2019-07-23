@@ -249,17 +249,9 @@ func (v *SubnetRest) DeleteSubnet(c *macaron.Context) {
 		c.JSON(code, NewResponseError("Delete subnet fail", errMsg, code))
 		return
 	}
-	//  check whether need to delete dhcp
-	// TODO:  delete dhcp  Scope
-	// if subnet.Netlink.Hyper > 0 {
-	// 	err = db.Where("dhcp = ?", subnet.NetworkLink.ID).Delete(&model.Interface{}).Error
-	// 	if err != nil {
-	// 		log.Println("Failed to delete dhcp interfaces")
-	// 		return
-	// 	}
-	// }
 	network := subnet.Netlink
 	control := ""
+	var skipTag bool
 	if network.Hyper >= 0 {
 		control = fmt.Sprintf("toall=vlan-%d:%d", subnet.Vlan, network.Hyper)
 		if network.Peer >= 0 {
@@ -269,14 +261,17 @@ func (v *SubnetRest) DeleteSubnet(c *macaron.Context) {
 		control = fmt.Sprintf("inter=%d", network.Peer)
 	} else {
 		log.Println("Network has no valid hypers")
+		skipTag = true
 	}
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_net.sh %d %s %d", network.Vlan, subnet.Network, subnet.ID)
-	err = hyperExecute(c.Req.Context(), control, command)
-	if err != nil {
-		log.Println("Delete interface failed")
-		code := http.StatusInternalServerError
-		c.JSON(code, NewResponseError("Delete subnet fail", err.Error(), code))
-		return
+	if skipTag {
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_net.sh %d %s %d", network.Vlan, subnet.Network, subnet.ID)
+		err = hyperExecute(c.Req.Context(), control, command)
+		if err != nil {
+			log.Println("Delete interface failed")
+			code := http.StatusInternalServerError
+			c.JSON(code, NewResponseError("Delete subnet fail", err.Error(), code))
+			return
+		}
 	}
 	if err = db.Delete(subnet).Error; err != nil {
 		code := http.StatusInternalServerError
@@ -288,6 +283,12 @@ func (v *SubnetRest) DeleteSubnet(c *macaron.Context) {
 		log.Println("Database delete ip address failed, %v", err)
 		code := http.StatusInternalServerError
 		c.JSON(code, NewResponseError("Delete subnet fail", err.Error(), code))
+		return
+	}
+	// delete dhcp interface
+	if err = db.Preload("Addresses", "subnet_id = ?", subnet.ID).Where("type = ?", "dhcp").Delete(model.Interface{}).Error; err != nil {
+		code := http.StatusInternalServerError
+		c.JSON(code, NewResponseError("Delete internal interface fail", err.Error(), code))
 		return
 	}
 	c.Status(http.StatusNoContent)
