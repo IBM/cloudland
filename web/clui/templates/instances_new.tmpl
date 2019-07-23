@@ -29,9 +29,11 @@
 						  <div class="default text">Image</div>
 						  <div class="menu">
                             {{ range .Images }}
+		            {{ if eq .Status "available" }}
 							<div class="item" data-value={{.ID}} data-text={{.Name}}>
 							  {{.Name}}
 							</div>
+                            {{ end }}
                             {{ end }}
 						  </div>
 						</div>

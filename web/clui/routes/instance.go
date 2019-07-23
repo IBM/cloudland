@@ -90,6 +90,11 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		log.Println("Image query failed", err)
 		return
 	}
+	if image.Status != "available" {
+		err = fmt.Errorf("Image status not available")
+		log.Println("Image status not available")
+		return
+	}
 	flavor := &model.Flavor{Model: model.Model{ID: flavorID}}
 	if err = db.Find(flavor).Error; err != nil {
 		log.Println("Flavor query failed", err)
@@ -739,23 +744,13 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
-		log.Println("Not authorized for this operation")
+		log.Println("Need Write permissions")
 		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
 		return
 	}
 	redirectTo := "../instances"
 	hostname := c.Query("hostname")
-	hyper := c.QueryInt("hyper")
-	if hyper >= 0 {
-		permit := memberShip.CheckPermission(model.Admin)
-		if !permit {
-			log.Println("Not authorized for this operation")
-			code := http.StatusUnauthorized
-			c.Error(code, http.StatusText(code))
-			return
-		}
-	}
 	cnt := c.Query("count")
 	count, err := strconv.Atoi(cnt)
 	if err != nil {
@@ -763,6 +758,26 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		code := http.StatusBadRequest
 		c.Error(code, http.StatusText(code))
 		return
+	}
+	hyper := c.Query("hyper")
+	hyperID := -1
+	if hyper != "" {
+		hyperID, err = strconv.Atoi(hyper)
+		if err != nil {
+			log.Println("Invalid image ID, %v", err)
+			code := http.StatusBadRequest
+			c.Error(code, http.StatusText(code))
+			return
+		}
+	}
+	if hyperID >= 0 {
+		permit := memberShip.CheckPermission(model.Admin)
+		if !permit {
+			log.Println("Need Admin permissions")
+			code := http.StatusUnauthorized
+			c.Error(code, http.StatusText(code))
+			return
+		}
 	}
 	image := c.Query("image")
 	imageID, err := strconv.Atoi(image)
@@ -790,7 +805,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	}
 	permit, err = memberShip.CheckAdmin(model.Writer, "subnets", int64(primaryID))
 	if !permit {
-		log.Println("Not authorized for this operation")
+		log.Println("Not authorized to access subnet")
 		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
 		return
@@ -807,7 +822,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		}
 		permit, err = memberShip.CheckAdmin(model.Writer, "subnets", int64(sID))
 		if !permit {
-			log.Println("Not authorized for this operation")
+			log.Println("Not authorized to access subnet")
 			code := http.StatusUnauthorized
 			c.Error(code, http.StatusText(code))
 			return
@@ -825,7 +840,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		}
 		permit, err = memberShip.CheckOwner(model.Writer, "keys", int64(kID))
 		if !permit {
-			log.Println("Not authorized for this operation")
+			log.Println("Not authorized to access key")
 			code := http.StatusUnauthorized
 			c.Error(code, http.StatusText(code))
 			return
@@ -844,7 +859,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			}
 			permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
 			if !permit {
-				log.Println("Not authorized for this operation")
+				log.Println("Not authorized to access security group")
 				code := http.StatusUnauthorized
 				c.Error(code, http.StatusText(code))
 				return
@@ -855,7 +870,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		sgID := store.Get("defsg").(int64)
 		permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
 		if !permit {
-			log.Println("Not authorized for this operation")
+			log.Println("Not authorized to access security group")
 			code := http.StatusUnauthorized
 			c.Error(code, http.StatusText(code))
 			return
@@ -863,7 +878,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		sgIDs = append(sgIDs, sgID)
 	}
 	userdata := c.Query("userdata")
-	_, err = instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, int64(imageID), int64(flavorID), int64(primaryID), primaryIP, subnetIDs, keyIDs, sgIDs, hyper)
+	_, err = instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, int64(imageID), int64(flavorID), int64(primaryID), primaryIP, subnetIDs, keyIDs, sgIDs, hyperID)
 	if err != nil {
 		log.Println("Create instance failed, %v", err)
 		c.HTML(http.StatusBadRequest, err.Error())
