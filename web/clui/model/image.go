@@ -21,7 +21,7 @@ type Image struct {
 	Checksum     string `gorm:"type:varchar(36)"`
 	OsHashAlgo   string `gorm:"type:varchar(36)"`
 	OsHashValue  string `gorm:"type:varchar(36)"`
-	Owner        string `gorm:"type:varchar(36)"`
+	Holder       string `gorm:"type:varchar(36)"`
 	Protected    bool
 	Visibility   string `gorm:"type:varchar(36)"`
 	MiniDisk     int32

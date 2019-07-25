@@ -68,8 +68,12 @@ func (a *UserAdmin) Delete(id int64) (err error) {
 			db.Rollback()
 		}
 	}()
+	if err = db.Where("user_id = ?", id).Delete(&model.Member{}).Error; err != nil {
+		log.Println("DB failed to delete members", err)
+		return
+	}
 	if err = db.Delete(&model.User{Model: model.Model{ID: id}}).Error; err != nil {
-		log.Println("DB failed to delete user, %v", err)
+		log.Println("DB failed to delete members", err)
 		return
 	}
 	return
@@ -471,16 +475,19 @@ func (v *UserView) Create(c *macaron.Context, store session.Store) {
 	if confirm != password {
 		log.Println("Passwords do not match")
 		c.HTML(http.StatusBadRequest, "Passwords do not match")
+		return
 	}
 	_, err := userAdmin.Create(c.Req.Context(), username, password)
 	if err != nil {
 		log.Println("Failed to create user, %v", err)
 		c.HTML(500, "500")
+		return
 	}
 	_, err = orgAdmin.Create(c.Req.Context(), username, username)
 	if err != nil {
 		log.Println("Failed to create organization, %v", err)
 		c.HTML(500, "500")
+		return
 	}
 	c.Redirect(redirectTo)
 }

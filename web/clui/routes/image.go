@@ -29,8 +29,9 @@ type ImageAdmin struct{}
 type ImageView struct{}
 
 func (a *ImageAdmin) Create(ctx context.Context, name, url, format, architecture string) (image *model.Image, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
-	image = &model.Image{Name: name, OSCode: name, Format: format, Status: "creating", Architecture: architecture}
+	image = &model.Image{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Name: name, OSCode: name, Format: format, Status: "creating", Architecture: architecture}
 	err = db.Create(image).Error
 	if err != nil {
 		log.Println("DB create image failed, %v", err)

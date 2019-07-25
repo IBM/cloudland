@@ -360,7 +360,7 @@ func DeleteInterfaces(ctx context.Context, masterID, subnetID int64, ifType stri
 	ifaces := []*model.Interface{}
 	where := ""
 	if subnetID > 0 {
-		where = fmt.Sprintf("subnet_id = %d", subnetID)
+		where = fmt.Sprintf("subnet = %d", subnetID)
 	}
 	if ifType == "instance" {
 		err = db.Where("instance = ? and type = ?", masterID, "instance").Where(where).Find(&ifaces).Error
@@ -375,23 +375,25 @@ func DeleteInterfaces(ctx context.Context, masterID, subnetID int64, ifType stri
 		log.Println("Failed to query interfaces, %v", err)
 		return
 	}
-	err = DeallocateAddress(ctx, ifaces)
-	if err != nil {
-		log.Println("Failed to deallocate address, %v", err)
-		return
-	}
-	if ifType == "instance" {
-		err = db.Where("instance = ? and type = ?", masterID, "instance").Where(where).Delete(&model.Interface{}).Error
-	} else if ifType == "floating" {
-		err = db.Where("floating_ip = ? and type = ?", masterID, "floating").Where(where).Delete(&model.Interface{}).Error
-	} else if ifType == "gateway" {
-		err = db.Where("device = ? and type like ?", masterID, "%gateway%").Where(where).Delete(&model.Interface{}).Error
-	} else if ifType == "dhcp" {
-		err = db.Where("dhcp = ? and type = ?", masterID, "dhcp").Where(where).Delete(&model.Interface{}).Error
-	}
-	if err != nil {
-		log.Println("Failed to delete interface, %v", err)
-		return
+	if len(ifaces) > 0 {
+		err = DeallocateAddress(ctx, ifaces)
+		if err != nil {
+			log.Println("Failed to deallocate address, %v", err)
+			return
+		}
+		if ifType == "instance" {
+			err = db.Where("instance = ? and type = ?", masterID, "instance").Where(where).Delete(&model.Interface{}).Error
+		} else if ifType == "floating" {
+			err = db.Where("floating_ip = ? and type = ?", masterID, "floating").Where(where).Delete(&model.Interface{}).Error
+		} else if ifType == "gateway" {
+			err = db.Where("device = ? and type like ?", masterID, "%gateway%").Where(where).Delete(&model.Interface{}).Error
+		} else if ifType == "dhcp" {
+			err = db.Where("dhcp = ? and type = ?", masterID, "dhcp").Where(where).Delete(&model.Interface{}).Error
+		}
+		if err != nil {
+			log.Println("Failed to delete interface, %v", err)
+			return
+		}
 	}
 	return
 }

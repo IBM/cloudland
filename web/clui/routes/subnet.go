@@ -199,7 +199,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subnet, owner int64) (err error) {
 	if netlink.Hyper < 0 {
 		var dhcp1 *model.Interface
-		dhcp1, err = CreateInterface(ctx, netlink.ID, subnet.ID, owner, "", "dhcp-1", "dhcp", nil)
+		dhcp1, err = CreateInterface(ctx, subnet.ID, netlink.ID, owner, "", "dhcp-1", "dhcp", nil)
 		if err != nil {
 			log.Println("Failed to allocate dhcp first address", err)
 			return
@@ -240,6 +240,7 @@ func (a *SubnetAdmin) Delete(ctx context.Context, id int64) (err error) {
 			db.Rollback()
 		}
 	}()
+	ctx = saveTXtoCtx(ctx, db)
 	subnet := &model.Subnet{Model: model.Model{ID: id}}
 	err = db.Preload("Netlink").Take(subnet).Error
 	if err != nil {
@@ -252,7 +253,7 @@ func (a *SubnetAdmin) Delete(ctx context.Context, id int64) (err error) {
 		return
 	}
 	count := 0
-	err = db.Model(&model.Interface{}).Where("subnet_id = ? and type <> ?", subnet.ID, "dhcp").Count(&count).Error
+	err = db.Model(&model.Interface{}).Where("subnet = ? and type <> ?", subnet.ID, "dhcp").Count(&count).Error
 	if err != nil {
 		log.Println("Failed to query interfaces", err)
 		return

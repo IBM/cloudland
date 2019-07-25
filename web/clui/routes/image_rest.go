@@ -55,7 +55,7 @@ func (v *ImageRest) List(c *macaron.Context) {
 			Name:            image.Name,
 			OsHashAlgo:      image.OsHashAlgo,
 			OsHashValue:     image.OsHashValue,
-			Owner:           image.Owner,
+			Owner:           image.Holder,
 			Protected:       image.Protected,
 			UpdatedAt:       updateAt,
 			Visibility:      image.Visibility,
