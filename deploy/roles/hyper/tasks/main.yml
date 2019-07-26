@@ -48,8 +48,17 @@
     owner: "{{ item.owner }}"
   with_items:
     - {src: 'cloudlet.j2', dest: '/etc/sysconfig/cloudlet', owner: 'root'}
+  tags: [be_conf] 
+ 
+- name: create cloudlet cloudrc local file
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}"
+  with_items:
     - {src: 'cloudrc.local.j2', dest: '/opt/cloudland/scripts/cloudrc.local', owner: 'cland'}
-  tags: [be_conf]
+  tags: [be_conf] 
+  when: client_id == 0
  
 - name: copy service file
   copy: 

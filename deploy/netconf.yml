@@ -1,0 +1,6 @@
+network_device: bond1
+external_vlan: 2052
+internal_vlan: 1236
+dns_server: 114.114.114.114
+multicast_group: 225.10.10.1
+
