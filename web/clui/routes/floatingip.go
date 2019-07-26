@@ -97,6 +97,7 @@ func (a *FloatingIpAdmin) Delete(ctx context.Context, id int64) (err error) {
 			db.Rollback()
 		}
 	}()
+	ctx = saveTXtoCtx(ctx, db)
 	floatingip := &model.FloatingIp{Model: model.Model{ID: id}}
 	if err = db.Set("gorm:auto_preload", true).Find(floatingip).Error; err != nil {
 		log.Println("Failed to query floating ip", err)

@@ -192,6 +192,7 @@ func (a *GatewayAdmin) Delete(ctx context.Context, id int64) (err error) {
 			db.Rollback()
 		}
 	}()
+	ctx = saveTXtoCtx(ctx, db)
 	count := 0
 	err = db.Model(&model.FloatingIp{}).Where("gateway_id = ?", id).Count(&count).Error
 	if err != nil {
@@ -360,7 +361,7 @@ func (v *GatewayView) New(c *macaron.Context, store session.Store) {
 	}
 	db := dbs.DB()
 	subnets := []*model.Subnet{}
-	if err := db.Find(&subnets).Error; err != nil {
+	if err := db.Where("id in (select subnet_id from addresses where allocated=false)").Find(&subnets).Error; err != nil {
 		log.Println("DB failed to query subnets, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
