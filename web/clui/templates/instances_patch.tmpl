@@ -34,8 +34,10 @@
                                    <option value="{{ .ID }}" >{{.Name}}-{{.Network}}/{{.Netmask}}</option>
 							    {{ end }}
 							  {{ else }}
+							    {{ range .Subnets }}
 								{{ if eq .Type "internal" }}
                                    <option value="{{ .ID }}" >{{.Name}}-{{.Network}}/{{.Netmask}}</option>
+							        {{ end }}
 							    {{ end }}
 							  {{ end }}
 							{{ end }}
