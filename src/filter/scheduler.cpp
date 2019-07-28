@@ -26,7 +26,7 @@ extern "C" {
 
 extern int report_availibility(int group, ResourceManager *rcMgr, int myID);
 extern int report_topology(int msgID, int target);
-extern int getValue(char *message, char *key, int *second);
+extern long getValue(char *message, char *key, long *second);
 extern int bcast_message(int msgID, int group, void *buffer, int size);
 
 pthread_t rthread;
@@ -189,19 +189,19 @@ int report_availibility(int group, ResourceManager *rcMgr, int myID)
     return rc;
 }
 
-int getValue(char *message, char *key, int *second)
+long getValue(char *message, char *key, long *second)
 {
     char *p;
-    int value = 0;
+    long value = 0;
 
     p = strstr(message, key);
     if (p != NULL) {
         p += strlen(key);
-        value = atoi(p);
+        value = atol(p);
         if (second != NULL) {
             p = strchr(p, '/');
             if (p != NULL) {
-                *second = atoi(p + 1);
+                *second = atol(p + 1);
             }
         }
     }
@@ -232,19 +232,19 @@ int filter_input(void *user_param, sci_group_t group, void *buffer, int size)
     char *toall = strstr(control, "toall=");
 
     if (report != NULL) {
-        int total_cpu;
-        int cpu = getValue(message, "cpu=", &total_cpu);
-        int total_memory;
-        int memory = getValue(message, "memory=", &total_memory);
-        int total_disk;
-        int disk = getValue(message, "disk=", &total_disk);
-        int total_network;
-        int network = getValue(message, "network=", &total_network);
-        int total_load;
-        int load = getValue(message, "load=", &total_load);
+        long total_cpu;
+        long cpu = getValue(message, "cpu=", &total_cpu);
+        long total_memory;
+        long memory = getValue(message, "memory=", &total_memory);
+        long total_disk;
+        long disk = getValue(message, "disk=", &total_disk);
+        long total_network;
+        long network = getValue(message, "network=", &total_network);
+        long total_load;
+        long load = getValue(message, "load=", &total_load);
         rcManager->setAvailibility(beID, cpu, total_cpu, memory, total_memory, disk, total_disk, network, total_network, load, total_load);
     } else if ((inter != NULL) || (grp != NULL)) {
-        int target = getValue(control, "inter=", NULL);
+        int target = (int)getValue(control, "inter=", NULL);
         if (target < 0) {
             if (target == myID) {
                 rc = report_topology(msgID, myID);
@@ -252,10 +252,10 @@ int filter_input(void *user_param, sci_group_t group, void *buffer, int size)
                 rc = bcast_message(msgID, group, buffer, size);
             }
         } else {
-            int cpu = getValue(control, "cpu=", NULL);
-            int memory = getValue(control, "memory=", NULL);
-            int disk = getValue(control, "disk=", NULL);
-            int network = getValue(control, "network=", NULL);
+            long cpu = getValue(control, "cpu=", NULL);
+            long memory = getValue(control, "memory=", NULL);
+            long disk = getValue(control, "disk=", NULL);
+            long network = (int)getValue(control, "network=", NULL);
             int bestID = rcManager->getBestBranch(cpu, memory, disk, network, group);
             if (bestID != -1) {
                 rc = SCI_Filter_bcast(SCHEDULE_FILTER, 1, &bestID, 1, &buffer, &size);

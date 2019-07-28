@@ -13,17 +13,17 @@ SPDX-License-Identifier: Apache-2.0
 using namespace std;
 
 struct Resource {
-    int cpu;
-    int total_cpu;
-    int memory;
-    int total_memory;
-    int disk;
-    int total_disk;
-    int network;
-    int total_network;
-    int load;
-    int total_load;
-    int hitRate;
+    long cpu;
+    long total_cpu;
+    long memory;
+    long total_memory;
+    long disk;
+    long total_disk;
+    long network;
+    long total_network;
+    long load;
+    long total_load;
+    long hitRate;
 };
 
 class ResourceManager {
@@ -35,10 +35,10 @@ class ResourceManager {
     public:
         ResourceManager();
         ~ResourceManager();
-        int setAvailibility(int id, int cpu, int total_cpu, int memory, int total_memory, int disk, int total_disk, int network, int total_network, int load, int total_load);
-        double testResource(Resource *resc, int cpu, int memory, int disk, int network);
+        int setAvailibility(int id, long cpu, long total_cpu, long memory, long total_memory, long disk, long total_disk, long network, long total_network, long load, long total_load);
+        double testResource(Resource *resc, long cpu, long memory, long disk, long network);
         int totalResource();
-        int getBestBranch(int cpu, int memory, int disk, int network, int group);
+        int getBestBranch(long cpu, long memory, long disk, long network, int group);
         int getTotalMsg(char *rcMsg, int size);
         bool ifUpdated() { return updated; }
 };

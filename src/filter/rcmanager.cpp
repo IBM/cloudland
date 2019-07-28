@@ -28,9 +28,13 @@ ResourceManager::~ResourceManager()
     rcMap.clear();
 }
 
-double ResourceManager::testResource(Resource *resc, int cpu, int memory, int disk, int network)
+double ResourceManager::testResource(Resource *resc, long cpu, long memory, long disk, long network)
 {
-    double current = (1 - cpu / (double)(resc->cpu + 1));
+    double current = 0.0;
+    if (resc->cpu < 0 || resc->memory < 0 || resc->disk < 0) {
+        return current;
+    }
+    current = (1 - cpu / (double)(resc->cpu + 1));
     if (current <= 0.0) {
         return current;
     }
@@ -43,7 +47,7 @@ double ResourceManager::testResource(Resource *resc, int cpu, int memory, int di
     return current;
 }
 
-int ResourceManager::getBestBranch(int cpu, int memory, int disk, int network, int group)
+int ResourceManager::getBestBranch(long cpu, long memory, long disk, long network, int group)
 {
     int bestID = -1;
     static int count = 0;
@@ -103,7 +107,7 @@ int ResourceManager::getBestBranch(int cpu, int memory, int disk, int network, i
     return bestID;
 }
 
-int ResourceManager::setAvailibility(int id, int cpu, int total_cpu, int memory, int total_memory, int disk, int total_disk, int network, int total_network, int load, int total_load)
+int ResourceManager::setAvailibility(int id, long cpu, long total_cpu, long memory, long total_memory, long disk, long total_disk, long network, long total_network, long load, long total_load)
 {
     map<int, struct Resource *>::iterator it = rcMap.find(id);
     Resource *resource = NULL;
@@ -154,7 +158,7 @@ int ResourceManager::totalResource()
 int ResourceManager::getTotalMsg(char *rcMsg, int size)
 {
     memset(rcMsg, '\0', size);
-    snprintf(rcMsg, size - 1, "|:-COMMAND-:| report_rc.sh cpu=%d/%d memory=%d/%d disk=%d/%d network=%d/%d load=%d/%d\n", totalRC.cpu, totalRC.total_cpu, totalRC.memory, totalRC.total_memory, totalRC.disk, totalRC.total_disk, totalRC.network, totalRC.total_network, totalRC.load, totalRC.total_load);
+    snprintf(rcMsg, size - 1, "|:-COMMAND-:| report_rc.sh cpu=%d/%d memory=%ld/%ld disk=%ld/%ld network=%d/%d load=%d/%d\n", totalRC.cpu, totalRC.total_cpu, totalRC.memory, totalRC.total_memory, totalRC.disk, totalRC.total_disk, totalRC.network, totalRC.total_network, totalRC.load, totalRC.total_load);
 
     return 0;
 }

@@ -25,11 +25,10 @@ for (( i=1; i <= $count; i++ )); do
         ./clear_sg_chain.sh $vif_dev
     fi
     sidecar span log $span "Callback: clear_vnic.sh '$vif_dev'"
-    [ -n "$vif_dev" ] && echo "|:-COMMAND-:| clear_vnic.sh '$vif_dev'"
 done
 
 rm -f ${image_dir}/$vm_ID.disk
 rm -f ${cache_dir}/meta/$vm_ID.iso
 rm -rf $xml_dir/$vm_ID
 sidecar span log $span "Callback: `basename $0` '$vm_ID'"
-echo "|:-COMMAND-:| $(basename $0) '$vm_ID'"
+echo "|:-COMMAND-:| $(basename $0) '$1'"

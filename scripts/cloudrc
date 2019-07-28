@@ -9,12 +9,10 @@ image_cache=$cache_dir/image
 xml_dir=/opt/cloudland/cache/xml
 template_dir=/opt/cloudland/scripts/xml
 container_dir=/var/lib/lxd/containers
-db_file=/opt/cloudland/db/resource-${SCI_CLIENT_ID}.db
 dmasq_dir=/opt/cloudland/cache/dnsmasq
 mudata_dir=/opt/cloudland/mudata
 snapshot_dir=/var/snapshot
 cland_private_key=/opt/cloudland/deploy/.ssh/cland.key
-db_lock=/opt/cloudland/run/db-${SCI_CLIENT_ID}.lock
 export JAEGER_SERVICE_NAME="SCI-Backend"
 span=$(basename $0 .sh)
 function die()
@@ -67,11 +65,6 @@ function apply_vnic()
     apply_fw $action FORWARD -m physdev --physdev-in $vnic --physdev-is-bridged -j ACCEPT
     apply_fw $action FORWARD -m physdev --physdev-out $vnic --physdev-is-bridged -j ACCEPT
     service iptables save
-}
-
-function sql_exec()
-{
-    flock -w 5 $db_lock sqlite3 $db_file "$@"
 }
 
 function sidecar()

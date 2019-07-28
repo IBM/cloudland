@@ -138,7 +138,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			log.Println("Build instance metadata failed", err)
 			return
 		}
-		control := fmt.Sprintf("inter= cpu=%d memory=%d disk=%d network=%d", 0, 0, 0, 0)
+		control := fmt.Sprintf("inter= cpu=%d memory=%d disk=%d network=%d", flavor.Cpu, flavor.Memory*1024, flavor.Disk*1024*1024, 0)
 		if i == 0 && hyper >= 0 {
 			control = fmt.Sprintf("inter=%d cpu=%d memory=%d disk=%d network=%d", hyper, 0, 0, 0, 0)
 		}
