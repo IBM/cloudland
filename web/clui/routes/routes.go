@@ -128,6 +128,8 @@ func New() (m *macaron.Macaron) {
 	m.Get("/secgroups/new", secgroupView.New)
 	m.Post("/secgroups/new", secgroupView.Create)
 	m.Delete("/secgroups/:id", secgroupView.Delete)
+	m.Get("/secgroups/:id", secgroupView.Edit)
+	m.Post("/secgroups/:id", secgroupView.Patch)
 	m.Get("/secgroups/:sgid/secrules", secruleView.List)
 	m.Get("/secgroups/:sgid/secrules/new", secruleView.New)
 	m.Post("/secgroups/:sgid/secrules/new", secruleView.Create)

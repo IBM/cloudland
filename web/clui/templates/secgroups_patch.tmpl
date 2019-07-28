@@ -1,0 +1,35 @@
+{{template "_head" .}}
+<div class="user signup">
+	<div class="ui middle very relaxed page grid">
+        <div class="column" >
+            <form class="ui form" action="{{.Link}}" method="post">
+                <h3 class="ui top attached header">
+                    Update Security Group
+                </h3>
+                <div class="ui attached segment">
+                    <div class="required inline field">
+                        <label for="name">Name</label>
+                        <input id="name" name="name" value="{{ .Secgroup.Name }}" required>
+                    </div>
+                    <div class="inline field">
+                        <label for="isdefault">Is Default</label>
+                        <select name="isdefault" id="isdefault" class="ui selection dropdown">
+                              {{ if .Secgroup.IsDefault }}
+                              <option value="yes" selected>yes</option>
+                              {{ else }}
+                              <option value="yes">yes</option>
+                              <option value="no" selected>no</option>
+                              {{ end }}
+                        </select>
+		    </div>
+                    <div class="inline field">
+                        <label></label>
+                        <button class="ui green button">Update Security Group</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+	</div>
+</div>
+{{template "_footer" .}}
+
