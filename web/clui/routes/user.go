@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os/exec"
 	"strconv"
 	"strings"
 
@@ -156,12 +157,38 @@ func (a *UserAdmin) List(ctx context.Context, offset, limit int64, order string)
 	return
 }
 
-func (a *UserAdmin) Validate(username, password string) (user *model.User, err error) {
-	user = &model.User{}
+func (a *UserAdmin) Validate(ctx context.Context, username, password string) (user *model.User, err error) {
 	db := DB()
+	hasUser := true
+	user = &model.User{}
 	err = db.Take(user, "username = ?", username).Error
 	if err != nil {
-		log.Println("DB failed to validate user, %v", err)
+		log.Println("DB failed to qeury user", err)
+		hasUser = false
+	}
+	if strings.Contains(username, "@") && strings.Contains(username, "ibm.com") {
+		cmd := exec.Command("/opt/cloudland/scripts/frontend/ldap_auth.sh", username, password)
+		err = cmd.Start()
+		if err != nil {
+			log.Println("cmd.Start: ", err)
+		}
+		err = cmd.Wait()
+		if err != nil {
+			log.Println("cmd.Wait: ", err)
+			return
+		} else if hasUser {
+			return
+		}
+		_, err = a.Create(ctx, username, password)
+		if err != nil {
+			log.Println("Failed to create user", err)
+			return
+		}
+		_, err = orgAdmin.Create(ctx, username, username)
+		if err != nil {
+			log.Println("Failed to create organization", err)
+			return
+		}
 		return
 	}
 	err = a.CompareHashAndPassword(user.Password, password)
@@ -227,7 +254,7 @@ func (v *UserView) LoginGet(c *macaron.Context, store session.Store) {
 func (v *UserView) LoginPost(c *macaron.Context, store session.Store) {
 	username := c.Query("username")
 	password := c.Query("password")
-	user, err := userAdmin.Validate(username, password)
+	user, err := userAdmin.Validate(c.Req.Context(), username, password)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(401, "401")

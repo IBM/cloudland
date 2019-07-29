@@ -126,15 +126,15 @@ function allinone_firewall()
     sudo service iptables save
 }
 
-diff /opt/sci/lib64/libsci.so.0.0.0 $cland_root_dir/sci/libsci/.libs/libsci.so.0.0.0
-[ $? -ne 0 ] && inst_sci
-[ ! -f "/usr/local/lib/pkgconfig" ] && inst_grpc
-diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
-[ $? -ne 0 ] && inst_cland
+#diff /opt/sci/lib64/libsci.so.0.0.0 $cland_root_dir/sci/libsci/.libs/libsci.so.0.0.0
+#[ $? -ne 0 ] && inst_sci
+#[ ! -f "/usr/local/lib/pkgconfig" ] && inst_grpc
+#diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
+#[ $? -ne 0 ] && inst_cland
 
 gen_hosts
 cd $cland_root_dir/deploy
-ansible-playbook cloudland.yml --tags hosts,epel,ntp,be_pkg,be_conf,be_srv,fe_srv,firewall,imgrepo --extra-vars "network_device=$NET_DEV"
+#ansible-playbook cloudland.yml --tags hosts,epel,ntp,be_pkg,be_conf,be_srv,fe_srv,firewall,imgrepo --extra-vars "network_device=$NET_DEV"
 inst_web
-demo_router
-allinone_firewall
+#demo_router
+#allinone_firewall

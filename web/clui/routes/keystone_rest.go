@@ -93,7 +93,7 @@ func (t *Token) IssueTokenByPasswd(c *macaron.Context) {
 	username := requestStruct.Auth.Identity.Password.User.Name
 	password := requestStruct.Auth.Identity.Password.User.Password
 	org := requestStruct.Auth.Scope.Project.Name
-	user, err := userAdmin.Validate(username, password)
+	user, err := userAdmin.Validate(c.Req.Context(), username, password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, NewResponseError("Authen user fail", err.Error(), http.StatusUnauthorized))
 		return
