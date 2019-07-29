@@ -81,7 +81,7 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 		log.Println("Failed to create demo subnet", err)
 	} else {
 		subIDs := []int64{subnet.ID}
-		_, err = gatewayAdmin.Create(ctx, name, 0, 0, subIDs, org.ID)
+		_, _ = gatewayAdmin.Create(ctx, name, 0, 0, subIDs, org.ID)
 	}
 	return
 }

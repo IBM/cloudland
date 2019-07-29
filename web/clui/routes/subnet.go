@@ -188,11 +188,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 			return
 		}
 	}
-	err = execNetwork(ctx, netlink, subnet, owner)
-	if err != nil {
-		log.Println("Failed remote execute network creation", err)
-		return
-	}
+	_ = execNetwork(ctx, netlink, subnet, owner)
 	return
 }
 
