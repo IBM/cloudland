@@ -73,9 +73,9 @@ STATE=\$3
 case \$STATE in
    "MASTER") 
         ip netns exec $router route add default gw $ext_gw
-        ip netns exec $router arping -c 1 -I te-$suffix -s $eip $eip 
+        ip netns exec $router arping -c 3 -I te-$suffix -s $eip $eip 
 #        ip netns exec $router route add -net 10.0.0.0/8 gw $int_gw
-        ip netns exec $router arping -c 1 -I ti-$suffix -s $iip $iip
+        ip netns exec $router arping -c 3 -I ti-$suffix -s $iip $iip
         exit 0
         ;;
    "BACKUP") 

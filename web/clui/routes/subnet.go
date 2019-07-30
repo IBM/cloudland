@@ -9,6 +9,7 @@ package routes
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/big"
@@ -16,6 +17,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/IBM/cloudland/web/clui/model"
@@ -79,7 +81,7 @@ func checkIfExistVni(vni int64) (result bool, err error) {
 	}
 }
 
-func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, gateway, start, end, rtype, uuid string, owner int64) (subnet *model.Subnet, err error) {
+func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, gateway, start, end, rtype string, routes string, owner int64) (subnet *model.Subnet, err error) {
 	memberShip := GetMemberShip(ctx)
 	if owner == 0 {
 		owner = memberShip.OrgID
@@ -138,7 +140,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 	}
 	gateway = fmt.Sprintf("%s/%d", gateway, preSize)
 	subnet = &model.Subnet{
-		Model:   model.Model{Creater: memberShip.UserID, Owner: owner, UUID: uuid},
+		Model:   model.Model{Creater: memberShip.UserID, Owner: owner},
 		Name:    name,
 		Network: first.String(),
 		Netmask: netmask,
@@ -147,6 +149,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 		End:     end,
 		Vlan:    int64(vlanNo),
 		Type:    rtype,
+		Routes:  routes,
 	}
 	err = db.Create(subnet).Error
 	if err != nil {
@@ -410,6 +413,54 @@ func (v *SubnetView) New(c *macaron.Context, store session.Store) {
 	c.HTML(200, "subnets_new")
 }
 
+func ipv4MaskString(m []byte) string {
+	if len(m) != 4 {
+		return ""
+	}
+
+	return fmt.Sprintf("%d.%d.%d.%d", m[0], m[1], m[2], m[3])
+}
+
+func (v *SubnetView) checkRoutes(routes string) (valid bool, routeJson string) {
+	valid = false
+	routeList := strings.Split(routes, " ")
+	netRoutes := []*NetworkRoute{}
+	for _, route := range routeList {
+		pair := strings.Split(route, ":")
+		if len(pair) != 2 {
+			return
+		}
+		ipmask := pair[0]
+		if !strings.Contains(ipmask, "/") {
+			return
+		}
+		_, ipNet, err := net.ParseCIDR(ipmask)
+		if err != nil {
+			return
+		}
+		gateway := net.ParseIP(pair[1])
+		if gateway == nil {
+			return
+		}
+		netmask := ipv4MaskString(ipNet.Mask)
+		if netmask == "" {
+			return
+		}
+		netrt := &NetworkRoute{
+			Network: ipNet.IP.String(),
+			Netmask: netmask,
+			Gateway: gateway.String(),
+		}
+		netRoutes = append(netRoutes, netrt)
+	}
+	jsonData, err := json.Marshal(netRoutes)
+	if err == nil {
+		valid = true
+		routeJson = string(jsonData)
+	}
+	return
+}
+
 func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
@@ -426,9 +477,16 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 	network := c.Query("network")
 	netmask := c.Query("netmask")
 	gateway := c.Query("gateway")
+	routes := c.Query("routes")
+	valid, routeJson := v.checkRoutes(routes)
+	if !valid {
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	start := c.Query("start")
 	end := c.Query("end")
-	_, err := subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, gateway, start, end, rtype, "", memberShip.OrgID)
+	_, err := subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, gateway, start, end, rtype, routeJson, memberShip.OrgID)
 	if err != nil {
 		log.Println("Create subnet failed, %v", err)
 		c.Data["ErrorMsg"] = err.Error()

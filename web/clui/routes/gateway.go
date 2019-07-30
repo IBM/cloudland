@@ -28,8 +28,9 @@ var (
 )
 
 type SubnetIface struct {
-	Address string `json:"ip_address"`
-	Vni     int64  `json:"vni"`
+	Address string          `json:"ip_address"`
+	Vni     int64           `json:"vni"`
+	Routes  []*NetworkRoute `json:"routes,omitempty"`
 }
 
 type GatewayAdmin struct{}
@@ -88,7 +89,12 @@ func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int
 			log.Println("DB failed to set gateway, %v", err)
 			return
 		}
-		intIfaces = append(intIfaces, &SubnetIface{Address: subnet.Gateway, Vni: subnet.Vlan})
+		routes := []*NetworkRoute{}
+		err = json.Unmarshal([]byte(subnet.Routes), &routes)
+		if err != nil {
+			log.Println("Failed to unmarshal routes", err)
+		}
+		intIfaces = append(intIfaces, &SubnetIface{Address: subnet.Gateway, Vni: subnet.Vlan, Routes: routes})
 	}
 	jsonData, err := json.Marshal(intIfaces)
 	if err != nil {

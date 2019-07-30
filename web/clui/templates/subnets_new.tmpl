@@ -41,13 +41,17 @@
 						<div class="ui selection dropdown">
 						  <input id="rtype" name="rtype" type="hidden">
 						  <i class="dropdown icon"></i>
-						  <div class="default text">Routing Type</div>
+						  <div class="default text">internal</div>
 						  <div class="menu">
 							<div class="item" data-value="internal" data-text="internal">internal</div>
 							<div class="item" data-value="public" data-text="public">public</div>
 							<div class="item" data-value="private" data-text="private">private</div>
 						  </div>
 						</div>
+                    </div>
+                    <div class="inline field">
+                        <label for="routes">Routes (admin only)</label>
+                        <input id="routes" name="routes" placeholder="eg. 10.0.0.0/8:10.5.5.5 172.0.0.0/16:172.5.5.5">
                     </div>
 			        {{end}}
                     <div class="inline field">
