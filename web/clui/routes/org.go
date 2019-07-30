@@ -256,7 +256,7 @@ func (a *OrgAdmin) List(ctx context.Context, offset, limit int64, order string) 
 func (v *OrgView) List(c *macaron.Context, store session.Store) {
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
-	order := c.Query("order")
+	order := c.QueryTrim("order")
 	total, orgs, err := orgAdmin.List(c.Req.Context(), offset, limit, order)
 	if err != nil {
 		log.Println("Failed to list organizations, %v", err)
@@ -373,7 +373,7 @@ func (v *OrgView) Patch(c *macaron.Context, store session.Store) {
 		return
 	}
 	redirectTo := "../orgs/" + id
-	members := c.Query("members")
+	members := c.QueryTrim("members")
 	memberList := strings.Split(members, " ")
 	userList := c.QueryStrings("names")
 	roles := c.QueryStrings("roles")
@@ -412,8 +412,8 @@ func (v *OrgView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	redirectTo := "../orgs"
-	name := c.Query("name")
-	owner := c.Query("owner")
+	name := c.QueryTrim("name")
+	owner := c.QueryTrim("owner")
 	_, err := orgAdmin.Create(c.Req.Context(), name, owner)
 	if err != nil {
 		log.Println("Failed to create organization, %v", err)

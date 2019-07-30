@@ -353,7 +353,7 @@ func (v *SubnetView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
-	order := c.Query("order")
+	order := c.QueryTrim("order")
 	if order == "" {
 		order = "-created_at"
 	}
@@ -423,35 +423,42 @@ func ipv4MaskString(m []byte) string {
 
 func (v *SubnetView) checkRoutes(routes string) (valid bool, routeJson string) {
 	valid = false
-	routeList := strings.Split(routes, " ")
 	netRoutes := []*NetworkRoute{}
-	for _, route := range routeList {
-		pair := strings.Split(route, ":")
-		if len(pair) != 2 {
-			return
+	if routes != "" {
+		routeList := strings.Split(routes, " ")
+		for _, route := range routeList {
+			pair := strings.Split(route, ":")
+			if len(pair) != 2 {
+				log.Println("No valid pair delimiter")
+				return
+			}
+			ipmask := pair[0]
+			if !strings.Contains(ipmask, "/") {
+				log.Println("IPmask has no slash")
+				return
+			}
+			_, ipNet, err := net.ParseCIDR(ipmask)
+			if err != nil {
+				log.Println("Failed to parse cidr")
+				return
+			}
+			gateway := net.ParseIP(pair[1])
+			if gateway == nil {
+				log.Println("Gateway not in IP format")
+				return
+			}
+			netmask := ipv4MaskString(ipNet.Mask)
+			if netmask == "" {
+				log.Println("Failed to get netmask")
+				return
+			}
+			netrt := &NetworkRoute{
+				Network: ipNet.IP.String(),
+				Netmask: netmask,
+				Gateway: gateway.String(),
+			}
+			netRoutes = append(netRoutes, netrt)
 		}
-		ipmask := pair[0]
-		if !strings.Contains(ipmask, "/") {
-			return
-		}
-		_, ipNet, err := net.ParseCIDR(ipmask)
-		if err != nil {
-			return
-		}
-		gateway := net.ParseIP(pair[1])
-		if gateway == nil {
-			return
-		}
-		netmask := ipv4MaskString(ipNet.Mask)
-		if netmask == "" {
-			return
-		}
-		netrt := &NetworkRoute{
-			Network: ipNet.IP.String(),
-			Netmask: netmask,
-			Gateway: gateway.String(),
-		}
-		netRoutes = append(netRoutes, netrt)
 	}
 	jsonData, err := json.Marshal(netRoutes)
 	if err == nil {
@@ -471,21 +478,21 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	redirectTo := "../subnets"
-	name := c.Query("name")
-	vlan := c.Query("vlan")
-	rtype := c.Query("rtype")
-	network := c.Query("network")
-	netmask := c.Query("netmask")
-	gateway := c.Query("gateway")
-	routes := c.Query("routes")
+	name := c.QueryTrim("name")
+	vlan := c.QueryTrim("vlan")
+	rtype := c.QueryTrim("rtype")
+	network := c.QueryTrim("network")
+	netmask := c.QueryTrim("netmask")
+	gateway := c.QueryTrim("gateway")
+	routes := c.QueryTrim("routes")
 	valid, routeJson := v.checkRoutes(routes)
 	if !valid {
 		code := http.StatusBadRequest
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	start := c.Query("start")
-	end := c.Query("end")
+	start := c.QueryTrim("start")
+	end := c.QueryTrim("end")
 	_, err := subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, gateway, start, end, rtype, routeJson, memberShip.OrgID)
 	if err != nil {
 		log.Println("Create subnet failed, %v", err)

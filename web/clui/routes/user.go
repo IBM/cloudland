@@ -243,7 +243,7 @@ func (a *UserAdmin) CompareHashAndPassword(hash, password string) (err error) {
 
 func (v *UserView) LoginGet(c *macaron.Context, store session.Store) {
 	adminInit(c.Req.Context())
-	logout := c.Query("logout")
+	logout := c.QueryTrim("logout")
 	if logout == "" {
 		c.Data["PageIsSignIn"] = true
 		c.HTML(200, "login")
@@ -252,8 +252,8 @@ func (v *UserView) LoginGet(c *macaron.Context, store session.Store) {
 }
 
 func (v *UserView) LoginPost(c *macaron.Context, store session.Store) {
-	username := c.Query("username")
-	password := c.Query("password")
+	username := c.QueryTrim("username")
+	password := c.QueryTrim("password")
 	user, err := userAdmin.Validate(c.Req.Context(), username, password)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
@@ -300,7 +300,7 @@ func (v *UserView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
-	order := c.Query("order")
+	order := c.QueryTrim("order")
 	if order == "" {
 		order = "-created_at"
 	}
@@ -366,7 +366,7 @@ func (v *UserView) Change(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	orgName := c.Query("org")
+	orgName := c.QueryTrim("org")
 	db := DB()
 	user := &model.User{Model: model.Model{ID: int64(userID)}}
 	err = db.Set("gorm:auto_preload", true).Take(user).Error
@@ -425,7 +425,7 @@ func (v *UserView) Patch(c *macaron.Context, store session.Store) {
 		return
 	}
 	redirectTo := "../users/" + id
-	password := c.Query("password")
+	password := c.QueryTrim("password")
 	members := c.QueryStrings("members")
 	_, err = userAdmin.Update(c.Req.Context(), int64(userID), password, members)
 	if err != nil {
@@ -495,9 +495,9 @@ func (v *UserView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	redirectTo := "/users"
-	username := c.Query("username")
-	password := c.Query("password")
-	confirm := c.Query("confirm")
+	username := c.QueryTrim("username")
+	password := c.QueryTrim("password")
+	confirm := c.QueryTrim("confirm")
 
 	if confirm != password {
 		log.Println("Passwords do not match")

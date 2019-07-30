@@ -93,7 +93,7 @@ func (v *KeyView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
-	order := c.Query("order")
+	order := c.QueryTrim("order")
 	if order == "" {
 		order = "-created_at"
 	}
@@ -166,8 +166,8 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	redirectTo := "../keys"
-	name := c.Query("name")
-	pubkey := c.Query("pubkey")
+	name := c.QueryTrim("name")
+	pubkey := c.QueryTrim("pubkey")
 	_, err := keyAdmin.Create(c.Req.Context(), name, pubkey)
 	if err != nil {
 		log.Println("Failed to create key, %v", err)

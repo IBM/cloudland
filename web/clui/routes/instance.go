@@ -542,7 +542,7 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
-	order := c.Query("order")
+	order := c.QueryTrim("order")
 	if order == "" {
 		order = "-created_at"
 	}
@@ -711,8 +711,8 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	hostname := c.Query("hostname")
-	action := c.Query("action")
+	hostname := c.QueryTrim("hostname")
+	action := c.QueryTrim("action")
 	ifaces := c.QueryStrings("ifaces")
 	var subnetIDs []int64
 	for _, s := range ifaces {
@@ -750,8 +750,8 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	redirectTo := "../instances"
-	hostname := c.Query("hostname")
-	cnt := c.Query("count")
+	hostname := c.QueryTrim("hostname")
+	cnt := c.QueryTrim("count")
 	count, err := strconv.Atoi(cnt)
 	if err != nil {
 		log.Println("Invalid instance count", err)
@@ -759,7 +759,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	hyper := c.Query("hyper")
+	hyper := c.QueryTrim("hyper")
 	hyperID := -1
 	if hyper != "" {
 		hyperID, err = strconv.Atoi(hyper)
@@ -779,7 +779,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			return
 		}
 	}
-	image := c.Query("image")
+	image := c.QueryTrim("image")
 	imageID, err := strconv.Atoi(image)
 	if err != nil {
 		log.Println("Invalid image ID, %v", err)
@@ -787,7 +787,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	flavor := c.Query("flavor")
+	flavor := c.QueryTrim("flavor")
 	flavorID, err := strconv.Atoi(flavor)
 	if err != nil {
 		log.Println("Invalid flavor ID, %v", err)
@@ -795,7 +795,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	primary := c.Query("primary")
+	primary := c.QueryTrim("primary")
 	primaryID, err := strconv.Atoi(primary)
 	if err != nil {
 		log.Println("Invalid primary subnet ID, %v", err)
@@ -811,7 +811,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	primaryIP := c.QueryTrim("primaryip")
-	subnets := c.Query("subnets")
+	subnets := c.QueryTrim("subnets")
 	s := strings.Split(subnets, ",")
 	var subnetIDs []int64
 	for i := 0; i < len(s); i++ {
@@ -829,7 +829,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		}
 		subnetIDs = append(subnetIDs, int64(sID))
 	}
-	keys := c.Query("keys")
+	keys := c.QueryTrim("keys")
 	k := strings.Split(keys, ",")
 	var keyIDs []int64
 	for i := 0; i < len(k); i++ {
@@ -847,7 +847,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		}
 		keyIDs = append(keyIDs, int64(kID))
 	}
-	secgroups := c.Query("secgroups")
+	secgroups := c.QueryTrim("secgroups")
 	var sgIDs []int64
 	if secgroups != "" {
 		sg := strings.Split(secgroups, ",")
@@ -877,7 +877,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		}
 		sgIDs = append(sgIDs, sgID)
 	}
-	userdata := c.Query("userdata")
+	userdata := c.QueryTrim("userdata")
 	_, err = instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, int64(imageID), int64(flavorID), int64(primaryID), primaryIP, subnetIDs, keyIDs, sgIDs, hyperID)
 	if err != nil {
 		log.Println("Create instance failed, %v", err)

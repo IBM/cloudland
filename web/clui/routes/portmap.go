@@ -152,7 +152,7 @@ func (v *PortmapView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
-	order := c.Query("order")
+	order := c.QueryTrim("order")
 	if order == "" {
 		order = "-created_at"
 	}
@@ -231,8 +231,8 @@ func (v *PortmapView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	redirectTo := "../portmaps"
-	instance := c.Query("instance")
-	port := c.Query("port")
+	instance := c.QueryTrim("instance")
+	port := c.QueryTrim("port")
 	instID, err := strconv.Atoi(instance)
 	if err != nil {
 		log.Println("Invalid interface ID", err)

@@ -180,7 +180,7 @@ func (v *SecruleView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
-	order := c.Query("order")
+	order := c.QueryTrim("order")
 	if order == "" {
 		order = "-created_at"
 	}
@@ -289,7 +289,7 @@ func (v *SecruleView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	redirectTo := "../secrules"
-	remoteIp := c.Query("remoteip")
+	remoteIp := c.QueryTrim("remoteip")
 	sgid := c.Params("sgid")
 	if sgid == "" {
 		log.Println("Security group ID is empty")
@@ -304,10 +304,10 @@ func (v *SecruleView) Create(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	direction := c.Query("direction")
-	protocol := c.Query("protocol")
-	min := c.Query("portmin")
-	max := c.Query("portmax")
+	direction := c.QueryTrim("direction")
+	protocol := c.QueryTrim("protocol")
+	min := c.QueryTrim("portmin")
+	max := c.QueryTrim("portmax")
 	portMin, err := strconv.Atoi(min)
 	portMax, err := strconv.Atoi(max)
 	_, err = secruleAdmin.Create(c.Req.Context(), int64(secgroupID), memberShip.OrgID, remoteIp, direction, protocol, portMin, portMax)

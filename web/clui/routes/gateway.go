@@ -304,7 +304,7 @@ func (v *GatewayView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
-	order := c.Query("order")
+	order := c.QueryTrim("order")
 	if order == "" {
 		order = "-created_at"
 	}
@@ -434,9 +434,9 @@ func (v *GatewayView) Patch(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	name := c.Query("name")
-	pubSubnet := c.Query("public")
-	priSubnet := c.Query("private")
+	name := c.QueryTrim("name")
+	pubSubnet := c.QueryTrim("public")
+	priSubnet := c.QueryTrim("private")
 	subnets := c.QueryStrings("subnets")
 	pubID, err := strconv.Atoi(pubSubnet)
 	if err != nil {
@@ -482,10 +482,10 @@ func (v *GatewayView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	redirectTo := "../gateways"
-	name := c.Query("name")
-	pubSubnet := c.Query("public")
-	priSubnet := c.Query("private")
-	subnets := c.Query("subnets")
+	name := c.QueryTrim("name")
+	pubSubnet := c.QueryTrim("public")
+	priSubnet := c.QueryTrim("private")
+	subnets := c.QueryTrim("subnets")
 	pubID, err := strconv.Atoi(pubSubnet)
 	if err != nil {
 		log.Println("Invalid public subnet id, %v", err)

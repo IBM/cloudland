@@ -187,7 +187,7 @@ func (v *SecgroupView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
-	order := c.Query("order")
+	order := c.QueryTrim("order")
 	if order == "" {
 		order = "-created_at"
 	}
@@ -282,7 +282,7 @@ func (v *SecgroupView) Patch(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	redirectTo := "../secgroups"
 	id := c.Params(":id")
-	name := c.Query("name")
+	name := c.QueryTrim("name")
 	sgID, err := strconv.Atoi(id)
 	if err != nil {
 		code := http.StatusBadRequest
@@ -296,7 +296,7 @@ func (v *SecgroupView) Patch(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	isdefStr := c.Query("isdefault")
+	isdefStr := c.QueryTrim("isdefault")
 	isDef := false
 	if isdefStr == "" || isdefStr == "no" {
 		isDef = false
@@ -331,8 +331,8 @@ func (v *SecgroupView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	redirectTo := "../secgroups"
-	name := c.Query("name")
-	isdefStr := c.Query("isdefault")
+	name := c.QueryTrim("name")
+	isdefStr := c.QueryTrim("isdefault")
 	isDef := false
 	if isdefStr == "" || isdefStr == "no" {
 		isDef = false

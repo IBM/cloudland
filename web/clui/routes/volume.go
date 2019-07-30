@@ -161,7 +161,7 @@ func (v *VolumeView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
-	order := c.Query("order")
+	order := c.QueryTrim("order")
 	if order == "" {
 		order = "-created_at"
 	}
@@ -259,8 +259,8 @@ func (v *VolumeView) Patch(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	redirectTo := "../volumes"
 	id := c.Params(":id")
-	name := c.Query("name")
-	instance := c.Query("instance")
+	name := c.QueryTrim("name")
+	instance := c.QueryTrim("instance")
 	volID, err := strconv.Atoi(id)
 	if err != nil {
 		code := http.StatusBadRequest
@@ -305,8 +305,8 @@ func (v *VolumeView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	redirectTo := "../volumes"
-	name := c.Query("name")
-	size := c.Query("size")
+	name := c.QueryTrim("name")
+	size := c.QueryTrim("size")
 	vsize, err := strconv.Atoi(size)
 	if err != nil {
 		code := http.StatusBadRequest

@@ -109,7 +109,7 @@ func (v *ImageView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
-	order := c.Query("order")
+	order := c.QueryTrim("order")
 	if order == "" {
 		order = "-created_at"
 	}
@@ -179,10 +179,10 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	redirectTo := "../images"
-	name := c.Query("name")
-	url := c.Query("url")
-	format := c.Query("format")
-	architecture := c.Query("architecture")
+	name := c.QueryTrim("name")
+	url := c.QueryTrim("url")
+	format := c.QueryTrim("format")
+	architecture := c.QueryTrim("architecture")
 	_, err := imageAdmin.Create(c.Req.Context(), name, url, format, architecture)
 	if err != nil {
 		c.HTML(500, "500")
