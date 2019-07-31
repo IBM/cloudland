@@ -27,10 +27,15 @@ var (
 	gatewayView  = &GatewayView{}
 )
 
+type StaticRoute struct {
+	Destination string `json:"destination"`
+	Nexthop     string `json:"nexthop"`
+}
+
 type SubnetIface struct {
-	Address string          `json:"ip_address"`
-	Vni     int64           `json:"vni"`
-	Routes  []*NetworkRoute `json:"routes,omitempty"`
+	Address string         `json:"ip_address"`
+	Vni     int64          `json:"vni"`
+	Routes  []*StaticRoute `json:"routes,omitempty"`
 }
 
 type GatewayAdmin struct{}
@@ -89,7 +94,7 @@ func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int
 			log.Println("DB failed to set gateway, %v", err)
 			return
 		}
-		routes := []*NetworkRoute{}
+		routes := []*StaticRoute{}
 		err = json.Unmarshal([]byte(subnet.Routes), &routes)
 		if err != nil {
 			log.Println("Failed to unmarshal routes", err)
@@ -172,7 +177,7 @@ func (a *GatewayAdmin) Update(ctx context.Context, id int64, name string, pubID,
 				continue
 			}
 			control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
-			command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_gateway.sh %d %s %d soft", gateway.ID, sub.Gateway, sub.Vlan)
+			command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_routing.sh %d %s %d soft <<EOF\n%s\nEOF", gateway.ID, sub.Gateway, sub.Vlan, sub.Routes)
 			err = hyperExecute(ctx, control, command)
 			if err != nil {
 				log.Println("Set gateway failed")

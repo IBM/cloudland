@@ -413,56 +413,63 @@ func (v *SubnetView) New(c *macaron.Context, store session.Store) {
 	c.HTML(200, "subnets_new")
 }
 
-func ipv4MaskString(m []byte) string {
-	if len(m) != 4 {
-		return ""
+func (v *SubnetView) checkRoutes(network, netmask, gateway, start, end, routes string) (routeJson string, err error) {
+	inNet := &net.IPNet{
+		IP:   net.ParseIP(network),
+		Mask: net.IPMask(net.ParseIP(netmask).To4()),
 	}
-
-	return fmt.Sprintf("%d.%d.%d.%d", m[0], m[1], m[2], m[3])
-}
-
-func (v *SubnetView) checkRoutes(routes string) (valid bool, routeJson string) {
-	valid = false
-	netRoutes := []*NetworkRoute{}
+	if !inNet.Contains(net.ParseIP(gateway)) {
+		log.Println("Gateway not belonging to network/netmask")
+		err = fmt.Errorf("Gateway not belonging to network/netmask")
+		return
+	}
+	if !inNet.Contains(net.ParseIP(start)) {
+		log.Println("Start not belonging to network/netmask")
+		err = fmt.Errorf("Start not belonging to network/netmask")
+		return
+	}
+	if !inNet.Contains(net.ParseIP(end)) {
+		log.Println("End not belonging to network/netmask")
+		err = fmt.Errorf("End not belonging to network/netmask")
+		return
+	}
+	sRoutes := []*StaticRoute{}
 	if routes != "" {
 		routeList := strings.Split(routes, " ")
 		for _, route := range routeList {
 			pair := strings.Split(route, ":")
 			if len(pair) != 2 {
 				log.Println("No valid pair delimiter")
+				err = fmt.Errorf("No valid pair delimiter")
 				return
 			}
 			ipmask := pair[0]
 			if !strings.Contains(ipmask, "/") {
 				log.Println("IPmask has no slash")
+				err = fmt.Errorf("IPmask has no slash")
 				return
 			}
-			_, ipNet, err := net.ParseCIDR(ipmask)
+			_, _, err = net.ParseCIDR(ipmask)
 			if err != nil {
 				log.Println("Failed to parse cidr")
+				err = fmt.Errorf("Failed to parse cidr")
 				return
 			}
-			gateway := net.ParseIP(pair[1])
-			if gateway == nil {
-				log.Println("Gateway not in IP format")
+			nexthop := pair[1]
+			if !inNet.Contains(net.ParseIP(nexthop)) {
+				log.Println("Nexthop not belonging to network/netmask")
+				err = fmt.Errorf("Nexthop not belonging to network/netmask")
 				return
 			}
-			netmask := ipv4MaskString(ipNet.Mask)
-			if netmask == "" {
-				log.Println("Failed to get netmask")
-				return
+			netrt := &StaticRoute{
+				Destination: ipmask,
+				Nexthop:     nexthop,
 			}
-			netrt := &NetworkRoute{
-				Network: ipNet.IP.String(),
-				Netmask: netmask,
-				Gateway: gateway.String(),
-			}
-			netRoutes = append(netRoutes, netrt)
+			sRoutes = append(sRoutes, netrt)
 		}
 	}
-	jsonData, err := json.Marshal(netRoutes)
+	jsonData, err := json.Marshal(sRoutes)
 	if err == nil {
-		valid = true
 		routeJson = string(jsonData)
 	}
 	return
@@ -485,15 +492,15 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 	netmask := c.QueryTrim("netmask")
 	gateway := c.QueryTrim("gateway")
 	routes := c.QueryTrim("routes")
-	valid, routeJson := v.checkRoutes(routes)
-	if !valid {
+	start := c.QueryTrim("start")
+	end := c.QueryTrim("end")
+	routeJson, err := v.checkRoutes(network, netmask, gateway, start, end, routes)
+	if err != nil {
 		code := http.StatusBadRequest
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	start := c.QueryTrim("start")
-	end := c.QueryTrim("end")
-	_, err := subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, gateway, start, end, rtype, routeJson, memberShip.OrgID)
+	_, err = subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, gateway, start, end, rtype, routeJson, memberShip.OrgID)
 	if err != nil {
 		log.Println("Create subnet failed, %v", err)
 		c.Data["ErrorMsg"] = err.Error()

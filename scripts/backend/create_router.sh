@@ -5,7 +5,8 @@ source ../cloudrc
 
 [ $# -lt 5 ] && echo "$0 <router> <ext_defaut_gw> <int_defaut_gw> <ext_gw_cidr> <int_gw_cidr> <vrrp_vni> <vrrp_ip> <role>" && exit -1
 
-router=router-$1
+ID=$1
+router=router-$ID
 ext_gw=${2%/*}
 int_gw=${3%/*}
 ext_ip=$4
@@ -74,7 +75,6 @@ case \$STATE in
    "MASTER") 
         ip netns exec $router route add default gw $ext_gw
         ip netns exec $router arping -c 3 -I te-$suffix -s $eip $eip 
-#        ip netns exec $router route add -net 10.0.0.0/8 gw $int_gw
         ip netns exec $router arping -c 3 -I ti-$suffix -s $iip $iip
         exit 0
         ;;
@@ -100,9 +100,10 @@ n=$(jq length <<< $interfaces)
 while [ $i -lt $n ]; do
     addr=$(jq -r .[$i].ip_address <<< $interfaces)
     vni=$(jq -r .[$i].vni <<< $interfaces)
-    ./set_gateway.sh $router $addr $vni
+    routes=$(jq -r .[$i].routes <<< $interfaces)
+    ./set_routing.sh $router $addr $vni soft <<< $routes
     let i=$i+1
 done
 
 ip netns exec $router bash -c "echo 1 >/proc/sys/net/ipv4/ip_forward"
-echo "|:-COMMAND-:| $(basename $0) '$1' '$SCI_CLIENT_ID' '$role'"
+echo "|:-COMMAND-:| $(basename $0) '$ID' '$SCI_CLIENT_ID' '$role'"
