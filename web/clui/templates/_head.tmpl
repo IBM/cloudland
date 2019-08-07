@@ -95,7 +95,7 @@
                                                                                 <div class="menu">
                                 						{{ $Link := .Link }}
                                                                                 {{ range .Members }}
-                                                                                    <div class="item"><a href="{{$Link}}/../users/{{.UserID}}/chorg?org={{.OrgName}}"> {{ .OrgName }}</a></div>
+                                                                                    <div class="item"><a href="/users/{{.UserID}}/chorg?org={{.OrgName}}"> {{ .OrgName }}</a></div>
                                     				                {{ end }}
                                                                                     <div class="divider"></div>
                                                                                     <div class="item"><a href="/?logout=true&redirect_to={{.Link}}"> Sign out</a></div>
