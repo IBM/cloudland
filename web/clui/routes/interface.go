@@ -141,16 +141,8 @@ func (v *InterfaceView) Edit(c *macaron.Context, store session.Store) {
 		log.Println("Image query failed", err)
 		return
 	}
-	secgroups := []*model.SecurityGroup{}
-	where := ""
-	for i, sg := range iface.Secgroups {
-		if i == 0 {
-			where = fmt.Sprintf("id != %d", sg.ID)
-		} else {
-			where = fmt.Sprintf("%s and id != %d", where, sg.ID)
-		}
-	}
-	if err := db.Where(where).Find(&secgroups).Error; err != nil {
+	_, secgroups, err := secgroupAdmin.List(c.Req.Context(), 0, 0, "")
+	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return

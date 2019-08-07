@@ -670,19 +670,19 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 		log.Println("Failed to query floating ip(s), %v", err)
 		return
 	}
-	subnets := []*model.Subnet{}
-	where := ""
-	for i, iface := range instance.Interfaces {
-		if i == 0 {
-			where = fmt.Sprintf("id != %d", iface.Address.Subnet.ID)
-		} else {
-			where = fmt.Sprintf("%s and id != %d", where, iface.Address.Subnet.ID)
-		}
-	}
-	if err := db.Where(where).Find(&subnets).Error; err != nil {
+	_, subnets, err := subnetAdmin.List(c.Req.Context(), 0, 0, "")
+	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
+	}
+	for _, iface := range instance.Interfaces {
+		for i, subnet := range subnets {
+			if subnet.ID == iface.Address.SubnetID {
+				subnets = append(subnets[:i], subnets[i+1:]...)
+				break
+			}
+		}
 	}
 	c.Data["Instance"] = instance
 	c.Data["Subnets"] = subnets
