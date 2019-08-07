@@ -46,9 +46,14 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID int64, types []stri
 		return
 	}
 	gateway := &model.Gateway{Model: model.Model{ID: iface.Address.Subnet.Router}}
-	err = db.Model(gateway).Set("gorm:auto_preload", true).Take(gateway).Error
+	err = db.Take(gateway).Error
 	if err != nil {
 		log.Println("DB failed to query gateway", err)
+		return
+	}
+	err = db.Set("gorm:auto_preload", true).Find(&gateway.Interfaces).Error
+	if err != nil {
+		log.Println("DB failed to query interfaces", err)
 		return
 	}
 	for _, ftype := range types {
