@@ -33,8 +33,11 @@ function calc_resource()
         let virtual_disk=$virtual_disk+$vdisk
     done
     let disk=($total_disk-$used_disk)*$disk_over_ratio-$virtual_disk
+    [ $disk -lt 0 ] && disk=0
     let cpu=$total_cpu*$cpu_over_ratio-$virtual_cpu
+    [ $cpu -lt 0 ] && cpu=0
     let memory=$total_memory*$mem_over_ratio-$virtual_memory
+    [ $memory -lt 0 ] && memory=0
 }
 
 calc_resource

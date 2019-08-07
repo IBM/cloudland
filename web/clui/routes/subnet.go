@@ -98,7 +98,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 		return
 	}
 	count := 0
-	err = db.Model(&model.Subnet{}).Where("vlan = ?", vlanNo).Count(&count).Error
+	err = db.Model(&model.Network{}).Where("vlan = ?", vlanNo).Count(&count).Error
 	if err != nil {
 		log.Println("Database failed to count network", err)
 		return
@@ -172,7 +172,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 			ip = cidr.Inc(ip)
 		}
 	}
-	netlink := &model.Network{Vlan: int64(vlanNo), Type: "vxlan"}
+	netlink := &model.Network{Vlan: int64(vlanNo)}
 	if vlanNo < 4096 {
 		netlink.Type = "vlan"
 	}

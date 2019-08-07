@@ -41,6 +41,29 @@ type SubnetIface struct {
 type GatewayAdmin struct{}
 type GatewayView struct{}
 
+func createGatewayIface(ctx context.Context, rtype string, gateway *model.Gateway, owner int64) (iface *model.Interface, subnet *model.Subnet, err error) {
+	db := DB()
+	subnets := []*model.Subnet{}
+	err = db.Where("type = ?", rtype).Find(&subnets).Error
+	name := ""
+	ifType := ""
+	for _, subnet = range subnets {
+		if rtype == "public" {
+			name = fmt.Sprintf("pub%d", subnet.ID)
+			ifType = "gateway_public"
+		} else if rtype == "private" {
+			name = fmt.Sprintf("pub%d", subnet.ID)
+			ifType = "gateway_private"
+		}
+		iface, err = CreateInterface(ctx, subnet.ID, gateway.ID, owner, "", name, ifType, nil)
+		if err == nil {
+			log.Println("Created gateway interface from subnet", err)
+			break
+		}
+	}
+	return
+}
+
 func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int64, subnetIDs []int64, owner int64) (gateway *model.Gateway, err error) {
 	memberShip := GetMemberShip(ctx)
 	if owner == 0 {
@@ -58,33 +81,47 @@ func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int
 		log.Println("DB failed to create gateway, %v", err)
 		return
 	}
-	pubSubnet := &model.Subnet{Model: model.Model{ID: pubID}}
+	var pubIface *model.Interface
+	var pubSubnet *model.Subnet
 	if pubID == 0 {
-		pubSubnet.Type = "public"
+		pubIface, pubSubnet, err = createGatewayIface(ctx, "public", gateway, owner)
+		if err != nil {
+			log.Println("DB failed to create public interface", err)
+			return
+		}
+	} else {
+		pubSubnet = &model.Subnet{Model: model.Model{ID: pubID}}
+		err = db.Model(pubSubnet).Where(pubSubnet).Take(pubSubnet).Error
+		if err != nil {
+			log.Println("DB failed to query public subnet, %v", err)
+			return
+		}
+		pubIface, err = CreateInterface(ctx, pubSubnet.ID, gateway.ID, owner, "", fmt.Sprintf("pub%d", pubSubnet.ID), "gateway_public", nil)
+		if err != nil {
+			log.Println("DB failed to create public interface, %v", err)
+			return
+		}
 	}
-	err = db.Model(pubSubnet).Where(pubSubnet).Take(pubSubnet).Error
-	if err != nil {
-		log.Println("DB failed to query public subnet, %v", err)
-		return
-	}
-	pubIface, err := CreateInterface(ctx, pubSubnet.ID, gateway.ID, owner, "", fmt.Sprintf("pub%d", pubSubnet.ID), "gateway_public", nil)
-	if err != nil {
-		log.Println("DB failed to create public interface, %v", err)
-		return
-	}
-	priSubnet := &model.Subnet{Model: model.Model{ID: priID}}
+	var priIface *model.Interface
+	var priSubnet *model.Subnet
 	if priID == 0 {
-		priSubnet.Type = "private"
-	}
-	err = db.Model(priSubnet).Where(priSubnet).Take(priSubnet).Error
-	if err != nil {
-		log.Println("DB failed to query private subnet, %v", err)
-		return
-	}
-	priIface, err := CreateInterface(ctx, priSubnet.ID, gateway.ID, owner, "", fmt.Sprintf("pri%d", priSubnet.ID), "gateway_private", nil)
-	if err != nil {
-		log.Println("DB failed to create private interface, %v", err)
-		return
+		priIface, priSubnet, err = createGatewayIface(ctx, "private", gateway, owner)
+		if err != nil {
+			log.Println("DB failed to create private interface", err)
+			return
+		}
+	} else {
+		priSubnet := &model.Subnet{Model: model.Model{ID: priID}}
+		err = db.Model(priSubnet).Where(priSubnet).Take(priSubnet).Error
+		if err != nil {
+			log.Println("DB failed to query private subnet, %v", err)
+			return
+		}
+		priIface, err = CreateInterface(ctx, priSubnet.ID, gateway.ID, owner, "", fmt.Sprintf("pri%d", priSubnet.ID), "gateway_private", nil)
+		if err != nil {
+			log.Println("DB failed to create private interface, %v", err)
+			return
+		}
 	}
 	intIfaces := []*SubnetIface{}
 	for _, sID := range subnetIDs {
@@ -370,9 +407,8 @@ func (v *GatewayView) New(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	db := dbs.DB()
-	subnets := []*model.Subnet{}
-	if err := db.Where("id in (select subnet_id from addresses where allocated=false)").Find(&subnets).Error; err != nil {
+	_, subnets, err := subnetAdmin.List(c.Req.Context(), 0, 0, "")
+	if err != nil {
 		log.Println("DB failed to query subnets, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
