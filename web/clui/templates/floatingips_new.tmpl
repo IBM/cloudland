@@ -15,9 +15,11 @@
 						  <div class="default text">Address</div>
 						  <div class="menu">
                             {{ range .Instances }}
+						{{ if ne (index .Interfaces 0).Address.Subnet.Router 0 }}
 							<div class="item" data-value={{.ID}} data-text={{.Hostname}}-{{(index .Interfaces 0).Address.Address}}>
 							  {{.Hostname}}-{{(index .Interfaces 0).Address.Address}}
 							</div>
+                                                {{ end }}
                             {{ end }}
 						  </div>
 						</div>

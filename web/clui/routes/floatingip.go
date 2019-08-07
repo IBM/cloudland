@@ -225,7 +225,7 @@ func (v *FloatingIpView) New(c *macaron.Context, store session.Store) {
 	db := DB()
 	where := memberShip.GetWhere()
 	instances := []*model.Instance{}
-	if err := db.Preload("Interfaces", "primary_if = ?", true).Preload("Interfaces.Address").Where(where).Find(&instances).Error; err != nil {
+	if err := db.Preload("Interfaces", "primary_if = ?", true).Preload("Interfaces.Address").Preload("Interfaces.Address.Subnet").Where(where).Find(&instances).Error; err != nil {
 		return
 	}
 	c.Data["Instances"] = instances
