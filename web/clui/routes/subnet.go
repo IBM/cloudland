@@ -418,17 +418,17 @@ func (v *SubnetView) checkRoutes(network, netmask, gateway, start, end, routes s
 		IP:   net.ParseIP(network),
 		Mask: net.IPMask(net.ParseIP(netmask).To4()),
 	}
-	if !inNet.Contains(net.ParseIP(gateway)) {
+	if gateway != "" && !inNet.Contains(net.ParseIP(gateway)) {
 		log.Println("Gateway not belonging to network/netmask")
 		err = fmt.Errorf("Gateway not belonging to network/netmask")
 		return
 	}
-	if !inNet.Contains(net.ParseIP(start)) {
+	if start != "" && !inNet.Contains(net.ParseIP(start)) {
 		log.Println("Start not belonging to network/netmask")
 		err = fmt.Errorf("Start not belonging to network/netmask")
 		return
 	}
-	if !inNet.Contains(net.ParseIP(end)) {
+	if end != "" && !inNet.Contains(net.ParseIP(end)) {
 		log.Println("End not belonging to network/netmask")
 		err = fmt.Errorf("End not belonging to network/netmask")
 		return
