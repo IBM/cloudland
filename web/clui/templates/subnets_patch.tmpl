@@ -1,0 +1,58 @@
+{{template "_head" .}}
+<div class="user signup">
+	<div class="ui middle very relaxed page grid">
+        <div class="column" >
+            <form class="ui form" action="{{.Link}}" method="post">
+                <h3 class="ui top attached header">
+                    Update Subnet
+                </h3>
+                <div class="ui attached segment">
+                    <div class="required inline field">
+                        <label for="name">Name</label>
+                        <input id="name" name="name" value="{{ .Subnet.Name }}" required>
+                    </div>
+                    <div class="required inline field">
+                        <label for="network">Network</label>
+                        <input id="network" name="network" value="{{ .Subnet.Network }}" disabled required>
+                    </div>
+                    <div class="required inline field">
+                        <label for="netmask">Netmask</label>
+                        <input id="netmask"  name="netmask" value="{{ .Subnet.Netmask }}" disabled required>
+                    </div>
+                    <div class="inline field">
+                        <label for="gateway">Gateway</label>
+                        <input id="gateway"  name="gateway" value="{{ .Subnet.Gateway }}">
+                    </div>
+                    <div class="inline field">
+                        <label for="start">Start</label>
+                        <input id="start"  name="start" value="{{ .Subnet.Start }}">
+                    </div>
+                    <div class="inline field">
+                        <label for="end">End</label>
+                        <input id="end"  name="end" value="{{ .Subnet.End }}">
+                    </div>
+			        {{if .IsAdmin }}
+                    <div class="inline field">
+                        <label for="vlan">Vlan (admin only)</label>
+                        <input id="vlan" name="vlan" value="{{ .Subnet.Vlan }}" disabled>
+                    </div>
+                    <div class="inline field">
+                        <label for="rtype">Routing Type (admin only)</label>
+                        <input id="rtypr" name="rtype" value="{{ .Subnet.Type }}" disabled>
+                    </div>
+                    <div class="inline field">
+                        <label for="routes">Routes (admin only)</label>
+                        <input id="routes" name="routes" value="{{ .Subnet.Routes }}">
+                    </div>
+			        {{end}}
+                    <div class="inline field">
+                        <label></label>
+                        <button class="ui green button">Update Subnet</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+	</div>
+</div>
+{{template "_footer" .}}
+

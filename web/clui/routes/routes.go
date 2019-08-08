@@ -106,6 +106,8 @@ func New() (m *macaron.Macaron) {
 	m.Get("/subnets/new", subnetView.New)
 	m.Post("/subnets/new", subnetView.Create)
 	m.Delete("/subnets/:id", subnetView.Delete)
+	m.Get("/subnets/:id", subnetView.Edit)
+	m.Post("/subnets/:id", subnetView.Patch)
 	m.Get("/keys", keyView.List)
 	m.Get("/keys/new", keyView.New)
 	m.Post("/keys/new", keyView.Create)

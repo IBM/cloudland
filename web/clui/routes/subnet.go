@@ -81,6 +81,51 @@ func checkIfExistVni(vni int64) (result bool, err error) {
 	}
 }
 
+func (a *SubnetAdmin) Update(ctx context.Context, id int64, name, gateway, start, end, routes string) (subnet *model.Subnet, err error) {
+	db := DB()
+	subnet = &model.Subnet{Model: model.Model{ID: id}}
+	err = db.Take(subnet).Error
+	if err != nil {
+		log.Println("DB failed to query subnet ", err)
+		return
+	}
+	if name != "" {
+		subnet.Name = name
+	}
+	if gateway != "" {
+		preSize, _ := net.IPMask(net.ParseIP(subnet.Netmask).To4()).Size()
+		subnet.Gateway = fmt.Sprintf("%s/%d", gateway, preSize)
+	}
+	if start != "" {
+		subnet.Start = start
+	}
+	if end != "" {
+		subnet.End = end
+	}
+	subnet.Routes = routes
+	err = db.Save(subnet).Error
+	if err != nil {
+		log.Println("DB failed to save subnet ", err)
+		return
+	}
+	if subnet.Router > 0 {
+		gateway := &model.Gateway{Model: model.Model{ID: subnet.Router}}
+		err = db.Take(gateway).Error
+		if err != nil {
+			log.Println("DB failed to query router", err)
+			return
+		}
+		control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_routing.sh %d %s %d soft <<EOF\n%s\nEOF", gateway.ID, subnet.Gateway, subnet.Vlan, subnet.Routes)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Set gateway failed")
+			return
+		}
+	}
+	return
+}
+
 func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, gateway, start, end, rtype string, routes string, owner int64) (subnet *model.Subnet, err error) {
 	memberShip := GetMemberShip(ctx)
 	if owner == 0 {
@@ -413,7 +458,65 @@ func (v *SubnetView) New(c *macaron.Context, store session.Store) {
 	c.HTML(200, "subnets_new")
 }
 
-func (v *SubnetView) checkRoutes(network, netmask, gateway, start, end, routes string) (routeJson string, err error) {
+func (v *SubnetView) Edit(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	id := c.ParamsInt64("id")
+	if id <= 0 {
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Reader, "subnets", id)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	subnet := &model.Subnet{Model: model.Model{ID: id}}
+	err = DB().Take(subnet).Error
+	if err != nil {
+		log.Println("Database failed to query subnet", err)
+		return
+	}
+	routes := []*StaticRoute{}
+	err = json.Unmarshal([]byte(subnet.Routes), &routes)
+	if err != nil || len(routes) == 0 {
+		log.Println("Failed to unmarshal routes", err)
+		subnet.Routes = ""
+	} else {
+		for i, route := range routes {
+			if i == 0 {
+				subnet.Routes = fmt.Sprintf("%s:%s", route.Destination, route.Nexthop)
+			} else {
+				subnet.Routes = fmt.Sprintf("%s %s:%s", subnet.Routes, route.Destination, route.Nexthop)
+			}
+		}
+	}
+	subnet.Gateway = strings.Split(subnet.Gateway, "/")[0]
+	c.Data["Subnet"] = subnet
+	c.HTML(200, "subnets_patch")
+}
+
+func (v *SubnetView) checkRoutes(network, netmask, gateway, start, end, routes string, id int64) (routeJson string, err error) {
+	if id > 0 {
+		db := DB()
+		subnet := &model.Subnet{Model: model.Model{ID: id}}
+		err = db.Take(subnet).Error
+		if err != nil {
+			log.Println("DB failed to query subnet ", err)
+			return
+		}
+		network = subnet.Network
+		netmask = subnet.Netmask
+	}
 	inNet := &net.IPNet{
 		IP:   net.ParseIP(network),
 		Mask: net.IPMask(net.ParseIP(netmask).To4()),
@@ -475,6 +578,52 @@ func (v *SubnetView) checkRoutes(network, netmask, gateway, start, end, routes s
 	return
 }
 
+func (v *SubnetView) Patch(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	redirectTo := "../subnets"
+	id := c.ParamsInt64("id")
+	if id <= 0 {
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "subnets", id)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	name := c.QueryTrim("name")
+	network := c.QueryTrim("network")
+	netmask := c.QueryTrim("netmask")
+	gateway := c.QueryTrim("gateway")
+	start := c.QueryTrim("start")
+	end := c.QueryTrim("end")
+	routes := c.QueryTrim("routes")
+	log.Println("$$$$$$$$$$$$$$$$ network/netmask = ", network, netmask)
+	routeJson, err := v.checkRoutes(network, netmask, gateway, start, end, routes, id)
+	if err != nil {
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	_, err = subnetAdmin.Update(c.Req.Context(), id, name, gateway, start, end, routeJson)
+	if err != nil {
+		log.Println("Create subnet failed, %v", err)
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+	}
+	c.Redirect(redirectTo)
+}
+
 func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
@@ -494,7 +643,7 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 	routes := c.QueryTrim("routes")
 	start := c.QueryTrim("start")
 	end := c.QueryTrim("end")
-	routeJson, err := v.checkRoutes(network, netmask, gateway, start, end, routes)
+	routeJson, err := v.checkRoutes(network, netmask, gateway, start, end, routes, 0)
 	if err != nil {
 		code := http.StatusBadRequest
 		c.Error(code, http.StatusText(code))

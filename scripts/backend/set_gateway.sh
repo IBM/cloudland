@@ -20,13 +20,19 @@ if [ $? -ne 0 ]; then
 fi
 apply_vnic -I ln-$vni
 
+iface=ns-$vni
+router_dir=/opt/cloudland/cache/router/$router
+vrrp_conf=$router_dir/keepalived.conf
+pid_file=$router_dir/keepalived.pid
+sed -i "\#.* dev $iface#d" $vrrp_conf
+#addrs=$(ip netns exec $router ip addr show $iface | grep 'inet ' | awk '{print $2}')
+#for addr in $addrs; do
+#    ip netns exec $router ip addr del $addr dev $iface
+#done
+
 if [ "$mode" = "hard" ]; then
-    ip netns exec $router ip addr add $addr brd $bcast dev ns-$vni
+    ip netns exec $router ip addr add $addr brd $bcast dev $iface
 else
-    router_dir=/opt/cloudland/cache/router/$router
-    vrrp_conf=$router_dir/keepalived.conf
-    pid_file=$router_dir/keepalived.pid
-    sed -i "\#$addr dev ns-$vni#d" $vrrp_conf
-    sed -i "/virtual_ipaddress {/a $addr dev ns-$vni" $vrrp_conf
+    sed -i "/virtual_ipaddress {/a $addr dev $iface" $vrrp_conf
     [ -f "$pid_file" ] && ip netns exec $router kill -HUP $(cat $pid_file)
 fi

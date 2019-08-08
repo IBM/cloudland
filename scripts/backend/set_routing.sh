@@ -12,4 +12,4 @@ vni=$3
 mode=$4
 
 ./set_gateway.sh $router $addr $vni $mode
-./set_route.sh $router
+./set_route.sh $router $vni
