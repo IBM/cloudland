@@ -101,7 +101,7 @@ while [ $i -lt $n ]; do
     addr=$(jq -r .[$i].ip_address <<< $interfaces)
     vni=$(jq -r .[$i].vni <<< $interfaces)
     routes=$(jq -r .[$i].routes <<< $interfaces)
-    ./set_routing.sh $router $addr $vni soft <<< $routes
+    ./set_gw_route.sh $router $addr $vni soft <<< $routes
     let i=$i+1
 done
 

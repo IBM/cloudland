@@ -3,11 +3,13 @@
 cd `dirname $0`
 source ../cloudrc
 
-[ $# -lt 2 ] && echo "$0 <router> <vni>" && exit -1
+[ $# -lt 2 ] && echo "$0 <router> <vni> [type]" && exit -1
 
 router=$1
 [ "${router/router-/}" = "$router" ] && router=router-$1
+ID=${router/router-/}
 vni=$2
+rtype=$3
 
 routes=$(cat)
 router_dir=/opt/cloudland/cache/router/$router
@@ -16,6 +18,8 @@ notify_sh=$router_dir/notify.sh
 pid_file=$router_dir/keepalived.pid
 
 iface=ns-$vni
+[ "$rtype" = "private" ] && iface=ti-$ID
+[ "$rtype" = "pubilc" ] && iface=te-$ID
 sed -i "\#ip netns exec $router route add -net .* gw .* dev $iface#d" $notify_sh
 i=0
 rlen=$(jq length <<< $routes)

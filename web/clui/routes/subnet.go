@@ -109,19 +109,48 @@ func (a *SubnetAdmin) Update(ctx context.Context, id int64, name, gateway, start
 		return
 	}
 	if subnet.Router > 0 {
-		gateway := &model.Gateway{Model: model.Model{ID: subnet.Router}}
-		err = db.Take(gateway).Error
+		err = setRouting(ctx, subnet.ID, subnet, false)
 		if err != nil {
-			log.Println("DB failed to query router", err)
+			log.Println("Failed to set routing for subnet")
 			return
 		}
-		control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_routing.sh %d %s %d soft <<EOF\n%s\nEOF", gateway.ID, subnet.Gateway, subnet.Vlan, subnet.Routes)
+	} else if subnet.Type != "internal" {
+		var ifaces []*model.Interface
+		ifType := fmt.Sprintf("gateway_%s", subnet.Type)
+		err = db.Where("type = ? and subnet = ?", ifType, subnet.ID).Find(&ifaces).Error
+		if err != nil {
+			log.Println("DB failed to query interfaces")
+			return
+		}
+		for _, iface := range ifaces {
+			err = setRouting(ctx, iface.Device, subnet, true)
+			if err != nil {
+				log.Println("Failed to set routing for subnet")
+			}
+		}
+	}
+	return
+}
+
+func setRouting(ctx context.Context, gatewayID int64, subnet *model.Subnet, routeOnly bool) (err error) {
+	db := DB()
+	gateway := &model.Gateway{Model: model.Model{ID: gatewayID}}
+	err = db.Take(gateway).Error
+	if err != nil {
+		log.Println("DB failed to query router", err)
+		return
+	}
+	control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
+	if routeOnly {
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_route.sh %d %d %s<<EOF\n%s\nEOF", gateway.ID, subnet.Vlan, subnet.Type, subnet.Routes)
 		err = hyperExecute(ctx, control, command)
-		if err != nil {
-			log.Println("Set gateway failed")
-			return
-		}
+	} else {
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_gw_route.sh %d %s %d soft <<EOF\n%s\nEOF", gateway.ID, subnet.Gateway, subnet.Vlan, subnet.Routes)
+		err = hyperExecute(ctx, control, command)
+	}
+	if err != nil {
+		log.Println("Set gateway failed")
+		return
 	}
 	return
 }
