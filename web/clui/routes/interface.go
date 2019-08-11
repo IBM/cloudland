@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -225,6 +226,10 @@ func AllocateAddress(ctx context.Context, subnetID, ifaceID int64, ipaddr, addrT
 	if ipaddr == "" {
 		err = db.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ?", subnetID, false).Take(address).Error
 	} else {
+		if !strings.Contains(ipaddr, "/") {
+			preSize, _ := net.IPMask(net.ParseIP(subnet.Netmask).To4()).Size()
+			ipaddr = fmt.Sprintf("%s/%d", ipaddr, preSize)
+		}
 		err = db.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ? and address = ?", subnetID, false, ipaddr).Take(address).Error
 	}
 	if err != nil {
@@ -302,17 +307,19 @@ func genMacaddr() (mac string, err error) {
 	return mac, nil
 }
 
-func CreateInterface(ctx context.Context, subnetID, ID, owner int64, address, ifaceName, ifType string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
+func CreateInterface(ctx context.Context, subnetID, ID, owner int64, address, mac, ifaceName, ifType string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
 	var db *gorm.DB
 	ctx, db = getCtxDB(ctx)
 	primary := false
 	if ifaceName == "eth0" {
 		primary = true
 	}
-	mac, err := genMacaddr()
-	if err != nil {
-		log.Println("Failed to generate random Mac address, %v", err)
-		return
+	if mac == "" {
+		mac, err = genMacaddr()
+		if err != nil {
+			log.Println("Failed to generate random Mac address, %v", err)
+			return
+		}
 	}
 	iface = &model.Interface{
 		Model:     model.Model{Owner: owner},

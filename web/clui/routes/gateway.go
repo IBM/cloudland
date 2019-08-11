@@ -55,7 +55,7 @@ func createGatewayIface(ctx context.Context, rtype string, gateway *model.Gatewa
 			name = fmt.Sprintf("pub%d", subnet.ID)
 			ifType = "gateway_private"
 		}
-		iface, err = CreateInterface(ctx, subnet.ID, gateway.ID, owner, "", name, ifType, nil)
+		iface, err = CreateInterface(ctx, subnet.ID, gateway.ID, owner, "", "", name, ifType, nil)
 		if err == nil {
 			log.Println("Created gateway interface from subnet", err)
 			break
@@ -96,7 +96,7 @@ func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int
 			log.Println("DB failed to query public subnet, %v", err)
 			return
 		}
-		pubIface, err = CreateInterface(ctx, pubSubnet.ID, gateway.ID, owner, "", fmt.Sprintf("pub%d", pubSubnet.ID), "gateway_public", nil)
+		pubIface, err = CreateInterface(ctx, pubSubnet.ID, gateway.ID, owner, "", "", fmt.Sprintf("pub%d", pubSubnet.ID), "gateway_public", nil)
 		if err != nil {
 			log.Println("DB failed to create public interface, %v", err)
 			return
@@ -117,7 +117,7 @@ func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int
 			log.Println("DB failed to query private subnet, %v", err)
 			return
 		}
-		priIface, err = CreateInterface(ctx, priSubnet.ID, gateway.ID, owner, "", fmt.Sprintf("pri%d", priSubnet.ID), "gateway_private", nil)
+		priIface, err = CreateInterface(ctx, priSubnet.ID, gateway.ID, owner, "", "", fmt.Sprintf("pri%d", priSubnet.ID), "gateway_private", nil)
 		if err != nil {
 			log.Println("DB failed to create private interface, %v", err)
 			return
