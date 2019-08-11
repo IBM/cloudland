@@ -526,6 +526,14 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order str
 			log.Println("Failed to query floating ip(s), %v", err)
 			return
 		}
+		permit := memberShip.CheckPermission(model.Admin)
+		if permit {
+			instance.OwnerInfo = &model.Organization{Model: model.Model{ID: instance.Owner}}
+			if err = db.Take(instance.OwnerInfo).Error; err != nil {
+				log.Println("Failed to query owner info", err)
+				return
+			}
+		}
 	}
 
 	return

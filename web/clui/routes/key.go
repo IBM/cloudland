@@ -78,6 +78,16 @@ func (a *KeyAdmin) List(ctx context.Context, offset, limit int64, order string) 
 		log.Println("DB failed to query keys, %v", err)
 		return
 	}
+	permit := memberShip.CheckPermission(model.Admin)
+	if permit {
+		for _, key := range keys {
+			key.OwnerInfo = &model.Organization{Model: model.Model{ID: key.Owner}}
+			if err = db.Take(key.OwnerInfo).Error; err != nil {
+				log.Println("Failed to query owner info", err)
+				return
+			}
+		}
+	}
 
 	return
 }

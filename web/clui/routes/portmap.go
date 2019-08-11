@@ -137,6 +137,16 @@ func (a *PortmapAdmin) List(ctx context.Context, offset, limit int64, order stri
 		log.Println("DB failed to query portmap(s), %v", err)
 		return
 	}
+	permit := memberShip.CheckPermission(model.Admin)
+	if permit {
+		for _, pmap := range portmaps {
+			pmap.OwnerInfo = &model.Organization{Model: model.Model{ID: pmap.Owner}}
+			if err = db.Take(pmap.OwnerInfo).Error; err != nil {
+				log.Println("Failed to query owner info", err)
+				return
+			}
+		}
+	}
 
 	return
 }

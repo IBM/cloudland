@@ -146,6 +146,16 @@ func (a *VolumeAdmin) List(ctx context.Context, offset, limit int64, order strin
 	if err = db.Preload("Instance").Where(where).Find(&volumes).Error; err != nil {
 		return
 	}
+	permit := memberShip.CheckPermission(model.Admin)
+	if permit {
+		for _, vol := range volumes {
+			vol.OwnerInfo = &model.Organization{Model: model.Model{ID: vol.Owner}}
+			if err = db.Take(vol.OwnerInfo).Error; err != nil {
+				log.Println("Failed to query owner info", err)
+				return
+			}
+		}
+	}
 
 	return
 }

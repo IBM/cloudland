@@ -172,6 +172,16 @@ func (a *SecgroupAdmin) List(ctx context.Context, offset, limit int64, order str
 		log.Println("DB failed to query security group(s), %v", err)
 		return
 	}
+	permit := memberShip.CheckPermission(model.Admin)
+	if permit {
+		for _, sg := range secgroups {
+			sg.OwnerInfo = &model.Organization{Model: model.Model{ID: sg.Owner}}
+			if err = db.Take(sg.OwnerInfo).Error; err != nil {
+				log.Println("Failed to query owner info", err)
+				return
+			}
+		}
+	}
 
 	return
 }

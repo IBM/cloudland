@@ -25,6 +25,9 @@
 			                        <th>ID</th>
 			                        <th>Name</th>
 			                        <th>IsDefault</th>
+						{{ if $.IsAdmin }}
+			                        <th>Owner</th>
+						{{ end }}
 			                        <th>Created At</th>
 			                        <th>Edit</th>
                                     <th>Delete</th>
@@ -37,6 +40,9 @@
 			                        <td><a href="{{$Link}}/{{.ID}}/secrules">{{.ID}}</a></td>
 			                        <td>{{.Name}}</td>
 			                        <td>{{.IsDefault}}</td>
+						{{ if $.IsAdmin }}
+			                        <td>{{.OwnerInfo.Name}}</td>
+						{{ end }}
 			                        <td><span title="Tue, 18 Dec 2018 14:24:59 &#43;0800">{{.CreatedAt}}</span></td>
 			                        <td><a href="{{$Link}}/{{.ID}}"><i class="fa fa-pencil-square-o"></i></a></td>
                                     <td><div class="ui red tiny button delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}">Delete</div></td>

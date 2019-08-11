@@ -412,6 +412,16 @@ func (a *SubnetAdmin) List(ctx context.Context, offset, limit int64, order strin
 	if err = db.Preload("Netlink").Where(where).Find(&subnets).Error; err != nil {
 		return
 	}
+	permit := memberShip.CheckPermission(model.Admin)
+	if permit {
+		for _, subnet := range subnets {
+			subnet.OwnerInfo = &model.Organization{Model: model.Model{ID: subnet.Owner}}
+			if err = db.Take(subnet.OwnerInfo).Error; err != nil {
+				log.Println("Failed to query owner info", err)
+				return
+			}
+		}
+	}
 
 	return
 }

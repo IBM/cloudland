@@ -26,7 +26,11 @@
 			                        <th>Name</th>
 			                        <th>Network</th>
 			                        <th>Netmask</th>
-			                        <th>Created At</th>
+						{{ if $.IsAdmin }}
+			                        <th>Vlan</th>
+			                        <th>Hyper</th>
+			                        <th>Owner</th>
+						{{ end }}
 			                        <th>Edit</th>
                                     <th>Delete</th>
 		                        </tr>
@@ -39,7 +43,13 @@
 			                        <td>{{.Name}}</td>
 			                        <td>{{.Network}}</td>
 			                        <td>{{.Netmask}}</td>
-			                        <td><span title="Tue, 18 Dec 2018 14:24:59 &#43;0800">{{.CreatedAt}}</span></td>
+						{{ if $.IsAdmin }}
+			                        <td>{{.Vlan}}</td>
+			                        <td>
+						{{ .Netlink.Hyper }},{{ .Netlink.Peer }}
+                                    		</td>
+			                        <td>{{.OwnerInfo.Name}}</td>
+						{{ end }}
 			                        <td><a href="{{$Link}}/{{.ID}}"><i class="fa fa-pencil-square-o"></i></a></td>
                                     <td><div class="ui red tiny button delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}">Delete</div></td>
 		                        </tr>

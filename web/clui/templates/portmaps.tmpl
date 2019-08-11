@@ -27,6 +27,9 @@
 			                        <th>Local IP:Port</th>
 			                        <th>Remote IP:Port</th>
 			                        <th>Status</th>
+						{{ if $.IsAdmin }}
+			                        <th>Owner</th>
+						{{ end }}
 			                        <th>Edit</th>
                                     <th>Delete</th>
 		                        </tr>
@@ -40,6 +43,9 @@
 			                        <td>{{.LocalAddress}}:{{.LocalPort}}</td>
 			                        <td>{{.RemoteAddress}}:{{.RemotePort}}</td>
 			                        <td>{{.Status}}</td>
+						{{ if $.IsAdmin }}
+			                        <td>{{.OwnerInfo.Name}}</td>
+						{{ end }}
 			                        <td><a href="{{$Link}}/{{.ID}}"><i class="fa fa-pencil-square-o"></i></a></td>
                                     <td><div class="ui red tiny button delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}">Delete</div></td>
 		                        </tr>

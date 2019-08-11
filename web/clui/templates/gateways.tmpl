@@ -29,6 +29,7 @@
 			                        <th>Status</th>
 		   			        {{ if $.IsAdmin }}
 			                        <th>Hyper</th>
+			                        <th>Owner</th>
 						{{ end }}
 			                        <th>Edit</th>
                                     <th>Delete</th>
@@ -61,6 +62,7 @@
 			                        <td>
 										{{ .Hyper }},{{ .Peer }}
                                     		</td>
+			                        <td>{{.OwnerInfo.Name}}</td>
 						{{ end }}
 			                        <td><a href="{{$Link}}/{{.ID}}"><i class="fa fa-pencil-square-o"></i></a></td>
                                     <td><div class="ui red tiny button delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}">Delete</div></td>

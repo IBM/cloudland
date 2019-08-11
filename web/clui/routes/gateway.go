@@ -332,6 +332,16 @@ func (a *GatewayAdmin) List(ctx context.Context, offset, limit int64, order stri
 		log.Println("DB failed to query gateways, %v", err)
 		return
 	}
+	permit := memberShip.CheckPermission(model.Admin)
+	if permit {
+		for _, gateway := range gateways {
+			gateway.OwnerInfo = &model.Organization{Model: model.Model{ID: gateway.Owner}}
+			if err = db.Take(gateway.OwnerInfo).Error; err != nil {
+				log.Println("Failed to query owner info", err)
+				return
+			}
+		}
+	}
 	return
 }
 
