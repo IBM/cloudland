@@ -32,7 +32,8 @@ if [ ! -f "$vm_img" ]; then
         echo "|:-COMMAND-:| `basename $0` '$1' '$vm_stat' '$SCI_CLIENT_ID' 'image $img_name downlaod failed!'"
         exit -1
     fi
-    cmd="qemu-img convert -f qcow2 -O raw $image_cache/$img_name $vm_img"
+    format=$(qemu-img info $image_cache/$img_name | grep 'file format' | cut -d' ' -f3)
+    cmd="qemu-img convert -f $format -O qcow2 $image_cache/$img_name $vm_img"
     result=$(eval "$cmd")
     sidecar span log $span "Internal: $cmd, result: $result"
     vsize=$(qemu-img info $vm_img | grep 'virtual size:' | cut -d' ' -f4 | tr -d '(')

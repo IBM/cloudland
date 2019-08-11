@@ -20,7 +20,7 @@
   <devices>
     <emulator>/usr/libexec/qemu-kvm</emulator>
     <disk type='file' device='disk'>
-      <driver name='qemu' type='raw' cache='writeback'/>
+      <driver name='qemu' type='qcow2' cache='writeback'/>
       <source file='VM_IMG'/>
       <target dev='vda' bus='virtio'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
