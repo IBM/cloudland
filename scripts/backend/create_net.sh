@@ -8,7 +8,7 @@ source ../cloudrc
 vlan=$1
 network=$2
 netmask=$3
-gateway=$4
+gateway=${4%%/*}
 dhcp_ip=$5
 tag_id=$6
 role=$7

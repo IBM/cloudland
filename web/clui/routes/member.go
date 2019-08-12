@@ -91,7 +91,7 @@ func (m *MemberShip) CheckOwner(reqRole model.Role, table string, id int64) (isO
 		log.Println("Failed to query resource owner", err)
 		return
 	}
-	if m.OrgID == result.Owner || (m.OrgName == "admin" && m.Role == model.Admin) {
+	if m.OrgID == result.Owner || m.Role == model.Admin {
 		isOwner = true
 	}
 	return
