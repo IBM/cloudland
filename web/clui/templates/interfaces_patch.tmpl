@@ -12,16 +12,20 @@
                         <input id="name" name="name" value="{{ .Interface.Name }}" required>
                     </div>
                     <div class="required inline field">
-                        <label for="Address">Address</label>
+                        <label for="address">Address</label>
                         <input id="address" name="address" value="{{ .Interface.Address.Address }}" disabled>
                     </div>
+                    <div class="required inline field">
+                        <label for="macaddr">Address</label>
+                        <input id="macaddr" name="macaddr" value="{{ .Interface.MacAddr }}" disabled>
+                    </div>
                     <div class="inline field">
-                        <label for="secgroup">Security Groups</label>
-                        <select name="" id="action" multiple="" class="ui multiple selection dropdown">
-						   {{ range .Interface.Secgroups }}
+                        <label for="secgroups">Security Groups</label>
+                        <select name="secgroups" id="secgroups" multiple="" class="ui multiple selection dropdown">
+			   {{ range .Interface.Secgroups }}
                               <option value="{{ .ID }}" selected>{{ .ID }}-{{ .Name }}</option>
                            {{ end }}
-						   {{ range .Secgroups }}
+			   {{ range .Secgroups }}
                               <option value="{{ .ID }}">{{ .ID }}-{{ .Name }}</option>
                            {{ end }}
                         </select>

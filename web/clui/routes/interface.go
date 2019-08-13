@@ -48,14 +48,27 @@ func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name string, sgID
 		}
 	}
 	sgChanged := false
-	if len(iface.Secgroups) != len(sgIDs) {
-		sgChanged = true
-	} else {
-		for _, esg := range iface.Secgroups {
+	log.Println("$$$$ len = ", len(iface.Secgroups), len(sgIDs))
+	for _, esg := range iface.Secgroups {
+		found := false
+		for _, sgID := range sgIDs {
+			if sgID == esg.ID {
+				found = true
+				break
+			}
+		}
+		if found == false {
+			sgChanged = true
+			break
+		}
+	}
+	if !sgChanged {
+		for _, sgID := range sgIDs {
 			found := false
-			for _, sgID := range sgIDs {
+			for _, esg := range iface.Secgroups {
 				if sgID == esg.ID {
 					found = true
+					break
 				}
 			}
 			if found == false {
@@ -64,10 +77,18 @@ func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name string, sgID
 			}
 		}
 	}
+	log.Println("$$$$ start to sgChanged = ", sgChanged, name)
 	if sgChanged == true {
+		log.Println("$$$$ start to change security group")
 		secGroups := []*model.SecurityGroup{}
 		if err = db.Where(sgIDs).Find(&secGroups).Error; err != nil {
 			log.Println("Security group query failed", err)
+			return
+		}
+		db.Model(iface).Association("Secgroups").Clear()
+		iface.Secgroups = secGroups
+		if err = db.Save(iface).Error; err != nil {
+			log.Println("Failed to save security groups", err)
 			return
 		}
 		var secRules []*model.SecurityRule
@@ -175,14 +196,15 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	name := c.Params("name")
+	name := c.QueryTrim("name")
 	secgroups := c.QueryStrings("secgroups")
 	var sgIDs []int64
+	log.Println("$$$$$$ len = ", len(secgroups))
 	if len(secgroups) > 0 {
 		for _, s := range secgroups {
 			sID, err := strconv.Atoi(s)
 			if err != nil {
-				log.Println("Invalid secondary subnet ID, %v", err)
+				log.Println("Invalid security group ID", err)
 				continue
 			}
 			permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sID))

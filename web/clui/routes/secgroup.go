@@ -105,6 +105,11 @@ func (a *SecgroupAdmin) Create(ctx context.Context, name string, isDefault bool,
 		log.Println("Failed to create security rule", err)
 		return
 	}
+	_, err = secruleAdmin.Create(ctx, secgroup.ID, owner, "0.0.0.0/0", "ingress", "udp", 68, 68)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
 	_, err = secruleAdmin.Create(ctx, secgroup.ID, owner, "0.0.0.0/0", "egress", "icmp", -1, -1)
 	if err != nil {
 		log.Println("Failed to create security rule", err)
