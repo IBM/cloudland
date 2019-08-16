@@ -1,3 +1,8 @@
+- name: set SELinux in permissive mode
+  selinux:
+    policy: targeted
+    state: permissive
+
 - name: install packages
   yum: 
     name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'vconfig', 'git', 'NetworkManager', 'bridge-utils', 'python-pip', 'net-tools', 'iptables-services', 'dnsmasq-utils']

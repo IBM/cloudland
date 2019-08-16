@@ -135,7 +135,7 @@ diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 
 gen_hosts
 cd $cland_root_dir/deploy
-ansible-playbook cloudland.yml -e @net_conf --tags hosts,epel,ntp,be_pkg,be_conf,be_srv,fe_srv,firewall,imgrepo
+ansible-playbook cloudland.yml -e @$net_conf --tags hosts,epel,ntp,be_pkg,be_conf,be_srv,fe_srv,firewall,imgrepo
 inst_web
 demo_router
 allinone_firewall
