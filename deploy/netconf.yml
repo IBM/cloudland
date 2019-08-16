@@ -1,6 +1,8 @@
-network_device: bond1
-external_vlan: 2052
-internal_vlan: 1236
+network_device: eth0
+admin_passwd: passw0rd
+db_passwd: d6Passwd
+network_external_vlan: 5000
+network_internal_vlan: 5010
 dns_server: 114.114.114.114
 multicast_group: 225.10.10.1
 

@@ -2,9 +2,9 @@
 cloud_no=0
 cloud_domain=cloudland.bluecat.ltd
 image_repo=http://{{ hostvars[groups['hyper'][0]]['inventory_hostname'] }}:4000
-dns_server={{ dns_server }
-external_vlan={{ external_vlan }}
-internal_vlan={{ internal_vlan }}
+dns_server={{ dns_server }}
+external_vlan={{ network_external_vlan }}
+internal_vlan={{ network_internal_vlan }}
 vxlan_mcast_addr={{ multicast_group }}
 vxlan_interface={{ network_device }}
 vlan_interface={{ network_device }}
