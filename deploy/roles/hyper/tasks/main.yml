@@ -82,6 +82,7 @@
     - 'NetworkManager'
     - 'scid'
     - 'cloudlet'
+    - 'iptables'
   tags: [be_srv]
 
 - name: start cloudlet services

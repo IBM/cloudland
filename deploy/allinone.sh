@@ -3,6 +3,7 @@
 cland_root_dir=/opt/cloudland
 cd $(dirname $0)
 [ $PWD != "$cland_root_dir/deploy" ] && echo "Please clone cloudland into /opt" && exit 1
+net_conf=$cland_root_dir/deploy/netconf.yml
 
 sudo chown -R cland.cland $cland_root_dir
 mkdir $cland_root_dir/{bin,deploy,etc,lib6,log,run,sci,scripts,src,web,cache} $cland_root_dir/cache/{image,instance,meta,router,volume,xml} 2>/dev/null
@@ -37,7 +38,7 @@ function inst_grpc() {
 function inst_web()
 {
     cd $cland_root_dir/deploy
-    ansible-playbook cloudland.yml -e @netconf.yml --tags database
+    ansible-playbook cloudland.yml -e @$net_conf --tags database
     sudo yum -y install golang 
     sudo chown -R cland.cland /usr/local
     sed -i '/export GO/d' ~/.bashrc
@@ -47,7 +48,7 @@ function inst_web()
     cd $cland_root_dir/web/clui
     go build
     cd $cland_root_dir/deploy
-    ansible-playbook cloudland.yml -e @netconf.yml --tags web
+    ansible-playbook cloudland.yml -e @$net_conf --tags web
 }
 
 # Install cloudland
@@ -75,8 +76,8 @@ function gen_hosts()
         cat $cland_ssh_dir/cland.key.pub >> ~/.ssh/authorized_keys
     fi
 
-    net_dev=$(cat netconf.yml | grep 'network_device:' | cut -d: -f2)
-    myip=$(ifconfig $cland_root_dir/deploy/$net_dev | grep 'inet ' | awk '{print $2}')
+    net_dev=$(cat $net_conf | grep 'network_device:' | cut -d: -f2)
+    myip=$(ifconfig $net_dev | grep 'inet ' | awk '{print $2}')
     hname=$(hostname -s)
     sudo bash -c "echo '$myip $hname' >> /etc/hosts"
     echo $hname > $cland_root_dir/etc/host.list
@@ -98,12 +99,16 @@ EOF
 
 function demo_router()
 {
-    sudo /opt/cloudland/scripts/backend/create_link.sh 5000
-    sudo /opt/cloudland/scripts/backend/create_link.sh 5010
-    sudo nmcli connection modify br5000 ipv4.addresses 192.168.71.1/24
-    sudo nmcli connection modify br5010 ipv4.addresses 172.16.20.1/24
-    sudo nmcli connection up br5000
-    sudo nmcli connection up br5010
+    ext_vlan=$(cat $net_conf | grep 'network_external_vlan:' | cut -d: -f2 | xargs)
+    int_vlan=$(cat $net_conf | grep 'network_internal_vlan:' | cut -d: -f2 | xargs)
+    br_ext=br$ext_vlan
+    br_int=br$int_vlan
+    sudo /opt/cloudland/scripts/backend/create_link.sh $ext_vlan
+    sudo /opt/cloudland/scripts/backend/create_link.sh $int_vlan
+    sudo nmcli connection modify $br_ext ipv4.addresses 192.168.71.1/24
+    sudo nmcli connection modify $br_int ipv4.addresses 172.16.20.1/24
+    sudo nmcli connection up $br_ext
+    sudo nmcli connection up $br_int
     sudo grep -q "^GatewayPorts yes" /etc/ssh/sshd_config
     [ $? -ne 0 ] && sudo bash -c "echo -e '\nGatewayPorts yes' >> /etc/ssh/sshd_config"
     sudo systemctl restart sshd
@@ -130,7 +135,7 @@ diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 
 gen_hosts
 cd $cland_root_dir/deploy
-ansible-playbook cloudland.yml -e @netconf.yml --tags hosts,epel,ntp,be_pkg,be_conf,be_srv,fe_srv,firewall,imgrepo
+ansible-playbook cloudland.yml -e @net_conf --tags hosts,epel,ntp,be_pkg,be_conf,be_srv,fe_srv,firewall,imgrepo
 inst_web
 demo_router
 allinone_firewall
