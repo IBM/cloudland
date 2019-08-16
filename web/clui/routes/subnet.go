@@ -647,7 +647,6 @@ func (v *SubnetView) Patch(c *macaron.Context, store session.Store) {
 	start := c.QueryTrim("start")
 	end := c.QueryTrim("end")
 	routes := c.QueryTrim("routes")
-	log.Println("$$$$$$$$$$$$$$$$ network/netmask = ", network, netmask)
 	routeJson, err := v.checkRoutes(network, netmask, gateway, start, end, routes, id)
 	if err != nil {
 		code := http.StatusBadRequest

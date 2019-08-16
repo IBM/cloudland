@@ -424,7 +424,6 @@ func (v *UserView) Patch(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	redirectTo := "../users/" + id
 	password := c.QueryTrim("password")
 	members := c.QueryStrings("members")
 	_, err = userAdmin.Update(c.Req.Context(), int64(userID), password, members)
@@ -433,8 +432,9 @@ func (v *UserView) Patch(c *macaron.Context, store session.Store) {
 		code := http.StatusInternalServerError
 		c.Error(code, http.StatusText(code))
 		return
+	} else {
+		c.HTML(200, "ok")
 	}
-	c.Redirect(redirectTo)
 }
 
 func (v *UserView) Delete(c *macaron.Context, store session.Store) (err error) {

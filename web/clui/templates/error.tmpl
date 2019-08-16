@@ -1,0 +1,18 @@
+{{template "_head" .}}
+    <div class="admin user">
+	    <div class="ui container">
+		    <div class="ui grid">
+                {{template "_left" .}}
+          	    <div class="twelve wide column content">
+<div class="ui container center">
+<div class="ui message">
+    <div class="header">
+        Error
+    </div>
+	<div class="ui divider"></div>
+    <p> {{ .ErrorMsg }} </p>
+</div>
+</div>
+            </div>
+        </div>
+{{template "_footer" .}}
