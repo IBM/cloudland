@@ -1,22 +1,22 @@
-- name: disable selinux
+- name: set SELinux in permissive mode
   selinux:
-    state: disabled
-  register: se
+    policy: targeted
+    state: permissive
   tags: [selinux]
 
-- name: reboot host and wait for it to return
-  shell: sleep 3 && shutdown -r now "reboot for disable selinux"
-  async: 1
-  poll: 0
-  ignore_errors: true
-  when:
-    se.reboot_required == True
-  tags: [selinux]
+#- name: reboot host and wait for it to return
+#  shell: sleep 3 && shutdown -r now "reboot for disable selinux"
+#  async: 1
+#  poll: 0
+#  ignore_errors: true
+#  when:
+#    se.reboot_required == True
+#  tags: [selinux]
 
-- name: Wait for the server to finish rebooting
-  wait_for_connection:
-    delay: 5
-  tags: [selinux]
+#- name: Wait for the server to finish rebooting
+#  wait_for_connection:
+#    delay: 5
+#  tags: [selinux]
 
 - name: ensure hostname set correctly
   hostname: name={{inventory_hostname}}

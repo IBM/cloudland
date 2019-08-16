@@ -46,7 +46,9 @@
 						{{ if $.IsAdmin }}
 			                        <td>{{.Vlan}}</td>
 			                        <td>
+						{{ if .Netlink }}
 						{{ .Netlink.Hyper }},{{ .Netlink.Peer }}
+						{{ end }}
                                     		</td>
 			                        <td>{{.OwnerInfo.Name}}</td>
 						{{ end }}
