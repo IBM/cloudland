@@ -1320,7 +1320,10 @@ $(document).ready(function () {
                     type: 'DELETE',
                     success: function (data) {
                         window.location.href = data.redirect;
-                    }
+                    },
+error: function (jqXHR, textStatus, errorThrown) {
+                        window.location.href = "error?ErrorMsg=" + jqXHR.responseText;
+        }
                 });
             }
         }).modal('show');

@@ -136,6 +136,10 @@ func New() (m *macaron.Macaron) {
 	m.Get("/secgroups/:sgid/secrules/new", secruleView.New)
 	m.Post("/secgroups/:sgid/secrules/new", secruleView.Create)
 	m.Delete("/secgroups/:sgid/secrules/:id", secruleView.Delete)
+	m.Get("/error", func(c *macaron.Context) {
+		c.Data["ErrorMsg"] = c.QueryTrim("ErrorMsg")
+		c.HTML(500, "error")
+	})
 	m.NotFound(func(c *macaron.Context) { c.HTML(404, "404") })
 	return
 }
