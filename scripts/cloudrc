@@ -12,7 +12,8 @@ container_dir=/var/lib/lxd/containers
 dmasq_dir=/opt/cloudland/cache/dnsmasq
 mudata_dir=/opt/cloudland/mudata
 snapshot_dir=/var/snapshot
-cland_private_key=/opt/cloudland/deploy/.ssh/cland.key
+deploy_dir=/opt/cloudland/deploy
+cland_private_key=$deploy_dir/.ssh/cland.key
 export JAEGER_SERVICE_NAME="SCI-Backend"
 span=$(basename $0 .sh)
 function die()
@@ -77,6 +78,13 @@ function end_span()
     sidecar span finish $span
 }
 
+function sync_target()
+{
+    target=$1
+    cd $deploy_dir
+    ansible hyper -u cland -b -a "chown -R cland.cland $target"
+    ansible hyper -u cland -m synchronize -a "src=$target dest=$target"
+}
 if [ "$span" != "report_rc" ]; then
     sidecar span start $span
     trap end_span EXIT

@@ -15,5 +15,5 @@ format=$(qemu-img info $image | grep 'file format' | cut -d' ' -f3)
 [ "$format" = "qcow2" -o "$format" = "raw" ] && state=available
 [ ! -s "$image" ] && state=error
 mv $image ${image}.${format}
-
+sync_target /opt/cloudland/cache/image/
 echo "|:-COMMAND-:| $(basename $0) '$ID' '$state' '$format'"

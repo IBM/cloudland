@@ -11,13 +11,22 @@
                         <label for="name">Name</label>
                         <input id="name" name="name" autofocus required>
                     </div>
-                    <div class="required inline field">
-                        <label for="url">Download Url</label>
-                        <input id="url" name="url" autocomplete="off" required>
+                    <div class="inline field">
+                        <label for="instance">From Instance</label>
+                        <select name="instance" id="instance" class="ui selection dropdown">
+                             <option value="0" selected>None</option>
+	                   {{ range .Instances }}
+                             <option value="{{ .ID }}">{{ .ID }}-{{ .Hostname }}</option>
+                           {{ end }}
+                        </select>
                     </div>
-                    <div class="required inline field">
+                    <div class="inline field">
+                        <label for="url">Download Url</label>
+                        <input id="url" name="url" autocomplete="off">
+                    </div>
+                    <div class="inline field">
                         <label for="architecture">Architecture</label>
-                        <input id="architecture"  name="architecture" autocomplete="off" required>
+                        <input id="architecture"  name="architecture" autocomplete="off">
                     </div>
                     <div class="inline field">
                         <label></label>

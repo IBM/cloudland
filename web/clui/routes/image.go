@@ -28,20 +28,39 @@ var (
 type ImageAdmin struct{}
 type ImageView struct{}
 
-func (a *ImageAdmin) Create(ctx context.Context, name, url, format, architecture string) (image *model.Image, err error) {
+func (a *ImageAdmin) Create(ctx context.Context, name, url, format, architecture string, instID int64) (image *model.Image, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
+	if architecture == "" {
+		architecture = "x86-64"
+	}
 	image = &model.Image{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Name: name, OSCode: name, Format: format, Status: "creating", Architecture: architecture}
 	err = db.Create(image).Error
 	if err != nil {
 		log.Println("DB create image failed, %v", err)
 	}
-	control := "inter=0"
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_image.sh %d %s", image.ID, url)
-	err = hyperExecute(ctx, control, command)
-	if err != nil {
-		log.Println("Create image command execution failed", err)
-		return
+	if instID > 0 {
+		instance := &model.Instance{Model: model.Model{ID: instID}}
+		err = db.Take(instance).Error
+		if err != nil {
+			log.Println("DB failed to query instance", err)
+			return
+		}
+		control := fmt.Sprintf("inter=%d", instance.Hyper)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/capture_image.sh %d %d", image.ID, instance.ID)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Create image command execution failed", err)
+			return
+		}
+	} else {
+		control := "inter=0"
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_image.sh %d %s", image.ID, url)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Create image command execution failed", err)
+			return
+		}
 	}
 	return
 }
@@ -166,6 +185,13 @@ func (v *ImageView) New(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	_, instances, err := instanceAdmin.List(c.Req.Context(), 0, 0, "")
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+		return
+	}
+	c.Data["Instances"] = instances
 	c.HTML(200, "images_new")
 }
 
@@ -183,7 +209,8 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	url := c.QueryTrim("url")
 	format := c.QueryTrim("format")
 	architecture := c.QueryTrim("architecture")
-	_, err := imageAdmin.Create(c.Req.Context(), name, url, format, architecture)
+	instance := c.QueryInt64("instance")
+	_, err := imageAdmin.Create(c.Req.Context(), name, url, format, architecture, instance)
 	if err != nil {
 		c.HTML(500, "500")
 	}
