@@ -67,7 +67,7 @@ func (a *PortmapAdmin) Create(ctx context.Context, instID int64, port int) (port
 		}
 	}
 	control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_portmap.sh %d %s %d %d", gateway.ID, iface.Address.Address, port, rport)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_portmap.sh '%d' '%s' '%d' '%d'", gateway.ID, iface.Address.Address, port, rport)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Create portmap failed", err)
@@ -100,7 +100,7 @@ func (a *PortmapAdmin) Delete(ctx context.Context, id int64) (err error) {
 	}
 	if portmap.Gateway != nil {
 		control := fmt.Sprintf("toall=router-%d:%d,%d", portmap.Gateway.ID, portmap.Gateway.Hyper, portmap.Gateway.Peer)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_portmap.sh %d %s %d %d", portmap.Gateway.ID, portmap.LocalAddress, portmap.LocalPort, portmap.RemotePort)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_portmap.sh '%d' '%s' '%d' '%d'", portmap.Gateway.ID, portmap.LocalAddress, portmap.LocalPort, portmap.RemotePort)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Delete portmap failed", err)

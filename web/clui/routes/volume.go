@@ -37,7 +37,7 @@ func (a *VolumeAdmin) Create(ctx context.Context, name string, size int) (volume
 		return
 	}
 	control := fmt.Sprintf("inter=")
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_volume.sh %d %d", volume.ID, volume.Size)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_volume.sh '%d' '%d'", volume.ID, volume.Size)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Create volume execution failed", err)
@@ -62,7 +62,7 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 	}
 	if volume.InstanceID > 0 && instID == 0 && volume.Status == "attached" {
 		control := fmt.Sprintf("inter=%d", volume.Instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/detach_volume.sh %d %d", volume.Instance.ID, volume.ID)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/detach_volume.sh '%d' '%d'", volume.Instance.ID, volume.ID)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Detach volume execution failed", err)
@@ -77,7 +77,7 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 			return
 		}
 		control := fmt.Sprintf("inter=%d", instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/attach_volume.sh %d %d %s", instance.ID, volume.ID, volume.Path)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/attach_volume.sh '%d' '%d' '%s'", instance.ID, volume.ID, volume.Path)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Create volume execution failed", err)
@@ -113,7 +113,7 @@ func (a *VolumeAdmin) Delete(ctx context.Context, id int64) (err error) {
 		return
 	}
 	control := fmt.Sprintf("inter=")
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_volume.sh %d %d", volume.ID, volume.Path)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_volume.sh '%d' '%d'", volume.ID, volume.Path)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Delete volume execution failed", err)

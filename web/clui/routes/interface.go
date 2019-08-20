@@ -126,7 +126,7 @@ func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name string, sgID
 			}
 			control = fmt.Sprintf("inter=%d", instance.Hyper)
 		}
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/reapply_secgroup.sh %s %s <<EOF\n%s\nEOF", iface.Address.Address, iface.MacAddr, jsonData)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/reapply_secgroup.sh '%s' '%s' <<EOF\n%s\nEOF", iface.Address.Address, iface.MacAddr, jsonData)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Launch vm command execution failed", err)

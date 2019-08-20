@@ -170,7 +170,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, id int64, hostname, action s
 	}
 	if action == "shutdown" || action == "start" || action == "suspend" || action == "resume" {
 		control := fmt.Sprintf("inter=%d", instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh %d %s", instance.ID, action)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh '%d' '%s'", instance.ID, action)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Delete vm command execution failed", err)
@@ -217,7 +217,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, id int64, hostname, action s
 		}
 		if found == false {
 			control := fmt.Sprintf("inter=%d", instance.Hyper)
-			command := fmt.Sprintf("/opt/cloudland/scripts/backend/detach_nic.sh %d %d %s %s", instance.ID, iface.Address.Subnet.Vlan, iface.Address.Address, iface.MacAddr)
+			command := fmt.Sprintf("/opt/cloudland/scripts/backend/detach_nic.sh '%d' '%d' '%s' '%s'", instance.ID, iface.Address.Subnet.Vlan, iface.Address.Address, iface.MacAddr)
 			err = hyperExecute(ctx, control, command)
 			if err != nil {
 				log.Println("Delete vm command execution failed", err)
@@ -251,7 +251,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, id int64, hostname, action s
 			}
 			iface, err = a.createInterface(ctx, subnet, "", "", instance, ifname, secGroups)
 			control := fmt.Sprintf("inter=%d", instance.Hyper)
-			command := fmt.Sprintf("/opt/cloudland/scripts/backend/attach_nic.sh %d %d %s %s <<EOF\n%s\nEOF", instance.ID, iface.Address.Subnet.Vlan, iface.Address.Address, iface.MacAddr, jsonData)
+			command := fmt.Sprintf("/opt/cloudland/scripts/backend/attach_nic.sh '%d' '%d' '%s' '%s' <<EOF\n%s\nEOF", instance.ID, iface.Address.Subnet.Vlan, iface.Address.Address, iface.MacAddr, jsonData)
 			err = hyperExecute(ctx, control, command)
 			if err != nil {
 				log.Println("Delete vm command execution failed", err)
@@ -313,7 +313,7 @@ func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interf
 		log.Println("Network has no valid hypers")
 		return
 	}
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/del_host.sh %d %s %s", vlan, iface.MacAddr, iface.Address.Address)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/del_host.sh '%d' '%s' '%s'", vlan, iface.MacAddr, iface.Address.Address)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Delete interface failed")
@@ -356,7 +356,7 @@ func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subne
 		log.Println("Network has no valid hypers")
 		return
 	}
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_host.sh %d %s %s %s", subnet.Vlan, iface.MacAddr, instance.Hostname, iface.Address.Address)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_host.sh '%d' '%s' '%s' '%s'", subnet.Vlan, iface.MacAddr, instance.Hostname, iface.Address.Address)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Delete slave failed")
@@ -483,7 +483,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
 	}
 	if instance.Hyper != -1 {
 		control := fmt.Sprintf("inter=%d", instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh %d", instance.ID)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh '%d'", instance.ID)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Delete vm command execution failed, %v", err)

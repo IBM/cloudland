@@ -142,10 +142,10 @@ func setRouting(ctx context.Context, gatewayID int64, subnet *model.Subnet, rout
 	}
 	control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
 	if routeOnly {
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_route.sh %d %d %s<<EOF\n%s\nEOF", gateway.ID, subnet.Vlan, subnet.Type, subnet.Routes)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_route.sh '%d' '%d' '%s'<<EOF\n%s\nEOF", gateway.ID, subnet.Vlan, subnet.Type, subnet.Routes)
 		err = hyperExecute(ctx, control, command)
 	} else {
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_gw_route.sh %d %s %d soft <<EOF\n%s\nEOF", gateway.ID, subnet.Gateway, subnet.Vlan, subnet.Routes)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_gw_route.sh '%d' '%s' '%d' soft <<EOF\n%s\nEOF", gateway.ID, subnet.Gateway, subnet.Vlan, subnet.Routes)
 		err = hyperExecute(ctx, control, command)
 	}
 	if err != nil {
@@ -278,7 +278,7 @@ func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subn
 			return
 		}
 		control := fmt.Sprintf("inter=")
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_net.sh %d %s %s %s %s %d FIRST", netlink.Vlan, subnet.Network, subnet.Netmask, subnet.Gateway, dhcp1.Address.Address, subnet.ID)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_net.sh '%d' '%s' '%s' '%s' '%s' '%d' 'FIRST'", netlink.Vlan, subnet.Network, subnet.Netmask, subnet.Gateway, dhcp1.Address.Address, subnet.ID)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Failed to create first dhcp", err)
@@ -293,7 +293,7 @@ func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subn
 			return
 		}
 		control := fmt.Sprintf("inter=")
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_net.sh %d %s %s %s %s %d SECOND", netlink.Vlan, subnet.Network, subnet.Netmask, subnet.Gateway, dhcp2.Address.Address, subnet.ID)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_net.sh '%d' '%s' '%s' '%s' '%s' '%d' 'SECOND'", netlink.Vlan, subnet.Network, subnet.Netmask, subnet.Gateway, dhcp2.Address.Address, subnet.ID)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Failed to create second dhcp", err)
@@ -371,7 +371,7 @@ func (a *SubnetAdmin) Delete(ctx context.Context, id int64) (err error) {
 			log.Println("Network has no valid hypers")
 			return
 		}
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_net.sh %d %s %d", netlink.Vlan, subnet.Network, subnet.ID)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_net.sh '%d' '%s' '%d'", netlink.Vlan, subnet.Network, subnet.ID)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Delete interface failed")

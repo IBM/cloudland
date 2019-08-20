@@ -264,7 +264,7 @@ func (v *SubnetRest) DeleteSubnet(c *macaron.Context) {
 		skipTag = true
 	}
 	if skipTag {
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_net.sh %d %s %d", network.Vlan, subnet.Network, subnet.ID)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_net.sh '%d' '%s' '%d'", network.Vlan, subnet.Network, subnet.ID)
 		err = hyperExecute(c.Req.Context(), control, command)
 		if err != nil {
 			log.Println("Delete interface failed")

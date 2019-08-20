@@ -144,14 +144,14 @@ func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int
 		return
 	}
 	control := fmt.Sprintf("inter=")
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh %d %s %s %s %s %d %s 'MASTER' <<EOF\n%s\nEOF", gateway.ID, pubSubnet.Gateway, priSubnet.Gateway, pubIface.Address.Address, priIface.Address.Address, vni, gateway.VrrpAddr, jsonData)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh '%d' '%s' '%s' '%s' '%s' '%d' '%s' 'MASTER' <<EOF\n%s\nEOF", gateway.ID, pubSubnet.Gateway, priSubnet.Gateway, pubIface.Address.Address, priIface.Address.Address, vni, gateway.VrrpAddr, jsonData)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Create master router command execution failed, %v", err)
 		return
 	}
 	control = fmt.Sprintf("inter=")
-	command = fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh %d %s %s %s %s %d %s 'SLAVE' <<EOF\n%s\nEOF", gateway.ID, pubSubnet.Gateway, priSubnet.Gateway, pubIface.Address.Address, priIface.Address.Address, vni, gateway.PeerAddr, jsonData)
+	command = fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh '%d' '%s' '%s' '%s' '%s' '%d' '%s' 'SLAVE' <<EOF\n%s\nEOF", gateway.ID, pubSubnet.Gateway, priSubnet.Gateway, pubIface.Address.Address, priIface.Address.Address, vni, gateway.PeerAddr, jsonData)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Create peer router command execution failed, %v", err)
@@ -185,7 +185,7 @@ func (a *GatewayAdmin) Update(ctx context.Context, id int64, name string, pubID,
 		}
 		if found == false {
 			control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
-			command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_gateway.sh %d %s %d", gateway.ID, gsub.Gateway, gsub.Vlan)
+			command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_gateway.sh '%d' '%s' '%d'", gateway.ID, gsub.Gateway, gsub.Vlan)
 			err = hyperExecute(ctx, control, command)
 			if err != nil {
 				log.Println("Clear gateway failed")
@@ -214,7 +214,7 @@ func (a *GatewayAdmin) Update(ctx context.Context, id int64, name string, pubID,
 				continue
 			}
 			control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
-			command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_routing.sh %d %s %d soft <<EOF\n%s\nEOF", gateway.ID, sub.Gateway, sub.Vlan, sub.Routes)
+			command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_routing.sh '%d' '%s' '%d' 'soft' <<EOF\n%s\nEOF", gateway.ID, sub.Gateway, sub.Vlan, sub.Routes)
 			err = hyperExecute(ctx, control, command)
 			if err != nil {
 				log.Println("Set gateway failed")
@@ -287,7 +287,7 @@ func (a *GatewayAdmin) Delete(ctx context.Context, id int64) (err error) {
 	if gateway.Hyper != -1 {
 		control = fmt.Sprintf("inter=%d", gateway.Hyper)
 	}
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_router.sh %d %d <<EOF\n%s\nEOF", gateway.ID, gateway.VrrpVni, jsonData)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_router.sh '%d' '%d' <<EOF\n%s\nEOF", gateway.ID, gateway.VrrpVni, jsonData)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Delete master failed")
@@ -297,7 +297,7 @@ func (a *GatewayAdmin) Delete(ctx context.Context, id int64) (err error) {
 		if gateway.Peer != -1 {
 			control = fmt.Sprintf("inter=%d", gateway.Peer)
 		}
-		command = fmt.Sprintf("/opt/cloudland/scripts/backend/clear_router.sh %d %d <<EOF\n%s\nEOF", gateway.ID, gateway.VrrpVni, jsonData)
+		command = fmt.Sprintf("/opt/cloudland/scripts/backend/clear_router.sh '%d' '%d' <<EOF\n%s\nEOF", gateway.ID, gateway.VrrpVni, jsonData)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Delete slave failed")
