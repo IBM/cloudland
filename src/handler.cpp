@@ -52,17 +52,14 @@ void frontHandler(void *user_param, sci_group_t group, void *buffer, int size)
     char *report = strstr(ctl, "report");
     RpcWorker *rpcWorker = (RpcWorker *)user_param;
 
+    log_info("Cloudlet %d responded message id: %d control: %s content: %s", be_id, msg_id, ctl, msg);
     if (error != NULL) {
-        log_info("Cloudlet %d responded message id: %d control: %s content: %s", be_id, msg_id, ctl, msg);
-        return;
-    }
-
-    if (callback != NULL) {
+	rpcWorker->getClient()->ExecuteAsync(msg_id, be_id, ctl, msg, trace);
+    } else if (callback != NULL) {
         char *cmd = NULL;
         char *next = NULL;
         char *tail = NULL;
 
-        log_info("Cloudlet %d responded message id: %d control: %s content: %s", be_id, msg_id, ctl, msg);
         if (strstr(callback, "callback=agent") != NULL) {
             rpcWorker->getClient()->ExecuteAsync(msg_id, be_id, ctl, msg, trace);
             return;
@@ -79,7 +76,6 @@ void frontHandler(void *user_param, sci_group_t group, void *buffer, int size)
             cmd = next;
         }
     } else if (report != NULL) {
-        log_info("Resource from %d message id: %d control: %s content: %s", be_id, msg_id, ctl, msg);
         if (be_id == -1) {
             rpcWorker->getClient()->ExecuteAsync(msg_id, be_id, ctl, msg, trace);
         }

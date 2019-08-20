@@ -78,7 +78,7 @@ func (fb *frontbackService) doExecute(ctx context.Context, id, extra int32, comm
 	defer sp.Finish()
 	reply = &scripts.ExecuteReply{}
 	firstToken := strings.Split(control, " ")[0]
-	if id <= 0 { // ignore report
+	if id < 0 && !strings.Contains(firstToken, "error") { // ignore report
 		switch firstToken {
 		case "report":
 		case "callback=agent":
@@ -101,15 +101,17 @@ func (fb *frontbackService) doExecute(ctx context.Context, id, extra int32, comm
 
 	db := dbs.DB()
 	job := &model.Job{}
-	if err = db.First(job, uint(id)).Error; err != nil {
-		sp.WithError(err).Debug()
-		cmd, args := DecodeCommand(command)
-		sp.Debug("cmd:", cmd, ", args: ", args)
-		if cmd != "" {
-			reply.Status, err = fb.dispatchExecute(ctx, job, cmd, args)
+	/*
+		if err = db.First(job, uint(id)).Error; err != nil {
+			sp.WithError(err).Debug()
+			cmd, args := DecodeCommand(command)
+			sp.Debug("cmd:", cmd, ", args: ", args)
+			if cmd != "" {
+				reply.Status, err = fb.dispatchExecute(ctx, job, cmd, args)
+			}
+			return
 		}
-		return
-	}
+	*/
 	succeed := true
 	if strings.Index(control, "error") != -1 {
 		succeed = false
@@ -132,6 +134,13 @@ func (fb *frontbackService) doExecute(ctx context.Context, id, extra int32, comm
 			}
 		}
 		reply.Status = strings.Join(ss, "\n")
+	} else if firstToken == "error=resource" {
+		cmd, args := DecodeCommand(command)
+		sp.Debug("cmd:", cmd, ", args: ", args)
+		if cmd != "" {
+			ctx2 := context.WithValue(ctx, "error", "resource")
+			reply.Status, err = fb.dispatchExecute(ctx2, job, cmd, args)
+		}
 	} else {
 		cmd, args := DecodeCommand(command)
 		sp.Debug("cmd:", cmd, ", args: ", args)
