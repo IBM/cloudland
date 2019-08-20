@@ -34,11 +34,12 @@ func LaunchVM(ctx context.Context, job *model.Job, args []string) (status string
 		log.Println("Invalid instance ID", err)
 		return
 	}
+	instance := &model.Instance{Model: model.Model{ID: int64(instID)}}
 	reason := ""
 	errHndl := ctx.Value("error")
 	if errHndl != nil {
 		reason = "Resource is not enough"
-		err = db.Model(&model.Instance{}).Updates(map[string]interface{}{
+		err = db.Model(instance).Updates(map[string]interface{}{
 			"status": "error",
 			"reason": reason}).Error
 		if err != nil {
@@ -46,7 +47,6 @@ func LaunchVM(ctx context.Context, job *model.Job, args []string) (status string
 		}
 		return
 	}
-	instance := &model.Instance{Model: model.Model{ID: int64(instID)}}
 	err = db.Where(instance).Take(instance).Error
 	if err != nil {
 		log.Println("Invalid instance ID", err)

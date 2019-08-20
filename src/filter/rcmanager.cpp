@@ -158,7 +158,7 @@ int ResourceManager::totalResource()
 int ResourceManager::getTotalMsg(char *rcMsg, int size)
 {
     memset(rcMsg, '\0', size);
-    snprintf(rcMsg, size - 1, "|:-COMMAND-:| report_rc.sh cpu=%d/%d memory=%ld/%ld disk=%ld/%ld network=%d/%d load=%d/%d\n", totalRC.cpu, totalRC.total_cpu, totalRC.memory, totalRC.total_memory, totalRC.disk, totalRC.total_disk, totalRC.network, totalRC.total_network, totalRC.load, totalRC.total_load);
+    snprintf(rcMsg, size - 1, "report_rc.sh 'cpu=%d/%d' 'memory=%ld/%ld' 'disk=%ld/%ld' 'network=%d/%d' 'load=%d/%d'\n", totalRC.cpu, totalRC.total_cpu, totalRC.memory, totalRC.total_memory, totalRC.disk, totalRC.total_disk, totalRC.network, totalRC.total_network, totalRC.load, totalRC.total_load);
 
     return 0;
 }

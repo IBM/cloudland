@@ -21,7 +21,6 @@ import (
 	"github.com/IBM/cloudland/web/clui/jobs"
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/clui/scripts"
-	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/IBM/cloudland/web/sca/logs"
 	"golang.org/x/net/context"
 )
@@ -78,19 +77,8 @@ func (fb *frontbackService) doExecute(ctx context.Context, id, extra int32, comm
 	defer sp.Finish()
 	reply = &scripts.ExecuteReply{}
 	firstToken := strings.Split(control, " ")[0]
-	if id < 0 && !strings.Contains(firstToken, "error") { // ignore report
-		switch firstToken {
-		case "report":
-		case "callback=agent":
-			fb.CallbackAgent(ctx, control, command, 0)
-		default:
-			sp.WithFields(map[string]interface{}{
-				"id":      id,
-				"control": control,
-				"command": command,
-				"extra":   extra,
-			}).Warning("illegal event received")
-		}
+	if id < 0 && firstToken == "callback=agent" {
+		fb.CallbackAgent(ctx, control, command, 0)
 		return
 	}
 	sp.Debug("id: ", id, ", command: ", command)
@@ -98,10 +86,9 @@ func (fb *frontbackService) doExecute(ctx context.Context, id, extra int32, comm
 		"id":      id,
 		"command": command,
 	}).Debug("Event received")
-
-	db := dbs.DB()
 	job := &model.Job{}
 	/*
+		db := dbs.DB()
 		if err = db.First(job, uint(id)).Error; err != nil {
 			sp.WithError(err).Debug()
 			cmd, args := DecodeCommand(command)
@@ -111,11 +98,11 @@ func (fb *frontbackService) doExecute(ctx context.Context, id, extra int32, comm
 			}
 			return
 		}
+		succeed := true
+		if strings.Index(control, "error") != -1 {
+			succeed = false
+		}
 	*/
-	succeed := true
-	if strings.Index(control, "error") != -1 {
-		succeed = false
-	}
 	sp.Debug(firstToken, control)
 	if firstToken == "callback=agent" {
 		duration := time.Now().Sub(job.CreatedAt)
@@ -145,39 +132,42 @@ func (fb *frontbackService) doExecute(ctx context.Context, id, extra int32, comm
 		cmd, args := DecodeCommand(command)
 		sp.Debug("cmd:", cmd, ", args: ", args)
 		if cmd != "" {
-			reply.Status, err = fb.dispatchExecute(ctx, job, cmd, args)
+			ctx2 := context.WithValue(ctx, "hostid", id)
+			reply.Status, err = fb.dispatchExecute(ctx2, job, cmd, args)
 		}
 	}
-	if err != nil {
-		succeed = false
-	}
-	status := jobs.Status_FAILED
-	if succeed {
-		status = jobs.Status_DONE
-	}
-	if job.Status == int32(jobs.Status_RUNNING) {
-		db.Model(job).Updates(&model.Job{
-			Status: int32(status),
-		})
-	}
-	if succeed && err == nil {
-		if job.EchoNumber == 1 {
-			err = db.Delete(job).Error
-			if err != nil {
-				sp.Error(err)
-				return
+	/*
+		if err != nil {
+			succeed = false
+		}
+		status := jobs.Status_FAILED
+		if succeed {
+			status = jobs.Status_DONE
+		}
+		if job.Status == int32(jobs.Status_RUNNING) {
+			db.Model(job).Updates(&model.Job{
+				Status: int32(status),
+			})
+		}
+		if succeed && err == nil {
+			if job.EchoNumber == 1 {
+				err = db.Delete(job).Error
+				if err != nil {
+					sp.Error(err)
+					return
+				}
 			}
 		}
-	}
-	event := &jobs.Event{
-		Echo:    reply.Status,
-		JobId:   int32(job.ID),
-		Succeed: succeed,
-	}
-	if err = fb.Notify(ctx, job.Hooks, event); err != nil {
-		sp.Error(err)
-		return
-	}
+		event := &jobs.Event{
+			Echo:    reply.Status,
+			JobId:   int32(job.ID),
+			Succeed: succeed,
+		}
+		if err = fb.Notify(ctx, job.Hooks, event); err != nil {
+			sp.Error(err)
+			return
+		}
+	*/
 	return
 }
 
