@@ -285,7 +285,7 @@ func (v *UserView) LoginPost(c *macaron.Context, store session.Store) {
 	store.Set("org", organization)
 	store.Set("defsg", org.DefaultSG)
 	store.Set("members", members)
-	redirectTo := "/instances"
+	redirectTo := "/dashboard"
 	c.Redirect(redirectTo)
 }
 
@@ -376,7 +376,7 @@ func (v *UserView) Change(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	redirectTo := "/instances"
+	redirectTo := "/dashboard"
 	orgName = strings.TrimSpace(orgName)
 	if orgName != "" {
 		for _, em := range user.Members {
