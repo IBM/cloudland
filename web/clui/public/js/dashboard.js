@@ -18,8 +18,12 @@ var labelFromatter = {
     normal : {
         label : {
             formatter : function (params){
-//		console.log(params)
-                return params.value + '\n' + params.percent + '%'
+                res = params.value
+                if (params.name.indexOf('memory') > -1 || params.name.indexOf('volume') > -1 || params.name.indexOf('disk') > -1) {
+                    res = res + 'G'
+                }
+                res = res + '\n' + params.percent + '%'
+                return res
             },
             textStyle: {
                 baseline : 'top'
@@ -42,6 +46,11 @@ var labelBottom = {
 };
 var radius = [40, 55];
 option = {
+    title: {
+        text : 'Resource Usage Ratio',
+        subtext : 'cpu memory disk volume ip',
+        x : 'center',
+    },
     legend: {
         x : 'center',
         y : 'center',
@@ -173,7 +182,127 @@ option = {
                 }
             },
             data:[
-                {value:335, name:'cpu_total'},
+                {name:'cpu'},
+            ]
+        },
+{
+	    name: 'memory',
+            type:'pie',
+            radius: [0, 25],
+            color: '#fff',
+            center : ['50%', '30%'],
+            label: {
+                normal: {
+            formatter : function (params){
+//		console.log(params)
+                return params.name + '\n' + params.value + 'G'
+            },
+            textStyle: {
+                baseline : 'top',
+                color: '#000'
+            },
+		    show: true,
+                    position: 'center'
+                }
+            },
+            data:[
+                {name:'memory'},
+            ]
+        },
+{
+	    name: 'disk',
+            type:'pie',
+            radius: [0, 25],
+            color: '#fff',
+            center : ['80%', '30%'],
+            label: {
+                normal: {
+            formatter : function (params){
+//		console.log(params)
+                return params.name + '\n' + params.value + 'G'
+            },
+            textStyle: {
+                baseline : 'top',
+                color: '#000'
+            },
+		    show: true,
+                    position: 'center'
+                }
+            },
+            data:[
+                {name:'disk'},
+            ]
+        },
+{
+	    name: 'volume',
+            type:'pie',
+            radius: [0, 25],
+            color: '#fff',
+            center : ['20%', '75%'],
+            label: {
+                normal: {
+            formatter : function (params){
+//		console.log(params)
+                return params.name + '\n' + params.value + 'G'
+            },
+            textStyle: {
+                baseline : 'top',
+                color: '#000'
+            },
+		    show: true,
+                    position: 'center'
+                }
+            },
+            data:[
+                {name:'volume'},
+            ]
+        },
+{
+	    name: 'public_ip',
+            type:'pie',
+            radius: [0, 25],
+            color: '#fff',
+            center : ['50%', '75%'],
+            label: {
+                normal: {
+            formatter : function (params){
+//		console.log(params)
+                return params.name + '\n' + params.value
+            },
+            textStyle: {
+                baseline : 'top',
+                color: '#000'
+            },
+		    show: true,
+                    position: 'center'
+                }
+            },
+            data:[
+                {name:'public_ip'},
+            ]
+        },
+{
+	    name: 'private_ip',
+            type:'pie',
+            radius: [0, 25],
+            color: '#fff',
+            center : ['80%', '75%'],
+            label: {
+                normal: {
+            formatter : function (params){
+//		console.log(params)
+                return params.name + '\n' + params.value
+            },
+            textStyle: {
+                baseline : 'top',
+                color: '#000'
+            },
+		    show: true,
+                    position: 'center'
+                }
+            },
+            data:[
+                {name:'private_ip'},
             ]
         },
     ]
@@ -196,6 +325,12 @@ $.ajax({
 		option.series[4].data[1].value = data.pubip_used
 		option.series[5].data[0].value = data.prvip_avail
 		option.series[5].data[1].value = data.prvip_used
+		option.series[6].data[0].value = data.cpu_avail + data.cpu_used
+		option.series[7].data[0].value = data.mem_avail + data.mem_used
+		option.series[8].data[0].value = data.disk_avail + data.disk_used
+		option.series[9].data[0].value = data.volume_avail + data.volume_used
+		option.series[10].data[0].value = data.pubip_avail + data.pubip_used
+		option.series[11].data[0].value = data.prvip_avail + data.prvip_used
         	myChart.setOption(option);
         }
     },

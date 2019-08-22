@@ -43,25 +43,31 @@ func (a *Dashboard) Show(c *macaron.Context, store session.Store) {
 }
 
 func (a *Dashboard) GetData(c *macaron.Context, store session.Store) {
-	memberShip := GetMemberShip(c.Req.Context())
+	// memberShip := GetMemberShip(c.Req.Context())
 	rcData := &ResourceData{}
 	db := DB()
-	if memberShip.OrgName == "admin" {
-		resource := &model.Resource{}
-		err := db.Take(resource).Error
-		if err != nil {
-			log.Println("Failed to query system resource")
-			code := http.StatusInternalServerError
-			c.Error(code, http.StatusText(code))
-			return
-		}
-		rcData.CpuUsed = resource.CpuTotal - resource.Cpu
-		rcData.CpuAvail = resource.Cpu
-		rcData.MemUsed = (resource.MemoryTotal - resource.Memory) >> 20
-		rcData.MemAvail = resource.Memory >> 20
-		rcData.DiskUsed = (resource.DiskTotal - resource.Disk) >> 30
-		rcData.DiskAvail = resource.Disk >> 30
+	//	if memberShip.OrgName == "admin" {
+	resource := &model.Resource{}
+	err := db.Take(resource).Error
+	if err != nil {
+		log.Println("Failed to query system resource")
+		code := http.StatusInternalServerError
+		c.Error(code, http.StatusText(code))
+		return
 	}
+	rcData.CpuUsed = resource.CpuTotal - resource.Cpu
+	rcData.CpuAvail = resource.Cpu
+	rcData.MemUsed = (resource.MemoryTotal - resource.Memory) >> 20
+	rcData.MemAvail = resource.Memory >> 20
+	rcData.DiskUsed = (resource.DiskTotal - resource.Disk) >> 30
+	rcData.DiskAvail = resource.Disk >> 30
+	rcData.VolumeUsed = 160
+	rcData.VolumeAvail = 1100
+	rcData.PubipUsed = 26
+	rcData.PubipAvail = 12
+	rcData.PrvipUsed = 17
+	rcData.PrvipAvail = 35
+	//	}
 	c.JSON(200, rcData)
 	return
 }
