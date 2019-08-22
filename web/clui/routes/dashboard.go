@@ -8,6 +8,7 @@ SPDX-License-Identifier: Apache-2.0
 package routes
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -63,10 +64,77 @@ func (a *Dashboard) GetData(c *macaron.Context, store session.Store) {
 	rcData.DiskAvail = resource.Disk >> 30
 	rcData.VolumeUsed = 160
 	rcData.VolumeAvail = 1100
-	rcData.PubipUsed = 26
-	rcData.PubipAvail = 12
-	rcData.PrvipUsed = 17
-	rcData.PrvipAvail = 35
+	pubnets := []*model.Subnet{}
+	err = db.Where("type = 'public'").Find(&pubnets).Error
+	if err != nil {
+		log.Println("Failed to query public subnets")
+		code := http.StatusInternalServerError
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	pubipTotal := 0
+	where := "subnet_id in ("
+	for i, pub := range pubnets {
+		if i == 0 {
+			where = fmt.Sprintf("%s%d", where, pub.ID)
+		} else {
+			where = fmt.Sprintf("%s,%d", where, pub.ID)
+		}
+	}
+	where = where + ")"
+	err = db.Model(&model.Address{}).Where(where).Count(&pubipTotal).Error
+	if err != nil {
+		log.Println("Failed to count total public ips")
+		code := http.StatusInternalServerError
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	pubipUsed := 0
+	err = db.Model(&model.Address{}).Where(where).Where("allocated = ?", true).Count(&pubipUsed).Error
+	if err != nil {
+		log.Println("Failed to count used public ips")
+		code := http.StatusInternalServerError
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	rcData.PubipUsed = int64(pubipUsed)
+	rcData.PubipAvail = int64(pubipTotal - pubipUsed)
+
+	prvnets := []*model.Subnet{}
+	err = db.Where("type = 'private'").Find(&prvnets).Error
+	if err != nil {
+		log.Println("Failed to query private subnets")
+		code := http.StatusInternalServerError
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	prvipTotal := 0
+	where = "subnet_id in ("
+	for i, prv := range prvnets {
+		if i == 0 {
+			where = fmt.Sprintf("%s%d", where, prv.ID)
+		} else {
+			where = fmt.Sprintf("%s,%d", where, prv.ID)
+		}
+	}
+	where = where + ")"
+	err = db.Model(&model.Address{}).Where(where).Count(&prvipTotal).Error
+	if err != nil {
+		log.Println("Failed to count total public ips")
+		code := http.StatusInternalServerError
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	prvipUsed := 0
+	err = db.Model(&model.Address{}).Where(where).Where("allocated = ?", true).Count(&prvipUsed).Error
+	if err != nil {
+		log.Println("Failed to count used public ips")
+		code := http.StatusInternalServerError
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	rcData.PrvipUsed = int64(prvipUsed)
+	rcData.PrvipAvail = int64(prvipTotal - prvipUsed)
 	//	}
 	c.JSON(200, rcData)
 	return
