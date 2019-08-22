@@ -18,11 +18,13 @@ var labelFromatter = {
     normal : {
         label : {
             formatter : function (params){
-                return 100 - params.value + '%'
+//		console.log(params)
+                return params.value + '\n' + params.percent + '%'
             },
             textStyle: {
                 baseline : 'top'
-            }
+            },
+            position: 'outside'
         }
     },
 }
@@ -36,9 +38,6 @@ var labelBottom = {
         labelLine : {
             show : false
         }
-    },
-    emphasis: {
-        color: 'rgba(0,0,0,0)'
     }
 };
 var radius = [40, 55];
@@ -47,13 +46,8 @@ option = {
         x : 'center',
         y : 'center',
         data:[
-            'Cpu_Usage','Memory_Usage','Disk_Usage','Bandwidth','System_Load'
+            'cpu_used','memory_used','disk_used','volume_storage_used','public_ip_used','private_ip_used'
         ]
-    },
-    title : {
-        text: 'System Resource Usage Ratio',
-        subtext: 'cpu memory disk ...',
-        x: 'center'
     },
     toolbox: {
         show : true,
@@ -87,14 +81,17 @@ option = {
     },
     series : [
         {
+            name: 'cpu',
             type : 'pie',
             center : ['20%', '30%'],
+            avoidLabelOverlap: true,
             radius : radius,
             x: '0%', // for funnel
+            name: 'cpu',
             itemStyle : labelFromatter,
             data : [
-                {name:'other', value:46, itemStyle : labelBottom},
-                {name:'Cpu_Usage', value:54,itemStyle : labelTop}
+                {name:'other', itemStyle : labelBottom},
+                {name:'cpu_used', itemStyle : labelTop}
             ]
         },
         {
@@ -104,8 +101,8 @@ option = {
             x:'20%', // for funnel
             itemStyle : labelFromatter,
             data : [
-                {name:'other', value:56, itemStyle : labelBottom},
-                {name:'Memory_Usage', value:44,itemStyle : labelTop}
+                {name:'other', itemStyle : labelBottom},
+                {name:'memory_used', itemStyle : labelTop}
             ]
         },
         {
@@ -115,36 +112,95 @@ option = {
             x:'40%', // for funnel
             itemStyle : labelFromatter,
             data : [
-                {name:'other', value:65, itemStyle : labelBottom},
-                {name:'Disk_Usage', value:35,itemStyle : labelTop}
+                {name:'other', itemStyle : labelBottom},
+                {name:'disk_used', itemStyle : labelTop}
             ]
         },
         {
             type : 'pie',
-            center : ['35%', '75%'],
+            center : ['20%', '75%'],
             radius : radius,
             y: '55%',   // for funnel
             x: '0%',    // for funnel
             itemStyle : labelFromatter,
             data : [
-                {name:'other', value:78, itemStyle : labelBottom},
-                {name:'Bandwidth', value:22,itemStyle : labelTop}
+                {name:'other', itemStyle : labelBottom},
+                {name:'volume_storage_used', itemStyle : labelTop}
             ]
         },
         {
             type : 'pie',
-            center : ['65%', '75%'],
+            center : ['50%', '75%'],
             radius : radius,
             y: '55%',   // for funnel
             x:'20%',    // for funnel
             itemStyle : labelFromatter,
             data : [
-                {name:'other', value:78, itemStyle : labelBottom},
-                {name:'System_Load', value:22,itemStyle : labelTop}
+                {name:'other', itemStyle : labelBottom},
+                {name:'public_ip_used', itemStyle : labelTop}
             ]
-        }
+        },
+        {
+            type : 'pie',
+            center : ['80%', '75%'],
+            radius : radius,
+            y: '55%',   // for funnel
+            x:'20%',    // for funnel
+            itemStyle : labelFromatter,
+            data : [
+                {name:'other', itemStyle : labelBottom},
+                {name:'private_ip_used', itemStyle : labelTop}
+            ]
+        },
+{
+	    name: 'cpu',
+            type:'pie',
+            radius: [0, 25],
+            color: '#fff',
+            center : ['20%', '30%'],
+            label: {
+                normal: {
+            formatter : function (params){
+//		console.log(params)
+                return params.name + '\n' + params.value
+            },
+            textStyle: {
+                baseline : 'top',
+                color: '#000'
+            },
+		    show: true,
+                    position: 'center'
+                }
+            },
+            data:[
+                {value:335, name:'cpu_total'},
+            ]
+        },
     ]
 };
        
-myChart.setOption(option);
+$.ajax({
+    url: "/dashboard/getdata", 
+    type: 'GET',
+    success: function (data) {
+        if (data) {
+		option.series[0].data[0].value = data.cpu_avail
+		option.series[0].data[1].value = data.cpu_used
+		option.series[1].data[0].value = data.mem_avail
+		option.series[1].data[1].value = data.mem_used
+		option.series[2].data[0].value = data.disk_avail
+		option.series[2].data[1].value = data.disk_used
+		option.series[3].data[0].value = data.volume_avail
+		option.series[3].data[1].value = data.volume_used
+		option.series[4].data[0].value = data.pubip_avail
+		option.series[4].data[1].value = data.pubip_used
+		option.series[5].data[0].value = data.prvip_avail
+		option.series[5].data[1].value = data.prvip_used
+        	myChart.setOption(option);
+        }
+    },
+    error: function (jqXHR, textStatus, errorThrown) {
+        window.location.href = "/error?ErrorMsg=" + jqXHR.responseText;
+    }
+});
 

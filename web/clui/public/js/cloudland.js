@@ -1321,9 +1321,9 @@ $(document).ready(function () {
                     success: function (data) {
                         window.location.href = data.redirect;
                     },
-error: function (jqXHR, textStatus, errorThrown) {
-                        window.location.href = "error?ErrorMsg=" + jqXHR.responseText;
-        }
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        window.location.href = "/error?ErrorMsg=" + jqXHR.responseText;
+                    }
                 });
             }
         }).modal('show');

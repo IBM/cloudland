@@ -1,0 +1,39 @@
+{{template "_head" .}}
+<div class="user signup">
+	<div class="ui middle very relaxed page grid">
+        <div class="column" >
+            <form class="ui form" action="{{.Link}}" method="post">
+                <h3 class="ui top attached header">
+                    Create New Openshift Cluster
+                </h3>
+                <div class="ui attached segment">
+                    <div class="required inline field">
+                        <label for="clustername">Cluster Name</label>
+                        <input id="clustername" name="clustername" autofocus required>
+                    </div>
+                    <div class="required inline field">
+                        <label for="basedomain">Base Domain</label>
+                        <input id="basedomain"  name="basedomain" autocomplete="off" required>
+                    </div>
+                    <div class="required inline field">
+                        <label for="haflag">High Available</label>
+                    </div>
+                    <div class="required inline field">
+                        <label for="nworkers">Number of Workers</label>
+                        <input id="nworker"  name="nworkers" value="2" required>
+                    </div>
+                    <div class="inline field">
+                        <label for="key">Key</label>
+                        <input id="swap"  name="swap" autocomplete="off">
+                    </div>
+                    <div class="inline field">
+                        <label></label>
+                        <button class="ui green button">Create New Openshift Cluster</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+	</div>
+</div>
+{{template "_footer" .}}
+
