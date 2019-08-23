@@ -19,8 +19,10 @@ var labelFromatter = {
         label : {
             formatter : function (params){
                 res = params.value
-                if (params.name.indexOf('memory') > -1 || params.name.indexOf('volume') > -1 || params.name.indexOf('disk') > -1) {
+                if (params.name.indexOf('volume') > -1 || params.name.indexOf('disk') > -1) {
                     res = res + 'G'
+                } else if (params.name.indexOf('memory') > -1) {
+                    res = res + 'M'
                 }
                 res = res + '\n' + params.percent + '%'
                 return res
@@ -47,7 +49,6 @@ var labelBottom = {
 var radius = [40, 55];
 option = {
     title: {
-        text : 'Resource Usage Ratio',
         subtext : 'cpu memory disk volume ip',
         x : 'center',
     },
@@ -195,7 +196,7 @@ option = {
                 normal: {
             formatter : function (params){
 //		console.log(params)
-                return params.name + '\n' + params.value + 'G'
+                return params.name + '\n' + params.value + 'M'
             },
             textStyle: {
                 baseline : 'top',
@@ -313,6 +314,7 @@ $.ajax({
     type: 'GET',
     success: function (data) {
         if (data) {
+		option.title.text = data.title
 		option.series[0].data[0].value = data.cpu_avail
 		option.series[0].data[1].value = data.cpu_used
 		option.series[1].data[0].value = data.mem_avail

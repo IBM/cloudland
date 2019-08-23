@@ -23,18 +23,19 @@ var (
 )
 
 type ResourceData struct {
-	CpuUsed     int64 `json:"cpu_used"`
-	CpuAvail    int64 `json:"cpu_avail"`
-	MemUsed     int64 `json:"mem_used"`
-	MemAvail    int64 `json:"mem_avail"`
-	DiskUsed    int64 `json:"disk_used"`
-	DiskAvail   int64 `json:"disk_avail"`
-	VolumeUsed  int64 `json:"volume_used"`
-	VolumeAvail int64 `json:"volume_avail"`
-	PubipUsed   int64 `json:"pubip_used"`
-	PubipAvail  int64 `json:"pubip_avail"`
-	PrvipUsed   int64 `json:"prvip_used"`
-	PrvipAvail  int64 `json:"prvip_avail"`
+	Title       string `json:"title"`
+	CpuUsed     int64  `json:"cpu_used"`
+	CpuAvail    int64  `json:"cpu_avail"`
+	MemUsed     int64  `json:"mem_used"`
+	MemAvail    int64  `json:"mem_avail"`
+	DiskUsed    int64  `json:"disk_used"`
+	DiskAvail   int64  `json:"disk_avail"`
+	VolumeUsed  int64  `json:"volume_used"`
+	VolumeAvail int64  `json:"volume_avail"`
+	PubipUsed   int64  `json:"pubip_used"`
+	PubipAvail  int64  `json:"pubip_avail"`
+	PrvipUsed   int64  `json:"prvip_used"`
+	PrvipAvail  int64  `json:"prvip_avail"`
 }
 
 type Dashboard struct{}
@@ -61,9 +62,10 @@ func (a *Dashboard) GetData(c *macaron.Context, store session.Store) {
 		pubipTotal, pubipUsed, err := a.getSystemIpUsage(ctx, "public")
 		prvipTotal, prvipUsed, err := a.getSystemIpUsage(ctx, "private")
 		rcData = &ResourceData{
+			Title:       "System Resource Usage Ratio",
 			CpuUsed:     resource.CpuTotal - resource.Cpu,
 			CpuAvail:    resource.Cpu,
-			MemUsed:     (resource.MemoryTotal - resource.Memory) >> 20,
+			MemUsed:     (resource.MemoryTotal - resource.Memory) >> 10,
 			MemAvail:    resource.Memory >> 20,
 			DiskUsed:    (resource.DiskTotal - resource.Disk) >> 30,
 			DiskAvail:   resource.Disk >> 30,
@@ -179,10 +181,11 @@ func (a *Dashboard) getOrgUsage(ctx context.Context, quota *model.Quota) (rcData
 	pubip, err := a.getOrgIpUsage(ctx, "public")
 	prvip, err := a.getOrgIpUsage(ctx, "private")
 	rcData = &ResourceData{
+		Title:       "Organization Quota Usage Ratio",
 		CpuUsed:     int64(cpu),
 		CpuAvail:    int64(quota.Cpu - cpu),
 		MemUsed:     int64(memory),
-		MemAvail:    int64(quota.Memory - memory),
+		MemAvail:    int64(quota.Memory*1024 - memory),
 		DiskUsed:    int64(disk),
 		DiskAvail:   int64(quota.Disk - disk),
 		VolumeUsed:  0,
