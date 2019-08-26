@@ -126,7 +126,7 @@ func (a *VolumeAdmin) Delete(ctx context.Context, id int64) (err error) {
 	return
 }
 
-func (a *VolumeAdmin) List(ctx context.Context, offset, limit int64, order string) (total int64, volumes []*model.Volume, err error) {
+func (a *VolumeAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, volumes []*model.Volume, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
@@ -137,13 +137,16 @@ func (a *VolumeAdmin) List(ctx context.Context, offset, limit int64, order strin
 		order = "created_at"
 	}
 
+	if query != "" {
+		query = fmt.Sprintf("name like '%%%s%%'", query)
+	}
 	where := memberShip.GetWhere()
 	volumes = []*model.Volume{}
-	if err = db.Model(&model.Volume{}).Where(where).Count(&total).Error; err != nil {
+	if err = db.Model(&model.Volume{}).Where(where).Where(query).Count(&total).Error; err != nil {
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Preload("Instance").Where(where).Find(&volumes).Error; err != nil {
+	if err = db.Preload("Instance").Where(where).Where(query).Find(&volumes).Error; err != nil {
 		return
 	}
 	permit := memberShip.CheckPermission(model.Admin)
@@ -179,7 +182,8 @@ func (v *VolumeView) List(c *macaron.Context, store session.Store) {
 	if order == "" {
 		order = "-created_at"
 	}
-	total, volumes, err := volumeAdmin.List(c.Req.Context(), offset, limit, order)
+	query := c.QueryTrim("q")
+	total, volumes, err := volumeAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
@@ -188,6 +192,7 @@ func (v *VolumeView) List(c *macaron.Context, store session.Store) {
 	c.Data["Volumes"] = volumes
 	c.Data["Total"] = total
 	c.Data["Pages"] = GetPages(total, limit)
+	c.Data["Query"] = query
 	c.HTML(200, "volumes")
 }
 
@@ -259,7 +264,7 @@ func (v *VolumeView) Edit(c *macaron.Context, store session.Store) {
 		c.HTML(500, err.Error())
 		return
 	}
-	_, instances, err := instanceAdmin.List(c.Req.Context(), 0, -1, "")
+	_, instances, err := instanceAdmin.List(c.Req.Context(), 0, -1, "", "")
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, err.Error())

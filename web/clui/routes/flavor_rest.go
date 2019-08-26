@@ -163,7 +163,7 @@ func (v *FlavorRest) List(c *macaron.Context) ([]*model.Flavor, error) {
 	order := c.Header().Get("sort_dir")
 	limit, _ := strconv.ParseInt(c.Header().Get("limit"), 10, 64)
 	offset, _ := strconv.ParseInt(c.Header().Get("marker"), 10, 64)
-	_, flavors, err := flavorAdmin.List(offset, limit, order)
+	_, flavors, err := flavorAdmin.List(offset, limit, order, "")
 	return flavors, err
 }
 

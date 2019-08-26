@@ -163,7 +163,7 @@ func (v *InterfaceView) Edit(c *macaron.Context, store session.Store) {
 		log.Println("Image query failed", err)
 		return
 	}
-	_, secgroups, err := secgroupAdmin.List(c.Req.Context(), 0, -1, "")
+	_, secgroups, err := secgroupAdmin.List(c.Req.Context(), 0, -1, "", "")
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")

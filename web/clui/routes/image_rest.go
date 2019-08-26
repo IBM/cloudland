@@ -32,7 +32,7 @@ func (v *ImageRest) List(c *macaron.Context) {
 	if order == "" {
 		order = "-created_at"
 	}
-	_, images, err := imageAdmin.List(offset, limit, order)
+	_, images, err := imageAdmin.List(offset, limit, order, "")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, NewResponseError("List images fail", err.Error(), http.StatusInternalServerError))
 		return

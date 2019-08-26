@@ -399,13 +399,13 @@ func (a *SubnetAdmin) List(ctx context.Context, offset, limit int64, order, quer
 		order = "created_at"
 	}
 
+	if query != "" {
+		query = fmt.Sprintf("name like '%%%s%%'", query)
+	}
 	where := ""
 	wm := memberShip.GetWhere()
 	if wm != "" {
 		where = fmt.Sprintf("type != 'internal' or %s", wm)
-	}
-	if query != "" {
-		query = fmt.Sprintf("name like '%%%s%%'", query)
 	}
 	subnets = []*model.Subnet{}
 	if err = db.Model(&model.Subnet{}).Where(where).Where(query).Count(&total).Error; err != nil {
@@ -458,6 +458,7 @@ func (v *SubnetView) List(c *macaron.Context, store session.Store) {
 	c.Data["Subnets"] = subnets
 	c.Data["Total"] = total
 	c.Data["Pages"] = GetPages(total, limit)
+	c.Data["Query"] = query
 	c.HTML(200, "subnets")
 }
 

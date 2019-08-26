@@ -8,6 +8,7 @@ SPDX-License-Identifier: Apache-2.0
 package routes
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -55,7 +56,7 @@ func (a *FlavorAdmin) Delete(id int64) (err error) {
 	return
 }
 
-func (a *FlavorAdmin) List(offset, limit int64, order string) (total int64, flavors []*model.Flavor, err error) {
+func (a *FlavorAdmin) List(offset, limit int64, order, query string) (total int64, flavors []*model.Flavor, err error) {
 	db := DB()
 	if limit == 0 {
 		limit = 20
@@ -64,13 +65,16 @@ func (a *FlavorAdmin) List(offset, limit int64, order string) (total int64, flav
 	if order == "" {
 		order = "created_at"
 	}
+	if query != "" {
+		query = fmt.Sprintf("name like '%%%s%%'", query)
+	}
 
 	flavors = []*model.Flavor{}
-	if err = db.Model(&model.Flavor{}).Count(&total).Error; err != nil {
+	if err = db.Model(&model.Flavor{}).Where(query).Count(&total).Error; err != nil {
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Find(&flavors).Error; err != nil {
+	if err = db.Where(query).Find(&flavors).Error; err != nil {
 		return
 	}
 
@@ -87,7 +91,8 @@ func (v *FlavorView) List(c *macaron.Context, store session.Store) {
 	if order == "" {
 		order = "-created_at"
 	}
-	total, flavors, err := flavorAdmin.List(offset, limit, order)
+	query := c.QueryTrim("q")
+	total, flavors, err := flavorAdmin.List(offset, limit, order, query)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
@@ -96,6 +101,7 @@ func (v *FlavorView) List(c *macaron.Context, store session.Store) {
 	c.Data["Flavors"] = flavors
 	c.Data["Total"] = total
 	c.Data["Pages"] = GetPages(total, limit)
+	c.Data["Query"] = query
 	c.HTML(200, "flavors")
 }
 

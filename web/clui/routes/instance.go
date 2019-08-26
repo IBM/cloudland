@@ -501,24 +501,27 @@ func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
 	return
 }
 
-func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order string) (total int64, instances []*model.Instance, err error) {
+func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, instances []*model.Instance, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
-		limit = 20
+		limit = 10
 	}
 
 	if order == "" {
 		order = "created_at"
 	}
 
+	if query != "" {
+		query = fmt.Sprintf("hostname like '%%%s%%'", query)
+	}
 	where := memberShip.GetWhere()
 	instances = []*model.Instance{}
-	if err = db.Model(&model.Instance{}).Where(where).Count(&total).Error; err != nil {
+	if err = db.Model(&model.Instance{}).Where(where).Where(query).Where(query).Count(&total).Error; err != nil {
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Set("gorm:auto_preload", true).Where(where).Find(&instances).Error; err != nil {
+	if err = db.Set("gorm:auto_preload", true).Where(where).Where(query).Where(query).Find(&instances).Error; err != nil {
 		log.Println("Failed to query instance(s), %v", err)
 		return
 	}
@@ -559,7 +562,8 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	if order == "" {
 		order = "-created_at"
 	}
-	total, instances, err := instanceAdmin.List(c.Req.Context(), offset, limit, order)
+	query := c.QueryTrim("q")
+	total, instances, err := instanceAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
@@ -568,6 +572,7 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	c.Data["Instances"] = instances
 	c.Data["Total"] = total
 	c.Data["Pages"] = GetPages(total, limit)
+	c.Data["Query"] = query
 	c.HTML(200, "instances")
 }
 
@@ -633,13 +638,13 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
-	_, secgroups, err := secgroupAdmin.List(ctx, 0, -1, "")
+	_, secgroups, err := secgroupAdmin.List(ctx, 0, -1, "", "")
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
 	}
-	_, keys, err := keyAdmin.List(ctx, 0, -1, "")
+	_, keys, err := keyAdmin.List(ctx, 0, -1, "", "")
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")

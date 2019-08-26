@@ -9,6 +9,7 @@ package routes
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -55,7 +56,7 @@ func (a *OpenshiftAdmin) Delete(id int64) (err error) {
 	return
 }
 
-func (a *OpenshiftAdmin) List(ctx context.Context, offset, limit int64, order string) (total int64, openshifts []*model.Openshift, err error) {
+func (a *OpenshiftAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, openshifts []*model.Openshift, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
@@ -65,14 +66,17 @@ func (a *OpenshiftAdmin) List(ctx context.Context, offset, limit int64, order st
 	if order == "" {
 		order = "created_at"
 	}
+	if query != "" {
+		query = fmt.Sprintf("name like '%%%s%%'", query)
+	}
 
 	where := memberShip.GetWhere()
 	openshifts = []*model.Openshift{}
-	if err = db.Model(&model.Openshift{}).Where(where).Count(&total).Error; err != nil {
+	if err = db.Model(&model.Openshift{}).Where(where).Where(query).Count(&total).Error; err != nil {
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Find(&openshifts).Error; err != nil {
+	if err = db.Where(query).Find(&openshifts).Error; err != nil {
 		return
 	}
 
@@ -97,7 +101,8 @@ func (v *OpenshiftView) List(c *macaron.Context, store session.Store) {
 	if order == "" {
 		order = "-created_at"
 	}
-	total, openshifts, err := openshiftAdmin.List(c.Req.Context(), offset, limit, order)
+	query := c.QueryTrim("q")
+	total, openshifts, err := openshiftAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
@@ -106,6 +111,7 @@ func (v *OpenshiftView) List(c *macaron.Context, store session.Store) {
 	c.Data["Openshifts"] = openshifts
 	c.Data["Total"] = total
 	c.Data["Pages"] = GetPages(total, limit)
+	c.Data["Query"] = query
 	c.HTML(200, "openshifts")
 }
 

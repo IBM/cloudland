@@ -125,7 +125,7 @@ func (a *FloatingIpAdmin) Delete(ctx context.Context, id int64) (err error) {
 	return
 }
 
-func (a *FloatingIpAdmin) List(ctx context.Context, offset, limit int64, order string) (total int64, floatingips []*model.FloatingIp, err error) {
+func (a *FloatingIpAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, floatingips []*model.FloatingIp, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
@@ -135,15 +135,18 @@ func (a *FloatingIpAdmin) List(ctx context.Context, offset, limit int64, order s
 	if order == "" {
 		order = "created_at"
 	}
+	if query != "" {
+		query = fmt.Sprintf("fip_address like '%%%s%%' or int_address like '%%%s%%'", query, query)
+	}
 
 	where := memberShip.GetWhere()
 	floatingips = []*model.FloatingIp{}
-	if err = db.Model(&model.FloatingIp{}).Where(where).Count(&total).Error; err != nil {
+	if err = db.Model(&model.FloatingIp{}).Where(where).Where(query).Count(&total).Error; err != nil {
 		log.Println("DB failed to count floating ip(s), %v", err)
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Set("gorm:auto_preload", true).Where(where).Find(&floatingips).Error; err != nil {
+	if err = db.Set("gorm:auto_preload", true).Where(where).Where(query).Find(&floatingips).Error; err != nil {
 		log.Println("DB failed to query floating ip(s), %v", err)
 		return
 	}
@@ -180,7 +183,8 @@ func (v *FloatingIpView) List(c *macaron.Context, store session.Store) {
 	if order == "" {
 		order = "-created_at"
 	}
-	total, floatingips, err := floatingipAdmin.List(c.Req.Context(), offset, limit, order)
+	query := c.QueryTrim("q")
+	total, floatingips, err := floatingipAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		log.Println("Failed to list floating ip(s), %v", err)
 		c.Data["ErrorMsg"] = err.Error()
@@ -190,6 +194,7 @@ func (v *FloatingIpView) List(c *macaron.Context, store session.Store) {
 	c.Data["FloatingIps"] = floatingips
 	c.Data["Total"] = total
 	c.Data["Pages"] = GetPages(total, limit)
+	c.Data["Query"] = query
 	c.HTML(200, "floatingips")
 }
 

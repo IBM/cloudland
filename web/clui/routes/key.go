@@ -9,6 +9,7 @@ package routes
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -56,7 +57,7 @@ func (a *KeyAdmin) Delete(id int64) (err error) {
 	return
 }
 
-func (a *KeyAdmin) List(ctx context.Context, offset, limit int64, order string) (total int64, keys []*model.Key, err error) {
+func (a *KeyAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, keys []*model.Key, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
@@ -67,14 +68,17 @@ func (a *KeyAdmin) List(ctx context.Context, offset, limit int64, order string) 
 		order = "created_at"
 	}
 
+	if query != "" {
+		query = fmt.Sprintf("name like '%%%s%%'", query)
+	}
 	where := memberShip.GetWhere()
 	keys = []*model.Key{}
-	if err = db.Model(&model.Key{}).Where(where).Count(&total).Error; err != nil {
+	if err = db.Model(&model.Key{}).Where(where).Where(query).Count(&total).Error; err != nil {
 		log.Println("DB failed to count keys, %v", err)
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Where(where).Find(&keys).Error; err != nil {
+	if err = db.Where(where).Where(query).Find(&keys).Error; err != nil {
 		log.Println("DB failed to query keys, %v", err)
 		return
 	}
@@ -111,7 +115,8 @@ func (v *KeyView) List(c *macaron.Context, store session.Store) {
 	if order == "" {
 		order = "-created_at"
 	}
-	total, keys, err := keyAdmin.List(c.Req.Context(), offset, limit, order)
+	query := c.QueryTrim("q")
+	total, keys, err := keyAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		log.Println("Failed to list keys, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
@@ -121,6 +126,7 @@ func (v *KeyView) List(c *macaron.Context, store session.Store) {
 	c.Data["Keys"] = keys
 	c.Data["Total"] = total
 	c.Data["Pages"] = GetPages(total, limit)
+	c.Data["Query"] = query
 	c.HTML(200, "keys")
 }
 

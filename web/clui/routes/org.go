@@ -218,7 +218,7 @@ func (a *OrgAdmin) Delete(ctx context.Context, id int64) (err error) {
 	return
 }
 
-func (a *OrgAdmin) List(ctx context.Context, offset, limit int64, order string) (total int64, orgs []*model.Organization, err error) {
+func (a *OrgAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, orgs []*model.Organization, err error) {
 	memberShip := GetMemberShip(ctx)
 	if limit == 0 {
 		limit = 20
@@ -228,6 +228,9 @@ func (a *OrgAdmin) List(ctx context.Context, offset, limit int64, order string) 
 		order = "created_at"
 	}
 
+	if query != "" {
+		query = fmt.Sprintf("name like '%%%s%%'", query)
+	}
 	db := DB()
 	user := &model.User{Model: model.Model{ID: memberShip.UserID}}
 	err = db.Take(user).Error
@@ -240,10 +243,10 @@ func (a *OrgAdmin) List(ctx context.Context, offset, limit int64, order string) 
 	if memberShip.Role != model.Admin {
 		where = fmt.Sprintf("owner = %d", user.ID)
 	}
-	if err = db.Model(&model.Organization{}).Where(where).Count(&total).Error; err != nil {
+	if err = db.Model(&model.Organization{}).Where(where).Where(query).Count(&total).Error; err != nil {
 		return
 	}
-	err = db.Where(where).Find(&orgs).Error
+	err = db.Where(where).Where(query).Find(&orgs).Error
 	if err != nil {
 		log.Println("DB failed to query organizations, %v", err)
 		return
@@ -258,7 +261,8 @@ func (v *OrgView) List(c *macaron.Context, store session.Store) {
 		limit = 10
 	}
 	order := c.QueryTrim("order")
-	total, orgs, err := orgAdmin.List(c.Req.Context(), offset, limit, order)
+	query := c.QueryTrim("q")
+	total, orgs, err := orgAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		log.Println("Failed to list organizations, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
@@ -268,6 +272,7 @@ func (v *OrgView) List(c *macaron.Context, store session.Store) {
 	c.Data["Organizations"] = orgs
 	c.Data["Total"] = total
 	c.Data["Pages"] = GetPages(total, limit)
+	c.Data["Query"] = query
 	c.HTML(200, "orgs")
 }
 
