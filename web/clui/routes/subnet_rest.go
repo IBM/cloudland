@@ -46,7 +46,7 @@ func (v *SubnetRest) ListSubnets(c *macaron.Context) {
 	if reverse {
 		order = "-created_at"
 	}
-	_, subnets, err := subnetAdmin.List(c.Req.Context(), offset, limit, order)
+	_, subnets, err := subnetAdmin.List(c.Req.Context(), offset, limit, order, "")
 	if err != nil {
 		code := http.StatusInternalServerError
 		c.JSON(code, NewResponseError("List subnets fail", err.Error(), code))

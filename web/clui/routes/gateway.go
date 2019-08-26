@@ -422,7 +422,7 @@ func (v *GatewayView) New(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	_, subnets, err := subnetAdmin.List(c.Req.Context(), 0, -1, "")
+	_, subnets, err := subnetAdmin.List(c.Req.Context(), 0, -1, "", "")
 	if err != nil {
 		log.Println("DB failed to query subnets, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
@@ -457,11 +457,11 @@ func (v *GatewayView) Edit(c *macaron.Context, store session.Store) {
 		return
 	}
 	subnets := []*model.Subnet{}
-	where := memberShip.GetWhere() + "and type = 'internal'"
+	where := "type = 'internal'"
 	for _, gsub := range gateway.Subnets {
 		where = fmt.Sprintf("%s and id != %d", where, gsub.ID)
 	}
-	if err := db.Where(where).Find(&subnets).Error; err != nil {
+	if err := db.Where(where).Where(memberShip.GetWhere()).Find(&subnets).Error; err != nil {
 		log.Println("DB failed to query subnets, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")

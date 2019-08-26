@@ -388,7 +388,7 @@ func (a *SubnetAdmin) Delete(ctx context.Context, id int64) (err error) {
 	return
 }
 
-func (a *SubnetAdmin) List(ctx context.Context, offset, limit int64, order string) (total int64, subnets []*model.Subnet, err error) {
+func (a *SubnetAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, subnets []*model.Subnet, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
@@ -404,12 +404,15 @@ func (a *SubnetAdmin) List(ctx context.Context, offset, limit int64, order strin
 	if wm != "" {
 		where = fmt.Sprintf("type != 'internal' or %s", wm)
 	}
+	if query != "" {
+		query = fmt.Sprintf("name like '%%%s%%'", query)
+	}
 	subnets = []*model.Subnet{}
-	if err = db.Model(&model.Subnet{}).Where(where).Count(&total).Error; err != nil {
+	if err = db.Model(&model.Subnet{}).Where(where).Where(query).Count(&total).Error; err != nil {
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Preload("Netlink").Where(where).Find(&subnets).Error; err != nil {
+	if err = db.Preload("Netlink").Where(where).Where(query).Find(&subnets).Error; err != nil {
 		return
 	}
 	permit := memberShip.CheckPermission(model.Admin)
@@ -438,14 +441,15 @@ func (v *SubnetView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
-	if limit == 0 {
+	if limit <= 0 {
 		limit = 10
 	}
 	order := c.QueryTrim("order")
 	if order == "" {
 		order = "-created_at"
 	}
-	total, subnets, err := subnetAdmin.List(c.Req.Context(), offset, limit, order)
+	query := c.QueryTrim("q")
+	total, subnets, err := subnetAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
