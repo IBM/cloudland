@@ -122,7 +122,7 @@ func (a *UserAdmin) List(ctx context.Context, offset, limit int64, order string)
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
-		limit = 8
+		limit = 10
 	}
 
 	if order == "" {
@@ -142,12 +142,19 @@ func (a *UserAdmin) List(ctx context.Context, offset, limit int64, order string)
 				userIDs = append(userIDs, member.UserID)
 			}
 		}
+		if err = db.Model(&model.User{}).Where(userIDs).Count(&total).Error; err != nil {
+			return
+		}
 		db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
 		if err = db.Where(userIDs).Find(&users).Error; err != nil {
 			log.Println("DB failed to get user list, %v", err)
 			return
 		}
 	} else {
+		if err = db.Model(&model.User{}).Count(&total).Error; err != nil {
+			return
+		}
+		db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
 		if err = db.Find(&users).Error; err != nil {
 			log.Println("DB failed to get user list, %v", err)
 			return
