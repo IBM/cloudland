@@ -66,7 +66,7 @@ func (a *Dashboard) GetData(c *macaron.Context, store session.Store) {
 			CpuUsed:     resource.CpuTotal - resource.Cpu,
 			CpuAvail:    resource.Cpu,
 			MemUsed:     (resource.MemoryTotal - resource.Memory) >> 10,
-			MemAvail:    resource.Memory >> 20,
+			MemAvail:    resource.Memory >> 10,
 			DiskUsed:    (resource.DiskTotal - resource.Disk) >> 30,
 			DiskAvail:   resource.Disk >> 30,
 			VolumeUsed:  160,

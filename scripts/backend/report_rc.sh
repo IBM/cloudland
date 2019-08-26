@@ -38,6 +38,9 @@ function calc_resource()
     [ $cpu -lt 0 ] && cpu=0
     let memory=$total_memory*$mem_over_ratio-$virtual_memory
     [ $memory -lt 0 ] && memory=0
+    let total_cpu=$total_cpu*$cpu_over_ratio
+    let total_memory=$total_memory*$mem_over_ratio
+    let total_disk=($total_disk-$used_disk)*$disk_over_ratio
 }
 
 calc_resource
