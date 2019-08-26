@@ -334,6 +334,7 @@ func (a *GatewayAdmin) List(ctx context.Context, offset, limit int64, order stri
 	}
 	permit := memberShip.CheckPermission(model.Admin)
 	if permit {
+		db = db.Offset(0).Limit(-1)
 		for _, gateway := range gateways {
 			gateway.OwnerInfo = &model.Organization{Model: model.Model{ID: gateway.Owner}}
 			if err = db.Take(gateway.OwnerInfo).Error; err != nil {
@@ -356,6 +357,9 @@ func (v *GatewayView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 10
+	}
 	order := c.QueryTrim("order")
 	if order == "" {
 		order = "-created_at"
@@ -369,6 +373,7 @@ func (v *GatewayView) List(c *macaron.Context, store session.Store) {
 	}
 	c.Data["Gateways"] = gateways
 	c.Data["Total"] = total
+	c.Data["Pages"] = GetPages(total, limit)
 	c.HTML(200, "gateways")
 }
 
@@ -417,7 +422,7 @@ func (v *GatewayView) New(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	_, subnets, err := subnetAdmin.List(c.Req.Context(), 0, 0, "")
+	_, subnets, err := subnetAdmin.List(c.Req.Context(), 0, -1, "")
 	if err != nil {
 		log.Println("DB failed to query subnets, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
@@ -452,7 +457,7 @@ func (v *GatewayView) Edit(c *macaron.Context, store session.Store) {
 		return
 	}
 	subnets := []*model.Subnet{}
-	where := "type = 'internal'"
+	where := memberShip.GetWhere() + "and type = 'internal'"
 	for _, gsub := range gateway.Subnets {
 		where = fmt.Sprintf("%s and id != %d", where, gsub.ID)
 	}

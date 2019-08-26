@@ -122,7 +122,7 @@ func (a *UserAdmin) List(ctx context.Context, offset, limit int64, order string)
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
-		limit = 20
+		limit = 8
 	}
 
 	if order == "" {
@@ -300,6 +300,9 @@ func (v *UserView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 10
+	}
 	order := c.QueryTrim("order")
 	if order == "" {
 		order = "-created_at"
@@ -313,6 +316,7 @@ func (v *UserView) List(c *macaron.Context, store session.Store) {
 	}
 	c.Data["Users"] = users
 	c.Data["Total"] = total
+	c.Data["Pages"] = GetPages(total, limit)
 	c.HTML(200, "users")
 }
 

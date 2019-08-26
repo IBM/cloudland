@@ -90,6 +90,9 @@ func (v *OpenshiftView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 10
+	}
 	order := c.Query("order")
 	if order == "" {
 		order = "-created_at"
@@ -102,6 +105,7 @@ func (v *OpenshiftView) List(c *macaron.Context, store session.Store) {
 	}
 	c.Data["Openshifts"] = openshifts
 	c.Data["Total"] = total
+	c.Data["Pages"] = GetPages(total, limit)
 	c.HTML(200, "openshifts")
 }
 

@@ -148,6 +148,7 @@ func (a *VolumeAdmin) List(ctx context.Context, offset, limit int64, order strin
 	}
 	permit := memberShip.CheckPermission(model.Admin)
 	if permit {
+		db = db.Offset(0).Limit(-1)
 		for _, vol := range volumes {
 			vol.OwnerInfo = &model.Organization{Model: model.Model{ID: vol.Owner}}
 			if err = db.Take(vol.OwnerInfo).Error; err != nil {
@@ -171,6 +172,9 @@ func (v *VolumeView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 10
+	}
 	order := c.QueryTrim("order")
 	if order == "" {
 		order = "-created_at"
@@ -183,6 +187,7 @@ func (v *VolumeView) List(c *macaron.Context, store session.Store) {
 	}
 	c.Data["Volumes"] = volumes
 	c.Data["Total"] = total
+	c.Data["Pages"] = GetPages(total, limit)
 	c.HTML(200, "volumes")
 }
 
@@ -254,7 +259,7 @@ func (v *VolumeView) Edit(c *macaron.Context, store session.Store) {
 		c.HTML(500, err.Error())
 		return
 	}
-	_, instances, err := instanceAdmin.List(c.Req.Context(), 0, 0, "")
+	_, instances, err := instanceAdmin.List(c.Req.Context(), 0, -1, "")
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, err.Error())

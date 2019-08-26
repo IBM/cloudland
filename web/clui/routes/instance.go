@@ -529,6 +529,7 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order str
 		}
 		permit := memberShip.CheckPermission(model.Admin)
 		if permit {
+			db = db.Offset(0).Limit(-1)
 			instance.OwnerInfo = &model.Organization{Model: model.Model{ID: instance.Owner}}
 			if err = db.Take(instance.OwnerInfo).Error; err != nil {
 				log.Println("Failed to query owner info", err)
@@ -551,6 +552,9 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 10
+	}
 	order := c.QueryTrim("order")
 	if order == "" {
 		order = "-created_at"
@@ -563,6 +567,7 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	}
 	c.Data["Instances"] = instances
 	c.Data["Total"] = total
+	c.Data["Pages"] = GetPages(total, limit)
 	c.HTML(200, "instances")
 }
 
@@ -622,19 +627,19 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 		return
 	}
 	ctx := c.Req.Context()
-	_, subnets, err := subnetAdmin.List(ctx, 0, 0, "")
+	_, subnets, err := subnetAdmin.List(ctx, 0, -1, "")
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
 	}
-	_, secgroups, err := secgroupAdmin.List(ctx, 0, 0, "")
+	_, secgroups, err := secgroupAdmin.List(ctx, 0, -1, "")
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
 	}
-	_, keys, err := keyAdmin.List(ctx, 0, 0, "")
+	_, keys, err := keyAdmin.List(ctx, 0, -1, "")
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
@@ -679,7 +684,7 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 		log.Println("Failed to query floating ip(s), %v", err)
 		return
 	}
-	_, subnets, err := subnetAdmin.List(c.Req.Context(), 0, 0, "")
+	_, subnets, err := subnetAdmin.List(c.Req.Context(), 0, -1, "")
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")

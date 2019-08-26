@@ -179,6 +179,7 @@ func (a *SecgroupAdmin) List(ctx context.Context, offset, limit int64, order str
 	}
 	permit := memberShip.CheckPermission(model.Admin)
 	if permit {
+		db = db.Offset(0).Limit(-1)
 		for _, sg := range secgroups {
 			sg.OwnerInfo = &model.Organization{Model: model.Model{ID: sg.Owner}}
 			if err = db.Take(sg.OwnerInfo).Error; err != nil {
@@ -202,6 +203,9 @@ func (v *SecgroupView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 10
+	}
 	order := c.QueryTrim("order")
 	if order == "" {
 		order = "-created_at"
@@ -215,6 +219,7 @@ func (v *SecgroupView) List(c *macaron.Context, store session.Store) {
 	}
 	c.Data["SecurityGroups"] = secgroups
 	c.Data["Total"] = total
+	c.Data["Pages"] = GetPages(total, limit)
 	c.HTML(200, "secgroups")
 }
 

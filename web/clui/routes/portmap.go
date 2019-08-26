@@ -139,6 +139,7 @@ func (a *PortmapAdmin) List(ctx context.Context, offset, limit int64, order stri
 	}
 	permit := memberShip.CheckPermission(model.Admin)
 	if permit {
+		db = db.Offset(0).Limit(-1)
 		for _, pmap := range portmaps {
 			pmap.OwnerInfo = &model.Organization{Model: model.Model{ID: pmap.Owner}}
 			if err = db.Take(pmap.OwnerInfo).Error; err != nil {
@@ -162,6 +163,9 @@ func (v *PortmapView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 10
+	}
 	order := c.QueryTrim("order")
 	if order == "" {
 		order = "-created_at"
@@ -175,6 +179,7 @@ func (v *PortmapView) List(c *macaron.Context, store session.Store) {
 	}
 	c.Data["Portmaps"] = portmaps
 	c.Data["Total"] = total
+	c.Data["Pages"] = GetPages(total, limit)
 	c.HTML(200, "portmaps")
 }
 

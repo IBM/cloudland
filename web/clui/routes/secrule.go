@@ -180,6 +180,9 @@ func (v *SecruleView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 10
+	}
 	order := c.QueryTrim("order")
 	if order == "" {
 		order = "-created_at"
@@ -207,6 +210,7 @@ func (v *SecruleView) List(c *macaron.Context, store session.Store) {
 	}
 	c.Data["SecurityRules"] = secrules
 	c.Data["Total"] = total
+	c.Data["Pages"] = GetPages(total, limit)
 	c.HTML(200, "secrules")
 }
 

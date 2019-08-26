@@ -80,6 +80,7 @@ func (a *KeyAdmin) List(ctx context.Context, offset, limit int64, order string) 
 	}
 	permit := memberShip.CheckPermission(model.Admin)
 	if permit {
+		db = db.Offset(0).Limit(-1)
 		for _, key := range keys {
 			key.OwnerInfo = &model.Organization{Model: model.Model{ID: key.Owner}}
 			if err = db.Take(key.OwnerInfo).Error; err != nil {
@@ -103,6 +104,9 @@ func (v *KeyView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 10
+	}
 	order := c.QueryTrim("order")
 	if order == "" {
 		order = "-created_at"
@@ -116,6 +120,7 @@ func (v *KeyView) List(c *macaron.Context, store session.Store) {
 	}
 	c.Data["Keys"] = keys
 	c.Data["Total"] = total
+	c.Data["Pages"] = GetPages(total, limit)
 	c.HTML(200, "keys")
 }
 

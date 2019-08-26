@@ -128,6 +128,9 @@ func (v *ImageView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 10
+	}
 	order := c.QueryTrim("order")
 	if order == "" {
 		order = "-created_at"
@@ -140,6 +143,7 @@ func (v *ImageView) List(c *macaron.Context, store session.Store) {
 	}
 	c.Data["Images"] = images
 	c.Data["Total"] = total
+	c.Data["Pages"] = GetPages(total, limit)
 	c.HTML(200, "images")
 }
 
@@ -185,7 +189,7 @@ func (v *ImageView) New(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	_, instances, err := instanceAdmin.List(c.Req.Context(), 0, 0, "")
+	_, instances, err := instanceAdmin.List(c.Req.Context(), 0, -1, "")
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")

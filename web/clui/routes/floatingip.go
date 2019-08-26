@@ -149,6 +149,7 @@ func (a *FloatingIpAdmin) List(ctx context.Context, offset, limit int64, order s
 	}
 	permit := memberShip.CheckPermission(model.Admin)
 	if permit {
+		db = db.Offset(0).Limit(-1)
 		for _, fip := range floatingips {
 			fip.OwnerInfo = &model.Organization{Model: model.Model{ID: fip.Owner}}
 			if err = db.Take(fip.OwnerInfo).Error; err != nil {
@@ -172,6 +173,9 @@ func (v *FloatingIpView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 10
+	}
 	order := c.Query("order")
 	if order == "" {
 		order = "-created_at"
@@ -185,6 +189,7 @@ func (v *FloatingIpView) List(c *macaron.Context, store session.Store) {
 	}
 	c.Data["FloatingIps"] = floatingips
 	c.Data["Total"] = total
+	c.Data["Pages"] = GetPages(total, limit)
 	c.HTML(200, "floatingips")
 }
 

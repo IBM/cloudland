@@ -392,7 +392,7 @@ func (a *SubnetAdmin) List(ctx context.Context, offset, limit int64, order strin
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
-		limit = 20
+		limit = 10
 	}
 
 	if order == "" {
@@ -414,6 +414,7 @@ func (a *SubnetAdmin) List(ctx context.Context, offset, limit int64, order strin
 	}
 	permit := memberShip.CheckPermission(model.Admin)
 	if permit {
+		db = db.Offset(0).Limit(-1)
 		for _, subnet := range subnets {
 			subnet.OwnerInfo = &model.Organization{Model: model.Model{ID: subnet.Owner}}
 			if err = db.Take(subnet.OwnerInfo).Error; err != nil {
@@ -437,6 +438,9 @@ func (v *SubnetView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 10
+	}
 	order := c.QueryTrim("order")
 	if order == "" {
 		order = "-created_at"
@@ -449,6 +453,7 @@ func (v *SubnetView) List(c *macaron.Context, store session.Store) {
 	}
 	c.Data["Subnets"] = subnets
 	c.Data["Total"] = total
+	c.Data["Pages"] = GetPages(total, limit)
 	c.HTML(200, "subnets")
 }
 

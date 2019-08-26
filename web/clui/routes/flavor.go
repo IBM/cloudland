@@ -80,6 +80,9 @@ func (a *FlavorAdmin) List(offset, limit int64, order string) (total int64, flav
 func (v *FlavorView) List(c *macaron.Context, store session.Store) {
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 10
+	}
 	order := c.Query("order")
 	if order == "" {
 		order = "-created_at"
@@ -92,6 +95,7 @@ func (v *FlavorView) List(c *macaron.Context, store session.Store) {
 	}
 	c.Data["Flavors"] = flavors
 	c.Data["Total"] = total
+	c.Data["Pages"] = GetPages(total, limit)
 	c.HTML(200, "flavors")
 }
 

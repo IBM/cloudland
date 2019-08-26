@@ -171,7 +171,7 @@ func (a *Dashboard) getOrgIpUsage(ctx context.Context, ntype string) (ipUsed int
 
 func (a *Dashboard) getOrgUsage(ctx context.Context, quota *model.Quota) (rcData *ResourceData, err error) {
 	var cpu, memory, disk int32
-	_, instances, err := instanceAdmin.List(ctx, 0, 0, "")
+	_, instances, err := instanceAdmin.List(ctx, 0, -1, "")
 	for _, inst := range instances {
 		flavor := inst.Flavor
 		cpu += flavor.Cpu

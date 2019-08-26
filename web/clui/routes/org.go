@@ -254,6 +254,9 @@ func (a *OrgAdmin) List(ctx context.Context, offset, limit int64, order string) 
 func (v *OrgView) List(c *macaron.Context, store session.Store) {
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 10
+	}
 	order := c.QueryTrim("order")
 	total, orgs, err := orgAdmin.List(c.Req.Context(), offset, limit, order)
 	if err != nil {
@@ -264,6 +267,7 @@ func (v *OrgView) List(c *macaron.Context, store session.Store) {
 	}
 	c.Data["Organizations"] = orgs
 	c.Data["Total"] = total
+	c.Data["Pages"] = GetPages(total, limit)
 	c.HTML(200, "orgs")
 }
 
