@@ -1,46 +1,43 @@
 <div class="four wide column">
     <div class="ui vertical menu">
         <div class="header item">Control Panel</div>
-        <a class="active item" href="/dashboard">
+        <a {{ if eq .Link "/dashboard" }} class="active item" {{ else }} class="item" {{ end }} href="/dashboard">
             Dashboard
         </a>
-        <a class=" item" href="/users">
+        <a {{ if eq .Link "/users" }} class="active item" {{ else }} class="item" {{ end }} href="/users">
             Users
         </a>
-        <a class=" item" href="/orgs">
+        <a {{ if eq .Link "/orgs" }} class="active item" {{ else }} class="item" {{ end }} href="/orgs">
             Organizations
         </a>
-        <a class=" item" href="/openshifts">
+        <a {{ if eq .Link "/openshifts" }} class="active item" {{ else }} class="item" {{ end }} href="/openshifts">
             Openshift Clusters
         </a>
-        <a class=" item" href="/instances">
+        <a {{ if eq .Link "/instances" }} class="active item" {{ else }} class="item" {{ end }} href="/instances">
             Instances
         </a>
-        <a class=" item" href="/flavors">
+        <a {{ if eq .Link "/flavors" }} class="active item" {{ else }} class="item" {{ end }} href="/flavors">
             Flavors
         </a>
-        <a class=" item" href="/images">
+        <a {{ if eq .Link "/images" }} class="active item" {{ else }} class="item" {{ end }} href="/images">
             Images
         </a>
-        <a class=" item" href="/volumes">
+        <a {{ if eq .Link "/volumes" }} class="active item" {{ else }} class="item" {{ end }} href="/volumes">
             Volumes
         </a>
-        <a class=" item" href="/keys">
+        <a {{ if eq .Link "/keys" }} class="active item" {{ else }} class="item" {{ end }} href="/keys">
             Keys
         </a>
-        <a class=" item" href="/subnets">
+        <a {{ if eq .Link "/subnets" }} class="active item" {{ else }} class="item" {{ end }} href="/subnets">
             Subnets
         </a>
-        <a class=" item" href="/portmaps">
-            Portmaps
-        </a>
-        <a class=" item" href="/floatingips">
+        <a {{ if eq .Link "/floatingips" }} class="active item" {{ else }} class="item" {{ end }} href="/floatingips">
             FloatingIps
         </a>
-        <a class=" item" href="/gateways">
+        <a {{ if eq .Link "/gateways" }} class="active item" {{ else }} class="item" {{ end }} href="/gateways">
             Gateways
         </a>
-        <a class=" item" href="/secgroups">
+        <a {{ if eq .Link "/secgroups" }} class="active item" {{ else }} class=" item" {{ end }} href="/secgroups">
             SecurityGroups
         </a>
     </div>
