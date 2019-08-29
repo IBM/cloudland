@@ -15,16 +15,55 @@
                         <label for="basedomain">Base Domain</label>
                         <input id="basedomain"  name="basedomain" autocomplete="off" required>
                     </div>
-                    <div class="required inline field">
+                    <div class="inline field">
                         <label for="haflag">High Available</label>
+						<div class="ui selection dropdown">
+						  <input id="haflag" name="haflag" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">no</div>
+						  <div class="menu">
+							<div class="item" data-value="no" data-text="no">
+							  no
+							</div>
+							<div class="item" data-value="yes" data-text="yes">
+							  yes
+							</div>
+						  </div>
+						</div>
                     </div>
                     <div class="required inline field">
                         <label for="nworkers">Number of Workers</label>
                         <input id="nworker"  name="nworkers" value="2" required>
                     </div>
+                    <div class="required inline field">
+                        <label for="flavor">Flavor</label>
+						<div class="ui selection dropdown">
+						  <input id="flavor" name="flavor" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">Flavor</div>
+						  <div class="menu">
+                            {{ range .Flavors }}
+							<div class="item" data-value={{.ID}} data-text={{.Name}}>
+							  {{.Name}}
+							</div>
+                            {{ end }}
+						  </div>
+						</div>
+                    </div>
                     <div class="inline field">
-                        <label for="key">Key</label>
-                        <input id="swap"  name="swap" autocomplete="off">
+                        <label for="keys">Keys</label>
+						<div class="ui multiple selection dropdown">
+						  <input id="keys" name="keys" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">Key</div>
+						  <div class="menu">
+                            {{ range .Keys }}
+							<div class="item" data-value={{.ID}} data-text={{.Name}}>
+							  {{.Name}}
+							</div>
+                            {{ end }}
+						  </div>
+						</div>
                     </div>
                     <div class="inline field">
                         <label></label>

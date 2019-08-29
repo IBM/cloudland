@@ -28,15 +28,139 @@ var (
 type OpenshiftAdmin struct{}
 type OpenshiftView struct{}
 
-func (a *OpenshiftAdmin) Create(name, domain string, haflag bool, nworkers int32, key int64) (openshift *model.Openshift, err error) {
+func (a *OpenshiftAdmin) createSecgroup(ctx context.Context, name, cidr string, owner int64) (secgroup *model.SecurityGroup, err error) {
+	db := DB()
+	secgroup = &model.SecurityGroup{Model: model.Model{Owner: owner}, Name: name}
+	err = db.Where(secgroup).Take(secgroup).Error
+	if err == nil {
+		log.Println("Use existing openshift security group", err)
+		return
+	}
+	secgroup, err = secgroupAdmin.Create(ctx, name, false, owner)
+	if err != nil {
+		log.Println("Failed to create security group with default rules", err)
+		return
+	}
+	_, err = secruleAdmin.Create(ctx, secgroup.ID, owner, cidr, "ingress", "tcp", 1, 65535)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
+	_, err = secruleAdmin.Create(ctx, secgroup.ID, owner, cidr, "ingress", "udp", 1, 65535)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
+	_, err = secruleAdmin.Create(ctx, secgroup.ID, owner, "0.0.0.0/0", "ingress", "tcp", 8443, 8443)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
+	_, err = secruleAdmin.Create(ctx, secgroup.ID, owner, "0.0.0.0/0", "ingress", "tcp", 6443, 6443)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
+	_, err = secruleAdmin.Create(ctx, secgroup.ID, owner, "0.0.0.0/0", "ingress", "tcp", 22623, 22623)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
+	_, err = secruleAdmin.Create(ctx, secgroup.ID, owner, "0.0.0.0/0", "ingress", "tcp", 2379, 2379)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
+	_, err = secruleAdmin.Create(ctx, secgroup.ID, owner, "0.0.0.0/0", "ingress", "tcp", 9000, 9999)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
+	_, err = secruleAdmin.Create(ctx, secgroup.ID, owner, "0.0.0.0/0", "ingress", "tcp", 10249, 10259)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
+	_, err = secruleAdmin.Create(ctx, secgroup.ID, owner, "0.0.0.0/0", "ingress", "tcp", 30000, 32767)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
+	_, err = secruleAdmin.Create(ctx, secgroup.ID, owner, "0.0.0.0/0", "ingress", "tcp", 53, 53)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
+	_, err = secruleAdmin.Create(ctx, secgroup.ID, owner, "0.0.0.0/0", "ingress", "udp", 53, 53)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
+	_, err = secruleAdmin.Create(ctx, secgroup.ID, owner, "0.0.0.0/0", "ingress", "tcp", 443, 443)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
+	_, err = secruleAdmin.Create(ctx, secgroup.ID, owner, "0.0.0.0/0", "ingress", "tcp", 80, 80)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
+	return
+}
+
+func (a *OpenshiftAdmin) Create(ctx context.Context, name, domain string, haflag bool, nworkers int32, flavor, key int64) (openshift *model.Openshift, err error) {
+	memberShip := GetMemberShip(ctx)
 	db := DB()
 	openshift = &model.Openshift{
 		ClusterName: name,
 		BaseDomain:  domain,
 		Haflag:      haflag,
 		WorkerNum:   nworkers,
+		Flavor:      flavor,
+		Key:         key,
 	}
 	err = db.Create(openshift).Error
+	if err != nil {
+		log.Println("DB failed to create openshift", err)
+		return
+	}
+	name = fmt.Sprintf("oc%d-sn", openshift.ID)
+	subnet, err := subnetAdmin.Create(ctx, name, "", "192.168.91.0", "255.255.255.0", "", "", "", "", "", memberShip.OrgID)
+	if err != nil {
+		log.Println("Failed to create openshift subnet", err)
+		return
+	}
+	name = fmt.Sprintf("oc%d-gw", openshift.ID)
+	subnetIDs := []int64{subnet.ID}
+	_, err = gatewayAdmin.Create(ctx, name, 0, 0, subnetIDs, memberShip.OrgID)
+	if err != nil {
+		log.Println("Failed to create gateway", err)
+		return
+	}
+	secgroup, err := a.createSecgroup(ctx, "openshift", "192.168.91.0/24", memberShip.OrgID)
+	name = fmt.Sprintf("oc%d-lb", openshift.ID)
+	keyIDs := []int64{key}
+	sgIDs := []int64{secgroup.ID}
+	userdata := `#!/bin/bash
+
+oc_dir=/tmp/openshift
+mkdir $oc_dir
+mount /dev/sr1 $oc_dir
+cd $oc_dir
+./ocd.sh
+`
+	instance, err := instanceAdmin.Create(ctx, 1, name, userdata, 1, flavor, subnet.ID, "", "", nil, keyIDs, sgIDs, -1)
+	if err != nil {
+		log.Println("Failed to create oc first instance", err)
+		return
+	}
+	types := []string{"public", "private"}
+	_, err = floatingipAdmin.Create(ctx, instance.ID, types)
+	if err != nil {
+		log.Println("Failed to create lb floating ips", err)
+		return
+	}
 	return
 }
 
@@ -149,7 +273,8 @@ func (v *OpenshiftView) Delete(c *macaron.Context, store session.Store) (err err
 }
 
 func (v *OpenshiftView) New(c *macaron.Context, store session.Store) {
-	memberShip := GetMemberShip(c.Req.Context())
+	ctx := c.Req.Context()
+	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Owner)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -157,6 +282,21 @@ func (v *OpenshiftView) New(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	db := DB()
+	_, flavors, err := flavorAdmin.List(0, -1, "", "")
+	if err := db.Find(&flavors).Error; err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+		return
+	}
+	_, keys, err := keyAdmin.List(ctx, 0, -1, "", "")
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+		return
+	}
+	c.Data["Flavors"] = flavors
+	c.Data["Keys"] = keys
 	c.HTML(200, "openshifts_new")
 }
 
@@ -169,11 +309,12 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	redirectTo := "../openshift"
+	redirectTo := "../openshifts"
 	name := c.QueryTrim("clustername")
 	domain := c.QueryTrim("basedomain")
 	haflagStr := c.QueryTrim("haflag")
 	nworkers := c.QueryInt("nworkers")
+	flavor := c.QueryInt64("flavor")
 	key := c.QueryInt64("key")
 	haflag := false
 	if haflagStr == "" || haflagStr == "no" {
@@ -181,7 +322,7 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	} else if haflagStr == "yes" {
 		haflag = true
 	}
-	_, err := openshiftAdmin.Create(name, domain, haflag, int32(nworkers), key)
+	_, err := openshiftAdmin.Create(c.Req.Context(), name, domain, haflag, int32(nworkers), flavor, key)
 	if err != nil {
 		c.HTML(500, "500")
 	}
