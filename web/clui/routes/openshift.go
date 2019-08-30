@@ -17,6 +17,7 @@ import (
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/go-macaron/session"
+	"github.com/spf13/viper"
 	macaron "gopkg.in/macaron.v1"
 )
 
@@ -109,11 +110,11 @@ func (a *OpenshiftAdmin) createSecgroup(ctx context.Context, name, cidr string, 
 	return
 }
 
-func (a *OpenshiftAdmin) Create(ctx context.Context, name, domain string, haflag bool, nworkers int32, flavor, key int64) (openshift *model.Openshift, err error) {
+func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret string, haflag bool, nworkers int32, flavor, key int64) (openshift *model.Openshift, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	openshift = &model.Openshift{
-		ClusterName: name,
+		ClusterName: cluster,
 		BaseDomain:  domain,
 		Haflag:      haflag,
 		WorkerNum:   nworkers,
@@ -125,7 +126,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, name, domain string, haflag
 		log.Println("DB failed to create openshift", err)
 		return
 	}
-	name = fmt.Sprintf("oc%d-sn", openshift.ID)
+	name := fmt.Sprintf("oc%d-sn", openshift.ID)
 	subnet, err := subnetAdmin.Create(ctx, name, "", "192.168.91.0", "255.255.255.0", "", "", "", "", "", memberShip.OrgID)
 	if err != nil {
 		log.Println("Failed to create openshift subnet", err)
@@ -142,14 +143,13 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, name, domain string, haflag
 	name = fmt.Sprintf("oc%d-lb", openshift.ID)
 	keyIDs := []int64{key}
 	sgIDs := []int64{secgroup.ID}
+	endpoint := viper.GetString("api.endpoint")
 	userdata := `#!/bin/bash
-
-oc_dir=/tmp/openshift
-mkdir $oc_dir
-mount /dev/sr1 $oc_dir
-cd $oc_dir
-./ocd.sh
+cd /opt
+yum -y install wget jq
 `
+	userdata = fmt.Sprintf("%s\nwget '%s/misc/openshift/ocd.sh'", userdata, endpoint)
+	userdata = fmt.Sprintf("%s\n./ocd.sh '%s' '%s' '%s' <<EOF\n%s\nEOF", userdata, cluster, domain, endpoint, secret)
 	instance, err := instanceAdmin.Create(ctx, 1, name, userdata, 1, flavor, subnet.ID, "", "", nil, keyIDs, sgIDs, -1)
 	if err != nil {
 		log.Println("Failed to create oc first instance", err)
@@ -313,6 +313,7 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	name := c.QueryTrim("clustername")
 	domain := c.QueryTrim("basedomain")
 	haflagStr := c.QueryTrim("haflag")
+	secret := c.QueryTrim("secret")
 	nworkers := c.QueryInt("nworkers")
 	flavor := c.QueryInt64("flavor")
 	key := c.QueryInt64("key")
@@ -322,7 +323,7 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	} else if haflagStr == "yes" {
 		haflag = true
 	}
-	_, err := openshiftAdmin.Create(c.Req.Context(), name, domain, haflag, int32(nworkers), flavor, key)
+	_, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, haflag, int32(nworkers), flavor, key)
 	if err != nil {
 		c.HTML(500, "500")
 	}
