@@ -48,7 +48,7 @@
     owner: "{{ item.owner }}"
   with_items:
     - {src: 'cloudlet.j2', dest: '/etc/sysconfig/cloudlet', owner: 'root'}
-  tags: [be_conf] 
+  tags: [be_env_conf] 
  
 - name: create cloudlet cloudrc local file
   template:

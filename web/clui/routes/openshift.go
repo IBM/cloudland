@@ -114,6 +114,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret str
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	openshift = &model.Openshift{
+		Model:       model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID},
 		ClusterName: cluster,
 		BaseDomain:  domain,
 		Haflag:      haflag,
@@ -146,19 +147,17 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret str
 	endpoint := viper.GetString("api.endpoint")
 	userdata := `#!/bin/bash
 cd /opt
-yum -y install wget jq
-`
-	userdata = fmt.Sprintf("%s\nwget '%s/misc/openshift/ocd.sh'", userdata, endpoint)
+exec >/tmp/ocd.log 2>&1
+sleep 15
+grep nameserver /etc/resolv.conf
+[ $? -ne 0 ] && echo nameserver 8.8.8.8 >> /etc/resolv.conf
+yum -y install epel-release
+yum -y install wget jq`
+	userdata = fmt.Sprintf("%s\nwget '%s/misc/openshift/ocd.sh'\nchmod +x ocd.sh", userdata, endpoint)
 	userdata = fmt.Sprintf("%s\n./ocd.sh '%s' '%s' '%s' <<EOF\n%s\nEOF", userdata, cluster, domain, endpoint, secret)
-	instance, err := instanceAdmin.Create(ctx, 1, name, userdata, 1, flavor, subnet.ID, "", "", nil, keyIDs, sgIDs, -1)
+	_, err = instanceAdmin.Create(ctx, 1, name, userdata, 1, flavor, subnet.ID, "192.168.91.9", "", nil, keyIDs, sgIDs, -1)
 	if err != nil {
 		log.Println("Failed to create oc first instance", err)
-		return
-	}
-	types := []string{"public", "private"}
-	_, err = floatingipAdmin.Create(ctx, instance.ID, types)
-	if err != nil {
-		log.Println("Failed to create lb floating ips", err)
 		return
 	}
 	return
@@ -184,7 +183,7 @@ func (a *OpenshiftAdmin) List(ctx context.Context, offset, limit int64, order, q
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
-		limit = 20
+		limit = 10
 	}
 
 	if order == "" {
@@ -200,7 +199,7 @@ func (a *OpenshiftAdmin) List(ctx context.Context, offset, limit int64, order, q
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Where(query).Find(&openshifts).Error; err != nil {
+	if err = db.Where(where).Where(query).Find(&openshifts).Error; err != nil {
 		return
 	}
 

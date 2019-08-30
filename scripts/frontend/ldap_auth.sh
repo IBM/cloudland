@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/bin/bash -xv
 
 cd `dirname $0`
 source ../cloudrc
 
 [ $# -lt 2 ] && echo "$0 <email> <password>" && exit -1
 
-exit 0
+exit 1
 
 email=$1
 echo $email | grep ".*@.*ibm.com" >/dev/null 2>&1

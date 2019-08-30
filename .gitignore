@@ -37,6 +37,7 @@ wget-log
 /deploy/hosts/hosts
 /web/clui/clui
 /deploy/*.retry
+/deploy/netconf.yml
 /web/clui/conf/config.toml
 .ssh
 /deploy/.ssh
