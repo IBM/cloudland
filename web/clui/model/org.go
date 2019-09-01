@@ -13,6 +13,7 @@ History:
 package model
 
 import (
+	"encoding/gob"
 	"fmt"
 
 	"github.com/IBM/cloudland/web/sca/dbs"
@@ -20,6 +21,10 @@ import (
 
 func init() {
 	dbs.AutoMigrate(&Member{}, &Organization{})
+	var role Role
+	gob.Register(role)
+	gob.Register(Member{})
+	gob.Register([]*Member{})
 }
 
 type Role int

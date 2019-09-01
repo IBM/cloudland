@@ -21,6 +21,7 @@ import (
 
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/go-macaron/session"
+	_ "github.com/go-macaron/session/postgres"
 	"github.com/spf13/viper"
 	"gopkg.in/macaron.v1"
 )
@@ -51,7 +52,11 @@ func Run() (err error) {
 
 func New() (m *macaron.Macaron) {
 	m = macaron.Classic()
-	m.Use(session.Sessioner())
+	m.Use(session.Sessioner(session.Options{
+		IDLength:       16,
+		Provider:       "postgres",
+		ProviderConfig: viper.GetString("db.uri"),
+	}))
 	m.Use(macaron.Renderer(
 		macaron.RenderOptions{
 			Funcs: []template.FuncMap{
@@ -158,6 +163,7 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 	log.Println(link)
 	c.Data["Link"] = link
 	if login, ok := store.Get("login").(string); ok {
+		// log.Println("$$$$$$$$$$$$$$$$$$", c.GetCookie("MacaronSession"))
 		memberShip := &MemberShip{
 			OrgID:    store.Get("oid").(int64),
 			UserID:   store.Get("uid").(int64),
