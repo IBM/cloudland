@@ -5,17 +5,20 @@ exit 0
 
 cd $(dirname $0)
 
-[ $# -lt 4 ] && echo "$0 <cluster_name> <base_domain> <external_address> <secret> [ha_flag]"
+[ $# -lt 5 ] && echo "$0 <cluster_name> <base_domain> <endpoint> <cookie> <ha_flag>"
 
 cluster_name=$1
 base_domain=$2
-ext_addr=$3
-secret=$4
+endpoint=$3
+cookie=$4
 haflag=$5
 seq_max=100
 
 function setup_dns()
 {
+    instID=$(cat /var/lib/cloud/data/instance-id | cut -d'-' -f2)
+    data=$(curl -XPOST $endpoint/floatingips/assign --cookie "$cookie" --form "instance=$instID")
+    public_ip=$(jq  -r .public_ip <<< $data)
     dns_server=$(grep '^namaserver' /etc/resolv.conf | tail -1 | awk '{print $2}')
     if [ -n "$dns_server" -o "$dns_server" = "127.0.0.1" ]; then
         dns_server=8.8.8.8
@@ -27,7 +30,7 @@ function setup_dns()
 no-resolv
 server=8.8.8.8
 local=/${cluster_name}.${base_domain}/
-address=/apps.${cluster_name}.${base_domain}/$ext_addr
+address=/apps.${cluster_name}.${base_domain}/$public_ip
 srv-host=_etcd-server-ssl._tcp.${cluster_name}.${base_domain},etcd-0.${cluster_name}.${base_domain},2380,0,10
 srv-host=_etcd-server-ssl._tcp.${cluster_name}.${base_domain},etcd-1.${cluster_name}.${base_domain},2380,0,10
 srv-host=_etcd-server-ssl._tcp.${cluster_name}.${base_domain},etcd-2.${cluster_name}.${base_domain},2380,0,10
