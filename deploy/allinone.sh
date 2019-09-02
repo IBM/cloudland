@@ -4,6 +4,7 @@ cland_root_dir=/opt/cloudland
 cd $(dirname $0)
 [ $PWD != "$cland_root_dir/deploy" ] && echo "Please clone cloudland into /opt" && exit 1
 net_conf=$cland_root_dir/deploy/netconf.yml
+[ ! -s "$net_conf" ] && cp ${net_conf}.example $net_conf
 
 sudo chown -R cland.cland $cland_root_dir
 mkdir $cland_root_dir/{bin,deploy,etc,lib6,log,run,sci,scripts,src,web,cache} $cland_root_dir/cache/{image,instance,meta,router,volume,xml} 2>/dev/null

@@ -214,7 +214,7 @@ func (a *GatewayAdmin) Update(ctx context.Context, id int64, name string, pubID,
 				continue
 			}
 			control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
-			command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_routing.sh '%d' '%s' '%d' 'soft' <<EOF\n%s\nEOF", gateway.ID, sub.Gateway, sub.Vlan, sub.Routes)
+			command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_gw_route.sh '%d' '%s' '%d' 'soft' <<EOF\n%s\nEOF", gateway.ID, sub.Gateway, sub.Vlan, sub.Routes)
 			err = hyperExecute(ctx, control, command)
 			if err != nil {
 				log.Println("Set gateway failed")
