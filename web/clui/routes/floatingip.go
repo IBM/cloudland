@@ -27,6 +27,12 @@ var (
 	floatingipView  = &FloatingIpView{}
 )
 
+type FloatingIps struct {
+	Instance  int64  `json:"instance"`
+	PublicIp  string `json:"public_ip"`
+	PrivateIp string `json:"private_ip"`
+}
+
 type FloatingIpAdmin struct{}
 type FloatingIpView struct{}
 
@@ -262,16 +268,9 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	redirectTo := "../floatingips"
-	instance := c.Query("instance")
-	ftype := c.Query("ftype")
-	instID, err := strconv.Atoi(instance)
-	if err != nil {
-		log.Println("Invalid interface ID", err)
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
-		return
-	}
-	permit, err = memberShip.CheckOwner(model.Writer, "instances", int64(instID))
+	instID := c.QueryInt64("instance")
+	ftype := c.QueryTrim("ftype")
+	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instID))
 	if !permit {
 		log.Println("Not authorized for this operation")
 		code := http.StatusUnauthorized
@@ -289,6 +288,43 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 	}
 	c.Redirect(redirectTo)
+}
+
+func (v *FloatingIpView) Assign(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	instID := c.QueryInt64("instance")
+	log.Println("$$$$$$$$$$$$$$$$$$$$$$$$$$$ instID = ", instID)
+	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	types := []string{"public", "private"}
+	floatingips, err := floatingipAdmin.Create(c.Req.Context(), int64(instID), types)
+	if err != nil {
+		log.Println("Failed to create floating ip", err)
+		code := http.StatusInternalServerError
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	fipsData := &FloatingIps{Instance: instID}
+	for _, fip := range floatingips {
+		if fip.Type == "public" {
+			fipsData.PublicIp = fip.FipAddress
+		} else if fip.Type == "private" {
+			fipsData.PrivateIp = fip.FipAddress
+		}
+	}
+	c.JSON(200, fipsData)
 }
 
 func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, gateway *model.Gateway, ftype string) (fipIface *model.Interface, err error) {
