@@ -1,8 +1,5 @@
 #!/bin/bash
 
-echo "$@" > /tmp/openshift
-exit 0
-
 cd $(dirname $0)
 
 [ $# -lt 5 ] && echo "$0 <cluster_name> <base_domain> <endpoint> <cookie> <ha_flag>"
@@ -18,7 +15,9 @@ function setup_dns()
 {
     instID=$(cat /var/lib/cloud/data/instance-id | cut -d'-' -f2)
     data=$(curl -XPOST $endpoint/floatingips/assign --cookie "$cookie" --form "instance=$instID")
+echo $data
     public_ip=$(jq  -r .public_ip <<< $data)
+    public_ip=${public_ip%%/*}
     dns_server=$(grep '^namaserver' /etc/resolv.conf | tail -1 | awk '{print $2}')
     if [ -n "$dns_server" -o "$dns_server" = "127.0.0.1" ]; then
         dns_server=8.8.8.8
@@ -56,7 +55,7 @@ EOF
 EOF
     done
 
-    echo "nameserver 127.0.0.1" > /etc/resolv.conf
+#    echo "nameserver 127.0.0.1" > /etc/resolv.conf
     systemctl restart dnsmasq
     systemctl enable dnsmasq
 }
@@ -213,10 +212,51 @@ function download_pkgs()
     yum install -y wget
     wget -O /usr/share/nginx/html/rhcos.raw.gz https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.1/latest/rhcos-4.1.0-x86_64-metal-bios.raw.gz
     cd /opt
-    wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux-4.1.11.tar.gz
-    wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-install-linux-4.1.11.tar.gz
-    tar -zxf openshift-client-linux-4.1.11.tar.gz
-    tar -zxf openshift-install-linux-4.1.11.tar.gz
+    wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.1.13/openshift-client-linux-4.1.13.tar.gz
+    wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.1.13/openshift-install-linux-4.1.13.tar.gz
+    tar -zxf openshift-client-linux-4.1.13.tar.gz
+    tar -zxf openshift-install-linux-4.1.13.tar.gz
+}
+
+function ignite_files()
+{
+    secret=$(cat)
+    ssh_key=$(cat /home/centos/.ssh/authorized_keys | tail -1)
+    rm -rf $cluster_name
+    mkdir $cluster_name
+    cd $cluster_name
+    cat > install-config.yaml <<EOF
+apiVersion: v1
+baseDomain: $base_domain
+compute:
+- hyperthreading: Enabled
+  name: worker
+  platform: {}
+  replicas: 0
+controlPlane:
+  hyperthreading: Enabled
+  name: master
+  platform: {}
+  replicas: 1
+metadata:
+  creationTimestamp: null
+  name: $cluster_name
+networking:
+  clusterNetwork:
+  - cidr: 10.128.0.0/14
+    hostPrefix: 23
+  networkType: OpenShiftSDN
+  serviceNetwork:
+  - 172.30.0.0/16
+platform:
+  none: {}
+pullSecret: '$secret'
+sshKey: '$ssh_key'
+EOF
+    ../openshift-install create ignition-configs
+    rm -rf /usr/share/nginx/html/$cluster_name
+    mkdir /usr/share/nginx/html/$cluster_name
+    cp *.ign /usr/share/nginx/html/$cluster_name
 }
 
 setenforce Permissive
@@ -225,3 +265,4 @@ setup_dns
 setup_lb
 setup_nginx
 download_pkgs
+ignite_files

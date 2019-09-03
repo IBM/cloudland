@@ -128,7 +128,8 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 		return
 	}
 	name := fmt.Sprintf("oc%d-sn", openshift.ID)
-	subnet, err := subnetAdmin.Create(ctx, name, "", "192.168.91.0", "255.255.255.0", "", "", "", "", "", memberShip.OrgID)
+	search := cluster + "." + domain
+	subnet, err := subnetAdmin.Create(ctx, name, "", "192.168.91.0", "255.255.255.0", "", "", "", "", "192.168.91.8", search, "", memberShip.OrgID)
 	if err != nil {
 		log.Println("Failed to create openshift subnet", err)
 		return
@@ -154,7 +155,7 @@ grep nameserver /etc/resolv.conf
 yum -y install epel-release
 yum -y install wget jq`
 	userdata = fmt.Sprintf("%s\nwget '%s/misc/openshift/ocd.sh'\nchmod +x ocd.sh", userdata, endpoint)
-	userdata = fmt.Sprintf("%s\n./ocd.sh '%s' '%s' '%s' '%s' <<EOF\n%s\nEOF", userdata, cluster, domain, endpoint, cookie, haflag, secret)
+	userdata = fmt.Sprintf("%s\n./ocd.sh '%s' '%s' '%s' '%s' <<EOF\n%s\nEOF", userdata, cluster, domain, endpoint, cookie, secret)
 	_, err = instanceAdmin.Create(ctx, 1, name, userdata, 1, flavor, subnet.ID, "192.168.91.9", "", nil, keyIDs, sgIDs, -1)
 	if err != nil {
 		log.Println("Failed to create oc first instance", err)

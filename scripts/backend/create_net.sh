@@ -3,7 +3,7 @@
 cd `dirname $0`
 source ../cloudrc
 
-[ $# -lt 6 ] && echo "$0 <vlan> <network> <netmask> <gateway> <dhcp_ip> [tag_id] [role]" && exit -1
+[ $# -lt 6 ] && echo "$0 <vlan> <network> <netmask> <gateway> <dhcp_ip> [tag_id] [role] [name_server] [domain_search]" && exit -1
 
 vlan=$1
 network=$2
@@ -12,6 +12,9 @@ gateway=${4%%/*}
 dhcp_ip=$5
 tag_id=$6
 role=$7
+name_server=$8
+domain_search=$9
+[ -z "$name_server" ] && name_server=$dns_server
 
 vm_br=br$vlan
 ./create_link.sh $vlan
@@ -45,7 +48,8 @@ if [ "$role" != "BOOT" ]; then
     else
         echo "tag:tag$vlan-$tag_id,option:router" >> $dns_opt
     fi
-[ -n "$dns_server" ] && echo "tag:tag$vlan-$tag_id,option:dns-server,$dns_server" >> $dns_opt
+    [ -n "$name_server" ] && echo "tag:tag$vlan-$tag_id,option:dns-server,$name_server" >> $dns_opt
+    [ -n "$domain_search" ] && echo "tag:tag$vlan-$tag_id,option:domain-search,$domain_search" >> $dns_opt
 fi
 
 dmasq_cmd=$(ps -ef | grep dnsmasq | grep "\<interface=ns-$vlan\>")

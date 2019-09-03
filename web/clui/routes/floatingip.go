@@ -45,6 +45,12 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID int64, types []stri
 		log.Println("DB failed to query instance, %v", err)
 		return
 	}
+	err = db.Where("instance_id = ?", instID).Find(&instance.FloatingIps).Error
+	if err == nil && instance.FloatingIps != nil && len(instance.FloatingIps) > 0 {
+		log.Println("DB failed to query instance, %v", err)
+		floatingips = instance.FloatingIps
+		return
+	}
 	iface := instance.Interfaces[0]
 	if iface.Address.Subnet.Router == 0 {
 		err = fmt.Errorf("Floating IP can not be created without a gateway")
@@ -300,7 +306,6 @@ func (v *FloatingIpView) Assign(c *macaron.Context, store session.Store) {
 		return
 	}
 	instID := c.QueryInt64("instance")
-	log.Println("$$$$$$$$$$$$$$$$$$$$$$$$$$$ instID = ", instID)
 	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instID))
 	if !permit {
 		log.Println("Not authorized for this operation")

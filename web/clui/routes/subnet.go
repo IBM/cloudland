@@ -155,7 +155,7 @@ func setRouting(ctx context.Context, gatewayID int64, subnet *model.Subnet, rout
 	return
 }
 
-func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, gateway, start, end, rtype string, routes string, owner int64) (subnet *model.Subnet, err error) {
+func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, gateway, start, end, rtype, dns, search string, routes string, owner int64) (subnet *model.Subnet, err error) {
 	memberShip := GetMemberShip(ctx)
 	if owner == 0 {
 		owner = memberShip.OrgID
@@ -214,16 +214,18 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 	}
 	gateway = fmt.Sprintf("%s/%d", gateway, preSize)
 	subnet = &model.Subnet{
-		Model:   model.Model{Creater: memberShip.UserID, Owner: owner},
-		Name:    name,
-		Network: first.String(),
-		Netmask: netmask,
-		Gateway: gateway,
-		Start:   start,
-		End:     end,
-		Vlan:    int64(vlanNo),
-		Type:    rtype,
-		Routes:  routes,
+		Model:        model.Model{Creater: memberShip.UserID, Owner: owner},
+		Name:         name,
+		Network:      first.String(),
+		Netmask:      netmask,
+		Gateway:      gateway,
+		Start:        start,
+		End:          end,
+		NameServer:   dns,
+		DomainSearch: search,
+		Vlan:         int64(vlanNo),
+		Type:         rtype,
+		Routes:       routes,
 	}
 	err = db.Create(subnet).Error
 	if err != nil {
@@ -278,7 +280,7 @@ func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subn
 			return
 		}
 		control := fmt.Sprintf("inter=")
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_net.sh '%d' '%s' '%s' '%s' '%s' '%d' 'FIRST'", netlink.Vlan, subnet.Network, subnet.Netmask, subnet.Gateway, dhcp1.Address.Address, subnet.ID)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_net.sh '%d' '%s' '%s' '%s' '%s' '%d' 'FIRST' '%s' '%s'", netlink.Vlan, subnet.Network, subnet.Netmask, subnet.Gateway, dhcp1.Address.Address, subnet.ID, subnet.NameServer, subnet.DomainSearch)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Failed to create first dhcp", err)
@@ -293,7 +295,7 @@ func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subn
 			return
 		}
 		control := fmt.Sprintf("inter=")
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_net.sh '%d' '%s' '%s' '%s' '%s' '%d' 'SECOND'", netlink.Vlan, subnet.Network, subnet.Netmask, subnet.Gateway, dhcp2.Address.Address, subnet.ID)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_net.sh '%d' '%s' '%s' '%s' '%s' '%d' 'SECOND' '%s' '%s'", netlink.Vlan, subnet.Network, subnet.Netmask, subnet.Gateway, dhcp2.Address.Address, subnet.ID, subnet.NameServer, subnet.DomainSearch)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Failed to create second dhcp", err)
@@ -554,7 +556,7 @@ func (v *SubnetView) Edit(c *macaron.Context, store session.Store) {
 	c.HTML(200, "subnets_patch")
 }
 
-func (v *SubnetView) checkRoutes(network, netmask, gateway, start, end, routes string, id int64) (routeJson string, err error) {
+func (v *SubnetView) checkRoutes(network, netmask, gateway, start, end, dns, routes string, id int64) (routeJson string, err error) {
 	if id > 0 {
 		db := DB()
 		subnet := &model.Subnet{Model: model.Model{ID: id}}
@@ -583,6 +585,11 @@ func (v *SubnetView) checkRoutes(network, netmask, gateway, start, end, routes s
 	if end != "" && !inNet.Contains(net.ParseIP(end)) {
 		log.Println("End not belonging to network/netmask")
 		err = fmt.Errorf("End not belonging to network/netmask")
+		return
+	}
+	if dns != "" && net.ParseIP(dns) == nil {
+		log.Println("Name server is not an valid IP address")
+		err = fmt.Errorf("Name server is not an valid IP address")
 		return
 	}
 	sRoutes := []*StaticRoute{}
@@ -657,7 +664,7 @@ func (v *SubnetView) Patch(c *macaron.Context, store session.Store) {
 	start := c.QueryTrim("start")
 	end := c.QueryTrim("end")
 	routes := c.QueryTrim("routes")
-	routeJson, err := v.checkRoutes(network, netmask, gateway, start, end, routes, id)
+	routeJson, err := v.checkRoutes(network, netmask, gateway, start, end, "", routes, id)
 	if err != nil {
 		code := http.StatusBadRequest
 		c.Error(code, http.StatusText(code))
@@ -691,13 +698,15 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 	routes := c.QueryTrim("routes")
 	start := c.QueryTrim("start")
 	end := c.QueryTrim("end")
-	routeJson, err := v.checkRoutes(network, netmask, gateway, start, end, routes, 0)
+	dns := c.QueryTrim("dns")
+	search := c.QueryTrim("search")
+	routeJson, err := v.checkRoutes(network, netmask, gateway, start, end, dns, routes, 0)
 	if err != nil {
 		code := http.StatusBadRequest
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	_, err = subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, gateway, start, end, rtype, routeJson, memberShip.OrgID)
+	_, err = subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, gateway, start, end, rtype, dns, search, routeJson, memberShip.OrgID)
 	if err != nil {
 		log.Println("Create subnet failed, %v", err)
 		c.Data["ErrorMsg"] = err.Error()

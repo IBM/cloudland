@@ -12,17 +12,19 @@ import (
 
 type Subnet struct {
 	Model
-	Name    string `gorm:"type:varchar(32)"`
-	Network string `gorm:"type:varchar(64)"`
-	Netmask string `gorm:"type:varchar(64)"`
-	Gateway string `gorm:"type:varchar(64)"`
-	Start   string `gorm:"type:varchar(64)"`
-	End     string `gorm:"type:varchar(64)"`
-	Vlan    int64
-	Netlink *Network `gorm:"foreignkey:Vlan;AssociationForeignKey:Vlan"`
-	Type    string   `gorm:"type:varchar(20);default:'internal'"`
-	Router  int64
-	Routes  string `gorm:"type:varchar(256)"`
+	Name         string `gorm:"type:varchar(32)"`
+	Network      string `gorm:"type:varchar(64)"`
+	Netmask      string `gorm:"type:varchar(64)"`
+	Gateway      string `gorm:"type:varchar(64)"`
+	Start        string `gorm:"type:varchar(64)"`
+	End          string `gorm:"type:varchar(64)"`
+	NameServer   string `gorm:"type:varchar(64)"`
+	DomainSearch string `gorm:"type:varchar(256)"`
+	Vlan         int64
+	Netlink      *Network `gorm:"foreignkey:Vlan;AssociationForeignKey:Vlan"`
+	Type         string   `gorm:"type:varchar(20);default:'internal'"`
+	Router       int64
+	Routes       string `gorm:"type:varchar(256)"`
 }
 
 type Address struct {
