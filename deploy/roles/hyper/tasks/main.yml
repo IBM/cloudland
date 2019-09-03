@@ -69,6 +69,7 @@
     - {src: 'cloudlet.service', dest: '/lib/systemd/system', owner: 'root'}
     - {src: 'scid.service', dest: '/lib/systemd/system', owner: 'root'}
     - {src: 'recover_onboot.service', dest: '/lib/systemd/system', owner: 'root'}
+    - {src: 'kvm-nested.conf', dest: '/etc/modprobe.d', owner: 'root'}
   tags: [be_srv]
 
 - name: start cloudlet services
