@@ -13,10 +13,7 @@ nic_name=tap$(echo $vm_mac | cut -d: -f4- | tr -d :)
 vm_br=br$vlan
 ./create_link.sh $vlan
 state=$(virsh dominfo $vm_ID | grep State | cut -d: -f2 | xargs)
-if [ "$state" = "running" ]; then
-    virsh attach-interface $vm_ID bridge $vm_br --model virtio --mac $vm_mac --target $nic_name --live --config
-else
-    virsh attach-interface $vm_ID bridge $vm_br --model virtio --mac $vm_mac --target $nic_name --config
-fi 
+virsh attach-interface $vm_ID bridge $vm_br --model virtio --mac $vm_mac --target $nic_name --live
+virsh attach-interface $vm_ID bridge $vm_br --model virtio --mac $vm_mac --target $nic_name --config
 ./create_sg_chain.sh $nic_name $vm_ip $vm_mac
 ./apply_sg_rule.sh $nic_name

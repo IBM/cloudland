@@ -55,7 +55,7 @@ EOF
 EOF
     done
 
-#    echo "nameserver 127.0.0.1" > /etc/resolv.conf
+    echo "nameserver 127.0.0.1" > /etc/resolv.conf
     systemctl restart dnsmasq
     systemctl enable dnsmasq
 }
@@ -254,9 +254,10 @@ pullSecret: '$secret'
 sshKey: '$ssh_key'
 EOF
     ../openshift-install create ignition-configs
-    rm -rf /usr/share/nginx/html/$cluster_name
-    mkdir /usr/share/nginx/html/$cluster_name
-    cp *.ign /usr/share/nginx/html/$cluster_name
+    ignite_dir=/usr/share/nginx/html/ignition
+    rm -rf $ignite_dir
+    mkdir $ignite_dir
+    cp *.ign $ignite_dir
 }
 
 setenforce Permissive

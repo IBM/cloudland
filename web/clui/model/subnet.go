@@ -20,6 +20,7 @@ type Subnet struct {
 	End          string `gorm:"type:varchar(64)"`
 	NameServer   string `gorm:"type:varchar(64)"`
 	DomainSearch string `gorm:"type:varchar(256)"`
+	ClusterID    int64
 	Vlan         int64
 	Netlink      *Network `gorm:"foreignkey:Vlan;AssociationForeignKey:Vlan"`
 	Type         string   `gorm:"type:varchar(20);default:'internal'"`

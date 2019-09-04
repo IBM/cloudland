@@ -14,7 +14,9 @@ type Openshift struct {
 	Model
 	ClusterName string      `gorm:"type:varchar(128)"`
 	BaseDomain  string      `gorm:"type:varchar(256)"`
+	Status      string      `gorm:"type:varchar(32)"`
 	Instances   []*Instance `gorm:"foreignkey:ClusterID"`
+	Subnet      *Subnet     `gorm:"foreignkey:ClusterID"`
 	Haflag      bool
 	WorkerNum   int32
 	Flavor      int64
