@@ -15,12 +15,12 @@ int_ip=${4%/*}
 
 if [ "$ext_type" = "public" ]; then
     ext_dev=te-$ID
-    ip netns exec $router iptables -t nat -D PREROUTING -d $ext_ip -i $ext_dev -j DNAT --to-destination $int_ip
-    ip netns exec $router iptables -t nat -D POSTROUTING -s $int_ip ! -d 10.0.0.0/8 -o $ext_dev -j SNAT --to-source $ext_ip
+    ip netns exec $router iptables -t nat -D PREROUTING -d $ext_ip -j DNAT --to-destination $int_ip
+    ip netns exec $router iptables -t nat -D POSTROUTING -s $int_ip ! -d 10.0.0.0/8 -j SNAT --to-source $ext_ip
 elif [ "$ext_type" = "private" ]; then
     ext_dev=ti-$ID
-    ip netns exec $router iptables -t nat -D PREROUTING -d $ext_ip -i $ext_dev -j DNAT --to-destination $int_ip
-    ip netns exec $router iptables -t nat -D POSTROUTING -s $int_ip -d 10.0.0.0/8 -o $ext_dev -j SNAT --to-source $ext_ip
+    ip netns exec $router iptables -t nat -D PREROUTING -d $ext_ip -j DNAT --to-destination $int_ip
+    ip netns exec $router iptables -t nat -D POSTROUTING -s $int_ip -d 10.0.0.0/8 -j SNAT --to-source $ext_ip
 fi
 
 router_dir=/opt/cloudland/cache/router/$router

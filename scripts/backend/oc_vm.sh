@@ -3,13 +3,13 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 5 ] && die "$0 <vm_ID> <cpu> <memory> <disk_size> <role>"
+[ $# -lt 5 ] && die "$0 <vm_ID> <cpu> <memory> <disk_size> <hostname>"
 
 vm_ID=inst-$1
 vm_cpu=$2
 vm_mem=$3
 disk_size=$4
-role=$5
+role=${5%%-*}
 vm_stat=error
 vm_vnc=""
 
@@ -35,7 +35,7 @@ template=$template_dir/openshift.xml
 cp $template $vm_xml
 sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_disk#g; s/VNC_PASS/$vnc_pass/g; s/ROLE_IGN/${role}.ign/g;" $vm_xml
 state=error
-virsh create $vm_xml --paused
+virsh define $vm_xml
 vlans=$(jq .vlans <<< $metadata)
 nvlan=$(jq length <<< $vlans)
 i=0
@@ -46,7 +46,7 @@ while [ $i -lt $nvlan ]; do
     jq .security <<< $metadata | ./attach_nic.sh $1 $vlan $ip $mac 
     let i=$i+1
 done
-virsh resume $vm_ID
+virsh start $vm_ID
 count=0
 while [ $count -le 100 ]; do
     sleep 5
@@ -55,13 +55,17 @@ while [ $count -le 100 ]; do
     let count=$count+1
 done
 if [ $? -eq 0 ]; then
-    state=running
-    virsh dumpxml --security-info $vm_ID 2>/dev/null | sed "s/autoport='yes'/autoport='no'/g" > ${vm_xml}.dump
-    sed "/initrd/d;/kernel/d;/cmdline/d" ${vm_xml}.dump
+    virsh dumpxml $vm_ID 2>/dev/null > ${vm_xml}.dump
     mv -f ${vm_xml}.dump $vm_xml
+    virsh undefine $vm_ID
+    sed -i "/initrd/d;/kernel/d;/cmdline/d;s/<on_reboot>destroy/<on_reboot>restart/;s/<on_crash>destroy/<on_crash>restart/" ${vm_xml}
+    virsh define $vm_xml
+    virsh start $vm_ID
+    virsh dumpxml --security-info $vm_ID 2>/dev/null | sed "s/autoport='yes'/autoport='no'/g" > ${vm_xml}.dump
+    mv -f ${vm_xml}.dump $vm_xml
+    [ $? -eq 0 ] && state=running
     vnc_port=$(xmllint --xpath 'string(/domain/devices/graphics/@port)' $vm_xml)
     vm_vnc="$vnc_port:$vnc_pass"
-    virsh define $vm_xml
     virsh autostart $vm_ID
 fi
 echo "|:-COMMAND-:| launch_vm.sh '$1' '$state' '$SCI_CLIENT_ID' 'unknown'"

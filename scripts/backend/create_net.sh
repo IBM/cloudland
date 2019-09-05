@@ -50,16 +50,20 @@ if [ "$role" != "BOOT" ]; then
     fi
     [ -n "$name_server" ] && echo "tag:tag$vlan-$tag_id,option:dns-server,$name_server" >> $dns_opt
     [ -n "$domain_search" ] && echo "tag:tag$vlan-$tag_id,option:domain-search,$domain_search" >> $dns_opt
+    if [ "$vlan" -gt 4095 ]; then
+        let mtu=$(ip -o link show $vxlan_interface | cut -d' ' -f5)-50
+        [ "$mtu" -ge 1400 ] && mtu_args="--dhcp-option-force=26,$mtu"
+    fi
 fi
 
 dmasq_cmd=$(ps -ef | grep dnsmasq | grep "\<interface=ns-$vlan\>")
 dns_pid=$(echo "$dmasq_cmd" | awk '{print $2}')
 if [ -z "$dns_pid" ]; then
-    cmd="/usr/sbin/dnsmasq --no-hosts --cache-size=0 --no-resolv --strict-order --bind-interfaces --interface=ns-$vlan --except-interface=lo --pid-file=$pid_file --dhcp-hostsfile=$dns_host --dhcp-optsfile=$dns_opt --leasefile-ro --dhcp-ignore='tag:!known' --dhcp-range=set:tag$vlan-$tag_id,$network,static,86400s"
+    cmd="/usr/sbin/dnsmasq --no-hosts --cache-size=0 --no-resolv --strict-order --bind-interfaces --interface=ns-$vlan --except-interface=lo --pid-file=$pid_file --dhcp-hostsfile=$dns_host --dhcp-optsfile=$dns_opt $mtu_args --leasefile-ro --dhcp-ignore='tag:!known' --dhcp-range=set:tag$vlan-$tag_id,$network,static,86400s"
 else
     kill $dns_pid || kill -9 $dns_pid
     exist_ranges=`echo "$dmasq_cmd" | tr -s ' ' '\n' | grep "\-\-dhcp-range"`
-    cmd="/usr/sbin/dnsmasq --no-hosts --cache-size=0 --no-resolv --strict-order --bind-interfaces --interface=ns-$vlan --except-interface=lo --pid-file=$pid_file --dhcp-hostsfile=$dns_host --dhcp-optsfile=$dns_opt --leasefile-ro --dhcp-ignore='tag:!known' --dhcp-range=set:tag$vlan-$tag_id,$network,static,86400s $exist_ranges"
+    cmd="/usr/sbin/dnsmasq --no-hosts --cache-size=0 --no-resolv --strict-order --bind-interfaces --interface=ns-$vlan --except-interface=lo --pid-file=$pid_file --dhcp-hostsfile=$dns_host --dhcp-optsfile=$dns_opt $mtu_args  --leasefile-ro --dhcp-ignore='tag:!known' --dhcp-range=set:tag$vlan-$tag_id,$network,static,86400s $exist_ranges"
 fi
 ip netns exec $nspace $cmd
 echo "|:-COMMAND-:| $(basename $0) '$vlan' '$SCI_CLIENT_ID' '$role'"

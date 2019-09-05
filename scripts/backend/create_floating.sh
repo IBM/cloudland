@@ -23,20 +23,20 @@ dest_nets=$(grep 'add -net' $notify_sh | awk '{print $8}')
 
 if [ "$ext_type" = "public" ]; then
     ext_dev=te-$ID
-    ip netns exec $router iptables -t nat -I PREROUTING -d $ext_ip -i $ext_dev -j DNAT --to-destination $int_ip
+    ip netns exec $router iptables -t nat -I PREROUTING -d $ext_ip -j DNAT --to-destination $int_ip
     for net in $dest_nets; do
         ipcalc -c $net
         if [ $? -eq 0 ]; then
-            ip netns exec $router iptables -t nat -I POSTROUTING -s $int_ip ! -d $net -o $ext_dev -j SNAT --to-source $ext_ip
+            ip netns exec $router iptables -t nat -I POSTROUTING -s $int_ip ! -d $net -j SNAT --to-source $ext_ip
         fi
     done
 elif [ "$ext_type" = "private" ]; then
     ext_dev=ti-$ID
-    ip netns exec $router iptables -t nat -I PREROUTING -d $ext_ip -i $ext_dev -j DNAT --to-destination $int_ip
+    ip netns exec $router iptables -t nat -I PREROUTING -d $ext_ip -j DNAT --to-destination $int_ip
     for net in $dest_nets; do
         ipcalc -c $net
         if [ $? -eq 0 ]; then
-            ip netns exec $router iptables -t nat -I POSTROUTING -s $int_ip -d $net -o $ext_dev -j SNAT --to-source $ext_ip
+            ip netns exec $router iptables -t nat -I POSTROUTING -s $int_ip -d $net -j SNAT --to-source $ext_ip
         fi
     done
 fi

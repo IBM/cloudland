@@ -17,7 +17,6 @@ import (
 
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/sca/dbs"
-	"github.com/apparentlymart/go-cidr/cidr"
 	"github.com/go-macaron/session"
 	"github.com/spf13/viper"
 	macaron "gopkg.in/macaron.v1"
@@ -112,7 +111,7 @@ func (a *OpenshiftAdmin) createSecgroup(ctx context.Context, name, cidr string, 
 	return
 }
 
-func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, role string, count int) (instances []*model.Instance, err error) {
+func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr string) (instance *model.Instance, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	openshift := &model.Openshift{Model: model.Model{ID: id}}
@@ -131,6 +130,16 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, role string, coun
 		err = fmt.Errorf("Cluster has no built-in subnet")
 		return
 	}
+	inNet := &net.IPNet{
+		IP:   net.ParseIP(subnet.Network),
+		Mask: net.IPMask(net.ParseIP(subnet.Netmask).To4()),
+	}
+	primaryIP := net.ParseIP(ipaddr)
+	if !inNet.Contains(primaryIP) {
+		log.Println("Invalid IP address or not belonging to subnet")
+		err = fmt.Errorf("Invalid IP address or not belonging to subnet")
+		return
+	}
 	secgroup := &model.SecurityGroup{Model: model.Model{Owner: memberShip.OrgID}, Name: "openshift"}
 	err = db.Where(secgroup).Take(secgroup).Error
 	if err != nil {
@@ -138,50 +147,24 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, role string, coun
 		return
 	}
 	secGroups := []*model.SecurityGroup{secgroup}
-	primaryIP := net.ParseIP(subnet.Network)
-	if role == "bootstrap" {
-		for i := 0; i < 9; i++ {
-			primaryIP = cidr.Inc(primaryIP)
-		}
-	} else if role == "master" {
-		for i := 0; i < 10; i++ {
-			primaryIP = cidr.Inc(primaryIP)
-		}
-	} else if role == "worker" {
-		for i := 0; i < 20; i++ {
-			primaryIP = cidr.Inc(primaryIP)
-		}
-	} else {
-		log.Println("Undefined role")
-		err = fmt.Errorf("Undefined role %s", role)
+	instance = &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, FlavorID: openshift.Flavor, Status: "pending"}
+	err = db.Create(instance).Error
+	if err != nil {
+		log.Println("DB create instance failed", err)
 		return
 	}
-	hostname := role
-	for i := 0; i < count; i++ {
-		if hostname != "bootstrap" {
-			hostname = fmt.Sprintf("%s-%d", role, i)
-		}
-		instance := &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, FlavorID: openshift.Flavor, Status: "pending"}
-		err = db.Create(instance).Error
-		if err != nil {
-			log.Println("DB create instance failed", err)
-			return
-		}
-		metadata := ""
-		_, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, primaryIP.String(), "", nil, nil, instance, "", secGroups)
-		if err != nil {
-			log.Println("Build instance metadata failed", err)
-			return
-		}
-		control := fmt.Sprintf("inter= cpu=%d memory=%d disk=%d network=%d", flavor.Cpu, flavor.Memory*1024, flavor.Disk*1024*1024, 0)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/oc_vm.sh '%d' '%d' '%d' '%d' '%s'<<EOF\n%s\nEOF", instance.ID, flavor.Cpu, flavor.Memory, flavor.Disk, role, metadata)
-		err = hyperExecute(ctx, control, command)
-		if err != nil {
-			log.Println("Launch vm command execution failed", err)
-			return
-		}
-		primaryIP = cidr.Inc(primaryIP)
-		instances = append(instances, instance)
+	metadata := ""
+	_, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, primaryIP.String(), "", nil, nil, instance, "", secGroups)
+	if err != nil {
+		log.Println("Build instance metadata failed", err)
+		return
+	}
+	control := fmt.Sprintf("inter= cpu=%d memory=%d disk=%d network=%d", flavor.Cpu, flavor.Memory*1024, flavor.Disk*1024*1024, 0)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/oc_vm.sh '%d' '%d' '%d' '%d' '%s'<<EOF\n%s\nEOF", instance.ID, flavor.Cpu, flavor.Memory, flavor.Disk, hostname, metadata)
+	err = hyperExecute(ctx, control, command)
+	if err != nil {
+		log.Println("Launch vm command execution failed", err)
+		return
 	}
 	return
 }
@@ -233,7 +216,7 @@ grep nameserver /etc/resolv.conf
 yum -y install epel-release
 yum -y install wget jq`
 	userdata = fmt.Sprintf("%s\nwget '%s/misc/openshift/ocd.sh'\nchmod +x ocd.sh", userdata, endpoint)
-	userdata = fmt.Sprintf("%s\n./ocd.sh '%s' '%s' '%s' '%s' <<EOF\n%s\nEOF", userdata, cluster, domain, endpoint, cookie, secret)
+	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' <<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, secret)
 	_, err = instanceAdmin.Create(ctx, 1, name, userdata, 1, flavor, subnet.ID, openshift.ID, lbIP, "", nil, keyIDs, sgIDs, -1)
 	if err != nil {
 		log.Println("Failed to create oc first instance", err)
@@ -388,15 +371,15 @@ func (v *OpenshiftView) Launch(c *macaron.Context, store session.Store) {
 		return
 	}
 	id := c.ParamsInt64("id")
-	role := c.QueryTrim("role")
-	count := c.QueryInt("count")
-	instances, err := openshiftAdmin.Launch(c.Req.Context(), id, role, count)
+	hostname := c.QueryTrim("hostname")
+	ipaddr := c.QueryTrim("ipaddr")
+	instance, err := openshiftAdmin.Launch(c.Req.Context(), id, hostname, ipaddr)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
 			"error": err.Error(),
 		})
 	}
-	c.JSON(200, instances)
+	c.JSON(200, instance)
 }
 
 func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {

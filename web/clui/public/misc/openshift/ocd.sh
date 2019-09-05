@@ -2,20 +2,20 @@
 
 cd $(dirname $0)
 
-[ $# -lt 5 ] && echo "$0 <cluster_name> <base_domain> <endpoint> <cookie> <ha_flag>"
+[ $# -lt 5 ] && echo "$0 <cluster_id> <cluster_name> <base_domain> <endpoint> <cookie> <ha_flag>" && exit 1
 
-cluster_name=$1
-base_domain=$2
-endpoint=$3
-cookie=$4
-haflag=$5
+cluster_id=$1
+cluster_name=$2
+base_domain=$3
+endpoint=$4
+cookie=$5
+haflag=$6
 seq_max=100
 
 function setup_dns()
 {
     instID=$(cat /var/lib/cloud/data/instance-id | cut -d'-' -f2)
-    data=$(curl -XPOST $endpoint/floatingips/assign --cookie "$cookie" --form "instance=$instID")
-echo $data
+    data=$(curl -XPOST $endpoint/floatingips/assign --cookie "$cookie" --data "instance=$instID")
     public_ip=$(jq  -r .public_ip <<< $data)
     public_ip=${public_ip%%/*}
     dns_server=$(grep '^namaserver' /etc/resolv.conf | tail -1 | awk '{print $2}')
@@ -41,8 +41,8 @@ conf-dir=/etc/dnsmasq.d,.rpmnew,.rpmsave,.rpmorig
 EOF
 
     cat > /etc/dnsmasq.openshift.addnhosts <<EOF
-192.168.91.8 dns.${cluster_name}.${base_domain}
-192.168.91.8 loadbalancer.${cluster_name}.${base_domain}  api.${cluster_name}.${base_domain}  api-int.${cluster_name}.${base_domain}
+$public_ip dns.${cluster_name}.${base_domain}
+$public_ip loadbalancer.${cluster_name}.${base_domain}  api.${cluster_name}.${base_domain}  api-int.${cluster_name}.${base_domain}
 192.168.91.9 bootstrap.${cluster_name}.${base_domain}
 192.168.91.10 master-0.${cluster_name}.${base_domain}  etcd-0.${cluster_name}.${base_domain}
 192.168.91.11 master-1.${cluster_name}.${base_domain}  etcd-1.${cluster_name}.${base_domain}
@@ -237,7 +237,7 @@ controlPlane:
   hyperthreading: Enabled
   name: master
   platform: {}
-  replicas: 1
+  replicas: 3
 metadata:
   creationTimestamp: null
   name: $cluster_name
@@ -260,6 +260,27 @@ EOF
     cp *.ign $ignite_dir
 }
 
+function launch_cluster()
+{
+    cd /opt/$cluster_name
+    curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=bootstrap;ipaddr=192.168.91.9"
+    curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-0;ipaddr=192.168.91.10"
+    curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-1;ipaddr=192.168.91.11"
+    curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-2;ipaddr=192.168.91.12"
+    ../openshift-install wait-for bootstrap-complete --log-level debug
+    curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-0;ipaddr=192.168.91.20"
+    curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-1;ipaddr=192.168.91.21"
+    export KUBECONFIG=auth/kubeconfig
+    ../oc get csr -ojson | jq -r '.items[] | select(.status == {} ) | .metadata.name' | xargs oc adm certificate approve
+    count=$(../oc get nodes | grep -c Ready)
+    [ "$count" -ge 5 ] && ../oc patch configs.imageregistry.operator.openshift.io cluster --type merge --patch '{"spec":{"storage":{"emptyDir":{}}}}'
+    while true; do
+        ../oc get clusteroperators | awk '{print $3}' | grep False
+        [ $? -ne 0 ] && break
+    done
+    ../openshift-install wait-for install-complete
+}
+
 setenforce Permissive
 sed -i 's/^SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
 setup_dns
@@ -267,3 +288,4 @@ setup_lb
 setup_nginx
 download_pkgs
 ignite_files
+launch_cluster
