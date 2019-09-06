@@ -147,7 +147,7 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 		return
 	}
 	secGroups := []*model.SecurityGroup{secgroup}
-	instance = &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, FlavorID: openshift.Flavor, Status: "pending"}
+	instance = &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, FlavorID: openshift.Flavor, Status: "pending", ClusterID: id}
 	err = db.Create(instance).Error
 	if err != nil {
 		log.Println("DB create instance failed", err)
@@ -225,7 +225,7 @@ yum -y install wget jq`
 	return
 }
 
-func (a *OpenshiftAdmin) Delete(id int64) (err error) {
+func (a *OpenshiftAdmin) Delete(ctx context.Context, id int64) (err error) {
 	db := DB()
 	db = db.Begin()
 	defer func() {
@@ -235,6 +235,34 @@ func (a *OpenshiftAdmin) Delete(id int64) (err error) {
 			db.Rollback()
 		}
 	}()
+	openshift := &model.Openshift{Model: model.Model{ID: id}}
+	err = db.Set("gorm:auto_preload", true).Take(openshift).Error
+	if err != nil {
+		log.Println("Failed to query openshift cluster", err)
+		return
+	}
+	for _, inst := range openshift.Instances {
+		err = instanceAdmin.Delete(ctx, inst.ID)
+		if err != nil {
+			log.Println("Failed to delete instance", err)
+			return
+		}
+	}
+	subnet := openshift.Subnet
+	if subnet != nil {
+		if subnet.Router != 0 {
+			err = gatewayAdmin.Delete(ctx, subnet.Router)
+			if err != nil {
+				log.Println("Failed to delete gateway", err)
+				return
+			}
+		}
+		err = subnetAdmin.Delete(ctx, subnet.ID)
+		if err != nil {
+			log.Println("Failed to delete subnet", err)
+			return
+		}
+	}
 	if err = db.Delete(&model.Openshift{Model: model.Model{ID: id}}).Error; err != nil {
 		return
 	}
@@ -321,7 +349,7 @@ func (v *OpenshiftView) Delete(c *macaron.Context, store session.Store) (err err
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	err = openshiftAdmin.Delete(int64(openshiftID))
+	err = openshiftAdmin.Delete(c.Req.Context(), int64(openshiftID))
 	if err != nil {
 		code := http.StatusInternalServerError
 		c.Error(code, http.StatusText(code))

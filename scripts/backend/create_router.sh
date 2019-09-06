@@ -25,7 +25,7 @@ suffix=$1
 ./create_veth.sh $router ext-$suffix te-$suffix
 if [ -n "$ext_ip" ]; then
     eip=${ext_ip%/*}
-    ip netns exec $router iptables -t nat -A POSTROUTING ! -d 10.0.0.0/8 -j SNAT --to-source $eip
+    ip netns exec $router iptables -t nat -A POSTROUTING ! -s 169.254.169.0/24 ! -d 10.0.0.0/8 -j SNAT --to-source $eip
 fi
 apply_vnic -I ext-$suffix
 

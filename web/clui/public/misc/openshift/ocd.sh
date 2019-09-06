@@ -209,7 +209,7 @@ EOF
 
 function download_pkgs()
 {
-    yum install -y wget
+    yum install -y wget nc jq
     wget -O /usr/share/nginx/html/rhcos.raw.gz https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.1/latest/rhcos-4.1.0-x86_64-metal-bios.raw.gz
     cd /opt
     wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.1.13/openshift-client-linux-4.1.13.tar.gz
@@ -264,17 +264,28 @@ function launch_cluster()
 {
     cd /opt/$cluster_name
     curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=bootstrap;ipaddr=192.168.91.9"
+    while true; do
+        sleep 5
+        nc -zv 192.168.91.9 6443
+        [ $? -eq 0 ] && break
+    done
     curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-0;ipaddr=192.168.91.10"
     curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-1;ipaddr=192.168.91.11"
     curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-2;ipaddr=192.168.91.12"
     ../openshift-install wait-for bootstrap-complete --log-level debug
     curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-0;ipaddr=192.168.91.20"
     curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-1;ipaddr=192.168.91.21"
+    sleep 60
     export KUBECONFIG=auth/kubeconfig
-    ../oc get csr -ojson | jq -r '.items[] | select(.status == {} ) | .metadata.name' | xargs oc adm certificate approve
-    count=$(../oc get nodes | grep -c Ready)
-    [ "$count" -ge 5 ] && ../oc patch configs.imageregistry.operator.openshift.io cluster --type merge --patch '{"spec":{"storage":{"emptyDir":{}}}}'
     while true; do
+        # ../oc get csr -ojson | jq -r '.items[] | select(.status == {} ) | .metadata.name' | xargs oc adm certificate approve
+        sleep 5
+        count=$(../oc get nodes | grep -c Ready)
+        [ "$count" -ge 5 ] && break
+    done
+    ../oc patch configs.imageregistry.operator.openshift.io cluster --type merge --patch '{"spec":{"storage":{"emptyDir":{}}}}'
+    while true; do
+        sleep 5
         ../oc get clusteroperators | awk '{print $3}' | grep False
         [ $? -ne 0 ] && break
     done
