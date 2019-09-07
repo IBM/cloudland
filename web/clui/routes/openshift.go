@@ -169,7 +169,7 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 	return
 }
 
-func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie string, haflag bool, nworkers int32, flavor, key int64) (openshift *model.Openshift, err error) {
+func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie, haflag string, nworkers int32, flavor, key int64) (openshift *model.Openshift, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	openshift = &model.Openshift{
@@ -216,7 +216,7 @@ grep nameserver /etc/resolv.conf
 yum -y install epel-release
 yum -y install wget jq`
 	userdata = fmt.Sprintf("%s\nwget '%s/misc/openshift/ocd.sh'\nchmod +x ocd.sh", userdata, endpoint)
-	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' <<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, secret)
+	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' '%s' '%d'<<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, haflag, nworkers, secret)
 	_, err = instanceAdmin.Create(ctx, 1, name, userdata, 1, flavor, subnet.ID, openshift.ID, lbIP, "", nil, keyIDs, sgIDs, -1)
 	if err != nil {
 		log.Println("Failed to create oc first instance", err)
@@ -422,17 +422,11 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	redirectTo := "../openshifts"
 	name := c.QueryTrim("clustername")
 	domain := c.QueryTrim("basedomain")
-	haflagStr := c.QueryTrim("haflag")
+	haflag := c.QueryTrim("haflag")
 	secret := c.QueryTrim("secret")
 	nworkers := c.QueryInt("nworkers")
 	flavor := c.QueryInt64("flavor")
 	key := c.QueryInt64("key")
-	haflag := false
-	if haflagStr == "" || haflagStr == "no" {
-		haflag = false
-	} else if haflagStr == "yes" {
-		haflag = true
-	}
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
 	_, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, int32(nworkers), flavor, key)
 	if err != nil {

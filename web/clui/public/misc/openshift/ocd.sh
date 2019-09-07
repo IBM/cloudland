@@ -2,7 +2,7 @@
 
 cd $(dirname $0)
 
-[ $# -lt 5 ] && echo "$0 <cluster_id> <cluster_name> <base_domain> <endpoint> <cookie> <ha_flag>" && exit 1
+[ $# -lt 7 ] && echo "$0 <cluster_id> <cluster_name> <base_domain> <endpoint> <cookie> <ha_flag> <nworkers>" && exit 1
 
 cluster_id=$1
 cluster_name=$2
@@ -10,6 +10,7 @@ base_domain=$3
 endpoint=$4
 cookie=$5
 haflag=$6
+nworkers=$7
 seq_max=100
 
 function setup_dns()
@@ -31,9 +32,13 @@ server=8.8.8.8
 local=/${cluster_name}.${base_domain}/
 address=/apps.${cluster_name}.${base_domain}/$public_ip
 srv-host=_etcd-server-ssl._tcp.${cluster_name}.${base_domain},etcd-0.${cluster_name}.${base_domain},2380,0,10
+EOF
+    if [ "$haflag" = "yes" ]; then
+        cat >> /etc/dnsmasq.conf <<EOF
 srv-host=_etcd-server-ssl._tcp.${cluster_name}.${base_domain},etcd-1.${cluster_name}.${base_domain},2380,0,10
 srv-host=_etcd-server-ssl._tcp.${cluster_name}.${base_domain},etcd-2.${cluster_name}.${base_domain},2380,0,10
 EOF
+    fi
     cat >> /etc/dnsmasq.conf <<EOF
 no-hosts
 addn-hosts=/etc/dnsmasq.openshift.addnhosts
@@ -225,6 +230,8 @@ function ignite_files()
     rm -rf $cluster_name
     mkdir $cluster_name
     cd $cluster_name
+    mreplica=1
+    [ "$haflag" = "yes" ] && mreplica=3
     cat > install-config.yaml <<EOF
 apiVersion: v1
 baseDomain: $base_domain
@@ -237,7 +244,7 @@ controlPlane:
   hyperthreading: Enabled
   name: master
   platform: {}
-  replicas: 3
+  replicas: $mreplica
 metadata:
   creationTimestamp: null
   name: $cluster_name
@@ -270,18 +277,22 @@ function launch_cluster()
         [ $? -eq 0 ] && break
     done
     curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-0;ipaddr=192.168.91.10"
-    curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-1;ipaddr=192.168.91.11"
-    curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-2;ipaddr=192.168.91.12"
+    if [ "$haflag" = "yes" ]; then
+        curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-1;ipaddr=192.168.91.11"
+        curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-2;ipaddr=192.168.91.12"
+    fi
     ../openshift-install wait-for bootstrap-complete --log-level debug
     curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-0;ipaddr=192.168.91.20"
     curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-1;ipaddr=192.168.91.21"
     sleep 60
+    nodes=3
+    [ "$haflag" = "yes" ] && nodes=5
     export KUBECONFIG=auth/kubeconfig
     while true; do
         # ../oc get csr -ojson | jq -r '.items[] | select(.status == {} ) | .metadata.name' | xargs oc adm certificate approve
         sleep 5
         count=$(../oc get nodes | grep -c Ready)
-        [ "$count" -ge 5 ] && break
+        [ "$count" -ge "$nodes" ] && break
     done
     ../oc patch configs.imageregistry.operator.openshift.io cluster --type merge --patch '{"spec":{"storage":{"emptyDir":{}}}}'
     while true; do
@@ -290,6 +301,11 @@ function launch_cluster()
         [ $? -ne 0 ] && break
     done
     ../openshift-install wait-for install-complete
+    for i in $(seq 1 $nworkers); do
+        let index=$i+1
+        let last=$index+20
+        curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-$index;ipaddr=192.168.91.$last"
+    done
 }
 
 setenforce Permissive
