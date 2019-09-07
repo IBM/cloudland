@@ -270,18 +270,23 @@ EOF
 function launch_cluster()
 {
     cd /opt/$cluster_name
-    curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=bootstrap;ipaddr=192.168.91.9"
+    bstrap_res=$(curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=bootstrap;ipaddr=192.168.91.9")
+    bstrap_ID=$(jq -r .ID <<< $bstrap_res)
+    curl -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=bootstrap"
     while true; do
         sleep 5
         nc -zv 192.168.91.9 6443
         [ $? -eq 0 ] && break
     done
+    curl -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=masters"
     curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-0;ipaddr=192.168.91.10"
     if [ "$haflag" = "yes" ]; then
         curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-1;ipaddr=192.168.91.11"
         curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-2;ipaddr=192.168.91.12"
     fi
     ../openshift-install wait-for bootstrap-complete --log-level debug
+    curl -XDELETE $endpoint/instances/$bstrap_ID --cookie $cookie
+    curl -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=workers"
     curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-0;ipaddr=192.168.91.20"
     curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-1;ipaddr=192.168.91.21"
     sleep 60
@@ -289,7 +294,7 @@ function launch_cluster()
     [ "$haflag" = "yes" ] && nodes=5
     export KUBECONFIG=auth/kubeconfig
     while true; do
-        # ../oc get csr -ojson | jq -r '.items[] | select(.status == {} ) | .metadata.name' | xargs oc adm certificate approve
+        ../oc get csr -ojson | jq -r '.items[] | select(.status == {} ) | .metadata.name' | xargs ../oc adm certificate approve
         sleep 5
         count=$(../oc get nodes | grep -c Ready)
         [ "$count" -ge "$nodes" ] && break
@@ -301,6 +306,7 @@ function launch_cluster()
         [ $? -ne 0 ] && break
     done
     ../openshift-install wait-for install-complete
+    curl -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=complete"
     for i in $(seq 1 $nworkers); do
         let index=$i+1
         let last=$index+20

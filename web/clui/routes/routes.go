@@ -95,6 +95,7 @@ func New() (m *macaron.Macaron) {
 	m.Post("/openshifts/new", openshiftView.Create)
 	m.Delete("/openshifts/:id", openshiftView.Delete)
 	m.Post("/openshifts/:id/launch", openshiftView.Launch)
+	m.Post("/openshifts/:id/state", openshiftView.State)
 	m.Get("/instances/:id", instanceView.Edit)
 	m.Post("/instances/:id", instanceView.Patch)
 	m.Get("/interfaces/:id", interfaceView.Edit)

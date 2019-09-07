@@ -111,6 +111,17 @@ func (a *OpenshiftAdmin) createSecgroup(ctx context.Context, name, cidr string, 
 	return
 }
 
+func (a *OpenshiftAdmin) State(ctx context.Context, id int64, status string) (err error) {
+	db := DB()
+	openshift := &model.Openshift{Model: model.Model{ID: id}}
+	err = db.Model(openshift).Update("status", status).Error
+	if err != nil {
+		log.Println("Failed to update openshift cluster status", err)
+		return
+	}
+	return
+}
+
 func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr string) (instance *model.Instance, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
@@ -389,16 +400,36 @@ func (v *OpenshiftView) New(c *macaron.Context, store session.Store) {
 	c.HTML(200, "openshifts_new")
 }
 
-func (v *OpenshiftView) Launch(c *macaron.Context, store session.Store) {
+func (v *OpenshiftView) State(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
-	permit := memberShip.CheckPermission(model.Owner)
+	id := c.ParamsInt64("id")
+	permit, err := memberShip.CheckOwner(model.Owner, "openshifts", id)
 	if !permit {
 		log.Println("Not authorized for this operation")
 		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	status := c.QueryTrim("status")
+	err = openshiftAdmin.State(c.Req.Context(), id, status)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"error": err.Error(),
+		})
+	}
+	c.JSON(200, "ack")
+}
+
+func (v *OpenshiftView) Launch(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	id := c.ParamsInt64("id")
+	permit, err := memberShip.CheckOwner(model.Owner, "openshifts", id)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	hostname := c.QueryTrim("hostname")
 	ipaddr := c.QueryTrim("ipaddr")
 	instance, err := openshiftAdmin.Launch(c.Req.Context(), id, hostname, ipaddr)
@@ -423,6 +454,9 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	name := c.QueryTrim("clustername")
 	domain := c.QueryTrim("basedomain")
 	haflag := c.QueryTrim("haflag")
+	if haflag == "" {
+		haflag = "no"
+	}
 	secret := c.QueryTrim("secret")
 	nworkers := c.QueryInt("nworkers")
 	flavor := c.QueryInt64("flavor")
