@@ -252,12 +252,10 @@ func (a *OpenshiftAdmin) Delete(ctx context.Context, id int64) (err error) {
 		log.Println("Failed to query openshift cluster", err)
 		return
 	}
-	for _, inst := range openshift.Instances {
-		err = instanceAdmin.Delete(ctx, inst.ID)
-		if err != nil {
-			log.Println("Failed to delete instance", err)
-			return
-		}
+	if openshift.Instances != nil && len(openshift.Instances) > 0 {
+		log.Println("There are instances in this cluster")
+		err = fmt.Errorf("There are instances in this cluster")
+		return
 	}
 	subnet := openshift.Subnet
 	if subnet != nil {
