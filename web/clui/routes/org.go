@@ -197,6 +197,19 @@ func (a *OrgAdmin) Delete(ctx context.Context, id int64) (err error) {
 		log.Println("DB failed to delete member, %v", err)
 		return
 	}
+	keys := []*model.Key{}
+	err = db.Where("owner = ?", id).Find(&keys).Error
+	if err != nil {
+		log.Println("DB failed to query keys", err)
+		return
+	}
+	for _, key := range keys {
+		err = keyAdmin.Delete(key.ID)
+		if err != nil {
+			log.Println("Can not delete key", err)
+			return
+		}
+	}
 	secgroups := []*model.SecurityGroup{}
 	err = db.Where("owner = ?", id).Find(&secgroups).Error
 	if err != nil {

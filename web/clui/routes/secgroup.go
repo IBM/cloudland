@@ -187,7 +187,8 @@ func (a *SecgroupAdmin) List(ctx context.Context, offset, limit int64, order, qu
 			sg.OwnerInfo = &model.Organization{Model: model.Model{ID: sg.Owner}}
 			if err = db.Take(sg.OwnerInfo).Error; err != nil {
 				log.Println("Failed to query owner info", err)
-				return
+				err = nil
+				continue
 			}
 		}
 	}

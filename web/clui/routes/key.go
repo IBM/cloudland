@@ -89,7 +89,8 @@ func (a *KeyAdmin) List(ctx context.Context, offset, limit int64, order, query s
 			key.OwnerInfo = &model.Organization{Model: model.Model{ID: key.Owner}}
 			if err = db.Take(key.OwnerInfo).Error; err != nil {
 				log.Println("Failed to query owner info", err)
-				return
+				err = nil
+				continue
 			}
 		}
 	}

@@ -312,6 +312,13 @@ function launch_cluster()
         let last=$index+20
         curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-$index;ipaddr=192.168.91.$last"
     done
+    let nodes=$nodes+$nworkers
+    while true; do
+        ../oc get csr -ojson | jq -r '.items[] | select(.status == {} ) | .metadata.name' | xargs ../oc adm certificate approve
+        sleep 5
+        count=$(../oc get nodes | grep -c Ready)
+        [ "$count" -ge "$nodes" ] && break
+    done
 }
 
 setenforce Permissive

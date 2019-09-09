@@ -39,7 +39,7 @@
 			                        <td>{{.ID}}</td>
 			                        <td>{{.Name}}</td>
 						{{ if $.IsAdmin }}
-			                        <td>{{.OwnerInfo.Name}}</td>
+			                        <td>{{ if .OwnerInfo }} {{.OwnerInfo.Name}} {{end}}</td>
 						{{ end }}
 			                        <td><span title="Tue, 18 Dec 2018 14:24:59 &#43;0800">{{.CreatedAt}}</span></td>
 			                        <td><a href="{{$Link}}/{{.ID}}"><i class="fa fa-pencil-square-o"></i></a></td>
