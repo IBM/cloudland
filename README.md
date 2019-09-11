@@ -27,7 +27,7 @@ Development environment can be installed from an all-in-one node and then extend
 ### For production
 Production environment can be self-incubated from a development environment -- the new control plane VMs with high availability are launched from the development environment and they take over the management of the cluster and turn it to production environment.
 
-Refer to [deployment guide](http//github.com/IBM/cloudland/wiki/Deployment) for more details
+Refer to [deployment guide](http://github.com/IBM/cloudland/wiki/Deployment) for more details
 
 ## Contributing
 
