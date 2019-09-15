@@ -28,6 +28,7 @@ type Interface struct {
 	Type       string   `gorm:"type:varchar(20)"`
 	Mtu        int32
 	Secgroups  []*SecurityGroup `gorm:"many2many:secgroup_ifaces;"`
+	AddrPairs  string           `gorm:"type:varchar(256)"`
 }
 
 func init() {

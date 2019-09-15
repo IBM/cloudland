@@ -33,7 +33,7 @@ type InterfaceAdmin struct{}
 
 type InterfaceView struct{}
 
-func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name string, sgIDs []int64) (iface *model.Interface, err error) {
+func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name, pairs string, sgIDs []int64) (iface *model.Interface, err error) {
 	db := DB()
 	iface = &model.Interface{Model: model.Model{ID: id}}
 	if err = db.Set("gorm:auto_preload", true).Take(iface).Error; err != nil {
@@ -47,8 +47,29 @@ func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name string, sgID
 			return
 		}
 	}
+	if iface.AddrPairs != pairs {
+		iface.AddrPairs = pairs
+		if err = db.Save(iface).Error; err != nil {
+			log.Println("Failed to save interface", err)
+			return
+		}
+	}
+	control := fmt.Sprintf("inter=%d", iface.Hyper)
+	if iface.Hyper < 0 {
+		instance := &model.Interface{Model: model.Model{ID: iface.Instance}}
+		if err = db.Take(instance).Error; err != nil {
+			log.Println("Failed to query instance ", err)
+			return
+		}
+		control = fmt.Sprintf("inter=%d", instance.Hyper)
+	}
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/allow_as_addr.sh '%s' '%s' <<EOF\n%s\nEOF", iface.Address.Address, iface.MacAddr, pairs)
+	err = hyperExecute(ctx, control, command)
+	if err != nil {
+		log.Println("Launch vm command execution failed", err)
+		return
+	}
 	sgChanged := false
-	log.Println("$$$$ len = ", len(iface.Secgroups), len(sgIDs))
 	for _, esg := range iface.Secgroups {
 		found := false
 		for _, sgID := range sgIDs {
@@ -116,15 +137,6 @@ func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name string, sgID
 		if err != nil {
 			log.Println("Failed to marshal security json data, %v", err)
 			return
-		}
-		control := fmt.Sprintf("inter=%d", iface.Hyper)
-		if iface.Hyper < 0 {
-			instance := &model.Interface{Model: model.Model{ID: iface.Instance}}
-			if err = db.Take(instance).Error; err != nil {
-				log.Println("Failed to query instance ", err)
-				return
-			}
-			control = fmt.Sprintf("inter=%d", instance.Hyper)
 		}
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/reapply_secgroup.sh '%s' '%s' <<EOF\n%s\nEOF", iface.Address.Address, iface.MacAddr, jsonData)
 		err = hyperExecute(ctx, control, command)
@@ -198,6 +210,7 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 	}
 	name := c.QueryTrim("name")
 	secgroups := c.QueryStrings("secgroups")
+	pairs := c.QueryTrim("pairs")
 	var sgIDs []int64
 	log.Println("$$$$$$ len = ", len(secgroups))
 	if len(secgroups) > 0 {
@@ -227,7 +240,7 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 		}
 		sgIDs = append(sgIDs, sID)
 	}
-	_, err = interfaceAdmin.Update(c.Req.Context(), int64(ifaceID), name, sgIDs)
+	_, err = interfaceAdmin.Update(c.Req.Context(), int64(ifaceID), name, pairs, sgIDs)
 	if err != nil {
 		log.Println("Failed to update interface", err)
 		c.HTML(http.StatusBadRequest, err.Error())

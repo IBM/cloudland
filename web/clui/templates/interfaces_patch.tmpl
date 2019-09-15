@@ -12,12 +12,16 @@
                         <input id="name" name="name" value="{{ .Interface.Name }}" required>
                     </div>
                     <div class="required inline field">
-                        <label for="address">Address</label>
+                        <label for="address">IP Address</label>
                         <input id="address" name="address" value="{{ .Interface.Address.Address }}" disabled>
                     </div>
                     <div class="required inline field">
-                        <label for="macaddr">Address</label>
+                        <label for="macaddr">Mac Address</label>
                         <input id="macaddr" name="macaddr" value="{{ .Interface.MacAddr }}" disabled>
+                    </div>
+                    <div class="required inline field">
+                        <label for="pairs">Allow Address Pairs</label>
+                        <input id="pairs" name="pairs" value="{{ .Interface.AddrPairs }}">
                     </div>
                     <div class="inline field">
                         <label for="secgroups">Security Groups</label>
