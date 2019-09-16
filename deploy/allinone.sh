@@ -7,7 +7,7 @@ net_conf=$cland_root_dir/deploy/netconf.yml
 
 sudo chown -R cland.cland $cland_root_dir
 mkdir $cland_root_dir/{bin,deploy,etc,lib6,log,run,sci,scripts,src,web,cache} $cland_root_dir/cache/{image,instance,meta,router,volume,xml} 2>/dev/null
-[ ! -s "$net_conf" ] && cp ${net_conf}.example $net_conf
+[ ! -s "$net_conf" ] && sudo cp ${net_conf}.example $net_conf
 
 # Install development tools
 sudo yum install -y epel-release

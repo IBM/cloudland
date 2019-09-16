@@ -186,6 +186,101 @@ func (v *InterfaceView) Edit(c *macaron.Context, store session.Store) {
 	c.HTML(200, "interfaces_patch")
 }
 
+func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
+	ctx := c.Req.Context()
+	memberShip := GetMemberShip(ctx)
+	subnetID := c.QueryInt64("subnet")
+	permit, err := memberShip.CheckOwner(model.Writer, "subnets", int64(subnetID))
+	if !permit {
+		log.Println("Not authorized to access subnet")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	instID := c.QueryInt64("instance")
+	if instID > 0 {
+		permit, err = memberShip.CheckOwner(model.Writer, "instances", int64(instID))
+		if !permit {
+			log.Println("Not authorized to access instance")
+			code := http.StatusUnauthorized
+			c.Error(code, http.StatusText(code))
+			return
+		}
+	}
+	address := c.QueryTrim("address")
+	mac := c.QueryTrim("mac")
+	ifname := c.QueryTrim("ifname")
+	secgroups := c.QueryTrim("secgroups")
+	var sgIDs []int64
+	if secgroups != "" {
+		sg := strings.Split(secgroups, ",")
+		for i := 0; i < len(sg); i++ {
+			sgID, err := strconv.Atoi(sg[i])
+			if err != nil {
+				log.Println("Invalid security group ID", err)
+				continue
+			}
+			permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
+			if !permit {
+				log.Println("Not authorized to access security group")
+				code := http.StatusUnauthorized
+				c.Error(code, http.StatusText(code))
+				return
+			}
+			sgIDs = append(sgIDs, int64(sgID))
+		}
+	} else {
+		sgID := store.Get("defsg").(int64)
+		permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
+		if !permit {
+			log.Println("Not authorized to access security group")
+			code := http.StatusUnauthorized
+			c.Error(code, http.StatusText(code))
+			return
+		}
+		sgIDs = append(sgIDs, sgID)
+	}
+	secGroups := []*model.SecurityGroup{}
+	if err = DB().Where(sgIDs).Find(&secGroups).Error; err != nil {
+		log.Println("Security group query failed", err)
+		return
+	}
+	iface, err := CreateInterface(ctx, subnetID, instID, memberShip.OrgID, address, mac, ifname, "instance", secGroups)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"error": err.Error(),
+		})
+	}
+	c.JSON(200, iface)
+}
+
+func (v *InterfaceView) Delete(c *macaron.Context, store session.Store) {
+	ctx := c.Req.Context()
+	memberShip := GetMemberShip(ctx)
+	id := c.ParamsInt64("id")
+	permit, err := memberShip.CheckOwner(model.Writer, "interfaces", id)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	iface := &model.Interface{Model: model.Model{ID: id}}
+	err = DB().Take(iface).Error
+	if err != nil {
+		code := http.StatusInternalServerError
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	err = DeleteInterface(ctx, iface)
+	if err != nil {
+		code := http.StatusInternalServerError
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	c.JSON(200, "ok")
+}
+
 func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	redirectTo := "../instances"

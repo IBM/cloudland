@@ -36,7 +36,7 @@ type FloatingIps struct {
 type FloatingIpAdmin struct{}
 type FloatingIpView struct{}
 
-func (a *FloatingIpAdmin) Create(ctx context.Context, instID int64, types []string) (floatingips []*model.FloatingIp, err error) {
+func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, types []string) (floatingips []*model.FloatingIp, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	instance := &model.Instance{Model: model.Model{ID: instID}}
@@ -51,7 +51,17 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID int64, types []stri
 		floatingips = instance.FloatingIps
 		return
 	}
-	iface := instance.Interfaces[0]
+	var iface *model.Interface
+	if ifaceID > 0 {
+		iface = &model.Interface{Model: model.Model{ID: ifaceID}}
+		err = db.Take(iface).Error
+		if err != nil {
+			log.Println("DB failed to query interface", err)
+			return
+		}
+	} else {
+		iface = instance.Interfaces[0]
+	}
 	if iface.Address.Subnet.Router == 0 {
 		err = fmt.Errorf("Floating IP can not be created without a gateway")
 		log.Println("Floating IP can not be created without a gateway")
@@ -287,7 +297,7 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 		ftype = "public,private"
 	}
 	types := strings.Split(ftype, ",")
-	_, err = floatingipAdmin.Create(c.Req.Context(), int64(instID), types)
+	_, err = floatingipAdmin.Create(c.Req.Context(), int64(instID), 0, types)
 	if err != nil {
 		log.Println("Failed to create floating ip", err)
 		c.Data["ErrorMsg"] = err.Error()
@@ -314,7 +324,7 @@ func (v *FloatingIpView) Assign(c *macaron.Context, store session.Store) {
 		return
 	}
 	types := []string{"public", "private"}
-	floatingips, err := floatingipAdmin.Create(c.Req.Context(), int64(instID), types)
+	floatingips, err := floatingipAdmin.Create(c.Req.Context(), int64(instID), 0, types)
 	if err != nil {
 		log.Println("Failed to create floating ip", err)
 		code := http.StatusInternalServerError
