@@ -16,6 +16,23 @@ total_network=0
 load=$(w | head -1 | cut -d',' -f5 | cut -d'.' -f1 | xargs)
 total_load=0
 
+function probe_arp()
+{
+    cd /opt/cloudland/cache/router
+    for router in *; do
+        ID=${router##router-}
+        ext_ips=$(ip netns exec $router ip addr show te-$ID | grep 'inet ' | awk '{print $2}')
+        for ip in $ext_ips; do
+            ip netns exec $router arping -c 1 -I te-$ID ${ip%%/*}
+        done
+        int_ips=$(ip netns exec $router ip addr show ti-$ID | grep 'inet ' | awk '{print $2}')
+        for ip in $int_ips; do
+            ip netns exec $router arping -c 1 -I ti-$ID ${ip%%/*}
+        done
+    done
+    cd -
+}
+
 function calc_resource()
 {
     virtual_cpu=0
@@ -45,3 +62,4 @@ function calc_resource()
 
 calc_resource
 echo "cpu=$cpu/$total_cpu memory=$memory/$total_memory disk=$disk/$total_disk network=$network/$total_network load=$load/$total_load"
+probe_arp >/dev/null 2>&1

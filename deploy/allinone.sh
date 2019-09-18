@@ -128,6 +128,7 @@ function allinone_firewall()
     sudo service iptables save
 }
 
+export PATH=$PATH:/usr/local/bin
 diff /opt/sci/lib64/libsci.so.0.0.0 $cland_root_dir/sci/libsci/.libs/libsci.so.0.0.0
 [ $? -ne 0 ] && inst_sci
 [ ! -f "/usr/local/lib/pkgconfig" ] && inst_grpc
@@ -140,3 +141,4 @@ ansible-playbook cloudland.yml -e @$net_conf --tags hosts,epel,ntp,selinux,be_pk
 demo_router
 allinone_firewall
 inst_web
+sudo chown -R cland.cland $cland_root_dir
