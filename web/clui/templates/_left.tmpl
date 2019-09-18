@@ -1,18 +1,16 @@
 <div class="four wide column">
     <div class="ui vertical menu">
-        <div class="header item">Control Panel</div>
-        <a {{ if eq .Link "/dashboard" }} class="active item" {{ else }} class="item" {{ end }} href="/dashboard">
-            Dashboard
-        </a>
+        <div class="header item">Authorizations</div>
         <a {{ if eq .Link "/users" }} class="active item" {{ else }} class="item" {{ end }} href="/users">
             Users
         </a>
         <a {{ if eq .Link "/orgs" }} class="active item" {{ else }} class="item" {{ end }} href="/orgs">
             Organizations
         </a>
-        <a {{ if eq .Link "/openshifts" }} class="active item" {{ else }} class="item" {{ end }} href="/openshifts">
-            Openshift Clusters
+        <a {{ if eq .Link "/keys" }} class="active item" {{ else }} class="item" {{ end }} href="/keys">
+            Keys
         </a>
+        <div class="header item">Compute & Storage</div>
         <a {{ if eq .Link "/instances" }} class="active item" {{ else }} class="item" {{ end }} href="/instances">
             Instances
         </a>
@@ -25,9 +23,11 @@
         <a {{ if eq .Link "/volumes" }} class="active item" {{ else }} class="item" {{ end }} href="/volumes">
             Volumes
         </a>
-        <a {{ if eq .Link "/keys" }} class="active item" {{ else }} class="item" {{ end }} href="/keys">
-            Keys
+        <div class="header item">Platform Service</div>
+        <a {{ if eq .Link "/openshifts" }} class="active item" {{ else }} class="item" {{ end }} href="/openshifts">
+            Openshift
         </a>
+        <div class="header item">Network & Security</div>
         <a {{ if eq .Link "/subnets" }} class="active item" {{ else }} class="item" {{ end }} href="/subnets">
             Subnets
         </a>

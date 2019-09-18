@@ -299,9 +299,11 @@ function launch_cluster()
         count=$(../oc get nodes | grep -c Ready)
         [ "$count" -ge "$nodes" ] && break
     done
-    ../oc patch configs.imageregistry.operator.openshift.io cluster --type merge --patch '{"spec":{"storage":{"emptyDir":{}}}}'
+    sleep 60
     while true; do
         sleep 5
+        ../oc get csr -ojson | jq -r '.items[] | select(.status == {} ) | .metadata.name' | xargs ../oc adm certificate approve
+        ../oc patch configs.imageregistry.operator.openshift.io cluster --type merge --patch '{"spec":{"storage":{"emptyDir":{}}}}'
         ../oc get clusteroperators | awk '{print $3}' | grep False
         [ $? -ne 0 ] && break
     done
@@ -314,8 +316,8 @@ function launch_cluster()
     done
     let nodes=$nodes+$nworkers
     while true; do
-        ../oc get csr -ojson | jq -r '.items[] | select(.status == {} ) | .metadata.name' | xargs ../oc adm certificate approve
         sleep 5
+        ../oc get csr -ojson | jq -r '.items[] | select(.status == {} ) | .metadata.name' | xargs ../oc adm certificate approve
         count=$(../oc get nodes | grep -c Ready)
         [ "$count" -ge "$nodes" ] && break
     done
