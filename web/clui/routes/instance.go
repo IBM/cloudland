@@ -16,12 +16,14 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/IBM/cloudland/web/clui/grpcs"
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/clui/scripts"
 	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/go-macaron/session"
+	"github.com/jinzhu/gorm"
 	macaron "gopkg.in/macaron.v1"
 )
 
@@ -544,6 +546,16 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 	return
 }
 
+func (a *InstanceAdmin) enableVnc(ctx context.Context, vmID int64, hID int32) (err error) {
+	control := fmt.Sprintf("inter=%d", hID)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/enable_vm_vnc.sh '%d'", vmID)
+	err = hyperExecute(ctx, control, command)
+	if err != nil {
+		log.Printf("Failed to enable VNC of VM %d at hyper %d\n", vmID, hID)
+	}
+	return
+}
+
 func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
@@ -702,6 +714,18 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 				break
 			}
 		}
+	}
+	vnc := &model.Vnc{InstanceID: int64(instanceID)}
+	if err = db.Set("gorm:auto_preload", true).Take(vnc).Error; err != nil && !gorm.IsRecordNotFoundError(err) {
+		log.Println("VNC query failed", err)
+		return
+	}
+	if gorm.IsRecordNotFoundError(err) || !vnc.ExpiredAt.After(time.Now()) {
+		if err := instanceAdmin.enableVnc(c.Req.Context(), int64(instanceID), instance.Hyper); err != nil {
+			log.Println("Failed enable VNC", err)
+		}
+	} else {
+		c.Data["Vnc"] = vnc
 	}
 	c.Data["Instance"] = instance
 	c.Data["Subnets"] = subnets
