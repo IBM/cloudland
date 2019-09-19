@@ -21,13 +21,13 @@ function probe_arp()
     cd /opt/cloudland/cache/router
     for router in *; do
         ID=${router##router-}
-        ext_ips=$(ip netns exec $router ip addr show te-$ID | grep 'inet ' | awk '{print $2}')
+        ext_ips=$(sudo ip netns exec $router ip addr show te-$ID | grep 'inet ' | awk '{print $2}')
         for ip in $ext_ips; do
-            ip netns exec $router arping -c 1 -I te-$ID ${ip%%/*}
+            sudo ip netns exec $router arping -c 1 -I te-$ID ${ip%%/*}
         done
-        int_ips=$(ip netns exec $router ip addr show ti-$ID | grep 'inet ' | awk '{print $2}')
+        int_ips=$(sudo ip netns exec $router ip addr show ti-$ID | grep 'inet ' | awk '{print $2}')
         for ip in $int_ips; do
-            ip netns exec $router arping -c 1 -I ti-$ID ${ip%%/*}
+            sudo ip netns exec $router arping -c 1 -I ti-$ID ${ip%%/*}
         done
     done
     cd -

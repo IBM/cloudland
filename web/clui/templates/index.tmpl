@@ -9,14 +9,14 @@
         	 			  <h4>1. Create a key</h4>
 To create a key, simply input key name and public key into fields and submit. If you don't have a key already, use command ssh-keygen -f /path/to/your_key to generate one.
         	 			  <h4>2. Create a gateway</h4>
-To create a gateway, input a gateway name and select a subnet you want to attach.
+To create a gateway, input a gateway name and select one or multiple subnets to attach.
         	 			  <h4>3. Launch an instance</h4>
 To launch an instance, specify the fields with star including hostname, count, image, flavor and primary interface. It is also important to select a key to login the instance.
         	 			  <h4>4. Create a floating IP</h4>
 To create a floating ip, select the instance name with address in the drop down menu, choose floating ip type to be public to get an public floating ip. Private floating ip can be an internal access endpoint when needed. Leaving it blank means to create both.
         	 			  <h4>5. Use your instance and modify security group as needed</h4>
 ssh -i /path/to/your_private_key username@instance_public_floating_ip<br>
-username is centos for centos image, core for coreos image and ubuntu for ubuntu image by default. To expose a service you setup in the instance publicly, click security group id in the security group panel and reate a new rule. For example, to open port 443, specify 0.0.0.0/0 for remote ip, ingress for direction, tcp for protocol, both portmin and portmax to be 443.
+username is centos for centos image, core for coreos image and ubuntu for ubuntu image by default. To expose a service you setup in the instance publicly, click security group id in the security group panel and create a new rule. For example, to open port 443, specify 0.0.0.0/0 for remote ip, ingress for direction, tcp for protocol, both portmin and portmax to be 443.
         	 			  <h4>6. Create an OpenShift cluster (Advanced)</h4>
 <a href="https://github.com/IBM/cloudland/wiki/Manual#create-an-openshift-cluster">https://github.com/IBM/cloudland/wiki/Manual#create-an-openshift-cluster</a>
 		             </div>
