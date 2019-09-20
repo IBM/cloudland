@@ -33,11 +33,12 @@ func (c *MainController) Login() {
 	password := c.GetString("password")
 	identity, err := models.Identity()
 	if err != nil {
-		logs.Error(err)
+		flash.Error(err.Error())
+		flash.Store(&c.Controller)
 		return
 	}
-	logs.Debug(identity)
-	token, err := models.Authenticate(username, password, ``)
+	c.SetSession("IDENTIY", identity)
+	token, err := models.Authenticate(*identity.Versions.Values[0].Links[0].Href, username, password, ``)
 	if err != nil {
 		flash.Error(err.Error())
 		flash.Store(&c.Controller)

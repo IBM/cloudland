@@ -25,11 +25,27 @@ func init() {
 	}
 }
 
-func Authenticate(username, password, org string) (token string, err error) {
-	// TODO:  verify user
+func Authenticate(identityEndpoint, username, password, org string) (token string, err error) {
+	authenEndpoint, _ := url.Parse(identityEndpoint)
+	authenEndpoint.Path = authenEndpoint.Path + routeInfo[`identityToken`]
+	logs.Debug(`try to get token with auth endpoint`, authenEndpoint.String())
 	if org == `` {
 		org = `default`
 	}
+	tokenResqStruct := &restModels.PostIdentityV3AuthTokensParamsBody{
+		Auth: &restModels.PostIdentityV3AuthTokensParamsBodyAuth{
+			Identity: &restModels.PostIdentityV3AuthTokensParamsBodyAuthIdentity{
+				Password: &restModels.PostIdentityV3AuthTokensParamsBodyAuthIdentityPassword{
+					User: &restModels.PostIdentityV3AuthTokensParamsBodyAuthIdentityPasswordUser{
+						Name:     username,
+						Password: password,
+					},
+				},
+			},
+		},
+	}
+	tokensInstance := &restModels.Token{}
+	resp, respBody, errs := NewResut(http.MethodPost, authenEndpoint.String(), tokenResqStruct).EndStruct(tokensInstance)
 	return `11111`, nil
 }
 
