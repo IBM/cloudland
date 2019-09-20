@@ -45,8 +45,7 @@ func (c *MainController) Login() {
 		return
 	}
 	c.IsLogin = true
-	// flash.Success("Success logged in")
-	// flash.Store(&c.Controller)
+	logs.Debug(token)
 	c.SetSession(TOKENINFO, token)
 	c.Redirect(c.URLFor("/index"), 303)
 }

@@ -46,7 +46,17 @@ func Authenticate(identityEndpoint, username, password, org string) (token strin
 	}
 	tokensInstance := &restModels.Token{}
 	resp, respBody, errs := NewResut(http.MethodPost, authenEndpoint.String(), tokenResqStruct).EndStruct(tokensInstance)
-	return `11111`, nil
+	if len(errs) != 0 {
+		err = fmt.Errorf("fail to call identiy servier to get token with status code: %d, response body: %s", resp.StatusCode, string(respBody))
+		logs.Error(err)
+		return
+	}
+	token = resp.Header.Get(TOKEN_HEADER_KEY)
+	if token == `` {
+		err = fmt.Errorf(`fail to get token key`)
+		return
+	}
+	return token, nil
 }
 
 func Identity() (*restModels.GetIdentityMultipleChoicesBody, error) {

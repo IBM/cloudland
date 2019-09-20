@@ -10,3 +10,5 @@ var routeInfo = map[string]string{
 	"identityToken": "/auth/tokens",
 	"flavor":        "/compute/v2.1/flavors",
 }
+
+const TOKEN_HEADER_KEY = `X-Subject-Token`
