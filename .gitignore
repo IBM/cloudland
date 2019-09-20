@@ -68,3 +68,5 @@ cloudrc.local
 /sci/stamp-h1
 /sci/usecase
 .vscode
+/cland-ui/static/bower
+/cland-ui/cland-ui
