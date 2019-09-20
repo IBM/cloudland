@@ -2,7 +2,7 @@ package routers
 
 import (
 	"github.com/astaxie/beego"
-	"github.com/threen134/cdnDashboard/controllers"
+	"github.com/IBM/cloudland/cland-ui/controllers"
 )
 
 func init() {

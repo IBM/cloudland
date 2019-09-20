@@ -3,10 +3,10 @@ package controllers
 import (
 	"net/http"
 
+	"github.com/IBM/cloudland/cland-ui/models"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/astaxie/beego/session"
-	"github.com/threen134/cdnDashboard/models"
 )
 
 const TOKENINFO = `tokenInfo`
@@ -31,7 +31,13 @@ func (c *MainController) Login() {
 	flash := beego.NewFlash()
 	username := c.GetString("username")
 	password := c.GetString("password")
-	token, err := models.Authenticate(username, password)
+	identity, err := models.Identity()
+	if err != nil {
+		logs.Error(err)
+		return
+	}
+	logs.Debug(identity)
+	token, err := models.Authenticate(username, password, ``)
 	if err != nil {
 		flash.Error(err.Error())
 		flash.Store(&c.Controller)

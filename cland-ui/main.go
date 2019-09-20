@@ -3,11 +3,11 @@ package main
 import (
 	"net/http"
 
+	_ "github.com/IBM/cloudland/cland-ui/routers"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/context"
 	"github.com/astaxie/beego/logs"
 	"github.com/astaxie/beego/session"
-	_ "github.com/threen134/cdnDashboard/routers"
 )
 
 var globalSessions *session.Manager
