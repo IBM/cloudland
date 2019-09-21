@@ -5,8 +5,10 @@ import (
 
 	"github.com/IBM/cloudland/cland-ui/models"
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/cache"
 	"github.com/astaxie/beego/logs"
 	"github.com/astaxie/beego/session"
+	"github.com/astaxie/beego/utils/captcha"
 )
 
 const TOKENINFO = `tokenInfo`
@@ -18,17 +20,37 @@ type MainController struct {
 
 var globalSessions *session.Manager
 
+var cpt *captcha.Captcha
+
+func init() {
+	// use beego cache system store the captcha data
+	store := cache.NewMemoryCache()
+	cpt = captcha.NewWithFilter("/captcha/", store)
+	cpt.StdHeight = 40
+	cpt.StdWidth = 100
+	cpt.ChallengeNums = 4
+}
+
 // @router  /login [get]
 func (c *MainController) Login() {
 	if c.IsLogin {
 		c.Redirect(`/index`, http.StatusFound)
 		return
 	}
-	c.TplName = "login.html"
+	c.TplName = "login.tpl"
 	if !c.Ctx.Input.IsPost() {
 		return
 	}
-	flash := beego.NewFlash()
+	//flash := beego.NewFlash()
+	flash := beego.ReadFromRequest(&c.Controller)
+	if _, ok := flash.Data["error"]; ok {
+		// show captcha in login page
+		if !cpt.VerifyReq(c.Ctx.Request) {
+			flash.Error("verified code error")
+			flash.Store(&c.Controller)
+			return
+		}
+	}
 	username := c.GetString("username")
 	password := c.GetString("password")
 	identity, err := models.Identity()

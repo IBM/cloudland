@@ -39,6 +39,18 @@ func Authenticate(identityEndpoint, username, password, org string) (token strin
 					User: &restModels.PostIdentityV3AuthTokensParamsBodyAuthIdentityPasswordUser{
 						Name:     username,
 						Password: password,
+						Domain: &restModels.PostIdentityV3AuthTokensParamsBodyAuthIdentityPasswordUserDomain{
+							ID: `default`,
+						},
+					},
+				},
+				Methods: []string{`password`},
+			},
+			Scope: &restModels.PostIdentityV3AuthTokensParamsBodyAuthScope{
+				Project: &restModels.PostIdentityV3AuthTokensParamsBodyAuthScopeProject{
+					Name: username,
+					Domain: &restModels.PostIdentityV3AuthTokensParamsBodyAuthScopeProjectDomain{
+						ID: `default`,
 					},
 				},
 			},
@@ -52,6 +64,10 @@ func Authenticate(identityEndpoint, username, password, org string) (token strin
 		return
 	}
 	token = resp.Header.Get(TOKEN_HEADER_KEY)
+	if resp.StatusCode == http.StatusUnauthorized {
+		err = fmt.Errorf(`invalid username or password`)
+		return
+	}
 	if token == `` {
 		err = fmt.Errorf(`fail to get token key`)
 		return

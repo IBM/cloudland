@@ -14,7 +14,7 @@
             href="/static/img/cland.ico"
             type="image/ico" />
         <title>ClandLand</title>
-        <<<.CSS>>>
+        {{.CSS}}
     </head>
 
     <body class="nav-md">
@@ -30,30 +30,30 @@
                         </div>
                         <div class="clearfix"></div>
                         <!-- menu profile quick info -->
-                        <<<.MenuProfile>>>
+                        {{.MenuProfile}}
                         <!-- /menu profile quick info -->
                         <br />
                         <!-- sidebar menu -->
-                        <<<.SideBar>>>
+                        {{.SideBar}}
                         <!-- /sidebar menu -->
                         <!-- /menu footer buttons -->
-                        <<<.MenuFooter>>>
+                        {{.MenuFooter}}
                         <!-- /menu footer buttons -->
                     </div>
                 </div>
                 <!-- top navigation -->
-                <<<.TopNavigation>>>
+                {{.TopNavigation}}
                 <!-- /top navigation -->
                 <!-- page content -->
-                <<<.PageContent>>>
+                {{.PageContent}}
                 <!-- /page content -->
                 <!-- footer content -->
-                <<<.FooterContent>>>
+                {{.FooterContent}}
                 <!-- /footer content -->
             </div>
         </div>
         <!-- jQuery -->
-        <<<.JS>>>
+        {{.JS}}
     </body>
 
 </html>

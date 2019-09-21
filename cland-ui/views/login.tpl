@@ -38,14 +38,22 @@
               <div>
                 <input type="password" class="form-control" name="password" placeholder="Password" required="" />
               </div>
-
-              <<<if .flash>>>
-                <<<if (index .flash "error")>>>
+              {{if .flash}}
+                {{if (index .flash "error")}}
                   <div>
-                    <p class="login_err_msg"><<<.flash.error>>></p>
+                    <div class="row">
+                      <div class="col-sm-4">
+                        {{create_captcha}}
+                      </div>
+                      <div class="col-sm-4">
+  	                     <input name="captcha" class="form-control" type="text" placeholder="identity code"  required="" />
+                      </div>
+                    </div>
+                  <div>
+                    <p class="login_err_msg">{{.flash.error}}</p>
                   </div>
-                <<<end>>>
-              <<<end>>>
+                {{end}}
+              {{end}}
 
               <div>
                 <a class="btn btn-default submit" href="javascript:document:search_form.submit();">Log in</a>
@@ -64,7 +72,7 @@
 
                 <div>
                   <h1><i class="fa fa-cloud"></i> CloudLand</h1>
-                  <p>©2019 All Rights Reserved. CloudLand is open source IaaS cloud platform</p>
+                  <p>CloudLand is open source IaaS cloud platform</p>
                 </div>
               </div>
             </form>
@@ -101,7 +109,7 @@
                 <div>
                   <h1><i class="fa fa-paw"></i> CloudLand</h1>
                   <!-- © -->
-                  <p>©2019 All Rights Reserved. CloudLand is open source cloud IaaS cloud platform</p>
+                  <p>CloudLand is open source cloud IaaS cloud platform</p>
                 </div>
               </div>
             </form>

@@ -39,8 +39,6 @@ func main() {
 			}
 		}
 	}
-	beego.BConfig.WebConfig.TemplateLeft = "<<<"
-	beego.BConfig.WebConfig.TemplateRight = ">>>"
 	beego.BConfig.WebConfig.AutoRender = true
 	beego.BConfig.WebConfig.Session.SessionOn = true
 	beego.SetLogger("file", `{"filename":"logs/test.log"}`)

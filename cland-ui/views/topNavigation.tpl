@@ -26,6 +26,24 @@
                         </li>
                     </ul>
                 </li>
+                <li class="">
+                    <a href="javascript:;"
+                        class="dropdown-toggle"
+                        data-toggle="dropdown">
+                        <i class="fa fa-users"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-usermenu pull-right">
+                        <li>
+                            <a href="javascript:;">
+                                <span class="badge bg-green pull-right">now</span>
+                                <span>Spark</span>
+                            </a>
+                        </li>
+                        <li><a href="javascript:;">Unicom</a></li>
+                        <li><a href="javascript:;">IBM</a></li>
+                        </li>
+                    </ul>
+                </li>
                 <li role="presentation"
                     class="dropdown">
                     <a href="javascript:;"

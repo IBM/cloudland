@@ -5,9 +5,9 @@ var routeInfo = map[string]string{
 	"compute":       `/compute/v2.1`,
 	"image":         `/image`,
 	"network":       `/v2.0/networks`,
-	"identity":      `/identity`,
+	"identity":      `identity`,
 	"subnet":        `/v2.0/subnets`,
-	"identityToken": "/auth/tokens",
+	"identityToken": "auth/tokens",
 	"flavor":        "/compute/v2.1/flavors",
 }
 
