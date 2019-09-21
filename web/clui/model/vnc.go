@@ -14,10 +14,11 @@ import (
 
 type Vnc struct {
 	Model
-	Address    string `gorm:"type:varchar(15)"`
+	Address    string `gorm:"type:varchar(64)"`
 	Port       int32
 	Passwd     string `gorm:"type:varchar(32)"`
 	InstanceID int64
+	Portmap    string `gorm:"type:varchar(128)"`
 	ExpiredAt  *time.Time
 }
 

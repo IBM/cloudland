@@ -208,7 +208,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 	}
 	name = fmt.Sprintf("oc%d-gw", openshift.ID)
 	subnetIDs := []int64{subnet.ID}
-	_, err = gatewayAdmin.Create(ctx, name, 0, 0, subnetIDs, memberShip.OrgID)
+	_, err = gatewayAdmin.Create(ctx, name, "", 0, 0, subnetIDs, memberShip.OrgID)
 	if err != nil {
 		log.Println("Failed to create gateway", err)
 		return

@@ -64,7 +64,7 @@ func createGatewayIface(ctx context.Context, rtype string, gateway *model.Gatewa
 	return
 }
 
-func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int64, subnetIDs []int64, owner int64) (gateway *model.Gateway, err error) {
+func (a *GatewayAdmin) Create(ctx context.Context, name, stype string, pubID, priID int64, subnetIDs []int64, owner int64) (gateway *model.Gateway, err error) {
 	memberShip := GetMemberShip(ctx)
 	if owner == 0 {
 		owner = memberShip.OrgID
@@ -75,7 +75,7 @@ func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int
 		log.Println("Failed to get valid vrrp vni %s, %v", vni, err)
 		return
 	}
-	gateway = &model.Gateway{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Name: name, VrrpVni: int64(vni), VrrpAddr: "169.254.169.250/24", PeerAddr: "169.254.169.251/24", Status: "pending"}
+	gateway = &model.Gateway{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Name: name, Type: stype, VrrpVni: int64(vni), VrrpAddr: "169.254.169.250/24", PeerAddr: "169.254.169.251/24", Status: "pending"}
 	err = db.Create(gateway).Error
 	if err != nil {
 		log.Println("DB failed to create gateway, %v", err)
@@ -124,19 +124,21 @@ func (a *GatewayAdmin) Create(ctx context.Context, name string, pubID, priID int
 		}
 	}
 	intIfaces := []*SubnetIface{}
-	for _, sID := range subnetIDs {
-		var subnet *model.Subnet
-		subnet, err = SetGateway(ctx, sID, gateway.ID)
-		if err != nil {
-			log.Println("DB failed to set gateway, %v", err)
-			return
+	if subnetIDs != nil && len(subnetIDs) > 0 {
+		for _, sID := range subnetIDs {
+			var subnet *model.Subnet
+			subnet, err = SetGateway(ctx, sID, gateway.ID)
+			if err != nil {
+				log.Println("DB failed to set gateway, %v", err)
+				return
+			}
+			routes := []*StaticRoute{}
+			err = json.Unmarshal([]byte(subnet.Routes), &routes)
+			if err != nil {
+				log.Println("Failed to unmarshal routes", err)
+			}
+			intIfaces = append(intIfaces, &SubnetIface{Address: subnet.Gateway, Vni: subnet.Vlan, Routes: routes})
 		}
-		routes := []*StaticRoute{}
-		err = json.Unmarshal([]byte(subnet.Routes), &routes)
-		if err != nil {
-			log.Println("Failed to unmarshal routes", err)
-		}
-		intIfaces = append(intIfaces, &SubnetIface{Address: subnet.Gateway, Vni: subnet.Vlan, Routes: routes})
 	}
 	jsonData, err := json.Marshal(intIfaces)
 	if err != nil {
@@ -574,7 +576,7 @@ func (v *GatewayView) Create(c *macaron.Context, store session.Store) {
 		}
 		subnetIDs = append(subnetIDs, int64(sID))
 	}
-	_, err = gatewayAdmin.Create(c.Req.Context(), name, int64(pubID), int64(priID), subnetIDs, memberShip.OrgID)
+	_, err = gatewayAdmin.Create(c.Req.Context(), name, "", int64(pubID), int64(priID), subnetIDs, memberShip.OrgID)
 	if err != nil {
 		log.Println("Failed to create gateway, %v", err)
 		c.HTML(500, "500")

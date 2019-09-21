@@ -1,3 +1,1 @@
-<graphics type="vnc" passwd="VNC_PASS" port="VNC_PORT" autoport="no">
-  <listen type="address" address="0.0.0.0"/>
-</graphics>
+<graphics type="vnc" listen='0.0.0.0' passwd="VNC_PASS"/>

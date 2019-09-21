@@ -5,6 +5,7 @@ source ../cloudrc
 
 [ $# -lt 6 ] && die "$0 <vm_ID> <image> <name> <cpu> <memory> <disk_size> [userdata] [pubkey]"
 
+ID=$1
 vm_ID=inst-$1
 img_name=$2
 vm_name=$3
@@ -29,7 +30,7 @@ if [ ! -f "$vm_img" ]; then
     fi
     if [ ! -f "$image_cache/$img_name" ]; then
         echo "Image $img_name downlaod failed!"
-        echo "|:-COMMAND-:| `basename $0` '$1' '$vm_stat' '$SCI_CLIENT_ID' 'image $img_name downlaod failed!'"
+        echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' 'image $img_name downlaod failed!'"
         exit -1
     fi
     format=$(qemu-img info $image_cache/$img_name | grep 'file format' | cut -d' ' -f3)
@@ -39,7 +40,7 @@ if [ ! -f "$vm_img" ]; then
     vsize=$(qemu-img info $vm_img | grep 'virtual size:' | cut -d' ' -f4 | tr -d '(')
     let fsize=$disk_size*1024*1024*1024
     if [ "$vsize" -gt "$fsize" ]; then
-        echo "|:-COMMAND-:| `basename $0` '$1' '$vm_stat' '$SCI_CLIENT_ID' 'flavor is smaller than image size'"
+        echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' 'flavor is smaller than image size'"
         exit -1
     fi
     qemu-img resize -q $vm_img "${disk_size}G" &> /dev/null
@@ -49,12 +50,11 @@ hyper_ip=$(ifconfig $vxlan_interface | grep 'inet addr:' | cut -d: -f2 | cut -d'
 [ -z "$vm_mem" ] && vm_mem='1024m'
 [ -z "$vm_cpu" ] && vm_cpu=1
 let vm_mem=${vm_mem%[m|M]}*1024
-vnc_pass=`date | sum | cut -d' ' -f1`
 mkdir -p $xml_dir/$vm_ID
 vm_xml=$xml_dir/$vm_ID/$vm_ID.xml
 template=$template_dir/template.xml
 cp $template $vm_xml
-sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_img#g; s#VM_META#$vm_meta#g; s/VNC_PASS/$vnc_pass/g;" $vm_xml
+sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_img#g; s#VM_META#$vm_meta#g;" $vm_xml
 state=error
 virsh define $vm_xml
 virsh autostart $vm_ID
@@ -65,14 +65,12 @@ while [ $i -lt $nvlan ]; do
     vlan=$(jq -r .[$i].vlan <<< $vlans)
     ip=$(jq -r .[$i].ip_address <<< $vlans)
     mac=$(jq -r .[$i].mac_address <<< $vlans)
-    jq .security <<< $metadata | ./attach_nic.sh $1 $vlan $ip $mac 
+    jq .security <<< $metadata | ./attach_nic.sh $ID $vlan $ip $mac 
     let i=$i+1
 done
 virsh start $vm_ID
 if [ $? -eq 0 ]; then
     state=running
-    virsh dumpxml --security-info $vm_ID 2>/dev/null | sed "s/autoport='yes'/autoport='no'/g" > $vm_xml.dump && mv -f $vm_xml.dump $vm_xml
-    vnc_port=$(xmllint --xpath 'string(/domain/devices/graphics/@port)' $vm_xml)
-    vm_vnc="$vnc_port:$vnc_pass"
+    ./replace_vnc_passwd.sh $ID
 fi
-echo "|:-COMMAND-:| $(basename $0) '$1' '$state' '$SCI_CLIENT_ID' 'unknown'"
+echo "|:-COMMAND-:| $(basename $0) '$ID' '$state' '$SCI_CLIENT_ID' 'unknown'"
