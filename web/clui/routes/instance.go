@@ -16,12 +16,14 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/IBM/cloudland/web/clui/grpcs"
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/clui/scripts"
 	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/go-macaron/session"
+	"github.com/jinzhu/gorm"
 	macaron "gopkg.in/macaron.v1"
 )
 
@@ -544,6 +546,55 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 	return
 }
 
+func (a *InstanceAdmin) enableVnc(ctx context.Context, instance *model.Instance, vnc *model.Vnc) (err error) {
+	expired := true
+	if vnc != nil && vnc.ExpiredAt != nil {
+		expired = !vnc.ExpiredAt.After(time.Now())
+	}
+	if vnc != nil && vnc.Portmap != "" && !expired {
+		log.Println("Vnc uri is still valid")
+		return
+	}
+	gateway := &model.Gateway{}
+	db := DB()
+	routerID := instance.Interfaces[0].Address.Subnet.Router
+	if routerID > 0 {
+		gateway.ID = routerID
+		err = db.Take(gateway).Error
+		if err != nil {
+			log.Println("Failed to query instance gateway", err)
+			return
+		}
+	} else {
+		err = db.Where("type = ?", "system").Take(gateway).Error
+		if err != nil && gorm.IsRecordNotFoundError(err) {
+			log.Println("Creating new system router")
+			_, err = gatewayAdmin.Create(ctx, "System-Router", "system", 0, 0, nil, 1)
+			if err != nil {
+				log.Println("Failed to create system router", err)
+			}
+			return
+		}
+	}
+	if vnc == nil || vnc.Port == 0 || expired {
+		control := fmt.Sprintf("inter=%d", instance.Hyper)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/replace_vnc_passwd.sh '%d'", instance.ID)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Replace vnc password command execution failed", err)
+		}
+	}
+	if vnc != nil && vnc.Port != 0 && vnc.Address != "" && (vnc.Portmap == "" || expired) {
+		control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/enable_vnc_portmap.sh '%d' '%d' '%s' '%d'", instance.ID, gateway.ID, vnc.Address, vnc.Port)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Enable vnc portmap command execution failed", err)
+		}
+	}
+	return
+}
+
 func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
@@ -703,6 +754,16 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 			}
 		}
 	}
+	vnc := &model.Vnc{InstanceID: int64(instanceID)}
+	err = db.Where(vnc).Take(vnc).Error
+	if err != nil {
+		log.Println("VNC query failed", err)
+	}
+	err = instanceAdmin.enableVnc(c.Req.Context(), instance, vnc)
+	if err != nil {
+		log.Println("Failed enable VNC", err)
+	}
+	c.Data["Vnc"] = vnc
 	c.Data["Instance"] = instance
 	c.Data["Subnets"] = subnets
 	c.HTML(200, "instances_patch")
