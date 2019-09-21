@@ -8,6 +8,7 @@ internal_vlan=1236
 vxlan_mcast_addr=225.10.10.1
 vxlan_interface=bond0
 vlan_interface=bond0
+vnc_interface=bond0
 cpu_over_ratio=1
 mem_over_ratio=1
 disk_over_ratio=1

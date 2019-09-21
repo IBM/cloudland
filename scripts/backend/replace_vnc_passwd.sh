@@ -17,4 +17,8 @@ tmpxml=/tmp/${vm_ID}.xml
 virsh dumpxml $vm_ID >$tmpxml
 vnc_port=$(xmllint --xpath 'string(/domain/devices/graphics/@port)' $tmpxml)
 rm -f $tmpxml
-echo "|:-COMMAND-:| $(basename $0) '$ID' '$vnc_port' '$vnc_pass' '$portmap_remote_ip'"
+local_ip=$(ifconfig $vnc_interface | grep 'inet ' | awk '{print $2}')
+iptables -D INPUT -p tcp -m state --state NEW -m tcp -i $vnc_interface --dport $vnc_port -j ACCEPT
+iptables -I INPUT -p tcp -m state --state NEW -m tcp -i $vnc_interface --dport $vnc_port -j ACCEPT
+echo "iptables -D INPUT -p tcp -m state --state NEW -m tcp -i $vnc_interface --dport $vnc_port -j ACCEPT" | at now + 30 minutes
+echo "|:-COMMAND-:| $(basename $0) '$ID' '$vnc_port' '$vnc_pass' '$local_ip'"
