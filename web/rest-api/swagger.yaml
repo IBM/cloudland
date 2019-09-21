@@ -683,6 +683,23 @@ paths:
       responses:
         204:
           description: 204 response
+  /v3/projects:
+    get:
+      operationId: listProjects
+      summary: 'List projects'
+      tags: [keystone]
+      description: |
+        List projects
+      produces:
+      - application/json
+      responses:
+        200:
+          headers:
+            X-Auth-Token:
+              type: string
+            x-openstack-request-id: {type: string, description: 'request-id'}
+          description: 200 response
+          schema: {$ref: '#/definitions/projects'}
 definitions:
   token:
     type: object
@@ -897,18 +914,38 @@ definitions:
         virtual_size: {type: integer, example: 100}
         min_ram: {type: integer, format: int32, example: 512}
   member:
-       type: object
-       properties:
-          created_at: {type: string, format: date-time, example: '2016-03-08T20:19:41'}
-          image_id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'd32019d3-bc6e-4319-9c1d-6722fc136a22'}
-          member_id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'd32019d3-bc6e-4319-9c1d-6722fc136a22'}
-          schema: {type: string, example: '/v2/schemas/image'}
-          status: {type: string, enum: [queued, saving, active, killed, deleted, pending_delete, deactivated, uploading, importing], example: 'active'}
-          updated_at: {type: string, format: date-time, example: '2016-03-08T20:19:41'}
+     type: object
+     properties:
+        created_at: {type: string, format: date-time, example: '2016-03-08T20:19:41'}
+        image_id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'd32019d3-bc6e-4319-9c1d-6722fc136a22'}
+        member_id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'd32019d3-bc6e-4319-9c1d-6722fc136a22'}
+        schema: {type: string, example: '/v2/schemas/image'}
+        status: {type: string, enum: [queued, saving, active, killed, deleted, pending_delete, deactivated, uploading, importing], example: 'active'}
+        updated_at: {type: string, format: date-time, example: '2016-03-08T20:19:41'}
   members:
-       type: array
-       items:
-         $ref: '#/definitions/member'
+     type: array
+     items:
+        $ref: '#/definitions/member'
+  projectItem:
+    type: object
+    properties:
+        id: {type: string, format: name, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'd32019d3-bc6e-4319-9c1d-6722fc136a22'}
+        name: {type: string, enum: [stable], pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'demo'}
+        enabled: {type: boolean, example: true}
+        domain_id: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: 'default'}
+        links: {$ref: '#/definitions/links'}
+        description: {type: string, pattern: '^[A-Za-z][-A-Za-z0-9_]*$', example: ''}
+  projet:
+    type: object
+    properties:
+        project: {$ref: '#/definitions/projectItem'}
+  projects:
+    type: object
+    properties:
+        projects:
+          type: array
+          items:
+            $ref: '#/definitions/projectItem'
 # Added by API Auto Mocking Plugin
 host: localhost:4001
 basePath: /
