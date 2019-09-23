@@ -1,0 +1,40 @@
+{{template "_head" .}}
+<div class="user signup">
+	<div class="ui middle very relaxed page grid">
+        <div class="column" >
+            <form class="ui form" action="{{.Link}}" method="post">
+                <h3 class="ui top attached header">
+                    Update Openshift Cluster
+                </h3>
+                <div class="ui attached segment">
+                    <div class="required inline field">
+                        <label for="clustername">Cluster Name</label>
+                        <input id="clustername" name="clustername" value="{{ .Openshift.ClusterName }}" disabled>
+                    </div>
+                    <div class="required inline field">
+                        <label for="basedomain">Base Domain</label>
+                        <input id="basedomain" name="basedomain" value="{{ .Openshift.BaseDomain }}" disabled>
+                    </div>
+                    <div class="required inline field">
+                        <label for="haflag">High Available</label>
+                        <input id="haflag" name="haflag" value="{{ .Openshift.Haflag }}" disabled>
+                    </div>
+                    <div class="required inline field">
+                        <label for="flavor">Flavor</label>
+                        <input id="flavor" name="flavor" value="{{ .Openshift.Flavor }}" disabled>
+                    </div>
+                    <div class="required inline field">
+                        <label for="nworkers">Number of Workers</label>
+                        <input id="nworker"  name="nworkers" value="{{ .Openshift.WorkerNum }}" required>
+                    </div>
+                    <div class="inline field">
+                        <label></label>
+                        <button class="ui green button">Update Openshift Cluster</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+	</div>
+</div>
+{{template "_footer" .}}
+

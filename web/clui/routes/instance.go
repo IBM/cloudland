@@ -453,9 +453,17 @@ func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
 		}
 	}()
 	instance := &model.Instance{Model: model.Model{ID: id}}
-	if err = db.Set("gorm:auto_preload", true).Find(instance).Error; err != nil {
+	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
 		log.Println("Failed to query instance, %v", err)
 		return
+	}
+	if instance.ClusterID > 0 {
+		openshift := &model.Openshift{Model: model.Model{ID: instance.ClusterID}}
+		err = db.Model(openshift).Update("worker_num", gorm.Expr("worker_num - 1")).Error
+		if err != nil {
+			log.Println("Failed to update openshift cluster")
+			return
+		}
 	}
 	if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
 		log.Println("Failed to query floating ip(s), %v", err)

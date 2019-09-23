@@ -309,12 +309,13 @@ function launch_cluster()
     done
     ../openshift-install wait-for install-complete
     curl -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=complete"
-    for i in $(seq 1 $nworkers); do
+    let more=$nworkers-2
+    for i in $(seq 1 $more); do
         let index=$i+1
         let last=$index+20
         curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-$index;ipaddr=192.168.91.$last"
     done
-    let nodes=$nodes+$nworkers
+    let nodes=$nodes+$more
     while true; do
         sleep 5
         ../oc get csr -ojson | jq -r '.items[] | select(.status == {} ) | .metadata.name' | xargs ../oc adm certificate approve

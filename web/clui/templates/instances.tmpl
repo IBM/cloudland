@@ -28,6 +28,7 @@
 			                        <th>Image</th>
 			                        <th>IP Address</th>
 			                        <th>Status</th>
+			                        <th>Cluster</th>
 									{{ if .IsAdmin }}
 			                        <th>Hyper</th>
 			                        <th>Owner</th>
@@ -59,6 +60,7 @@
 					        {{ end }}
 						</td>
 			                        <td>{{.Status}}{{ if eq .Status "error" }}: {{ .Reason }}{{ end }}</td>
+			                        <td>{{ if ne .ClusterID 0 }}: {{ .ClusterID }}{{ end }}</td>
 						{{ if $.IsAdmin }}
 			                        <td>{{.Hyper}}</td>
 			                        <td>{{.OwnerInfo.Name}}</td>
