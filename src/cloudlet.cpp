@@ -206,7 +206,6 @@ int main(int argc, char *argv[])
         void *bufs[1];
         int sizes[1];
         Packer packer;
-
         packer.packInt(msgID);
         packer.packInt(myID);
         packer.packStr("report");
@@ -214,12 +213,27 @@ int main(int argc, char *argv[])
         memset(result, '\0', sizeof(result));
         fp = popen(REPORT_RC_CMD, "r");
         p = fgets(result, sizeof(result) - 1, fp);
-        pclose(fp);
         packer.packStr(result);
         packer.packStr("");
         bufs[0] = packer.getPackedMsg();
         sizes[0] = packer.getPackedMsgLen();
         rc = SCI_Upload(SCHEDULE_FILTER, SCI_GROUP_ALL, 1, bufs, sizes);
+        do {
+            p = fgets(result, sizeof(result), fp);
+            if (p == NULL) {
+                break;
+            }
+            Packer resp;
+            resp.packInt(msgID);
+            resp.packInt(myID);
+            resp.packStr("callback");
+            resp.packStr(result);
+            resp.packStr("");
+            bufs[0] = resp.getPackedMsg();
+            sizes[0] = resp.getPackedMsgLen();
+            rc = SCI_Upload(SCI_FILTER_NULL, SCI_GROUP_ALL, 1, bufs, sizes);
+        } while (true);
+        pclose(fp);
         rc = SCI_Query(HEALTH_STATUS, &status);
         sleep(random() % 5 + 1);
     }

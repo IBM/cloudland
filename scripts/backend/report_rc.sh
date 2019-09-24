@@ -33,6 +33,12 @@ function probe_arp()
     cd -
 }
 
+function inst_status()
+{
+    list=$(sudo virsh list --all | tail -n +3 | cut -d' ' -f3- | xargs | sed 's/inst-//g;s/shut off/shut_off/g')
+    echo "|:-COMMAND-:| inst_status.sh '$SCI_CLIENT_ID' '$list'"
+}
+
 function calc_resource()
 {
     virtual_cpu=0
@@ -63,3 +69,4 @@ function calc_resource()
 calc_resource
 echo "cpu=$cpu/$total_cpu memory=$memory/$total_memory disk=$disk/$total_disk network=$network/$total_network load=$load/$total_load"
 probe_arp >/dev/null 2>&1
+inst_status
