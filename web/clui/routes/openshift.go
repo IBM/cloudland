@@ -123,6 +123,18 @@ func (a *OpenshiftAdmin) State(ctx context.Context, id int64, status string) (er
 	return
 }
 
+func (a *OpenshiftAdmin) GetState(ctx context.Context, id int64) (status string, err error) {
+	db := DB()
+	openshift := &model.Openshift{Model: model.Model{ID: id}}
+	err = db.Take(openshift).Error
+	if err != nil {
+		log.Println("Failed to update openshift cluster status", err)
+		return
+	}
+	status = openshift.Status
+	return
+}
+
 func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr string) (instance *model.Instance, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
@@ -178,11 +190,13 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 		log.Println("Launch vm command execution failed", err)
 		return
 	}
-	openshift.WorkerNum++
-	err = db.Save(openshift).Error
-	if err != nil {
-		log.Println("Failed to update openshift cluster")
-		return
+	if strings.Index(hostname, "worker-") == 0 {
+		openshift.WorkerNum++
+		err = db.Save(openshift).Error
+		if err != nil {
+			log.Println("Failed to update openshift cluster")
+			return
+		}
 	}
 	return
 }
@@ -190,15 +204,20 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 func (a *OpenshiftAdmin) Update(ctx context.Context, id int64, nworkers int32) (openshift *model.Openshift, err error) {
 	db := DB()
 	openshift = &model.Openshift{Model: model.Model{ID: id}}
-	err = db.Create(openshift).Error
+	err = db.Take(openshift).Error
 	if err != nil {
-		log.Println("DB failed to create openshift", err)
+		log.Println("DB failed to query openshift", err)
+		return
+	}
+	err = a.State(ctx, id, "updating")
+	if err != nil {
+		log.Println("DB failed to update cluster status", err)
 		return
 	}
 	maxIndex := 0
 	if openshift.WorkerNum > 0 {
 		instances := []*model.Instance{}
-		err = db.Where("cluster_id = ? and hostname like ?", id, "%worker%").Find(instances).Error
+		err = db.Where("cluster_id = ? and hostname like ?", id, "%worker%").Find(&instances).Error
 		if err != nil {
 			log.Println("Failed to query cluster instances", err)
 			return
@@ -222,9 +241,9 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id int64, nworkers int32) (
 		}
 	}
 	if nworkers > openshift.WorkerNum {
-		maxIndex++
-		for maxIndex <= int(nworkers) {
-			hostname := fmt.Sprintf("Worker-%d", maxIndex)
+		for i := 0; i < int(nworkers-openshift.WorkerNum); i++ {
+			maxIndex++
+			hostname := fmt.Sprintf("worker-%d", maxIndex)
 			ipaddr := fmt.Sprintf("192.168.91.%d", maxIndex+20)
 			_, err = openshiftAdmin.Launch(ctx, id, hostname, ipaddr)
 			if err != nil {
@@ -233,8 +252,8 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id int64, nworkers int32) (
 			}
 		}
 	} else {
-		for i := 0; i < int(openshift.WorkerNum-nworkers); i-- {
-			hostname := fmt.Sprintf("Worker-%d", maxIndex)
+		for i := 0; i < int(openshift.WorkerNum-nworkers); i++ {
+			hostname := fmt.Sprintf("worker-%d", maxIndex)
 			instance := &model.Instance{}
 			err = db.Where("hostname = ? and cluster_id = ?", hostname, id).Take(instance).Error
 			if err != nil {
@@ -248,6 +267,11 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id int64, nworkers int32) (
 			}
 			maxIndex--
 		}
+	}
+	err = a.State(ctx, id, "complete")
+	if err != nil {
+		log.Println("DB failed to update cluster status", err)
+		return
 	}
 	return
 }
@@ -453,7 +477,8 @@ func (v *OpenshiftView) Edit(c *macaron.Context, store session.Store) {
 }
 
 func (v *OpenshiftView) Patch(c *macaron.Context, store session.Store) {
-	memberShip := GetMemberShip(c.Req.Context())
+	ctx := c.Req.Context()
+	memberShip := GetMemberShip(ctx)
 	id := c.ParamsInt64("id")
 	permit, err := memberShip.CheckOwner(model.Owner, "openshifts", id)
 	if !permit {
@@ -462,8 +487,21 @@ func (v *OpenshiftView) Patch(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	nworkers := c.ParamsInt("nworkers")
-	_, err = openshiftAdmin.Update(c.Req.Context(), id, int32(nworkers))
+	nworkers := c.QueryInt("nworkers")
+	if nworkers < 2 {
+		code := http.StatusBadRequest
+		c.Data["ErrorMsg"] = "Number of worker must be at least 2"
+		c.HTML(code, "error")
+		return
+	}
+	status, err := openshiftAdmin.GetState(ctx, id)
+	if status != "complete" {
+		code := http.StatusBadRequest
+		c.Data["ErrorMsg"] = "Cluster can be updated only in complete status"
+		c.HTML(code, "error")
+		return
+	}
+	_, err = openshiftAdmin.Update(ctx, id, int32(nworkers))
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
@@ -560,8 +598,9 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	nworkers := c.QueryInt("nworkers")
 	if nworkers < 2 {
 		code := http.StatusBadRequest
-		c.Data["ErrorMsg"] = "Initial number of worker must >= 2"
+		c.Data["ErrorMsg"] = "Number of worker must be at least 2"
 		c.HTML(code, "error")
+		return
 	}
 	flavor := c.QueryInt64("flavor")
 	key := c.QueryInt64("key")
@@ -569,7 +608,8 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	_, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, int32(nworkers), flavor, key)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(500, "500")
+		c.HTML(500, "error")
+		return
 	}
 	c.Redirect(redirectTo)
 }

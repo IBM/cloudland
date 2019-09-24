@@ -5,6 +5,7 @@ source ../cloudrc
 
 [ $# -lt 5 ] && die "$0 <vm_ID> <cpu> <memory> <disk_size> <hostname>"
 
+ID=$1
 vm_ID=inst-$1
 vm_cpu=$2
 vm_mem=$3
@@ -42,7 +43,7 @@ while [ $i -lt $nvlan ]; do
     vlan=$(jq -r .[$i].vlan <<< $vlans)
     ip=$(jq -r .[$i].ip_address <<< $vlans)
     mac=$(jq -r .[$i].mac_address <<< $vlans)
-    jq .security <<< $metadata | ./attach_nic.sh $1 $vlan $ip $mac 
+    jq .security <<< $metadata | ./attach_nic.sh $ID $vlan $ip $mac 
     let i=$i+1
 done
 virsh start $vm_ID
@@ -60,9 +61,7 @@ if [ $? -eq 0 ]; then
     sed -i "/initrd/d;/kernel/d;/cmdline/d;s/<on_reboot>destroy/<on_reboot>restart/;s/<on_crash>destroy/<on_crash>restart/" ${vm_xml}
     virsh define $vm_xml
     virsh start $vm_ID
-    virsh dumpxml --security-info $vm_ID 2>/dev/null | sed "s/autoport='yes'/autoport='no'/g" > ${vm_xml}.dump
-    mv -f ${vm_xml}.dump $vm_xml
-    [ $? -eq 0 ] && state=running
+    [ $? -eq 0 ] && state=running && ./replace_vnc_passwd.sh $ID
     virsh autostart $vm_ID
 fi
-echo "|:-COMMAND-:| launch_vm.sh '$1' '$state' '$SCI_CLIENT_ID' 'unknown'"
+echo "|:-COMMAND-:| launch_vm.sh '$ID' '$state' '$SCI_CLIENT_ID' 'unknown'"

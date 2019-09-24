@@ -458,7 +458,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
 		log.Println("Failed to query instance, %v", err)
 		return
 	}
-	if instance.ClusterID > 0 {
+	if instance.ClusterID > 0 && strings.Index(instance.Hostname, "worker-") == 0 {
 		openshift := &model.Openshift{Model: model.Model{ID: instance.ClusterID}}
 		err = db.Model(openshift).Update("worker_num", gorm.Expr("worker_num - 1")).Error
 		if err != nil {
@@ -591,6 +591,7 @@ func (a *InstanceAdmin) enableVnc(ctx context.Context, instance *model.Instance)
 		}
 	}
 	if vnc.LocalPort == 0 || expired {
+		vnc.Passwd = ""
 		control := fmt.Sprintf("inter=%d", instance.Hyper)
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/replace_vnc_passwd.sh '%d'", instance.ID)
 		err = hyperExecute(ctx, control, command)

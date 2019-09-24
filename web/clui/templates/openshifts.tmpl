@@ -35,7 +35,7 @@
                                 {{ $Link := .Link }}
                                 {{ range .Openshifts }}
 		                        <tr>
-			                        <td>{{.ID}}</td>
+			                        <td><a href="{{$Link}}/{{.ID}}">{{.ID}}</a></td>
 			                        <td>{{.ClusterName}}</td>
 			                        <td>{{.BaseDomain}}</td>
 			                        <td>{{.Haflag}}</td>

@@ -28,7 +28,6 @@
 			                        <th>Image</th>
 			                        <th>IP Address</th>
 			                        <th>Status</th>
-			                        <th>Cluster</th>
 									{{ if .IsAdmin }}
 			                        <th>Hyper</th>
 			                        <th>Owner</th>
@@ -42,7 +41,7 @@
                                 {{ $InstanceID := .ID }}
 		                        <tr>
 			                        <td><a href="{{$Link}}/{{.ID}}">{{.ID}}</a></td>
-			                        <td>{{.Hostname}}</td>
+			                        <td>{{ if ne .ClusterID 0 }}oc{{.ClusterID}}: {{end}}{{.Hostname}}</td>
 			                        <td>{{.Flavor.Name}}</td>
 			                        <td>{{ if .Image }}{{.Image.Name}}{{else}}{{.Hostname}}{{end}}</td>
 			                        <td>
@@ -60,7 +59,6 @@
 					        {{ end }}
 						</td>
 			                        <td>{{.Status}}{{ if eq .Status "error" }}: {{ .Reason }}{{ end }}</td>
-			                        <td>{{ if ne .ClusterID 0 }}: {{ .ClusterID }}{{ end }}</td>
 						{{ if $.IsAdmin }}
 			                        <td>{{.Hyper}}</td>
 			                        <td>{{.OwnerInfo.Name}}</td>
