@@ -14,6 +14,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/sca/dbs"
@@ -177,6 +178,77 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 		log.Println("Launch vm command execution failed", err)
 		return
 	}
+	openshift.WorkerNum++
+	err = db.Save(openshift).Error
+	if err != nil {
+		log.Println("Failed to update openshift cluster")
+		return
+	}
+	return
+}
+
+func (a *OpenshiftAdmin) Update(ctx context.Context, id int64, nworkers int32) (openshift *model.Openshift, err error) {
+	db := DB()
+	openshift = &model.Openshift{Model: model.Model{ID: id}}
+	err = db.Create(openshift).Error
+	if err != nil {
+		log.Println("DB failed to create openshift", err)
+		return
+	}
+	maxIndex := 0
+	if openshift.WorkerNum > 0 {
+		instances := []*model.Instance{}
+		err = db.Where("cluster_id = ? and hostname like ?", id, "%worker%").Find(instances).Error
+		if err != nil {
+			log.Println("Failed to query cluster instances", err)
+			return
+		}
+		if len(instances) > 0 {
+			for _, inst := range instances {
+				name := strings.Split(inst.Hostname, "-")
+				if len(name) < 2 {
+					log.Println("Wrong name pattern")
+					continue
+				}
+				index, err := strconv.Atoi(name[1])
+				if err != nil {
+					log.Println("Failed to convert index")
+					continue
+				}
+				if maxIndex < index {
+					maxIndex = index
+				}
+			}
+		}
+	}
+	if nworkers > openshift.WorkerNum {
+		maxIndex++
+		for maxIndex <= int(nworkers) {
+			hostname := fmt.Sprintf("Worker-%d", maxIndex)
+			ipaddr := fmt.Sprintf("192.168.91.%d", maxIndex+20)
+			_, err = openshiftAdmin.Launch(ctx, id, hostname, ipaddr)
+			if err != nil {
+				log.Println("Failed to launch a worker", err)
+				return
+			}
+		}
+	} else {
+		for i := 0; i < int(openshift.WorkerNum-nworkers); i-- {
+			hostname := fmt.Sprintf("Worker-%d", maxIndex)
+			instance := &model.Instance{}
+			err = db.Where("hostname = ? and cluster_id = ?", hostname, id).Take(instance).Error
+			if err != nil {
+				log.Println("Failed to query worker", err)
+				return
+			}
+			err = instanceAdmin.Delete(ctx, instance.ID)
+			if err != nil {
+				log.Println("Failed to delete worker", err)
+				return
+			}
+			maxIndex--
+		}
+	}
 	return
 }
 
@@ -189,7 +261,6 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 		BaseDomain:  domain,
 		Status:      "creating",
 		Haflag:      haflag,
-		WorkerNum:   nworkers,
 		Flavor:      flavor,
 		Key:         key,
 	}
@@ -339,26 +410,15 @@ func (v *OpenshiftView) List(c *macaron.Context, store session.Store) {
 
 func (v *OpenshiftView) Delete(c *macaron.Context, store session.Store) (err error) {
 	memberShip := GetMemberShip(c.Req.Context())
-	id := c.Params("id")
-	if id == "" {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
-		return
-	}
-	openshiftID, err := strconv.Atoi(id)
-	if err != nil {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
-		return
-	}
-	permit, err := memberShip.CheckOwner(model.Owner, "openshifts", int64(openshiftID))
+	id := c.ParamsInt64("id")
+	permit, err := memberShip.CheckOwner(model.Owner, "openshifts", id)
 	if !permit {
 		log.Println("Not authorized for this operation")
 		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	err = openshiftAdmin.Delete(c.Req.Context(), int64(openshiftID))
+	err = openshiftAdmin.Delete(c.Req.Context(), id)
 	if err != nil {
 		code := http.StatusInternalServerError
 		c.Error(code, http.StatusText(code))
@@ -368,6 +428,47 @@ func (v *OpenshiftView) Delete(c *macaron.Context, store session.Store) (err err
 		"redirect": "openshifts",
 	})
 	return
+}
+
+func (v *OpenshiftView) Edit(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.ParamsInt64("id")
+	permit, err := memberShip.CheckOwner(model.Owner, "openshifts", id)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	db := DB()
+	openshift := &model.Openshift{Model: model.Model{ID: id}}
+	err = db.Take(openshift).Error
+	if err != nil {
+		log.Println("Failed ro query openshift", err)
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+	}
+	c.Data["Openshift"] = openshift
+	c.HTML(200, "openshifts_patch")
+}
+
+func (v *OpenshiftView) Patch(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.ParamsInt64("id")
+	permit, err := memberShip.CheckOwner(model.Owner, "openshifts", id)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	nworkers := c.ParamsInt("nworkers")
+	_, err = openshiftAdmin.Update(c.Req.Context(), id, int32(nworkers))
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+	}
+	c.Redirect("../openshifts")
 }
 
 func (v *OpenshiftView) New(c *macaron.Context, store session.Store) {
@@ -457,11 +558,17 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	}
 	secret := c.QueryTrim("secret")
 	nworkers := c.QueryInt("nworkers")
+	if nworkers < 2 {
+		code := http.StatusBadRequest
+		c.Data["ErrorMsg"] = "Initial number of worker must >= 2"
+		c.HTML(code, "error")
+	}
 	flavor := c.QueryInt64("flavor")
 	key := c.QueryInt64("key")
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
 	_, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, int32(nworkers), flavor, key)
 	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 	}
 	c.Redirect(redirectTo)
