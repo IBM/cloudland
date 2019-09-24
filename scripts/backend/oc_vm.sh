@@ -28,12 +28,11 @@ metadata=$(cat)
 [ -z "$vm_mem" ] && vm_mem='1024m'
 [ -z "$vm_cpu" ] && vm_cpu=1
 let vm_mem=${vm_mem%[m|M]}*1024
-vnc_pass=`date | sum | cut -d' ' -f1`
 mkdir -p $xml_dir/$vm_ID
 vm_xml=$xml_dir/$vm_ID/$vm_ID.xml
 template=$template_dir/openshift.xml
 cp $template $vm_xml
-sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_disk#g; s/VNC_PASS/$vnc_pass/g; s/ROLE_IGN/${role}.ign/g;" $vm_xml
+sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_disk#g; s/ROLE_IGN/${role}.ign/g;" $vm_xml
 state=error
 virsh define $vm_xml
 vlans=$(jq .vlans <<< $metadata)
@@ -64,8 +63,6 @@ if [ $? -eq 0 ]; then
     virsh dumpxml --security-info $vm_ID 2>/dev/null | sed "s/autoport='yes'/autoport='no'/g" > ${vm_xml}.dump
     mv -f ${vm_xml}.dump $vm_xml
     [ $? -eq 0 ] && state=running
-    vnc_port=$(xmllint --xpath 'string(/domain/devices/graphics/@port)' $vm_xml)
-    vm_vnc="$vnc_port:$vnc_pass"
     virsh autostart $vm_ID
 fi
 echo "|:-COMMAND-:| launch_vm.sh '$1' '$state' '$SCI_CLIENT_ID' 'unknown'"

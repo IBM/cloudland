@@ -36,10 +36,10 @@ func ReplaceVncPasswd(ctx context.Context, job *model.Job, args []string) (statu
 	passwd := args[3]
 	hyperip := args[4]
 	vnc := &model.Vnc{
-		InstanceID: int64(instID),
-		Address:    hyperip,
-		Port:       int32(portN),
-		Passwd:     passwd,
+		InstanceID:   int64(instID),
+		LocalAddress: hyperip,
+		LocalPort:    int32(portN),
+		Passwd:       passwd,
 	}
 	err = db.Where("instance_id = ?", int64(instID)).Assign(vnc).FirstOrCreate(&model.Vnc{}).Error
 	if err != nil {

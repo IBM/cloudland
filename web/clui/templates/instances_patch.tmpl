@@ -47,14 +47,16 @@
 		    {{ if .Vnc }}
 		    <div class="inline field">
 			<label for="vnc" name="vnc">Vnc</label>
-			<span>{{.Vnc.Portmap}}:{{.Vnc.Passwd}}</span>
+			<span>{{.Vnc.AccessAddress}}:{{.Vnc.AccessPort}}:{{.Vnc.Passwd}}</span>
 		    </div>
-                  <div class="inline field">
+		    {{ if .Vnc.ExpiredAt }}
+                    <div class="inline field">
                        <label></label>
                        <span class="content vnc">
                                (Expires at {{ .Vnc.ExpiredAt}})
                        </span>
-                  </div>
+                   </div>
+		   {{ end }}
 		   {{ end }}
                     <div class="inline field">
                         <label></label>

@@ -16,7 +16,7 @@ func init() {
 }
 
 func EnableVncPortmap(ctx context.Context, job *model.Job, args []string) (status string, err error) {
-	//|:-COMMAND-:| enable_vm_vnc.sh 6 192.168.71.110 18000
+	//|:-COMMAND-:| enable_vnc_portmap.sh 6 192.168.71.110 18000
 	db := dbs.DB()
 	argn := len(args)
 	if argn < 2 {
@@ -29,12 +29,14 @@ func EnableVncPortmap(ctx context.Context, job *model.Job, args []string) (statu
 		log.Println("Invalid instance ID", err)
 		return
 	}
-	portmap := args[2]
+	raddress := args[2]
+	rport, err := strconv.Atoi(args[3])
 
 	expireAt := time.Now().Add(time.Minute * 30)
 	vnc := &model.Vnc{
-		Portmap:   portmap,
-		ExpiredAt: &expireAt,
+		AccessAddress: raddress,
+		AccessPort:    int32(rport),
+		ExpiredAt:     &expireAt,
 	}
 	err = db.Model(vnc).Where("instance_id = ?", int64(instID)).Update(vnc).Error
 	if err != nil {

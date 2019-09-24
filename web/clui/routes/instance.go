@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
 	"strconv"
@@ -546,22 +547,27 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 	return
 }
 
-func (a *InstanceAdmin) enableVnc(ctx context.Context, instance *model.Instance, vnc *model.Vnc) (err error) {
+func (a *InstanceAdmin) enableVnc(ctx context.Context, instance *model.Instance) (vnc *model.Vnc, err error) {
+	db := DB()
+	vnc = &model.Vnc{InstanceID: int64(instance.ID)}
+	err = db.Where(vnc).Take(vnc).Error
+	if err != nil {
+		log.Println("VNC query failed", err)
+	}
 	expired := true
-	if vnc != nil && vnc.ExpiredAt != nil {
+	if vnc.ExpiredAt != nil {
 		expired = !vnc.ExpiredAt.After(time.Now())
 	}
-	if vnc != nil && vnc.Portmap != "" && !expired {
+	if vnc.AccessAddress != "" && vnc.AccessPort > 0 && !expired {
 		log.Println("Vnc uri is still valid")
 		return
 	}
 	gateway := &model.Gateway{}
-	db := DB()
 	routerID := instance.Interfaces[0].Address.Subnet.Router
 	if routerID > 0 {
 		gateway.ID = routerID
-		err = db.Take(gateway).Error
-		if err != nil {
+		err = db.Preload("Interfaces", "type = 'gateway_public'").Preload("Interfaces.Address").Take(gateway).Error
+		if err != nil || gateway.Interfaces == nil || len(gateway.Interfaces) == 0 {
 			log.Println("Failed to query instance gateway", err)
 			return
 		}
@@ -576,7 +582,7 @@ func (a *InstanceAdmin) enableVnc(ctx context.Context, instance *model.Instance,
 			return
 		}
 	}
-	if vnc == nil || vnc.Port == 0 || expired {
+	if vnc.LocalPort == 0 || expired {
 		control := fmt.Sprintf("inter=%d", instance.Hyper)
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/replace_vnc_passwd.sh '%d'", instance.ID)
 		err = hyperExecute(ctx, control, command)
@@ -584,13 +590,32 @@ func (a *InstanceAdmin) enableVnc(ctx context.Context, instance *model.Instance,
 			log.Println("Replace vnc password command execution failed", err)
 		}
 	}
-	if vnc != nil && vnc.Port != 0 && vnc.Address != "" && (vnc.Portmap == "" || expired) {
+	if vnc.LocalPort != 0 && vnc.LocalAddress != "" && (vnc.AccessAddress == "" || vnc.AccessPort == 0 || expired) {
+		raddress := strings.Split(gateway.Interfaces[0].Address.Address, "/")[0]
+		count := 1
+		rport := 0
+		for count > 0 {
+			rport = rand.Intn(remoteMax-remoteMin) + remoteMin
+			if err = db.Model(&model.Vnc{}).Where("access_port = ? and router = ?", rport, routerID).Count(&count).Error; err != nil {
+				log.Println("Failed to query existing remote port", err)
+				return
+			}
+		}
 		control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/enable_vnc_portmap.sh '%d' '%d' '%s' '%d'", instance.ID, gateway.ID, vnc.Address, vnc.Port)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/enable_vnc_portmap.sh '%d' '%d' '%s' '%d' '%s' '%d'", instance.ID, gateway.ID, vnc.LocalAddress, vnc.LocalPort, raddress, rport)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Enable vnc portmap command execution failed", err)
 		}
+		vnc.Router = routerID
+		err = db.Where("instance_id = ?", instance.ID).Assign(vnc).FirstOrCreate(&model.Vnc{}).Error
+		if err != nil {
+			log.Println("Failed to update vnc", err)
+		}
+		vnc.AccessAddress = raddress
+		vnc.AccessPort = int32(rport)
+		expireAt := time.Now().Add(time.Minute * 30).UTC()
+		vnc.ExpiredAt = &expireAt
 	}
 	return
 }
@@ -754,12 +779,7 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 			}
 		}
 	}
-	vnc := &model.Vnc{InstanceID: int64(instanceID)}
-	err = db.Where(vnc).Take(vnc).Error
-	if err != nil {
-		log.Println("VNC query failed", err)
-	}
-	err = instanceAdmin.enableVnc(c.Req.Context(), instance, vnc)
+	vnc, err := instanceAdmin.enableVnc(c.Req.Context(), instance)
 	if err != nil {
 		log.Println("Failed enable VNC", err)
 	}

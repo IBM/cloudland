@@ -14,12 +14,14 @@ import (
 
 type Vnc struct {
 	Model
-	Address    string `gorm:"type:varchar(64)"`
-	Port       int32
-	Passwd     string `gorm:"type:varchar(32)"`
-	InstanceID int64
-	Portmap    string `gorm:"type:varchar(128)"`
-	ExpiredAt  *time.Time
+	LocalAddress  string `gorm:"type:varchar(64)"`
+	LocalPort     int32
+	AccessAddress string `gorm:"type:varchar(64)"`
+	AccessPort    int32
+	Passwd        string `gorm:"type:varchar(32)"`
+	InstanceID    int64
+	Router        int64
+	ExpiredAt     *time.Time
 }
 
 func init() {
