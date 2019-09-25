@@ -30,7 +30,6 @@
 						{{ if $.IsAdmin }}
 			                        <th>Owner</th>
 						{{ end }}
-			                        <th>Edit</th>
                                     <th>Delete</th>
 		                        </tr>
 	                        </thead>
@@ -46,7 +45,6 @@
 			                        <td>{{.OwnerInfo.Name}}</td>
 						{{ end }}
 			                        <td>{{ if .Instance }} {{.Instance.ID}}-{{.Instance.Hostname}}:{{.Target}} {{ end }}</td>
-			                        <td><a href="{{$Link}}/{{.ID}}"><i class="fa fa-pencil-square-o"></i></a></td>
                                     <td><div class="delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}"><i class="dark purple trash alternate outline icon"></i></div></td>
 		                        </tr>
                                 {{ end }}

@@ -12,6 +12,14 @@
                         <input id="name" name="name" value="{{ .Gateway.Name }}" required>
                     </div>
                     <div class="inline field">
+                        <label for="createdat">Created At</label>
+                        <input id="createdat" name="createdat" value="{{ .Gateway.CreatedAt }}" disabled>
+                    </div>
+                    <div class="inline field">
+                        <label for="updatedat">Updated At</label>
+                        <input id="updatedat" name="updatedat" value="{{ .Gateway.UpdatedAt }}" disabled>
+                    </div>
+                    <div class="inline field">
                         <label for="subnets">Subnets</label>
                         <select name="subnets" id="subnets" multiple="" class="ui multiple selection dropdown">
 							{{ if .Gateway.Subnets }}

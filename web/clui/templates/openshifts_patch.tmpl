@@ -15,6 +15,14 @@
                         <label for="basedomain">Base Domain</label>
                         <input id="basedomain" name="basedomain" value="{{ .Openshift.BaseDomain }}" disabled>
                     </div>
+                    <div class="inline field">
+                        <label for="createdat">Created At</label>
+                        <input id="createdat" name="createdat" value="{{ .Openshift.CreatedAt }}" disabled>
+                    </div>
+                    <div class="inline field">
+                        <label for="updatedat">Updated At</label>
+                        <input id="updatedat" name="updatedat" value="{{ .Openshift.UpdatedAt }}" disabled>
+                    </div>
                     <div class="required inline field">
                         <label for="haflag">High Available</label>
                         <input id="haflag" name="haflag" value="{{ .Openshift.Haflag }}" disabled>
