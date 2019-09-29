@@ -201,13 +201,25 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 	return
 }
 
-func (a *OpenshiftAdmin) Update(ctx context.Context, id int64, nworkers int32) (openshift *model.Openshift, err error) {
+func (a *OpenshiftAdmin) Update(ctx context.Context, id, flavorID int64, nworkers int32) (openshift *model.Openshift, err error) {
 	db := DB()
 	openshift = &model.Openshift{Model: model.Model{ID: id}}
 	err = db.Take(openshift).Error
 	if err != nil {
 		log.Println("DB failed to query openshift", err)
 		return
+	}
+	if flavorID != openshift.Flavor {
+		flavor := &model.Flavor{Model: model.Model{ID: flavorID}}
+		if err = db.Take(flavor).Error; err != nil {
+			log.Println("Failed to query flavor", err)
+			return
+		}
+		openshift.Flavor = flavorID
+		if err = db.Save(openshift).Error; err != nil {
+			log.Println("Failed to save openshift", err)
+			return
+		}
 	}
 	err = a.State(ctx, id, "updating")
 	if err != nil {
@@ -472,7 +484,14 @@ func (v *OpenshiftView) Edit(c *macaron.Context, store session.Store) {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 	}
+	_, flavors, err := flavorAdmin.List(0, -1, "", "")
+	if err := db.Find(&flavors).Error; err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+		return
+	}
 	c.Data["Openshift"] = openshift
+	c.Data["Flavors"] = flavors
 	c.HTML(200, "openshifts_patch")
 }
 
@@ -487,6 +506,7 @@ func (v *OpenshiftView) Patch(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	flavor := c.QueryInt64("flavor")
 	nworkers := c.QueryInt("nworkers")
 	if nworkers < 2 {
 		code := http.StatusBadRequest
@@ -501,7 +521,7 @@ func (v *OpenshiftView) Patch(c *macaron.Context, store session.Store) {
 		c.HTML(code, "error")
 		return
 	}
-	_, err = openshiftAdmin.Update(ctx, id, int32(nworkers))
+	_, err = openshiftAdmin.Update(ctx, id, flavor, int32(nworkers))
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
