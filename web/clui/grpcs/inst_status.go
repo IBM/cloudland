@@ -23,7 +23,7 @@ func init() {
 }
 
 func InstanceStatus(ctx context.Context, job *model.Job, args []string) (status string, err error) {
-	//|:-COMMAND-:| launch_vm.sh '127' 'running' '3' 'reason'
+	//|:-COMMAND-:| launch_vm.sh '3' '5 running 7 running 9 shut_off'
 	db := dbs.DB()
 	argn := len(args)
 	if argn < 2 {

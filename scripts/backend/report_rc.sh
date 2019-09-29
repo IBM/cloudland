@@ -35,8 +35,24 @@ function probe_arp()
 
 function inst_status()
 {
-    list=$(sudo virsh list --all | tail -n +3 | cut -d' ' -f3- | xargs | sed 's/inst-//g;s/shut off/shut_off/g')
-    echo "|:-COMMAND-:| inst_status.sh '$SCI_CLIENT_ID' '$list'"
+    inst_list=$(sudo virsh list --all | tail -n +3 | cut -d' ' -f3- | xargs | sed 's/inst-//g;s/shut off/shut_off/g')
+    echo "|:-COMMAND-:| inst_status.sh '$SCI_CLIENT_ID' '$inst_list'"
+}
+
+function vlan_status()
+{
+    cd /opt/cloudland/cache/dnsmasq
+    vlan_list=$(ls)
+    vlan_list=$(echo "$vlan_list $(ip netns list | grep vlan | cut -d' ' -f1)" | xargs | sed 's/vlan//g')
+    echo "|:-COMMAND-:| vlan_status.sh '$SCI_CLIENT_ID' '$vlan_list'"
+}
+
+function router_status()
+{
+    cd /opt/cloudland/cache/router
+    router_list=$(ls)
+    router_list=$(echo "$router_list $(ip netns list | grep router | cut -d' ' -f1)" | xargs | sed 's/router-//g')
+    echo "|:-COMMAND-:| router_status.sh '$SCI_CLIENT_ID' '$router_list'"
 }
 
 function calc_resource()
@@ -70,3 +86,5 @@ calc_resource
 echo "cpu=$cpu/$total_cpu memory=$memory/$total_memory disk=$disk/$total_disk network=$network/$total_network load=$load/$total_load"
 probe_arp >/dev/null 2>&1
 inst_status
+vlan_status
+router_status
