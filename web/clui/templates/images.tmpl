@@ -26,7 +26,7 @@
 			                        <th>Name</th>
 			                        <th>Format</th>
 			                        <th>Status</th>
-			                        <th>Edit</th>
+			                        <th>Created At</th>
                                     <th>Delete</th>
 		                        </tr>
 	                        </thead>
@@ -38,7 +38,7 @@
 			                        <td>{{.Name}}</td>
 			                        <td>{{.Format}}</td>
 			                        <td>{{.Status}}</td>
-			                        <td><a href="{{$Link}}/{{.ID}}"><i class="fa fa-pencil-square-o"></i></a></td>
+			                        <td><span title="Tue, 18 Dec 2018 14:24:59 &#43;0800">{{.CreatedAt}}</span></td>
                                     <td><div class="delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}"><i class="dark purple trash alternate outline icon"></i></div></td>
 		                        </tr>
                                 {{ end }}

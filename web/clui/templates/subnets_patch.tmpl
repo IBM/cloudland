@@ -11,6 +11,14 @@
                         <label for="name">Name</label>
                         <input id="name" name="name" value="{{ .Subnet.Name }}" required>
                     </div>
+                    <div class="inline field">
+                        <label for="createdat">Created At</label>
+                        <input id="createdat" name="createdat" value="{{ .Subnet.CreatedAt }}" disabled>
+                    </div>
+                    <div class="inline field">
+                        <label for="updatedat">Updated At</label>
+                        <input id="updatedat" name="updatedat" value="{{ .Subnet.UpdatedAt }}" disabled>
+                    </div>
                     <div class="required inline field">
                         <label for="network">Network</label>
                         <input id="network" name="network" value="{{ .Subnet.Network }}" disabled required>

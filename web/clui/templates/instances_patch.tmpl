@@ -12,6 +12,14 @@
                         <input id="hostname" name="hostname" value="{{ .Instance.Hostname }}" required>
                     </div>
                     <div class="inline field">
+                        <label for="createdat">Created At</label>
+                        <input id="createdat" name="createdat" value="{{ .Instance.CreatedAt }}" disabled>
+                    </div>
+                    <div class="inline field">
+                        <label for="updatedat">Updated At</label>
+                        <input id="updatedat" name="updatedat" value="{{ .Instance.UpdatedAt }}" disabled>
+                    </div>
+                    <div class="inline field">
                         <label for="action">Action</label>
                         <select name="action" id="action" class="ui selection dropdown">
                             <option value="">{{ .Instance.Status }}</option>

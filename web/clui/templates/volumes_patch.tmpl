@@ -12,6 +12,14 @@
                         <input id="name" name="name" value="{{ .Volume.Name }}" required>
                     </div>
                     <div class="inline field">
+                        <label for="createdat">Created At</label>
+                        <input id="createdat" name="createdat" value="{{ .Volume.CreatedAt }}" disabled>
+                    </div>
+                    <div class="inline field">
+                        <label for="updatedat">Updated At</label>
+                        <input id="updatedat" name="updatedat" value="{{ .Volume.UpdatedAt }}" disabled>
+                    </div>
+                    <div class="inline field">
                         <label for="size">Size (G)</label>
                         <input id="size"  name="size" value="{{ .Volume.Size }}" disabled>
                     </div>
