@@ -61,14 +61,16 @@ function calc_resource()
     virtual_memory=0
     virtual_disk=0
     for xml in $(ls $xml_dir/*/*.xml 2>/dev/null); do
-       vcpu=$(xmllint --xpath 'string(/domain/vcpu)' $xml)
-       vmem=$(xmllint --xpath 'string(/domain/memory)' $xml)
-       let virtual_cpu=$virtual_cpu+$vcpu
-       let virtual_memory=$virtual_memory+$vmem
+        vcpu=$(xmllint --xpath 'string(/domain/vcpu)' $xml)
+        vmem=$(xmllint --xpath 'string(/domain/memory)' $xml)
+        [ -z "$vcpu" -o -z "$vmem" ] && continue
+        let virtual_cpu=$virtual_cpu+$vcpu
+        let virtual_memory=$virtual_memory+$vmem
     done
     used_disk=$(du $image_dir | awk '{print $1}')
     for disk in $(ls $image_dir/* 2>/dev/null); do
         vdisk=$(qemu-img info $disk | grep 'virtual size:' | cut -d' ' -f4 | tr -d '(')
+        [ -z "$vdisk" ] && continue
         let virtual_disk=$virtual_disk+$vdisk
     done
     let disk=($total_disk-$used_disk)*$disk_over_ratio-$virtual_disk

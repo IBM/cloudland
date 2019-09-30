@@ -49,4 +49,4 @@ done
 virsh start $vm_ID
 [ $? -eq 0 ] && state=running && ./replace_vnc_passwd.sh $ID
 echo "|:-COMMAND-:| launch_vm.sh '$ID' '$state' '$SCI_CLIENT_ID' 'unknown'"
-echo "$(pwd)/oc_vm_2.sh '$ID'" | at now + 20 seconds
+echo "$(pwd)/oc_vm_2.sh '$ID'" | at -t $(date --date="now +20 seconds" +"%Y%m%d%H%M.%S")
