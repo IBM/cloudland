@@ -65,10 +65,10 @@
     <div class="ui small basic delete modal">
 	    <div class="ui icon header">
 		    <i class="trash icon"></i>
-            Openshift Cluster Deletion
+            {{.i18n.Tr "Openshift Cluster Deletion"}}
 	    </div>
 	    <div class="content">
-		    <p>This openshift cluster is going to be deleted permanently, do you want to continue?</p>
+		    <p>{{.i18n.Tr "Openshift_Cluster_Deletion_Confirm"}}</p>
 	    </div>
 	    {{template "_delete_modal_actions" .}}
     </div>

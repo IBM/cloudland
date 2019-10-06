@@ -58,7 +58,7 @@
 							{{ end }}
 					        {{ end }}
 						</td>
-			                        <td>{{.Status}}{{ if eq .Status "error" }}: {{ .Reason }}{{ end }}</td>
+			                        <td>{{$.i18n.Tr .Status}}{{ if eq .Status "error" }}: {{ .Reason }}{{ end }}</td>
 						{{ if $.IsAdmin }}
 			                        <td>{{.Hyper}}</td>
 			                        <td>{{.OwnerInfo.Name}}</td>
@@ -87,10 +87,10 @@
     <div class="ui small basic delete modal">
 	    <div class="ui icon header">
 		    <i class="trash icon"></i>
-            Instance Deletion
+            {{.i18n.Tr "Instance Deletion"}}
 	    </div>
 	    <div class="content">
-		    <p>This instance is going to be deleted permanently, do you want to continue?</p>
+		    <p>{{.i18n.Tr "Instance_Deletion_Confirm"}}</p>
 	    </div>
 	    {{template "_delete_modal_actions" .}}
     </div>

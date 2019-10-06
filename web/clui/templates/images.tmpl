@@ -63,10 +63,10 @@
     <div class="ui small basic delete modal">
 	    <div class="ui icon header">
 		    <i class="trash icon"></i>
-            Image Deletion
+            {{.i18n.Tr "Image Deletion"}}
 	    </div>
 	    <div class="content">
-		    <p>This image is going to be deleted permanently, do you want to continue?</p>
+		    <p>{{.i18n.Tr "Image_Deletion_Confirm"}}</p>
 	    </div>
 	    {{template "_delete_modal_actions" .}}
     </div>

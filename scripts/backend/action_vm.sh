@@ -12,6 +12,6 @@ state=$(virsh dominfo $vm_ID | grep State | cut -d: -f2 | xargs)
 if [ "$state" = "running" -a "$action" = "shutdown" ]; then
     sleep 2
     virsh destroy $vm_ID
-    state=$(virsh dominfo $vm_ID | grep State | cut -d: -f2 | xargs)
+    state=$(virsh dominfo $vm_ID | grep State | cut -d: -f2 | xargs | sed 's/shut off/shut_off/g')
 fi
 echo "|:-COMMAND-:| $(basename $0) '$1' '$state'"

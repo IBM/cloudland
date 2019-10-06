@@ -69,10 +69,10 @@
     <div class="ui small basic delete modal">
 	    <div class="ui icon header">
 		    <i class="trash icon"></i>
-            Volume Deletion
+            {{.i18n.Tr "Volume Deletion"}}
 	    </div>
 	    <div class="content">
-		    <p>This volume is going to be deleted permanently, do you want to continue?</p>
+		    <p>{{.i18n.Tr "Volume_Deletion_Confirm"}}</p>
 	    </div>
 	    {{template "_delete_modal_actions" .}}
     </div>
