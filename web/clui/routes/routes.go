@@ -54,8 +54,9 @@ func Run() (err error) {
 func New() (m *macaron.Macaron) {
 	m = macaron.Classic()
 	m.Use(i18n.I18n(i18n.Options{
-		Langs: []string{"en-US", "zh-CN"},
-		Names: []string{"English", "简体中文"},
+		Langs:       []string{"en-US", "zh-CN"},
+		Names:       []string{"English", "简体中文"},
+		DefaultLang: "zh-CN",
 	}))
 	m.Use(session.Sessioner(session.Options{
 		IDLength:       16,
