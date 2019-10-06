@@ -4,37 +4,37 @@
         <div class="column" >
             <form class="ui form" action="{{.Link}}" method="post">
                 <h3 class="ui top attached header">
-                    Update Volume
+                    {{.i18n.Tr "Update Volume"}}
                 </h3>
                 <div class="ui attached segment">
                     <div class="required inline field">
-                        <label for="name">Name</label>
+                        <label for="name">{{.i18n.Tr "Name"}}</label>
                         <input id="name" name="name" value="{{ .Volume.Name }}" required>
                     </div>
                     <div class="inline field">
-                        <label for="createdat">Created At</label>
+                        <label for="createdat">{{.i18n.Tr "Created_At"}}</label>
                         <input id="createdat" name="createdat" value="{{ .Volume.CreatedAt }}" disabled>
                     </div>
                     <div class="inline field">
-                        <label for="updatedat">Updated At</label>
+                        <label for="updatedat">{{.i18n.Tr "Updated_At"}}</label>
                         <input id="updatedat" name="updatedat" value="{{ .Volume.UpdatedAt }}" disabled>
                     </div>
                     <div class="inline field">
-                        <label for="size">Size (G)</label>
+                        <label for="size">{{.i18n.Tr "Size"}} (G)</label>
                         <input id="size"  name="size" value="{{ .Volume.Size }}" disabled>
                     </div>
                     <div class="inline field">
-                        <label for="instance">Attached to Instance</label>
+                        <label for="instance">{{.i18n.Tr "Attached to Instance"}}</label>
 						<div class="ui selection dropdown">
 						  <input id="instance" name="instance" type="hidden">
 						  <i class="dropdown icon"></i>
 						  {{ if .Volume.Instance }}
 						  <div data-value={{.Volume.Instance.ID}} class="default text">{{.Volume.Instance.ID}}-{{.Volume.Instance.Hostname}}</div>
 						  {{ else }}
-						  <div data-value=0 class="default text">Not Attached at All</div>
+						  <div data-value=0 class="default text">{{.i18n.Tr "Not Attached at All"}}</div>
 						  {{ end }}
 						  <div class="menu">
-							<div class="item" data-value=0 data-text="Not Attached at All">Not Attached at All</div>
+							<div class="item" data-value=0 data-text="Not Attached at All">{{.i18n.Tr "Not Attached at All"}}</div>
                             {{ range .Instances }}
 							<div class="item" data-value={{.ID}} data-text={{.ID}}-{{.Hostname}}>
 							  {{.ID}}-{{.Hostname}}
@@ -45,7 +45,7 @@
                     </div>
                     <div class="inline field">
                         <label></label>
-                        <button class="ui green button">Update Volume</button>
+                        <button class="ui green button">{{.i18n.Tr "Update Volume"}}</button>
                     </div>
                 </div>
             </form>

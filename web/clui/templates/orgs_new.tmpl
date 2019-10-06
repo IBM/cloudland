@@ -4,22 +4,22 @@
         <div class="column" >
             <form class="ui form" action="{{.Link}}" method="post">
                 <h3 class="ui top attached header">
-                    Create New Organization
+                    {{.i18n.Tr "Create New Organization"}}
                 </h3>
                 <div class="ui attached segment">
                     <div class="required inline field">
-                        <label for="orgname">Organization Name</label>
+                        <label for="orgname">{{.i18n.Tr "Organization Name"}}</label>
                         <input id="orgname" name="orgname" autofocus required>
                     </div>
 		{{ if $.IsAdmin }}
                     <div class="inline field">
-                        <label for="owner">Owner</label>
+                        <label for="owner">{{.i18n.Tr "Owner"}}</label>
                         <input id="owner"  name="owner" autocomplete="off">
                     </div>
                 {{ end }}
                     <div class="inline field">
                         <label></label>
-                        <button class="ui green button">Create New Organization</button>
+                        <button class="ui green button">{{.i18n.Tr "Create New Organization"}}</button>
                     </div>
                 </div>
             </form>

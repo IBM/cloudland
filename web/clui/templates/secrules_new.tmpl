@@ -4,35 +4,35 @@
         <div class="column" >
             <form class="ui form" action="{{.Link}}" method="post">
                 <h3 class="ui top attached header">
-                    Create New Security Rule
+                    {{.i18n.Tr "Create New Security Rule"}}
                 </h3>
                 <div class="ui attached segment">
                     <div class="required inline field">
-                        <label for="remoteip">RemoteIp</label>
+                        <label for="remoteip">{{.i18n.Tr "RemoteIp"}}</label>
                         <input id="remoteip" name="remoteip" autofocus required>
                     </div>
                     <div class="required inline field">
-                        <label for="direction">Direction</label>
+                        <label for="direction">{{.i18n.Tr "Direction"}}</label>
 						<div class="ui selection dropdown">
 						  <input id="direction" name="direction" type="hidden">
 						  <i class="dropdown icon"></i>
-						  <div class="default text">Direction</div>
+						  <div class="default text">{{.i18n.Tr "Direction"}}</div>
 						  <div class="menu">
 							<div class="item" data-value=ingress data-text=ingress>
-							  ingress
+							  {{.i18n.Tr "ingress"}}
 							</div>
 							<div class="item" data-value=egress data-text=egress>
-							  egress
+							  {{.i18n.Tr "egress"}}
 							</div>
 						  </div>
 						</div>
                     </div>
                     <div class="required inline field">
-                        <label for="protocol">Protocol</label>
+                        <label for="protocol">{{.i18n.Tr "Protocol"}}</label>
 						<div class="ui selection dropdown">
 						  <input id="protocol" name="protocol" type="hidden">
 						  <i class="dropdown icon"></i>
-						  <div class="default text">Protocol</div>
+						  <div class="default text">{{.i18n.Tr "Protocol"}}</div>
 						  <div class="menu">
 							<div class="item" data-value=tcp data-text=tcp>
 							  tcp
@@ -50,16 +50,16 @@
 						</div>
                     </div>
                     <div class="inline field">
-                        <label for="portmin">PortMin | Type</label>
+                        <label for="portmin">{{.i18n.Tr "PortMin_Type"}}</label>
                         <input id="portmin" name="portmin">
                     </div>
                     <div class="inline field">
-                        <label for="portmax">PortMax | Code</label>
+                        <label for="portmax">{{.i18n.Tr "PortMax_Code"}}</label>
                         <input id="portmax" name="portmax">
                     </div>
                     <div class="inline field">
                         <label></label>
-                        <button class="ui green button">Create New Security Rule</button>
+                        <button class="ui green button">{{.i18n.Tr "Create New Security Rule"}}</button>
                     </div>
                 </div>
             </form>

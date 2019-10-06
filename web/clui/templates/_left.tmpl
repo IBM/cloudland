@@ -1,44 +1,44 @@
 <div class="four wide column">
     <div class="ui vertical menu">
-        <div class="header item">Authorizations</div>
+        <div class="header item">{{.i18n.Tr "Authorizations"}}</div>
         <a {{ if eq .Link "/users" }} class="active item" {{ else }} class="item" {{ end }} href="/users">
-            Users
+            {{.i18n.Tr "Users"}}
         </a>
         <a {{ if eq .Link "/orgs" }} class="active item" {{ else }} class="item" {{ end }} href="/orgs">
-            Organizations
+            {{.i18n.Tr "Organizations"}}
         </a>
         <a {{ if eq .Link "/keys" }} class="active item" {{ else }} class="item" {{ end }} href="/keys">
-            Keys
+            {{.i18n.Tr "Keys"}}
         </a>
-        <div class="header item">Compute & Storage</div>
+        <div class="header item">{{.i18n.Tr "Compute_Storage"}}</div>
         <a {{ if eq .Link "/instances" }} class="active item" {{ else }} class="item" {{ end }} href="/instances">
-            Instances
+            {{.i18n.Tr "Instances"}}
         </a>
         <a {{ if eq .Link "/flavors" }} class="active item" {{ else }} class="item" {{ end }} href="/flavors">
-            Flavors
+            {{.i18n.Tr "Flavors"}}
         </a>
         <a {{ if eq .Link "/images" }} class="active item" {{ else }} class="item" {{ end }} href="/images">
-            Images
+            {{.i18n.Tr "Images"}}
         </a>
         <a {{ if eq .Link "/volumes" }} class="active item" {{ else }} class="item" {{ end }} href="/volumes">
-            Volumes
+            {{.i18n.Tr "Volumes"}}
         </a>
-        <div class="header item">Platform Service</div>
+        <div class="header item">{{.i18n.Tr "Platform_Service"}}</div>
         <a {{ if eq .Link "/openshifts" }} class="active item" {{ else }} class="item" {{ end }} href="/openshifts">
-            Openshift
+            {{.i18n.Tr "Openshift"}}
         </a>
-        <div class="header item">Network & Security</div>
+        <div class="header item">{{.i18n.Tr "Network_Security"}}</div>
         <a {{ if eq .Link "/subnets" }} class="active item" {{ else }} class="item" {{ end }} href="/subnets">
-            Subnets
+            {{.i18n.Tr "Subnets"}}
         </a>
         <a {{ if eq .Link "/floatingips" }} class="active item" {{ else }} class="item" {{ end }} href="/floatingips">
-            FloatingIps
+            {{.i18n.Tr "FloatingIps"}}
         </a>
         <a {{ if eq .Link "/gateways" }} class="active item" {{ else }} class="item" {{ end }} href="/gateways">
-            Gateways
+            {{.i18n.Tr "Gateways"}}
         </a>
         <a {{ if eq .Link "/secgroups" }} class="active item" {{ else }} class="item" {{ end }} href="/secgroups">
-            SecurityGroups
+            {{.i18n.Tr "SecurityGroups"}}
         </a>
     </div>
 </div>

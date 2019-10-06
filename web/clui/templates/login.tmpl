@@ -4,21 +4,21 @@
         <div class="column" >
             <form class="ui form" action="{{.Link}}" method="post">
                 <h3 class="ui top attached header">
-                    Login
+                    {{.i18n.Tr "Login"}}
                 </h3>
                 <div class="ui attached segment">
                     <div class="required inline field">
-                        <label for="username">Username </label>
+                        <label for="username">{{.i18n.Tr "Username"}}</label>
                         <input id="username" name="username" value="{{.Username}}" autofocus required>
                     </div>
                     <div class="required inline field">
-                        <label for="password">Password</label>
+                        <label for="password">{{.i18n.Tr "Password"}}</label>
                         <input id="password"  name="password" type="password" autocomplete="off" value="{{.Password}}" required>
                     </div>
                     <div class="inline field">
 						<label></label>
 						<div class="ui checkbox">
-							<label>Remember me</label>
+							<label>{{.i18n.Tr "Remember_me"}}</label>
 							<input name="remember" type="checkbox" value="{{.Remember}}">
 						</div>
                     </div>

@@ -4,33 +4,33 @@
         <div class="column" >
             <form class="ui form" action="{{.Link}}" method="post">
                 <h3 class="ui top attached header">
-                    Update Instance
+                    {{.i18n.Tr "Update Instance"}}
                 </h3>
                 <div class="ui attached segment">
                     <div class="required inline field">
-                        <label for="hostname">Hostname</label>
+                        <label for="hostname">{{.i18n.Tr "Hostname"}}</label>
                         <input id="hostname" name="hostname" value="{{ .Instance.Hostname }}" required>
                     </div>
                     <div class="inline field">
-                        <label for="createdat">Created At</label>
+                        <label for="createdat">{{.i18n.Tr "Created_At"}}</label>
                         <input id="createdat" name="createdat" value="{{ .Instance.CreatedAt }}" disabled>
                     </div>
                     <div class="inline field">
-                        <label for="updatedat">Updated At</label>
+                        <label for="updatedat">{{.i18n.Tr "Updated_At"}}</label>
                         <input id="updatedat" name="updatedat" value="{{ .Instance.UpdatedAt }}" disabled>
                     </div>
                     <div class="inline field">
-                        <label for="action">Action</label>
+                        <label for="action">{{.i18n.Tr "Action"}}</label>
                         <select name="action" id="action" class="ui selection dropdown">
                             <option value="">{{ .Instance.Status }}</option>
-                            <option value="shutdown">shutdown</option>
-                            <option value="start">start</option>
-                            <option value="suspend">suspend</option>
-                            <option value="resume">resume</option>
+                            <option value="shutdown">{{.i18n.Tr "shutdown"}}</option>
+                            <option value="start">{{.i18n.Tr "start"}}</option>
+                            <option value="suspend">{{.i18n.Tr "suspend"}}</option>
+                            <option value="resume">{{.i18n.Tr "resume"}}</option>
                         </select>
                     </div>
                     <div class="inline field">
-					    <label for="ifaces">Interfaces</label>
+					    <label for="ifaces">{{.i18n.Tr "Interfaces"}}</label>
                         <select name="ifaces" id="ifaces" multiple="" class="ui multiple selection dropdown">
 							{{ if .Instance.Interfaces }}
 							  {{ range .Instance.Interfaces }}
@@ -54,21 +54,21 @@
 					</div>
 		    {{ if .Vnc }}
 		    <div class="inline field">
-			<label for="vnc" name="vnc">Vnc</label>
+			<label for="vnc" name="vnc">{{.i18n.Tr "Vnc"}}</label>
 			<span>{{.Vnc.AccessAddress}}:{{.Vnc.AccessPort}}:{{.Vnc.Passwd}}</span>
 		    </div>
 		    {{ if .Vnc.ExpiredAt }}
                     <div class="inline field">
                        <label></label>
                        <span class="content vnc">
-                               (Expires at {{ .Vnc.ExpiredAt}})
+                               ({{.i18n.Tr "Expires at"}} {{ .Vnc.ExpiredAt}})
                        </span>
                    </div>
 		   {{ end }}
 		   {{ end }}
                     <div class="inline field">
                         <label></label>
-                        <button class="ui green button">Update Instance</button>
+                        <button class="ui green button">{{.i18n.Tr "Update Instance"}}</button>
                     </div>
                 </div>
             </form>

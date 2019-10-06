@@ -4,63 +4,63 @@
         <div class="column" >
             <form class="ui form" action="{{.Link}}" method="post">
                 <h3 class="ui top attached header">
-                    Create New Subnet
+                    {{.i18n.Tr "Create New Subnet"}}
                 </h3>
                 <div class="ui attached segment">
                     <div class="required inline field">
-                        <label for="name">Name</label>
+                        <label for="name">{{.i18n.Tr "Name"}}</label>
                         <input id="name" name="name" autofocus required>
                     </div>
                     <div class="required inline field">
-                        <label for="network">Network</label>
+                        <label for="network">{{.i18n.Tr "Network"}}</label>
                         <input id="network" name="network" required>
                     </div>
                     <div class="required inline field">
-                        <label for="netmask">Netmask</label>
+                        <label for="netmask">{{.i18n.Tr "Netmask"}}</label>
                         <input id="netmask"  name="netmask" required>
                     </div>
                     <div class="inline field">
-                        <label for="gateway">Gateway</label>
+                        <label for="gateway">{{.i18n.Tr "Gateway"}}</label>
                         <input id="gateway"  name="gateway">
                     </div>
                     <div class="inline field">
-                        <label for="start">Start</label>
+                        <label for="start">{{.i18n.Tr "Start"}}</label>
                         <input id="start"  name="start">
                     </div>
                     <div class="inline field">
-                        <label for="end">End</label>
+                        <label for="end">{{.i18n.Tr "End"}}</label>
                         <input id="end"  name="end">
                     </div>
                     <div class="inline field">
-                        <label for="dns">Name Server</label>
+                        <label for="dns">{{.i18n.Tr "Name Server"}}</label>
                         <input id="dns"  name="dns">
                     </div>
 			        {{if .IsAdmin }}
                     <div class="inline field">
-                        <label for="vlan">Vlan (admin only)</label>
+                        <label for="vlan">{{.i18n.Tr "Vlan"}} ({{.i18n.Tr "admin only"}})</label>
                         <input id="vlan" name="vlan">
                     </div>
                     <div class="inline field">
-                        <label for="rtype">Routing Type (admin only)</label>
+                        <label for="rtype">{{.i18n.Tr "Routing Type"}} ({{.i18n.Tr "admin only"}})</label>
 						<div class="ui selection dropdown">
 						  <input id="rtype" name="rtype" type="hidden">
 						  <i class="dropdown icon"></i>
-						  <div class="default text">internal</div>
+						  <div class="default text">{{.i18n.Tr "internal"}}</div>
 						  <div class="menu">
-							<div class="item" data-value="internal" data-text="internal">internal</div>
-							<div class="item" data-value="public" data-text="public">public</div>
-							<div class="item" data-value="private" data-text="private">private</div>
+							<div class="item" data-value="internal" data-text="internal">{{.i18n.Tr "internal"}}</div>
+							<div class="item" data-value="public" data-text="public">{{.i18n.Tr "public"}}</div>
+							<div class="item" data-value="private" data-text="private">{{.i18n.Tr "private"}}</div>
 						  </div>
 						</div>
                     </div>
                     <div class="inline field">
-                        <label for="routes">Routes (admin only)</label>
+                        <label for="routes">{{.i18n.Tr "Routes"}} ({{.i18n.Tr "admin only"}})</label>
                         <input id="routes" name="routes" placeholder="eg. 10.0.0.0/8:10.5.5.5 172.0.0.0/16:172.5.5.5">
                     </div>
 			        {{end}}
                     <div class="inline field">
                         <label></label>
-                        <button class="ui green button">Create New Subnet</button>
+                        <button class="ui green button">{{.i18n.Tr "Create New Subnet"}}</button>
                     </div>
                 </div>
             </form>

@@ -4,15 +4,15 @@
         <div class="column" >
             <form class="ui form" action="{{.Link}}" method="post" autocomplete="off">
                 <h3 class="ui top attached header">
-                    Update {{.User.Username}}
+                    {{.i18n.Tr "Update"}} {{.User.Username}}
                 </h3>
                 <div class="ui attached segment">
                     <div class="inline field">
-                        <label for="password">Password</label>
+                        <label for="password">{{.i18n.Tr "Password"}}</label>
                         <input id="password" name="password" type="password">
                     </div>
                     <div class="inline field">
-                        <label for="members">Organization Members</label>
+                        <label for="members">{{.i18n.Tr "Organizations"}}</label>
                         <select name="members" id="members" multiple="" class="ui multiple selection dropdown">
 							{{ if .User.Members }}
 							{{ range .User.Members }}
@@ -23,7 +23,7 @@
                     </div>
                     <div class="inline field">
                         <label></label>
-                        <button class="ui green button">Update</button>
+                        <button class="ui green button">{{.i18n.Tr "Update"}}</button>
                     </div>
                 </div>
             </form>

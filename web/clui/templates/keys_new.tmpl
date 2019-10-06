@@ -4,20 +4,20 @@
         <div class="column" >
             <form class="ui form" action="{{.Link}}" method="post">
                 <h3 class="ui top attached header">
-                    Create New Key
+                    {{.i18n.Tr "Create New Key"}}
                 </h3>
                 <div class="ui attached segment">
                     <div class="required inline field">
-                        <label for="name">Name</label>
+                        <label for="name">{{.i18n.Tr "Name"}}</label>
                         <input id="name" name="name" autofocus required>
                     </div>
                     <div class="required inline field">
-						<label>Public Key</label>
+						<label>{{.i18n.Tr "Public Key"}}</label>
 						<textarea id="pubkey"  name="pubkey" autocomplete="off" required></textarea>
                     </div>
                     <div class="inline field">
                         <label></label>
-                        <button class="ui green button">Create New Key</button>
+                        <button class="ui green button">{{.i18n.Tr "Create New Key"}}</button>
                     </div>
                 </div>
             </form>

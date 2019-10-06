@@ -4,31 +4,31 @@
         <div class="column" >
             <form class="ui form" action="{{.Link}}" method="post">
                 <h3 class="ui top attached header">
-                    Update Openshift Cluster
+                    {{.i18n.Tr "Update Openshift Cluster"}}
                 </h3>
                 <div class="ui attached segment">
                     <div class="required inline field">
-                        <label for="clustername">Cluster Name</label>
+                        <label for="clustername">{{.i18n.Tr "Cluster_Name"}}</label>
                         <input id="clustername" name="clustername" value="{{ .Openshift.ClusterName }}" disabled>
                     </div>
                     <div class="required inline field">
-                        <label for="basedomain">Base Domain</label>
+                        <label for="basedomain">{{.i18n.Tr "Base_Domain"}}</label>
                         <input id="basedomain" name="basedomain" value="{{ .Openshift.BaseDomain }}" disabled>
                     </div>
                     <div class="inline field">
-                        <label for="createdat">Created At</label>
+                        <label for="createdat">{{.i18n.Tr "Created_At"}}</label>
                         <input id="createdat" name="createdat" value="{{ .Openshift.CreatedAt }}" disabled>
                     </div>
                     <div class="inline field">
-                        <label for="updatedat">Updated At</label>
+                        <label for="updatedat">{{.i18n.Tr "Updated_At"}}</label>
                         <input id="updatedat" name="updatedat" value="{{ .Openshift.UpdatedAt }}" disabled>
                     </div>
                     <div class="required inline field">
-                        <label for="haflag">High Available</label>
+                        <label for="haflag">{{.i18n.Tr "High Available"}}</label>
                         <input id="haflag" name="haflag" value="{{ .Openshift.Haflag }}" disabled>
                     </div>
                     <div class="required inline field">
-                        <label for="flavor">flavor</label>
+                        <label for="flavor">{{.i18n.Tr "Flavor"}}</label>
                         <select name="flavor" id="flavor" class="ui selection dropdown">
 			   {{ range .Flavors }}
                               <option value="{{ .ID }}" {{ if eq $.Openshift.Flavor .ID }}selected{{end}}>{{ .ID }}-{{ .Name }}</option>
@@ -36,12 +36,12 @@
                         </select>
 		    </div>
                     <div class="required inline field">
-                        <label for="nworkers">Number of Workers</label>
+                        <label for="nworkers">{{.i18n.Tr "Number of Workers"}}s</label>
                         <input id="nworkers"  name="nworkers" value="{{ .Openshift.WorkerNum }}" required>
                     </div>
                     <div class="inline field">
                         <label></label>
-                        <button class="ui green button">Update Openshift Cluster</button>
+                        <button class="ui green button">{{.i18n.Tr "Update Openshift Cluster"}}</button>
                     </div>
                 </div>
             </form>

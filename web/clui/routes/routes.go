@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/IBM/cloudland/web/clui/model"
+	"github.com/go-macaron/i18n"
 	"github.com/go-macaron/session"
 	_ "github.com/go-macaron/session/postgres"
 	"github.com/spf13/viper"
@@ -52,6 +53,10 @@ func Run() (err error) {
 
 func New() (m *macaron.Macaron) {
 	m = macaron.Classic()
+	m.Use(i18n.I18n(i18n.Options{
+		Langs: []string{"en-US", "zh-CN"},
+		Names: []string{"English", "简体中文"},
+	}))
 	m.Use(session.Sessioner(session.Options{
 		IDLength:       16,
 		Provider:       "postgres",

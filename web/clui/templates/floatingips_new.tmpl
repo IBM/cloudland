@@ -4,15 +4,15 @@
         <div class="column" >
             <form class="ui form" action="{{.Link}}" method="post">
                 <h3 class="ui top attached header">
-                    Create New Floating Ip
+                    {{.i18n.Tr "Create New Floating Ip"}}
                 </h3>
                 <div class="ui attached segment">
                     <div class="required inline field">
-                        <label for="instance">Instance Address</label>
+                        <label for="instance">{{.i18n.Tr "Instance Address"}}</label>
 						<div class="ui selection dropdown">
 						  <input id="instance" name="instance" type="hidden">
 						  <i class="dropdown icon"></i>
-						  <div class="default text">Address</div>
+						  <div class="default text">{{.i18n.Tr "Instance Address"}}</div>
 						  <div class="menu">
                             {{ range .Instances }}
 						{{ if ne (index .Interfaces 0).Address.Subnet.Router 0 }}
@@ -25,24 +25,24 @@
 						</div>
                     </div>
                     <div class="inline field">
-                        <label for="ftype">Floating IP type</label>
+                        <label for="ftype">{{.i18n.Tr "Floating IP type"}}</label>
 						<div class="ui selection dropdown">
 						  <input id="ftype" name="ftype" type="hidden">
 						  <i class="dropdown icon"></i>
-						  <div class="default text">Type</div>
+						  <div class="default text">{{.i18n.Tr "Type"}}</div>
 						  <div class="menu">
 							<div class="item" data-value="public" data-text="Public">
-							  Public
+							  {{.i18n.Tr "public"}}
 							</div>
 							<div class="item" data-value="private" data-text="Private">
-							  Private
+							  {{.i18n.Tr "private"}}
 							</div>
 						  </div>
 						</div>
                     </div>
                     <div class="inline field">
                         <label></label>
-                        <button class="ui green button">Create New Floating Ip</button>
+                        <button class="ui green button">{{.i18n.Tr "Create New Floating Ip"}}</button>
                     </div>
                 </div>
             </form>

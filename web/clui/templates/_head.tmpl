@@ -85,7 +85,7 @@
 							    <a class="item brand" href="/dashboard">
 								    <img class="ui image" src="/img/cland.png">
 							    </a>
-							    <a class="item" target="_blank" rel="noopener noreferrer" href="https://github.com/IBM/cloudland/wiki" rel="noreferrer">Help</a>
+							    <a class="item" target="_blank" rel="noopener noreferrer" href="https://github.com/IBM/cloudland/wiki" rel="noreferrer">{{.i18n.Tr "Help"}}</a>
 							    <div class="right menu">
                                     {{if .IsSignedIn}}
 								    <div class="item{{if eq .Link "/login"}} active{{end}}">
@@ -99,14 +99,14 @@
                                                                                     <div class="item"><a href="/users/{{.UserID}}/chorg?org={{.OrgName}}"> {{ .OrgName }}</a></div>
                                     				                {{ end }}
                                                                                     <div class="divider"></div>
-                                                                                    <div class="item"><a href="/?logout=true&redirect_to={{.Link}}"> Sign out</a></div>
+                                                                                    <div class="item"><a href="/?logout=true&redirect_to={{.Link}}">{{.i18n.Tr "Signout"}}</a></div>
                                                                                 </div>
                                                                             </div>
 								    </div>
                                     {{else}}
 								    <div class="item{{if eq .Link "/login"}} active{{end}}">
 									    <i class="octicon octicon-sign-in"></i>
-                                                                            <div class="text"><a href="/login?redirect_to={{.Link}}"> Sign in</a></div>
+                                                                            <div class="text"><a href="/login?redirect_to={{.Link}}">{{.i18n.Tr "Signin"}}</a></div>
 								    </div>
                                     {{end}}
 							    </div><!-- end anonymous right menu -->

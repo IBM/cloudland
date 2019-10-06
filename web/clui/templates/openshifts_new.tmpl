@@ -4,43 +4,43 @@
         <div class="column" >
             <form class="ui form" action="{{.Link}}" method="post">
                 <h3 class="ui top attached header">
-                    Create New Openshift Cluster
+                    {{.i18n.Tr "Create New Openshift Cluster"}}
                 </h3>
                 <div class="ui attached segment">
                     <div class="required inline field">
-                        <label for="clustername">Cluster Name</label>
+                        <label for="clustername">{{.i18n.Tr "Cluster_Name"}}</label>
                         <input id="clustername" name="clustername" autofocus required>
                     </div>
                     <div class="required inline field">
-                        <label for="basedomain">Base Domain</label>
+                        <label for="basedomain">{{.i18n.Tr "Base_Domain"}}</label>
                         <input id="basedomain"  name="basedomain" required>
                     </div>
                     <div class="inline field">
-                        <label for="haflag">High Available</label>
+                        <label for="haflag">{{.i18n.Tr "High Available"}}</label>
 						<div class="ui selection dropdown">
 						  <input id="haflag" name="haflag" type="hidden">
 						  <i class="dropdown icon"></i>
-						  <div class="default text">no</div>
+						  <div class="default text">{{.i18n.Tr "no"}}</div>
 						  <div class="menu">
 							<div class="item" data-value="no" data-text="no">
-							  no
+							  {{.i18n.Tr "no"}}
 							</div>
 							<div class="item" data-value="yes" data-text="yes">
-							  yes
+							  {{.i18n.Tr "yes"}}
 							</div>
 						  </div>
 						</div>
                     </div>
                     <div class="required inline field">
-                        <label for="nworkers">Number of Workers</label>
+                        <label for="nworkers">{{.i18n.Tr "Number of Workers"}}</label>
                         <input id="nworker"  name="nworkers" value="2" required>
                     </div>
                     <div class="required inline field">
-                        <label for="flavor">Flavor</label>
+                        <label for="flavor">{{.i18n.Tr "Flavor"}}</label>
 						<div class="ui selection dropdown">
 						  <input id="flavor" name="flavor" type="hidden">
 						  <i class="dropdown icon"></i>
-						  <div class="default text">Flavor</div>
+						  <div class="default text">{{.i18n.Tr "Flavor"}}</div>
 						  <div class="menu">
                             {{ range .Flavors }}
 							<div class="item" data-value={{.ID}} data-text={{.Name}}>
@@ -51,11 +51,11 @@
 						</div>
                     </div>
                     <div class="required inline field">
-                        <label for="key">Key</label>
+                        <label for="key">{{.i18n.Tr "Key"}}</label>
 						<div class="ui multiple selection dropdown">
 						  <input id="key" name="key" type="hidden">
 						  <i class="dropdown icon"></i>
-						  <div class="default text">Key</div>
+						  <div class="default text">{{.i18n.Tr "Key"}}</div>
 						  <div class="menu">
                             {{ range .Keys }}
 							<div class="item" data-value={{.ID}} data-text={{.Name}}>
@@ -66,12 +66,12 @@
 						</div>
                     </div>
                     <div class="required inline field">
-						<label>Pull Secret</label>
+						<label>{{.i18n.Tr "Pull Secret"}}</label>
 						<textarea id="secret" name="secret" autocomplete="off" required></textarea>
                     </div>
                     <div class="inline field">
                         <label></label>
-                        <button class="ui green button">Create New Openshift Cluster</button>
+                        <button class="ui green button">{{.i18n.Tr "Create New Openshift Cluster"}}</button>
                     </div>
                 </div>
             </form>

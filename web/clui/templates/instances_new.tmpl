@@ -4,29 +4,29 @@
         <div class="column" >
             <form class="ui form" action="{{.Link}}" method="post">
                 <h3 class="ui top attached header">
-                    Create New Instance
+                    {{.i18n.Tr "Create New Instance"}}
                 </h3>
                 <div class="ui attached segment">
                     <div class="required inline field">
-                        <label for="hostname">Hostname (prefix)</label>
+                        <label for="hostname">{{.i18n.Tr "Hostname_prefix"}}</label>
                         <input id="hostname" name="hostname" autofocus required>
                     </div>
 	            {{ if .IsAdmin }}
                     <div class="required inline field">
-                        <label for="hyper">Hyper</label>
+                        <label for="hyper">{{.i18n.Tr "Hyper"}}</label>
                         <input id="hyper" name="hyper" value="-1" required>
                     </div>
 	            {{ end }}
                     <div class="required inline field">
-                        <label for="count">Count</label>
+                        <label for="count">{{.i18n.Tr "Count"}}</label>
                         <input id="count" name="count" value="1" required>
                     </div>
                     <div class="required inline field">
-                        <label for="image">Image</label>
+                        <label for="image">{{.i18n.Tr "Image"}}</label>
 						<div class="ui selection dropdown">
 						  <input id="image" name="image" type="hidden">
 						  <i class="dropdown icon"></i>
-						  <div class="default text">Image</div>
+						  <div class="default text">{{.i18n.Tr "Image"}}</div>
 						  <div class="menu">
                             {{ range .Images }}
 		            {{ if eq .Status "available" }}
@@ -39,11 +39,11 @@
 						</div>
                     </div>
                     <div class="required inline field">
-                        <label for="flavor">Flavor</label>
+                        <label for="flavor">{{.i18n.Tr "Flavor"}}</label>
 						<div class="ui selection dropdown">
 						  <input id="flavor" name="flavor" type="hidden">
 						  <i class="dropdown icon"></i>
-						  <div class="default text">Flavor</div>
+						  <div class="default text">{{.i18n.Tr "Flavor"}}</div>
 						  <div class="menu">
                             {{ range .Flavors }}
 							<div class="item" data-value={{.ID}} data-text={{.Name}}>
@@ -54,11 +54,11 @@
 						</div>
                     </div>
                     <div class="required inline field">
-                        <label for="primary">Primary Interface</label>
+                        <label for="primary">{{.i18n.Tr "Primary Interface"}}</label>
 						<div class="ui selection dropdown">
 						  <input id="primary" name="primary" type="hidden">
 						  <i class="dropdown icon"></i>
-						  <div class="default text">Subnet</div>
+						  <div class="default text">{{.i18n.Tr "Subnet"}}</div>
 						  <div class="menu">
 						    {{ if .IsAdmin }}
 							{{ range .Subnets }}
@@ -79,19 +79,19 @@
 						</div>
                     </div>
                     <div class="inline field">
-                        <label for="primaryip">Primary IP</label>
+                        <label for="primaryip">{{.i18n.Tr "Primary IP"}}</label>
                         <input id="primaryip" name="primaryip" placeholder="10.10.50.100">
                     </div>
                     <div class="inline field">
-                        <label for="primarymac">Primary Mac</label>
+                        <label for="primarymac">{{.i18n.Tr "Primary Mac"}}</label>
                         <input id="primarymac" name="primarymac" placeholder="52:54:41:12:ac:70">
                     </div>
                     <div class="inline field">
-					    <label for="secondary">Secondary Interfaces</label>
+					    <label for="secondary">{{.i18n.Tr "Secondary Interfaces"}}</label>
 						<div class="ui multiple selection dropdown">
 						  <input name="subnets" id="subnets" type="hidden">
 						  <i class="dropdown icon"></i>
-						  <div class="default text">Subnets</div>
+						  <div class="default text">{{.i18n.Tr "Subnets"}}</div>
 						  <div class="menu">
 						    {{ if .IsAdmin }}
 							{{ range .Subnets }}
@@ -112,11 +112,11 @@
 						</div>
 					</div>
                     <div class="inline field">
-                        <label for="secgroups">Security Groups</label>
+                        <label for="secgroups">{{.i18n.Tr "Security Groups"}}</label>
 						<div class="ui multiple selection dropdown">
 						  <input id="secgroups" name="secgroups" type="hidden">
 						  <i class="dropdown icon"></i>
-						  <div class="default text">Security Groups</div>
+						  <div class="default text">{{.i18n.Tr "Security Groups"}}</div>
 						  <div class="menu">
 							{{ if .Secgroups }}
                             {{ range .Secgroups }}
@@ -129,11 +129,11 @@
 						</div>
                     </div>
                     <div class="inline field">
-                        <label for="keys">Keys</label>
+                        <label for="keys">{{.i18n.Tr "Keys"}}</label>
 						<div class="ui multiple selection dropdown">
 						  <input id="keys" name="keys" type="hidden">
 						  <i class="dropdown icon"></i>
-						  <div class="default text">Key</div>
+						  <div class="default text">{{.i18n.Tr "Key"}}</div>
 						  <div class="menu">
                             {{ range .Keys }}
 							<div class="item" data-value={{.ID}} data-text={{.Name}}>
@@ -144,12 +144,12 @@
 						</div>
                     </div>
                     <div class="inline field">
-						<label>User Data</label>
+						<label>{{.i18n.Tr "User Data"}}</label>
 						<textarea id="userdata"  name="userdata" autocomplete="off"></textarea>
                     </div>
                     <div class="inline field">
                         <label></label>
-                        <button class="ui green button">Create New Instance</button>
+                        <button class="ui green button">{{.i18n.Tr "Create New Instance"}}</button>
                     </div>
                 </div>
             </form>

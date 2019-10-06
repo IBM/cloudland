@@ -5,16 +5,16 @@
                 {{template "_left" .}}
           	    <div class="twelve wide column content">
 		            <h4 class="ui top attached header">
-			            Volume Manage Panel (Total: {{.Total}})
+			            {{.i18n.Tr "Volume_Manage_Panel"}} ({{.i18n.Tr "Total"}}: {{.Total}})
 			            <div class="ui right">
-				            <a class="ui green tiny button" href="volumes/new">Create</a>
+				            <a class="ui green tiny button" href="volumes/new">{{.i18n.Tr "Create"}}</a>
 			            </div>
 		            </h4>
 		            <div class="ui attached segment">
 			            <form class="ui form">
 	                        <div class="ui fluid tiny action input">
 	                            <input name="q" value="{{ .Query }}" placeholder="Search..." autofocus>
-	                            <button class="ui blue tiny button">Search</button>
+	                            <button class="ui blue tiny button">{{.i18n.Tr "Search"}}</button>
 	                        </div>
                         </form>
 		            </div>
@@ -22,29 +22,29 @@
                         <table class="ui unstackable very basic striped table">
 	                        <thead>
 		                        <tr>
-			                        <th>ID</th>
-			                        <th>Name</th>
-			                        <th>Size (G)</th>
-			                        <th>Status</th>
-			                        <th>Attached as</th>
+			                        <th>{{.i18n.Tr "ID"}}</th>
+			                        <th>{{.i18n.Tr "Name"}}</th>
+			                        <th>{{.i18n.Tr "Size"}} (G)</th>
+			                        <th>{{.i18n.Tr "Status"}}</th>
+			                        <th>{{.i18n.Tr "Attached_as"}}</th>
 						{{ if $.IsAdmin }}
-			                        <th>Owner</th>
+			                        <th>{{.i18n.Tr "Owner"}}</th>
 						{{ end }}
-                                    <th>Delete</th>
+                                    <th>{{.i18n.Tr "Delete"}}</th>
 		                        </tr>
 	                        </thead>
 	                        <tbody>
                                 {{ $Link := .Link }}
                                 {{ range .Volumes }}
 		                        <tr>
-			                        <td>{{.ID}}</td>
+			                        <td><a href="{{$Link}}/{{.ID}}">{{.ID}}</a></td>
 			                        <td>{{.Name}}</td>
 			                        <td>{{.Size}}</td>
 			                        <td>{{.Status}}</td>
+			                        <td>{{ if .Instance }} {{.Instance.ID}}-{{.Instance.Hostname}}:{{.Target}} {{ end }}</td>
 						{{ if $.IsAdmin }}
 			                        <td>{{.OwnerInfo.Name}}</td>
 						{{ end }}
-			                        <td>{{ if .Instance }} {{.Instance.ID}}-{{.Instance.Hostname}}:{{.Target}} {{ end }}</td>
                                     <td><div class="delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}"><i class="dark purple trash alternate outline icon"></i></div></td>
 		                        </tr>
                                 {{ end }}

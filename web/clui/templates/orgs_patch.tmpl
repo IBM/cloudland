@@ -4,36 +4,36 @@
         <div class="column" >
             <form class="ui form" action="{{.Link}}" method="post">
                 <h3 class="ui top attached header">
-                    Update Organization
+                    {{.i18n.Tr "Update Organization"}}
                 </h3>
                 <div class="ui attached segment">
                     <div class="inline field">
-                        <label for="orgname">Organization Name</label>
+                        <label for="orgname">{{.i18n.Tr "Organization Name"}}</label>
                         <input id="orgname" name="orgname" value="{{ .Org.Name }}" disabled>
                     </div>
 		    {{ if $.IsAdmin }}
                     <div class="required inline field">
-                        <label for="owner">Owner</label>
+                        <label for="owner">{{.i18n.Tr "Owner"}}</label>
                         <input id="owner"  name="owner" value="{{ .Org.OwnerUser.Username }}" required>
                     </div>
 		    {{ end }}
                     <div class="inline field">
-                        <label for="members">Members</label>
+                        <label for="members">{{.i18n.Tr "Members"}}</label>
 			<input id="members"  name="members" value="{{ range .Org.Members }}{{ .UserName }} {{ end }}" required>
                     </div>
-                    <h3 class="ui top attached header">{{ .Org.Name }} Member List</h3>
+                    <h3 class="ui top attached header">{{ .Org.Name }} {{.i18n.Tr "Member List"}}</h3>
 		    <div class="ui divider"></div>
 		    {{ range .Org.Members }}
                     <div class="inline field">
                     <div class="ui fluid action input">
                         <input id="names"  name="names" value="{{ .UserName }}">
                         <select name="roles" id="roles" class="ui selection dropdown">
-                               <option value="0" {{ if eq .Role 0 }}selected{{ end }}>None</option>
-                               <option value="1" {{ if eq .Role 1 }}selected{{ end }}>Reader</option>
-                               <option value="2" {{ if eq .Role 2 }}selected{{ end }}>Writer</option>
-                               <option value="3" {{ if eq .Role 3 }}selected{{ end }}>Owner</option>
+                               <option value="0" {{ if eq .Role 0 }}selected{{ end }}>{{$.i18n.Tr "None"}}</option>
+                               <option value="1" {{ if eq .Role 1 }}selected{{ end }}>{{$.i18n.Tr "Reader"}}</option>
+                               <option value="2" {{ if eq .Role 2 }}selected{{ end }}>{{$.i18n.Tr "Writer"}}</option>
+                               <option value="3" {{ if eq .Role 3 }}selected{{ end }}>{{$.i18n.Tr "Owner"}}</option>
 		               {{ if $.IsAdmin }}
-                               <option value="4" {{ if eq .Role 4 }}selected{{ end }}>Admin</option>
+                               <option value="4" {{ if eq .Role 4 }}selected{{ end }}>{{$.i18n.Tr "Admin"}}</option>
 		               {{ end }}
                         </select>
                     </div>
@@ -41,7 +41,7 @@
                     {{ end }}
                     <div class="inline field">
                         <label></label>
-                        <button class="ui green button">Update Organization</button>
+                        <button class="ui green button">{{.i18n.Tr "Update Organization"}}</button>
                     </div>
                 </div>
             </form>

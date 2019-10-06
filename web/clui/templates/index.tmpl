@@ -4,20 +4,20 @@
 		    <div class="ui grid">
                 {{template "_left" .}}
           	    <div class="twelve wide column content">
-		            <h3>Brief Instructions:</h3>
+		            <h3>{{.i18n.Tr "Brief_Instructions"}}:</h3>
 		            <div class="ui divider"></div>
-        	 			  <h4>1. Create a key</h4>
-To create a key, simply input key name and public key into fields and submit. If you don't have a key already, use command ssh-keygen -f /path/to/your_key to generate one.
-        	 			  <h4>2. Create a gateway</h4>
-To create a gateway, input a gateway name and select one or multiple subnets to attach.
-        	 			  <h4>3. Launch an instance</h4>
-To launch an instance, specify the fields with star including hostname, count, image, flavor and primary interface. It is also important to select a key to login the instance.
-        	 			  <h4>4. Create a floating IP</h4>
-To create a floating ip, select the instance name with address in the drop down menu, choose floating ip type to be public to get an public floating ip. Private floating ip can be an internal access endpoint when needed. Leaving it blank means to create both.
-        	 			  <h4>5. Use your instance and modify security group as needed</h4>
-ssh -i /path/to/your_private_key username@instance_public_floating_ip<br>
-username is centos for centos image, core for coreos image and ubuntu for ubuntu image by default. To expose a service you setup in the instance publicly, click security group id in the security group panel and create a new rule. For example, to open port 443, specify 0.0.0.0/0 for remote ip, ingress for direction, tcp for protocol, both portmin and portmax to be 443.
-        	 			  <h4>6. Create an OpenShift cluster (Advanced)</h4>
+        	 			  <h4>1. {{.i18n.Tr "Create_a_key"}}</h4>
+{{.i18n.Tr "Create_a_key_content"}}
+        	 			  <h4>2. {{.i18n.Tr "Create_a_gateway"}}</h4>
+{{.i18n.Tr "Create_a_gateway_content"}}
+        	 			  <h4>3. {{.i18n.Tr "Launch_an_instance"}}</h4>
+{{.i18n.Tr "Launch_an_instance_content"}}
+        	 			  <h4>4. {{.i18n.Tr "Create_a_floating_IP"}}</h4>
+{{.i18n.Tr "Create_a_floating_IP_content"}}
+        	 			  <h4>5. {{.i18n.Tr "Use_your_instance_and_modify_security_group_as_needed"}}</h4>
+{{.i18n.Tr "ssh_key_login_cmd"}}<br>
+{{.i18n.Tr "Use_your_instance_content"}}
+        	 			  <h4>6. {{.i18n.Tr "Create_an_OpenShift_cluster"}} ({{.i18n.Tr "Advanced"}})</h4>
 <a href="https://github.com/IBM/cloudland/wiki/Manual#create-an-openshift-cluster">https://github.com/IBM/cloudland/wiki/Manual#create-an-openshift-cluster</a>
 		             </div>
                 </div>

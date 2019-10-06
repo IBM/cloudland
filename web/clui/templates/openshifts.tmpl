@@ -5,16 +5,16 @@
                 {{template "_left" .}}
           	    <div class="twelve wide column content">
 		            <h4 class="ui top attached header">
-			            Openshift Cluster Manage Panel (Total: {{.Total}})
+			            {{.i18n.Tr "Openshift_Cluster_Manage_Panel"}} ({{.i18n.Tr "Total"}}: {{.Total}})
 			            <div class="ui right">
-				            <a class="ui green tiny button" href="openshifts/new">Create</a>
+				            <a class="ui green tiny button" href="openshifts/new">{{.i18n.Tr "Create"}}</a>
 			            </div>
 		            </h4>
 		            <div class="ui attached segment">
 			            <form class="ui form">
 	                        <div class="ui fluid tiny action input">
 	                            <input name="q" value="{{ .Query }}" placeholder="Search..." autofocus>
-	                            <button class="ui blue tiny button">Search</button>
+	                            <button class="ui blue tiny button">{{.i18n.Tr "Search"}}</button>
 	                        </div>
                         </form>
 		            </div>
@@ -22,13 +22,13 @@
                         <table class="ui unstackable very basic striped table">
 	                        <thead>
 		                        <tr>
-			                        <th>ID</th>
-			                        <th>Cluster Name</th>
-			                        <th>Base Domain</th>
-			                        <th>HA</th>
-			                        <th>N-Workers</th>
-			                        <th>Status</th>
-                                    <th>Delete</th>
+			                        <th>{{.i18n.Tr "ID"}}</th>
+			                        <th>{{.i18n.Tr "Cluster_Name"}}</th>
+			                        <th>{{.i18n.Tr "Base_Domain"}}</th>
+			                        <th>{{.i18n.Tr "HA"}}</th>
+			                        <th>{{.i18n.Tr "N-Workers"}}</th>
+			                        <th>{{.i18n.Tr "Status"}}</th>
+                                    <th>{{.i18n.Tr "Delete"}}</th>
 		                        </tr>
 	                        </thead>
 	                        <tbody>
