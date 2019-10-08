@@ -7,7 +7,7 @@
 	<footer>
 		<div class="ui container">
 			<div class="ui left">
-			        Template loading time <strong>{{call .TmplLoadTimes}}</strong>
+			        {{ .i18n.Tr "Template loading time" }} <strong>{{call .TmplLoadTimes}}</strong>
 			</div>
 			<div class="ui right links">
 				<span class="version">{{GetString "GoVersion"}}</span>

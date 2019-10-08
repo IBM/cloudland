@@ -25,6 +25,7 @@
 			                        <th>{{.i18n.Tr "ID"}}</th>
 			                        <th>{{.i18n.Tr "Cluster_Name"}}</th>
 			                        <th>{{.i18n.Tr "Base_Domain"}}</th>
+			                        <th>{{.i18n.Tr "Flavor"}}</th>
 			                        <th>{{.i18n.Tr "HA"}}</th>
 			                        <th>{{.i18n.Tr "N-Workers"}}</th>
 			                        <th>{{.i18n.Tr "Status"}}</th>
@@ -38,6 +39,7 @@
 			                        <td><a href="{{$Link}}/{{.ID}}">{{.ID}}</a></td>
 			                        <td>{{.ClusterName}}</td>
 			                        <td>{{.BaseDomain}}</td>
+			                        <td>{{.Flavor}}</td>
 			                        <td>{{$.i18n.Tr .Haflag}}</td>
 			                        <td>{{.WorkerNum}}</td>
 			                        <td>{{$.i18n.Tr .Status}}</td>

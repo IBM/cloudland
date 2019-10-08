@@ -46,7 +46,8 @@ func VlanStatus(ctx context.Context, job *model.Job, args []string) (status stri
 		}
 		netlink := &model.Network{}
 		err = db.Where("vlan = ?", vlan).Take(netlink).Error
-		if (err != nil && gorm.IsRecordNotFoundError(err)) || (err == nil && netlink.Hyper != int32(hyperID) && netlink.Peer != int32(hyperID)) {
+		if (err != nil && gorm.IsRecordNotFoundError(err)) ||
+			(err == nil && netlink.Hyper > 0 && netlink.Hyper != int32(hyperID) && netlink.Peer > 0 && netlink.Peer != int32(hyperID)) {
 			log.Println("Invalid vlan", err)
 			sciClient := RemoteExecClient()
 			control := fmt.Sprintf("inter=%d", hyperID)

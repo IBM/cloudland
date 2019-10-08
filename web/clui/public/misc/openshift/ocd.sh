@@ -267,6 +267,39 @@ EOF
     cp *.ign $ignite_dir
 }
 
+function setup_nfs_pv()
+{
+    cd /opt/$cluster_name
+    mkdir data
+    yum -y install nfs-utils nfs-utils-lib
+    service rpcbind start
+    service nfs start
+    service nfslock start
+    cat >/etc/exports <<EOF
+/opt/$cluster_name/data 192.168.91.0/24(rw,sync,no_root_squash,no_subtree_check,insecure)
+EOF
+    exportfs -a
+
+    cat >nfs-pv.yaml <<EOF
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-pv
+spec:
+  capacity:
+    storage: 100Gi 
+  accessModes:
+  - ReadWriteMany 
+  nfs: 
+    path: /opt/$cluster_name/data 
+    server: 192.168.91.8
+  persistentVolumeReclaimPolicy: Recycle
+EOF
+    ../oc create -f nfs-pv.yaml
+    ../oc patch configs.imageregistry/cluster --type merge --patch '{"spec":{"storage":{"pvc":{"claim":""}}}}'
+    cd -
+}
+
 function launch_cluster()
 {
     cd /opt/$cluster_name
@@ -303,10 +336,10 @@ function launch_cluster()
     while true; do
         sleep 5
         ../oc get csr -ojson | jq -r '.items[] | select(.status == {} ) | .metadata.name' | xargs ../oc adm certificate approve
-        ../oc patch configs.imageregistry.operator.openshift.io cluster --type merge --patch '{"spec":{"storage":{"emptyDir":{}}}}'
-        ../oc get clusteroperators | awk '{print $3}' | grep False
-        [ $? -ne 0 ] && break
+        ../oc get clusteroperators image-registry
+        [ $? -eq 0 ] && break
     done
+    setup_nfs_pv
     ../openshift-install wait-for install-complete
     curl -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=complete"
     let more=$nworkers-2

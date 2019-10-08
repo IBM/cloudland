@@ -46,7 +46,8 @@ func RouterStatus(ctx context.Context, job *model.Job, args []string) (status st
 		}
 		gateway := &model.Gateway{Model: model.Model{ID: int64(ID)}}
 		err = db.Take(gateway).Error
-		if (err != nil && gorm.IsRecordNotFoundError(err)) || (err == nil && gateway.Hyper != int32(hyperID) && gateway.Peer != int32(hyperID)) {
+		if (err != nil && gorm.IsRecordNotFoundError(err)) ||
+			(err == nil && gateway.Hyper > 0 && gateway.Hyper != int32(hyperID) && gateway.Peer > 0 && gateway.Peer != int32(hyperID)) {
 			log.Println("Invalid router", err)
 			sciClient := RemoteExecClient()
 			control := fmt.Sprintf("inter=%d", hyperID)
