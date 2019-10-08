@@ -38,9 +38,9 @@
 			                        <td><a href="{{$Link}}/{{.ID}}">{{.ID}}</a></td>
 			                        <td>{{.ClusterName}}</td>
 			                        <td>{{.BaseDomain}}</td>
-			                        <td>{{.Haflag}}</td>
+			                        <td>{{$.i18n.Tr .Haflag}}</td>
 			                        <td>{{.WorkerNum}}</td>
-			                        <td>{{.Status}}</td>
+			                        <td>{{$.i18n.Tr .Status}}</td>
                                     <td><div class="delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}"><i class="dark purple trash alternate outline icon"></i></div></td>
 		                        </tr>
                                 {{ end }}

@@ -47,13 +47,13 @@
 			                        <td>
 						{{ if .FloatingIps }}
 							{{ range .FloatingIps }}
-								{{.FipAddress }}
+								{{.FipAddress }}<br>
 							{{ end }}
 						{{ end }}
 						{{ if .Interfaces }}
 							{{ range .Interfaces }}
 								{{ if .Address}}
-								<a href="{{$Link}}/../interfaces/{{.ID}}">{{ .Address.Address }}</a>
+								<a href="{{$Link}}/../interfaces/{{.ID}}">{{ .Address.Address }}</a><br>
 								{{ end }}
 							{{ end }}
 					        {{ end }}

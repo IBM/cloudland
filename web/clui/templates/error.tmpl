@@ -7,10 +7,10 @@
 <div class="ui container center">
 <div class="ui message">
     <div class="header">
-        Error
+        {{ .i18n.Tr "Error" }}
     </div>
 	<div class="ui divider"></div>
-    <p> {{ .ErrorMsg }} </p>
+    <p> {{ .i18n.Tr .ErrorMsg }} </p>
 </div>
 </div>
             </div>
