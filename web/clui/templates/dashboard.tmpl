@@ -4,7 +4,11 @@
 		    <div class="ui grid">
                 {{template "_left" .}}
     <div id="dashboard" class="twelve wide column content"></div>
-    <script type="text/javascript" src="js/dashboard.js"></script>
+    {{ if eq .i18n.Locale.Lang "zh-CN" }}
+        <script type="text/javascript" src="js/dashboard-zh.js"></script>
+    {{ else }}
+        <script type="text/javascript" src="js/dashboard-en.js"></script>
+    {{ end }}
             </div>
         </div>
     </div>

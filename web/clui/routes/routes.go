@@ -176,7 +176,7 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 	log.Println(link)
 	c.Data["Link"] = link
 	if login, ok := store.Get("login").(string); ok {
-		// log.Println("$$$$$$$$$$$$$$$$$$", c.GetCookie("MacaronSession"))
+		// log.Println("$$$$$$$$$$$$$$$$$$", c.Locale.Language())
 		memberShip := &MemberShip{
 			OrgID:    store.Get("oid").(int64),
 			UserID:   store.Get("uid").(int64),
