@@ -27,14 +27,15 @@ var (
 type FlavorAdmin struct{}
 type FlavorView struct{}
 
-func (a *FlavorAdmin) Create(name string, cpu, memory, disk, swap int32) (flavor *model.Flavor, err error) {
+func (a *FlavorAdmin) Create(name string, cpu, memory, disk, swap, ephemeral int32) (flavor *model.Flavor, err error) {
 	db := DB()
 	flavor = &model.Flavor{
-		Name:   name,
-		Cpu:    cpu,
-		Disk:   disk,
-		Memory: memory,
-		Swap:   swap,
+		Name:      name,
+		Cpu:       cpu,
+		Disk:      disk,
+		Memory:    memory,
+		Swap:      swap,
+		Ephemeral: ephemeral,
 	}
 	err = db.Create(flavor).Error
 	return
@@ -51,6 +52,7 @@ func (a *FlavorAdmin) Delete(id int64) (err error) {
 		}
 	}()
 	if err = db.Delete(&model.Flavor{Model: model.Model{ID: id}}).Error; err != nil {
+		log.Println("Failed to delete flavor", err)
 		return
 	}
 	return
@@ -114,19 +116,13 @@ func (v *FlavorView) Delete(c *macaron.Context, store session.Store) (err error)
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	id := c.Params("id")
-	if id == "" {
+	id := c.ParamsInt64("id")
+	if id <= 0 {
 		code := http.StatusBadRequest
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	flavorID, err := strconv.Atoi(id)
-	if err != nil {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
-		return
-	}
-	err = flavorAdmin.Delete(int64(flavorID))
+	err = flavorAdmin.Delete(id)
 	if err != nil {
 		code := http.StatusInternalServerError
 		c.Error(code, http.StatusText(code))
@@ -167,32 +163,22 @@ func (v *FlavorView) Create(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	mem := c.Query("memory")
-	memory, err := strconv.Atoi(mem)
-	if err != nil {
+	memory := c.QueryInt("memory")
+	if memory <= 0 {
 		code := http.StatusBadRequest
 		c.Error(code, http.StatusText(code))
 		return
 	}
 
-	dSize := c.Query("disk")
-	disk, err := strconv.Atoi(dSize)
-	if err != nil {
+	disk := c.QueryInt("disk")
+	if disk <= 0 {
 		code := http.StatusBadRequest
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	sSize := c.Query("swap")
-	swap := 0
-	if sSize != "" {
-		swap, err = strconv.Atoi(sSize)
-		if err != nil {
-			code := http.StatusBadRequest
-			c.Error(code, http.StatusText(code))
-			return
-		}
-	}
-	_, err = flavorAdmin.Create(name, int32(cpu), int32(memory), int32(disk), int32(swap))
+	swap := c.QueryInt("swap")
+	ephemeral := c.QueryInt("ephemeral")
+	_, err = flavorAdmin.Create(name, int32(cpu), int32(memory), int32(disk), int32(swap), int32(ephemeral))
 	if err != nil {
 		c.HTML(500, "500")
 	}

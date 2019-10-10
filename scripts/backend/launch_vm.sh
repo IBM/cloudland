@@ -3,7 +3,7 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 6 ] && die "$0 <vm_ID> <image> <name> <cpu> <memory> <disk_size> [userdata] [pubkey]"
+[ $# -lt 6 ] && die "$0 <vm_ID> <image> <name> <cpu> <memory> <disk_size> <swap_size> <ephemeral_size>"
 
 ID=$1
 vm_ID=inst-$1
@@ -12,8 +12,8 @@ vm_name=$3
 vm_cpu=$4
 vm_mem=$5
 disk_size=$6
-userdata=$7
-pubkey=$8
+swap_size=$7
+ephemeral_size=$8
 vm_stat=error
 vm_vnc=""
 
@@ -58,6 +58,11 @@ sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_i
 state=error
 virsh define $vm_xml
 virsh autostart $vm_ID
+if [ "$ephemeral_size" -gt 0 ]; then
+    ephemeral=$image_dir/${vm_ID}.ephemeral
+    qemu-img create $ephemeral ${ephemeral_size}G
+    virsh attach-disk $vm_ID $ephemeral vdb --config
+fi
 vlans=$(jq .vlans <<< $metadata)
 nvlan=$(jq length <<< $vlans)
 i=0

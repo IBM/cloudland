@@ -143,7 +143,7 @@ EOF
     done
 
     systemctl restart haproxy
-     systemctl enable haproxy
+    systemctl enable haproxy
 }
 
 function setup_nginx()
@@ -272,9 +272,12 @@ function setup_nfs_pv()
     cd /opt/$cluster_name
     mkdir data
     yum -y install nfs-utils nfs-utils-lib
-    service rpcbind start
-    service nfs start
-    service nfslock start
+    systemctl start  rpcbind
+    systemctl start nfs
+    systemctl start  nfslock
+    systemctl enable rpcbind
+    systemctl enable nfs
+    systemctl enable  nfslock
     cat >/etc/exports <<EOF
 /opt/$cluster_name/data 192.168.91.0/24(rw,sync,no_root_squash,no_subtree_check,insecure)
 EOF

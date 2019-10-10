@@ -81,6 +81,7 @@ func (v *FlavorRest) Create(c *macaron.Context) {
 		flavor.Flavor.Raw,
 		flavor.Flavor.Disk,
 		0,
+		0,
 	); err != nil {
 		c.JSON(http.StatusInternalServerError, NewResponseError("Unmarshal fail", err.Error(), http.StatusInternalServerError))
 		return
