@@ -1,0 +1,58 @@
+{{template "_head" .}}
+<div class="user signup">
+	<div class="ui middle very relaxed page grid">
+        <div class="column" >
+            <form class="ui form" action="{{.Link}}" method="post">
+                <h3 class="ui top attached header">
+                    {{.i18n.Tr "Create New Glusterfs Cluster"}}
+                </h3>
+                <div class="ui attached segment">
+                    <div class="required inline field">
+                        <label for="name">{{.i18n.Tr "Name"}}</label>
+                        <input id="name" name="name" autofocus required>
+                    </div>
+                    <div class="required inline field">
+                        <label for="nworkers">{{.i18n.Tr "Number of Workers"}}</label>
+                        <input id="nworker"  name="nworkers" value="3" required>
+                    </div>
+                    <div class="required inline field">
+                        <label for="flavor">{{.i18n.Tr "Flavor"}}</label>
+						<div class="ui selection dropdown">
+						  <input id="flavor" name="flavor" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">{{.i18n.Tr "Flavor"}}</div>
+						  <div class="menu">
+                            {{ range .Flavors }}
+							<div class="item" data-value={{.ID}} data-text={{.Name}}>
+							  {{.Name}}
+							</div>
+                            {{ end }}
+						  </div>
+						</div>
+                    </div>
+                    <div class="required inline field">
+                        <label for="key">{{.i18n.Tr "Key"}}</label>
+						<div class="ui multiple selection dropdown">
+						  <input id="key" name="key" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">{{.i18n.Tr "Key"}}</div>
+						  <div class="menu">
+                            {{ range .Keys }}
+							<div class="item" data-value={{.ID}} data-text={{.Name}}>
+							  {{.Name}}
+							</div>
+                            {{ end }}
+						  </div>
+						</div>
+                    </div>
+                    <div class="inline field">
+                        <label></label>
+                        <button class="ui green button">{{.i18n.Tr "Create New Glusterfs Cluster"}}</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+	</div>
+</div>
+{{template "_footer" .}}
+
