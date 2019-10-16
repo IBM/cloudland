@@ -14,8 +14,8 @@ setenforce Permissive
 sed -i "s/^SELINUX=enforcing/SELINUX=permissive/" /etc/selinux/config
 yum install -y heketi-client heketi
 ssh-keygen -f /etc/heketi/heketi_key -t rsa -N ''
-key_id=$(curl -XPOST -H "X-Json-Format: yes" $endpoint/keys/new --cookie "$cookie" --data "name=heketi_g$gluster_id;pubkey=$(cat /etc/heketi/heketi_key.pub)" | jq .ID)
-curl -XPOST -H "X-Json-Format: yes" $endpoint/glusterfs/$gluster_id --cookie "$cookie" --data "nworkers=3"  --data-urlencode "heketikey=$key_id"
+key_id=$(curl -XPOST -H "X-Json-Format: yes" $endpoint/keys/new --cookie "$cookie" --data "name=heketi_g$gluster_id" --data-urlencode "pubkey=$(cat /etc/heketi/heketi_key.pub)" | jq .ID)
+curl -XPOST -H "X-Json-Format: yes" $endpoint/glusterfs/$gluster_id --cookie "$cookie" --data "nworkers=3;heketikey=$key_id"
 
 cat >/etc/heketi/heketi.json <<EOF
 {
@@ -87,11 +87,15 @@ echo 192.168.91.199 g${gluster_id}-heketi >>/etc/hosts
 for i in {0..50}; do
     let suffix=200+$i
     cat >>/etc/hosts <<EOF
-192.168.91.$suffix g${gluster_id}-gluster-$i
+192.168.91.$suffix g${gluster_id}-gluster-$i gluster-$i
 EOF
 done
 
 systemctl enable heketi
 systemctl start heketi
 export HEKETI_CLI_SERVER=http://192.168.91.199:8080
-heketi-cli cluster create
+while true; do
+    heketi-cli cluster create
+    [ $? -eq 0 ] && break
+    sleep 5
+done

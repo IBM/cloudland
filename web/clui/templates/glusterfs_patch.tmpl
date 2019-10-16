@@ -19,6 +19,10 @@
                         <label for="updatedat">{{.i18n.Tr "Updated_At"}}</label>
                         <input id="updatedat" name="updatedat" value="{{ .Glusterfs.UpdatedAt }}" disabled>
                     </div>
+                    <div class="inline field">
+                        <label for="cluster">{{.i18n.Tr "Openshift Cluster"}}</label>
+                        <input id="cluster" name="cluster" value="{{ .Glusterfs.ClusterID }}" disabled>
+                    </div>
                     <div class="required inline field">
                         <label for="flavor">{{.i18n.Tr "Flavor"}}</label>
                         <select name="flavor" id="flavor" class="ui selection dropdown">

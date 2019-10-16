@@ -12,8 +12,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
-	"strings"
 
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/sca/dbs"
@@ -112,34 +110,8 @@ func (a *GlusterfsAdmin) Update(ctx context.Context, id, heketiKey, flavorID int
 		log.Println("DB failed to update cluster status", err)
 		return
 	}
-	maxIndex := -1
-	if glusterfs.WorkerNum > 0 {
-		instances := []*model.Instance{}
-		err = db.Where("subnet_id = ? and hostname like ?", glusterfs.SubnetID, "%gluster%").Find(&instances).Error
-		if err != nil {
-			log.Println("Failed to query cluster instances", err)
-			return
-		}
-		if len(instances) > 0 {
-			for _, inst := range instances {
-				name := strings.Split(inst.Hostname, "-")
-				if len(name) < 2 {
-					log.Println("Wrong name pattern")
-					continue
-				}
-				index, err := strconv.Atoi(name[1])
-				if err != nil {
-					log.Println("Failed to convert index")
-					continue
-				}
-				if maxIndex < index {
-					maxIndex = index
-				}
-			}
-		}
-	}
+	maxIndex := glusterfs.WorkerNum - 1
 	if nworkers > glusterfs.WorkerNum {
-		log.Println("$$$$$$$$$$$$$$$ nworkers-glusterfs.WorkerNum: ", nworkers-glusterfs.WorkerNum)
 		for i := 0; i < int(nworkers-glusterfs.WorkerNum); i++ {
 			maxIndex++
 			hostname := fmt.Sprintf("g%d-gluster-%d", glusterfs.ID, maxIndex)
@@ -153,7 +125,7 @@ func (a *GlusterfsAdmin) Update(ctx context.Context, id, heketiKey, flavorID int
 			endpoint := viper.GetString("api.endpoint")
 			userdata := `#!/bin/bash
 cd /opt
-exec >/tmp/heketi.log 2>&1
+exec >/tmp/gluster.log 2>&1
 sleep 15
 grep nameserver /etc/resolv.conf
 [ $? -ne 0 ] && echo nameserver 8.8.8.8 >> /etc/resolv.conf
@@ -169,14 +141,17 @@ yum -y install wget jq`
 				return
 			}
 		}
-		glusterfs.WorkerNum += nworkers
 	} else {
 		for i := 0; i < int(glusterfs.WorkerNum-nworkers); i++ {
 			hostname := fmt.Sprintf("g%d-gluster-%d", glusterfs.ID, maxIndex)
 			instance := &model.Instance{}
-			err = db.Where("hostname = ? and subnet_id = ?", hostname, glusterfs.SubnetID).Take(instance).Error
+			err = db.Preload("Interface").Where("hostname = ?", hostname).Take(instance).Error
 			if err != nil {
-				log.Println("Failed to query worker", err)
+				log.Println("Failed to query gluster worker", err)
+				return
+			}
+			if instance.Interfaces == nil || len(instance.Interfaces) == 0 || instance.Interfaces[0].Subnet != glusterfs.SubnetID {
+				log.Println("Failed to query gluster worker", err)
 				return
 			}
 			err = instanceAdmin.Delete(ctx, instance.ID)
@@ -186,8 +161,8 @@ yum -y install wget jq`
 			}
 			maxIndex--
 		}
-		glusterfs.WorkerNum -= nworkers
 	}
+	glusterfs.WorkerNum = nworkers
 	err = a.State(ctx, id, "complete", glusterfs.WorkerNum)
 	if err != nil {
 		log.Println("DB failed to update cluster status", err)
@@ -431,14 +406,6 @@ func (v *GlusterfsView) Patch(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	heketiKey := c.QueryInt64("heketikey")
-	permit, err = memberShip.CheckOwner(model.Writer, "keys", heketiKey)
-	if !permit {
-		log.Println("Not authorized to access key")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
-		return
-	}
 	flavor := c.QueryInt64("flavor")
 	nworkers := c.QueryInt("nworkers")
 	if nworkers < 3 {
@@ -447,7 +414,7 @@ func (v *GlusterfsView) Patch(c *macaron.Context, store session.Store) {
 		c.HTML(code, "error")
 		return
 	}
-	glusterfs, err := glusterfsAdmin.Update(ctx, id, heketiKey, flavor, int32(nworkers))
+	glusterfs, err := glusterfsAdmin.Update(ctx, id, 0, flavor, int32(nworkers))
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, err.Error())
@@ -481,7 +448,8 @@ func (v *GlusterfsView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
-	_, openshifts, err := openshiftAdmin.List(ctx, 0, -1, "", "")
+	openshifts := []*model.Openshift{}
+	err = db.Where("gluster_id = 0").Find(&openshifts).Error
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
