@@ -21,6 +21,7 @@ type Glusterfs struct {
 	HeketiKey int64
 	SubnetID  int64
 	Subnet    *Subnet `gorm:"foreignkey:SubnetID"`
+	ClusterID int64
 }
 
 func init() {

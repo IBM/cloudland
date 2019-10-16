@@ -110,7 +110,7 @@ func (v *KeyView) List(c *macaron.Context, store session.Store) {
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
 	if limit == 0 {
-		limit = 10
+		limit = 12
 	}
 	order := c.QueryTrim("order")
 	if order == "" {
@@ -190,10 +190,13 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 	redirectTo := "../keys"
 	name := c.QueryTrim("name")
 	pubkey := c.QueryTrim("pubkey")
-	_, err := keyAdmin.Create(c.Req.Context(), name, pubkey)
+	key, err := keyAdmin.Create(c.Req.Context(), name, pubkey)
 	if err != nil {
 		log.Println("Failed to create key, %v", err)
 		c.HTML(500, "500")
+	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, key)
+		return
 	}
 	c.Redirect(redirectTo)
 }

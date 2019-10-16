@@ -23,6 +23,7 @@
 	                        <thead>
 		                        <tr>
 			                        <th>{{.i18n.Tr "ID"}}</th>
+			                        <th>{{.i18n.Tr "Name"}}</th>
 			                        <th>{{.i18n.Tr "Endpoint"}}</th>
 			                        <th>{{.i18n.Tr "Flavor"}}</th>
 			                        <th>{{.i18n.Tr "N-Workers"}}</th>
@@ -35,6 +36,7 @@
                                 {{ range .Glusterfses }}
 		                        <tr>
 			                        <td><a href="{{$Link}}/{{.ID}}">{{.ID}}</a></td>
+			                        <td>{{.Name}}</td>
 			                        <td>{{.Endpoint}}</td>
 			                        <td>{{.Flavor}}</td>
 			                        <td>{{.WorkerNum}}</td>

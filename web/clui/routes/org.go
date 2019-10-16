@@ -271,7 +271,7 @@ func (v *OrgView) List(c *macaron.Context, store session.Store) {
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
 	if limit == 0 {
-		limit = 10
+		limit = 12
 	}
 	order := c.QueryTrim("order")
 	query := c.QueryTrim("q")

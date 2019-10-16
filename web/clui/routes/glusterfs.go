@@ -56,10 +56,10 @@ func (a *GlusterfsAdmin) createSecgroup(ctx context.Context, name, cidr string, 
 	return
 }
 
-func (a *GlusterfsAdmin) State(ctx context.Context, id int64, status string) (err error) {
+func (a *GlusterfsAdmin) State(ctx context.Context, id int64, status string, nworkers int32) (err error) {
 	db := DB()
 	glusterfs := &model.Glusterfs{Model: model.Model{ID: id}}
-	err = db.Model(glusterfs).Update("status", status).Error
+	err = db.Model(glusterfs).Update(map[string]interface{}{"status": status, "worker_num": nworkers}).Error
 	if err != nil {
 		log.Println("Failed to update glusterfs cluster status", err)
 		return
@@ -79,7 +79,7 @@ func (a *GlusterfsAdmin) GetState(ctx context.Context, id int64) (status string,
 	return
 }
 
-func (a *GlusterfsAdmin) Update(ctx context.Context, id, flavorID int64, nworkers int32) (glusterfs *model.Glusterfs, err error) {
+func (a *GlusterfsAdmin) Update(ctx context.Context, id, heketiKey, flavorID int64, nworkers int32) (glusterfs *model.Glusterfs, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	glusterfs = &model.Glusterfs{Model: model.Model{ID: id}}
@@ -88,7 +88,7 @@ func (a *GlusterfsAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 		log.Println("DB failed to query glusterfs", err)
 		return
 	}
-	if flavorID != glusterfs.Flavor {
+	if flavorID > 0 && flavorID != glusterfs.Flavor {
 		flavor := &model.Flavor{Model: model.Model{ID: flavorID}}
 		if err = db.Take(flavor).Error; err != nil {
 			log.Println("Failed to query flavor", err)
@@ -100,12 +100,19 @@ func (a *GlusterfsAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 			return
 		}
 	}
-	err = a.State(ctx, id, "updating")
+	if glusterfs.HeketiKey == 0 && heketiKey > 0 {
+		glusterfs.HeketiKey = heketiKey
+		if err = db.Save(glusterfs).Error; err != nil {
+			log.Println("Failed to save glusterfs", err)
+			return
+		}
+	}
+	err = a.State(ctx, id, "updating", glusterfs.WorkerNum)
 	if err != nil {
 		log.Println("DB failed to update cluster status", err)
 		return
 	}
-	maxIndex := 0
+	maxIndex := -1
 	if glusterfs.WorkerNum > 0 {
 		instances := []*model.Instance{}
 		err = db.Where("subnet_id = ? and hostname like ?", glusterfs.SubnetID, "%gluster%").Find(&instances).Error
@@ -132,9 +139,10 @@ func (a *GlusterfsAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 		}
 	}
 	if nworkers > glusterfs.WorkerNum {
+		log.Println("$$$$$$$$$$$$$$$ nworkers-glusterfs.WorkerNum: ", nworkers-glusterfs.WorkerNum)
 		for i := 0; i < int(nworkers-glusterfs.WorkerNum); i++ {
 			maxIndex++
-			hostname := fmt.Sprintf("gluster-%d", maxIndex)
+			hostname := fmt.Sprintf("g%d-gluster-%d", glusterfs.ID, maxIndex)
 			ipaddr := fmt.Sprintf("192.168.91.%d", maxIndex+200)
 			secgroup := &model.SecurityGroup{Model: model.Model{Owner: memberShip.OrgID}, Name: "gluster"}
 			err = db.Where(secgroup).Take(secgroup).Error
@@ -142,17 +150,29 @@ func (a *GlusterfsAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 				log.Println("No existing gluster security group", err)
 				return
 			}
+			endpoint := viper.GetString("api.endpoint")
+			userdata := `#!/bin/bash
+cd /opt
+exec >/tmp/heketi.log 2>&1
+sleep 15
+grep nameserver /etc/resolv.conf
+[ $? -ne 0 ] && echo nameserver 8.8.8.8 >> /etc/resolv.conf
+yum -y install epel-release centos-release-gluster
+yum -y install wget jq`
+			userdata = fmt.Sprintf("%s\nwget '%s/misc/glusterfs/gluster.sh'\nchmod +x gluster.sh", userdata, endpoint)
+			userdata = fmt.Sprintf("%s\n./gluster.sh '%d' '%s'", userdata, glusterfs.ID, glusterfs.Endpoint)
 			sgIDs := []int64{secgroup.ID}
 			keyIDs := []int64{glusterfs.Key, glusterfs.HeketiKey}
-			_, err = instanceAdmin.Create(ctx, 1, hostname, "", 1, int64(flavorID), glusterfs.SubnetID, 0, ipaddr, "", nil, keyIDs, sgIDs, -1)
+			_, err = instanceAdmin.Create(ctx, 1, hostname, userdata, 1, glusterfs.Flavor, glusterfs.SubnetID, 0, ipaddr, "", nil, keyIDs, sgIDs, -1)
 			if err != nil {
 				log.Println("Failed to launch a worker", err)
 				return
 			}
 		}
+		glusterfs.WorkerNum += nworkers
 	} else {
 		for i := 0; i < int(glusterfs.WorkerNum-nworkers); i++ {
-			hostname := fmt.Sprintf("gluster-%d", maxIndex)
+			hostname := fmt.Sprintf("g%d-gluster-%d", glusterfs.ID, maxIndex)
 			instance := &model.Instance{}
 			err = db.Where("hostname = ? and subnet_id = ?", hostname, glusterfs.SubnetID).Take(instance).Error
 			if err != nil {
@@ -166,8 +186,9 @@ func (a *GlusterfsAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 			}
 			maxIndex--
 		}
+		glusterfs.WorkerNum -= nworkers
 	}
-	err = a.State(ctx, id, "complete")
+	err = a.State(ctx, id, "complete", glusterfs.WorkerNum)
 	if err != nil {
 		log.Println("DB failed to update cluster status", err)
 		return
@@ -178,6 +199,20 @@ func (a *GlusterfsAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 func (a *GlusterfsAdmin) Create(ctx context.Context, name, cookie string, nworkers int32, cluster, flavor, key int64) (glusterfs *model.Glusterfs, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
+	glusterfs = &model.Glusterfs{
+		Model:     model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID},
+		Name:      name,
+		Status:    "creating",
+		Flavor:    flavor,
+		Key:       key,
+		ClusterID: cluster,
+		Endpoint:  "http://192.168.91.199:8080",
+	}
+	err = db.Create(glusterfs).Error
+	if err != nil {
+		log.Println("Failed to create glusterfs", err)
+		return
+	}
 	var subnet *model.Subnet
 	if cluster > 0 {
 		glusterfs = &model.Glusterfs{Model: model.Model{ID: cluster}}
@@ -188,13 +223,15 @@ func (a *GlusterfsAdmin) Create(ctx context.Context, name, cookie string, nworke
 		}
 		subnet = glusterfs.Subnet
 	} else {
-		subnet, err = subnetAdmin.Create(ctx, "gluster-sn", "", "192.168.91.0", "255.255.255.0", "", "", "", "", "", "", "", 0, memberShip.OrgID)
+		tmpName := fmt.Sprintf("g%d-sn", glusterfs.ID)
+		subnet, err = subnetAdmin.Create(ctx, tmpName, "", "192.168.91.0", "255.255.255.0", "", "", "", "", "", "", "", 0, memberShip.OrgID)
 		if err != nil {
 			log.Println("Failed to create glusterfs subnet", err)
 			return
 		}
 		subnetIDs := []int64{subnet.ID}
-		_, err = gatewayAdmin.Create(ctx, "gatewayAdmin", "", 0, 0, subnetIDs, memberShip.OrgID)
+		tmpName = fmt.Sprintf("g%d-gw", glusterfs.ID)
+		_, err = gatewayAdmin.Create(ctx, tmpName, "", 0, 0, subnetIDs, memberShip.OrgID)
 		if err != nil {
 			log.Println("Failed to create gateway", err)
 			return
@@ -207,24 +244,25 @@ func (a *GlusterfsAdmin) Create(ctx context.Context, name, cookie string, nworke
 	userdata := `#!/bin/bash
 cd /opt
 exec >/tmp/heketi.log 2>&1
+sleep 15
+grep nameserver /etc/resolv.conf
+[ $? -ne 0 ] && echo nameserver 8.8.8.8 >> /etc/resolv.conf
 yum -y install epel-release centos-release-gluster
 yum -y install wget jq`
 	userdata = fmt.Sprintf("%s\nwget '%s/misc/glusterfs/heketi.sh'\nchmod +x heketi.sh", userdata, endpoint)
-	userdata = fmt.Sprintf("%s\n./heketi.sh '%s' '%s' '%d' '%d'", userdata, endpoint, cookie, subnet.ID, nworkers)
-	_, err = instanceAdmin.Create(ctx, 1, "heketi", userdata, 1, flavor, subnet.ID, cluster, "192.168.91.199", "", nil, keyIDs, sgIDs, -1)
+	userdata = fmt.Sprintf("%s\n./heketi.sh '%d' '%s' '%s' '%d' '%d'", userdata, glusterfs.ID, endpoint, cookie, subnet.ID, nworkers)
+	tmpName := fmt.Sprintf("g%d-heketi", glusterfs.ID)
+	_, err = instanceAdmin.Create(ctx, 1, tmpName, userdata, 1, flavor, subnet.ID, cluster, "192.168.91.199", "", nil, keyIDs, sgIDs, -1)
 	if err != nil {
 		log.Println("Failed to create heketi instance", err)
 		return
 	}
-	glusterfs = &model.Glusterfs{
-		Model:    model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID},
-		Status:   "creating",
-		Flavor:   flavor,
-		Key:      key,
-		SubnetID: subnet.ID,
-		Endpoint: "http://192.168.91.199:8080",
+	glusterfs.SubnetID = subnet.ID
+	err = db.Save(glusterfs).Error
+	if err != nil {
+		log.Println("Failed to create glusterfs", err)
+		return
 	}
-	err = db.Create(glusterfs).Error
 	return
 }
 
@@ -259,6 +297,13 @@ func (a *GlusterfsAdmin) Delete(ctx context.Context, id int64) (err error) {
 			return
 		}
 	}
+	if glusterfs.HeketiKey > 0 {
+		err = keyAdmin.Delete(glusterfs.HeketiKey)
+		if err != nil {
+			log.Println("Failed to delete heketi key", err)
+			return
+		}
+	}
 	if err = db.Delete(&model.Glusterfs{Model: model.Model{ID: id}}).Error; err != nil {
 		return
 	}
@@ -269,7 +314,7 @@ func (a *GlusterfsAdmin) List(ctx context.Context, offset, limit int64, order, q
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
-		limit = 10
+		limit = 12
 	}
 
 	if order == "" {
@@ -304,7 +349,7 @@ func (v *GlusterfsView) List(c *macaron.Context, store session.Store) {
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
 	if limit == 0 {
-		limit = 10
+		limit = 12
 	}
 	order := c.Query("order")
 	if order == "" {
@@ -386,25 +431,29 @@ func (v *GlusterfsView) Patch(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	heketiKey := c.QueryInt64("heketikey")
+	permit, err = memberShip.CheckOwner(model.Writer, "keys", heketiKey)
+	if !permit {
+		log.Println("Not authorized to access key")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	flavor := c.QueryInt64("flavor")
 	nworkers := c.QueryInt("nworkers")
 	if nworkers < 3 {
 		code := http.StatusBadRequest
-		c.Data["ErrorMsg"] = "Number of worker must be at least 2"
+		c.Data["ErrorMsg"] = "Number of workers must be at least 3"
 		c.HTML(code, "error")
 		return
 	}
-	status, err := glusterfsAdmin.GetState(ctx, id)
-	if status != "complete" {
-		code := http.StatusBadRequest
-		c.Data["ErrorMsg"] = "Cluster can be updated only in complete status"
-		c.HTML(code, "error")
-		return
-	}
-	_, err = glusterfsAdmin.Update(ctx, id, flavor, int32(nworkers))
+	glusterfs, err := glusterfsAdmin.Update(ctx, id, heketiKey, flavor, int32(nworkers))
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(500, "500")
+		c.HTML(500, err.Error())
+	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, glusterfs)
+		return
 	}
 	c.Redirect("../glusterfs")
 }
@@ -455,7 +504,7 @@ func (v *GlusterfsView) State(c *macaron.Context, store session.Store) {
 		return
 	}
 	status := c.QueryTrim("status")
-	err = glusterfsAdmin.State(c.Req.Context(), id, status)
+	err = glusterfsAdmin.State(c.Req.Context(), id, status, 0)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
 			"error": err.Error(),
@@ -484,18 +533,40 @@ func (v *GlusterfsView) Create(c *macaron.Context, store session.Store) {
 	nworkers := c.QueryInt("nworkers")
 	if nworkers < 3 {
 		code := http.StatusBadRequest
-		c.Data["ErrorMsg"] = "Number of worker must be at least 2"
+		c.Data["ErrorMsg"] = "Number of workers must be at least 3"
 		c.HTML(code, "error")
 		return
 	}
 	flavor := c.QueryInt64("flavor")
+	if flavor <= 0 {
+		log.Println("Invalid flavor ID")
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	key := c.QueryInt64("key")
+	permit, err := memberShip.CheckOwner(model.Writer, "keys", key)
+	if !permit {
+		log.Println("Not authorized to access key")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	cluster := c.QueryInt64("cluster")
+	if cluster < 0 {
+		code := http.StatusBadRequest
+		c.Data["ErrorMsg"] = "Openshift cluster must be >= 0"
+		c.HTML(code, "error")
+		return
+	}
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
-	_, err := glusterfsAdmin.Create(c.Req.Context(), name, cookie, int32(nworkers), cluster, flavor, key)
+	glusterfs, err := glusterfsAdmin.Create(c.Req.Context(), name, cookie, int32(nworkers), cluster, flavor, key)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "error")
+		return
+	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, glusterfs)
 		return
 	}
 	c.Redirect(redirectTo)

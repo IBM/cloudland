@@ -42,7 +42,7 @@
 		                        <tr>
 			                        <td><a href="{{$Link}}/{{.ID}}">{{.ID}}</a></td>
 			                        <td>{{ if ne .ClusterID 0 }}oc{{.ClusterID}}: {{end}}{{.Hostname}}</td>
-			                        <td>{{.Flavor.Name}}</td>
+			                        <td>{{ if .Flavor }}{{ .Flavor.Name}}{{ end }}</td>
 			                        <td>{{ if .Image }}{{.Image.Name}}{{else}}{{.Hostname}}{{end}}</td>
 			                        <td>
 						{{ if .FloatingIps }}

@@ -517,7 +517,7 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
-		limit = 10
+		limit = 12
 	}
 
 	if order == "" {
@@ -642,7 +642,7 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
 	if limit == 0 {
-		limit = 10
+		limit = 12
 	}
 	order := c.QueryTrim("order")
 	if order == "" {
@@ -928,18 +928,16 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			return
 		}
 	}
-	image := c.QueryTrim("image")
-	imageID, err := strconv.Atoi(image)
-	if err != nil {
-		log.Println("Invalid image ID, %v", err)
+	image := c.QueryInt64("image")
+	if image <= 0 {
+		log.Println("Invalid image ID", err)
 		code := http.StatusBadRequest
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	flavor := c.QueryTrim("flavor")
-	flavorID, err := strconv.Atoi(flavor)
-	if err != nil {
-		log.Println("Invalid flavor ID, %v", err)
+	flavor := c.QueryInt64("flavor")
+	if flavor <= 0 {
+		log.Println("Invalid flavor ID", err)
 		code := http.StatusBadRequest
 		c.Error(code, http.StatusText(code))
 		return
@@ -1035,7 +1033,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		sgIDs = append(sgIDs, sgID)
 	}
 	userdata := c.QueryTrim("userdata")
-	instance, err := instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, int64(imageID), int64(flavorID), int64(primaryID), 0, ipAddr, macAddr, subnetIDs, keyIDs, sgIDs, hyperID)
+	instance, err := instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, image, flavor, int64(primaryID), 0, ipAddr, macAddr, subnetIDs, keyIDs, sgIDs, hyperID)
 	if err != nil {
 		log.Println("Create instance failed, %v", err)
 		c.HTML(http.StatusBadRequest, err.Error())

@@ -389,7 +389,7 @@ func (a *OpenshiftAdmin) List(ctx context.Context, offset, limit int64, order, q
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
-		limit = 10
+		limit = 12
 	}
 
 	if order == "" {
