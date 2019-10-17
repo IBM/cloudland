@@ -190,13 +190,13 @@ func (a *GlusterfsAdmin) Create(ctx context.Context, name, cookie string, nworke
 	}
 	var subnet *model.Subnet
 	if cluster > 0 {
-		glusterfs = &model.Glusterfs{Model: model.Model{ID: cluster}}
-		err = db.Take(glusterfs).Error
+		openshift := &model.Openshift{Model: model.Model{ID: cluster}}
+		err = db.Preload("Subnet").Take(openshift).Error
 		if err != nil {
-			log.Println("DB failed to query glusterfs", err)
+			log.Println("DB failed to query openshift cluster", err)
 			return
 		}
-		subnet = glusterfs.Subnet
+		subnet = openshift.Subnet
 	} else {
 		tmpName := fmt.Sprintf("g%d-sn", glusterfs.ID)
 		subnet, err = subnetAdmin.Create(ctx, tmpName, "", "192.168.91.0", "255.255.255.0", "", "", "", "", "", "", "", 0, memberShip.OrgID)
@@ -448,8 +448,9 @@ func (v *GlusterfsView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	where := memberShip.GetWhere()
 	openshifts := []*model.Openshift{}
-	err = db.Where("gluster_id = 0").Find(&openshifts).Error
+	err = db.Where(where).Where("gluster_id = 0").Find(&openshifts).Error
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")

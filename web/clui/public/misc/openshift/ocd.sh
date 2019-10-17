@@ -303,6 +303,24 @@ EOF
     cd -
 }
 
+function create_storage()
+{
+    cd /opt/$cluster_name
+    cat >storage.yaml <<EOF
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: gp2
+provisioner: kubernetes.io/glusterfs
+parameters:
+  resturl: 'http://192.168.91.199:8080'
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+EOF
+    ../oc create -f storage.yaml
+    cd -
+}
+
 function launch_cluster()
 {
     cd /opt/$cluster_name
@@ -358,6 +376,7 @@ function launch_cluster()
         count=$(../oc get nodes | grep -c Ready)
         [ "$count" -ge "$nodes" ] && break
     done
+    create_storage
 }
 
 setenforce Permissive
