@@ -6,7 +6,7 @@ cd $(dirname $0)
 net_conf=$cland_root_dir/deploy/netconf.yml
 
 sudo chown -R cland.cland $cland_root_dir
-mkdir $cland_root_dir/{bin,deploy,etc,lib6,log,run,sci,scripts,src,web,cache} $cland_root_dir/cache/{image,instance,meta,router,volume,xml} 2>/dev/null
+mkdir $cland_root_dir/{bin,deploy,etc,lib6,log,run,sci,scripts,src,web,cache} $cland_root_dir/cache/{image,instance,dnsmasq,meta,router,volume,xml} 2>/dev/null
 [ ! -s "$net_conf" ] && sudo cp ${net_conf}.example $net_conf
 
 # Install development tools
@@ -46,6 +46,8 @@ function inst_web()
     echo 'export GOPROXY=https://goproxy.io' >> ~/.bashrc
     echo 'export GO111MODULE=on' >> ~/.bashrc
     source ~/.bashrc
+    cd $cland_root_dir
+    go mod init web
     cd $cland_root_dir/web/clui
     go build
     cd $cland_root_dir/deploy
