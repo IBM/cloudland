@@ -215,12 +215,12 @@ EOF
 function download_pkgs()
 {
     yum install -y wget nc jq
-    wget -O /usr/share/nginx/html/rhcos.raw.gz https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.1/latest/rhcos-4.1.0-x86_64-metal-bios.raw.gz
+    wget -O /usr/share/nginx/html/rhcos.raw.gz https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.2/latest/rhcos-4.2.0-x86_64-metal-bios.raw.gz
     cd /opt
-    wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.1.13/openshift-client-linux-4.1.13.tar.gz
-    wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.1.13/openshift-install-linux-4.1.13.tar.gz
-    tar -zxf openshift-client-linux-4.1.13.tar.gz
-    tar -zxf openshift-install-linux-4.1.13.tar.gz
+    wget -O openshift-install-linux.tgz https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.2.0/openshift-install-linux-4.2.0.tar.gz
+    wget -O openshift-client-linux.tgz https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.2.0/openshift-client-linux-4.2.0.tar.gz
+    tar -zxf openshift-install-linux.tgz
+    tar -zxf openshift-client-linux.tgz
 }
 
 function ignite_files()
@@ -246,7 +246,6 @@ controlPlane:
   platform: {}
   replicas: $mreplica
 metadata:
-  creationTimestamp: null
   name: $cluster_name
 networking:
   clusterNetwork:
@@ -260,6 +259,8 @@ platform:
 pullSecret: '$secret'
 sshKey: '$ssh_key'
 EOF
+    ../openshift-install create manifests
+    sed -i "s/mastersSchedulable: true/mastersSchedulable: false/" manifests/cluster-scheduler-02-config.yml
     ../openshift-install create ignition-configs
     ignite_dir=/usr/share/nginx/html/ignition
     rm -rf $ignite_dir
