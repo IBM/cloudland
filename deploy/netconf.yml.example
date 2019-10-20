@@ -1,4 +1,5 @@
 network_device: eth0
+vnc_device: eth0
 admin_passwd: passw0rd
 db_passwd: passw0rd
 network_external_vlan: 5000
