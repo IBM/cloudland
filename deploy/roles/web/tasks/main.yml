@@ -16,6 +16,12 @@
     dest: /opt/cloudland/web/clui/conf/config.toml
   tags: [web_conf]
 
+- name: ocd shell config
+  template:
+    src: ocd.conf.j2
+    dest: /opt/cloudland/web/clui/public/misc/openshift/ocd.conf
+  tags: [ocd_conf]
+
 - name: copy service files
   copy:
     src: "{{ item.src }}"

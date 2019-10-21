@@ -16,7 +16,7 @@ seq_max=100
 function setup_dns()
 {
     instID=$(cat /var/lib/cloud/data/instance-id | cut -d'-' -f2)
-    data=$(curl -XPOST $endpoint/floatingips/assign --cookie "$cookie" --data "instance=$instID")
+    data=$(curl -k -XPOST $endpoint/floatingips/assign --cookie "$cookie" --data "instance=$instID")
     public_ip=$(jq  -r .public_ip <<< $data)
     public_ip=${public_ip%%/*}
     dns_server=$(grep '^namaserver' /etc/resolv.conf | tail -1 | awk '{print $2}')
@@ -215,10 +215,12 @@ EOF
 function download_pkgs()
 {
     yum install -y wget nc jq
-    wget -O /usr/share/nginx/html/rhcos.raw.gz https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.2/latest/rhcos-4.2.0-x86_64-metal-bios.raw.gz
+    wget --no-check-certificate $endpoint/misc/openshift/ocd.conf
+    source ocd.conf
+    wget --no-check-certificate -O /usr/share/nginx/html/rhcos.raw.gz $coreos_image_url
     cd /opt
-    wget -O openshift-install-linux.tgz https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.2.0/openshift-install-linux-4.2.0.tar.gz
-    wget -O openshift-client-linux.tgz https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.2.0/openshift-client-linux-4.2.0.tar.gz
+    wget --no-check-certificate -O openshift-install-linux.tgz $openshift_installer
+    wget --no-check-certificate -O openshift-client-linux.tgz $openshift_client
     tar -zxf openshift-install-linux.tgz
     tar -zxf openshift-client-linux.tgz
 }
@@ -325,26 +327,26 @@ EOF
 function launch_cluster()
 {
     cd /opt/$cluster_name
-    bstrap_res=$(curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=bootstrap;ipaddr=192.168.91.9")
+    bstrap_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=bootstrap;ipaddr=192.168.91.9")
     bstrap_ID=$(jq -r .ID <<< $bstrap_res)
-    curl -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=bootstrap"
+    curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=bootstrap"
     while true; do
         sleep 5
         nc -zv 192.168.91.9 6443
         [ $? -eq 0 ] && break
     done
-    curl -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=masters"
-    curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-0;ipaddr=192.168.91.10"
+    curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=masters"
+    curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-0;ipaddr=192.168.91.10"
     if [ "$haflag" = "yes" ]; then
-        curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-1;ipaddr=192.168.91.11"
-        curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-2;ipaddr=192.168.91.12"
+        curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-1;ipaddr=192.168.91.11"
+        curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-2;ipaddr=192.168.91.12"
     fi
-    ../openshift-install wait-for bootstrap-complete --log-level debug
-    curl -XDELETE $endpoint/instances/$bstrap_ID --cookie $cookie
-    curl -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=workers"
-    curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-0;ipaddr=192.168.91.20"
-    curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-1;ipaddr=192.168.91.21"
+    curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=workers"
+    curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-0;ipaddr=192.168.91.20"
+    curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-1;ipaddr=192.168.91.21"
     sleep 60
+    ../openshift-install wait-for bootstrap-complete --log-level debug
+    curl -k -XDELETE $endpoint/instances/$bstrap_ID --cookie $cookie
     nodes=3
     [ "$haflag" = "yes" ] && nodes=5
     export KUBECONFIG=auth/kubeconfig
@@ -363,12 +365,12 @@ function launch_cluster()
     done
     setup_nfs_pv
     ../openshift-install wait-for install-complete
-    curl -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=complete"
+    curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=complete"
     let more=$nworkers-2
     for i in $(seq 1 $more); do
         let index=$i+1
         let last=$index+20
-        curl -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-$index;ipaddr=192.168.91.$last"
+        curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-$index;ipaddr=192.168.91.$last"
     done
     let nodes=$nodes+$more
     while true; do

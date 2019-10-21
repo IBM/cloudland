@@ -131,7 +131,7 @@ grep nameserver /etc/resolv.conf
 [ $? -ne 0 ] && echo nameserver 8.8.8.8 >> /etc/resolv.conf
 yum -y install epel-release centos-release-gluster
 yum -y install wget jq`
-			userdata = fmt.Sprintf("%s\nwget '%s/misc/glusterfs/gluster.sh'\nchmod +x gluster.sh", userdata, endpoint)
+			userdata = fmt.Sprintf("%s\nwget --no-check-certificate '%s/misc/glusterfs/gluster.sh'\nchmod +x gluster.sh", userdata, endpoint)
 			userdata = fmt.Sprintf("%s\n./gluster.sh '%d' '%s'", userdata, glusterfs.ID, glusterfs.Endpoint)
 			sgIDs := []int64{secgroup.ID}
 			keyIDs := []int64{glusterfs.Key, glusterfs.HeketiKey}
