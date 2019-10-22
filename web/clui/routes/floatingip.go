@@ -297,11 +297,14 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 		ftype = "public,private"
 	}
 	types := strings.Split(ftype, ",")
-	_, err = floatingipAdmin.Create(c.Req.Context(), int64(instID), 0, types)
+	floatingips, err := floatingipAdmin.Create(c.Req.Context(), int64(instID), 0, types)
 	if err != nil {
 		log.Println("Failed to create floating ip", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
+	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, floatingips)
+		return
 	}
 	c.Redirect(redirectTo)
 }

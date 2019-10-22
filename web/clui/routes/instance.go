@@ -1035,7 +1035,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	userdata := c.QueryTrim("userdata")
 	instance, err := instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, image, flavor, int64(primaryID), 0, ipAddr, macAddr, subnetIDs, keyIDs, sgIDs, hyperID)
 	if err != nil {
-		log.Println("Create instance failed, %v", err)
+		log.Println("Create instance failed", err)
 		c.HTML(http.StatusBadRequest, err.Error())
 		return
 	} else if c.Req.Header.Get("X-Json-Format") == "yes" {

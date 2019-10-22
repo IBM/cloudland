@@ -707,11 +707,14 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	_, err = subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, gateway, start, end, rtype, dns, search, routeJson, 0, memberShip.OrgID)
+	subnet, err := subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, gateway, start, end, rtype, dns, search, routeJson, 0, memberShip.OrgID)
 	if err != nil {
 		log.Println("Create subnet failed, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
+	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, subnet)
+		return
 	}
 	c.Redirect(redirectTo)
 }

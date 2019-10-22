@@ -219,9 +219,14 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	format := c.QueryTrim("format")
 	architecture := c.QueryTrim("architecture")
 	instance := c.QueryInt64("instance")
-	_, err := imageAdmin.Create(c.Req.Context(), name, url, format, architecture, instance)
+	image, err := imageAdmin.Create(c.Req.Context(), name, url, format, architecture, instance)
 	if err != nil {
-		c.HTML(500, "500")
+		log.Println("Create instance failed", err)
+		c.HTML(http.StatusBadRequest, err.Error())
+		return
+	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, image)
+		return
 	}
 	c.Redirect(redirectTo)
 }

@@ -333,9 +333,14 @@ func (v *VolumeView) Create(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	_, err = volumeAdmin.Create(c.Req.Context(), name, vsize)
+	volume, err := volumeAdmin.Create(c.Req.Context(), name, vsize)
 	if err != nil {
-		c.HTML(500, err.Error())
+		log.Println("Create volume failed", err)
+		c.HTML(http.StatusBadRequest, err.Error())
+		return
+	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, volume)
+		return
 	}
 	c.Redirect(redirectTo)
 }

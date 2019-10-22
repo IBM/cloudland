@@ -314,10 +314,14 @@ func (v *SecruleView) Create(c *macaron.Context, store session.Store) {
 	max := c.QueryTrim("portmax")
 	portMin, err := strconv.Atoi(min)
 	portMax, err := strconv.Atoi(max)
-	_, err = secruleAdmin.Create(c.Req.Context(), int64(secgroupID), memberShip.OrgID, remoteIp, direction, protocol, portMin, portMax)
+	secrule, err := secruleAdmin.Create(c.Req.Context(), int64(secgroupID), memberShip.OrgID, remoteIp, direction, protocol, portMin, portMax)
 	if err != nil {
 		log.Println("Failed to create security rule, %v", err)
-		c.HTML(500, "500")
+		c.HTML(http.StatusBadRequest, err.Error())
+		return
+	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, secrule)
+		return
 	}
 	c.Redirect(redirectTo)
 }

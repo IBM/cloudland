@@ -520,7 +520,7 @@ func (v *UserView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "Passwords do not match")
 		return
 	}
-	_, err := userAdmin.Create(c.Req.Context(), username, password)
+	user, err := userAdmin.Create(c.Req.Context(), username, password)
 	if err != nil {
 		log.Println("Failed to create user, %v", err)
 		c.HTML(500, "500")
@@ -530,6 +530,10 @@ func (v *UserView) Create(c *macaron.Context, store session.Store) {
 	if err != nil {
 		log.Println("Failed to create organization, %v", err)
 		c.HTML(500, "500")
+		return
+	}
+	if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, user)
 		return
 	}
 	c.Redirect(redirectTo)

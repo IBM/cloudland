@@ -434,10 +434,14 @@ func (v *OrgView) Create(c *macaron.Context, store session.Store) {
 	redirectTo := "../orgs"
 	name := c.QueryTrim("name")
 	owner := c.QueryTrim("owner")
-	_, err := orgAdmin.Create(c.Req.Context(), name, owner)
+	organization, err := orgAdmin.Create(c.Req.Context(), name, owner)
 	if err != nil {
 		log.Println("Failed to create organization, %v", err)
-		c.HTML(500, "500")
+		c.HTML(http.StatusBadRequest, err.Error())
+		return
+	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, organization)
+		return
 	}
 	c.Redirect(redirectTo)
 }

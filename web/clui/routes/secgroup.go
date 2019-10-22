@@ -382,5 +382,9 @@ func (v *SecgroupView) Create(c *macaron.Context, store session.Store) {
 			return
 		}
 	}
+	if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, secgroup)
+		return
+	}
 	c.Redirect(redirectTo)
 }

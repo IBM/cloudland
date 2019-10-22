@@ -625,10 +625,13 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	flavor := c.QueryInt64("flavor")
 	key := c.QueryInt64("key")
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
-	_, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, int32(nworkers), flavor, key)
+	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, int32(nworkers), flavor, key)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "error")
+		return
+	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, openshift)
 		return
 	}
 	c.Redirect(redirectTo)

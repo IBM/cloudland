@@ -324,6 +324,15 @@ EOF
     cd -
 }
 
+function set_autocsr()
+{
+    cat >/etc/cron.hourly/50autocsr <<EOF
+#!/bin/bash
+export KUBECONFIG=/opt/$cluster_name/auth/kubeconfig
+/opt/oc get csr -ojson | jq -r '.items[] | select(.status == {} ) | .metadata.name' | xargs /opt/oc adm certificate approve
+EOF
+}
+
 function launch_cluster()
 {
     cd /opt/$cluster_name
@@ -379,6 +388,7 @@ function launch_cluster()
         count=$(../oc get nodes | grep -c Ready)
         [ "$count" -ge "$nodes" ] && break
     done
+    set_autocsr
     create_storage
 }
 
