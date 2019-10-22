@@ -331,6 +331,7 @@ function set_autocsr()
 export KUBECONFIG=/opt/$cluster_name/auth/kubeconfig
 /opt/oc get csr -ojson | jq -r '.items[] | select(.status == {} ) | .metadata.name' | xargs /opt/oc adm certificate approve
 EOF
+    chmod +x /etc/cron.hourly/50autocsr
 }
 
 function launch_cluster()

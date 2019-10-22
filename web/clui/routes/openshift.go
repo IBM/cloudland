@@ -74,6 +74,11 @@ func (a *OpenshiftAdmin) createSecgroup(ctx context.Context, name, cidr string, 
 		log.Println("Failed to create security rule", err)
 		return
 	}
+	_, err = secruleAdmin.Create(ctx, secgroup.ID, owner, cidr, "ingress", "tcp", 8080, 8080)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
 	_, err = secruleAdmin.Create(ctx, secgroup.ID, owner, cidr, "ingress", "tcp", 2379, 2380)
 	if err != nil {
 		log.Println("Failed to create security rule", err)
