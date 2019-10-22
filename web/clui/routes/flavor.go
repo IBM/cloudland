@@ -148,7 +148,8 @@ func (v *FlavorView) New(c *macaron.Context, store session.Store) {
 
 func (v *FlavorView) Create(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
-	if memberShip.UserName != "admin" {
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
 		log.Println("Not authorized for this operation")
 		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
