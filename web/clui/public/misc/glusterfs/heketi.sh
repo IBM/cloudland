@@ -14,8 +14,8 @@ setenforce Permissive
 sed -i "s/^SELINUX=enforcing/SELINUX=permissive/" /etc/selinux/config
 yum install -y heketi-client heketi
 ssh-keygen -f /etc/heketi/heketi_key -t rsa -N ''
-key_id=$(curl -XPOST -H "X-Json-Format: yes" $endpoint/keys/new --cookie "$cookie" --data "name=heketi_g$gluster_id" --data-urlencode "pubkey=$(cat /etc/heketi/heketi_key.pub)" | jq .ID)
-curl -XPOST -H "X-Json-Format: yes" $endpoint/glusterfs/$gluster_id --cookie "$cookie" --data "nworkers=3;heketikey=$key_id"
+key_id=$(curl -k -XPOST -H "X-Json-Format: yes" $endpoint/keys/new --cookie "$cookie" --data "name=heketi_g$gluster_id" --data-urlencode "pubkey=$(cat /etc/heketi/heketi_key.pub)" | jq .ID)
+curl -k -XPOST -H "X-Json-Format: yes" $endpoint/glusterfs/$gluster_id --cookie "$cookie" --data "nworkers=$nworkers" --data "heketikey=$key_id"
 
 cat >/etc/heketi/heketi.json <<EOF
 {

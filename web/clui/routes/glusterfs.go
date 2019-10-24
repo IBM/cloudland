@@ -135,7 +135,7 @@ yum -y install wget jq`
 			userdata = fmt.Sprintf("%s\n./gluster.sh '%d' '%s'", userdata, glusterfs.ID, glusterfs.Endpoint)
 			sgIDs := []int64{secgroup.ID}
 			keyIDs := []int64{glusterfs.Key, glusterfs.HeketiKey}
-			_, err = instanceAdmin.Create(ctx, 1, hostname, userdata, 1, glusterfs.Flavor, glusterfs.SubnetID, 0, ipaddr, "", nil, keyIDs, sgIDs, -1)
+			_, err = instanceAdmin.Create(ctx, 1, hostname, userdata, 1, glusterfs.Flavor, glusterfs.SubnetID, glusterfs.ClusterID, ipaddr, "", nil, keyIDs, sgIDs, -1)
 			if err != nil {
 				log.Println("Failed to launch a worker", err)
 				return
@@ -224,7 +224,7 @@ grep nameserver /etc/resolv.conf
 [ $? -ne 0 ] && echo nameserver 8.8.8.8 >> /etc/resolv.conf
 yum -y install epel-release centos-release-gluster
 yum -y install wget jq`
-	userdata = fmt.Sprintf("%s\nwget '%s/misc/glusterfs/heketi.sh'\nchmod +x heketi.sh", userdata, endpoint)
+	userdata = fmt.Sprintf("%s\nwget --no-check-certificate '%s/misc/glusterfs/heketi.sh'\nchmod +x heketi.sh", userdata, endpoint)
 	userdata = fmt.Sprintf("%s\n./heketi.sh '%d' '%s' '%s' '%d' '%d'", userdata, glusterfs.ID, endpoint, cookie, subnet.ID, nworkers)
 	tmpName := fmt.Sprintf("g%d-heketi", glusterfs.ID)
 	_, err = instanceAdmin.Create(ctx, 1, tmpName, userdata, 1, flavor, subnet.ID, cluster, "192.168.91.199", "", nil, keyIDs, sgIDs, -1)
@@ -407,6 +407,7 @@ func (v *GlusterfsView) Patch(c *macaron.Context, store session.Store) {
 		return
 	}
 	flavor := c.QueryInt64("flavor")
+	heketikey := c.QueryInt64("heketikey")
 	nworkers := c.QueryInt("nworkers")
 	if nworkers < 3 {
 		code := http.StatusBadRequest
@@ -414,7 +415,7 @@ func (v *GlusterfsView) Patch(c *macaron.Context, store session.Store) {
 		c.HTML(code, "error")
 		return
 	}
-	glusterfs, err := glusterfsAdmin.Update(ctx, id, 0, flavor, int32(nworkers))
+	glusterfs, err := glusterfsAdmin.Update(ctx, id, heketikey, flavor, int32(nworkers))
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, err.Error())
