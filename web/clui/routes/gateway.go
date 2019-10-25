@@ -429,7 +429,7 @@ func (v *GatewayView) New(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	_, subnets, err := subnetAdmin.List(c.Req.Context(), 0, -1, "", "")
+	_, subnets, err := subnetAdmin.List(c.Req.Context(), 0, -1, "", "", "router = 0")
 	if err != nil {
 		log.Println("DB failed to query subnets, %v", err)
 		c.Data["ErrorMsg"] = err.Error()

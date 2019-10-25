@@ -189,8 +189,9 @@ func (a *GlusterfsAdmin) Create(ctx context.Context, name, cookie string, nworke
 		return
 	}
 	var subnet *model.Subnet
+	var openshift *model.Openshift
 	if cluster > 0 {
-		openshift := &model.Openshift{Model: model.Model{ID: cluster}}
+		openshift = &model.Openshift{Model: model.Model{ID: cluster}}
 		err = db.Preload("Subnet").Take(openshift).Error
 		if err != nil {
 			log.Println("DB failed to query openshift cluster", err)
@@ -237,6 +238,9 @@ yum -y install wget jq`
 	if err != nil {
 		log.Println("Failed to create glusterfs", err)
 		return
+	}
+	if openshift != nil {
+		openshift.GlusterID = glusterfs.ID
 	}
 	return
 }
