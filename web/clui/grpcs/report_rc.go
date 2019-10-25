@@ -75,7 +75,7 @@ func ReportRC(ctx context.Context, job *model.Job, args []string) (status string
 		Disk:        disk,
 		DiskTotal:   diskTotal,
 	}
-	err = db.Where("hostid = ?", id).Assign(resource).FirstOrCreate(resource).Error
+	err = db.Where("hostid = ?", id).Assign(resource).FirstOrCreate(&model.Resource{}).Error
 	if err != nil {
 		log.Println("Failed to create or update hyper resource", err)
 		return
