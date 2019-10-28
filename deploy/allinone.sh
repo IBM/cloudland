@@ -47,7 +47,9 @@ function inst_web()
     echo 'export GO111MODULE=on' >> ~/.bashrc
     source ~/.bashrc
     cd $cland_root_dir
-    go mod init web
+    go mod init github.com/IBM/cloudland/web
+    go mod tidy
+    echo 'replace github.com/IBM/cloudland => /opt/cloudland' >> go.mod
     cd $cland_root_dir/web/clui
     go build
     cd $cland_root_dir/deploy
