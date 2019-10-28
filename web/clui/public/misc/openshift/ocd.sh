@@ -19,6 +19,7 @@ function setup_dns()
     data=$(curl -k -XPOST $endpoint/floatingips/assign --cookie "$cookie" --data "instance=$instID")
     public_ip=$(jq  -r .public_ip <<< $data)
     public_ip=${public_ip%%/*}
+    [ -z "$public_ip" ] && public_ip=192.168.91.8
     dns_server=$(grep '^namaserver' /etc/resolv.conf | tail -1 | awk '{print $2}')
     if [ -n "$dns_server" -o "$dns_server" = "127.0.0.1" ]; then
         dns_server=8.8.8.8
@@ -215,14 +216,15 @@ EOF
 function download_pkgs()
 {
     yum install -y wget nc jq
+    cd /opt
     wget --no-check-certificate $endpoint/misc/openshift/ocd.conf
     source ocd.conf
     wget --no-check-certificate -O /usr/share/nginx/html/rhcos.raw.gz $coreos_image_url
-    cd /opt
     wget --no-check-certificate -O openshift-install-linux.tgz $openshift_installer
     wget --no-check-certificate -O openshift-client-linux.tgz $openshift_client
     tar -zxf openshift-install-linux.tgz
     tar -zxf openshift-client-linux.tgz
+    cp kubectl oc /usr/bin/
 }
 
 function ignite_files()
