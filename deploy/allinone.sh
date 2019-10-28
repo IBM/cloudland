@@ -48,6 +48,8 @@ function inst_web()
     source ~/.bashrc
     cd $cland_root_dir
     go mod init web
+    go mod tidy
+    echo 'replace github.com/IBM/cloudland => /opt/cloudland' >> go.mod
     cd $cland_root_dir/web/clui
     go build
     cd $cland_root_dir/deploy
