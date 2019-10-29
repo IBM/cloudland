@@ -349,13 +349,18 @@ function launch_cluster()
     done
     curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=masters"
     curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-0;ipaddr=192.168.91.10"
+    sleep 3
     if [ "$haflag" = "yes" ]; then
         curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-1;ipaddr=192.168.91.11"
+        sleep 3
         curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-2;ipaddr=192.168.91.12"
+        sleep 3
     fi
     curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=workers"
     curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-0;ipaddr=192.168.91.20"
+    sleep 3
     curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-1;ipaddr=192.168.91.21"
+    sleep 3
     sleep 60
     ../openshift-install wait-for bootstrap-complete --log-level debug
     curl -k -XDELETE $endpoint/instances/$bstrap_ID --cookie $cookie
@@ -383,6 +388,7 @@ function launch_cluster()
         let index=$i+1
         let last=$index+20
         curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-$index;ipaddr=192.168.91.$last"
+        sleep 3
     done
     let nodes=$nodes+$more
     while true; do
