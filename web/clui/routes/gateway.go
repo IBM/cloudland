@@ -377,10 +377,20 @@ func (v *GatewayView) List(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	pages := GetPages(total, limit)
 	c.Data["Gateways"] = gateways
 	c.Data["Total"] = total
-	c.Data["Pages"] = GetPages(total, limit)
+	c.Data["Pages"] = pages
 	c.Data["Query"] = query
+	if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, map[string]interface{}{
+			"gateways": gateways,
+			"total":    total,
+			"pages":    pages,
+			"query":    query,
+		})
+		return
+	}
 	c.HTML(200, "gateways")
 }
 
@@ -527,10 +537,15 @@ func (v *GatewayView) Patch(c *macaron.Context, store session.Store) {
 		}
 		subnetIDs = append(subnetIDs, int64(sID))
 	}
-	_, err = gatewayAdmin.Update(c.Req.Context(), int64(gatewayID), name, int64(pubID), int64(priID), subnetIDs)
+	gateway, err := gatewayAdmin.Update(c.Req.Context(), int64(gatewayID), name, int64(pubID), int64(priID), subnetIDs)
 	if err != nil {
-		log.Println("Failed to create gateway, %v", err)
-		c.HTML(500, "500")
+		log.Println("Failed to create gateway", err)
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, gateway)
+		return
 	}
 	c.Redirect(redirectTo)
 }

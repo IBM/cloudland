@@ -335,10 +335,14 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 		}
 		sgIDs = append(sgIDs, sID)
 	}
-	_, err = interfaceAdmin.Update(c.Req.Context(), int64(ifaceID), name, pairs, sgIDs)
+	iface, err := interfaceAdmin.Update(c.Req.Context(), int64(ifaceID), name, pairs, sgIDs)
 	if err != nil {
 		log.Println("Failed to update interface", err)
-		c.HTML(http.StatusBadRequest, err.Error())
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
+	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, iface)
+		return
 	}
 	c.Redirect(redirectTo)
 }

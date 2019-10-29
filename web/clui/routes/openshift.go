@@ -452,10 +452,20 @@ func (v *OpenshiftView) List(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	pages := GetPages(total, limit)
 	c.Data["Openshifts"] = openshifts
 	c.Data["Total"] = total
-	c.Data["Pages"] = GetPages(total, limit)
+	c.Data["Pages"] = pages
 	c.Data["Query"] = query
+	if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, map[string]interface{}{
+			"openshifts": openshifts,
+			"total":      total,
+			"pages":      pages,
+			"query":      query,
+		})
+		return
+	}
 	c.HTML(200, "openshifts")
 }
 
@@ -536,10 +546,14 @@ func (v *OpenshiftView) Patch(c *macaron.Context, store session.Store) {
 		c.HTML(code, "error")
 		return
 	}
-	_, err = openshiftAdmin.Update(ctx, id, flavor, int32(nworkers))
+	openshift, err := openshiftAdmin.Update(ctx, id, flavor, int32(nworkers))
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(500, "500")
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, openshift)
+		return
 	}
 	c.Redirect("../openshifts")
 }

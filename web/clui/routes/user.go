@@ -325,10 +325,20 @@ func (v *UserView) List(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	pages := GetPages(total, limit)
 	c.Data["Users"] = users
 	c.Data["Total"] = total
-	c.Data["Pages"] = GetPages(total, limit)
+	c.Data["Pages"] = pages
 	c.Data["Query"] = query
+	if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, map[string]interface{}{
+			"users": users,
+			"total": total,
+			"pages": pages,
+			"query": query,
+		})
+		return
+	}
 	c.HTML(200, "users")
 }
 
@@ -442,15 +452,17 @@ func (v *UserView) Patch(c *macaron.Context, store session.Store) {
 	}
 	password := c.QueryTrim("password")
 	members := c.QueryStrings("members")
-	_, err = userAdmin.Update(c.Req.Context(), int64(userID), password, members)
+	user, err := userAdmin.Update(c.Req.Context(), int64(userID), password, members)
 	if err != nil {
 		log.Println("Failed to update password, %v", err)
-		code := http.StatusInternalServerError
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
-	} else {
-		c.HTML(200, "ok")
+	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, user)
+		return
 	}
+	c.HTML(200, "ok")
 }
 
 func (v *UserView) Delete(c *macaron.Context, store session.Store) (err error) {

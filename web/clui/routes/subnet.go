@@ -458,10 +458,20 @@ func (v *SubnetView) List(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	pages := GetPages(total, limit)
 	c.Data["Subnets"] = subnets
 	c.Data["Total"] = total
-	c.Data["Pages"] = GetPages(total, limit)
+	c.Data["Pages"] = pages
 	c.Data["Query"] = query
+	if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, map[string]interface{}{
+			"subnets": subnets,
+			"total":   total,
+			"pages":   pages,
+			"query":   query,
+		})
+		return
+	}
 	c.HTML(200, "subnets")
 }
 
@@ -671,11 +681,15 @@ func (v *SubnetView) Patch(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	_, err = subnetAdmin.Update(c.Req.Context(), id, name, gateway, start, end, routeJson)
+	subnet, err := subnetAdmin.Update(c.Req.Context(), id, name, gateway, start, end, routeJson)
 	if err != nil {
-		log.Println("Create subnet failed, %v", err)
+		log.Println("Create subnet failed", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(500, "500")
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, subnet)
+		return
 	}
 	c.Redirect(redirectTo)
 }

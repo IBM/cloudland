@@ -124,10 +124,20 @@ func (v *KeyView) List(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	pages := GetPages(total, limit)
 	c.Data["Keys"] = keys
 	c.Data["Total"] = total
 	c.Data["Pages"] = GetPages(total, limit)
 	c.Data["Query"] = query
+	if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, map[string]interface{}{
+			"keys":  keys,
+			"total": total,
+			"pages": pages,
+			"query": query,
+		})
+		return
+	}
 	c.HTML(200, "keys")
 }
 

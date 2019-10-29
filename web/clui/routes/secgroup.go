@@ -222,10 +222,20 @@ func (v *SecgroupView) List(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	pages := GetPages(total, limit)
 	c.Data["SecurityGroups"] = secgroups
 	c.Data["Total"] = total
-	c.Data["Pages"] = GetPages(total, limit)
+	c.Data["Pages"] = pages
 	c.Data["Query"] = query
+	if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, map[string]interface{}{
+			"secgroups": secgroups,
+			"total":     total,
+			"pages":     pages,
+			"query":     query,
+		})
+		return
+	}
 	c.HTML(200, "secgroups")
 }
 
@@ -334,7 +344,6 @@ func (v *SecgroupView) Patch(c *macaron.Context, store session.Store) {
 		c.HTML(500, err.Error())
 	}
 	if isDef {
-		log.Println("$$$$$$$$$ To switch default group")
 		err = secgroupAdmin.Switch(c.Req.Context(), secgroup, store)
 		if err != nil {
 			log.Println("Failed to switch security group", err)
@@ -342,6 +351,10 @@ func (v *SecgroupView) Patch(c *macaron.Context, store session.Store) {
 			c.HTML(500, "500")
 			return
 		}
+	}
+	if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, secgroup)
+		return
 	}
 	c.Redirect(redirectTo)
 	return

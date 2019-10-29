@@ -213,10 +213,20 @@ func (v *FloatingIpView) List(c *macaron.Context, store session.Store) {
 		c.HTML(500, err.Error())
 		return
 	}
+	pages := GetPages(total, limit)
 	c.Data["FloatingIps"] = floatingips
 	c.Data["Total"] = total
-	c.Data["Pages"] = GetPages(total, limit)
+	c.Data["Pages"] = pages
 	c.Data["Query"] = query
+	if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, map[string]interface{}{
+			"floatingips": floatingips,
+			"total":       total,
+			"pages":       pages,
+			"query":       query,
+		})
+		return
+	}
 	c.HTML(200, "floatingips")
 }
 

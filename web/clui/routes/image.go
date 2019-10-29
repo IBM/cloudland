@@ -145,10 +145,20 @@ func (v *ImageView) List(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	pages := GetPages(total, limit)
 	c.Data["Images"] = images
 	c.Data["Total"] = total
-	c.Data["Pages"] = GetPages(total, limit)
+	c.Data["Pages"] = pages
 	c.Data["Query"] = query
+	if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, map[string]interface{}{
+			"images": images,
+			"total":  total,
+			"pages":  pages,
+			"query":  query,
+		})
+		return
+	}
 	c.HTML(200, "images")
 }
 

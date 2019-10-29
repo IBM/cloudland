@@ -189,10 +189,20 @@ func (v *VolumeView) List(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	pages := GetPages(total, limit)
 	c.Data["Volumes"] = volumes
 	c.Data["Total"] = total
-	c.Data["Pages"] = GetPages(total, limit)
+	c.Data["Pages"] = pages
 	c.Data["Query"] = query
+	if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, map[string]interface{}{
+			"volumes": volumes,
+			"total":   total,
+			"pages":   pages,
+			"query":   query,
+		})
+		return
+	}
 	c.HTML(200, "volumes")
 }
 
@@ -307,9 +317,15 @@ func (v *VolumeView) Patch(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	_, err = volumeAdmin.Update(c.Req.Context(), int64(volID), name, int64(instID))
+	volume, err := volumeAdmin.Update(c.Req.Context(), int64(volID), name, int64(instID))
 	if err != nil {
-		c.HTML(500, err.Error())
+		log.Println("Failed to create volume", err)
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, volume)
+		return
 	}
 	c.Redirect(redirectTo)
 	return

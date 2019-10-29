@@ -852,10 +852,15 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 	}
 	var sgIDs []int64
 	sgIDs = append(sgIDs, store.Get("defsg").(int64))
-	_, err = instanceAdmin.Update(c.Req.Context(), int64(instanceID), hostname, action, subnetIDs, sgIDs)
+	instance, err := instanceAdmin.Update(c.Req.Context(), int64(instanceID), hostname, action, subnetIDs, sgIDs)
 	if err != nil {
 		log.Println("Create instance failed, %v", err)
-		c.HTML(http.StatusBadRequest, err.Error())
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, instance)
+		return
 	}
 	c.Redirect(redirectTo)
 }

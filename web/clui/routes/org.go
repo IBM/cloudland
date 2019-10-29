@@ -282,10 +282,20 @@ func (v *OrgView) List(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	pages := GetPages(total, limit)
 	c.Data["Organizations"] = orgs
 	c.Data["Total"] = total
-	c.Data["Pages"] = GetPages(total, limit)
+	c.Data["Pages"] = pages
 	c.Data["Query"] = query
+	if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, map[string]interface{}{
+			"orgs":  orgs,
+			"total": total,
+			"pages": pages,
+			"query": query,
+		})
+		return
+	}
 	c.HTML(200, "orgs")
 }
 
@@ -414,10 +424,15 @@ func (v *OrgView) Patch(c *macaron.Context, store session.Store) {
 		}
 		roleList = append(roleList, model.Role(role))
 	}
-	_, err = orgAdmin.Update(c.Req.Context(), int64(orgID), memberList, userList, roleList)
+	org, err := orgAdmin.Update(c.Req.Context(), int64(orgID), memberList, userList, roleList)
 	if err != nil {
-		log.Println("Failed to create organization, %v", err)
-		c.HTML(500, "500")
+		log.Println("Failed to update organization, %v", err)
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, org)
+		return
 	}
 	c.Redirect(redirectTo)
 }

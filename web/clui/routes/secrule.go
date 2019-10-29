@@ -208,9 +208,18 @@ func (v *SecruleView) List(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	pages := GetPages(total, limit)
 	c.Data["SecurityRules"] = secrules
 	c.Data["Total"] = total
-	c.Data["Pages"] = GetPages(total, limit)
+	c.Data["Pages"] = pages
+	if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, map[string]interface{}{
+			"secrules": secrules,
+			"total":    total,
+			"pages":    pages,
+		})
+		return
+	}
 	c.HTML(200, "secrules")
 }
 

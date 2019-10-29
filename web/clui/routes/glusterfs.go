@@ -341,10 +341,20 @@ func (v *GlusterfsView) List(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	pages := GetPages(total, limit)
 	c.Data["Glusterfses"] = glusterfses
 	c.Data["Total"] = total
-	c.Data["Pages"] = GetPages(total, limit)
+	c.Data["Pages"] = pages
 	c.Data["Query"] = query
+	if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, map[string]interface{}{
+			"glusterfses": glusterfses,
+			"total":       total,
+			"pages":       pages,
+			"query":       query,
+		})
+		return
+	}
 	c.HTML(200, "glusterfs")
 }
 
@@ -421,8 +431,10 @@ func (v *GlusterfsView) Patch(c *macaron.Context, store session.Store) {
 	}
 	glusterfs, err := glusterfsAdmin.Update(ctx, id, heketikey, flavor, int32(nworkers))
 	if err != nil {
+		log.Println("Failed to create glusterfs", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(500, err.Error())
+		c.HTML(http.StatusBadRequest, "error")
+		return
 	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
 		c.JSON(200, glusterfs)
 		return
