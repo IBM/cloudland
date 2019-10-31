@@ -537,6 +537,7 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 		log.Println("Failed to query instance(s), %v", err)
 		return
 	}
+	db = db.Offset(0).Limit(-1)
 	for _, instance := range instances {
 		if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
 			log.Println("Failed to query floating ip(s), %v", err)

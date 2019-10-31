@@ -398,7 +398,7 @@ function launch_cluster()
         [ "$count" -ge "$nodes" ] && break
     done
     set_autocsr
-    create_storage
+    # create_storage
 }
 
 setenforce Permissive
