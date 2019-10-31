@@ -340,14 +340,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 	keyIDs := []int64{key}
 	sgIDs := []int64{secgroup.ID}
 	endpoint := viper.GetString("api.endpoint")
-	userdata := `#!/bin/bash
-cd /opt
-exec >/tmp/ocd.log 2>&1
-sleep 15
-grep nameserver /etc/resolv.conf
-[ $? -ne 0 ] && echo nameserver 8.8.8.8 >> /etc/resolv.conf
-yum -y install epel-release
-yum -y install wget jq`
+	userdata := getUserdata("ocd")
 	userdata = fmt.Sprintf("%s\nwget --no-check-certificate '%s/misc/openshift/ocd.sh'\nchmod +x ocd.sh", userdata, endpoint)
 	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' '%s' '%d'<<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, haflag, nworkers, secret)
 	_, err = instanceAdmin.Create(ctx, 1, name, userdata, 1, flavor, subnet.ID, openshift.ID, lbIP, "", nil, keyIDs, sgIDs, -1)

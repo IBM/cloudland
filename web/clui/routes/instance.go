@@ -9,6 +9,7 @@ package routes
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -147,7 +148,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		if i == 0 && hyper >= 0 {
 			control = fmt.Sprintf("inter=%d %s", hyper, rcNeeded)
 		}
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' 'image-%d.%s' '%s' '%d' '%d' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, image.ID, image.Format, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, flavor.Swap, flavor.Ephemeral, metadata)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' 'image-%d.%s' '%s' '%d' '%d' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, image.ID, image.Format, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, flavor.Swap, flavor.Ephemeral, base64.StdEncoding.EncodeToString([]byte(metadata)))
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Launch vm command execution failed", err)

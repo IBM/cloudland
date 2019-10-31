@@ -123,14 +123,7 @@ func (a *GlusterfsAdmin) Update(ctx context.Context, id, heketiKey, flavorID int
 				return
 			}
 			endpoint := viper.GetString("api.endpoint")
-			userdata := `#!/bin/bash
-cd /opt
-exec >/tmp/gluster.log 2>&1
-sleep 15
-grep nameserver /etc/resolv.conf
-[ $? -ne 0 ] && echo nameserver 8.8.8.8 >> /etc/resolv.conf
-yum -y install epel-release centos-release-gluster
-yum -y install wget jq`
+			userdata := getUserdata("gluster")
 			userdata = fmt.Sprintf("%s\nwget --no-check-certificate '%s/misc/glusterfs/gluster.sh'\nchmod +x gluster.sh", userdata, endpoint)
 			userdata = fmt.Sprintf("%s\n./gluster.sh '%d' '%s'", userdata, glusterfs.ID, glusterfs.Endpoint)
 			sgIDs := []int64{secgroup.ID}
@@ -168,6 +161,21 @@ yum -y install wget jq`
 		log.Println("DB failed to update cluster status", err)
 		return
 	}
+	return
+}
+
+func getUserdata(name string) (userdata string) {
+	userdata = fmt.Sprintf("#!/bin/bash\nexec >/tmp/%s.log 2>&1\n", name)
+	userdata += `cd /opt
+count=0
+while [ "$count" -le 10 ]; do
+    sleep 10
+    nameserver=$(grep '^nameserver' /etc/resolv.conf | head -1 | awk '{print $2}')
+    [ -n "$nameserver" ] && break
+    let count=$count+1
+done
+[ -z "$nameserver" ] && echo nameserver 8.8.8.8 >> /etc/resolv.conf
+yum -y install wget`
 	return
 }
 
@@ -217,14 +225,7 @@ func (a *GlusterfsAdmin) Create(ctx context.Context, name, cookie string, nworke
 	keyIDs := []int64{key}
 	sgIDs := []int64{secgroup.ID}
 	endpoint := viper.GetString("api.endpoint")
-	userdata := `#!/bin/bash
-cd /opt
-exec >/tmp/heketi.log 2>&1
-sleep 15
-grep nameserver /etc/resolv.conf
-[ $? -ne 0 ] && echo nameserver 8.8.8.8 >> /etc/resolv.conf
-yum -y install epel-release centos-release-gluster
-yum -y install wget jq`
+	userdata := getUserdata("heketi")
 	userdata = fmt.Sprintf("%s\nwget --no-check-certificate '%s/misc/glusterfs/heketi.sh'\nchmod +x heketi.sh", userdata, endpoint)
 	userdata = fmt.Sprintf("%s\n./heketi.sh '%d' '%s' '%s' '%d' '%d'", userdata, glusterfs.ID, endpoint, cookie, subnet.ID, nworkers)
 	tmpName := fmt.Sprintf("g%d-heketi", glusterfs.ID)

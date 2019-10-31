@@ -10,6 +10,7 @@ heketi_endpoint=$2
 setenforce Permissive
 sed -i "s/^SELINUX=enforcing/SELINUX=permissive/" /etc/selinux/config
 cp -f /home/centos/.ssh/authorized_keys ~/.ssh/
+yum -y install epel-release centos-release-gluster
 yum install -y glusterfs-server heketi-client
 systemctl start glusterd
 systemctl enable glusterd

@@ -26,8 +26,8 @@ function setup_dns()
         sleep 1
     done
     [ -z "$public_ip" ] && public_ip=192.168.91.8
-    dns_server=$(grep '^namaserver' /etc/resolv.conf | tail -1 | awk '{print $2}')
-    if [ -n "$dns_server" -o "$dns_server" = "127.0.0.1" ]; then
+    dns_server=$(grep '^nameserver' /etc/resolv.conf | head -1 | awk '{print $2}')
+    if [ -z "$dns_server" -o "$dns_server" = "127.0.0.1" ]; then
         dns_server=8.8.8.8
     fi
 
@@ -35,7 +35,7 @@ function setup_dns()
     cp /etc/dnsmasq.conf /etc/dnsmasq.conf.bak
     cat > /etc/dnsmasq.conf <<EOF
 no-resolv
-server=8.8.8.8
+server=$dns_server
 local=/${cluster_name}.${base_domain}/
 address=/apps.${cluster_name}.${base_domain}/$public_ip
 srv-host=_etcd-server-ssl._tcp.${cluster_name}.${base_domain},etcd-0.${cluster_name}.${base_domain},2380,0,10
@@ -409,6 +409,8 @@ function launch_cluster()
 
 setenforce Permissive
 sed -i 's/^SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
+yum -y install epel-release
+yum -y install jq
 setup_dns
 setup_lb
 setup_nginx
