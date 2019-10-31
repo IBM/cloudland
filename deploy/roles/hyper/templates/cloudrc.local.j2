@@ -1,6 +1,6 @@
 # -*- mode: sh -*-
 cloud_no=0
-cloud_domain=cloudland.bluecat.ltd
+cloud_domain={{ domain_name }}
 image_repo=http://{{ hostvars[groups['hyper'][0]]['inventory_hostname'] }}:4000
 dns_server={{ dns_server }}
 external_vlan={{ network_external_vlan }}

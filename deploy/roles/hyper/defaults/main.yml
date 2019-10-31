@@ -1,3 +1,4 @@
+domain_name: example.com
 network_device: eth0
 external_vlan: 5000
 internal_vlan: 5010

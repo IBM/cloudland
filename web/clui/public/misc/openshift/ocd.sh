@@ -16,9 +16,15 @@ seq_max=100
 function setup_dns()
 {
     instID=$(cat /var/lib/cloud/data/instance-id | cut -d'-' -f2)
-    data=$(curl -k -XPOST $endpoint/floatingips/assign --cookie "$cookie" --data "instance=$instID")
-    public_ip=$(jq  -r .public_ip <<< $data)
-    public_ip=${public_ip%%/*}
+    count=0
+    while [ -z "$public_ip" -a $count -lt 10 ]; do
+        data=$(curl -k -XPOST $endpoint/floatingips/assign --cookie "$cookie" --data "instance=$instID")
+        echo $data
+        public_ip=$(jq  -r .public_ip <<< $data)
+        public_ip=${public_ip%%/*}
+        let count=$count+1
+        sleep 1
+    done
     [ -z "$public_ip" ] && public_ip=192.168.91.8
     dns_server=$(grep '^namaserver' /etc/resolv.conf | tail -1 | awk '{print $2}')
     if [ -n "$dns_server" -o "$dns_server" = "127.0.0.1" ]; then
@@ -48,7 +54,7 @@ EOF
 
     cat > /etc/dnsmasq.openshift.addnhosts <<EOF
 $public_ip dns.${cluster_name}.${base_domain}
-$public_ip loadbalancer.${cluster_name}.${base_domain}  api.${cluster_name}.${base_domain}  api-int.${cluster_name}.${base_domain}
+$public_ip loadbalancer.${cluster_name}.${base_domain}  api.${cluster_name}.${base_domain}  api-int.${cluster_name}.${base_domain}  lb.${cluster_name}.${base_domain}
 192.168.91.9 bootstrap.${cluster_name}.${base_domain}
 192.168.91.10 master-0.${cluster_name}.${base_domain}  etcd-0.${cluster_name}.${base_domain}
 192.168.91.11 master-1.${cluster_name}.${base_domain}  etcd-1.${cluster_name}.${base_domain}

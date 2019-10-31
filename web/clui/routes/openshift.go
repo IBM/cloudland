@@ -336,7 +336,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 		return
 	}
 	secgroup, err := a.createSecgroup(ctx, "openshift", "192.168.91.0/24", memberShip.OrgID)
-	name = fmt.Sprintf("oc%d-lb", openshift.ID)
+	name = "lb"
 	keyIDs := []int64{key}
 	sgIDs := []int64{secgroup.ID}
 	endpoint := viper.GetString("api.endpoint")
