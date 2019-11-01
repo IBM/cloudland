@@ -22,7 +22,9 @@
                         <table class="ui unstackable very basic striped table">
 	                        <thead>
 		                        <tr>
+									{{ if $.IsAdmin }}
 			                        <th>ID</th>
+									{{ end }}
 			                        <th>Instance</th>
 			                        <th>Local IP:Port</th>
 			                        <th>Remote IP:Port</th>
@@ -38,7 +40,9 @@
                                 {{ $Link := .Link }}
                                 {{ range .Portmaps }}
 		                        <tr>
+									{{ if $.IsAdmin }}
 			                        <td>{{.ID}}</td>
+									{{ end }}
 			                        <td>{{.Name}}</td>
 			                        <td>{{.LocalAddress}}:{{.LocalPort}}</td>
 			                        <td>{{.RemoteAddress}}:{{.RemotePort}}</td>

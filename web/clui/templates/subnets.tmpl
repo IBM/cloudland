@@ -22,7 +22,9 @@
                         <table class="ui unstackable very basic striped table">
 	                        <thead>
 		                        <tr>
+									{{ if $.IsAdmin }}
 			                        <th>{{.i18n.Tr "ID"}}</th>
+									{{ end }}
 			                        <th>{{.i18n.Tr "Name"}}</th>
 			                        <th>{{.i18n.Tr "Network"}}</th>
 			                        <th>{{.i18n.Tr "Netmask"}}</th>
@@ -38,8 +40,10 @@
                                 {{ $Link := .Link }}
                                 {{ range .Subnets }}
 		                        <tr>
+									{{ if $.IsAdmin }}
 			                        <td><a href="{{$Link}}/{{.ID}}">{{.ID}}</a></td>
-			                        <td>{{.Name}}</td>
+									{{ end }}
+			                        <td><a href="{{$Link}}/{{.ID}}">{{.Name}}</a></td>
 			                        <td>{{.Network}}</td>
 			                        <td>{{.Netmask}}</td>
 						{{ if $.IsAdmin }}

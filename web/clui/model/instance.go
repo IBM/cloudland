@@ -25,9 +25,10 @@ type Instance struct {
 	ImageID     int64
 	Image       *Image `gorm:"foreignkey:ImageID"`
 	ClusterID   int64
-	Keys        []*Key `gorm:"many2many:InstanceKeys;"`
-	Userdata    string `gorm:"type:text"`
-	Hyper       int32  `gorm:"default:-1"`
+	Cluster     *Openshift `gorm:"PRELOAD:false"`
+	Keys        []*Key     `gorm:"many2many:InstanceKeys;"`
+	Userdata    string     `gorm:"type:text"`
+	Hyper       int32      `gorm:"default:-1"`
 }
 
 func init() {

@@ -22,7 +22,9 @@
                         <table class="ui unstackable very basic striped table">
 	                        <thead>
 		                        <tr>
+									{{ if $.IsAdmin }}
 			                        <th>{{.i18n.Tr "ID"}}</th>
+									{{ end }}
 			                        <th>{{.i18n.Tr "Hostname"}}</th>
 			                        <th>{{.i18n.Tr "Flavor"}}</th>
 			                        <th>{{.i18n.Tr "Image"}}</th>
@@ -40,8 +42,10 @@
                                 {{ range .Instances }}
                                 {{ $InstanceID := .ID }}
 		                        <tr>
+									{{ if $.IsAdmin }}
 			                        <td><a href="{{$Link}}/{{.ID}}">{{.ID}}</a></td>
-			                        <td>{{ if ne .ClusterID 0 }}oc{{.ClusterID}}: {{end}}{{.Hostname}}</td>
+									{{ end }}
+			                        <td>{{ if .Cluster }}{{.Cluster.ClusterName}}:<br>{{end}}<a href="{{$Link}}/{{.ID}}">{{.Hostname}}</a></td>
 			                        <td>{{ if .Flavor }}{{ .Flavor.Name}}{{ end }}</td>
 			                        <td>{{ if .Image }}{{.Image.Name}}{{else}}{{.Hostname}}{{end}}</td>
 			                        <td>

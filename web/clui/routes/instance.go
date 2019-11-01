@@ -148,6 +148,9 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		if i == 0 && hyper >= 0 {
 			control = fmt.Sprintf("inter=%d %s", hyper, rcNeeded)
 		}
+		if primary.DomainSearch != "" {
+			hostname = hostname + "." + primary.DomainSearch
+		}
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' 'image-%d.%s' '%s' '%d' '%d' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, image.ID, image.Format, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, flavor.Swap, flavor.Ephemeral, base64.StdEncoding.EncodeToString([]byte(metadata)))
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
@@ -361,7 +364,7 @@ func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subne
 		log.Println("Network has no valid hypers")
 		return
 	}
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_host.sh '%d' '%s' '%s' '%s'", subnet.Vlan, iface.MacAddr, instance.Hostname, iface.Address.Address)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_host.sh '%d' '%s' '%s' '%s' '%s'", subnet.Vlan, iface.MacAddr, instance.Hostname, iface.Address.Address, subnet.DomainSearch)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Delete slave failed")
@@ -544,9 +547,15 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 			log.Println("Failed to query floating ip(s), %v", err)
 			return
 		}
+		if instance.ClusterID > 0 {
+			instance.Cluster = &model.Openshift{Model: model.Model{ID: instance.ClusterID}}
+			if err = db.Take(instance.Cluster).Error; err != nil {
+				log.Println("Failed to query openshift cluster info", err)
+				return
+			}
+		}
 		permit := memberShip.CheckPermission(model.Admin)
 		if permit {
-			db = db.Offset(0).Limit(-1)
 			instance.OwnerInfo = &model.Organization{Model: model.Model{ID: instance.Owner}}
 			if err = db.Take(instance.OwnerInfo).Error; err != nil {
 				log.Println("Failed to query owner info", err)

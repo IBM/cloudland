@@ -22,7 +22,9 @@
                         <table class="ui unstackable very basic striped table">
 	                        <thead>
 		                        <tr>
+									{{ if $.IsAdmin }}
 			                        <th>{{.i18n.Tr "ID"}}</th>
+									{{ end }}
 			                        <th>{{.i18n.Tr "Name"}}</th>
 			                        <th>{{.i18n.Tr "Size"}} (G)</th>
 			                        <th>{{.i18n.Tr "Status"}}</th>
@@ -37,8 +39,10 @@
                                 {{ $Link := .Link }}
                                 {{ range .Volumes }}
 		                        <tr>
+									{{ if $.IsAdmin }}
 			                        <td><a href="{{$Link}}/{{.ID}}">{{.ID}}</a></td>
-			                        <td>{{.Name}}</td>
+									{{ end }}
+			                        <td><a href="{{$Link}}/{{.ID}}">{{.Name}}</a></td>
 			                        <td>{{.Size}}</td>
 			                        <td>{{.Status}}</td>
 			                        <td>{{ if .Instance }} {{.Instance.ID}}-{{.Instance.Hostname}}:{{.Target}} {{ end }}</td>

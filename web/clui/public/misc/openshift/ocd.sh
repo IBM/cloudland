@@ -276,6 +276,13 @@ EOF
     rm -rf $ignite_dir
     mkdir $ignite_dir
     cp *.ign $ignite_dir
+    cat >>/root/.bashrc <<EOF
+export KUBECONFIG=/opt/$cluster_name/auth/kubeconfig
+export PS1='[\u@\h.$cluster_name \w]\# '
+EOF
+    cat >>/home/centos/.bashrc <<EOF
+export PS1='[\u@\h.$cluster_name \w]\$ '
+EOF
 }
 
 function setup_nfs_pv()

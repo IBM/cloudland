@@ -22,7 +22,9 @@
                         <table class="ui unstackable very basic striped table">
 	                        <thead>
 		                        <tr>
+									{{ if $.IsAdmin }}
 			                        <th>{{.i18n.Tr "ID"}}</th>
+									{{ end }}
 			                        <th>{{.i18n.Tr "Name"}}</th>
 			                        <th>{{.i18n.Tr "Format"}}</th>
 			                        <th>{{.i18n.Tr "Status"}}</th>
@@ -34,7 +36,9 @@
                                 {{ $Link := .Link }}
                                 {{ range .Images }}
 		                        <tr>
+									{{ if $.IsAdmin }}
 			                        <td>{{.ID}}</td>
+									{{ end }}
 			                        <td>{{.Name}}</td>
 			                        <td>{{.Format}}</td>
 			                        <td>{{.Status}}</td>

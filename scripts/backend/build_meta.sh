@@ -5,6 +5,7 @@ source ../cloudrc
 
 vm_ID=$1
 vm_name=$2
+[ "${vm_name%%.*}" = "$vm_name" ] && vm_name=${vm_name}.$cloud_domain
 working_dir=/tmp/$vm_ID
 latest_dir=$working_dir/openstack/latest
 mkdir -p $latest_dir
@@ -34,7 +35,7 @@ random_seed=`cat /dev/urandom | head -c 512 | base64 -w 0`
         echo '},'
     fi
     echo '  "launch_index": 0,'
-    echo '  "hostname": "'${vm_name}.${cloud_domain}'",'
+    echo '  "hostname": "'${vm_name}'",'
     echo '  "availability_zone": "cloudland",'
     echo '  "uuid": "'${vm_ID}'",'
     echo '  "admin_pass": "'${admin_pass}'",'

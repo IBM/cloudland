@@ -320,7 +320,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 		log.Println("DB failed to create openshift", err)
 		return
 	}
-	name := fmt.Sprintf("oc%d-sn", openshift.ID)
+	name := openshift.ClusterName + "-sn"
 	search := cluster + "." + domain
 	lbIP := "192.168.91.8"
 	subnet, err := subnetAdmin.Create(ctx, name, "", "192.168.91.0", "255.255.255.0", "", "", "", "", lbIP, search, "", openshift.ID, memberShip.OrgID)
@@ -328,7 +328,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 		log.Println("Failed to create openshift subnet", err)
 		return
 	}
-	name = fmt.Sprintf("oc%d-gw", openshift.ID)
+	name = openshift.ClusterName + "-gw"
 	subnetIDs := []int64{subnet.ID}
 	_, err = gatewayAdmin.Create(ctx, name, "", 0, 0, subnetIDs, memberShip.OrgID)
 	if err != nil {
