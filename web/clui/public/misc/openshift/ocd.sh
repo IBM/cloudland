@@ -278,10 +278,10 @@ EOF
     cp *.ign $ignite_dir
     cat >>/root/.bashrc <<EOF
 export KUBECONFIG=/opt/$cluster_name/auth/kubeconfig
-export PS1='[\u@\h.$cluster_name \w]\# '
+export PS1='[\u@\h.$cluster_name \w]\\$ '
 EOF
     cat >>/home/centos/.bashrc <<EOF
-export PS1='[\u@\h.$cluster_name \w]\$ '
+export PS1='[\u@\h.$cluster_name \w]\\$ '
 EOF
 }
 
