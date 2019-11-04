@@ -459,7 +459,7 @@ func (v *OrgView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	redirectTo := "../orgs"
-	name := c.QueryTrim("name")
+	name := c.QueryTrim("orgname")
 	owner := c.QueryTrim("owner")
 	organization, err := orgAdmin.Create(c.Req.Context(), name, owner)
 	if err != nil {
