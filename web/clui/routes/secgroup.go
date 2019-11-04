@@ -218,6 +218,12 @@ func (v *SecgroupView) List(c *macaron.Context, store session.Store) {
 	total, secgroups, err := secgroupAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		log.Println("Failed to list security group(s), %v", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -341,12 +347,25 @@ func (v *SecgroupView) Patch(c *macaron.Context, store session.Store) {
 	}
 	secgroup, err := secgroupAdmin.Update(c.Req.Context(), int64(sgID), name, isDef)
 	if err != nil {
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.HTML(500, err.Error())
+		return
 	}
 	if isDef {
 		err = secgroupAdmin.Switch(c.Req.Context(), secgroup, store)
 		if err != nil {
 			log.Println("Failed to switch security group", err)
+			if c.Req.Header.Get("X-Json-Format") == "yes" {
+				c.JSON(500, map[string]interface{}{
+					"error": err.Error(),
+				})
+				return
+			}
 			c.Data["ErrorMsg"] = err.Error()
 			c.HTML(500, "500")
 			return

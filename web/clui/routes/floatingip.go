@@ -209,6 +209,12 @@ func (v *FloatingIpView) List(c *macaron.Context, store session.Store) {
 	total, floatingips, err := floatingipAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		log.Println("Failed to list floating ip(s), %v", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, err.Error())
 		return
@@ -310,6 +316,12 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 	floatingips, err := floatingipAdmin.Create(c.Req.Context(), int64(instID), 0, types)
 	if err != nil {
 		log.Println("Failed to create floating ip", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 	} else if c.Req.Header.Get("X-Json-Format") == "yes" {

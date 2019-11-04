@@ -197,6 +197,12 @@ func (v *SecruleView) List(c *macaron.Context, store session.Store) {
 	secgroupID, err := strconv.Atoi(sgid)
 	if err != nil {
 		log.Println("Invalid security group ID", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		code := http.StatusBadRequest
 		c.Error(code, http.StatusText(code))
 		return
@@ -204,6 +210,12 @@ func (v *SecruleView) List(c *macaron.Context, store session.Store) {
 	total, secrules, err := secruleAdmin.List(c.Req.Context(), offset, limit, order, int64(secgroupID))
 	if err != nil {
 		log.Println("Failed to list security rule(s)", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -326,6 +338,12 @@ func (v *SecruleView) Create(c *macaron.Context, store session.Store) {
 	secrule, err := secruleAdmin.Create(c.Req.Context(), int64(secgroupID), memberShip.OrgID, remoteIp, direction, protocol, portMin, portMax)
 	if err != nil {
 		log.Println("Failed to create security rule, %v", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.HTML(http.StatusBadRequest, err.Error())
 		return
 	} else if c.Req.Header.Get("X-Json-Format") == "yes" {

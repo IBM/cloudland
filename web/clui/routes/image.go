@@ -141,6 +141,12 @@ func (v *ImageView) List(c *macaron.Context, store session.Store) {
 	query := c.QueryTrim("q")
 	total, images, err := imageAdmin.List(offset, limit, order, query)
 	if err != nil {
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -232,6 +238,12 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	image, err := imageAdmin.Create(c.Req.Context(), name, url, format, architecture, instance)
 	if err != nil {
 		log.Println("Create instance failed", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.HTML(http.StatusBadRequest, err.Error())
 		return
 	} else if c.Req.Header.Get("X-Json-Format") == "yes" {

@@ -120,6 +120,12 @@ func (v *KeyView) List(c *macaron.Context, store session.Store) {
 	total, keys, err := keyAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		log.Println("Failed to list keys, %v", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -203,7 +209,15 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 	key, err := keyAdmin.Create(c.Req.Context(), name, pubkey)
 	if err != nil {
 		log.Println("Failed to create key, %v", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
+		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
+		return
 	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
 		c.JSON(200, key)
 		return

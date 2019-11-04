@@ -454,6 +454,12 @@ func (v *SubnetView) List(c *macaron.Context, store session.Store) {
 	query := c.QueryTrim("q")
 	total, subnets, err := subnetAdmin.List(c.Req.Context(), offset, limit, order, query, "")
 	if err != nil {
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -684,6 +690,12 @@ func (v *SubnetView) Patch(c *macaron.Context, store session.Store) {
 	subnet, err := subnetAdmin.Update(c.Req.Context(), id, name, gateway, start, end, routeJson)
 	if err != nil {
 		log.Println("Create subnet failed", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -724,6 +736,12 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 	subnet, err := subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, gateway, start, end, rtype, dns, search, routeJson, 0, memberShip.OrgID)
 	if err != nil {
 		log.Println("Create subnet failed, %v", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 	} else if c.Req.Header.Get("X-Json-Format") == "yes" {

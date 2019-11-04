@@ -278,6 +278,12 @@ func (v *OrgView) List(c *macaron.Context, store session.Store) {
 	total, orgs, err := orgAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		log.Println("Failed to list organizations, %v", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -427,6 +433,12 @@ func (v *OrgView) Patch(c *macaron.Context, store session.Store) {
 	org, err := orgAdmin.Update(c.Req.Context(), int64(orgID), memberList, userList, roleList)
 	if err != nil {
 		log.Println("Failed to update organization, %v", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -452,6 +464,12 @@ func (v *OrgView) Create(c *macaron.Context, store session.Store) {
 	organization, err := orgAdmin.Create(c.Req.Context(), name, owner)
 	if err != nil {
 		log.Println("Failed to create organization, %v", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.HTML(http.StatusBadRequest, err.Error())
 		return
 	} else if c.Req.Header.Get("X-Json-Format") == "yes" {

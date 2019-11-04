@@ -321,6 +321,12 @@ func (v *UserView) List(c *macaron.Context, store session.Store) {
 	total, users, err := userAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		log.Println("Failed to list user(s)", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -455,6 +461,12 @@ func (v *UserView) Patch(c *macaron.Context, store session.Store) {
 	user, err := userAdmin.Update(c.Req.Context(), int64(userID), password, members)
 	if err != nil {
 		log.Println("Failed to update password, %v", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -541,6 +553,12 @@ func (v *UserView) Create(c *macaron.Context, store session.Store) {
 	_, err = orgAdmin.Create(c.Req.Context(), username, username)
 	if err != nil {
 		log.Println("Failed to create organization, %v", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.HTML(500, "500")
 		return
 	}

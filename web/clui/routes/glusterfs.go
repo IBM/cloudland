@@ -338,6 +338,12 @@ func (v *GlusterfsView) List(c *macaron.Context, store session.Store) {
 	query := c.QueryTrim("q")
 	total, glusterfses, err := glusterfsAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -433,6 +439,12 @@ func (v *GlusterfsView) Patch(c *macaron.Context, store session.Store) {
 	glusterfs, err := glusterfsAdmin.Update(ctx, id, heketikey, flavor, int32(nworkers))
 	if err != nil {
 		log.Println("Failed to create glusterfs", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -549,6 +561,12 @@ func (v *GlusterfsView) Create(c *macaron.Context, store session.Store) {
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
 	glusterfs, err := glusterfsAdmin.Create(c.Req.Context(), name, cookie, int32(nworkers), cluster, flavor, key)
 	if err != nil {
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "error")
 		return

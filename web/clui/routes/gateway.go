@@ -373,6 +373,12 @@ func (v *GatewayView) List(c *macaron.Context, store session.Store) {
 	total, gateways, err := gatewayAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		log.Println("Failed to list gateways, %v", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -541,6 +547,12 @@ func (v *GatewayView) Patch(c *macaron.Context, store session.Store) {
 	if err != nil {
 		log.Println("Failed to create gateway", err)
 		c.Data["ErrorMsg"] = err.Error()
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	} else if c.Req.Header.Get("X-Json-Format") == "yes" {

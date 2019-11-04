@@ -185,6 +185,12 @@ func (v *VolumeView) List(c *macaron.Context, store session.Store) {
 	query := c.QueryTrim("q")
 	total, volumes, err := volumeAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -320,6 +326,12 @@ func (v *VolumeView) Patch(c *macaron.Context, store session.Store) {
 	volume, err := volumeAdmin.Update(c.Req.Context(), int64(volID), name, int64(instID))
 	if err != nil {
 		log.Println("Failed to create volume", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -352,6 +364,12 @@ func (v *VolumeView) Create(c *macaron.Context, store session.Store) {
 	volume, err := volumeAdmin.Create(c.Req.Context(), name, vsize)
 	if err != nil {
 		log.Println("Create volume failed", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.HTML(http.StatusBadRequest, err.Error())
 		return
 	} else if c.Req.Header.Get("X-Json-Format") == "yes" {

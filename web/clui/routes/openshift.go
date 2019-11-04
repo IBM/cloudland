@@ -441,6 +441,12 @@ func (v *OpenshiftView) List(c *macaron.Context, store session.Store) {
 	query := c.QueryTrim("q")
 	total, openshifts, err := openshiftAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -541,6 +547,12 @@ func (v *OpenshiftView) Patch(c *macaron.Context, store session.Store) {
 	}
 	openshift, err := openshiftAdmin.Update(ctx, id, flavor, int32(nworkers))
 	if err != nil {
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -649,6 +661,12 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
 	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, int32(nworkers), flavor, key)
 	if err != nil {
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "error")
 		return

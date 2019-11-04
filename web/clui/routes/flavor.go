@@ -96,6 +96,12 @@ func (v *FlavorView) List(c *macaron.Context, store session.Store) {
 	query := c.QueryTrim("q")
 	total, flavors, err := flavorAdmin.List(offset, limit, order, query)
 	if err != nil {
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -192,6 +198,12 @@ func (v *FlavorView) Create(c *macaron.Context, store session.Store) {
 	flavor, err := flavorAdmin.Create(name, int32(cpu), int32(memory), int32(disk), int32(swap), int32(ephemeral))
 	if err != nil {
 		log.Println("Create flavor failed", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.HTML(500, "500")
 		return
 	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
