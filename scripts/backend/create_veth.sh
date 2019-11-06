@@ -23,4 +23,4 @@ elif [ "$prefix" == "ln" ]; then
     vni=${device##*-}
     bridge=br$vni
 fi
-brctl addif $bridge $device
+ip link set dev $device master $bridge

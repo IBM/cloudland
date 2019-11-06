@@ -11,7 +11,7 @@
 #include <grpcpp/impl/codegen/channel_interface.h>
 #include <grpcpp/impl/codegen/client_unary_call.h>
 #include <grpcpp/impl/codegen/client_callback.h>
-#include <grpcpp/impl/codegen/method_handler_impl.h>
+#include <grpcpp/impl/codegen/method_handler.h>
 #include <grpcpp/impl/codegen/rpc_service_method.h>
 #include <grpcpp/impl/codegen/server_callback.h>
 #include <grpcpp/impl/codegen/service_type.h>
@@ -42,43 +42,43 @@ RemoteExec::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel
 }
 
 void RemoteExec::Stub::experimental_async::Execute(::grpc::ClientContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, std::function<void(::grpc::Status)> f) {
-  ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_Execute_, context, request, response, std::move(f));
+  ::grpc_impl::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_Execute_, context, request, response, std::move(f));
 }
 
 void RemoteExec::Stub::experimental_async::Execute(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, std::function<void(::grpc::Status)> f) {
-  ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_Execute_, context, request, response, std::move(f));
+  ::grpc_impl::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_Execute_, context, request, response, std::move(f));
 }
 
 void RemoteExec::Stub::experimental_async::Execute(::grpc::ClientContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
-  ::grpc::internal::ClientCallbackUnaryFactory::Create(stub_->channel_.get(), stub_->rpcmethod_Execute_, context, request, response, reactor);
+  ::grpc_impl::internal::ClientCallbackUnaryFactory::Create(stub_->channel_.get(), stub_->rpcmethod_Execute_, context, request, response, reactor);
 }
 
 void RemoteExec::Stub::experimental_async::Execute(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
-  ::grpc::internal::ClientCallbackUnaryFactory::Create(stub_->channel_.get(), stub_->rpcmethod_Execute_, context, request, response, reactor);
+  ::grpc_impl::internal::ClientCallbackUnaryFactory::Create(stub_->channel_.get(), stub_->rpcmethod_Execute_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::com::ibm::cloudland::scripts::ExecuteReply>* RemoteExec::Stub::AsyncExecuteRaw(::grpc::ClientContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::com::ibm::cloudland::scripts::ExecuteReply>::Create(channel_.get(), cq, rpcmethod_Execute_, context, request, true);
+  return ::grpc_impl::internal::ClientAsyncResponseReaderFactory< ::com::ibm::cloudland::scripts::ExecuteReply>::Create(channel_.get(), cq, rpcmethod_Execute_, context, request, true);
 }
 
 ::grpc::ClientAsyncResponseReader< ::com::ibm::cloudland::scripts::ExecuteReply>* RemoteExec::Stub::PrepareAsyncExecuteRaw(::grpc::ClientContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::com::ibm::cloudland::scripts::ExecuteReply>::Create(channel_.get(), cq, rpcmethod_Execute_, context, request, false);
+  return ::grpc_impl::internal::ClientAsyncResponseReaderFactory< ::com::ibm::cloudland::scripts::ExecuteReply>::Create(channel_.get(), cq, rpcmethod_Execute_, context, request, false);
 }
 
 ::grpc::ClientWriter< ::com::ibm::cloudland::scripts::FileChunk>* RemoteExec::Stub::TransmitRaw(::grpc::ClientContext* context, ::com::ibm::cloudland::scripts::TransmitAck* response) {
-  return ::grpc::internal::ClientWriterFactory< ::com::ibm::cloudland::scripts::FileChunk>::Create(channel_.get(), rpcmethod_Transmit_, context, response);
+  return ::grpc_impl::internal::ClientWriterFactory< ::com::ibm::cloudland::scripts::FileChunk>::Create(channel_.get(), rpcmethod_Transmit_, context, response);
 }
 
 void RemoteExec::Stub::experimental_async::Transmit(::grpc::ClientContext* context, ::com::ibm::cloudland::scripts::TransmitAck* response, ::grpc::experimental::ClientWriteReactor< ::com::ibm::cloudland::scripts::FileChunk>* reactor) {
-  ::grpc::internal::ClientCallbackWriterFactory< ::com::ibm::cloudland::scripts::FileChunk>::Create(stub_->channel_.get(), stub_->rpcmethod_Transmit_, context, response, reactor);
+  ::grpc_impl::internal::ClientCallbackWriterFactory< ::com::ibm::cloudland::scripts::FileChunk>::Create(stub_->channel_.get(), stub_->rpcmethod_Transmit_, context, response, reactor);
 }
 
 ::grpc::ClientAsyncWriter< ::com::ibm::cloudland::scripts::FileChunk>* RemoteExec::Stub::AsyncTransmitRaw(::grpc::ClientContext* context, ::com::ibm::cloudland::scripts::TransmitAck* response, ::grpc::CompletionQueue* cq, void* tag) {
-  return ::grpc::internal::ClientAsyncWriterFactory< ::com::ibm::cloudland::scripts::FileChunk>::Create(channel_.get(), cq, rpcmethod_Transmit_, context, response, true, tag);
+  return ::grpc_impl::internal::ClientAsyncWriterFactory< ::com::ibm::cloudland::scripts::FileChunk>::Create(channel_.get(), cq, rpcmethod_Transmit_, context, response, true, tag);
 }
 
 ::grpc::ClientAsyncWriter< ::com::ibm::cloudland::scripts::FileChunk>* RemoteExec::Stub::PrepareAsyncTransmitRaw(::grpc::ClientContext* context, ::com::ibm::cloudland::scripts::TransmitAck* response, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncWriterFactory< ::com::ibm::cloudland::scripts::FileChunk>::Create(channel_.get(), cq, rpcmethod_Transmit_, context, response, false, nullptr);
+  return ::grpc_impl::internal::ClientAsyncWriterFactory< ::com::ibm::cloudland::scripts::FileChunk>::Create(channel_.get(), cq, rpcmethod_Transmit_, context, response, false, nullptr);
 }
 
 RemoteExec::Service::Service() {

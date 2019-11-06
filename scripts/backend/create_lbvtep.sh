@@ -16,7 +16,7 @@ ip netns add $instance
 bridge fdb add $mac dev vx-$vlan dst 127.0.0.1 self permanent
 ip link add dev ${instance}-vs type veth peer name ${instance}-vm
 ip link set ${instance}-vs up
-brctl addif br$vlan ${instance}-vs
+ip link set dev ${instance}-vs master br$vlan
 ip link set ${instance}-vm netns $instance
 ip netns exec $instance ip link set ${instance}-vm up
 prefix=$(ipcalc -p $ip $netmask | cut -d= -f2)

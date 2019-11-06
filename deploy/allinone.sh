@@ -28,7 +28,10 @@ function inst_grpc() {
     sudo yum install -y axel
     cd $cland_root_dir
     grpc_pkg=/tmp/grpc.tar.gz
-    wget http://www.bluecat.ltd/repo/grpc.tar.gz -O $grpc_pkg
+    grpc_url='http://www.bluecat.ltd/repo/grpc.tar.gz'
+    grep -q Ootpa /etc/redhat-release
+    [ $? -eq 0 ] && grpc_url='http://www.bluecat.ltd/repo/grpc8.tar.gz'
+    wget $grpc_url -O $grpc_pkg
     sudo tar -zxf $grpc_pkg -C /
     rm -f $grpc_pkg
     sudo bash -c 'echo /usr/local/lib > /etc/ld.so.conf.d/protobuf.conf'
@@ -135,13 +138,13 @@ function allinone_firewall()
 export PATH=$PATH:/usr/local/bin
 diff /opt/sci/lib64/libsci.so.0.0.0 $cland_root_dir/sci/libsci/.libs/libsci.so.0.0.0
 [ $? -ne 0 ] && inst_sci
-[ ! -f "/usr/local/lib/pkgconfig" ] && inst_grpc
+[ ! -d "/usr/local/lib/pkgconfig" ] && inst_grpc
 diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 [ $? -ne 0 ] && inst_cland
 
 gen_hosts
 cd $cland_root_dir/deploy
-ansible-playbook cloudland.yml -e @$net_conf --tags hosts,epel,ntp,selinux,be_pkg,be_conf,be_srv,fe_srv,firewall,imgrepo
+ansible-playbook cloudland.yml -e @$net_conf --tags hosts,epel,selinux,be_pkg,be_conf,be_srv,fe_srv,firewall,imgrepo
 demo_router
 allinone_firewall
 inst_web
