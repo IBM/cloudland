@@ -30,11 +30,11 @@
                     <div class="required inline field">
                         <label for="flavor">{{.i18n.Tr "Flavor"}}</label>
                         <select name="flavor" id="flavor" class="ui selection dropdown">
-			   {{ range .Flavors }}
+			            {{ range .Flavors }}
                               <option value="{{ .ID }}" {{ if eq $.Openshift.Flavor .ID }}selected{{end}}>{{ .ID }}-{{ .Name }}</option>
                            {{ end }}
                         </select>
-		    </div>
+		            </div>
                     <div class="required inline field">
                         <label for="nworkers">{{.i18n.Tr "Number of Workers"}}</label>
                         <input id="nworkers"  name="nworkers" value="{{ .Openshift.WorkerNum }}" required>

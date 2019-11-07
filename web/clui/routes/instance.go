@@ -162,12 +162,45 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 	return
 }
 
-func (a *InstanceAdmin) Update(ctx context.Context, id int64, hostname, action string, subnetIDs, sgIDs []int64) (instance *model.Instance, err error) {
+func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname, action string, subnetIDs, sgIDs []int64) (instance *model.Instance, err error) {
 	db := DB()
 	instance = &model.Instance{Model: model.Model{ID: id}}
 	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
 		log.Println("Failed to query instance ", err)
 		return
+	}
+	if flavorID != instance.FlavorID {
+		flavor := &model.Flavor{Model: model.Model{ID: flavorID}}
+		if err = db.Take(flavor).Error; err != nil {
+			log.Println("Failed to query flavor", err)
+			return
+		}
+		if flavor.Disk < instance.Flavor.Disk || flavor.Ephemeral < instance.Flavor.Ephemeral {
+			err = fmt.Errorf("Disk(s) can not be resized to smaller size")
+			return
+		}
+		cpu := flavor.Cpu - instance.Flavor.Cpu
+		if cpu < 0 {
+			cpu = 0
+		}
+		memory := flavor.Memory - instance.Flavor.Memory
+		if memory < 0 {
+			memory = 0
+		}
+		disk := flavor.Disk - instance.Flavor.Disk + flavor.Ephemeral - instance.Flavor.Ephemeral
+		control := fmt.Sprintf("inter=%d cpu=%d memory=%d disk=%d network=%d", instance.Hyper, cpu, memory, disk, 0)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/resize_vm.sh '%d' '%d' '%d' '%d' '%d' '%d'", instance.ID, flavor.Cpu, flavor.Memory, flavor.Disk, flavor.Swap, flavor.Ephemeral)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Resize vm command execution failed", err)
+			return
+		}
+		instance.FlavorID = flavorID
+		instance.Flavor = flavor
+		if err = db.Save(instance).Error; err != nil {
+			log.Println("Failed to save instance", err)
+			return
+		}
 	}
 	if instance.Hostname != hostname {
 		instance.Hostname = hostname
@@ -820,34 +853,31 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 	if err != nil {
 		log.Println("Failed enable VNC", err)
 	}
+	_, flavors, err := flavorAdmin.List(0, -1, "", "")
+	if err := db.Find(&flavors).Error; err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+		return
+	}
 	c.Data["Vnc"] = vnc
 	c.Data["Instance"] = instance
 	c.Data["Subnets"] = subnets
+	c.Data["Flavors"] = flavors
 	c.HTML(200, "instances_patch")
 }
 
 func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	redirectTo := "../instances"
-	id := c.Params("id")
-	if id == "" {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
-		return
-	}
-	instanceID, err := strconv.Atoi(id)
-	if err != nil {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
-		return
-	}
-	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instanceID))
+	id := c.ParamsInt64("id")
+	permit, err := memberShip.CheckOwner(model.Writer, "instances", id)
 	if !permit {
 		log.Println("Not authorized for this operation")
 		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	flavor := c.QueryInt64("flavor")
 	hostname := c.QueryTrim("hostname")
 	action := c.QueryTrim("action")
 	ifaces := c.QueryStrings("ifaces")
@@ -869,7 +899,7 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 	}
 	var sgIDs []int64
 	sgIDs = append(sgIDs, store.Get("defsg").(int64))
-	instance, err := instanceAdmin.Update(c.Req.Context(), int64(instanceID), hostname, action, subnetIDs, sgIDs)
+	instance, err := instanceAdmin.Update(c.Req.Context(), id, flavor, hostname, action, subnetIDs, sgIDs)
 	if err != nil {
 		log.Println("Create instance failed, %v", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {

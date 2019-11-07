@@ -29,6 +29,14 @@
                             <option value="resume">{{.i18n.Tr "resume"}}</option>
                         </select>
                     </div>
+                    <div class="required inline field">
+                        <label for="flavor">{{.i18n.Tr "Flavor"}}</label>
+                        <select name="flavor" id="flavor" class="ui selection dropdown">
+			               {{ range .Flavors }}
+                              <option value="{{ .ID }}" {{ if eq $.Instance.FlavorID .ID }}selected{{end}}>{{ .ID }}-{{ .Name }}</option>
+                           {{ end }}
+                        </select>
+		            </div>
                     <div class="inline field">
 					    <label for="ifaces">{{.i18n.Tr "Interfaces"}}</label>
                         <select name="ifaces" id="ifaces" multiple="" class="ui multiple selection dropdown">

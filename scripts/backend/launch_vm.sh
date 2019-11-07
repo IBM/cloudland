@@ -1,4 +1,4 @@
-#!/bin/bash -xv
+#!/bin/bash
 
 cd $(dirname $0)
 source ../cloudrc
@@ -51,7 +51,7 @@ hyper_ip=$(ifconfig $vxlan_interface | grep 'inet addr:' | cut -d: -f2 | cut -d'
 [ -z "$vm_cpu" ] && vm_cpu=1
 let vm_mem=${vm_mem%[m|M]}*1024
 mkdir -p $xml_dir/$vm_ID
-vm_xml=$xml_dir/$vm_ID/$vm_ID.xml
+vm_xml=$xml_dir/$vm_ID/${vm_ID}.xml
 template=$template_dir/template.xml
 cp $template $vm_xml
 sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_img#g; s#VM_META#$vm_meta#g;" $vm_xml
