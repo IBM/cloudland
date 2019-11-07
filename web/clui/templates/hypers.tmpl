@@ -1,0 +1,65 @@
+{{template "_head" .}}
+    <div class="admin user">
+	    <div class="ui container">
+		    <div class="ui grid">
+                {{template "_left" .}}
+          	    <div class="twelve wide column content">
+		            <h4 class="ui top attached header">
+			            {{.i18n.Tr "Hypervisors_View_Panel"}} ({{.i18n.Tr "Total"}}: {{.Total}})
+		            </h4>
+		            <div class="ui attached segment">
+			            <form class="ui form">
+	                        <div class="ui fluid tiny action input">
+	                            <input name="q" value="{{ .Query }}" placeholder="Search..." autofocus>
+	                            <button class="ui blue tiny button">{{.i18n.Tr "Search"}}</button>
+	                        </div>
+                        </form>
+		            </div>
+		            <div class="ui unstackable attached table segment">
+                        <table class="ui unstackable very basic striped table">
+	                        <thead>
+		                        <tr>
+			                        <th>{{.i18n.Tr "HyperID"}}</th>
+			                        <th>{{.i18n.Tr "Hostname"}}</th>
+			                        <th>{{.i18n.Tr "ParentID"}}</th>
+			                        <th>{{.i18n.Tr "Children"}}</th>
+			                        <th>{{.i18n.Tr "Status"}}</th>
+			                        <th>{{.i18n.Tr "Cpu"}}</th>
+			                        <th>{{.i18n.Tr "Memory"}}</th>
+			                        <th>{{.i18n.Tr "Disk"}}</th>
+		                        </tr>
+	                        </thead>
+	                        <tbody>
+                                {{ $Link := .Link }}
+                                {{ range .Hypers }}
+                                {{ $HyperID := .ID }}
+		                        <tr>
+			                        <td>{{.Hostid}}</td>
+			                        <td>{{.Hostname}}</td>
+			                        <td>{{.Parentid}}</td>
+			                        <td>{{.Children}}</td>
+			                        <td>{{.Status}}</td>
+			                        <td>{{.Cpu}}</td>
+			                        <td>{{.Memory}}</td>
+			                        <td>{{.Disk}}</td>
+		                        </tr>
+                                {{ end }}
+	                        </tbody>
+                        </table>
+		            </div>
+		            <div class="ui attached segment">
+                                 {{ if .Pages}}
+                                 <div class="ui pagination menu">
+                                     {{ range  $index, $element := .Pages }}
+                                         <a class="active item">
+                                             <a href="{{$Link}}?offset={{$element.Offset}}">{{ $element.Number }}</a>
+                                         </a>
+                                     {{ end }}
+                                 </div>
+                                 {{ end }}
+	                    </div>
+	            </div>
+            </div>
+        </div>
+    </div>
+{{template "_footer" .}}

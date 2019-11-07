@@ -79,6 +79,7 @@ func New() (m *macaron.Macaron) {
 	m.Get("/dashboard/getdata", dashboard.GetData)
 	m.Get("/login", userView.LoginGet)
 	m.Post("/login", userView.LoginPost)
+	m.Get("/hypers", hyperView.List)
 	m.Get("/users", userView.List)
 	m.Get("/users/:id", userView.Edit)
 	m.Post("/users/:id", userView.Patch)

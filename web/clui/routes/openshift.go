@@ -397,7 +397,7 @@ func (a *OpenshiftAdmin) List(ctx context.Context, offset, limit int64, order, q
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
-		limit = 12
+		limit = 16
 	}
 
 	if order == "" {
@@ -432,7 +432,7 @@ func (v *OpenshiftView) List(c *macaron.Context, store session.Store) {
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
 	if limit == 0 {
-		limit = 10
+		limit = 16
 	}
 	order := c.Query("order")
 	if order == "" {

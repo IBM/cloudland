@@ -234,7 +234,7 @@ func (a *OrgAdmin) Delete(ctx context.Context, id int64) (err error) {
 func (a *OrgAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, orgs []*model.Organization, err error) {
 	memberShip := GetMemberShip(ctx)
 	if limit == 0 {
-		limit = 20
+		limit = 16
 	}
 
 	if order == "" {
@@ -271,7 +271,7 @@ func (v *OrgView) List(c *macaron.Context, store session.Store) {
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
 	if limit == 0 {
-		limit = 12
+		limit = 16
 	}
 	order := c.QueryTrim("order")
 	query := c.QueryTrim("q")

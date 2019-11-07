@@ -61,7 +61,7 @@ func (a *FlavorAdmin) Delete(id int64) (err error) {
 func (a *FlavorAdmin) List(offset, limit int64, order, query string) (total int64, flavors []*model.Flavor, err error) {
 	db := DB()
 	if limit == 0 {
-		limit = 20
+		limit = 16
 	}
 
 	if order == "" {
@@ -87,7 +87,7 @@ func (v *FlavorView) List(c *macaron.Context, store session.Store) {
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
 	if limit == 0 {
-		limit = 12
+		limit = 16
 	}
 	order := c.Query("order")
 	if order == "" {

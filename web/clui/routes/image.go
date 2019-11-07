@@ -98,7 +98,7 @@ func (a *ImageAdmin) Delete(ctx context.Context, id int64) (err error) {
 func (a *ImageAdmin) List(offset, limit int64, order, query string) (total int64, images []*model.Image, err error) {
 	db := DB()
 	if limit == 0 {
-		limit = 20
+		limit = 16
 	}
 
 	if order == "" {
@@ -132,7 +132,7 @@ func (v *ImageView) List(c *macaron.Context, store session.Store) {
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
 	if limit == 0 {
-		limit = 12
+		limit = 16
 	}
 	order := c.QueryTrim("order")
 	if order == "" {

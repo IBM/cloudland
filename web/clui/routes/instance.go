@@ -554,7 +554,7 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
-		limit = 12
+		limit = 16
 	}
 
 	if order == "" {
@@ -686,7 +686,7 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
 	if limit == 0 {
-		limit = 12
+		limit = 16
 	}
 	order := c.QueryTrim("order")
 	if order == "" {
@@ -976,17 +976,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	hyper := c.QueryTrim("hyper")
-	hyperID := -1
-	if hyper != "" {
-		hyperID, err = strconv.Atoi(hyper)
-		if err != nil {
-			log.Println("Invalid image ID, %v", err)
-			code := http.StatusBadRequest
-			c.Error(code, http.StatusText(code))
-			return
-		}
-	}
+	hyperID := c.QueryInt("hyper")
 	if hyperID >= 0 {
 		permit := memberShip.CheckPermission(model.Admin)
 		if !permit {
@@ -995,6 +985,14 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			c.Error(code, http.StatusText(code))
 			return
 		}
+	}
+	hyper := &model.Hyper{Hostid: int32(hyperID)}
+	err = DB().Take(hyper).Error
+	if err != nil {
+		log.Println("Invalid hypervisor", err)
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
 	}
 	image := c.QueryInt64("image")
 	if image <= 0 {

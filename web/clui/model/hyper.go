@@ -32,6 +32,9 @@ type Hyper struct {
 	Parentid  int32
 	Children  int32
 	Duration  int64
+	Cpu       string `gorm:"type:varchar(64)"`
+	Memory    string `gorm:"type:varchar(64)"`
+	Disk      string `gorm:"type:varchar(64)"`
 }
 
 func init() {

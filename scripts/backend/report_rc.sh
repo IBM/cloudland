@@ -91,10 +91,11 @@ function calc_resource()
     let total_cpu=$total_cpu*$cpu_over_ratio
     let total_memory=$total_memory*$mem_over_ratio
     let total_disk=($total_disk-$used_disk)*$disk_over_ratio
+    echo "cpu=$cpu/$total_cpu memory=$memory/$total_memory disk=$disk/$total_disk network=$network/$total_network load=$load/$total_load"
+    echo "|:-COMMAND-:| hyper_status.sh '$SCI_CLIENT_ID' '$HOSTNAME' '$cpu/$total_cpu' '$memory/$total_memory' '$disk/$total_disk'"
 }
 
 calc_resource
-echo "cpu=$cpu/$total_cpu memory=$memory/$total_memory disk=$disk/$total_disk network=$network/$total_network load=$load/$total_load"
 probe_arp >/dev/null 2>&1
 inst_status
 vlan_status

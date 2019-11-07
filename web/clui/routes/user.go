@@ -122,7 +122,7 @@ func (a *UserAdmin) List(ctx context.Context, offset, limit int64, order, query 
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
-		limit = 12
+		limit = 16
 	}
 
 	if order == "" {
@@ -311,7 +311,7 @@ func (v *UserView) List(c *macaron.Context, store session.Store) {
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
 	if limit == 0 {
-		limit = 12
+		limit = 16
 	}
 	order := c.QueryTrim("order")
 	if order == "" {
