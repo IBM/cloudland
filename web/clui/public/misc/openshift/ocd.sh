@@ -67,7 +67,7 @@ EOF
 EOF
     done
 
-    echo "nameserver 127.0.0.1" > /etc/resolv.conf
+    echo -e "nameserver 127.0.0.1\nsearch $base_domain" > /etc/resolv.conf
     systemctl restart dnsmasq
     systemctl enable dnsmasq
 }

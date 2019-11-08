@@ -52,7 +52,7 @@ func (a *Dashboard) GetData(c *macaron.Context, store session.Store) {
 	db := DB()
 	if memberShip.OrgName == "admin" {
 		resource := &model.Resource{}
-		err := db.Take(resource).Error
+		err := db.Where("hostid = ?", -1).Take(resource).Error
 		if err != nil {
 			log.Println("Failed to query system resource")
 			code := http.StatusInternalServerError
