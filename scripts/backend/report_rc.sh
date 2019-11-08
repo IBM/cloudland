@@ -92,7 +92,12 @@ function calc_resource()
     let total_memory=$total_memory*$mem_over_ratio
     let total_disk=($total_disk-$used_disk)*$disk_over_ratio
     echo "cpu=$cpu/$total_cpu memory=$memory/$total_memory disk=$disk/$total_disk network=$network/$total_network load=$load/$total_load"
+    cd /opt/cloudland/run
+    old_resource_list=$(cat old_resource_list)
+    resource_list="'$cpu' '$total_cpu' '$memory' '$total_memory' '$disk' '$total_disk'"
+    [ "$resource_list" = "$old_resource_list" ] && return
     echo "|:-COMMAND-:| hyper_status.sh '$SCI_CLIENT_ID' '$HOSTNAME' '$cpu' '$total_cpu' '$memory' '$total_memory' '$disk' '$total_disk'"
+    echo "'$cpu' '$total_cpu' '$memory' '$total_memory' '$disk' '$total_disk'" >/opt/cloudland/run/old_resource_list
 }
 
 calc_resource
