@@ -2,14 +2,14 @@
   yum: 
     name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'git', 'python-pip', 'NetworkManager', 'net-tools', 'iptables-services', 'dnsmasq-utils']
     state: present
-    when: ansible_distribution_release == 'Core'
+  when: ansible_distribution_release == 'Core'
   tags: [be_pkg]
 
 - name: install packages
   yum: 
     name: ['@Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'git', 'python3-pip', 'NetworkManager', 'net-tools', 'iptables-services', 'dnsmasq-utils']
     state: present
-    when: ansible_distribution_release == 'Octopa'
+  when: ansible_distribution_release == 'Ootpa'
   tags: [be_pkg]
 
 - pip:
