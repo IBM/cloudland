@@ -40,6 +40,6 @@
   tags: [web_srv]
 
 - name: init test data
-  script: testdata.sh {{ db_passwd }} {{ hostvars[groups['database'][0]]['inventory_hostname'] }}
+  script: testdata.sh {{ db_passwd }} {{ hostvars[groups['database'][0]]['inventory_hostname'] }} {{ network_external_vlan }} {{ network_internal_vlan }}
   tags: [test]
   ignore_errors: yes

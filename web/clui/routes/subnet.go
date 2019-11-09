@@ -381,7 +381,7 @@ func (a *SubnetAdmin) Delete(ctx context.Context, id int64) (err error) {
 			return
 		}
 	}
-	if count <= 1 {
+	if count <= 1 && netlink != nil {
 		err = db.Delete(netlink).Error
 		if err != nil {
 			log.Println("Failed to delete network")
