@@ -45,6 +45,10 @@ func createGatewayIface(ctx context.Context, rtype string, gateway *model.Gatewa
 	db := DB()
 	subnets := []*model.Subnet{}
 	err = db.Where("type = ?", rtype).Find(&subnets).Error
+	if err != nil {
+		log.Println("Failed to query subnets", err)
+		return
+	}
 	name := ""
 	ifType := ""
 	for _, subnet = range subnets {
