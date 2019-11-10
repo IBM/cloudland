@@ -9,7 +9,8 @@ datetime=$(date +'%Y-%m-%d %H:%M:%S')
 sqlfile=/tmp/testdata-$(date +%H%M%S).sql
 cat >$sqlfile <<EOF
 INSERT  INTO "flavors" ("id","created_at","updated_at","deleted_at","name","cpu","memory","disk") VALUES (1, '$datetime','$datetime',NULL,'m1.tiny',1,256,8) RETURNING "flavors"."id";
-ALTER sequence "flavors_id_seq" restart with 2;
+INSERT  INTO "flavors" ("id","created_at","updated_at","deleted_at","name","cpu","memory","disk") VALUES (2, '$datetime','$datetime',NULL,'m1.normal',4,6144,120) RETURNING "flavors"."id";
+ALTER sequence "flavors_id_seq" restart with 3;
 INSERT  INTO "images" ("id","created_at","updated_at","deleted_at","name","os_code","format","architecture","status","href","checksum") VALUES (1,'$datetime','$datetime',NULL,'centos','centos','qcow2','x86-64','available','','') RETURNING "images"."id";
 ALTER sequence "images_id_seq" restart with 2;
 INSERT  INTO "subnets" ("id","created_at","updated_at","deleted_at","name","network","netmask","gateway","start","end","vlan","type","router") VALUES (1,'$datetime','$datetime',NULL,'public','192.168.71.0','255.255.255.0','192.168.71.1/24','192.168.71.100','192.168.71.150',$pub_vlan,'public',0) RETURNING "subnets"."id";
