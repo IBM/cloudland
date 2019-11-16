@@ -10,7 +10,9 @@ vm_ID=inst-$1
 vm_cpu=$2
 vm_mem=$3
 disk_size=$4
-role=${5%%-*}
+role='worker'
+[ "${5/master/}" != "$5" ] && role='master'
+[ -z "$role" ] && role='worker'
 vm_stat=error
 vm_vnc=""
 

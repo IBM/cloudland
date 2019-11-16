@@ -35,6 +35,10 @@
                         <label for="dns">{{.i18n.Tr "Name Server"}}</label>
                         <input id="dns"  name="dns">
                     </div>
+                    <div class="inline field">
+                        <label for="domain">{{.i18n.Tr "Base Domain"}}</label>
+                        <input id="domain"  name="domain">
+                    </div>
 			        {{if .IsAdmin }}
                     <div class="inline field">
                         <label for="vlan">{{.i18n.Tr "Vlan"}} ({{.i18n.Tr "admin only"}})</label>

@@ -91,14 +91,16 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	image := &model.Image{Model: model.Model{ID: imageID}}
-	if err = db.Take(image).Error; err != nil {
-		log.Println("Image query failed", err)
-		return
-	}
-	if image.Status != "available" {
-		err = fmt.Errorf("Image status not available")
-		log.Println("Image status not available")
-		return
+	if imageID > 0 {
+		if err = db.Take(image).Error; err != nil {
+			log.Println("Image query failed", err)
+			return
+		}
+		if image.Status != "available" {
+			err = fmt.Errorf("Image status not available")
+			log.Println("Image status not available")
+			return
+		}
 	}
 	flavor := &model.Flavor{Model: model.Model{ID: flavorID}}
 	if err = db.Find(flavor).Error; err != nil {
@@ -151,7 +153,18 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		if primary.DomainSearch != "" {
 			hostname = hostname + "." + primary.DomainSearch
 		}
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' 'image-%d.%s' '%s' '%d' '%d' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, image.ID, image.Format, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, flavor.Swap, flavor.Ephemeral, base64.StdEncoding.EncodeToString([]byte(metadata)))
+		command := ""
+		if imageID > 0 {
+			command = fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' 'image-%d.%s' '%s' '%d' '%d' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, image.ID, image.Format, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, flavor.Swap, flavor.Ephemeral, base64.StdEncoding.EncodeToString([]byte(metadata)))
+		} else if clusterID > 0 {
+			command = fmt.Sprintf("/opt/cloudland/scripts/backend/oc_vm.sh '%d' '%d' '%d' '%d' '%s'<<EOF\n%s\nEOF", instance.ID, flavor.Cpu, flavor.Memory, flavor.Disk, hostname, metadata)
+			openshift := &model.Openshift{Model: model.Model{ID: clusterID}}
+			err = db.Model(openshift).Update("worker_num", gorm.Expr("worker_num + 1")).Error
+			if err != nil {
+				log.Println("Failed to update openshift cluster")
+				return
+			}
+		}
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Launch vm command execution failed", err)
@@ -796,9 +809,16 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	_, openshifts, err := openshiftAdmin.List(ctx, 0, -1, "", "")
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+		return
+	}
 	c.Data["Images"] = images
 	c.Data["Flavors"] = flavors
 	c.Data["Subnets"] = subnets
+	c.Data["Openshifts"] = openshifts
 	c.Data["Secgroups"] = secgroups
 	c.Data["Keys"] = keys
 	c.HTML(200, "instances_new")
@@ -995,11 +1015,26 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	image := c.QueryInt64("image")
-	if image <= 0 {
+	if image < 0 {
 		log.Println("Invalid image ID", err)
 		code := http.StatusBadRequest
 		c.Error(code, http.StatusText(code))
 		return
+	}
+	cluster := c.QueryInt64("cluster")
+	if cluster < 0 {
+		log.Println("Invalid cluster ID", err)
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	} else if cluster > 0 {
+		permit, err = memberShip.CheckAdmin(model.Writer, "openshifts", cluster)
+		if !permit {
+			log.Println("Not authorized to access openshift cluster")
+			code := http.StatusUnauthorized
+			c.Error(code, http.StatusText(code))
+			return
+		}
 	}
 	flavor := c.QueryInt64("flavor")
 	if flavor <= 0 {
@@ -1099,7 +1134,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		sgIDs = append(sgIDs, sgID)
 	}
 	userdata := c.QueryTrim("userdata")
-	instance, err := instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, image, flavor, int64(primaryID), 0, ipAddr, macAddr, subnetIDs, keyIDs, sgIDs, hyperID)
+	instance, err := instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, image, flavor, int64(primaryID), cluster, ipAddr, macAddr, subnetIDs, keyIDs, sgIDs, hyperID)
 	if err != nil {
 		log.Println("Create instance failed", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {

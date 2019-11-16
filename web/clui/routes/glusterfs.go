@@ -558,6 +558,13 @@ func (v *GlusterfsView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(code, "error")
 		return
 	}
+	permit, err = memberShip.CheckOwner(model.Writer, "openshifts", cluster)
+	if !permit {
+		log.Println("Not authorized to access openshift cluser")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
 	glusterfs, err := glusterfsAdmin.Create(c.Req.Context(), name, cookie, int32(nworkers), cluster, flavor, key)
 	if err != nil {

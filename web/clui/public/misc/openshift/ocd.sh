@@ -67,7 +67,7 @@ EOF
 EOF
     done
 
-    echo -e "nameserver 127.0.0.1\nsearch $base_domain" > /etc/resolv.conf
+    echo -e "nameserver 127.0.0.1\nsearch ${cluster_name}.${base_domain}" > /etc/resolv.conf
     systemctl restart dnsmasq
     systemctl enable dnsmasq
 }
@@ -289,6 +289,7 @@ function setup_nfs_pv()
 {
     cd /opt/$cluster_name
     mkdir data
+    chmod a+rw data
     yum -y install nfs-utils nfs-utils-lib
     systemctl start  rpcbind
     systemctl start nfs

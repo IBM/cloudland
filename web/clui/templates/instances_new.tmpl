@@ -21,7 +21,22 @@
                         <label for="count">{{.i18n.Tr "Count"}}</label>
                         <input id="count" name="count" value="1" required>
                     </div>
-                    <div class="required inline field">
+                    <div class="inline field">
+                        <label for="cluster">{{.i18n.Tr "Openshift Cluster"}}</label>
+						<div class="ui selection dropdown">
+						  <input id="cluster" name="cluster" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">{{.i18n.Tr "None"}}</div>
+						  <div class="menu">
+                            {{ range .Openshifts }}
+							<div class="item" data-value={{.ID}} data-text={{.ID}}-{{.ClusterName}}>
+							  {{.ID}}-{{.ClusterName}}
+							</div>
+                            {{ end }}
+						  </div>
+						</div>
+                    </div>
+                    <div class="inline field">
                         <label for="image">{{.i18n.Tr "Image"}}</label>
 						<div class="ui selection dropdown">
 						  <input id="image" name="image" type="hidden">

@@ -205,7 +205,7 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 		log.Println("Launch vm command execution failed", err)
 		return
 	}
-	if strings.Index(hostname, "worker-") == 0 {
+	if strings.Contains(hostname, "worker") {
 		openshift.WorkerNum++
 		err = db.Save(openshift).Error
 		if err != nil {
