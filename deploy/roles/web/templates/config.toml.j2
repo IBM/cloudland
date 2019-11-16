@@ -1,14 +1,14 @@
 [api]
 listen = "{{ hostvars[groups['web'][0]]['inventory_hostname'] }}:80"
-endpoint = "{{ hostvars[groups['web'][0]]['inventory_hostname'] }}:80"
+endpoint = "{{ hostvars[groups['web'][0]]['ansible_host'] }}:80"
 
 [rest]
 listen = "{{ hostvars[groups['web'][0]]['inventory_hostname'] }}:4001"
-endpoint = "{{ hostvars[groups['web'][0]]['inventory_hostname'] }}:4001"
+endpoint = "{{ hostvars[groups['web'][0]]['ansible_host'] }}:4001"
 
 [grpc]
 listen = "{{ hostvars[groups['web'][0]]['inventory_hostname'] }}:5000"
-endpoint = "{{ hostvars[groups['web'][0]]['inventory_hostname'] }}:5000"
+endpoint = "{{ hostvars[groups['web'][0]]['ansible_host'] }}:5000"
 
 [sci]
 endpoint = "{{ hostvars[groups['cland'][0]]['inventory_hostname'] }}:50051"
