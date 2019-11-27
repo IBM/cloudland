@@ -64,6 +64,17 @@ func RouterStatus(ctx context.Context, job *model.Job, args []string) (status st
 				continue
 			}
 		}
+		if err == nil {
+			if gateway.Hyper == -1 {
+				gateway.Hyper = int32(hyperID)
+			} else if gateway.Peer == -1 {
+				gateway.Peer = int32(hyperID)
+			}
+			err = db.Save(gateway).Error
+			if err != nil {
+				log.Println("Failed to update router hyper", err)
+			}
+		}
 	}
 	return
 }

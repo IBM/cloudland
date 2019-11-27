@@ -275,7 +275,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subnet, owner int64) (err error) {
 	if netlink.Hyper < 0 {
 		var dhcp1 *model.Interface
-		dhcp1, err = CreateInterface(ctx, subnet.ID, netlink.ID, owner, "", "", "dhcp-1", "dhcp", nil)
+		dhcp1, err = CreateInterface(ctx, subnet.ID, netlink.ID, owner, -1, "", "", "dhcp-1", "dhcp", nil)
 		if err != nil {
 			log.Println("Failed to allocate dhcp first address", err)
 			return
@@ -290,7 +290,7 @@ func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subn
 	}
 	if netlink.Peer < 0 {
 		var dhcp2 *model.Interface
-		dhcp2, err = CreateInterface(ctx, subnet.ID, netlink.ID, owner, "", "", "dhcp-2", "dhcp", nil)
+		dhcp2, err = CreateInterface(ctx, subnet.ID, netlink.ID, owner, -1, "", "", "dhcp-2", "dhcp", nil)
 		if err != nil {
 			log.Println("Failed to allocate dhcp first address", err)
 			return

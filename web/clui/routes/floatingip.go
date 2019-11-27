@@ -382,13 +382,13 @@ func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, gateway 
 		return
 	}
 	name := ftype + "fip"
-	fipIface, err = CreateInterface(ctx, subnet.ID, floatingipID, owner, "", "", name, "floating", nil)
+	fipIface, err = CreateInterface(ctx, subnet.ID, floatingipID, owner, -1, "", "", name, "floating", nil)
 	if err != nil {
 		subnets := []*model.Subnet{}
 		err = db.Where("vlan = ? and id <> ?", subnet.Vlan, subnet.ID).Find(&subnets).Error
 		if err == nil && len(subnets) > 0 {
 			for _, s := range subnets {
-				fipIface, err = CreateInterface(ctx, s.ID, floatingipID, owner, "", "", name, "floating", nil)
+				fipIface, err = CreateInterface(ctx, s.ID, floatingipID, owner, -1, "", "", name, "floating", nil)
 				if err == nil {
 					break
 				}

@@ -379,7 +379,7 @@ func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interf
 func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subnet, address, mac string, instance *model.Instance, ifname string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
-	iface, err = CreateInterface(ctx, subnet.ID, instance.ID, memberShip.OrgID, address, mac, ifname, "instance", secGroups)
+	iface, err = CreateInterface(ctx, subnet.ID, instance.ID, memberShip.OrgID, instance.Hyper, address, mac, ifname, "instance", secGroups)
 	if err != nil {
 		log.Println("Failed to create interface")
 		return
@@ -863,6 +863,9 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 	}
 	for _, iface := range instance.Interfaces {
 		for i, subnet := range subnets {
+			if iface == nil || iface.Address == nil {
+				continue
+			}
 			if subnet.ID == iface.Address.SubnetID {
 				subnets = append(subnets[:i], subnets[i+1:]...)
 				break

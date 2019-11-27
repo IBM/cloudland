@@ -41,7 +41,7 @@ func VlanStatus(ctx context.Context, job *model.Job, args []string) (status stri
 	for i := 0; i < len(statusList); i++ {
 		vlan, err := strconv.Atoi(statusList[i])
 		if err != nil {
-			log.Println("Invalid instance ID", err)
+			log.Println("Invalid vlan ID", err)
 			continue
 		}
 		netlink := &model.Network{}
@@ -62,6 +62,17 @@ func VlanStatus(ctx context.Context, job *model.Job, args []string) (status stri
 			if err != nil {
 				log.Println("SCI client execution failed", err)
 				continue
+			}
+		}
+		if err == nil {
+			if netlink.Hyper == -1 {
+				netlink.Hyper = int32(hyperID)
+			} else if netlink.Peer == -1 {
+				netlink.Peer = int32(hyperID)
+			}
+			err = db.Save(netlink).Error
+			if err != nil {
+				log.Println("Failed to update dhcp hyper", err)
 			}
 		}
 	}
