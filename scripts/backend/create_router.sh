@@ -23,22 +23,26 @@ ip netns exec $router ip link set lo up
 suffix=$1
 
 ./create_veth.sh $router ext-$suffix te-$suffix
+ip netns exec $router ipset create nonat nethash
 if [ -n "$ext_ip" ]; then
     eip=${ext_ip%/*}
-    ip netns exec $router iptables -t nat -A POSTROUTING ! -s 169.254.169.0/24 ! -d 10.0.0.0/8 -j SNAT --to-source $eip
+    ip netns exec $router iptables -t nat -A POSTROUTING -m set --match-set nonat src -m set ! --match-set nonat dst -j SNAT --to-source $eip
 fi
+ip netns exec $router iptables -t nat -A POSTROUTING -m mark --mark 0x400 -j MASQUERADE
 apply_vnic -I ext-$suffix
 
 ./create_veth.sh $router int-$suffix ti-$suffix
 if [ -n "$int_ip" ]; then
     iip=${int_ip%/*}
-    ip netns exec $router iptables -t nat -A POSTROUTING -d 10.0.0.0/8 -j SNAT --to-source $iip
+    ip netns exec $router ipset add nonat $int_ip
+    ip netns exec $router iptables -t nat -A POSTROUTING -d $int_ip -j SNAT --to-source $iip
 fi
 apply_vnic -I int-$suffix
 
 router_dir=$cache_dir/router/$router
 mkdir -p $router_dir
 ip netns exec $router iptables-save > $router_dir/iptables.save
+ip netns exec $router ipset save > $router_dir/ipset.save
 
 vrrp_conf=$router_dir/keepalived.conf
 notify_sh=$router_dir/notify.sh
