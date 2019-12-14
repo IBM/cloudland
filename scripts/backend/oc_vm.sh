@@ -12,6 +12,7 @@ vm_mem=$3
 disk_size=$4
 role='worker'
 [ "${5/master/}" != "$5" ] && role='master'
+[ "${5/bootstrap/}" != "$5" ] && role='bootstrap'
 [ -z "$role" ] && role='worker'
 vm_stat=error
 vm_vnc=""
