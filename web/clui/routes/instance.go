@@ -317,6 +317,9 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 }
 
 func hyperExecute(ctx context.Context, control, command string) (err error) {
+	if control == "" {
+		return
+	}
 	sciClient := grpcs.RemoteExecClient()
 	sciReq := &scripts.ExecuteRequest{
 		Id:      100,
@@ -393,7 +396,6 @@ func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subne
 			return
 		}
 	}
-	err = execNetwork(ctx, netlink, subnet, memberShip.OrgID)
 	if err != nil {
 		log.Println("Failed to execute network creation")
 		return
