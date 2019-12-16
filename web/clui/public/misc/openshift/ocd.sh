@@ -54,7 +54,8 @@ EOF
 
     cat > /etc/dnsmasq.openshift.addnhosts <<EOF
 $public_ip dns.${cluster_name}.${base_domain}
-$public_ip loadbalancer.${cluster_name}.${base_domain}  api.${cluster_name}.${base_domain}  api-int.${cluster_name}.${base_domain}  lb.${cluster_name}.${base_domain}
+$public_ip loadbalancer.${cluster_name}.${base_domain}  api.${cluster_name}.${base_domain}  lb.${cluster_name}.${base_domain}
+192.168.91.8 api-int.${cluster_name}.${base_domain}
 192.168.91.9 bootstrap.${cluster_name}.${base_domain}
 192.168.91.10 master-0.${cluster_name}.${base_domain}  etcd-0.${cluster_name}.${base_domain}
 192.168.91.11 master-1.${cluster_name}.${base_domain}  etcd-1.${cluster_name}.${base_domain}
