@@ -37,6 +37,3 @@ else
     ip netns exec $router ipset add nonat $addr
     [ -f "$pid_file" ] && ip netns exec $router kill -HUP $(cat $pid_file)
 fi
-
-ip netns exec $router iptables-save > $router_dir/iptables.save
-ip netns exec $router ipset save > $router_dir/ipset.save

@@ -16,6 +16,11 @@
                         <label for="hyper">{{.i18n.Tr "Hyper"}}</label>
                         <input id="hyper" name="hyper" value="-1" required>
                     </div>
+                    {{ else }}
+                    <div class="required inline field" hidden>
+                        <label for="hyper">{{.i18n.Tr "Hyper"}}</label>
+                        <input id="hyper" name="hyper" value="-1" required>
+                    </div>
 	            {{ end }}
                     <div class="required inline field">
                         <label for="count">{{.i18n.Tr "Count"}}</label>

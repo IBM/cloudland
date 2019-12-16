@@ -11,13 +11,10 @@
 #include <grpcpp/impl/codegen/async_stream.h>
 #include <grpcpp/impl/codegen/async_unary_call.h>
 #include <grpcpp/impl/codegen/client_callback.h>
-#include <grpcpp/impl/codegen/client_context.h>
-#include <grpcpp/impl/codegen/completion_queue.h>
-#include <grpcpp/impl/codegen/method_handler.h>
+#include <grpcpp/impl/codegen/method_handler_impl.h>
 #include <grpcpp/impl/codegen/proto_utils.h>
 #include <grpcpp/impl/codegen/rpc_method.h>
 #include <grpcpp/impl/codegen/server_callback.h>
-#include <grpcpp/impl/codegen/server_context.h>
 #include <grpcpp/impl/codegen/service_type.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/stub_options.h>
@@ -26,7 +23,6 @@
 namespace grpc_impl {
 class CompletionQueue;
 class ServerCompletionQueue;
-class ServerContext;
 }  // namespace grpc_impl
 
 namespace grpc {
@@ -34,6 +30,7 @@ namespace experimental {
 template <typename RequestT, typename ResponseT>
 class MessageAllocator;
 }  // namespace experimental
+class ServerContext;
 }  // namespace grpc
 
 namespace com {
@@ -140,7 +137,7 @@ class RemoteExec final {
   template <class BaseClass>
   class WithAsyncMethod_Execute : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithAsyncMethod_Execute() {
       ::grpc::Service::MarkMethodAsync(0);
@@ -149,7 +146,7 @@ class RemoteExec final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Execute(::grpc::ServerContext* /*context*/, const ::com::ibm::cloudland::scripts::ExecuteRequest* /*request*/, ::com::ibm::cloudland::scripts::ExecuteReply* /*response*/) override {
+    ::grpc::Status Execute(::grpc::ServerContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -160,7 +157,7 @@ class RemoteExec final {
   template <class BaseClass>
   class WithAsyncMethod_Transmit : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithAsyncMethod_Transmit() {
       ::grpc::Service::MarkMethodAsync(1);
@@ -169,7 +166,7 @@ class RemoteExec final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Transmit(::grpc::ServerContext* /*context*/, ::grpc::ServerReader< ::com::ibm::cloudland::scripts::FileChunk>* /*reader*/, ::com::ibm::cloudland::scripts::TransmitAck* /*response*/) override {
+    ::grpc::Status Transmit(::grpc::ServerContext* context, ::grpc::ServerReader< ::com::ibm::cloudland::scripts::FileChunk>* reader, ::com::ibm::cloudland::scripts::TransmitAck* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -181,11 +178,11 @@ class RemoteExec final {
   template <class BaseClass>
   class ExperimentalWithCallbackMethod_Execute : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     ExperimentalWithCallbackMethod_Execute() {
       ::grpc::Service::experimental().MarkMethodCallback(0,
-        new ::grpc_impl::internal::CallbackUnaryHandler< ::com::ibm::cloudland::scripts::ExecuteRequest, ::com::ibm::cloudland::scripts::ExecuteReply>(
+        new ::grpc::internal::CallbackUnaryHandler< ::com::ibm::cloudland::scripts::ExecuteRequest, ::com::ibm::cloudland::scripts::ExecuteReply>(
           [this](::grpc::ServerContext* context,
                  const ::com::ibm::cloudland::scripts::ExecuteRequest* request,
                  ::com::ibm::cloudland::scripts::ExecuteReply* response,
@@ -195,7 +192,7 @@ class RemoteExec final {
     }
     void SetMessageAllocatorFor_Execute(
         ::grpc::experimental::MessageAllocator< ::com::ibm::cloudland::scripts::ExecuteRequest, ::com::ibm::cloudland::scripts::ExecuteReply>* allocator) {
-      static_cast<::grpc_impl::internal::CallbackUnaryHandler< ::com::ibm::cloudland::scripts::ExecuteRequest, ::com::ibm::cloudland::scripts::ExecuteReply>*>(
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::com::ibm::cloudland::scripts::ExecuteRequest, ::com::ibm::cloudland::scripts::ExecuteReply>*>(
           ::grpc::Service::experimental().GetHandler(0))
               ->SetMessageAllocator(allocator);
     }
@@ -203,39 +200,39 @@ class RemoteExec final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Execute(::grpc::ServerContext* /*context*/, const ::com::ibm::cloudland::scripts::ExecuteRequest* /*request*/, ::com::ibm::cloudland::scripts::ExecuteReply* /*response*/) override {
+    ::grpc::Status Execute(::grpc::ServerContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual void Execute(::grpc::ServerContext* /*context*/, const ::com::ibm::cloudland::scripts::ExecuteRequest* /*request*/, ::com::ibm::cloudland::scripts::ExecuteReply* /*response*/, ::grpc::experimental::ServerCallbackRpcController* controller) { controller->Finish(::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "")); }
+    virtual void Execute(::grpc::ServerContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, ::grpc::experimental::ServerCallbackRpcController* controller) { controller->Finish(::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "")); }
   };
   template <class BaseClass>
   class ExperimentalWithCallbackMethod_Transmit : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     ExperimentalWithCallbackMethod_Transmit() {
       ::grpc::Service::experimental().MarkMethodCallback(1,
-        new ::grpc_impl::internal::CallbackClientStreamingHandler< ::com::ibm::cloudland::scripts::FileChunk, ::com::ibm::cloudland::scripts::TransmitAck>(
+        new ::grpc::internal::CallbackClientStreamingHandler< ::com::ibm::cloudland::scripts::FileChunk, ::com::ibm::cloudland::scripts::TransmitAck>(
           [this] { return this->Transmit(); }));
     }
     ~ExperimentalWithCallbackMethod_Transmit() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Transmit(::grpc::ServerContext* /*context*/, ::grpc::ServerReader< ::com::ibm::cloudland::scripts::FileChunk>* /*reader*/, ::com::ibm::cloudland::scripts::TransmitAck* /*response*/) override {
+    ::grpc::Status Transmit(::grpc::ServerContext* context, ::grpc::ServerReader< ::com::ibm::cloudland::scripts::FileChunk>* reader, ::com::ibm::cloudland::scripts::TransmitAck* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::experimental::ServerReadReactor< ::com::ibm::cloudland::scripts::FileChunk, ::com::ibm::cloudland::scripts::TransmitAck>* Transmit() {
-      return new ::grpc_impl::internal::UnimplementedReadReactor<
+      return new ::grpc::internal::UnimplementedReadReactor<
         ::com::ibm::cloudland::scripts::FileChunk, ::com::ibm::cloudland::scripts::TransmitAck>;}
   };
   typedef ExperimentalWithCallbackMethod_Execute<ExperimentalWithCallbackMethod_Transmit<Service > > ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_Execute : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithGenericMethod_Execute() {
       ::grpc::Service::MarkMethodGeneric(0);
@@ -244,7 +241,7 @@ class RemoteExec final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Execute(::grpc::ServerContext* /*context*/, const ::com::ibm::cloudland::scripts::ExecuteRequest* /*request*/, ::com::ibm::cloudland::scripts::ExecuteReply* /*response*/) override {
+    ::grpc::Status Execute(::grpc::ServerContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -252,7 +249,7 @@ class RemoteExec final {
   template <class BaseClass>
   class WithGenericMethod_Transmit : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithGenericMethod_Transmit() {
       ::grpc::Service::MarkMethodGeneric(1);
@@ -261,7 +258,7 @@ class RemoteExec final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Transmit(::grpc::ServerContext* /*context*/, ::grpc::ServerReader< ::com::ibm::cloudland::scripts::FileChunk>* /*reader*/, ::com::ibm::cloudland::scripts::TransmitAck* /*response*/) override {
+    ::grpc::Status Transmit(::grpc::ServerContext* context, ::grpc::ServerReader< ::com::ibm::cloudland::scripts::FileChunk>* reader, ::com::ibm::cloudland::scripts::TransmitAck* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -269,7 +266,7 @@ class RemoteExec final {
   template <class BaseClass>
   class WithRawMethod_Execute : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithRawMethod_Execute() {
       ::grpc::Service::MarkMethodRaw(0);
@@ -278,7 +275,7 @@ class RemoteExec final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Execute(::grpc::ServerContext* /*context*/, const ::com::ibm::cloudland::scripts::ExecuteRequest* /*request*/, ::com::ibm::cloudland::scripts::ExecuteReply* /*response*/) override {
+    ::grpc::Status Execute(::grpc::ServerContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -289,7 +286,7 @@ class RemoteExec final {
   template <class BaseClass>
   class WithRawMethod_Transmit : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithRawMethod_Transmit() {
       ::grpc::Service::MarkMethodRaw(1);
@@ -298,7 +295,7 @@ class RemoteExec final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Transmit(::grpc::ServerContext* /*context*/, ::grpc::ServerReader< ::com::ibm::cloudland::scripts::FileChunk>* /*reader*/, ::com::ibm::cloudland::scripts::TransmitAck* /*response*/) override {
+    ::grpc::Status Transmit(::grpc::ServerContext* context, ::grpc::ServerReader< ::com::ibm::cloudland::scripts::FileChunk>* reader, ::com::ibm::cloudland::scripts::TransmitAck* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -309,11 +306,11 @@ class RemoteExec final {
   template <class BaseClass>
   class ExperimentalWithRawCallbackMethod_Execute : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     ExperimentalWithRawCallbackMethod_Execute() {
       ::grpc::Service::experimental().MarkMethodRawCallback(0,
-        new ::grpc_impl::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+        new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
           [this](::grpc::ServerContext* context,
                  const ::grpc::ByteBuffer* request,
                  ::grpc::ByteBuffer* response,
@@ -325,38 +322,38 @@ class RemoteExec final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Execute(::grpc::ServerContext* /*context*/, const ::com::ibm::cloudland::scripts::ExecuteRequest* /*request*/, ::com::ibm::cloudland::scripts::ExecuteReply* /*response*/) override {
+    ::grpc::Status Execute(::grpc::ServerContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual void Execute(::grpc::ServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/, ::grpc::experimental::ServerCallbackRpcController* controller) { controller->Finish(::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "")); }
+    virtual void Execute(::grpc::ServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response, ::grpc::experimental::ServerCallbackRpcController* controller) { controller->Finish(::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "")); }
   };
   template <class BaseClass>
   class ExperimentalWithRawCallbackMethod_Transmit : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     ExperimentalWithRawCallbackMethod_Transmit() {
       ::grpc::Service::experimental().MarkMethodRawCallback(1,
-        new ::grpc_impl::internal::CallbackClientStreamingHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+        new ::grpc::internal::CallbackClientStreamingHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
           [this] { return this->Transmit(); }));
     }
     ~ExperimentalWithRawCallbackMethod_Transmit() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Transmit(::grpc::ServerContext* /*context*/, ::grpc::ServerReader< ::com::ibm::cloudland::scripts::FileChunk>* /*reader*/, ::com::ibm::cloudland::scripts::TransmitAck* /*response*/) override {
+    ::grpc::Status Transmit(::grpc::ServerContext* context, ::grpc::ServerReader< ::com::ibm::cloudland::scripts::FileChunk>* reader, ::com::ibm::cloudland::scripts::TransmitAck* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::experimental::ServerReadReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>* Transmit() {
-      return new ::grpc_impl::internal::UnimplementedReadReactor<
+      return new ::grpc::internal::UnimplementedReadReactor<
         ::grpc::ByteBuffer, ::grpc::ByteBuffer>;}
   };
   template <class BaseClass>
   class WithStreamedUnaryMethod_Execute : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithStreamedUnaryMethod_Execute() {
       ::grpc::Service::MarkMethodStreamed(0,
@@ -366,7 +363,7 @@ class RemoteExec final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status Execute(::grpc::ServerContext* /*context*/, const ::com::ibm::cloudland::scripts::ExecuteRequest* /*request*/, ::com::ibm::cloudland::scripts::ExecuteReply* /*response*/) override {
+    ::grpc::Status Execute(::grpc::ServerContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
