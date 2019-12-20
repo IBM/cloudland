@@ -222,7 +222,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 			return
 		}
 	}
-	if action == "shutdown" || action == "start" || action == "suspend" || action == "resume" {
+	if action == "shutdown" || action == "destroy" || action == "start" || action == "suspend" || action == "resume" {
 		control := fmt.Sprintf("inter=%d", instance.Hyper)
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh '%d' '%s'", instance.ID, action)
 		err = hyperExecute(ctx, control, command)
