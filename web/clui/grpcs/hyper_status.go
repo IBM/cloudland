@@ -72,6 +72,7 @@ func HyperStatus(ctx context.Context, job *model.Job, args []string) (status str
 		totalDisk = 0
 	}
 	resource := &model.Resource{
+		Hostid:      int32(hyperID),
 		Cpu:         int64(availCpu),
 		CpuTotal:    int64(totalCpu),
 		Memory:      int64(availMem),

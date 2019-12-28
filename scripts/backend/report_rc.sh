@@ -46,7 +46,7 @@ function vlan_status()
 {
     cd /opt/cloudland/cache/dnsmasq
     old_vlan_list=$(cat old_vlan_list)
-    vlan_list=$(ls vlan*)
+    vlan_list=$(ls vlan* 2>/dev/null)
     vlan_list=$(echo "$vlan_list $(ip netns list | grep vlan | cut -d' ' -f1)" | xargs | sed 's/vlan//g')
     [ "$vlan_list" = "$old_vlan_list" ] && return
     [ -n "$vlan_list" ] && echo "|:-COMMAND-:| vlan_status.sh '$SCI_CLIENT_ID' '$vlan_list'"
@@ -57,7 +57,7 @@ function router_status()
 {
     cd /opt/cloudland/cache/router
     old_router_list=$(cat old_router_list)
-    router_list=$(ls router*)
+    router_list=$(ls router* 2>/dev/null)
     router_list=$(echo "$router_list $(ip netns list | grep router | cut -d' ' -f1)" | xargs | sed 's/router-//g')
     [ "$router_list" = "$old_router_list" ] && return
     [ -n "$router_list" ] && echo "|:-COMMAND-:| router_status.sh '$SCI_CLIENT_ID' '$router_list'"

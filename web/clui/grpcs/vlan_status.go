@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	"github.com/IBM/cloudland/web/clui/model"
-	"github.com/IBM/cloudland/web/clui/scripts"
 	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/jinzhu/gorm"
 )
@@ -49,20 +48,6 @@ func VlanStatus(ctx context.Context, job *model.Job, args []string) (status stri
 		if (err != nil && gorm.IsRecordNotFoundError(err)) ||
 			(err == nil && netlink.Hyper > 0 && netlink.Hyper != int32(hyperID) && netlink.Peer > 0 && netlink.Peer != int32(hyperID)) {
 			log.Println("Invalid vlan", err)
-			sciClient := RemoteExecClient()
-			control := fmt.Sprintf("inter=%d", hyperID)
-			command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_nspace.sh 'vlan%d'", vlan)
-			sciReq := &scripts.ExecuteRequest{
-				Id:      100,
-				Extra:   0,
-				Control: control,
-				Command: command,
-			}
-			_, err = sciClient.Execute(ctx, sciReq)
-			if err != nil {
-				log.Println("SCI client execution failed", err)
-				continue
-			}
 		}
 		if err == nil {
 			if netlink.Hyper == -1 {
