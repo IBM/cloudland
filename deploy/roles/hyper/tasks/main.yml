@@ -2,14 +2,14 @@
   yum: 
     name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'git', 'python-pip', 'NetworkManager', 'net-tools', 'iptables-services', 'dnsmasq-utils', 'conntrack-tools']
     state: present
-  when: ansible_distribution_release == 'Core'
+  when: ansible_distribution_major_version == '7'
   tags: [be_pkg]
 
 - name: install packages
   yum: 
     name: ['@Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'git', 'python3-pip', 'NetworkManager', 'net-tools', 'iptables-services', 'dnsmasq-utils', 'conntrack-tools']
     state: present
-  when: ansible_distribution_release == 'Ootpa'
+  when: ansible_distribution_major_version == '8'
   tags: [be_pkg]
 
 - pip:
@@ -115,6 +115,12 @@
   script: firewall.sh
   tags: [firewall]
   ignore_errors: yes
+
+- name: Load nr_bridge kernel module
+  modprobe:
+    name: br_netfilter
+    state: present
+  tags: [sysctl]
 
 - name: Apply sysctl bridge-nf-call-iptables
   sysctl:
