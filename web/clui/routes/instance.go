@@ -183,6 +183,11 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 		return
 	}
 	if flavorID != instance.FlavorID {
+		if instance.Status == "running" {
+			err = fmt.Errorf("Instance must be shutdown first before resize")
+			log.Println("Instance must be shutdown first before resize", err)
+			return
+		}
 		flavor := &model.Flavor{Model: model.Model{ID: flavorID}}
 		if err = db.Take(flavor).Error; err != nil {
 			log.Println("Failed to query flavor", err)
@@ -1019,13 +1024,6 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	image := c.QueryInt64("image")
-	if image < 0 {
-		log.Println("Invalid image ID", err)
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
-		return
-	}
 	cluster := c.QueryInt64("cluster")
 	if cluster < 0 {
 		log.Println("Invalid cluster ID", err)
@@ -1040,6 +1038,13 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			c.Error(code, http.StatusText(code))
 			return
 		}
+	}
+	image := c.QueryInt64("image")
+	if image <= 0 && cluster <= 0 {
+		log.Println("No valid image ID or cluster ID", err)
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
 	}
 	flavor := c.QueryInt64("flavor")
 	if flavor <= 0 {
