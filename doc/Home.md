@@ -1,15 +1,15 @@
 Welcome to CloudLand wiki!   
     
-[Introduction](wiki/Introduction)   
+[Introduction](Introduction)   
 
-[Deployment](wiki/Deployment)   
+[Deployment](Deployment)   
 
-[User Manual](wiki/Manual)
+[User Manual](Manual)
 
-[Operation Guide](wiki/Operation)
+[Operation Guide](Operation)
     
-[Development Guide](wiki/development)   
+[Development Guide](development)   
 
-[Contribution](wiki/contribution)   
+[Contribution](contribution)   
 
-[FAQ](wiki/FAQ)   
+[FAQ](FAQ)   
