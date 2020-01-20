@@ -14,6 +14,10 @@ For development, you can prepare one or more bare metals or VMs with nested kvm 
     echo 'cland ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers.d/cland
 ```
 * Make sure hostname not 'localhost'
+* If you use redhat instead of centos, you need to have pre-configured yum repositories including base and epel
+```bash
+    yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+```
  
 ## Install all in one   
 * With cland user create above for all the commands
