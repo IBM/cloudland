@@ -124,7 +124,7 @@ func (a *GlusterfsAdmin) Update(ctx context.Context, id, heketiKey, flavorID int
 			}
 			endpoint := viper.GetString("api.endpoint")
 			userdata := getUserdata("gluster")
-			userdata = fmt.Sprintf("%s\nwget --no-check-certificate '%s/misc/glusterfs/gluster.sh'\nchmod +x gluster.sh", userdata, endpoint)
+			userdata = fmt.Sprintf("%s\ncurl -k -O '%s/misc/glusterfs/gluster.sh'\nchmod +x gluster.sh", userdata, endpoint)
 			userdata = fmt.Sprintf("%s\n./gluster.sh '%d' '%s'", userdata, glusterfs.ID, glusterfs.Endpoint)
 			sgIDs := []int64{secgroup.ID}
 			keyIDs := []int64{glusterfs.Key, glusterfs.HeketiKey}
@@ -168,14 +168,18 @@ func getUserdata(name string) (userdata string) {
 	userdata = fmt.Sprintf("#!/bin/bash\nexec >/tmp/%s.log 2>&1\n", name)
 	userdata += `cd /opt
 count=0
-while [ "$count" -le 10 ]; do
+while [ "$count" -le 20 ]; do
     sleep 10
     nameserver=$(grep '^nameserver' /etc/resolv.conf | head -1 | awk '{print $2}')
     [ -n "$nameserver" ] && break
     let count=$count+1
 done
-[ -z "$nameserver" ] && echo nameserver 8.8.8.8 >> /etc/resolv.conf
-yum -y install wget`
+[ -z "$nameserver" ] && nameserver=8.8.8.8 && echo nameserver $nameserver >> /etc/resolv.conf
+while true; do
+    ping -c 1 $nameserver
+    [ $? -eq 0 ] && break
+done
+`
 	return
 }
 
@@ -226,7 +230,7 @@ func (a *GlusterfsAdmin) Create(ctx context.Context, name, cookie string, nworke
 	sgIDs := []int64{secgroup.ID}
 	endpoint := viper.GetString("api.endpoint")
 	userdata := getUserdata("heketi")
-	userdata = fmt.Sprintf("%s\nwget --no-check-certificate '%s/misc/glusterfs/heketi.sh'\nchmod +x heketi.sh", userdata, endpoint)
+	userdata = fmt.Sprintf("%s\ncurl -k -O '%s/misc/glusterfs/heketi.sh'\nchmod +x heketi.sh", userdata, endpoint)
 	userdata = fmt.Sprintf("%s\n./heketi.sh '%d' '%s' '%s' '%d' '%d'", userdata, glusterfs.ID, endpoint, cookie, subnet.ID, nworkers)
 	tmpName := fmt.Sprintf("g%d-heketi", glusterfs.ID)
 	_, err = instanceAdmin.Create(ctx, 1, tmpName, userdata, 1, flavor, subnet.ID, cluster, "192.168.91.199", "", nil, keyIDs, sgIDs, -1)

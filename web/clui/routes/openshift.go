@@ -341,7 +341,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 	sgIDs := []int64{secgroup.ID}
 	endpoint := viper.GetString("api.endpoint")
 	userdata := getUserdata("ocd")
-	userdata = fmt.Sprintf("%s\nwget --no-check-certificate '%s/misc/openshift/ocd.sh'\nchmod +x ocd.sh", userdata, endpoint)
+	userdata = fmt.Sprintf("%s\ncurl -k -O '%s/misc/openshift/ocd.sh'\nchmod +x ocd.sh", userdata, endpoint)
 	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' '%s' '%d'<<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, haflag, nworkers, secret)
 	_, err = instanceAdmin.Create(ctx, 1, name, userdata, 1, flavor, subnet.ID, openshift.ID, lbIP, "", nil, keyIDs, sgIDs, -1)
 	if err != nil {
