@@ -24,6 +24,16 @@
 						  </div>
 						</div>
                     </div>
+		    {{ if .IsAdmin }}
+                    <div class="inline field">
+                        <label for="publicip">{{.i18n.Tr "Public IP"}}</label>
+                        <input id="publicip" name="publicip" placeholder="192.168.1.25">
+                    </div>
+                    <div class="inline field">
+                        <label for="privateip">{{.i18n.Tr "Private IP"}}</label>
+                        <input id="privateip" name="publicip" placeholder="172.20.16.25">
+                    </div>
+		    {{ end }}
                     <div class="inline field">
                         <label for="ftype">{{.i18n.Tr "Floating IP type"}}</label>
 						<div class="ui selection dropdown">
