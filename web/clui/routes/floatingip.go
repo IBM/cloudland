@@ -388,20 +388,17 @@ func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, gateway 
 		return
 	}
 	name := ftype + "fip"
-	fipIface, err = CreateInterface(ctx, subnet.ID, floatingipID, owner, -1, address, "", name, "floating", nil)
-	if err != nil && address != "" {
-		subnets := []*model.Subnet{}
-		err = db.Where("vlan = ? and id <> ?", subnet.Vlan, subnet.ID).Find(&subnets).Error
-		if err == nil && len(subnets) > 0 {
-			for _, s := range subnets {
-				fipIface, err = CreateInterface(ctx, s.ID, floatingipID, owner, -1, "", "", name, "floating", nil)
-				if err == nil {
-					break
-				}
+	subnets := []*model.Subnet{}
+	err = db.Where("vlan = ?", subnet.Vlan).Find(&subnets).Error
+	if err == nil && len(subnets) > 0 {
+		for _, s := range subnets {
+			fipIface, err = CreateInterface(ctx, s.ID, floatingipID, owner, -1, address, "", name, "floating", nil)
+			if err == nil {
+				break
 			}
-		} else {
-			err = fmt.Errorf("No valid external subnets")
 		}
+	} else {
+		err = fmt.Errorf("No valid external subnets")
 	}
 	return
 }

@@ -489,8 +489,8 @@ func CreateInterface(ctx context.Context, subnetID, ID, owner int64, hyper int32
 	iface.Address, err = AllocateAddress(ctx, subnetID, iface.ID, address, "native")
 	if err != nil {
 		log.Println("Failed to allocate address", err)
-		err = db.Delete(iface).Error
-		if err != nil {
+		err2 := db.Delete(iface).Error
+		if err2 != nil {
 			log.Println("Failed to delete interface, ", err)
 		}
 		return
