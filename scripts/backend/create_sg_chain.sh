@@ -6,7 +6,7 @@ source ../cloudrc
 [ $# -lt 3 ] && echo "$0 <interface> <ip> <mac>" && exit -1
 
 vnic=$1
-ip=$2
+ip=${2%%/*}
 mac=$3
 
 apply_fw -I FORWARD -m physdev --physdev-out $vnic --physdev-is-bridged -j secgroup-chain

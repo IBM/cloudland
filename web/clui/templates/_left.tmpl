@@ -20,9 +20,6 @@
         <a {{ if eq .Link "/images" }} class="active item" {{ else }} class="item" {{ end }} href="/images">
             {{.i18n.Tr "Images"}}
         </a>
-        <a {{ if eq .Link "/volumes" }} class="active item" {{ else }} class="item" {{ end }} href="/volumes">
-            {{.i18n.Tr "Volumes"}}
-        </a>
         <div class="header item">{{.i18n.Tr "Platform_Service"}}</div>
         <a {{ if eq .Link "/openshifts" }} class="active item" {{ else }} class="item" {{ end }} href="/openshifts">
             {{.i18n.Tr "Openshift"}}

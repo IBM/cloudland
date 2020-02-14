@@ -155,7 +155,7 @@ func setRouting(ctx context.Context, gatewayID int64, subnet *model.Subnet, rout
 	return
 }
 
-func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, gateway, start, end, rtype, dns, search string, routes string, cluster, owner int64) (subnet *model.Subnet, err error) {
+func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, gateway, start, end, rtype, dns, domain, dhcp string, routes string, cluster, owner int64) (subnet *model.Subnet, err error) {
 	memberShip := GetMemberShip(ctx)
 	if owner == 0 {
 		owner = memberShip.OrgID
@@ -222,7 +222,8 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 		Start:        start,
 		End:          end,
 		NameServer:   dns,
-		DomainSearch: search,
+		DomainSearch: domain,
+		Dhcp:         dhcp,
 		ClusterID:    cluster,
 		Vlan:         int64(vlanNo),
 		Type:         rtype,
@@ -273,9 +274,12 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 }
 
 func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subnet, owner int64) (err error) {
+	if subnet.Dhcp == "no" {
+		return
+	}
 	if netlink.Hyper < 0 {
 		var dhcp1 *model.Interface
-		dhcp1, err = CreateInterface(ctx, subnet.ID, netlink.ID, owner, "", "", "dhcp-1", "dhcp", nil)
+		dhcp1, err = CreateInterface(ctx, subnet.ID, netlink.ID, owner, -1, "", "", "dhcp-1", "dhcp", nil)
 		if err != nil {
 			log.Println("Failed to allocate dhcp first address", err)
 			return
@@ -290,7 +294,7 @@ func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subn
 	}
 	if netlink.Peer < 0 {
 		var dhcp2 *model.Interface
-		dhcp2, err = CreateInterface(ctx, subnet.ID, netlink.ID, owner, "", "", "dhcp-2", "dhcp", nil)
+		dhcp2, err = CreateInterface(ctx, subnet.ID, netlink.ID, owner, -1, "", "", "dhcp-2", "dhcp", nil)
 		if err != nil {
 			log.Println("Failed to allocate dhcp first address", err)
 			return
@@ -370,9 +374,6 @@ func (a *SubnetAdmin) Delete(ctx context.Context, id int64) (err error) {
 			}
 		} else if netlink.Peer >= 0 {
 			control = fmt.Sprintf("inter=%d", netlink.Peer)
-		} else {
-			log.Println("Network has no valid hypers")
-			return
 		}
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_net.sh '%d' '%s' '%d'", netlink.Vlan, subnet.Network, subnet.ID)
 		err = hyperExecute(ctx, control, command)
@@ -381,7 +382,7 @@ func (a *SubnetAdmin) Delete(ctx context.Context, id int64) (err error) {
 			return
 		}
 	}
-	if count <= 1 {
+	if count <= 1 && netlink != nil {
 		err = db.Delete(netlink).Error
 		if err != nil {
 			log.Println("Failed to delete network")
@@ -726,14 +727,18 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 	start := c.QueryTrim("start")
 	end := c.QueryTrim("end")
 	dns := c.QueryTrim("dns")
-	search := c.QueryTrim("search")
+	domain := c.QueryTrim("domain")
+	dhcp := c.QueryTrim("dhcp")
+	if dhcp != "no" {
+		dhcp = "yes"
+	}
 	routeJson, err := v.checkRoutes(network, netmask, gateway, start, end, dns, routes, 0)
 	if err != nil {
 		code := http.StatusBadRequest
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	subnet, err := subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, gateway, start, end, rtype, dns, search, routeJson, 0, memberShip.OrgID)
+	subnet, err := subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, gateway, start, end, rtype, dns, domain, dhcp, routeJson, 0, memberShip.OrgID)
 	if err != nil {
 		log.Println("Create subnet failed, %v", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {

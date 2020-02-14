@@ -47,6 +47,10 @@ func (a *HyperAdmin) List(offset, limit int64, order, query string) (total int64
 	if err = db.Where("hostid >= 0").Where(query).Find(&hypers).Error; err != nil {
 		return
 	}
+	for _, hyper := range hypers {
+		hyper.Resource = &model.Resource{}
+		err = db.Where("hostid = ?", hyper.Hostid).Take(hyper.Resource).Error
+	}
 
 	return
 }

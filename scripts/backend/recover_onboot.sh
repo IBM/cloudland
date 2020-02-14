@@ -3,16 +3,18 @@
 cd $(dirname $0)
 source ../cloudrc
 
-for conf in $cache_dir/router/*; do
+for conf in $cache_dir/router/router-*; do
     router=$(basename $conf)
+    ip netns add $router
+    ip netns exec $router bash -c "echo 1 >/proc/sys/net/ipv4/ip_forward"
+    ip netns exec $router bash -c "/sbin/ipset restore < $conf/ipset.save"
+    ip netns exec $router bash -c "/sbin/iptables-restore < $conf/iptables.save"
     ./load_keepalived_conf.py -q $conf/keepalived.conf
     udevadm settle
     ip netns exec $router keepalived -D -f $conf/keepalived.conf -p $conf/keepalived.pid -r $conf/vrrp.pid -c $conf/checkers.pid
-    ip netns exec $router iptables-restore < $conf/iptables.save
-    ip netns exec $router bash -c "echo 1 >/proc/sys/net/ipv4/ip_forward"
 done
 
-for conf in $cache_dir/dnsmasq/*; do
+for conf in $cache_dir/dnsmasq/vlan*; do
     for cmd in $conf/tags/*/cmd; do
         sh $cmd
     done

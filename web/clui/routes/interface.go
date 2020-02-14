@@ -56,7 +56,7 @@ func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name, pairs strin
 	}
 	control := fmt.Sprintf("inter=%d", iface.Hyper)
 	if iface.Hyper < 0 {
-		instance := &model.Interface{Model: model.Model{ID: iface.Instance}}
+		instance := &model.Instance{Model: model.Model{ID: iface.Instance}}
 		if err = db.Take(instance).Error; err != nil {
 			log.Println("Failed to query instance ", err)
 			return
@@ -245,7 +245,7 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 		log.Println("Security group query failed", err)
 		return
 	}
-	iface, err := CreateInterface(ctx, subnetID, instID, memberShip.OrgID, address, mac, ifname, "instance", secGroups)
+	iface, err := CreateInterface(ctx, subnetID, instID, memberShip.OrgID, -1, address, mac, ifname, "instance", secGroups)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
 			"error": err.Error(),
@@ -447,7 +447,7 @@ func genMacaddr() (mac string, err error) {
 	return mac, nil
 }
 
-func CreateInterface(ctx context.Context, subnetID, ID, owner int64, address, mac, ifaceName, ifType string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
+func CreateInterface(ctx context.Context, subnetID, ID, owner int64, hyper int32, address, mac, ifaceName, ifType string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
 	var db *gorm.DB
 	ctx, db = getCtxDB(ctx)
 	primary := false
@@ -467,6 +467,7 @@ func CreateInterface(ctx context.Context, subnetID, ID, owner int64, address, ma
 		MacAddr:   mac,
 		PrimaryIf: primary,
 		Subnet:    subnetID,
+		Hyper:     hyper,
 		Type:      ifType,
 		Mtu:       1450,
 		Secgroups: secGroups,
@@ -482,12 +483,16 @@ func CreateInterface(ctx context.Context, subnetID, ID, owner int64, address, ma
 	}
 	err = db.Create(iface).Error
 	if err != nil {
-		log.Println("Failed to create interface, %v", err)
+		log.Println("Failed to create interface, ", err)
 		return
 	}
 	iface.Address, err = AllocateAddress(ctx, subnetID, iface.ID, address, "native")
 	if err != nil {
 		log.Println("Failed to allocate address", err)
+		err = db.Delete(iface).Error
+		if err != nil {
+			log.Println("Failed to delete interface, ", err)
+		}
 		return
 	}
 	return

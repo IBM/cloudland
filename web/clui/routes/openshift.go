@@ -205,7 +205,7 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 		log.Println("Launch vm command execution failed", err)
 		return
 	}
-	if strings.Index(hostname, "worker-") == 0 {
+	if strings.Contains(hostname, "worker") {
 		openshift.WorkerNum++
 		err = db.Save(openshift).Error
 		if err != nil {
@@ -323,7 +323,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 	name := openshift.ClusterName + "-sn"
 	search := cluster + "." + domain
 	lbIP := "192.168.91.8"
-	subnet, err := subnetAdmin.Create(ctx, name, "", "192.168.91.0", "255.255.255.0", "", "", "", "", lbIP, search, "", openshift.ID, memberShip.OrgID)
+	subnet, err := subnetAdmin.Create(ctx, name, "", "192.168.91.0", "255.255.255.0", "", "", "", "", lbIP, search, "yes", "", openshift.ID, memberShip.OrgID)
 	if err != nil {
 		log.Println("Failed to create openshift subnet", err)
 		return
@@ -341,7 +341,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 	sgIDs := []int64{secgroup.ID}
 	endpoint := viper.GetString("api.endpoint")
 	userdata := getUserdata("ocd")
-	userdata = fmt.Sprintf("%s\nwget --no-check-certificate '%s/misc/openshift/ocd.sh'\nchmod +x ocd.sh", userdata, endpoint)
+	userdata = fmt.Sprintf("%s\ncurl -k -O '%s/misc/openshift/ocd.sh'\nchmod +x ocd.sh", userdata, endpoint)
 	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' '%s' '%d'<<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, haflag, nworkers, secret)
 	_, err = instanceAdmin.Create(ctx, 1, name, userdata, 1, flavor, subnet.ID, openshift.ID, lbIP, "", nil, keyIDs, sgIDs, -1)
 	if err != nil {

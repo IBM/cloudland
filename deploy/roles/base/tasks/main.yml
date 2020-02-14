@@ -40,10 +40,12 @@
 
 - name: install ntp service
   yum: name=ntp state=latest
+  when: ansible_distribution_release == 'Core'
   tags: [ntp]
 
 - name: start ntp service
   service: name=ntpd state=started enabled=yes
+  when: ansible_distribution_release == 'Core'
   tags: [ntp]
 
 - name: upgrade all packages

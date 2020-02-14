@@ -25,8 +25,8 @@
 			                        <th>{{.i18n.Tr "Children"}}</th>
 			                        <th>{{.i18n.Tr "Status"}}</th>
 			                        <th>{{.i18n.Tr "Cpu"}}</th>
-			                        <th>{{.i18n.Tr "Memory"}}</th>
-			                        <th>{{.i18n.Tr "Disk"}}</th>
+			                        <th>{{.i18n.Tr "Memory"}}(M)</th>
+			                        <th>{{.i18n.Tr "Disk"}}(B)</th>
 		                        </tr>
 	                        </thead>
 	                        <tbody>
@@ -39,9 +39,9 @@
 			                        <td>{{.Parentid}}</td>
 			                        <td>{{.Children}}</td>
 			                        <td>{{.Status}}</td>
-			                        <td>{{.Cpu}}</td>
-			                        <td>{{.Memory}}</td>
-			                        <td>{{.Disk}}</td>
+			                        <td>{{.Resource.Cpu}}/<br>{{.Resource.CpuTotal}}</td>
+			                        <td>{{.Resource.Memory}}/<br>{{.Resource.MemoryTotal}}</td>
+			                        <td>{{.Resource.Disk}}/<br>{{.Resource.DiskTotal}}</td>
 		                        </tr>
                                 {{ end }}
 	                        </tbody>

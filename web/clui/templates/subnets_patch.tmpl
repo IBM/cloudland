@@ -39,6 +39,14 @@
                         <label for="end">{{.i18n.Tr "End"}}</label>
                         <input id="end"  name="end" value="{{ .Subnet.End }}">
                     </div>
+                    <div class="inline field">
+                        <label for="dns">{{.i18n.Tr "Name Server"}}</label>
+                        <input id="dns"  name="dns" value="{{ .Subnet.NameServer }}" disabled>
+                    </div>
+                    <div class="inline field">
+                        <label for="domain">{{.i18n.Tr "Base Domain"}}</label>
+                        <input id="domain"  name="dns" value="{{ .Subnet.DomainSearch }}" disabled>
+                    </div>
 			        {{if .IsAdmin }}
                     <div class="inline field">
                         <label for="vlan">{{.i18n.Tr "Vlan"}} ({{.i18n.Tr "admin only"}})</label>

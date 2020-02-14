@@ -26,15 +26,13 @@ type Hyper struct {
 	ID        int64 `gorm:"primary_key"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	Hostid    int32
+	Hostid    int32  `gorm:"unique_index"`
 	Hostname  string `gorm:"type:varchar(64)"`
 	Status    int32
 	Parentid  int32
 	Children  int32
 	Duration  int64
-	Cpu       string `gorm:"type:varchar(64)"`
-	Memory    string `gorm:"type:varchar(64)"`
-	Disk      string `gorm:"type:varchar(64)"`
+	Resource  *Resource `gorm:"foreignkey:Hostid;AssociationForeignKey:Hostid`
 }
 
 func init() {

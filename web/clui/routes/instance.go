@@ -91,14 +91,16 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	image := &model.Image{Model: model.Model{ID: imageID}}
-	if err = db.Take(image).Error; err != nil {
-		log.Println("Image query failed", err)
-		return
-	}
-	if image.Status != "available" {
-		err = fmt.Errorf("Image status not available")
-		log.Println("Image status not available")
-		return
+	if imageID > 0 {
+		if err = db.Take(image).Error; err != nil {
+			log.Println("Image query failed", err)
+			return
+		}
+		if image.Status != "available" {
+			err = fmt.Errorf("Image status not available")
+			log.Println("Image status not available")
+			return
+		}
 	}
 	flavor := &model.Flavor{Model: model.Model{ID: flavorID}}
 	if err = db.Find(flavor).Error; err != nil {
@@ -151,7 +153,18 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		if primary.DomainSearch != "" {
 			hostname = hostname + "." + primary.DomainSearch
 		}
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' 'image-%d.%s' '%s' '%d' '%d' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, image.ID, image.Format, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, flavor.Swap, flavor.Ephemeral, base64.StdEncoding.EncodeToString([]byte(metadata)))
+		command := ""
+		if imageID > 0 {
+			command = fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' 'image-%d.%s' '%s' '%d' '%d' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, image.ID, image.Format, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, flavor.Swap, flavor.Ephemeral, base64.StdEncoding.EncodeToString([]byte(metadata)))
+		} else if clusterID > 0 {
+			command = fmt.Sprintf("/opt/cloudland/scripts/backend/oc_vm.sh '%d' '%d' '%d' '%d' '%s'<<EOF\n%s\nEOF", instance.ID, flavor.Cpu, flavor.Memory, flavor.Disk, hostname, metadata)
+			openshift := &model.Openshift{Model: model.Model{ID: clusterID}}
+			err = db.Model(openshift).Update("worker_num", gorm.Expr("worker_num + 1")).Error
+			if err != nil {
+				log.Println("Failed to update openshift cluster")
+				return
+			}
+		}
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Launch vm command execution failed", err)
@@ -170,6 +183,11 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 		return
 	}
 	if flavorID != instance.FlavorID {
+		if instance.Status == "running" {
+			err = fmt.Errorf("Instance must be shutdown first before resize")
+			log.Println("Instance must be shutdown first before resize", err)
+			return
+		}
 		flavor := &model.Flavor{Model: model.Model{ID: flavorID}}
 		if err = db.Take(flavor).Error; err != nil {
 			log.Println("Failed to query flavor", err)
@@ -209,7 +227,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 			return
 		}
 	}
-	if action == "shutdown" || action == "start" || action == "suspend" || action == "resume" {
+	if action == "shutdown" || action == "destroy" || action == "start" || action == "suspend" || action == "resume" {
 		control := fmt.Sprintf("inter=%d", instance.Hyper)
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh '%d' '%s'", instance.ID, action)
 		err = hyperExecute(ctx, control, command)
@@ -304,6 +322,9 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 }
 
 func hyperExecute(ctx context.Context, control, command string) (err error) {
+	if control == "" {
+		return
+	}
 	sciClient := grpcs.RemoteExecClient()
 	sciReq := &scripts.ExecuteRequest{
 		Id:      100,
@@ -366,7 +387,7 @@ func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interf
 func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subnet, address, mac string, instance *model.Instance, ifname string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
-	iface, err = CreateInterface(ctx, subnet.ID, instance.ID, memberShip.OrgID, address, mac, ifname, "instance", secGroups)
+	iface, err = CreateInterface(ctx, subnet.ID, instance.ID, memberShip.OrgID, instance.Hyper, address, mac, ifname, "instance", secGroups)
 	if err != nil {
 		log.Println("Failed to create interface")
 		return
@@ -380,7 +401,6 @@ func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subne
 			return
 		}
 	}
-	err = execNetwork(ctx, netlink, subnet, memberShip.OrgID)
 	if err != nil {
 		log.Println("Failed to execute network creation")
 		return
@@ -796,9 +816,16 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	_, openshifts, err := openshiftAdmin.List(ctx, 0, -1, "", "")
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+		return
+	}
 	c.Data["Images"] = images
 	c.Data["Flavors"] = flavors
 	c.Data["Subnets"] = subnets
+	c.Data["Openshifts"] = openshifts
 	c.Data["Secgroups"] = secgroups
 	c.Data["Keys"] = keys
 	c.HTML(200, "instances_new")
@@ -843,6 +870,9 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 	}
 	for _, iface := range instance.Interfaces {
 		for i, subnet := range subnets {
+			if iface == nil || iface.Address == nil {
+				continue
+			}
 			if subnet.ID == iface.Address.SubnetID {
 				subnets = append(subnets[:i], subnets[i+1:]...)
 				break
@@ -994,9 +1024,24 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
+	cluster := c.QueryInt64("cluster")
+	if cluster < 0 {
+		log.Println("Invalid cluster ID", err)
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	} else if cluster > 0 {
+		permit, err = memberShip.CheckAdmin(model.Writer, "openshifts", cluster)
+		if !permit {
+			log.Println("Not authorized to access openshift cluster")
+			code := http.StatusUnauthorized
+			c.Error(code, http.StatusText(code))
+			return
+		}
+	}
 	image := c.QueryInt64("image")
-	if image <= 0 {
-		log.Println("Invalid image ID", err)
+	if image <= 0 && cluster <= 0 {
+		log.Println("No valid image ID or cluster ID", err)
 		code := http.StatusBadRequest
 		c.Error(code, http.StatusText(code))
 		return
@@ -1099,7 +1144,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		sgIDs = append(sgIDs, sgID)
 	}
 	userdata := c.QueryTrim("userdata")
-	instance, err := instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, image, flavor, int64(primaryID), 0, ipAddr, macAddr, subnetIDs, keyIDs, sgIDs, hyperID)
+	instance, err := instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, image, flavor, int64(primaryID), cluster, ipAddr, macAddr, subnetIDs, keyIDs, sgIDs, hyperID)
 	if err != nil {
 		log.Println("Create instance failed", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {

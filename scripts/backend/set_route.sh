@@ -26,9 +26,17 @@ rlen=$(jq length <<< $routes)
 while [ $i -lt $rlen ]; do
     destination=$(jq -r .[$i].destination <<< $routes)
     nexthop=$(jq -r .[$i].nexthop <<< $routes)
+    if [ "$rtype" != "public" ]; then
+        ip netns exec $router ipset add nonat $destination
+    fi
+    if [ "$rtype" = "private" ]; then
+        ip netns exec $router iptables -t nat -A POSTROUTING -d $destination -j SNAT --to-source $nexthop
+    fi
     ip netns exec $router route add -net $destination gw $nexthop dev $iface
     sed -i "/\"MASTER\")/a ip netns exec $router route add -net $destination gw $nexthop dev $iface" $notify_sh
     let i=$i+1
 done
 
 [ -f "$pid_file" ] && ip netns exec $router kill -HUP $(cat $pid_file)
+ip netns exec $router iptables-save > $router_dir/iptables.save
+ip netns exec $router ipset save > $router_dir/ipset.save

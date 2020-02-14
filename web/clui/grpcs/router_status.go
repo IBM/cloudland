@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	"github.com/IBM/cloudland/web/clui/model"
-	"github.com/IBM/cloudland/web/clui/scripts"
 	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/jinzhu/gorm"
 )
@@ -49,19 +48,16 @@ func RouterStatus(ctx context.Context, job *model.Job, args []string) (status st
 		if (err != nil && gorm.IsRecordNotFoundError(err)) ||
 			(err == nil && gateway.Hyper > 0 && gateway.Hyper != int32(hyperID) && gateway.Peer > 0 && gateway.Peer != int32(hyperID)) {
 			log.Println("Invalid router", err)
-			sciClient := RemoteExecClient()
-			control := fmt.Sprintf("inter=%d", hyperID)
-			command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_nspace.sh 'router-%d'", ID)
-			sciReq := &scripts.ExecuteRequest{
-				Id:      100,
-				Extra:   0,
-				Control: control,
-				Command: command,
+		}
+		if err == nil {
+			if gateway.Hyper == -1 {
+				gateway.Hyper = int32(hyperID)
+			} else if gateway.Peer == -1 {
+				gateway.Peer = int32(hyperID)
 			}
-			_, err = sciClient.Execute(ctx, sciReq)
+			err = db.Save(gateway).Error
 			if err != nil {
-				log.Println("SCI client execution failed", err)
-				continue
+				log.Println("Failed to update router hyper", err)
 			}
 		}
 	}

@@ -34,5 +34,6 @@ if [ "$mode" = "hard" ]; then
     ip netns exec $router ip addr add $addr brd $bcast dev $iface
 else
     sed -i "/virtual_ipaddress {/a $addr dev $iface" $vrrp_conf
+    ip netns exec $router ipset add nonat $addr
     [ -f "$pid_file" ] && ip netns exec $router kill -HUP $(cat $pid_file)
 fi

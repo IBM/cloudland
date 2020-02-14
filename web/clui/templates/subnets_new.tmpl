@@ -35,6 +35,22 @@
                         <label for="dns">{{.i18n.Tr "Name Server"}}</label>
                         <input id="dns"  name="dns">
                     </div>
+                    <div class="inline field">
+                        <label for="domain">{{.i18n.Tr "Base Domain"}}</label>
+                        <input id="domain"  name="domain">
+                    </div>
+                    <div class="inline field">
+                        <label for="dhcp">{{.i18n.Tr "Dhcp"}}</label>
+						<div class="ui selection dropdown">
+						  <input id="dhcp" name="dhcp" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">{{.i18n.Tr "yes"}}</div>
+						  <div class="menu">
+							<div class="item" data-value="yes" data-text="yes">{{.i18n.Tr "yes"}}</div>
+							<div class="item" data-value="no" data-text="no">{{.i18n.Tr "no"}}</div>
+						  </div>
+						</div>
+                    </div>
 			        {{if .IsAdmin }}
                     <div class="inline field">
                         <label for="vlan">{{.i18n.Tr "Vlan"}} ({{.i18n.Tr "admin only"}})</label>

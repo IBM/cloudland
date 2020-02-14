@@ -36,7 +36,7 @@ type FloatingIps struct {
 type FloatingIpAdmin struct{}
 type FloatingIpView struct{}
 
-func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, types []string) (floatingips []*model.FloatingIp, err error) {
+func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, types []string, publicIp, privateIp string) (floatingips []*model.FloatingIp, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	instance := &model.Instance{Model: model.Model{ID: instID}}
@@ -89,8 +89,12 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, typ
 			log.Println("DB failed to create floating ip", err)
 			return
 		}
+		address := publicIp
+		if ftype == "private" {
+			address = privateIp
+		}
 		var fipIface *model.Interface
-		fipIface, err = AllocateFloatingIp(ctx, floatingip.ID, memberShip.OrgID, gateway, ftype)
+		fipIface, err = AllocateFloatingIp(ctx, floatingip.ID, memberShip.OrgID, gateway, ftype, address)
 		if err != nil {
 			log.Println("DB failed to allocate floating ip", err)
 			return
@@ -312,8 +316,10 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 	if ftype == "" {
 		ftype = "public,private"
 	}
+	publicIp := c.QueryTrim("publicip")
+	privateIp := c.QueryTrim("privateip")
 	types := strings.Split(ftype, ",")
-	floatingips, err := floatingipAdmin.Create(c.Req.Context(), int64(instID), 0, types)
+	floatingips, err := floatingipAdmin.Create(c.Req.Context(), int64(instID), 0, types, publicIp, privateIp)
 	if err != nil {
 		log.Println("Failed to create floating ip", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
@@ -349,7 +355,7 @@ func (v *FloatingIpView) Assign(c *macaron.Context, store session.Store) {
 		return
 	}
 	types := []string{"public", "private"}
-	floatingips, err := floatingipAdmin.Create(c.Req.Context(), int64(instID), 0, types)
+	floatingips, err := floatingipAdmin.Create(c.Req.Context(), int64(instID), 0, types, "", "")
 	if err != nil {
 		log.Println("Failed to create floating ip", err)
 		code := http.StatusInternalServerError
@@ -367,7 +373,7 @@ func (v *FloatingIpView) Assign(c *macaron.Context, store session.Store) {
 	c.JSON(200, fipsData)
 }
 
-func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, gateway *model.Gateway, ftype string) (fipIface *model.Interface, err error) {
+func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, gateway *model.Gateway, ftype, address string) (fipIface *model.Interface, err error) {
 	var db *gorm.DB
 	ctx, db = getCtxDB(ctx)
 	var subnet *model.Subnet
@@ -382,13 +388,13 @@ func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, gateway 
 		return
 	}
 	name := ftype + "fip"
-	fipIface, err = CreateInterface(ctx, subnet.ID, floatingipID, owner, "", "", name, "floating", nil)
-	if err != nil {
+	fipIface, err = CreateInterface(ctx, subnet.ID, floatingipID, owner, -1, address, "", name, "floating", nil)
+	if err != nil && address != "" {
 		subnets := []*model.Subnet{}
 		err = db.Where("vlan = ? and id <> ?", subnet.Vlan, subnet.ID).Find(&subnets).Error
 		if err == nil && len(subnets) > 0 {
 			for _, s := range subnets {
-				fipIface, err = CreateInterface(ctx, s.ID, floatingipID, owner, "", "", name, "floating", nil)
+				fipIface, err = CreateInterface(ctx, s.ID, floatingipID, owner, -1, "", "", name, "floating", nil)
 				if err == nil {
 					break
 				}

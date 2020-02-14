@@ -10,6 +10,7 @@ router=router-$1
 ext_type=$2
 ext_ip=${3%/*}
 int_ip=${4%/*}
+int_net=$4
 
 [ -z "$router" -o  -z "$ext_ip" -o -z "$int_ip" ] && exit 1
 ip netns list | grep -q $router
@@ -23,23 +24,14 @@ dest_nets=$(grep 'add -net' $notify_sh | awk '{print $8}')
 
 if [ "$ext_type" = "public" ]; then
     ext_dev=te-$ID
-    ip netns exec $router iptables -t nat -I PREROUTING -d $ext_ip -j DNAT --to-destination $int_ip
-    for net in $dest_nets; do
-        ipcalc -c $net
-        if [ $? -eq 0 ]; then
-            ip netns exec $router iptables -t nat -I POSTROUTING -s $int_ip ! -d $net -j SNAT --to-source $ext_ip
-        fi
-    done
+    ip netns exec $router iptables -t nat -I POSTROUTING -s $int_ip -m set ! --match-set nonat dst -j SNAT --to-source $ext_ip
 elif [ "$ext_type" = "private" ]; then
     ext_dev=ti-$ID
-    ip netns exec $router iptables -t nat -I PREROUTING -d $ext_ip -j DNAT --to-destination $int_ip
-    for net in $dest_nets; do
-        ipcalc -c $net
-        if [ $? -eq 0 ]; then
-            ip netns exec $router iptables -t nat -I POSTROUTING -s $int_ip -d $net -j SNAT --to-source $ext_ip
-        fi
-    done
+else
+    echo "Rong routing type" && exit 1
 fi
+ip netns exec $router iptables -t nat -I PREROUTING -d $ext_ip -j DNAT --to-destination $int_ip
+ip netns exec $router iptables -t mangle -A PREROUTING -s $int_net -d $ext_ip -j MARK --set-xmark 0x400
 ip netns exec $router arping -c 3 -I $ext_dev -s $ext_ip $ext_ip
 
 sed -i "\#$ext_ip/32 dev $ext_dev#d" $vrrp_conf
