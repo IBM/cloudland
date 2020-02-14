@@ -276,6 +276,7 @@ EOF
     rm -rf $ignite_dir
     mkdir $ignite_dir
     cp *.ign $ignite_dir
+    chmod a+r $ignite_dir/*
     cat >>/root/.bashrc <<EOF
 export KUBECONFIG=/opt/$cluster_name/auth/kubeconfig
 export PS1='[\u@\h.$cluster_name \w]\\$ '
