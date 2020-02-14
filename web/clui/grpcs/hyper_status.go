@@ -71,16 +71,14 @@ func HyperStatus(ctx context.Context, job *model.Job, args []string) (status str
 		log.Println("Invalid total disk", err)
 		totalDisk = 0
 	}
-	resource := &model.Resource{
-		Hostid:      int32(hyperID),
-		Cpu:         int64(availCpu),
-		CpuTotal:    int64(totalCpu),
-		Memory:      int64(availMem),
-		MemoryTotal: int64(totalMem),
-		Disk:        int64(availDisk),
-		DiskTotal:   int64(totalDisk),
-	}
-	err = db.Where("hostid = ?", hyperID).Assign(resource).FirstOrCreate(&model.Resource{}).Error
+	err = db.Model(&model.Resource{}).Where("hostid = ?", hyperID).Update(map[string]interface{}{
+		"cpu":          int64(availCpu),
+		"cpu_total":    int64(totalCpu),
+		"memory":       int64(availMem),
+		"memory_total": int64(totalMem),
+		"disk":         int64(availDisk),
+		"disk_total":   int64(totalDisk),
+	}).Error
 	if err != nil {
 		log.Println("Failed to save resource", err)
 		return
