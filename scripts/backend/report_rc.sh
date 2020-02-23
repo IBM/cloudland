@@ -82,15 +82,21 @@ function calc_resource()
         [ -z "$vdisk" ] && continue
         let virtual_disk=$virtual_disk+$vdisk
     done
-    let disk=($total_disk-$used_disk)*$disk_over_ratio-$virtual_disk
+    total_disk=$(echo "($total_disk-$used_disk)*$disk_over_ratio" | bc)
+    total_disk=${total_disk%.*}
+    disk=$(echo "$total_disk-$virtual_disk" | bc)
+    disk=${disk%.*}
     [ $disk -lt 0 ] && disk=0
-    let cpu=$total_cpu*$cpu_over_ratio-$virtual_cpu
+    total_cpu=$(echo "$total_cpu*$cpu_over_ratio" | bc)
+    total_cpu=${total_cpu%.*}
+    cpu=$(echo "$total_cpu-$virtual_cpu" | bc)
+    cpu=${cpu%.*}
     [ $cpu -lt 0 ] && cpu=0
-    let memory=$total_memory*$mem_over_ratio-$virtual_memory
+    total_memory=$(echo "$total_memory*$mem_over_ratio" | bc)
+    total_memory=${total_memory%.*}
+    memory=$(echo "$total_memory-$virtual_memory" | bc)
+    memory=${memory%.*}
     [ $memory -lt 0 ] && memory=0
-    let total_cpu=$total_cpu*$cpu_over_ratio
-    let total_memory=$total_memory*$mem_over_ratio
-    let total_disk=($total_disk-$used_disk)*$disk_over_ratio
     echo "cpu=$cpu/$total_cpu memory=$memory/$total_memory disk=$disk/$total_disk network=$network/$total_network load=$load/$total_load"
     cd /opt/cloudland/run
     old_resource_list=$(cat old_resource_list)
