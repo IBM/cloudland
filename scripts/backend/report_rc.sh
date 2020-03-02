@@ -10,7 +10,9 @@ total_cpu=$(cat /proc/cpuinfo | grep -c processor)
 memory=0
 total_memory=$(free | grep 'Mem:' | awk '{print $2}')
 disk=0
-total_disk=$(df -B 1 $image_dir | tail -1 | awk '{print $4}')
+disk_info=$(df -B 1 $image_dir | tail -1)
+total_disk=$(echo $disk_info | awk '{print $4}')
+mount_point=$(echo $disk_info | awk '{print $6}')
 network=0
 total_network=0
 load=$(w | head -1 | cut -d',' -f5 | cut -d'.' -f1 | xargs)
@@ -76,13 +78,14 @@ function calc_resource()
         let virtual_cpu=$virtual_cpu+$vcpu
         let virtual_memory=$virtual_memory+$vmem
     done
-    used_disk=$(du $image_dir | awk '{print $1}')
+    used_disk=$(du -s $image_dir | awk '{print $1}')
     for disk in $(ls $image_dir/* 2>/dev/null); do
         vdisk=$(qemu-img info $disk | grep 'virtual size:' | cut -d' ' -f4 | tr -d '(')
         [ -z "$vdisk" ] && continue
         let virtual_disk=$virtual_disk+$vdisk
     done
-    total_disk=$(echo "($total_disk-$used_disk)*$disk_over_ratio" | bc)
+    total_used_disk=$(du -s $mount_point | awk '{print $1}')
+    total_disk=$(echo "($total_disk-$total_used_disk+$used_disk)*$disk_over_ratio" | bc)
     total_disk=${total_disk%.*}
     disk=$(echo "$total_disk-$virtual_disk" | bc)
     disk=${disk%.*}
