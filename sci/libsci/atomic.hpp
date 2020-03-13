@@ -99,6 +99,21 @@ int fetch_and_add(atomic_p ptr, int val)
 
 #endif /* INTEL_ARCH */
 
+#ifdef S390_ARCH
+
+#include <atomic_ops.h>
+typedef int *atomic_p;
+
+static __inline__
+int fetch_and_add(atomic_p ptr, int val) {
+    int old_val;
+    old_val = *ptr;
+    AO_fetch_and_add((volatile size_t *)ptr, (size_t)val);
+    return old_val;
+}
+
+#endif /* S390_ARCH */
+
 #elif defined(__APPLE__)
 #include <libkern/OSAtomic.h>
 typedef int *atomic_p;

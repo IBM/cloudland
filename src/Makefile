@@ -2,7 +2,7 @@ HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
 SYSTEM ?= $(HOST_SYSTEM)
 CPP = g++
 CPPFLAGS = -g -Wall -Iremotexec -Icommon -Ifilter -I/opt/sci/include -std=c++11
-LDFLAGS = -Lcommon -lcmn -Lremotexec -lrexec -L/opt/sci/lib64 -lsci -pthread
+LDFLAGS = -Lcommon -lcmn -Lremotexec -lrexec -L/opt/sci/lib64 -L/opt/sci/lib -lsci -pthread
 
 ifeq ($(SYSTEM),Darwin)
 LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++ grpc`\
@@ -14,7 +14,7 @@ LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++ grpc`\
            -ldl
 endif
 
-LD_BACK_FLAGS=-Lcommon -lcmn -L/opt/sci/lib64 -lsci -pthread
+LD_BACK_FLAGS=-Lcommon -lcmn -L/opt/sci/lib64 -L/opt/sci/lib -lsci -pthread
 ARFLAGS = -rv
 
 all: libcmn.a librexec.a scheduler.so cloudland cloudlet grpcmsg grpcfile

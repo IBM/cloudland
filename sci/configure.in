@@ -16,7 +16,7 @@ AC_PREFIX_DEFAULT("/opt/sci")
 
 UNAME_SYSTEM=`(uname -s) 2>/dev/null`  || UNAME_SYSTEM=unknown
 UNAME_MACHINE=`(uname -m) 2>/dev/null` || UNAME_MACHINE=unknown
-UNAME_BIT=32
+UNAME_BIT=64
 AC_DEFINE(_SCI_DEBUG, 1, "for debugging")
 case "${UNAME_SYSTEM}" in
     Linux)
@@ -39,6 +39,10 @@ case "${UNAME_MACHINE}" in
     ;;
     *ppc*)
     AC_DEFINE(POWER_ARCH, 1, "define if ppc")
+    ;;
+    *s390*)
+    AC_DEFINE(S390_ARCH, 1, "define if s390")
+    UNAME_BIT=64
     ;;
 esac
 case "${UNAME_MACHINE}" in

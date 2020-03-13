@@ -1,7 +1,7 @@
 CPP = g++
 AR = ar
 CPPFLAGS = -g -Wall -I../common -I/opt/sci/include -shared -fPIC
-LDFLAGS = -L../common -lcmn -L/opt/sci/lib64 -lsci 
+LDFLAGS = -L../common -lcmn -L/opt/sci/lib64 -L/opt/sci/lib -lsci 
 
 all: scheduler.so
 

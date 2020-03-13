@@ -14448,7 +14448,7 @@ fi
 
 UNAME_SYSTEM=`(uname -s) 2>/dev/null`  || UNAME_SYSTEM=unknown
 UNAME_MACHINE=`(uname -m) 2>/dev/null` || UNAME_MACHINE=unknown
-UNAME_BIT=32
+UNAME_BIT=64
 
 $as_echo "@%:@define _SCI_DEBUG 1" >>confdefs.h
 
@@ -14485,6 +14485,12 @@ $as_echo "@%:@define INTEL_ARCH 1" >>confdefs.h
     
 $as_echo "@%:@define POWER_ARCH 1" >>confdefs.h
 
+    ;;
+    *s390*)
+    
+$as_echo "@%:@define S390_ARCH 1" >>confdefs.h
+
+    UNAME_BIT=64
     ;;
 esac
 case "${UNAME_MACHINE}" in

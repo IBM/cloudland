@@ -79,9 +79,6 @@
 /* "define if enable openssl support" */
 #undef PSEC_OPEN_SSL
 
-/* "define if s390" */
-#undef S390_ARCH
-
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
