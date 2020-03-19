@@ -296,6 +296,17 @@ func (v *UserView) LoginPost(c *macaron.Context, store session.Store) {
 	store.Set("defsg", org.DefaultSG)
 	store.Set("members", members)
 	redirectTo := "/dashboard"
+	if c.Req.Header.Get("X-Json-Format") == "yes" {
+		cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
+		c.JSON(200, map[string]interface{}{
+			"user":   username,
+			"uid":    uid,
+			"oid":    oid,
+			"token":  token,
+			"cookie": cookie,
+		})
+		return
+	}
 	c.Redirect(redirectTo)
 }
 
