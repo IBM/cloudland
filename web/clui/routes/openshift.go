@@ -198,6 +198,13 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 		log.Println("Build instance metadata failed", err)
 		return
 	}
+	count := 0
+	err = db.Where("cluster_id = ? and hostname like ?", id, "%worker%").Count(&count).Error
+	if err != nil {
+		log.Println("Failed to query cluster instances", err)
+		return
+	}
+	openshift.WorkerNum = int32(count)
 	control := fmt.Sprintf("inter= cpu=%d memory=%d disk=%d network=%d", flavor.Cpu, flavor.Memory*1024, flavor.Disk*1024*1024, 0)
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/oc_vm.sh '%d' '%d' '%d' '%d' '%s'<<EOF\n%s\nEOF", instance.ID, flavor.Cpu, flavor.Memory, flavor.Disk, hostname, metadata)
 	err = hyperExecute(ctx, control, command)

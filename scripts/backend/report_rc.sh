@@ -11,7 +11,7 @@ memory=0
 total_memory=$(free | grep 'Mem:' | awk '{print $2}')
 disk=0
 disk_info=$(df -B 1 $image_dir | tail -1)
-total_disk=$(echo $disk_info | awk '{print $4}')
+total_disk=$(echo $disk_info | awk '{print $2}')
 mount_point=$(echo $disk_info | awk '{print $6}')
 network=0
 total_network=0
@@ -100,13 +100,19 @@ function calc_resource()
     memory=$(echo "$total_memory-$virtual_memory" | bc)
     memory=${memory%.*}
     [ $memory -lt 0 ] && memory=0
-    echo "cpu=$cpu/$total_cpu memory=$memory/$total_memory disk=$disk/$total_disk network=$network/$total_network load=$load/$total_load"
+    state=1
+    if [ -f "$run_dir/disabled" ]; then
+        echo "cpu=0/$total_cpu memory=0/$total_memory disk=0/$total_disk network=$network/$total_network load=$load/$total_load"
+        state=0
+    else
+        echo "cpu=$cpu/$total_cpu memory=$memory/$total_memory disk=$disk/$total_disk network=$network/$total_network load=$load/$total_load"
+    fi
     cd /opt/cloudland/run
     old_resource_list=$(cat old_resource_list)
-    resource_list="'$cpu' '$total_cpu' '$memory' '$total_memory' '$disk' '$total_disk'"
+    resource_list="'$cpu' '$total_cpu' '$memory' '$total_memory' '$disk' '$total_disk' '$state'"
     [ "$resource_list" = "$old_resource_list" ] && return
-    echo "|:-COMMAND-:| hyper_status.sh '$SCI_CLIENT_ID' '$HOSTNAME' '$cpu' '$total_cpu' '$memory' '$total_memory' '$disk' '$total_disk'"
-    echo "'$cpu' '$total_cpu' '$memory' '$total_memory' '$disk' '$total_disk'" >/opt/cloudland/run/old_resource_list
+    echo "|:-COMMAND-:| hyper_status.sh '$SCI_CLIENT_ID' '$HOSTNAME' '$cpu' '$total_cpu' '$memory' '$total_memory' '$disk' '$total_disk' '$state'"
+    echo "'$cpu' '$total_cpu' '$memory' '$total_memory' '$disk' '$total_disk' '$state'" >/opt/cloudland/run/old_resource_list
 }
 
 calc_resource

@@ -21,10 +21,10 @@ func init() {
 }
 
 func HyperStatus(ctx context.Context, job *model.Job, args []string) (status string, err error) {
-	//|:-COMMAND-:| hyper_status.sh '127' 'hyper-0' '0' '64' '26684376' '263662552' '1561731870272' '3086445260864'
+	//|:-COMMAND-:| hyper_status.sh '127' 'hyper-0' '0' '64' '26684376' '263662552' '1561731870272' '3086445260864' '1'
 	db := dbs.DB()
 	argn := len(args)
-	if argn < 9 {
+	if argn < 10 {
 		err = fmt.Errorf("Wrong params")
 		log.Println("Invalid args", err)
 		return
@@ -71,6 +71,11 @@ func HyperStatus(ctx context.Context, job *model.Job, args []string) (status str
 		log.Println("Invalid total disk", err)
 		totalDisk = 0
 	}
+	hyperStatus, err := strconv.Atoi(args[9])
+	if err != nil {
+		log.Println("Invalid hypervisor status", err)
+		hyperStatus = 1
+	}
 	err = db.Model(&model.Resource{}).Where("hostid = ?", hyperID).Update(map[string]interface{}{
 		"cpu":          int64(availCpu),
 		"cpu_total":    int64(totalCpu),
@@ -78,6 +83,7 @@ func HyperStatus(ctx context.Context, job *model.Job, args []string) (status str
 		"memory_total": int64(totalMem),
 		"disk":         int64(availDisk),
 		"disk_total":   int64(totalDisk),
+		"status":       int64(hyperStatus),
 	}).Error
 	if err != nil {
 		log.Println("Failed to save resource", err)

@@ -604,7 +604,7 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 			instance.Cluster = &model.Openshift{Model: model.Model{ID: instance.ClusterID}}
 			if err = db.Take(instance.Cluster).Error; err != nil {
 				log.Println("Failed to query openshift cluster info", err)
-				return
+				instance.ClusterID = 0
 			}
 		}
 		permit := memberShip.CheckPermission(model.Admin)

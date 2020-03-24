@@ -23,6 +23,7 @@
     owner: cland
   with_items:
     - /opt/cloudland
+    - /opt/cloudland/run
     - /opt/cloudland/cache
     - /opt/cloudland/cache/image
     - /opt/cloudland/cache/instance
@@ -37,7 +38,7 @@
   synchronize:
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
-    rsync_opts: "--exclude=cache,--exclude=log,--exclude=db"
+    rsync_opts: "--exclude=cache,--exclude=log,--exclude=db,--exclude=run"
   with_items:
     - {src: '/opt/cloudland', dest: '/opt', owner: 'cland'}
   tags: [sync]
