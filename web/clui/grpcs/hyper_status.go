@@ -76,6 +76,11 @@ func HyperStatus(ctx context.Context, job *model.Job, args []string) (status str
 		log.Println("Invalid hypervisor status", err)
 		hyperStatus = 1
 	}
+	err = db.Where("hostid = ?", hyperID).FirstOrCreate(&model.Resource{Hostid: int32(hyperID)}).Error
+	if err != nil {
+		log.Println("Failed to create resource", err)
+		return
+	}
 	err = db.Model(&model.Resource{}).Where("hostid = ?", hyperID).Update(map[string]interface{}{
 		"cpu":          int64(availCpu),
 		"cpu_total":    int64(totalCpu),
