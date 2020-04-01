@@ -213,7 +213,6 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 		return
 	}
 	if strings.Contains(hostname, "worker") {
-		openshift.WorkerNum++
 		err = db.Save(openshift).Error
 		if err != nil {
 			log.Println("Failed to update openshift cluster")
