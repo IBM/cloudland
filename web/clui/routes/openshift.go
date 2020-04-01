@@ -199,7 +199,7 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 		return
 	}
 	count := 0
-	err = db.Where("cluster_id = ? and hostname like ?", id, "%worker%").Count(&count).Error
+	err = db.Model(&model.Instance{}).Where("cluster_id = ? and hostname like ?", id, "%worker%").Count(&count).Error
 	if err != nil {
 		log.Println("Failed to query cluster instances", err)
 		return
