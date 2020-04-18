@@ -101,15 +101,15 @@ int fetch_and_add(atomic_p ptr, int val)
 
 #ifdef S390_ARCH
 
-#include <atomic_ops.h>
-typedef int *atomic_p;
+#include <pthread.h>
 
 static __inline__
-int fetch_and_add(atomic_p ptr, int val) {
-    int old_val;
-    old_val = *ptr;
-    AO_fetch_and_add((volatile size_t *)ptr, (size_t)val);
-    return old_val;
+int fetch_and_add(atomic_p ptr, int val)
+{
+    int prev;
+    prev = *ptr;
+    __atomic_fetch_add(ptr, val, __ATOMIC_SEQ_CST);
+    return prev;
 }
 
 #endif /* S390_ARCH */
