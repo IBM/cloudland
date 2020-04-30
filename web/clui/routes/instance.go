@@ -184,6 +184,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 	}
 	if hyper != int(instance.Hyper) {
 		if instance.Status != "shut_off" {
+			log.Println("Instance must be shutdown before migration")
 			err = fmt.Errorf("Instance must be shutdown before migration")
 			return
 		}
@@ -922,9 +923,33 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 	}
 	flavor := c.QueryInt64("flavor")
 	hostname := c.QueryTrim("hostname")
-	hyper := c.QueryInt("hyper")
+	hyperID := c.QueryInt("hyper")
 	action := c.QueryTrim("action")
 	ifaces := c.QueryStrings("ifaces")
+	instance := &model.Instance{Model: model.Model{ID: id}}
+	err = DB().Take(instance).Error
+	if err != nil {
+		log.Println("Invalid instance", err)
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	if hyperID != int(instance.Hyper) {
+		permit, err = memberShip.CheckAdmin(model.Admin, "instances", id)
+		if !permit {
+			log.Println("Not authorized to migrate VM")
+			err = fmt.Errorf("Not authorized to migrate VM")
+			return
+		}
+	}
+	hyper := &model.Hyper{Hostid: int32(hyperID)}
+	err = DB().Take(hyper).Error
+	if err != nil {
+		log.Println("Invalid hypervisor", err)
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
 	var subnetIDs []int64
 	for _, s := range ifaces {
 		sID, err := strconv.Atoi(s)
@@ -943,7 +968,7 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 	}
 	var sgIDs []int64
 	sgIDs = append(sgIDs, store.Get("defsg").(int64))
-	instance, err := instanceAdmin.Update(c.Req.Context(), id, flavor, hostname, action, subnetIDs, sgIDs, hyper)
+	instance, err = instanceAdmin.Update(c.Req.Context(), id, flavor, hostname, action, subnetIDs, sgIDs, hyperID)
 	if err != nil {
 		log.Println("Create instance failed, %v", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
