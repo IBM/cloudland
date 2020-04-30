@@ -20,6 +20,10 @@
                         <input id="updatedat" name="updatedat" value="{{ .Instance.UpdatedAt }}" disabled>
                     </div>
                     <div class="inline field">
+                        <label for="hyper">{{.i18n.Tr "Hyper"}}</label>
+                        <input id="hyper" name="hyper" value="{{ .Instance.Hyper }}">
+                    </div>
+                    <div class="inline field">
                         <label for="action">{{.i18n.Tr "Action"}}</label>
                         <select name="action" id="action" class="ui selection dropdown">
                             <option value="">{{ .i18n.Tr .Instance.Status }}</option>

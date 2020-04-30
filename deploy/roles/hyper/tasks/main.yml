@@ -25,6 +25,7 @@
     - /opt/cloudland
     - /opt/cloudland/run
     - /opt/cloudland/cache
+    - /opt/cloudland/cache/backup
     - /opt/cloudland/cache/image
     - /opt/cloudland/cache/instance
     - /opt/cloudland/cache/meta

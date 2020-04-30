@@ -8,6 +8,7 @@ package grpcs
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
@@ -20,6 +21,17 @@ import (
 
 func init() {
 	Add("inst_status", InstanceStatus)
+}
+
+type SecurityData struct {
+	Secgroup    int64
+	RemoteIp    string `json:"remote_ip"`
+	RemoteGroup string `json:"remote_group"`
+	Direction   string `json:"direction"`
+	IpVersion   string `json:"ip_version"`
+	Protocol    string `json:"protocol"`
+	PortMin     int32  `json:"port_min"`
+	PortMax     int32  `json:"port_max"`
 }
 
 func InstanceStatus(ctx context.Context, job *model.Job, args []string) (status string, err error) {
@@ -60,14 +72,73 @@ func InstanceStatus(ctx context.Context, job *model.Job, args []string) (status 
 			continue
 		}
 		if instance.Status != status || instance.Hyper != int32(hyperID) {
-			instance.Status = status
 			instance.Hyper = int32(hyperID)
-			instance.DeletedAt = nil
-			err = db.Unscoped().Save(instance).Error
+			err = db.Unscoped().Model(instance).Update(map[string]interface{}{
+				"hyper":      int32(hyperID),
+				"status":     status,
+				"deleted_at": nil,
+			}).Error
 			if err != nil {
 				log.Println("Failed to update status", err)
+			}
+			err = db.Unscoped().Model(&model.Interface{}).Where("instance = ?", instance.ID).Update(map[string]interface{}{
+				"hyper":      int32(hyperID),
+				"deleted_at": nil,
+			}).Error
+			if err != nil {
+				log.Println("Failed to update interface", err)
 				continue
 			}
+			err = ApplySecgroups(ctx, instance)
+			if err != nil {
+				log.Println("Failed to apply security groups", err)
+				continue
+			}
+		}
+	}
+	return
+}
+
+func ApplySecgroups(ctx context.Context, instance *model.Instance) (err error) {
+	db := dbs.DB()
+	var ifaces []*model.Interface
+	if err = db.Set("gorm:auto_preload", true).Where("instance = ?", instance.ID).Find(&ifaces).Error; err != nil {
+		log.Println("Interfaces query failed", err)
+		return
+	}
+	for _, iface := range ifaces {
+		var secRules []*model.SecurityRule
+		secRules, err = model.GetSecurityRules(iface.Secgroups)
+		if err != nil {
+			log.Println("Failed to get security rules", err)
+			continue
+		}
+		securityData := []*SecurityData{}
+		for _, rule := range secRules {
+			sgr := &SecurityData{
+				Secgroup:    rule.Secgroup,
+				RemoteIp:    rule.RemoteIp,
+				RemoteGroup: rule.RemoteGroup,
+				Direction:   rule.Direction,
+				IpVersion:   rule.IpVersion,
+				Protocol:    rule.Protocol,
+				PortMin:     rule.PortMin,
+				PortMax:     rule.PortMax,
+			}
+			securityData = append(securityData, sgr)
+		}
+		var jsonData []byte
+		jsonData, err = json.Marshal(securityData)
+		if err != nil {
+			log.Println("Failed to marshal security json data, %v", err)
+			continue
+		}
+		control := fmt.Sprintf("inter=%d", instance.Hyper)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/attach_nic.sh '%d' '%d' '%s' '%s' <<EOF\n%s\nEOF", instance.ID, iface.Address.Subnet.Vlan, iface.Address.Address, iface.MacAddr, jsonData)
+		err = HyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Launch vm command execution failed", err)
+			continue
 		}
 	}
 	return

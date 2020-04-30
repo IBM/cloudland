@@ -4,6 +4,7 @@ source "$localrc"
 run_dir=/opt/cloudland/run
 cache_dir=/opt/cloudland/cache
 cache_tmp_dir=$cache_dir/tmp
+backup_dir=$cache_dir/backup
 volume_dir=/opt/cloudland/cache/volume
 image_dir=$cache_dir/instance
 image_cache=$cache_dir/image
@@ -82,10 +83,37 @@ function end_span()
 function sync_target()
 {
     target=$1
+    node=$2
     cd $deploy_dir
-    ansible hyper -u cland -b -a "chown -R cland.cland $target"
-    ansible hyper -u cland -m synchronize -a "src=$target dest=$target"
+    group=hyper
+    if [ -n "$node" ]; then
+        group=$(cat hosts/hosts | grep client_id=$node | awk '{print $1}')
+    fi
+    ansible $group -u cland -b -a "chown -R cland.cland $target"
+    ansible $group -u cland -m synchronize -a "src=$target dest=$target"
+    cd -
 }
+
+function copy_target()
+{
+    target=$1
+    node=$2
+    cd $deploy_dir
+    [ -n "$node" ] && hyper_node=$(cat hosts/hosts | grep client_id=$node | awk '{print $1}')
+    scp -i $cland_private_key -o StrictHostKeyChecking=no -r ${target} cland@${hyper_node}:${target}
+    cd -
+}
+
+function action_target()
+{
+    node=$1
+    command=$2
+    cd $deploy_dir
+    [ -n "$node" ] && hyper_node=$(cat hosts/hosts | grep client_id=$node | awk '{print $1}')
+    ssh -i $cland_private_key -o StrictHostKeyChecking=no cland@$hyper_node "$command"
+    cd -
+}
+
 if [ "$span" != "report_rc" ]; then
     sidecar span start $span
     trap end_span EXIT

@@ -379,7 +379,7 @@ function launch_cluster()
     sleep 3
     sleep 60
     ../openshift-install wait-for bootstrap-complete --log-level debug
-    curl -k -XDELETE $endpoint/instances/$bstrap_ID --cookie $cookie
+    #curl -k -XDELETE $endpoint/instances/$bstrap_ID --cookie $cookie
     nodes=3
     [ "$haflag" = "yes" ] && nodes=5
     export KUBECONFIG=auth/kubeconfig

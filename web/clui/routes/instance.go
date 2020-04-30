@@ -175,12 +175,25 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 	return
 }
 
-func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname, action string, subnetIDs, sgIDs []int64) (instance *model.Instance, err error) {
+func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname, action string, subnetIDs, sgIDs []int64, hyper int) (instance *model.Instance, err error) {
 	db := DB()
 	instance = &model.Instance{Model: model.Model{ID: id}}
 	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
 		log.Println("Failed to query instance ", err)
 		return
+	}
+	if hyper != int(instance.Hyper) {
+		if instance.Status != "shut_off" {
+			err = fmt.Errorf("Instance must be shutdown before migration")
+			return
+		}
+		control := fmt.Sprintf("inter=%d", instance.Hyper)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/migrate_vm.sh '%d' '%d'", instance.ID, hyper)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Migrate vm command execution failed", err)
+			return
+		}
 	}
 	if flavorID != instance.FlavorID {
 		if instance.Status == "running" {
@@ -909,6 +922,7 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 	}
 	flavor := c.QueryInt64("flavor")
 	hostname := c.QueryTrim("hostname")
+	hyper := c.QueryInt("hyper")
 	action := c.QueryTrim("action")
 	ifaces := c.QueryStrings("ifaces")
 	var subnetIDs []int64
@@ -929,7 +943,7 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 	}
 	var sgIDs []int64
 	sgIDs = append(sgIDs, store.Get("defsg").(int64))
-	instance, err := instanceAdmin.Update(c.Req.Context(), id, flavor, hostname, action, subnetIDs, sgIDs)
+	instance, err := instanceAdmin.Update(c.Req.Context(), id, flavor, hostname, action, subnetIDs, sgIDs, hyper)
 	if err != nil {
 		log.Println("Create instance failed, %v", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
