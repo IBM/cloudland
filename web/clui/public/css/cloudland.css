@@ -12,7 +12,14 @@ body:not(.full-width) {
   min-width: 1020px;
 }
 .ui.container:not(.fluid) {
-  width: 980px !important;
+  width: 99% !important;
+}
+.ui.container .ui.grid>[class*="four wide"].column {
+  width: 15% !important;
+  margin-left: 2rem;
+}
+.ui.container .ui.grid>[class*="twelve wide"].column {
+  width: 80% !important;
 }
 h1,
 h2,
@@ -2893,7 +2900,7 @@ footer .ui.language .menu {
   margin-top: -3px;
 }
 .user:not(.icon) {
-  padding-top: 15px;
+  padding-top: 25px;
   padding-bottom: 80px;
 }
 .user.settings .list .item.ui.grid {
