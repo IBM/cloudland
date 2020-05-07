@@ -71,15 +71,23 @@ func InstanceStatus(ctx context.Context, job *model.Job, args []string) (status 
 			}
 			continue
 		}
-		if instance.Status != status || instance.Hyper != int32(hyperID) {
-			instance.Hyper = int32(hyperID)
+		if instance.Status != status {
 			err = db.Unscoped().Model(instance).Update(map[string]interface{}{
-				"hyper":      int32(hyperID),
 				"status":     status,
 				"deleted_at": nil,
 			}).Error
 			if err != nil {
 				log.Println("Failed to update status", err)
+			}
+		}
+		if instance.Hyper != int32(hyperID) {
+			instance.Hyper = int32(hyperID)
+			err = db.Unscoped().Model(instance).Update(map[string]interface{}{
+				"hyper":      int32(hyperID),
+				"deleted_at": nil,
+			}).Error
+			if err != nil {
+				log.Println("Failed to hypervisor", err)
 			}
 			err = db.Unscoped().Model(&model.Interface{}).Where("instance = ?", instance.ID).Update(map[string]interface{}{
 				"hyper":      int32(hyperID),
