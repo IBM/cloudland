@@ -11,6 +11,7 @@ endpoint=$4
 cookie=$5
 haflag=$6
 nworkers=$7
+version=$8
 seq_max=100
 
 function setup_dns()
@@ -224,7 +225,9 @@ function download_pkgs()
 {
     yum install -y wget nc jq
     cd /opt
-    wget --no-check-certificate $endpoint/misc/openshift/ocd.conf
+    conf_url=$endpoint/misc/openshift/ocd.conf
+    [ -n "$version" ] && conf_url=${conf_url}.${version}
+    wget --no-check-certificate $conf_url -O ocd.conf
     source ocd.conf
     wget --no-check-certificate -O /usr/share/nginx/html/rhcos.raw.gz $coreos_image_url
     wget --no-check-certificate -O openshift-install-linux.tgz $openshift_installer
@@ -379,7 +382,7 @@ function launch_cluster()
     sleep 3
     sleep 60
     ../openshift-install wait-for bootstrap-complete --log-level debug
-    #curl -k -XDELETE $endpoint/instances/$bstrap_ID --cookie $cookie
+    curl -k -XDELETE $endpoint/instances/$bstrap_ID --cookie $cookie
     nodes=3
     [ "$haflag" = "yes" ] && nodes=5
     export KUBECONFIG=auth/kubeconfig

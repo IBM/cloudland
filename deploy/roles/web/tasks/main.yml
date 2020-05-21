@@ -17,9 +17,17 @@
   tags: [web_conf]
 
 - name: ocd shell config
-  template:
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: preserve
     src: ocd.conf.j2
     dest: /opt/cloudland/web/clui/public/misc/openshift/ocd.conf
+  with_items:
+    - {src: 'ocd.conf', dest: '/opt/cloudland/web/clui/public/misc/openshift/ocd.conf', owner: 'cland'}
+    - {src: 'ocd.conf.4.2', dest: '/opt/cloudland/web/clui/public/misc/openshift/ocd.conf.4.2', owner: 'cland'}
+    - {src: 'ocd.conf.4.3', dest: '/opt/cloudland/web/clui/public/misc/openshift/ocd.conf.4.3', owner: 'cland'}
+    - {src: 'ocd.conf.4.4', dest: '/opt/cloudland/web/clui/public/misc/openshift/ocd.conf.4.4', owner: 'cland'}
   tags: [ocd_conf]
 
 - name: copy service files
