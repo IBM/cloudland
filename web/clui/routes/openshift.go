@@ -318,6 +318,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 		BaseDomain:  domain,
 		Status:      "creating",
 		Haflag:      haflag,
+		Version:     version,
 		Flavor:      flavor,
 		Key:         key,
 	}

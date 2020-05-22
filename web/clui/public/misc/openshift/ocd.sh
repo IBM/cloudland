@@ -252,12 +252,10 @@ baseDomain: $base_domain
 compute:
 - hyperthreading: Enabled
   name: worker
-  platform: {}
   replicas: 0
 controlPlane:
   hyperthreading: Enabled
   name: master
-  platform: {}
   replicas: $mreplica
 metadata:
   name: $cluster_name
@@ -270,6 +268,7 @@ networking:
   - 172.30.0.0/16
 platform:
   none: {}
+fips: false
 pullSecret: '$secret'
 sshKey: '$ssh_key'
 EOF
