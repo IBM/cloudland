@@ -8,6 +8,7 @@ SPDX-License-Identifier: Apache-2.0
 package routes
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -81,6 +82,42 @@ func checkIfExistVni(vni int64) (result bool, err error) {
 	}
 }
 
+func generateIPAddresses(subnet *model.Subnet, start net.IP, end net.IP, preSize int) (err error) {
+	db := DB()
+	ip := start
+	for {
+		ipstr := fmt.Sprintf("%s/%d", ip.String(), preSize)
+		if ipstr == subnet.Gateway {
+			if ip.String() == end.String() {
+				break
+			} else {
+				ip = cidr.Inc(ip)
+				ipstr = fmt.Sprintf("%s/%d", ip.String(), preSize)
+			}
+		}
+		address := &model.Address{
+			Model: model.Model{
+				Creater: subnet.Creater,
+				Owner:   subnet.Owner,
+			},
+			Address:  ipstr,
+			Netmask:  subnet.Netmask,
+			Type:     "ipv4",
+			SubnetID: subnet.ID,
+		}
+		err = db.Create(address).Error
+		if err != nil {
+			log.Println("Database create IP address failed, %v", err)
+			return err
+		}
+		if ip.String() == end.String() {
+			break
+		}
+		ip = cidr.Inc(ip)
+	}
+	return nil
+}
+
 func (a *SubnetAdmin) Update(ctx context.Context, id int64, name, gateway, start, end, routes string) (subnet *model.Subnet, err error) {
 	db := DB()
 	subnet = &model.Subnet{Model: model.Model{ID: id}}
@@ -92,15 +129,35 @@ func (a *SubnetAdmin) Update(ctx context.Context, id int64, name, gateway, start
 	if name != "" {
 		subnet.Name = name
 	}
+	preSize, _ := net.IPMask(net.ParseIP(subnet.Netmask).To4()).Size()
 	if gateway != "" {
-		preSize, _ := net.IPMask(net.ParseIP(subnet.Netmask).To4()).Size()
 		subnet.Gateway = fmt.Sprintf("%s/%d", gateway, preSize)
 	}
-	if start != "" {
-		subnet.Start = start
-	}
-	if end != "" {
-		subnet.End = end
+	if (start != "" && subnet.Start != start) || (end != "" && subnet.End != end) {
+		if start == "" {
+			start = subnet.Start
+		}
+		if end == "" {
+			end = subnet.End
+		}
+		if bytes.Compare(net.ParseIP(start), net.ParseIP(subnet.Start)) > 0 || bytes.Compare(net.ParseIP(end), net.ParseIP(subnet.End)) < 0 {
+			log.Println("Subnet update failed, only expand IP range allowed")
+			return
+		}
+		if bytes.Compare(net.ParseIP(start), net.ParseIP(subnet.Start)) < 0 {
+			err = generateIPAddresses(subnet, net.ParseIP(start), cidr.Dec(net.ParseIP(subnet.Start)), preSize)
+			if err != nil {
+				return
+			}
+			subnet.Start = start
+		}
+		if bytes.Compare(net.ParseIP(end), net.ParseIP(subnet.End)) > 0 {
+			err = generateIPAddresses(subnet, cidr.Inc(net.ParseIP(subnet.End)), net.ParseIP(end), preSize)
+			if err != nil {
+				return
+			}
+			subnet.End = end
+		}
 	}
 	subnet.Routes = routes
 	err = db.Save(subnet).Error
