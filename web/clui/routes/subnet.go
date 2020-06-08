@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"math/big"
@@ -141,8 +142,8 @@ func (a *SubnetAdmin) Update(ctx context.Context, id int64, name, gateway, start
 			end = subnet.End
 		}
 		if bytes.Compare(net.ParseIP(start), net.ParseIP(subnet.Start)) > 0 || bytes.Compare(net.ParseIP(end), net.ParseIP(subnet.End)) < 0 {
-			log.Println("Subnet update failed, only expand IP range allowed")
-			return
+			log.Println("Subnet Update failed: only allow expansion of IP address range")
+			return subnet, errors.New("Subnet Update failed: only allow expansion of IP address range")
 		}
 		if bytes.Compare(net.ParseIP(start), net.ParseIP(subnet.Start)) < 0 {
 			err = generateIPAddresses(subnet, net.ParseIP(start), cidr.Dec(net.ParseIP(subnet.Start)), preSize)
