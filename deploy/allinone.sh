@@ -10,7 +10,7 @@ mkdir $cland_root_dir/{bin,deploy,etc,lib6,log,run,sci,scripts,src,web,cache} $c
 [ ! -s "$net_conf" ] && sudo cp ${net_conf}.example $net_conf
 
 # Install development tools
-sudo yum install -y epel-release
+[ $(uname -m) != s390x ] && sudo yum -y install epel-release
 sudo yum install -y ansible vim git wget net-tools
 sudo yum groupinstall -y "Development Tools"
 
@@ -145,7 +145,8 @@ diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 
 gen_hosts
 cd $cland_root_dir/deploy
-ansible-playbook cloudland.yml -e @$net_conf --tags hosts,epel,selinux,be_pkg,be_conf,be_srv,fe_srv,firewall,imgrepo
+[ $(uname -m) != s390x ] && ansible-playbook cloudland.yml -e @$net_conf --tags epel
+ansible-playbook cloudland.yml -e @$net_conf --tags hosts,selinux,be_pkg,be_conf,be_srv,fe_srv,firewall,imgrepo
 demo_router
 allinone_firewall
 inst_web

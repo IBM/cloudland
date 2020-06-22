@@ -35,7 +35,7 @@ let vm_mem=${vm_mem%[m|M]}*1024
 mkdir -p $xml_dir/$vm_ID
 vm_xml=$xml_dir/$vm_ID/${vm_ID}.xml
 template=$template_dir/openshift.xml
-[ $(uname -m) = s390x ] && template=$template_dir/linuxone.xml
+[ $(uname -m) = s390x ] && template=$template_dir/ocd_linux1.xml
 cp $template $vm_xml
 sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_disk#g; s/ROLE_IGN/${role}.ign/g;" $vm_xml
 state=error

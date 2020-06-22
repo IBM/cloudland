@@ -13,6 +13,10 @@ haflag=$6
 nworkers=$7
 version=$8
 seq_max=100
+cloud_user=rhel
+
+cat /etc/redhat-release | grep -q CentOS
+[ $? -eq 0 ] && cloud_user=centos
 
 function setup_dns()
 {
@@ -157,7 +161,6 @@ EOF
 
 function setup_nginx()
 {
-    yum install -y epel-release
     yum install -y nginx
     cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak
     cat > /etc/nginx/nginx.conf <<EOF
@@ -240,7 +243,7 @@ function download_pkgs()
 function ignite_files()
 {
     secret=$(cat)
-    ssh_key=$(cat /home/centos/.ssh/authorized_keys | tail -1)
+    ssh_key=$(cat /home/$cloud_user/.ssh/authorized_keys | tail -1)
     rm -rf $cluster_name
     mkdir $cluster_name
     cd $cluster_name
@@ -284,7 +287,7 @@ EOF
 export KUBECONFIG=/opt/$cluster_name/auth/kubeconfig
 export PS1='[\u@\h.$cluster_name \w]\\$ '
 EOF
-    cat >>/home/centos/.bashrc <<EOF
+    cat >>/home/$cloud_user/.bashrc <<EOF
 export PS1='[\u@\h.$cluster_name \w]\\$ '
 EOF
 }
@@ -421,7 +424,7 @@ function launch_cluster()
 
 setenforce Permissive
 sed -i 's/^SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
-yum -y install epel-release
+[ $(uname -m) != s390x ] && yum -y install epel-release
 yum -y install jq
 setup_dns
 setup_lb
