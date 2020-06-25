@@ -102,11 +102,13 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			return
 		}
 	}
+	log.Printf("$$$$$$$$$$$$$$$$$$$$$$$$$ Flavor = %d\n", flavorID)
 	flavor := &model.Flavor{Model: model.Model{ID: flavorID}}
 	if err = db.Find(flavor).Error; err != nil {
 		log.Println("Flavor query failed", err)
 		return
 	}
+	log.Printf("$$$$$$$$$$$$$$$$$$$$$$$$$ cpu = %d, memory = %d, disk = %d\n", flavor.Cpu, flavor.Memory, flavor.Disk)
 	primary := &model.Subnet{Model: model.Model{ID: primaryID}}
 	if err = db.Preload("Netlink").Take(primary).Error; err != nil {
 		log.Println("Primary subnet query failed", err)

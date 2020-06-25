@@ -50,10 +50,10 @@ if [ "$role" != "BOOT" ]; then
     fi
     [ -n "$name_server" ] && echo "tag:tag$vlan-$tag_id,option:dns-server,$name_server" >> $dns_opt
     [ -n "$domain_search" ] && echo "tag:tag$vlan-$tag_id,option:domain-search,$domain_search" >> $dns_opt
-    if [ "$vlan" -gt 4095 ]; then
-        let mtu=$(ip -o link show $vxlan_interface | cut -d' ' -f5)-50
-        [ "$mtu" -ge 1400 ] && mtu_args="--dhcp-option-force=26,$mtu"
-    fi
+fi
+if [ "$vlan" -gt 4095 ]; then
+    let mtu=$(ip -o link show $vxlan_interface | cut -d' ' -f5)-50
+    [ "$mtu" -ge 1400 ] && mtu_args="--dhcp-option-force=26,$mtu"
 fi
 
 dmasq_cmd=$(ps -ef | grep dnsmasq | grep "\<interface=ns-$vlan\>")
