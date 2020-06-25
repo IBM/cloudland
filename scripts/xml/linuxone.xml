@@ -1,0 +1,59 @@
+<domain type='kvm'>
+  <name>VM_ID</name>
+  <memory unit='KiB'>VM_MEM</memory>
+  <currentMemory unit='KiB'>VM_MEM</currentMemory>
+  <vcpu placement='static'>VM_CPU</vcpu>
+  <os>
+    <type arch='s390x' machine='s390-ccw-virtio-rhel7.6.0'>hvm</type>
+    <boot dev='hd'/>
+  </os>
+  <clock offset='utc'/>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>restart</on_crash>
+  <devices>
+    <emulator>/usr/libexec/qemu-kvm</emulator>
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2' cache='none'/>
+      <source file='VM_IMG'/>
+      <backingStore/>
+      <target dev='vda' bus='virtio'/>
+      <alias name='virtio-disk0'/>
+      <address type='ccw' cssid='0xfe' ssid='0x0' devno='0x0000'/>
+    </disk>
+    <disk type='file' device='cdrom'>
+      <driver name='qemu' type='raw'/>
+      <source file='VM_META'/>
+      <backingStore/>
+      <target dev='sda' bus='scsi'/>
+      <readonly/>
+      <alias name='scsi0-0-0-0'/>
+      <address type='drive' controller='0' bus='0' target='0' unit='0'/>
+    </disk>
+    <controller type='scsi' index='0' model='virtio-scsi'>
+      <alias name='scsi0'/>
+      <address type='ccw' cssid='0xfe' ssid='0x0' devno='0x0001'/>
+    </controller>
+    <console type='pty' tty='/dev/pts/1'>
+      <source path='/dev/pts/1'/>
+      <target type='sclp' port='0'/>
+      <alias name='console0'/>
+    </console>
+    <graphics type='vnc' port='-1' listen='0.0.0.0' autoport='yes'/>
+    <video>
+      <model type='virtio' heads='1' primary='yes'/>
+      <alias name='video0'/>
+      <address type='ccw' cssid='0xfe' ssid='0x0' devno='0x0004'/>
+    </video>
+    <memballoon model='virtio'>
+      <alias name='balloon0'/>
+      <address type='ccw' cssid='0xfe' ssid='0x0' devno='0x0002'/>
+    </memballoon>
+    <panic model='s390'/>
+  </devices>
+  <seclabel type='dynamic' model='dac' relabel='yes'>
+    <label>+107:+107</label>
+    <imagelabel>+107:+107</imagelabel>
+  </seclabel>
+</domain>
+
