@@ -10,6 +10,7 @@ vm_ID=inst-$1
 vm_cpu=$2
 vm_mem=$3
 disk_size=$4
+hname=$5
 role='worker'
 [ "${5/master/}" != "$5" ] && role='master'
 [ "${5/bootstrap/}" != "$5" ] && role='bootstrap'
@@ -37,10 +38,11 @@ vm_xml=$xml_dir/$vm_ID/${vm_ID}.xml
 template=$template_dir/openshift.xml
 [ $(uname -m) = s390x ] && template=$template_dir/ocd_linux1.xml
 cp $template $vm_xml
-sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_disk#g; s/ROLE_IGN/${role}.ign/g;" $vm_xml
+vlans=$(jq .vlans <<< $metadata)
+core_ip=$(jq -r .[0].ip_address <<< $vlans)
+sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_disk#g; s/CORE_IP/$core_ip/g; s/HOSTNAME/$hname/g; s/ROLE_IGN/${role}.ign/g;" $vm_xml
 state=error
 virsh define $vm_xml
-vlans=$(jq .vlans <<< $metadata)
 nvlan=$(jq length <<< $vlans)
 i=0
 while [ $i -lt $nvlan ]; do
