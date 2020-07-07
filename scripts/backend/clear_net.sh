@@ -3,12 +3,11 @@
 cd `dirname $0`
 source ../cloudrc
 
-[ $# -lt 4 ] && echo "$0 <vlan> <network> <tag_id> <dhcp_ip>" && exit -1
+[ $# -lt 3 ] && echo "$0 <vlan> <network> <tag_id>" && exit -1
 
 vlan=$1
 network=$2
 tag_id=$3
-dhcp_ip=$4
 
 nspace=vlan$vlan
 rm -rf $dmasq_dir/$nspace/tags/$tag_id
@@ -21,12 +20,10 @@ if [ -n "$exist_ranges" ]; then
     dns_opt=$dmasq_dir/$nspace/${nspace}.opts
     dns_sh=$dmasq_dir/$nspace/${nspace}.sh
     pid_file=$dmasq_dir/$nspace/${nspace}.pid
-    dhcp_ip=$dmasq_dir/$nspace/dhcp_ip
     cmd="/usr/sbin/dnsmasq --no-hosts --no-resolv --strict-order --bind-interfaces --interface=ns-$vlan --except-interface=lo --pid-file=$pid_file --dhcp-hostsfile=$dns_host --dhcp-optsfile=$dns_opt --leasefile-ro --dhcp-ignore='tag:!known' $exist_ranges"
     echo "$cmd" > $dns_sh
     chmod +x $dns_sh
     ip netns exec $nspace $dns_sh
-    sed -i "#\<$dhcp_ip\>#d" $dhcp_ip
 else
     ip link del tap-$vlan
     ip netns exec $nspace ip link set lo down
