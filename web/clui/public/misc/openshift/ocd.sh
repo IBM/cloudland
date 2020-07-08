@@ -360,7 +360,7 @@ EOF
 function launch_cluster()
 {
     cd /opt/$cluster_name
-    bstrap_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=bootstrap;ipaddr=192.168.91.9")
+    bstrap_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=bootstrap.${cluster_name}.${base_domain};ipaddr=192.168.91.9")
     bstrap_ID=$(jq -r .ID <<< $bstrap_res)
     curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=bootstrap"
     while true; do
@@ -369,18 +369,18 @@ function launch_cluster()
         [ $? -eq 0 ] && break
     done
     curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=masters"
-    curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-0;ipaddr=192.168.91.10"
+    curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-0.${cluster_name}.${base_domain};ipaddr=192.168.91.10"
     sleep 3
     if [ "$haflag" = "yes" ]; then
-        curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-1;ipaddr=192.168.91.11"
+        curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-1.${cluster_name}.${base_domain};ipaddr=192.168.91.11"
         sleep 3
-        curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-2;ipaddr=192.168.91.12"
+        curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-2.${cluster_name}.${base_domain};ipaddr=192.168.91.12"
         sleep 3
     fi
     curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=workers"
-    curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-0;ipaddr=192.168.91.20"
+    curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-0.${cluster_name}.${base_domain};ipaddr=192.168.91.20"
     sleep 3
-    curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-1;ipaddr=192.168.91.21"
+    curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-1.${cluster_name}.${base_domain};ipaddr=192.168.91.21"
     sleep 3
     sleep 60
     ../openshift-install wait-for bootstrap-complete --log-level debug
@@ -408,7 +408,7 @@ function launch_cluster()
     for i in $(seq 1 $more); do
         let index=$i+1
         let last=$index+20
-        curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-$index;ipaddr=192.168.91.$last"
+        curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-$index.${cluster_name}.${base_domain};ipaddr=192.168.91.$last"
         sleep 3
     done
     let nodes=$nodes+$more
