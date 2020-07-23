@@ -2,7 +2,7 @@
 
 cd $(dirname $0)
 
-[ $# -lt 7 ] && echo "$0 <cluster_id> <cluster_name> <base_domain> <endpoint> <cookie> <ha_flag> <nworkers>" && exit 1
+[ $# -lt 8 ] && echo "$0 <cluster_id> <cluster_name> <base_domain> <endpoint> <cookie> <ha_flag> <nworkers> <version> <lb_ip>" && exit 1
 
 cluster_id=$1
 cluster_name=$2
@@ -12,6 +12,7 @@ cookie=$5
 haflag=$6
 nworkers=$7
 version=$8
+lb_ip=$9
 seq_max=100
 cloud_user=rhel
 
@@ -23,7 +24,7 @@ function setup_dns()
     instID=$(cat /var/lib/cloud/data/instance-id | cut -d'-' -f2)
     count=0
     while [ -z "$public_ip" -a $count -lt 10 ]; do
-        data=$(curl -k -XPOST $endpoint/floatingips/assign --cookie "$cookie" --data "instance=$instID")
+        data=$(curl -k -XPOST $endpoint/floatingips/assign --cookie "$cookie" --data "instance=$instID" --data "floatingIP=$lb_ip")
         echo $data
         public_ip=$(jq  -r .public_ip <<< $data)
         public_ip=${public_ip%%/*}
