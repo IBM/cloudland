@@ -21,8 +21,6 @@
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
     mode: preserve
-    src: ocd.conf.j2
-    dest: /opt/cloudland/web/clui/public/misc/openshift/ocd.conf
   with_items:
     - {src: 'ocd.conf', dest: '/opt/cloudland/web/clui/public/misc/openshift/ocd.conf', owner: 'cland'}
     - {src: 'ocd.conf.4.2', dest: '/opt/cloudland/web/clui/public/misc/openshift/ocd.conf.4.2', owner: 'cland'}
