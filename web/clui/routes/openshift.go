@@ -356,7 +356,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 	userdata := getUserdata("ocd")
 	userdata = fmt.Sprintf("%s\ncurl -k -O '%s/misc/openshift/ocd.sh'\nchmod +x ocd.sh", userdata, endpoint)
 	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' '%s' '%d' '%s' '%s'<<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, haflag, nworkers, version, extIP, secret)
-	_, err = instanceAdmin.Create(ctx, 1, name, userdata, 1, lflavor, subnet.ID, openshift.ID, extIP, "", nil, keyIDs, sgIDs, -1)
+	_, err = instanceAdmin.Create(ctx, 1, name, userdata, 1, lflavor, subnet.ID, openshift.ID, lbIP, "", nil, keyIDs, sgIDs, -1)
 	if err != nil {
 		log.Println("Failed to create oc first instance", err)
 		return
