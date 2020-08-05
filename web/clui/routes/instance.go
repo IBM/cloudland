@@ -182,6 +182,13 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 		log.Println("Failed to query instance ", err)
 		return
 	}
+	if instance.Hostname != hostname {
+		instance.Hostname = hostname
+		if err = db.Save(instance).Error; err != nil {
+			log.Println("Failed to save instance", err)
+			return
+		}
+	}
 	if hyper != int(instance.Hyper) {
 		if instance.Status != "shut_off" {
 			log.Println("Instance must be shutdown before migration")
@@ -195,6 +202,11 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 			log.Println("Migrate vm command execution failed", err)
 			return
 		}
+		instance.Status = "migrating"
+		if err = db.Save(instance).Error; err != nil {
+			log.Println("Failed to save instance", err)
+		}
+		return
 	}
 	if flavorID != instance.FlavorID {
 		if instance.Status == "running" {
@@ -229,13 +241,6 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 		}
 		instance.FlavorID = flavorID
 		instance.Flavor = flavor
-		if err = db.Save(instance).Error; err != nil {
-			log.Println("Failed to save instance", err)
-			return
-		}
-	}
-	if instance.Hostname != hostname {
-		instance.Hostname = hostname
 		if err = db.Save(instance).Error; err != nil {
 			log.Println("Failed to save instance", err)
 			return

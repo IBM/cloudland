@@ -21,11 +21,15 @@
                     </div>
                     <div class="inline field">
                         <label for="hyper">{{.i18n.Tr "Hyper"}}</label>
-                        <input id="hyper" name="hyper" value="{{ .Instance.Hyper }}" {{ if not $.IsAdmin }}disabled{{ end }}>
+                        <input id="hyper" name="hyper" value="{{ .Instance.Hyper }}" {{ if or (not $.IsAdmin) (eq .Instance.Status "migrating") }}disabled{{ end }}>
+                    </div>
+                    <div class="inline field">
+                        <label></label>
+                        <span>{{ if eq .Instance.Status "migrating" }} {{.i18n.Tr "(migrating)"}} {{else}} {{.i18n.Tr "(hyper_warning)"}} {{ end }}</span>
                     </div>
                     <div class="inline field">
                         <label for="action">{{.i18n.Tr "Action"}}</label>
-                        <select name="action" id="action" class="ui selection dropdown">
+                        <select name="action" id="action" class="ui selection dropdown" {{ if eq .Instance.Status "migrating" }} disabled {{ end }}>
                             <option value="">{{ .i18n.Tr .Instance.Status }}</option>
                             <option value="shutdown">{{.i18n.Tr "shutdown"}}</option>
                             <option value="destroy">{{.i18n.Tr "destroy"}}</option>
@@ -36,7 +40,7 @@
                     </div>
                     <div class="required inline field">
                         <label for="flavor">{{.i18n.Tr "Flavor"}}</label>
-                        <select name="flavor" id="flavor" class="ui selection dropdown">
+                        <select name="flavor" id="flavor" class="ui selection dropdown" {{ if eq .Instance.Status "migrating" }} disabled {{ end }}>
 			               {{ range .Flavors }}
                               <option value="{{ .ID }}" {{ if eq $.Instance.FlavorID .ID }}selected{{end}}>{{ .ID }}-{{ .Name }}</option>
                            {{ end }}
@@ -44,7 +48,7 @@
 		            </div>
                     <div class="inline field">
 					    <label for="ifaces">{{.i18n.Tr "Interfaces"}}</label>
-                        <select name="ifaces" id="ifaces" multiple="" class="ui multiple selection dropdown">
+                        <select name="ifaces" id="ifaces" multiple="" class="ui multiple selection dropdown" {{ if eq .Instance.Status "migrating" }} disabled {{ end }}>
 							{{ if .Instance.Interfaces }}
 							  {{ range .Instance.Interfaces }}
                                  <option value="{{ .Address.SubnetID }}" selected>{{.Address.Subnet.Name}}-{{.Address.Address}}</option>

@@ -71,6 +71,9 @@ func InstanceStatus(ctx context.Context, job *model.Job, args []string) (status 
 			}
 			continue
 		}
+		if instance.Status == "migrating" && instance.Hyper == int32(hyperID) {
+			continue
+		}
 		if instance.Status != status {
 			err = db.Unscoped().Model(instance).Update(map[string]interface{}{
 				"status":     status,
