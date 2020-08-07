@@ -177,8 +177,16 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 
 func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname, action string, subnetIDs, sgIDs []int64, hyper int) (instance *model.Instance, err error) {
 	db := DB()
+	db = db.Begin()
+	defer func() {
+		if err == nil {
+			db.Commit()
+		} else {
+			db.Rollback()
+		}
+	}()
 	instance = &model.Instance{Model: model.Model{ID: id}}
-	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
+	if err = db.Set("gorm:query_option", "FOR UPDATE").Take(instance).Error; err != nil {
 		log.Println("Failed to query instance ", err)
 		return
 	}
