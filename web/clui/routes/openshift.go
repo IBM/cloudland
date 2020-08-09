@@ -9,6 +9,7 @@ package routes
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"net"
@@ -313,7 +314,7 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 	return
 }
 
-func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie, haflag, version, extIP string, nworkers int32, lflavor, mflavor, wflavor, key int64) (openshift *model.Openshift, err error) {
+func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie, haflag, version, extIP string, nworkers int32, lflavor, mflavor, wflavor, key int64, hostrec, bundle, registry string) (openshift *model.Openshift, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	openshift = &model.Openshift{
@@ -355,7 +356,17 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 	endpoint := viper.GetString("api.endpoint")
 	userdata := getUserdata("ocd")
 	userdata = fmt.Sprintf("%s\ncurl -k -O '%s/misc/openshift/ocd.sh'\nchmod +x ocd.sh", userdata, endpoint)
-	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' '%s' '%d' '%s' '%s'<<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, haflag, nworkers, version, extIP, secret)
+	parts := fmt.Sprintf("pullSecret: '%s'\n", secret)
+	if bundle != "" {
+		bundle = strings.Replace(bundle, " ", "", -1)
+		bundle = strings.Replace(bundle, "\n", "\n  ", -1)
+		parts = fmt.Sprintf("%sadditionalTrustBundle: |\n  %s\n", parts, bundle)
+	}
+	if registry != "" {
+		parts = fmt.Sprintf("%simageContentSources:\n%s\n", parts, registry)
+	}
+	encParts := base64.StdEncoding.EncodeToString([]byte(parts))
+	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' '%s' '%d' '%s' '%s' '%s'<<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, haflag, nworkers, version, extIP, hostrec, encParts)
 	_, err = instanceAdmin.Create(ctx, 1, name, userdata, 1, lflavor, subnet.ID, openshift.ID, lbIP, "", nil, keyIDs, sgIDs, -1)
 	if err != nil {
 		log.Println("Failed to create oc first instance", err)
@@ -662,6 +673,9 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 		haflag = "no"
 	}
 	secret := c.QueryTrim("secret")
+	hostrec := c.QueryTrim("hostrec")
+	bundle := c.QueryTrim("bundle")
+	registry := c.QueryTrim("registry")
 	nworkers := c.QueryInt("nworkers")
 	if nworkers < 2 {
 		code := http.StatusBadRequest
@@ -676,7 +690,7 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	wflavor := c.QueryInt64("wflavor")
 	key := c.QueryInt64("key")
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
-	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, version, extIP, int32(nworkers), lflavor, mflavor, wflavor, key)
+	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, version, extIP, int32(nworkers), lflavor, mflavor, wflavor, key, hostrec, bundle, registry)
 	if err != nil {
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{

@@ -125,6 +125,18 @@
 						<textarea id="secret" name="secret" autocomplete="off" required></textarea>
                     </div>
                     <div class="inline field">
+                        <label for="hostrec">{{.i18n.Tr "Registry Host Record"}}</label>
+                        <input id="hostrec"  name="hostrec" placeholder="10.10.10.10:registry_name">
+                    </div>
+                    <div class="inline field">
+						<label>{{.i18n.Tr "Additional Trust Bundle"}}</label>
+						<textarea id="bundle" name="bundle" autocomplete="off"></textarea>
+                    </div>
+                    <div class="inline field">
+						<label>{{.i18n.Tr "Image Content Sources"}}</label>
+						<textarea id="registry" name="registry" autocomplete="off"></textarea>
+                    </div>
+                    <div class="inline field">
                         <label></label>
                         <button class="ui green button">{{.i18n.Tr "Create New Openshift Cluster"}}</button>
                     </div>
