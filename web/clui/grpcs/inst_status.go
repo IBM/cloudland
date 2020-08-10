@@ -37,14 +37,6 @@ type SecurityData struct {
 func InstanceStatus(ctx context.Context, job *model.Job, args []string) (status string, err error) {
 	//|:-COMMAND-:| launch_vm.sh '3' '5 running 7 running 9 shut_off'
 	db := dbs.DB()
-	db = db.Begin()
-	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
-		}
-	}()
 	argn := len(args)
 	if argn < 2 {
 		err = fmt.Errorf("Wrong params")
@@ -65,7 +57,7 @@ func InstanceStatus(ctx context.Context, job *model.Job, args []string) (status 
 		}
 		status := statusList[i+1]
 		instance := &model.Instance{Model: model.Model{ID: int64(instID)}}
-		err = db.Unscoped().Set("gorm:query_option", "FOR UPDATE").Take(instance).Error
+		err = db.Unscoped().Take(instance).Error
 		if err != nil {
 			log.Println("Invalid instance ID", err)
 			if gorm.IsRecordNotFoundError(err) {
@@ -83,7 +75,8 @@ func InstanceStatus(ctx context.Context, job *model.Job, args []string) (status 
 			continue
 		}
 		if instance.Status != status {
-			err = db.Unscoped().Model(instance).Update(map[string]interface{}{
+			query := fmt.Sprintf("status = '%s'", "migrating")
+			err = db.Unscoped().Model(instance).Where(query).Update(map[string]interface{}{
 				"status":     status,
 				"deleted_at": nil,
 			}).Error

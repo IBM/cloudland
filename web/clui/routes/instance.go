@@ -177,16 +177,8 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 
 func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname, action string, subnetIDs, sgIDs []int64, hyper int) (instance *model.Instance, err error) {
 	db := DB()
-	db = db.Begin()
-	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
-		}
-	}()
 	instance = &model.Instance{Model: model.Model{ID: id}}
-	if err = db.Set("gorm:query_option", "FOR UPDATE").Take(instance).Error; err != nil {
+	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
 		log.Println("Failed to query instance ", err)
 		return
 	}
@@ -211,6 +203,20 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 			return
 		}
 		instance.Status = "migrating"
+		if err = db.Save(instance).Error; err != nil {
+			log.Println("Failed to save instance", err)
+		}
+		return
+	}
+	if action == "shutdown" || action == "destroy" || action == "start" || action == "suspend" || action == "resume" {
+		control := fmt.Sprintf("inter=%d", instance.Hyper)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh '%d' '%s'", instance.ID, action)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Delete vm command execution failed", err)
+			return
+		}
+		instance.Status = "updating"
 		if err = db.Save(instance).Error; err != nil {
 			log.Println("Failed to save instance", err)
 		}
@@ -251,15 +257,6 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 		instance.Flavor = flavor
 		if err = db.Save(instance).Error; err != nil {
 			log.Println("Failed to save instance", err)
-			return
-		}
-	}
-	if action == "shutdown" || action == "destroy" || action == "start" || action == "suspend" || action == "resume" {
-		control := fmt.Sprintf("inter=%d", instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh '%d' '%s'", instance.ID, action)
-		err = hyperExecute(ctx, control, command)
-		if err != nil {
-			log.Println("Delete vm command execution failed", err)
 			return
 		}
 	}
@@ -663,6 +660,10 @@ func (a *InstanceAdmin) enableVnc(ctx context.Context, instance *model.Instance)
 		return
 	}
 	gateway := &model.Gateway{}
+	if len(instance.Interfaces) == 0 {
+		log.Println("No Interface")
+		return
+	}
 	routerID := instance.Interfaces[0].Address.Subnet.Router
 	if routerID > 0 {
 		gateway.ID = routerID
