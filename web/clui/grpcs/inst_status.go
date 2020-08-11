@@ -71,8 +71,12 @@ func InstanceStatus(ctx context.Context, job *model.Job, args []string) (status 
 			}
 			continue
 		}
+		if instance.Status == "migrating" && instance.Hyper == int32(hyperID) {
+			continue
+		}
 		if instance.Status != status {
-			err = db.Unscoped().Model(instance).Update(map[string]interface{}{
+			query := fmt.Sprintf("status = '%s'", "migrating")
+			err = db.Unscoped().Model(instance).Where(query).Update(map[string]interface{}{
 				"status":     status,
 				"deleted_at": nil,
 			}).Error
