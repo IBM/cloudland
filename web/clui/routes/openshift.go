@@ -358,12 +358,10 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 	userdata = fmt.Sprintf("%s\ncurl -k -O '%s/misc/openshift/ocd.sh'\nchmod +x ocd.sh", userdata, endpoint)
 	parts := fmt.Sprintf("pullSecret: '%s'\n", secret)
 	if bundle != "" {
-		bundle = strings.Replace(bundle, " ", "", -1)
-		bundle = strings.Replace(bundle, "\n", "\n  ", -1)
-		parts = fmt.Sprintf("%sadditionalTrustBundle: |\n  %s\n", parts, bundle)
+		parts = fmt.Sprintf("%s\n%s\n", parts, bundle)
 	}
 	if registry != "" {
-		parts = fmt.Sprintf("%simageContentSources:\n%s\n", parts, registry)
+		parts = fmt.Sprintf("%s\n%s\n", parts, registry)
 	}
 	encParts := base64.StdEncoding.EncodeToString([]byte(parts))
 	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' '%s' '%d' '%s' '%s' '%s'<<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, haflag, nworkers, version, extIP, hostrec, encParts)

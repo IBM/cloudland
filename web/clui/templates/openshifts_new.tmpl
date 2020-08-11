@@ -130,11 +130,16 @@
                     </div>
                     <div class="inline field">
 						<label>{{.i18n.Tr "Additional Trust Bundle"}}</label>
-						<textarea id="bundle" name="bundle" autocomplete="off"></textarea>
+						<textarea id="bundle" name="bundle" placeholder="additionalTrustBundle: |
+  -----BEGIN CERTIFICATE-----
+  ...
+  -----END CERTIFICATE-----" autocomplete="off"></textarea>
                     </div>
                     <div class="inline field">
 						<label>{{.i18n.Tr "Image Content Sources"}}</label>
-						<textarea id="registry" name="registry" autocomplete="off"></textarea>
+						<textarea id="registry" name="registry" placeholder="imageContentSources:
+- mirrors:
+  ..." autocomplete="off"></textarea>
                     </div>
                     <div class="inline field">
                         <label></label>

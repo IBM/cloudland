@@ -13,7 +13,7 @@ haflag=$6
 nworkers=$7
 version=$8
 lb_ip=$9
-host_rec=$10
+host_rec=${10}
 seq_max=100
 cloud_user=rhel
 
@@ -38,7 +38,7 @@ function setup_dns()
         dns_server=8.8.8.8
     fi
 
-    [ -n "$host_rec" ] && host_rec=$(echo $host_rec | tr ':' ' ')
+    [ -n "$host_rec" ] && host_rec="$(echo $host_rec | tr ':' ' ')"
     yum install -y dnsmasq
     cp /etc/dnsmasq.conf /etc/dnsmasq.conf.bak
     cat > /etc/dnsmasq.conf <<EOF
@@ -279,6 +279,7 @@ fips: false
 sshKey: '$ssh_key'
 $parts
 EOF
+    sed -i "/^$/d" install-config.yaml
     mkdir /opt/backup
     cp install-config.yaml /opt/backup
     ../openshift-install create manifests
@@ -433,6 +434,10 @@ function launch_cluster()
 setenforce Permissive
 sed -i 's/^SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
 [ $(uname -m) != s390x ] && yum -y install epel-release
+[ "$(uname -m)" = "s390x" ] && yum -y install rng-tools && systemctl start rngd
+systemctl stop firewalld
+systemctl disable firewalld
+systemctl mask firewalld
 yum -y install jq
 setup_dns
 setup_lb
