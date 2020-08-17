@@ -10,7 +10,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 
@@ -21,17 +20,6 @@ import (
 
 func init() {
 	Add("vlan_status", VlanStatus)
-}
-
-func Exists(path string) bool {
-	_, err := os.Stat(path)
-	if err != nil {
-		if os.IsExist(err) {
-			return true
-		}
-		return false
-	}
-	return true
 }
 
 func VlanStatus(ctx context.Context, job *model.Job, args []string) (status string, err error) {
@@ -68,13 +56,13 @@ func VlanStatus(ctx context.Context, job *model.Job, args []string) (status stri
 				netlink.Peer = int32(hyperID)
 			}
 			var first string
-			first += "/opt/cloudland/cache/dnsmasq/vlan" + statusList[i] + "/FIRST"
-			var second string
-			second += "/opt/cloudland/cache/dnsmasq/vlan" + statusList[i] + "/SECOND"
-			if Exists(first) {
+			first += statusList[i] + ".FIRST"
+			if strings.Contains(args[2], first) {
 				netlink.Hyper = int32(hyperID)
 			}
-			if Exists(second) {
+			var second string
+			second += statusList[i] + ".SECOND"
+			if strings.Contains(args[2], second) {
 				netlink.Peer = int32(hyperID)
 			}
 			err = db.Save(netlink).Error
