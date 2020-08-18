@@ -146,8 +146,9 @@ diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 gen_hosts
 cd $cland_root_dir/deploy
 [ $(uname -m) != s390x ] && ansible-playbook cloudland.yml -e @$net_conf --tags epel
-ansible-playbook cloudland.yml -e @$net_conf --tags hosts,selinux,be_pkg,be_conf,be_srv,fe_srv,firewall,imgrepo
+ansible-playbook cloudland.yml -e @$net_conf --tags hosts,selinux,be_pkg,be_conf,firewall,imgrepo
 demo_router
 allinone_firewall
 inst_web
+ansible-playbook cloudland.yml -e @$net_conf --tags be_srv,fe_srv
 sudo chown -R cland.cland $cland_root_dir

@@ -347,6 +347,7 @@ func (v *FloatingIpView) Assign(c *macaron.Context, store session.Store) {
 		return
 	}
 	instID := c.QueryInt64("instance")
+	floatingIP := c.QueryTrim("floatingIP")
 	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instID))
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -355,7 +356,7 @@ func (v *FloatingIpView) Assign(c *macaron.Context, store session.Store) {
 		return
 	}
 	types := []string{"public", "private"}
-	floatingips, err := floatingipAdmin.Create(c.Req.Context(), int64(instID), 0, types, "", "")
+	floatingips, err := floatingipAdmin.Create(c.Req.Context(), int64(instID), 0, types, floatingIP, "")
 	if err != nil {
 		log.Println("Failed to create floating ip", err)
 		code := http.StatusInternalServerError

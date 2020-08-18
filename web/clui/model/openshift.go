@@ -12,17 +12,19 @@ import (
 
 type Openshift struct {
 	Model
-	ClusterName string `gorm:"type:varchar(128)"`
-	BaseDomain  string `gorm:"type:varchar(256)"`
-	Version     string `gorm:"type:varchar(32)"`
-	Status      string `gorm:"type:varchar(32)"`
-	Haflag      string
-	Instances   []*Instance `gorm:"foreignkey:ClusterID"`
-	Subnet      *Subnet     `gorm:"foreignkey:ClusterID"`
-	WorkerNum   int32
-	Flavor      int64
-	Key         int64
-	GlusterID   int64
+	ClusterName  string `gorm:"type:varchar(128)"`
+	BaseDomain   string `gorm:"type:varchar(256)"`
+	Version      string `gorm:"type:varchar(32)"`
+	Status       string `gorm:"type:varchar(32)"`
+	Haflag       string
+	Instances    []*Instance `gorm:"foreignkey:ClusterID"`
+	Subnet       *Subnet     `gorm:"foreignkey:ClusterID"`
+	WorkerNum    int32
+	Flavor       int64
+	MasterFlavor int64
+	WorkerFlavor int64
+	Key          int64
+	GlusterID    int64
 }
 
 func init() {

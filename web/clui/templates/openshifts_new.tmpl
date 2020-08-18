@@ -15,6 +15,12 @@
                         <label for="basedomain">{{.i18n.Tr "Base_Domain"}}</label>
                         <input id="basedomain"  name="basedomain" required>
                     </div>
+	            {{ if .IsAdmin }}
+                    <div class="inline field">
+                        <label for="extip">{{.i18n.Tr "LoadBalancer_IP"}}</label>
+                        <input id="extip"  name="extip">
+                    </div>
+	            {{ end }}
                     <div class="inline field">
                         <label for="haflag">{{.i18n.Tr "High Available"}}</label>
 						<div class="ui selection dropdown">
@@ -55,11 +61,41 @@
 						</div>
                     </div>
                     <div class="required inline field">
-                        <label for="flavor">{{.i18n.Tr "Flavor"}}</label>
+                        <label for="lflavor">{{.i18n.Tr "LB_Flavor"}}</label>
 						<div class="ui selection dropdown">
-						  <input id="flavor" name="flavor" type="hidden">
+						  <input id="lflavor" name="lflavor" type="hidden">
 						  <i class="dropdown icon"></i>
 						  <div class="default text">{{.i18n.Tr "Flavor"}}</div>
+						  <div class="menu">
+                            {{ range .Flavors }}
+							<div class="item" data-value={{.ID}} data-text={{.Name}}>
+							  {{.Name}}
+							</div>
+                            {{ end }}
+						  </div>
+						</div>
+                    </div>
+                    <div class="required inline field">
+                        <label for="mflavor">{{.i18n.Tr "Master_Flavor"}}</label>
+						<div class="ui selection dropdown">
+						  <input id="mflavor" name="mflavor" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">{{.i18n.Tr "Master_Flavor"}}</div>
+						  <div class="menu">
+                            {{ range .Flavors }}
+							<div class="item" data-value={{.ID}} data-text={{.Name}}>
+							  {{.Name}}
+							</div>
+                            {{ end }}
+						  </div>
+						</div>
+                    </div>
+                    <div class="required inline field">
+                        <label for="wflavor">{{.i18n.Tr "Worker_Flavor"}}</label>
+						<div class="ui selection dropdown">
+						  <input id="wflavor" name="wflavor" type="hidden">
+						  <i class="dropdown icon"></i>
+						  <div class="default text">{{.i18n.Tr "Master_Flavor"}}</div>
 						  <div class="menu">
                             {{ range .Flavors }}
 							<div class="item" data-value={{.ID}} data-text={{.Name}}>
@@ -87,6 +123,23 @@
                     <div class="required inline field">
 						<label>{{.i18n.Tr "Pull Secret"}}</label>
 						<textarea id="secret" name="secret" autocomplete="off" required></textarea>
+                    </div>
+                    <div class="inline field">
+                        <label for="hostrec">{{.i18n.Tr "Registry Host Record"}}</label>
+                        <input id="hostrec"  name="hostrec" placeholder="10.10.10.10:registry_name">
+                    </div>
+                    <div class="inline field">
+						<label>{{.i18n.Tr "Additional Trust Bundle"}}</label>
+						<textarea id="bundle" name="bundle" placeholder="additionalTrustBundle: |
+  -----BEGIN CERTIFICATE-----
+  ...
+  -----END CERTIFICATE-----" autocomplete="off"></textarea>
+                    </div>
+                    <div class="inline field">
+						<label>{{.i18n.Tr "Image Content Sources"}}</label>
+						<textarea id="registry" name="registry" placeholder="imageContentSources:
+- mirrors:
+  ..." autocomplete="off"></textarea>
                     </div>
                     <div class="inline field">
                         <label></label>

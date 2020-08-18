@@ -2,7 +2,7 @@
 
 cd $(dirname $0)
 
-[ $# -lt 7 ] && echo "$0 <cluster_id> <cluster_name> <base_domain> <endpoint> <cookie> <ha_flag> <nworkers>" && exit 1
+[ $# -lt 8 ] && echo "$0 <cluster_id> <cluster_name> <base_domain> <endpoint> <cookie> <ha_flag> <nworkers> <version> <lb_ip> <host_record>" && exit 1
 
 cluster_id=$1
 cluster_name=$2
@@ -12,6 +12,8 @@ cookie=$5
 haflag=$6
 nworkers=$7
 version=$8
+lb_ip=$9
+host_rec=${10}
 seq_max=100
 cloud_user=rhel
 
@@ -23,7 +25,7 @@ function setup_dns()
     instID=$(cat /var/lib/cloud/data/instance-id | cut -d'-' -f2)
     count=0
     while [ -z "$public_ip" -a $count -lt 10 ]; do
-        data=$(curl -k -XPOST $endpoint/floatingips/assign --cookie "$cookie" --data "instance=$instID")
+        data=$(curl -k -XPOST $endpoint/floatingips/assign --cookie "$cookie" --data "instance=$instID" --data "floatingIP=$lb_ip")
         echo $data
         public_ip=$(jq  -r .public_ip <<< $data)
         public_ip=${public_ip%%/*}
@@ -36,6 +38,7 @@ function setup_dns()
         dns_server=8.8.8.8
     fi
 
+    [ -n "$host_rec" ] && host_rec="$(echo $host_rec | tr ':' ' ')"
     yum install -y dnsmasq
     cp /etc/dnsmasq.conf /etc/dnsmasq.conf.bak
     cat > /etc/dnsmasq.conf <<EOF
@@ -58,6 +61,7 @@ conf-dir=/etc/dnsmasq.d,.rpmnew,.rpmsave,.rpmorig
 EOF
 
     cat > /etc/dnsmasq.openshift.addnhosts <<EOF
+$host_rec
 $public_ip dns.${cluster_name}.${base_domain}
 $public_ip loadbalancer.${cluster_name}.${base_domain}  api.${cluster_name}.${base_domain}  lb.${cluster_name}.${base_domain}
 192.168.91.8 api-int.${cluster_name}.${base_domain}
@@ -242,7 +246,7 @@ function download_pkgs()
 
 function ignite_files()
 {
-    secret=$(cat)
+    parts=$(cat | base64 -d | sed -s 's/\r//')
     ssh_key=$(cat /home/$cloud_user/.ssh/authorized_keys | tail -1)
     rm -rf $cluster_name
     mkdir $cluster_name
@@ -272,12 +276,17 @@ networking:
 platform:
   none: {}
 fips: false
-pullSecret: '$secret'
 sshKey: '$ssh_key'
+$parts
 EOF
+    sed -i "/^$/d" install-config.yaml
+    mkdir /opt/backup
+    cp install-config.yaml /opt/backup
     ../openshift-install create manifests
     sed -i "s/mastersSchedulable: true/mastersSchedulable: false/" manifests/cluster-scheduler-02-config.yml
+    cp -rf ../$cluster_name /opt/backup
     ../openshift-install create ignition-configs
+    cp -rf ../$cluster_name /opt/backup
     ignite_dir=/usr/share/nginx/html/ignition
     rm -rf $ignite_dir
     mkdir $ignite_dir
@@ -425,6 +434,10 @@ function launch_cluster()
 setenforce Permissive
 sed -i 's/^SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
 [ $(uname -m) != s390x ] && yum -y install epel-release
+[ "$(uname -m)" = "s390x" ] && yum -y install rng-tools && systemctl start rngd
+systemctl stop firewalld
+systemctl disable firewalld
+systemctl mask firewalld
 yum -y install jq
 setup_dns
 setup_lb

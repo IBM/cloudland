@@ -9,6 +9,7 @@ package routes
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"net"
@@ -158,7 +159,11 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 		log.Println("Failed to query openshift cluster", err)
 		return
 	}
-	flavor := &model.Flavor{Model: model.Model{ID: openshift.Flavor}}
+	flavorID := openshift.MasterFlavor
+	if strings.Contains(hostname, "worker") {
+		flavorID = openshift.WorkerFlavor
+	}
+	flavor := &model.Flavor{Model: model.Model{ID: flavorID}}
 	if err = db.Take(flavor).Error; err != nil {
 		log.Println("Failed to query flavor", err)
 		return
@@ -230,13 +235,13 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 		log.Println("DB failed to query openshift", err)
 		return
 	}
-	if flavorID != openshift.Flavor {
+	if flavorID != openshift.WorkerFlavor {
 		flavor := &model.Flavor{Model: model.Model{ID: flavorID}}
 		if err = db.Take(flavor).Error; err != nil {
 			log.Println("Failed to query flavor", err)
 			return
 		}
-		openshift.Flavor = flavorID
+		openshift.WorkerFlavor = flavorID
 		if err = db.Save(openshift).Error; err != nil {
 			log.Println("Failed to save openshift", err)
 			return
@@ -310,18 +315,20 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 	return
 }
 
-func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie, haflag, version string, nworkers int32, flavor, key int64) (openshift *model.Openshift, err error) {
+func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie, haflag, version, extIP string, nworkers int32, lflavor, mflavor, wflavor, key int64, hostrec, bundle, registry string) (openshift *model.Openshift, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	openshift = &model.Openshift{
-		Model:       model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID},
-		ClusterName: cluster,
-		BaseDomain:  domain,
-		Status:      "creating",
-		Haflag:      haflag,
-		Version:     version,
-		Flavor:      flavor,
-		Key:         key,
+		Model:        model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID},
+		ClusterName:  cluster,
+		BaseDomain:   domain,
+		Status:       "creating",
+		Haflag:       haflag,
+		Version:      version,
+		Flavor:       lflavor,
+		MasterFlavor: mflavor,
+		WorkerFlavor: wflavor,
+		Key:          key,
 	}
 	err = db.Create(openshift).Error
 	if err != nil {
@@ -350,8 +357,16 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 	endpoint := viper.GetString("api.endpoint")
 	userdata := getUserdata("ocd")
 	userdata = fmt.Sprintf("%s\ncurl -k -O '%s/misc/openshift/ocd.sh'\nchmod +x ocd.sh", userdata, endpoint)
-	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' '%s' '%d' '%s'<<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, haflag, nworkers, version, secret)
-	_, err = instanceAdmin.Create(ctx, 1, name, userdata, 1, flavor, subnet.ID, openshift.ID, lbIP, "", nil, keyIDs, sgIDs, -1)
+	parts := fmt.Sprintf("pullSecret: '%s'\n", secret)
+	if bundle != "" {
+		parts = fmt.Sprintf("%s\n%s\n", parts, bundle)
+	}
+	if registry != "" {
+		parts = fmt.Sprintf("%s\n%s\n", parts, registry)
+	}
+	encParts := base64.StdEncoding.EncodeToString([]byte(parts))
+	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' '%s' '%d' '%s' '%s' '%s'<<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, haflag, nworkers, version, extIP, hostrec, encParts)
+	_, err = instanceAdmin.Create(ctx, 1, name, userdata, 1, lflavor, subnet.ID, openshift.ID, lbIP, "", nil, keyIDs, sgIDs, -1)
 	if err != nil {
 		log.Println("Failed to create oc first instance", err)
 		return
@@ -650,6 +665,9 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 		haflag = "no"
 	}
 	secret := c.QueryTrim("secret")
+	hostrec := c.QueryTrim("hostrec")
+	bundle := c.QueryTrim("bundle")
+	registry := c.QueryTrim("registry")
 	nworkers := c.QueryInt("nworkers")
 	if nworkers < 2 {
 		code := http.StatusBadRequest
@@ -658,10 +676,13 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	version := c.QueryTrim("version")
-	flavor := c.QueryInt64("flavor")
+	extIP := c.QueryTrim("extip")
+	lflavor := c.QueryInt64("lflavor")
+	mflavor := c.QueryInt64("mflavor")
+	wflavor := c.QueryInt64("wflavor")
 	key := c.QueryInt64("key")
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
-	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, version, int32(nworkers), flavor, key)
+	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, version, extIP, int32(nworkers), lflavor, mflavor, wflavor, key, hostrec, bundle, registry)
 	if err != nil {
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
