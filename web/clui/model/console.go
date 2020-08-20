@@ -13,8 +13,8 @@ import (
 type Console struct {
 	Model
 	Instance int64
-	User     uint
 	Token    string `gorm:"type:varchar(256)"`
+	Type     string
 }
 
 func init() {

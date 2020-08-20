@@ -20,7 +20,13 @@ var (
 type ConsoleAdmin struct{}
 type ConsoleView struct{}
 
-type ConsoleInfo struct{}
+type ConsoleInfo struct {
+	Type      string `json:"type"`
+	Address   string `json:"address"`
+	Insecure  bool   `json:"insecure"`
+	TLSTunnel bool   `json:"tlsTunnel"`
+	Password  string `json:"password"`
+}
 
 func (a *ConsoleView) ConsoleURL(c *macaron.Context, store session.Store) {
 	consoleURL := "http://cloudland.bluecat.ltd"
