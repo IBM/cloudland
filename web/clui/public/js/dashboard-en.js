@@ -308,36 +308,47 @@ option = {
         },
     ]
 };
-       
+
+getResourceData();
+
+var int=self.setInterval("getResourceData()",10000);
+
+function getResourceData()
+{
 $.ajax({
-    url: "/dashboard/getdata", 
+    url: "/dashboard/getdata",
     type: 'GET',
     success: function (data) {
         if (data) {
-		option.title.text = data.title
-		option.series[0].data[0].value = data.cpu_avail
-		option.series[0].data[1].value = data.cpu_used
-		option.series[1].data[0].value = data.mem_avail
-		option.series[1].data[1].value = data.mem_used
-		option.series[2].data[0].value = data.disk_avail
-		option.series[2].data[1].value = data.disk_used
-		option.series[3].data[0].value = data.volume_avail
-		option.series[3].data[1].value = data.volume_used
-		option.series[4].data[0].value = data.pubip_avail
-		option.series[4].data[1].value = data.pubip_used
-		option.series[5].data[0].value = data.prvip_avail
-		option.series[5].data[1].value = data.prvip_used
-		option.series[6].data[0].value = data.cpu_avail + data.cpu_used
-		option.series[7].data[0].value = data.mem_avail + data.mem_used
-		option.series[8].data[0].value = data.disk_avail + data.disk_used
-		option.series[9].data[0].value = data.volume_avail + data.volume_used
-		option.series[10].data[0].value = data.pubip_avail + data.pubip_used
-		option.series[11].data[0].value = data.prvip_avail + data.prvip_used
-        	myChart.setOption(option);
+                option.title.text = data.title
+                option.series[0].data[0].value = data.cpu_avail
+                option.series[0].data[1].value = data.cpu_used
+                option.series[1].data[0].value = data.mem_avail
+                option.series[1].data[1].value = data.mem_used
+                option.series[2].data[0].value = data.disk_avail
+                option.series[2].data[1].value = data.disk_used
+                option.series[3].data[0].value = data.volume_avail
+                option.series[3].data[1].value = data.volume_used
+                option.series[4].data[0].value = data.pubip_avail
+                option.series[4].data[1].value = data.pubip_used
+                option.series[5].data[0].value = data.prvip_avail
+                option.series[5].data[1].value = data.prvip_used
+                option.series[6].data[0].value = data.cpu_avail + data.cpu_used
+                option.series[7].data[0].value = data.mem_avail + data.mem_used
+                option.series[8].data[0].value = data.disk_avail + data.disk_used
+                option.series[9].data[0].value = data.volume_avail + data.volume_used
+                option.series[10].data[0].value = data.pubip_avail + data.pubip_used
+                option.series[11].data[0].value = data.prvip_avail + data.prvip_used
+                myChart.setOption(option);
         }
     },
     error: function (jqXHR, textStatus, errorThrown) {
         window.location.href = "/error?ErrorMsg=" + jqXHR.responseText;
     }
 });
+
+}
+
+
+
 
