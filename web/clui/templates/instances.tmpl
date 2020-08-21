@@ -66,7 +66,7 @@
 			                        <td>{{$.i18n.Tr .Status}}{{ if eq .Status "error" }}: {{ .Reason }}{{ end }}</td>
 			                        <td>{{ if .FloatingIps }}
 			                                {{ range .FloatingIps }}
-			                                    http://{{.FipAddress }}/novnc/vnc.html<br>
+			                                    http://{{.IPAddress }}/novnc/vnc.html<br>
 			                                {{ end }}
 			                            {{ end }}
 			                        </td>
