@@ -101,6 +101,7 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, typ
 		}
 		floatingip.FipAddress = fipIface.Address.Address
 		floatingip.IntAddress = iface.Address.Address
+		floatingip.IPAddress = strings.Split(floatingip.FipAddress, "/")[0]
 		err = db.Save(floatingip).Error
 		if err != nil {
 			log.Println("DB failed to update floating ip", err)

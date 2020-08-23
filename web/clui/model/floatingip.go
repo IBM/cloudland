@@ -20,6 +20,7 @@ type FloatingIp struct {
 	Interface  *Interface `gorm:"foreignkey:FloatingIp"`
 	GatewayID  int64
 	Gateway    *Gateway `gorm:"foreignkey:GatewayID"`
+	IPAddress  string
 }
 
 func init() {

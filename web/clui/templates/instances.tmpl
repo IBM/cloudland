@@ -30,6 +30,7 @@
 			                        <th>{{.i18n.Tr "Image"}}</th>
 			                        <th>{{.i18n.Tr "IP_Address"}}</th>
 			                        <th>{{.i18n.Tr "Status"}}</th>
+			                        <th>{{.i18n.Tr "VNC"}}</th>
 									{{ if .IsAdmin }}
 			                        <th>{{.i18n.Tr "Hyper"}}</th>
 			                        <th>{{.i18n.Tr "Owner"}}</th>
@@ -63,6 +64,12 @@
 					        {{ end }}
 						</td>
 			                        <td>{{$.i18n.Tr .Status}}{{ if eq .Status "error" }}: {{ .Reason }}{{ end }}</td>
+			                        <td>{{ if .FloatingIps }}
+			                                {{ range .FloatingIps }}
+			                                    http://{{.IPAddress }}/novnc/vnc.html<br>
+			                                {{ end }}
+			                            {{ end }}
+			                        </td>
 						{{ if $.IsAdmin }}
 			                        <td>{{.Hyper}}</td>
 			                        <td>{{.OwnerInfo.Name}}</td>
