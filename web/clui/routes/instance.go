@@ -742,6 +742,7 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	}
 	query := c.QueryTrim("q")
 	total, instances, err := instanceAdmin.List(c.Req.Context(), offset, limit, order, query)
+	
 	if err != nil {
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
