@@ -38,7 +38,11 @@ func VlanStatus(ctx context.Context, job *model.Job, args []string) (status stri
 	}
 	statusList := strings.Split(args[2], " ")
 	for i := 0; i < len(statusList); i++ {
-		vlan, err := strconv.Atoi(statusList[i])
+		vlanStatus := strings.Split(statusList[i], ":") // for each vlanStatus: [0: vlanNo, 1: STATUS, 2: FIRST, 3:SECOND]
+		if len(vlanStatus) != 4 {                       // four elements as above now
+			continue
+		}
+		vlan, err := strconv.Atoi(vlanStatus[0])
 		if err != nil {
 			log.Println("Invalid vlan ID", err)
 			continue
@@ -55,14 +59,10 @@ func VlanStatus(ctx context.Context, job *model.Job, args []string) (status stri
 			} else if netlink.Peer == -1 {
 				netlink.Peer = int32(hyperID)
 			}
-			var first string
-			first += statusList[i] + ".FIRST"
-			if strings.Contains(args[2], first) {
+			if vlanStatus[1] == "FIRST" {
 				netlink.Hyper = int32(hyperID)
 			}
-			var second string
-			second += statusList[i] + ".SECOND"
-			if strings.Contains(args[2], second) {
+			if vlanStatus[2] == "SECOND" {
 				netlink.Peer = int32(hyperID)
 			}
 			err = db.Save(netlink).Error
