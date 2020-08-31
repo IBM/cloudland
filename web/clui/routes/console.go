@@ -20,6 +20,7 @@ import (
 	"github.com/go-macaron/session"
 	"github.com/spf13/viper"
 	"gopkg.in/macaron.v1"
+	"math/rand"
 )
 
 var (
@@ -37,8 +38,10 @@ type ConsoleInfo struct {
 	TLSTunnel bool   `json:"tlsTunnel"`
 	Password  string `json:"password"`
 }
-type MyClaim struct {
-	InstanceID string `json:"instance_id"`
+
+type TokenClaim struct {
+	InstanceID string `json:"instanceID"`
+	Secret string `json:"secret"`
 	jwt.StandardClaims
 }
 
@@ -46,28 +49,40 @@ const (
 	TokenExpireDuration = time.Hour * 2
 )
 
-var MySeret = []byte("Red B")
+var SignedSecret = []byte("RedBlue")
+//Randomly generate a string of length 10
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-func MakeToken(instanceID string) (string, error) {
-	c := MyClaim{
+func RandStringRunes(n int) string {
+    b := make([]rune, n)
+    for i := range b {
+        b[i] = letterRunes[rand.Intn(len(letterRunes))]
+    }
+    return string(b)
+}
+
+func MakeToken(instanceID string, secret string) (string, error) {
+	c := TokenClaim{
 		InstanceID: instanceID,
+		Secret: secret,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(TokenExpireDuration).Unix(),
 			Issuer:    "TestIssuer",
 		},
 	}
 	tokenClaim := jwt.NewWithClaims(jwt.SigningMethodHS256, c)
-	token, err := tokenClaim.SignedString(MySeret)
+	token, err := tokenClaim.SignedString(SignedSecret)
 	return token, err
 }
-func ResolveToken(TokenString string) (*MyClaim, error) {
-	token, err := jwt.ParseWithClaims(TokenString, &MyClaim{}, func(token *jwt.Token) (interface{}, error) {
-		return MySeret, nil
+
+func ResolveToken(tokenString string) (*TokenClaim, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &TokenClaim{}, func(token *jwt.Token) (interface{}, error) {
+		return SignedSeret, nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	if claims, ok := token.Claims.(*MyClaim); ok && token.Valid {
+	if claims, ok := token.Claims.(*TokenClaim); ok && token.Valid {
 		return claims, nil
 	}
 	return nil, errors.New("invalid token")
@@ -94,7 +109,7 @@ func (a *ConsoleView) ConsoleURL(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	tokenString, err := MakeToken(id)
+	tokenString, err := MakeToken(id, RandStringRUnes(10))
 	endpoint := viper.GetString("api.endpoint")
 	consoleURL := fmt.Sprintf("%s/novnc/vnc.html?host=9.115.78.254&port=8000&autoconnect=true&token=%s", endpoint, tokenString)
 	c.Resp.Header().Set("Location", consoleURL)
