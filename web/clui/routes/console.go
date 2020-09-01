@@ -129,12 +129,12 @@ func (a *ConsoleView) ConsoleURL(c *macaron.Context, store session.Store) {
 
 func (a *ConsoleView) ConsoleResolve(c *macaron.Context, store session.Store) {
 	token := c.Params("token")
-	myClaim, err := ResolveToken(token)
+	tokenClaim, err := ResolveToken(token)
 	if err != nil {
 		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
 	}
-	log.Println("Get JWT token", token, myClaim)
+	log.Println("Get JWT token", token, tokenClaim)
 
 	consoleInfo := &ConsoleInfo{
 		Type:      "vnc",
