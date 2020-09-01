@@ -262,7 +262,8 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 		}
 		if len(instances) > 0 {
 			for _, inst := range instances {
-				name := strings.Split(inst.Hostname, "-")
+				prefix := strings.Split(inst.Hostname, ".")[0]
+				name := strings.Split(prefix, "-")
 				if len(name) < 2 {
 					log.Println("Wrong name pattern")
 					continue
@@ -281,7 +282,7 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 	if nworkers > openshift.WorkerNum {
 		for i := 0; i < int(nworkers-openshift.WorkerNum); i++ {
 			maxIndex++
-			hostname := fmt.Sprintf("worker-%d", maxIndex)
+			hostname := fmt.Sprintf("worker-%d.%s", maxIndex, openshift.BaseDomain)
 			ipaddr := fmt.Sprintf("192.168.91.%d", maxIndex+20)
 			_, err = openshiftAdmin.Launch(ctx, id, hostname, ipaddr)
 			if err != nil {
@@ -293,7 +294,7 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 		for i := 0; i < int(openshift.WorkerNum-nworkers); i++ {
 			hostname := fmt.Sprintf("worker-%d", maxIndex)
 			instance := &model.Instance{}
-			err = db.Where("hostname = ? and cluster_id = ?", hostname, id).Take(instance).Error
+			err = db.Where("(hostname = ? or hostname = ?) and cluster_id = ?", hostname, hostname+"."+openshift.BaseDomain, id).Take(instance).Error
 			if err != nil {
 				log.Println("Failed to query worker", err)
 				return
@@ -557,13 +558,6 @@ func (v *OpenshiftView) Patch(c *macaron.Context, store session.Store) {
 	if nworkers < 2 {
 		code := http.StatusBadRequest
 		c.Data["ErrorMsg"] = "Number of worker must be at least 2"
-		c.HTML(code, "error")
-		return
-	}
-	status, err := openshiftAdmin.GetState(ctx, id)
-	if status != "complete" {
-		code := http.StatusBadRequest
-		c.Data["ErrorMsg"] = "Cluster can be updated only in complete status"
 		c.HTML(code, "error")
 		return
 	}

@@ -34,6 +34,7 @@
 		                        </tr>
 	                        </thead>
 	                        <tbody>
+				<html>
                                 {{ $Link := .Link }}
                                 {{ range .Keys }}
 		                        <tr>
@@ -76,4 +77,5 @@
 	    </div>
 	    {{template "_delete_modal_actions" .}}
     </div>
+ <html> </html>
 {{template "_footer" .}}
