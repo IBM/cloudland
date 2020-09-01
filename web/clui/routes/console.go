@@ -14,13 +14,15 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"math/rand"
 
 	"github.com/IBM/cloudland/web/clui/model"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/go-macaron/session"
 	"github.com/spf13/viper"
 	"gopkg.in/macaron.v1"
-	"math/rand"
+	"github.com/IBM/cloudland/web/clui/model"
+	"github.com/IBM/cloudland/web/sca/dbs"
 )
 
 var (
@@ -111,7 +113,15 @@ func (a *ConsoleView) ConsoleURL(c *macaron.Context, store session.Store) {
 	}
 	tokenString, err := MakeToken(id, RandStringRUnes(10))
 	endpoint := viper.GetString("api.endpoint")
-	consoleURL := fmt.Sprintf("%s/novnc/vnc.html?host=9.115.78.254&port=8000&autoconnect=true&token=%s", endpoint, tokenString)
+
+	setDB(&Vnc{})
+	db := DB()
+	//var vncInfo Vnc
+	vncInfo := new(Vnc)
+	accessAddr := db.First(vncInfo, id).AccessAddress
+	accessPort := db.First(vncInfo, id).AccessPort
+
+	consoleURL := fmt.Sprintf("%s/novnc/vnc.html?host=%s&port=%s&autoconnect=true&token=%s", endpoint, accessAddr, accessPort, tokenString)	
 	c.Resp.Header().Set("Location", consoleURL)
 	c.JSON(301, nil)
 	return
