@@ -128,6 +128,7 @@ func (a *ConsoleView) ConsoleURL(c *macaron.Context, store session.Store) {
 }
 
 func (a *ConsoleView) ConsoleResolve(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	token := c.Params("token")
 	tokenClaim, err := ResolveToken(token)
 	if err != nil {
@@ -136,13 +137,46 @@ func (a *ConsoleView) ConsoleResolve(c *macaron.Context, store session.Store) {
 	}
 	log.Println("Get JWT token", token, tokenClaim)
 
+	instanceID, err := strconv.atoi(tokenClaim.instanceID)
+	if err != nil {
+		code := http.StatusBadRequest
+		c.Error(code, http.StatusText(code))
+		return
+	}
+
+	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instanceID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
+
+	setDB(&Vnc{})
+	db := DB()
+	vncInfo := new(Vnc)
+	accessAddr := db.First(vncInfo, id).AccessAddress
+	accessPort := db.First(vncInfo, id).AccessPort
+	accessPass := "" //db.First(vncInfo, id)
+	address := fmt.Sprintf("%s:%s", AccessAddr, AccessPort)
+	insecure := true
+	tlsTunnel := false
+
+	// consoleInfo := &ConsoleInfo{
+	// 	Type:      "vnc",
+	// 	Address:   "9.115.78.254:5900",
+	// 	Insecure:  true,
+	// 	TLSTunnel: false,
+	// 	Password:  "54321",
+	// }
 	consoleInfo := &ConsoleInfo{
 		Type:      "vnc",
-		Address:   "9.115.78.254:5900",
-		Insecure:  true,
-		TLSTunnel: false,
-		Password:  "54321",
+		Address:   address,
+		Insecure:  insecure,
+		TLSTunnel: tlsTunnel,
+		Password:  accessPass,
 	}
+
 	c.JSON(200, consoleInfo)
 	return
 }
