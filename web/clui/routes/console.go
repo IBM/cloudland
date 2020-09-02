@@ -52,15 +52,18 @@ const (
 )
 
 var SignedSecret = []byte("RedBlue")
-//Randomly generate a string of length 10
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-func RandStringRunes(n int) string {
-    b := make([]rune, n)
-    for i := range b {
-        b[i] = letterRunes[rand.Intn(len(letterRunes))]
-    }
-    return string(b)
+//Randomly generate a string of length 10
+func RandomStr() string {
+	rand.Seed(time.Now().UnixNano())
+	str := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	bytes := []byte(str)
+	result := []byte{}
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := 0; i < 10; i++ {
+		result = append(result, bytes[r.Intn(len(bytes))])
+	}
+	return string(result)
 }
 
 func MakeToken(instanceID string, secret string) (string, error) {
@@ -69,7 +72,7 @@ func MakeToken(instanceID string, secret string) (string, error) {
 		Secret: secret,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(TokenExpireDuration).Unix(),
-			Issuer:    "TestIssuer",
+			Issuer:    "Cloudland",
 		},
 	}
 	tokenClaim := jwt.NewWithClaims(jwt.SigningMethodHS256, c)
@@ -111,7 +114,7 @@ func (a *ConsoleView) ConsoleURL(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	tokenString, err := MakeToken(id, RandStringRUnes(10))
+	tokenString, err := MakeToken(id, RandomStr())
 	endpoint := viper.GetString("api.endpoint")
 
 	setDB(&Vnc{})
