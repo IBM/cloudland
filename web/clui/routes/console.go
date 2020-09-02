@@ -55,7 +55,6 @@ var SignedSecret = []byte("RedBlue")
 
 //Randomly generate a string of length 10
 func RandomStr() string {
-	rand.Seed(time.Now().UnixNano())
 	str := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	bytes := []byte(str)
 	result := []byte{}
