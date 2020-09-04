@@ -66,4 +66,6 @@ else
     cmd="/usr/sbin/dnsmasq --no-hosts --cache-size=0 --no-resolv --strict-order --bind-interfaces --interface=ns-$vlan --except-interface=lo --pid-file=$pid_file --dhcp-hostsfile=$dns_host --dhcp-optsfile=$dns_opt $mtu_args  --leasefile-ro --dhcp-ignore='tag:!known' --dhcp-range=set:tag$vlan-$tag_id,$network,static,86400s $exist_ranges"
 fi
 ip netns exec $nspace $cmd
+role_file=$dmasq_dir/$nspace/${nspace}.$role
+touch $role_file
 echo "|:-COMMAND-:| $(basename $0) '$vlan' '$SCI_CLIENT_ID' '$role'"
