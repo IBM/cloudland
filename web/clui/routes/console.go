@@ -11,18 +11,16 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"time"
-	"math/rand"
 
 	"github.com/IBM/cloudland/web/clui/model"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/go-macaron/session"
 	"github.com/spf13/viper"
 	"gopkg.in/macaron.v1"
-	"github.com/IBM/cloudland/web/clui/model"
-	"github.com/IBM/cloudland/web/sca/dbs"
 )
 
 var (
@@ -40,10 +38,9 @@ type ConsoleInfo struct {
 	TLSTunnel bool   `json:"tlsTunnel"`
 	Password  string `json:"password"`
 }
-
 type TokenClaim struct {
-	InstanceID string `json:"instanceID"`
-	Secret string `json:"secret"`
+	InstanceID int    `json:"instanceID"`
+	Secret     string `json:"secret"`
 	jwt.StandardClaims
 }
 
@@ -51,7 +48,7 @@ const (
 	TokenExpireDuration = time.Hour * 2
 )
 
-var SignedSecret = []byte("RedBlue")
+var SignedSeret = []byte("Red B")
 
 //Randomly generate a string of length 10
 func RandomStr() string {
@@ -65,31 +62,31 @@ func RandomStr() string {
 	return string(result)
 }
 
-func MakeToken(instanceID string, secret string) (string, error) {
+func MakeToken(instanceID int, secret string) (string, error) {
 	c := TokenClaim{
 		InstanceID: instanceID,
-		Secret: secret,
+		Secret:     secret,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(TokenExpireDuration).Unix(),
-			Issuer:    "Cloudland",
+			Issuer:    "TestIssuer",
 		},
 	}
 	tokenClaim := jwt.NewWithClaims(jwt.SigningMethodHS256, c)
-	token, err := tokenClaim.SignedString(SignedSecret)
+	token, err := tokenClaim.SignedString(SignedSeret)
 	return token, err
 }
 
-func ResolveToken(tokenString string) (*TokenClaim, error) {
+func ResolveToken(tokenString string) (int, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &TokenClaim{}, func(token *jwt.Token) (interface{}, error) {
 		return SignedSeret, nil
 	})
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	if claims, ok := token.Claims.(*TokenClaim); ok && token.Valid {
-		return claims, nil
+		return claims.InstanceID, nil
 	}
-	return nil, errors.New("invalid token")
+	return 0, errors.New("invalid token")
 }
 
 func (a *ConsoleView) ConsoleURL(c *macaron.Context, store session.Store) {
@@ -113,17 +110,17 @@ func (a *ConsoleView) ConsoleURL(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	tokenString, err := MakeToken(id, RandomStr())
+	tokenString, err := MakeToken(instanceID, RandomStr())
+	if err != nil {
+		log.Println("failed to make token", err)
+		code := http.StatusInternalServerError
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	endpoint := viper.GetString("api.endpoint")
-
-	setDB(&Vnc{})
-	db := DB()
-	//var vncInfo Vnc
-	vncInfo := new(Vnc)
-	accessAddr := db.First(vncInfo, id).AccessAddress
-	accessPort := db.First(vncInfo, id).AccessPort
-
-	consoleURL := fmt.Sprintf("%s/novnc/vnc.html?host=%s&port=%s&autoconnect=true&token=%s", endpoint, accessAddr, accessPort, tokenString)	
+	accessAddr := viper.GetString("console.host")
+	accessPort := viper.GetInt("console.port")
+	consoleURL := fmt.Sprintf("%s/novnc/vnc.html?host=%s&port=%d&autoconnect=true&token=%s", endpoint, accessAddr, accessPort, tokenString)
 	c.Resp.Header().Set("Location", consoleURL)
 	c.JSON(301, nil)
 	return
@@ -132,20 +129,12 @@ func (a *ConsoleView) ConsoleURL(c *macaron.Context, store session.Store) {
 func (a *ConsoleView) ConsoleResolve(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	token := c.Params("token")
-	tokenClaim, err := ResolveToken(token)
+	log.Println("Get JWT token", token)
+	instanceID, err := ResolveToken(token)
 	if err != nil {
 		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
 	}
-	log.Println("Get JWT token", token, tokenClaim)
-
-	instanceID, err := strconv.atoi(tokenClaim.instanceID)
-	if err != nil {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
-		return
-	}
-
 	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instanceID))
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -153,29 +142,23 @@ func (a *ConsoleView) ConsoleResolve(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-
-	setDB(&Vnc{})
 	db := DB()
-	vncInfo := new(Vnc)
-	accessAddr := db.First(vncInfo, id).AccessAddress
-	accessPort := db.First(vncInfo, id).AccessPort
-	accessPass := "" //db.First(vncInfo, id)
-	address := fmt.Sprintf("%s:%s", AccessAddr, AccessPort)
-	insecure := true
-	tlsTunnel := false
+	vnc := &model.Vnc{InstanceID: int64(instanceID)}
+	err = db.Where(vnc).Take(vnc).Error
+	if err != nil {
+		log.Println("VNC query failed", err)
+		code := http.StatusInternalServerError
+		c.Error(code, http.StatusText(code))
+		return
+	}
 
-	// consoleInfo := &ConsoleInfo{
-	// 	Type:      "vnc",
-	// 	Address:   "9.115.78.254:5900",
-	// 	Insecure:  true,
-	// 	TLSTunnel: false,
-	// 	Password:  "54321",
-	// }
+	accessPass := vnc.Passwd
+	address := fmt.Sprintf("%s:%s", vnc.AccessAddress, vnc.AccessPort)
 	consoleInfo := &ConsoleInfo{
 		Type:      "vnc",
 		Address:   address,
-		Insecure:  insecure,
-		TLSTunnel: tlsTunnel,
+		Insecure:  true,
+		TLSTunnel: false,
 		Password:  accessPass,
 	}
 
