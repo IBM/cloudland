@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"time"
@@ -19,6 +20,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/go-macaron/session"
 	"github.com/spf13/viper"
+	"golang.org/x/crypto/sha3"
 	"gopkg.in/macaron.v1"
 )
 
@@ -37,8 +39,9 @@ type ConsoleInfo struct {
 	TLSTunnel bool   `json:"tlsTunnel"`
 	Password  string `json:"password"`
 }
-type MyClaim struct {
-	InstanceID string `json:"instance_id"`
+type TokenClaim struct {
+	InstanceID int    `json:"instanceID"`
+	Secret     string `json:"secret"`
 	jwt.StandardClaims
 }
 
@@ -46,31 +49,77 @@ const (
 	TokenExpireDuration = time.Hour * 2
 )
 
-var MySeret = []byte("Red B")
+var SignedSeret = []byte("Red B")
 
-func MakeToken(instanceID string) (string, error) {
-	c := MyClaim{
+//Randomly generate a string of length 10
+func RandomStr() string {
+	str := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	bytes := []byte(str)
+	result := []byte{}
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := 0; i < 10; i++ {
+		result = append(result, bytes[r.Intn(len(bytes))])
+	}
+	return string(result)
+}
+
+func MakeToken(instanceID int, secret string) (string, error) {
+	tkClaim := TokenClaim{
 		InstanceID: instanceID,
+		Secret:     secret,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(TokenExpireDuration).Unix(),
-			Issuer:    "TestIssuer",
 		},
 	}
-	tokenClaim := jwt.NewWithClaims(jwt.SigningMethodHS256, c)
-	token, err := tokenClaim.SignedString(MySeret)
-	return token, err
-}
-func ResolveToken(TokenString string) (*MyClaim, error) {
-	token, err := jwt.ParseWithClaims(TokenString, &MyClaim{}, func(token *jwt.Token) (interface{}, error) {
-		return MySeret, nil
-	})
+	tokenHash := make([]byte, 32)
+	data := sha3.NewShake256()
+	data.Write([]byte(secret))
+	data.Read(tokenHash)
+	hashSecret := fmt.Sprintf("%x", tokenHash)
+	db := DB()
+	console := &model.Console{
+		Instance:   int64(instanceID),
+		Type:       "vnc",
+		HashSecret: hashSecret,
+	}
+	err := db.Where("instance = ?", instanceID).Assign(console).FirstOrCreate(&model.Console{}).Error
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	if claims, ok := token.Claims.(*MyClaim); ok && token.Valid {
-		return claims, nil
+	tokenClaim := jwt.NewWithClaims(jwt.SigningMethodHS256, tkClaim)
+	token, err := tokenClaim.SignedString(SignedSeret)
+	if err != nil {
+		return "", err
 	}
-	return nil, errors.New("invalid token")
+	return token, nil
+}
+
+func ResolveToken(tokenString string) (int, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &TokenClaim{}, func(token *jwt.Token) (interface{}, error) {
+		return SignedSeret, nil
+	})
+	if err != nil || token == nil {
+		return 0, err
+	}
+	claims, ok := token.Claims.(*TokenClaim)
+	if !ok || !token.Valid {
+		return 0, errors.New("invalid token")
+	}
+	instanceID := claims.InstanceID
+	console := &model.Console{Instance: int64(instanceID)}
+	err = DB().Where(console).Take(console).Error
+	if err != nil {
+		return 0, err
+	}
+	tokenHash := make([]byte, 32)
+	data := sha3.NewShake256()
+	data.Write([]byte(claims.Secret))
+	data.Read(tokenHash)
+	hashSecret := fmt.Sprintf("%x", tokenHash)
+	if hashSecret != console.HashSecret {
+		return 0, errors.New("Secret can not pass validation")
+	}
+	return instanceID, nil
 }
 
 func (a *ConsoleView) ConsoleURL(c *macaron.Context, store session.Store) {
@@ -94,30 +143,62 @@ func (a *ConsoleView) ConsoleURL(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	tokenString, err := MakeToken(id)
+	tokenString, err := MakeToken(instanceID, RandomStr())
+	if err != nil {
+		log.Println("failed to make token", err)
+		code := http.StatusInternalServerError
+		c.Error(code, http.StatusText(code))
+		return
+	}
 	endpoint := viper.GetString("api.endpoint")
-	consoleURL := fmt.Sprintf("%s/novnc/vnc.html?host=9.115.78.254&port=8000&autoconnect=true&token=%s", endpoint, tokenString)
+	accessAddr := viper.GetString("console.host")
+	accessPort := viper.GetInt("console.port")
+	consoleURL := fmt.Sprintf("%s/novnc/vnc.html?host=%s&port=%d&autoconnect=true&path=websockify?token=%s", endpoint, accessAddr, accessPort, tokenString)
 	c.Resp.Header().Set("Location", consoleURL)
 	c.JSON(301, nil)
 	return
 }
 
 func (a *ConsoleView) ConsoleResolve(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
 	token := c.Params("token")
-	myClaim, err := ResolveToken(token)
+	log.Println("Get JWT token", token)
+	instanceID, err := ResolveToken(token)
 	if err != nil {
+		log.Println("Unable to resolve token", err)
 		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
+		return
 	}
-	log.Println("Get JWT token", token, myClaim)
+	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instanceID))
+	log.Println("$$$$$$$$$$$$$$$$$$$$$ Check permission", permit, instanceID)
+	/*	if !permit {
+			log.Println("Not authorized for this operation")
+			code := http.StatusUnauthorized
+			c.Error(code, http.StatusText(code))
+			return
+		}
+	*/
+	db := DB()
+	vnc := &model.Vnc{InstanceID: int64(instanceID)}
+	err = db.Where(vnc).Take(vnc).Error
+	if err != nil {
+		log.Println("VNC query failed", err)
+		code := http.StatusInternalServerError
+		c.Error(code, http.StatusText(code))
+		return
+	}
 
+	accessPass := vnc.Passwd
+	address := fmt.Sprintf("%s:%d", vnc.LocalAddress, vnc.LocalPort)
 	consoleInfo := &ConsoleInfo{
 		Type:      "vnc",
-		Address:   "9.115.78.254:5900",
+		Address:   address,
 		Insecure:  true,
 		TLSTunnel: false,
-		Password:  "54321",
+		Password:  accessPass,
 	}
+
 	c.JSON(200, consoleInfo)
 	return
 }

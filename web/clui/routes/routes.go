@@ -113,7 +113,7 @@ func New() (m *macaron.Macaron) {
 	m.Post("/glusterfs/:id", glusterfsView.Patch)
 	m.Get("/instances/:id", instanceView.Edit)
 	m.Post("/instances/:id", instanceView.Patch)
-	m.Get("/instances/:id/console", consoleView.ConsoleURL)
+	m.Post("/instances/:id/console", consoleView.ConsoleURL)
 	m.Get("/consoleresolver/token/:token", consoleView.ConsoleResolve)
 	m.Get("/interfaces/:id", interfaceView.Edit)
 	m.Post("/interfaces/:id", interfaceView.Patch)
