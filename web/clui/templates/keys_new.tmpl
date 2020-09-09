@@ -11,9 +11,11 @@
                         <label for="name">{{.i18n.Tr "Name"}}</label>
                         <input id="name" name="name" autofocus required>
                     </div>
-                    <div class="required inline field">
-						<label>{{.i18n.Tr "Public Key"}}</label>
-						<textarea id="pubkey"  name="pubkey" autocomplete="off" required></textarea>
+					<div style="display:none">
+                        <input id="host" name="host" value="{{.Hostname}}">
+                    </div>
+					<div style="display:none">
+                        <input id="flags" name="flags" value="{{.InstanceFlag}}">
                     </div>
                     <div class="inline field">
                         <label></label>
