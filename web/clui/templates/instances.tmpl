@@ -1,4 +1,13 @@
 {{template "_head" .}}
+<script type="text/javascript">
+    function storage() {
+        var hostname = document.getElementById("hideHost").value;
+		
+		var toCreate = document.getElementById("toCreate");
+		toCreate.href = toCreate.href + "?hostname=" + hostname;
+    }
+</script>
+
     <div class="admin user">
 	    <div class="ui container">
 		    <div class="ui grid">
@@ -7,7 +16,10 @@
 		            <h4 class="ui top attached header">
 			            {{.i18n.Tr "Instance_Manage_Panel"}} ({{.i18n.Tr "Total"}}: {{.Total}})
 			            <div class="ui right">
-				            <a class="ui green tiny button" href="instances/new">{{.i18n.Tr "Create"}}</a>
+				            <a id="toCreate" class="ui green tiny button" href="instances/new" onclick="storage()">{{.i18n.Tr "Create"}}</a>
+							<div style="display:none">
+								<input id="hideHost" name="hideHost" value="{{.HostName}}">
+							</div>
 			            </div>
 		            </h4>
 		            <div class="ui attached segment">
@@ -30,7 +42,6 @@
 			                        <th>{{.i18n.Tr "Image"}}</th>
 			                        <th>{{.i18n.Tr "IP_Address"}}</th>
 			                        <th>{{.i18n.Tr "Status"}}</th>
-			                        <th>{{.i18n.Tr "VNC"}}</th>
 									{{ if .IsAdmin }}
 			                        <th>{{.i18n.Tr "Hyper"}}</th>
 			                        <th>{{.i18n.Tr "Owner"}}</th>
@@ -64,12 +75,6 @@
 					        {{ end }}
 						</td>
 			                        <td>{{$.i18n.Tr .Status}}{{ if eq .Status "error" }}: {{ .Reason }}{{ end }}</td>
-			                        <td>{{ if .FloatingIps }}
-			                                {{ range .FloatingIps }}
-			                                    http://{{.IPAddress }}/novnc/vnc.html<br>
-			                                {{ end }}
-			                            {{ end }}
-			                        </td>
 						{{ if $.IsAdmin }}
 			                        <td>{{.Hyper}}</td>
 			                        <td>{{.OwnerInfo.Name}}</td>
