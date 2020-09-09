@@ -40,6 +40,8 @@ type ConsoleInfo struct {
 	Password  string `json:"password"`
 }
 type TokenClaim struct {
+	OrgID      int64
+	Role       model.Role
 	InstanceID int    `json:"instanceID"`
 	Secret     string `json:"secret"`
 	jwt.StandardClaims
@@ -63,8 +65,10 @@ func RandomStr() string {
 	return string(result)
 }
 
-func MakeToken(instanceID int, secret string) (string, error) {
+func MakeToken(instanceID int, secret string, memberShip *MemberShip) (string, error) {
 	tkClaim := TokenClaim{
+		OrgID:      memberShip.OrgID,
+		Role:       memberShip.Role,
 		InstanceID: instanceID,
 		Secret:     secret,
 		StandardClaims: jwt.StandardClaims{
@@ -94,22 +98,22 @@ func MakeToken(instanceID int, secret string) (string, error) {
 	return token, nil
 }
 
-func ResolveToken(tokenString string) (int, error) {
+func ResolveToken(tokenString string) (int, *MemberShip, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &TokenClaim{}, func(token *jwt.Token) (interface{}, error) {
 		return SignedSeret, nil
 	})
 	if err != nil || token == nil {
-		return 0, err
+		return 0, nil, err
 	}
 	claims, ok := token.Claims.(*TokenClaim)
 	if !ok || !token.Valid {
-		return 0, errors.New("invalid token")
+		return 0, nil, errors.New("invalid token")
 	}
 	instanceID := claims.InstanceID
 	console := &model.Console{Instance: int64(instanceID)}
 	err = DB().Where(console).Take(console).Error
 	if err != nil {
-		return 0, err
+		return 0, nil, err
 	}
 	tokenHash := make([]byte, 32)
 	data := sha3.NewShake256()
@@ -117,9 +121,13 @@ func ResolveToken(tokenString string) (int, error) {
 	data.Read(tokenHash)
 	hashSecret := fmt.Sprintf("%x", tokenHash)
 	if hashSecret != console.HashSecret {
-		return 0, errors.New("Secret can not pass validation")
+		return 0, nil, errors.New("Secret can not pass validation")
 	}
-	return instanceID, nil
+	memberShip := &MemberShip{
+		OrgID: claims.OrgID,
+		Role:  claims.Role,
+	}
+	return instanceID, memberShip, nil
 }
 
 func (a *ConsoleView) ConsoleURL(c *macaron.Context, store session.Store) {
@@ -143,7 +151,7 @@ func (a *ConsoleView) ConsoleURL(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	tokenString, err := MakeToken(instanceID, RandomStr())
+	tokenString, err := MakeToken(instanceID, RandomStr(), memberShip)
 	if err != nil {
 		log.Println("failed to make token", err)
 		code := http.StatusInternalServerError
@@ -160,10 +168,9 @@ func (a *ConsoleView) ConsoleURL(c *macaron.Context, store session.Store) {
 }
 
 func (a *ConsoleView) ConsoleResolve(c *macaron.Context, store session.Store) {
-	memberShip := GetMemberShip(c.Req.Context())
 	token := c.Params("token")
 	log.Println("Get JWT token", token)
-	instanceID, err := ResolveToken(token)
+	instanceID, memberShip, err := ResolveToken(token)
 	if err != nil {
 		log.Println("Unable to resolve token", err)
 		code := http.StatusUnauthorized
@@ -171,14 +178,13 @@ func (a *ConsoleView) ConsoleResolve(c *macaron.Context, store session.Store) {
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instanceID))
-	log.Println("$$$$$$$$$$$$$$$$$$$$$ Check permission", permit, instanceID)
-	/*	if !permit {
-			log.Println("Not authorized for this operation")
-			code := http.StatusUnauthorized
-			c.Error(code, http.StatusText(code))
-			return
-		}
-	*/
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
+
 	db := DB()
 	vnc := &model.Vnc{InstanceID: int64(instanceID)}
 	err = db.Where(vnc).Take(vnc).Error

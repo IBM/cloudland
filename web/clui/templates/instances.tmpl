@@ -65,10 +65,10 @@
 						</td>
 			                        <td>{{$.i18n.Tr .Status}}{{ if eq .Status "error" }}: {{ .Reason }}{{ end }}</td>
                                                 <td>
-<form name="submitForm" method="post" target="_blank" action="{{$Link}}/{{.ID}}/console">
-<a href="javascript:document.submitForm.submit()">VNC</a>
-</form>
-</td>
+							<form name="submitForm" method="post" target="_blank" action="{{$Link}}/{{.ID}}/console">
+							<a href="javascript:document.submitForm.submit()">VNC</a>
+							</form>
+							</td>
 						{{ if $.IsAdmin }}
 			                        <td>{{.Hyper}}</td>
 			                        <td>{{.OwnerInfo.Name}}</td>
