@@ -14,7 +14,6 @@ package routes
 
 import (
 	"fmt"
-	"github.com/Unknwon/macaron"
 	"html/template"
 	"log"
 	"strconv"
