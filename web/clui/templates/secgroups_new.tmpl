@@ -1,35 +1,45 @@
 {{template "_head" .}}
-<div class="user signup">
-	<div class="ui middle very relaxed page grid">
-        <div class="column" >
-            <form class="ui form" action="{{.Link}}" method="post">
-                <h3 class="ui top attached header">
-                    {{.i18n.Tr "Create New Security Group"}}
-                </h3>
-                <div class="ui attached segment">
-                    <div class="required inline field">
-                        <label for="name">{{.i18n.Tr "Name"}}</label>
-                        <input id="name" name="name" autofocus required>
-                    </div>
-                    <div class="inline field">
-                        <label for="isdefault">{{.i18n.Tr "IsDefault"}}</label>
-						<div class="ui selection dropdown">
-						  <input id="isdefault" name="isdefault" type="hidden">
-						  <i class="dropdown icon"></i>
-						  <div data-value="no" class="default text">{{.i18n.Tr "no"}}</div>
-						  <div class="menu">
-							<div class="item" data-value="yes" data-text="yes">{{.i18n.Tr "yes"}}</div>
-							<div class="item" data-value="no" data-text="no">{{.i18n.Tr "no"}}</div>
-						  </div>
-						</div>
-                    </div>
-                    <div class="inline field">
-                        <label></label>
-                        <button class="ui green button">{{.i18n.Tr "Create New Security Group"}}</button>
-                    </div>
-                </div>
-            </form>
-        </div>
+<div class="admin user">
+
+    <div class="ui container">
+
+        <div class="ui grid">
+
+        {{template "_left" .}}
+			<div class="user signup">
+				<div class="ui middle very relaxed page grid">
+					<div class="" >
+						<form class="ui form" action="{{.Link}}" method="post">
+							<h3 class="ui top attached header">
+								{{.i18n.Tr "Create New Security Group"}}
+							</h3>
+							<div class="ui attached segment">
+								<div class="required inline field">
+									<label for="name">{{.i18n.Tr "Name"}}</label>
+									<input id="name" name="name" autofocus required>
+								</div>
+								<div class="inline field">
+									<label for="isdefault">{{.i18n.Tr "IsDefault"}}</label>
+									<div class="ui selection dropdown">
+									  <input id="isdefault" name="isdefault" type="hidden">
+									  <i class="dropdown icon"></i>
+									  <div data-value="no" class="default text">{{.i18n.Tr "no"}}</div>
+									  <div class="menu">
+										<div class="item" data-value="yes" data-text="yes">{{.i18n.Tr "yes"}}</div>
+										<div class="item" data-value="no" data-text="no">{{.i18n.Tr "no"}}</div>
+									  </div>
+									</div>
+								</div>
+								<div class="inline field">
+									<label></label>
+									<button class="ui green button">{{.i18n.Tr "Create New Security Group"}}</button>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
 </div>
 {{template "_footer" .}}

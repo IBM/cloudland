@@ -1,153 +1,146 @@
 {{template "_head" .}}
-<div class="user signup">
-	<div class="ui middle very relaxed page grid">
-        <div class="column" >
-            <form class="ui form" action="{{.Link}}" method="post">
-                <h3 class="ui top attached header">
-                    {{.i18n.Tr "Create New Openshift Cluster"}}
-                </h3>
-                <div class="ui attached segment">
-                    <div class="required inline field">
-                        <label for="clustername">{{.i18n.Tr "Cluster_Name"}}</label>
-                        <input id="clustername" name="clustername" autofocus required>
-                    </div>
-                    <div class="required inline field">
-                        <label for="basedomain">{{.i18n.Tr "Base_Domain"}}</label>
-                        <input id="basedomain"  name="basedomain" required>
-                    </div>
-	            {{ if .IsAdmin }}
-                    <div class="inline field">
-                        <label for="extip">{{.i18n.Tr "LoadBalancer_IP"}}</label>
-                        <input id="extip"  name="extip">
-                    </div>
-	            {{ end }}
-                    <div class="inline field">
-                        <label for="haflag">{{.i18n.Tr "High Available"}}</label>
-						<div class="ui selection dropdown">
-						  <input id="haflag" name="haflag" type="hidden">
-						  <i class="dropdown icon"></i>
-						  <div class="default text">{{.i18n.Tr "no"}}</div>
-						  <div class="menu">
-							<div class="item" data-value="no" data-text={{.i18n.Tr "no"}}>
-							  {{.i18n.Tr "no"}}
+<div class="admin user">
+
+    <div class="ui container">
+
+        <div class="ui grid">
+
+        {{template "_left" .}}
+			<div class="user signup">
+				<div class="ui middle very relaxed page grid">
+					<div class="" >
+						<form class="ui form" action="{{.Link}}" method="post">
+							<h3 class="ui top attached header">
+								{{.i18n.Tr "Create New Openshift Cluster"}}
+							</h3>
+							<div class="ui attached segment">
+								<div class="required inline field">
+									<label for="clustername">{{.i18n.Tr "Cluster_Name"}}</label>
+									<input id="clustername" name="clustername" autofocus required>
+								</div>
+								<div class="required inline field">
+									<label for="basedomain">{{.i18n.Tr "Base_Domain"}}</label>
+									<input id="basedomain"  name="basedomain" required>
+								</div>
+							{{ if .IsAdmin }}
+								<div class="inline field">
+									<label for="extip">{{.i18n.Tr "LoadBalancer_IP"}}</label>
+									<input id="extip"  name="extip">
+								</div>
+							{{ end }}
+								<div class="inline field">
+									<label for="haflag">{{.i18n.Tr "High Available"}}</label>
+									<div class="ui selection dropdown">
+									  <input id="haflag" name="haflag" type="hidden">
+									  <i class="dropdown icon"></i>
+									  <div class="default text">{{.i18n.Tr "no"}}</div>
+									  <div class="menu">
+										<div class="item" data-value="no" data-text={{.i18n.Tr "no"}}>
+										  {{.i18n.Tr "no"}}
+										</div>
+										<div class="item" data-value="yes" data-text={{.i18n.Tr "yes"}}>
+										  {{.i18n.Tr "yes"}}
+										</div>
+									  </div>
+									</div>
+								</div>
+								<div class="required inline field">
+									<label for="nworkers">{{.i18n.Tr "Number of Workers"}}</label>
+									<input id="nworker"  name="nworkers" value="2" required>
+								</div>
+								<div class="required inline field">
+									<label for="version">{{.i18n.Tr "Version"}}</label>
+									<div class="ui selection dropdown">
+									  <input id="version" name="version" type="hidden" required>
+									  <i class="dropdown icon"></i>
+									  <div class="default text">Version</div>
+									  <div class="menu">
+										<div class="item" data-value=4.4 data-text=4.4>
+										  4.4
+										</div>
+										<div class="item" data-value=4.3 data-text=4.3>
+										  4.3
+										</div>
+										<div class="item" data-value=4.2 data-text=4.2>
+										  4.2
+										</div>
+									  </div>
+									</div>
+								</div>
+								<div class="required inline field">
+									<label for="lflavor">{{.i18n.Tr "LB_Flavor"}}</label>
+									<div class="ui selection dropdown">
+									  <input id="lflavor" name="lflavor" type="hidden">
+									  <i class="dropdown icon"></i>
+									  <div class="default text">{{.i18n.Tr "Flavor"}}</div>
+									  <div class="menu">
+										{{ range .Flavors }}
+										<div class="item" data-value={{.ID}} data-text={{.Name}}>
+										  {{.Name}}
+										</div>
+										{{ end }}
+									  </div>
+									</div>
+								</div>
+								<div class="required inline field">
+									<label for="mflavor">{{.i18n.Tr "Master_Flavor"}}</label>
+									<div class="ui selection dropdown">
+									  <input id="mflavor" name="mflavor" type="hidden">
+									  <i class="dropdown icon"></i>
+									  <div class="default text">{{.i18n.Tr "Master_Flavor"}}</div>
+									  <div class="menu">
+										{{ range .Flavors }}
+										<div class="item" data-value={{.ID}} data-text={{.Name}}>
+										  {{.Name}}
+										</div>
+										{{ end }}
+									  </div>
+									</div>
+								</div>
+								<div class="required inline field">
+									<label for="wflavor">{{.i18n.Tr "Worker_Flavor"}}</label>
+									<div class="ui selection dropdown">
+									  <input id="wflavor" name="wflavor" type="hidden">
+									  <i class="dropdown icon"></i>
+									  <div class="default text">{{.i18n.Tr "Master_Flavor"}}</div>
+									  <div class="menu">
+										{{ range .Flavors }}
+										<div class="item" data-value={{.ID}} data-text={{.Name}}>
+										  {{.Name}}
+										</div>
+										{{ end }}
+									  </div>
+									</div>
+								</div>
+								<div class="required inline field">
+									<label for="key">{{.i18n.Tr "Key"}}</label>
+									<div class="ui selection dropdown">
+									  <input id="key" name="key" type="hidden">
+									  <i class="dropdown icon"></i>
+									  <div class="default text">{{.i18n.Tr "Key"}}</div>
+									  <div class="menu">
+										{{ range .Keys }}
+										<div class="item" data-value={{.ID}} data-text={{.Name}}>
+										  {{.Name}}
+										</div>
+										{{ end }}
+									  </div>
+									</div>
+								</div>
+								<div class="required inline field">
+									<label>{{.i18n.Tr "Pull Secret"}}</label>
+									<textarea id="secret" name="secret" autocomplete="off" required></textarea>
+								</div>
+								<div class="inline field">
+									<label></label>
+									<button class="ui green button">{{.i18n.Tr "Create New Openshift Cluster"}}</button>
+								</div>
 							</div>
-							<div class="item" data-value="yes" data-text={{.i18n.Tr "yes"}}>
-							  {{.i18n.Tr "yes"}}
-							</div>
-						  </div>
-						</div>
-                    </div>
-                    <div class="required inline field">
-                        <label for="nworkers">{{.i18n.Tr "Number of Workers"}}</label>
-                        <input id="nworker"  name="nworkers" value="2" required>
-                    </div>
-                    <div class="required inline field">
-                        <label for="version">{{.i18n.Tr "Version"}}</label>
-						<div class="ui selection dropdown">
-						  <input id="version" name="version" type="hidden" required>
-						  <i class="dropdown icon"></i>
-						  <div class="default text">Version</div>
-						  <div class="menu">
-							<div class="item" data-value=4.4 data-text=4.4>
-							  4.4
-							</div>
-							<div class="item" data-value=4.3 data-text=4.3>
-							  4.3
-							</div>
-							<div class="item" data-value=4.2 data-text=4.2>
-							  4.2
-							</div>
-						  </div>
-						</div>
-                    </div>
-                    <div class="required inline field">
-                        <label for="lflavor">{{.i18n.Tr "LB_Flavor"}}</label>
-						<div class="ui selection dropdown">
-						  <input id="lflavor" name="lflavor" type="hidden">
-						  <i class="dropdown icon"></i>
-						  <div class="default text">{{.i18n.Tr "Flavor"}}</div>
-						  <div class="menu">
-                            {{ range .Flavors }}
-							<div class="item" data-value={{.ID}} data-text={{.Name}}>
-							  {{.Name}}
-							</div>
-                            {{ end }}
-						  </div>
-						</div>
-                    </div>
-                    <div class="required inline field">
-                        <label for="mflavor">{{.i18n.Tr "Master_Flavor"}}</label>
-						<div class="ui selection dropdown">
-						  <input id="mflavor" name="mflavor" type="hidden">
-						  <i class="dropdown icon"></i>
-						  <div class="default text">{{.i18n.Tr "Master_Flavor"}}</div>
-						  <div class="menu">
-                            {{ range .Flavors }}
-							<div class="item" data-value={{.ID}} data-text={{.Name}}>
-							  {{.Name}}
-							</div>
-                            {{ end }}
-						  </div>
-						</div>
-                    </div>
-                    <div class="required inline field">
-                        <label for="wflavor">{{.i18n.Tr "Worker_Flavor"}}</label>
-						<div class="ui selection dropdown">
-						  <input id="wflavor" name="wflavor" type="hidden">
-						  <i class="dropdown icon"></i>
-						  <div class="default text">{{.i18n.Tr "Master_Flavor"}}</div>
-						  <div class="menu">
-                            {{ range .Flavors }}
-							<div class="item" data-value={{.ID}} data-text={{.Name}}>
-							  {{.Name}}
-							</div>
-                            {{ end }}
-						  </div>
-						</div>
-                    </div>
-                    <div class="required inline field">
-                        <label for="key">{{.i18n.Tr "Key"}}</label>
-						<div class="ui selection dropdown">
-						  <input id="key" name="key" type="hidden">
-						  <i class="dropdown icon"></i>
-						  <div class="default text">{{.i18n.Tr "Key"}}</div>
-						  <div class="menu">
-                            {{ range .Keys }}
-							<div class="item" data-value={{.ID}} data-text={{.Name}}>
-							  {{.Name}}
-							</div>
-                            {{ end }}
-						  </div>
-						</div>
-                    </div>
-                    <div class="required inline field">
-						<label>{{.i18n.Tr "Pull Secret"}}</label>
-						<textarea id="secret" name="secret" autocomplete="off" required></textarea>
-                    </div>
-                    <div class="inline field">
-                        <label for="hostrec">{{.i18n.Tr "Registry Host Record"}}</label>
-                        <input id="hostrec"  name="hostrec" placeholder="10.10.10.10:registry_name">
-                    </div>
-                    <div class="inline field">
-						<label>{{.i18n.Tr "Additional Trust Bundle"}}</label>
-						<textarea id="bundle" name="bundle" placeholder="additionalTrustBundle: |
-  -----BEGIN CERTIFICATE-----
-  ...
-  -----END CERTIFICATE-----" autocomplete="off"></textarea>
-                    </div>
-                    <div class="inline field">
-						<label>{{.i18n.Tr "Image Content Sources"}}</label>
-						<textarea id="registry" name="registry" placeholder="imageContentSources:
-- mirrors:
-  ..." autocomplete="off"></textarea>
-                    </div>
-                    <div class="inline field">
-                        <label></label>
-                        <button class="ui green button">{{.i18n.Tr "Create New Openshift Cluster"}}</button>
-                    </div>
-                </div>
-            </form>
-        </div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
 </div>
 {{template "_footer" .}}

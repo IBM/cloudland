@@ -9,7 +9,12 @@ package routes
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
+	"golang.org/x/crypto/ssh"
 	"log"
 	"net/http"
 	"strconv"
@@ -23,10 +28,32 @@ import (
 var (
 	keyAdmin = &KeyAdmin{}
 	keyView  = &KeyView{}
+	keyTemp = &KeyTemp{}
 )
 
 type KeyAdmin struct{}
 type KeyView struct{}
+type KeyTemp struct{}
+
+func (point *KeyTemp) Create() (publicKey, privateKey string, err error){
+	// generate key
+	private, er := rsa.GenerateKey(rand.Reader, 1024)
+	if er != nil {
+		log.Println("failed to create privateKey ")
+		err = er
+		return
+	}
+	privateKeyPEM := &pem.Block{Type:"RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(private)}
+	privateKey = string(pem.EncodeToMemory(privateKeyPEM))
+	pub, er := ssh.NewPublicKey(&private.PublicKey)
+	if er != nil {
+		log.Println("failed to create publicKey")
+		err = er
+		return
+	}
+	publicKey = string(ssh.MarshalAuthorizedKey(pub))
+	return
+}
 
 func (a *KeyAdmin) Create(ctx context.Context, name, pubkey string) (key *model.Key, err error) {
 	memberShip := GetMemberShip(ctx)
@@ -182,7 +209,7 @@ func (v *KeyView) Delete(c *macaron.Context, store session.Store) (err error) {
 	return
 }
 
-func (v *KeyView) New(c *macaron.Context, store session.Store) {
+func (v *KeyView) New(c *macaron.Context, store session.Store)(){
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -191,10 +218,22 @@ func (v *KeyView) New(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	c.HTML(200, "keys_new")
+	hostname := c.QueryTrim("hostname")
+	hyper := c.QueryTrim("hyper")
+	count := c.QueryTrim("count")
+	userData := c.QueryTrim("userData")
+	
+	if hostname != ""{
+		c.Data["InstanceFlag"] = 1
+	}
+	c.Data["Hostname"] = hostname
+	c.Data["hyper"] = hyper
+	c.Data["count"] = count
+	c.Data["userData"] = userData
+	c.HTML(200, "keys_new");
 }
 
-func (v *KeyView) Create(c *macaron.Context, store session.Store) {
+func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -203,10 +242,11 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	redirectTo := "../keys"
+	
 	name := c.QueryTrim("name")
-	pubkey := c.QueryTrim("pubkey")
-	key, err := keyAdmin.Create(c.Req.Context(), name, pubkey)
+	publicKey := c.QueryTrim("PublicKey")
+	hostname := c.QueryTrim("host")
+	key, err := keyAdmin.Create(c.Req.Context(), name, publicKey)
 	if err != nil {
 		log.Println("Failed to create key, %v", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
@@ -222,5 +262,47 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 		c.JSON(200, key)
 		return
 	}
-	c.Redirect(redirectTo)
+	
+	var redirectTo string
+	if c.QueryTrim("flags") == ""{
+		redirectTo = "../keys"
+		c.Redirect(redirectTo)
+	}else{
+		redirectTo = "../instances?hostname=" + hostname
+		c.Redirect(redirectTo)
+	}
 }
+
+
+
+func (v *KeyView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		code := http.StatusUnauthorized
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	if c.QueryTrim("flags") != ""{
+		c.Data["InstanceFlag"] = 1
+	}
+	hostname := c.QueryTrim("host")
+	name := c.QueryTrim("name")
+	publicKey, privateKey, err := keyTemp.Create()
+	
+	if err != nil{
+		log.Println("failed")
+		code := http.StatusInternalServerError
+		c.Error(code, http.StatusText(code))
+		return
+	}
+	
+	
+	c.Data["KeyName"] = name
+	c.Data["PublicKey"] = publicKey
+	c.Data["HostName"] = hostname
+	c.Data["PrivateKey"] = privateKey
+	c.HTML(200, "newKey")
+}
+
