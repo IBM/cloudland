@@ -53,7 +53,20 @@ function vlan_status()
     vlan_list=$(ls vlan* 2>/dev/null)
     vlan_list=$(echo "$vlan_list $(sudo ip netns list | grep vlan | cut -d' ' -f1)" | xargs | sed 's/vlan//g')
     [ "$vlan_list" = "$old_vlan_list" ] && return
-    [ -n "$vlan_list" ] && echo "|:-COMMAND-:| vlan_status.sh '$SCI_CLIENT_ID' '$vlan_list'"
+    vlan_arr=($vlan_list)
+    nlist=$(ip netns list | grep vlan | cut -d' ' -f1 | xargs | sed 's/vlan//g')
+    vlan_status_list=""
+    for var in ${vlan_arr[*]}; do
+        status="INACTIVE"
+        [[ $nlist =~ $var ]] && status="ACTIVE"
+        first=""
+        [[ -d "vlan$var" ]] && [[ -f "vlan$var/vlan$var.FIRST" ]] && first="FIRST"
+        second=""
+        [[ -d "vlan$var" ]] && [[ -f "vlan$var/vlan$var.SECOND" ]] && second="SECOND"
+        vlan_status_list="$vlan_status_list $var:$status:$first:$second"
+    done
+    vlan_status_list=$(echo $vlan_status_list | sed -e 's/^[ ]*//g')
+    [ -n "$vlan_status_list" ] && echo "|:-COMMAND-:| vlan_status.sh '$SCI_CLIENT_ID' '$vlan_status_list'"
     echo "$vlan_list" >old_vlan_list
 }
 
