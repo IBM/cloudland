@@ -42,6 +42,7 @@
 			                        <th>{{.i18n.Tr "Image"}}</th>
 			                        <th>{{.i18n.Tr "IP_Address"}}</th>
 			                        <th>{{.i18n.Tr "Status"}}</th>
+			                        <th>{{.i18n.Tr "Console"}}</th>
 									{{ if .IsAdmin }}
 			                        <th>{{.i18n.Tr "Hyper"}}</th>
 			                        <th>{{.i18n.Tr "Owner"}}</th>
@@ -75,6 +76,11 @@
 					        {{ end }}
 						</td>
 			                        <td>{{$.i18n.Tr .Status}}{{ if eq .Status "error" }}: {{ .Reason }}{{ end }}</td>
+                                                <td>
+							<form name="submitForm{{.ID}}" method="post" target="_blank" action="{{$Link}}/{{.ID}}/console">
+							<a href="javascript:document.submitForm{{.ID}}.submit()">VNC</a>
+							</form>
+						</td>
 						{{ if $.IsAdmin }}
 			                        <td>{{.Hyper}}</td>
 			                        <td>{{.OwnerInfo.Name}}</td>

@@ -12,9 +12,9 @@ import (
 
 type Console struct {
 	Model
-	Instance int64
-	Token    string `gorm:"type:varchar(256)"`
-	Type     string
+	Instance   int64
+	HashSecret string `gorm:"type:varchar(256)"`
+	Type       string
 }
 
 func init() {

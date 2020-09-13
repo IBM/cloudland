@@ -896,17 +896,12 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 			}
 		}
 	}
-	vnc, err := instanceAdmin.enableVnc(c.Req.Context(), instance)
-	if err != nil {
-		log.Println("Failed enable VNC", err)
-	}
 	_, flavors, err := flavorAdmin.List(0, -1, "", "")
 	if err := db.Find(&flavors).Error; err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
 	}
-	c.Data["Vnc"] = vnc
 	c.Data["Instance"] = instance
 	c.Data["Subnets"] = subnets
 	c.Data["Flavors"] = flavors
@@ -1203,4 +1198,3 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	}
 	c.Redirect(redirectTo)
 }
-

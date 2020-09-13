@@ -88,12 +88,12 @@ func HyperStatus(ctx context.Context, job *model.Job, args []string) (status str
 		"memory_total": int64(totalMem),
 		"disk":         int64(availDisk),
 		"disk_total":   int64(totalDisk),
-		"status":       int64(hyperStatus),
 	}).Error
 	if err != nil {
 		log.Println("Failed to save resource", err)
 		return
 	}
+	hyper.Status = int32(hyperStatus)
 	err = db.Save(hyper).Error
 	if err != nil {
 		log.Println("Failed to save hypervisor", err)
