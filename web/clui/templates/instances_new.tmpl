@@ -1,7 +1,24 @@
 {{template "_head" .}}
+
+<script type="text/javascript">
+    function storage() {
+        var hostname = document.getElementById("hostname").value;
+        var hyper = document.getElementById("hyper").value;
+        var count = document.getElementById("count").value;
+        var userData = document.getElementById("userdata").value;
+		
+		var create_key = document.getElementById("create_new_key");
+		create_key.href = create_key.href + "?hostname=" + hostname + "&hyper=" + hyper +"&count=" + count + "&userData=" + userData;
+    }
+</script>
+
+<div class="admin user">
+    <div class="ui container">
+        <div class="ui grid">
+        {{template "_left" .}}
 <div class="user signup">
 	<div class="ui middle very relaxed page grid">
-        <div class="column" >
+        <div class="" >
             <form class="ui form" action="{{.Link}}" method="post">
                 <h3 class="ui top attached header">
                     {{.i18n.Tr "Create New Instance"}}
@@ -9,7 +26,7 @@
                 <div class="ui attached segment">
                     <div class="required inline field">
                         <label for="hostname">{{.i18n.Tr "Hostname_prefix"}}</label>
-                        <input id="hostname" name="hostname" autofocus required>
+                        <input id="hostname" name="hostname" value="{{.HostName}}" autofocus required>
                     </div>
 	            {{ if .IsAdmin }}
                     <div class="required inline field">
@@ -155,13 +172,14 @@
 						  <i class="dropdown icon"></i>
 						  <div class="default text">{{.i18n.Tr "Key"}}</div>
 						  <div class="menu">
-                            {{ range .Keys }}
-							<div class="item" data-value={{.ID}} data-text={{.Name}}>
-							  {{.Name}}
-							</div>
-                            {{ end }}
+                             {{ range .Keys }}
+                             <div class="item" data-value={{.ID}} data-text={{.Name}}>
+                                  {{.Name}}
+                             </div>
+                             {{ end }}
 						  </div>
 						</div>
+						<a id="create_new_key" class="ui green button" href="/keys/new" onclick="storage()"> Click to create key</a>
                     </div>
                     <div class="inline field">
 						<label>{{.i18n.Tr "User Data"}}</label>
@@ -175,6 +193,9 @@
             </form>
         </div>
 	</div>
+</div>
+</div>
+</div>
 </div>
 {{template "_footer" .}}
 

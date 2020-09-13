@@ -142,6 +142,7 @@ func New() (m *macaron.Macaron) {
 	m.Get("/keys", keyView.List)
 	m.Get("/keys/new", keyView.New)
 	m.Post("/keys/new", keyView.Create)
+	m.Post("/keys/confirm", keyView.Confirm)
 	m.Delete("/keys/:id", keyView.Delete)
 	m.Get("/floatingips", floatingipView.List)
 	m.Get("/floatingips/new", floatingipView.New)

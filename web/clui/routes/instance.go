@@ -182,13 +182,6 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 		log.Println("Failed to query instance ", err)
 		return
 	}
-	if instance.Hostname != hostname {
-		instance.Hostname = hostname
-		if err = db.Save(instance).Error; err != nil {
-			log.Println("Failed to save instance", err)
-			return
-		}
-	}
 	if hyper != int(instance.Hyper) {
 		if instance.Status != "shut_off" {
 			log.Println("Instance must be shutdown before migration")
@@ -202,25 +195,6 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 			log.Println("Migrate vm command execution failed", err)
 			return
 		}
-		instance.Status = "migrating"
-		if err = db.Save(instance).Error; err != nil {
-			log.Println("Failed to save instance", err)
-		}
-		return
-	}
-	if action == "shutdown" || action == "destroy" || action == "start" || action == "suspend" || action == "resume" {
-		control := fmt.Sprintf("inter=%d", instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh '%d' '%s'", instance.ID, action)
-		err = hyperExecute(ctx, control, command)
-		if err != nil {
-			log.Println("Delete vm command execution failed", err)
-			return
-		}
-		instance.Status = "updating"
-		if err = db.Save(instance).Error; err != nil {
-			log.Println("Failed to save instance", err)
-		}
-		return
 	}
 	if flavorID != instance.FlavorID {
 		if instance.Status == "running" {
@@ -257,6 +231,22 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 		instance.Flavor = flavor
 		if err = db.Save(instance).Error; err != nil {
 			log.Println("Failed to save instance", err)
+			return
+		}
+	}
+	if instance.Hostname != hostname {
+		instance.Hostname = hostname
+		if err = db.Save(instance).Error; err != nil {
+			log.Println("Failed to save instance", err)
+			return
+		}
+	}
+	if action == "shutdown" || action == "destroy" || action == "start" || action == "suspend" || action == "resume" {
+		control := fmt.Sprintf("inter=%d", instance.Hyper)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh '%d' '%s'", instance.ID, action)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Delete vm command execution failed", err)
 			return
 		}
 	}
@@ -660,10 +650,6 @@ func (a *InstanceAdmin) enableVnc(ctx context.Context, instance *model.Instance)
 		return
 	}
 	gateway := &model.Gateway{}
-	if len(instance.Interfaces) == 0 {
-		log.Println("No Interface")
-		return
-	}
 	routerID := instance.Interfaces[0].Address.Subnet.Router
 	if routerID > 0 {
 		gateway.ID = routerID
@@ -733,6 +719,7 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
+	hostname := c.QueryTrim("hostname")
 	if limit == 0 {
 		limit = 16
 	}
@@ -742,7 +729,6 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	}
 	query := c.QueryTrim("q")
 	total, instances, err := instanceAdmin.List(c.Req.Context(), offset, limit, order, query)
-
 	if err != nil {
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
@@ -759,6 +745,7 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	c.Data["Total"] = total
 	c.Data["Pages"] = pages
 	c.Data["Query"] = query
+	c.Data["HostName"] = hostname
 	if c.Req.Header.Get("X-Json-Format") == "yes" {
 		c.JSON(200, map[string]interface{}{
 			"instances": instances,
@@ -851,6 +838,7 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	c.Data["HostName"] = c.QueryTrim("hostname")
 	c.Data["Images"] = images
 	c.Data["Flavors"] = flavors
 	c.Data["Subnets"] = subnets

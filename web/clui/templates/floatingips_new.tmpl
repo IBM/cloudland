@@ -1,63 +1,72 @@
 {{template "_head" .}}
-<div class="user signup">
-	<div class="ui middle very relaxed page grid">
-        <div class="column" >
-            <form class="ui form" action="{{.Link}}" method="post">
-                <h3 class="ui top attached header">
-                    {{.i18n.Tr "Create New Floating Ip"}}
-                </h3>
-                <div class="ui attached segment">
-                    <div class="required inline field">
-                        <label for="instance">{{.i18n.Tr "Instance Address"}}</label>
-						<div class="ui selection dropdown">
-						  <input id="instance" name="instance" type="hidden">
-						  <i class="dropdown icon"></i>
-						  <div class="default text">{{.i18n.Tr "Instance Address"}}</div>
-						  <div class="menu">
-                            {{ range .Instances }}
-						{{ if ne (index .Interfaces 0).Address.Subnet.Router 0 }}
-							<div class="item" data-value={{.ID}} data-text={{.Hostname}}-{{(index .Interfaces 0).Address.Address}}>
-							  {{.ID}}-{{.Hostname}}-{{(index .Interfaces 0).Address.Address}}
+<div class="admin user">
+
+    <div class="ui container">
+
+        <div class="ui grid">
+
+        {{template "_left" .}}
+			<div class="user signup">
+				<div class="ui middle very relaxed page grid">
+					<div class="" >
+						<form class="ui form" action="{{.Link}}" method="post">
+							<h3 class="ui top attached header">
+								{{.i18n.Tr "Create New Floating Ip"}}
+							</h3>
+							<div class="ui attached segment">
+								<div class="required inline field">
+									<label for="instance">{{.i18n.Tr "Instance Address"}}</label>
+									<div class="ui selection dropdown">
+									  <input id="instance" name="instance" type="hidden">
+									  <i class="dropdown icon"></i>
+									  <div class="default text">{{.i18n.Tr "Instance Address"}}</div>
+									  <div class="menu">
+										{{ range .Instances }}
+									{{ if ne (index .Interfaces 0).Address.Subnet.Router 0 }}
+										<div class="item" data-value={{.ID}} data-text={{.Hostname}}-{{(index .Interfaces 0).Address.Address}}>
+										  {{.ID}}-{{.Hostname}}-{{(index .Interfaces 0).Address.Address}}
+										</div>
+															{{ end }}
+										{{ end }}
+									  </div>
+									</div>
+								</div>
+						{{ if .IsAdmin }}
+								<div class="inline field">
+									<label for="publicip">{{.i18n.Tr "Public IP"}}</label>
+									<input id="publicip" name="publicip" placeholder="192.168.1.25">
+								</div>
+								<div class="inline field">
+									<label for="privateip">{{.i18n.Tr "Private IP"}}</label>
+									<input id="privateip" name="publicip" placeholder="172.20.16.25">
+								</div>
+						{{ end }}
+								<div class="inline field">
+									<label for="ftype">{{.i18n.Tr "Floating IP type"}}</label>
+									<div class="ui selection dropdown">
+									  <input id="ftype" name="ftype" type="hidden">
+									  <i class="dropdown icon"></i>
+									  <div class="default text">{{.i18n.Tr "Type"}}</div>
+									  <div class="menu">
+										<div class="item" data-value="public" data-text="Public">
+										  {{.i18n.Tr "public"}}
+										</div>
+										<div class="item" data-value="private" data-text="Private">
+										  {{.i18n.Tr "private"}}
+										</div>
+									  </div>
+									</div>
+								</div>
+								<div class="inline field">
+									<label></label>
+									<button class="ui green button">{{.i18n.Tr "Create New Floating Ip"}}</button>
+								</div>
 							</div>
-                                                {{ end }}
-                            {{ end }}
-						  </div>
-						</div>
-                    </div>
-		    {{ if .IsAdmin }}
-                    <div class="inline field">
-                        <label for="publicip">{{.i18n.Tr "Public IP"}}</label>
-                        <input id="publicip" name="publicip" placeholder="192.168.1.25">
-                    </div>
-                    <div class="inline field">
-                        <label for="privateip">{{.i18n.Tr "Private IP"}}</label>
-                        <input id="privateip" name="publicip" placeholder="172.20.16.25">
-                    </div>
-		    {{ end }}
-                    <div class="inline field">
-                        <label for="ftype">{{.i18n.Tr "Floating IP type"}}</label>
-						<div class="ui selection dropdown">
-						  <input id="ftype" name="ftype" type="hidden">
-						  <i class="dropdown icon"></i>
-						  <div class="default text">{{.i18n.Tr "Type"}}</div>
-						  <div class="menu">
-							<div class="item" data-value="public" data-text="Public">
-							  {{.i18n.Tr "public"}}
-							</div>
-							<div class="item" data-value="private" data-text="Private">
-							  {{.i18n.Tr "private"}}
-							</div>
-						  </div>
-						</div>
-                    </div>
-                    <div class="inline field">
-                        <label></label>
-                        <button class="ui green button">{{.i18n.Tr "Create New Floating Ip"}}</button>
-                    </div>
-                </div>
-            </form>
-        </div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
 </div>
-{{template "_footer" .}}
 
