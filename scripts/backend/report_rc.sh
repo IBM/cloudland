@@ -51,7 +51,7 @@ function vlan_status()
     cd /opt/cloudland/cache/dnsmasq
     old_vlan_list=$(cat old_vlan_list)
     vlan_list=$(ls vlan* 2>/dev/null)
-    vlan_list=$(echo "$vlan_list $(ip netns list | grep vlan | cut -d' ' -f1)" | xargs | sed 's/vlan//g')
+    vlan_list=$(echo "$vlan_list $(sudo ip netns list | grep vlan | cut -d' ' -f1)" | xargs | sed 's/vlan//g')
     [ "$vlan_list" = "$old_vlan_list" ] && return
     [ -n "$vlan_list" ] && echo "|:-COMMAND-:| vlan_status.sh '$SCI_CLIENT_ID' '$vlan_list'"
     echo "$vlan_list" >old_vlan_list
@@ -62,7 +62,7 @@ function router_status()
     cd /opt/cloudland/cache/router
     old_router_list=$(cat old_router_list)
     router_list=$(ls router* 2>/dev/null)
-    router_list=$(echo "$router_list $(ip netns list | grep router | cut -d' ' -f1)" | xargs | sed 's/router-//g')
+    router_list=$(echo "$router_list $(sudo ip netns list | grep router | cut -d' ' -f1)" | xargs | sed 's/router-//g')
     [ "$router_list" = "$old_router_list" ] && return
     [ -n "$router_list" ] && echo "|:-COMMAND-:| router_status.sh '$SCI_CLIENT_ID' '$router_list'"
     echo "$router_list" >old_router_list
@@ -80,13 +80,13 @@ function calc_resource()
         let virtual_cpu=$virtual_cpu+$vcpu
         let virtual_memory=$virtual_memory+$vmem
     done
-    used_disk=$(du -s $image_dir | awk '{print $1}')
+    used_disk=$(sudo du -s $image_dir | awk '{print $1}')
     for disk in $(ls $image_dir/* 2>/dev/null); do
         vdisk=$(qemu-img info $disk | grep 'virtual size:' | cut -d' ' -f4 | tr -d '(')
         [ -z "$vdisk" ] && continue
         let virtual_disk=$virtual_disk+$vdisk
     done
-    total_used_disk=$(du -s $mount_point | awk '{print $1}')
+    total_used_disk=$(sudo du -s $mount_point | awk '{print $1}')
     total_disk=$(echo "($total_disk-$total_used_disk+$used_disk)*$disk_over_ratio" | bc)
     total_disk=${total_disk%.*}
     disk=$(echo "$total_disk-$virtual_disk" | bc)
@@ -117,6 +117,21 @@ function calc_resource()
     echo "'$cpu' '$total_cpu' '$memory' '$total_memory' '$disk' '$total_disk' '$state'" >/opt/cloudland/run/old_resource_list
 }
 
+function replace_vnc_passwd()
+{
+    old_timestamp=/opt/cloudland/run/last_vnc_update
+    [ ! -f $old_timestamp ] && touch $old_timestamp && return
+    time_stamp=$(stat -c %X $old_timestamp)
+    let duration=$(date +%s)-$time_stamp
+    if [ "$duration" -gt 300 ]; then 
+        for inst in $(sudo virsh list --all | grep inst | awk '{print $2}'); do
+            sudo ./replace_vnc_passwd.sh $inst
+        done
+        touch $old_timestamp
+    fi
+}
+
+replace_vnc_passwd
 calc_resource
 probe_arp >/dev/null 2>&1
 inst_status

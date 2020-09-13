@@ -742,7 +742,7 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	}
 	query := c.QueryTrim("q")
 	total, instances, err := instanceAdmin.List(c.Req.Context(), offset, limit, order, query)
-	
+
 	if err != nil {
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
@@ -908,17 +908,12 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 			}
 		}
 	}
-	vnc, err := instanceAdmin.enableVnc(c.Req.Context(), instance)
-	if err != nil {
-		log.Println("Failed enable VNC", err)
-	}
 	_, flavors, err := flavorAdmin.List(0, -1, "", "")
 	if err := db.Find(&flavors).Error; err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
 	}
-	c.Data["Vnc"] = vnc
 	c.Data["Instance"] = instance
 	c.Data["Subnets"] = subnets
 	c.Data["Flavors"] = flavors

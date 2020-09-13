@@ -73,20 +73,6 @@
 							{{ end }}
                         </select>
 					</div>
-		    {{ if .Vnc }}
-		    <div class="inline field">
-			<label for="vnc" name="vnc">{{.i18n.Tr "Vnc"}}</label>
-			<span>{{.Vnc.AccessAddress}}:{{.Vnc.AccessPort}}:{{.Vnc.Passwd}}</span>
-		    </div>
-		    {{ if .Vnc.ExpiredAt }}
-                    <div class="inline field">
-                       <label></label>
-                       <span class="content vnc">
-                               ({{.i18n.Tr "Expires at"}} {{ .Vnc.ExpiredAt}})
-                       </span>
-                   </div>
-		   {{ end }}
-		   {{ end }}
                     <div class="inline field">
                         <label></label>
                         <button class="ui green button">{{.i18n.Tr "Update Instance"}}</button>
