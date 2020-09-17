@@ -75,10 +75,10 @@ function inst_console_proxy()
 {
     sudo yum -y install libvirt-devel
     cd /opt
-    sudo clone https://github.com/libvirt/libvirt-console-proxy.git
+    sudo git clone https://github.com/libvirt/libvirt-console-proxy.git
     sudo chown cland.cland libvirt-console-proxy
     cd libvirt-console-proxy
-    make
+    go build -o build/virtconsoleproxyd cmd/virtconsoleproxyd/virtconsoleproxyd.go
     cert_dir=/opt/libvirt-console-proxy/cert
     mkdir $cert_dir
     net_dev=$(cat $net_conf | grep 'network_device:' | cut -d: -f2)
