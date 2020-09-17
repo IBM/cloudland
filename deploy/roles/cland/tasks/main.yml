@@ -58,6 +58,12 @@
     dest: /opt/cloudland/etc/host.list
   tags: [fe_srv]
 
+- name: generate console proxy service
+  template:
+    src: consoleproxy.service.j2
+    dest: /lib/systemd/system/consoleproxy.service
+  tags: [console]
+
 - name: copy service file
   copy: 
     src: cloudland.service
@@ -78,6 +84,14 @@
     daemon_reload: yes
     state: restarted
   tags: [fe_srv]
+
+- name: start virt console proxy
+  systemd: 
+    name: consoleproxy
+    enabled: yes
+    daemon_reload: yes
+    state: restarted
+  tags: [fe_srv,console]
 
 - name: Allow cland necessary ports
   script: firewall.sh

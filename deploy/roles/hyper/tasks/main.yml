@@ -114,7 +114,7 @@
   ignore_errors: yes
 
 - name: Allow cland necessary ports
-  script: firewall.sh
+  script: firewall.sh {{ hostvars[groups['web'][0]]['ansible_host'] }}
   tags: [firewall]
   ignore_errors: yes
 

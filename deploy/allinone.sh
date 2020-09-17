@@ -70,6 +70,39 @@ function inst_cland()
     make install
 }
 
+# Install libvirt console proxy
+function inst_console_proxy()
+{
+    sudo yum -y install libvirt-devel
+    cd /opt
+    sudo clone https://github.com/libvirt/libvirt-console-proxy.git
+    sudo chown cland.cland libvirt-console-proxy
+    cd libvirt-console-proxy
+    make
+    cert_dir=/opt/libvirt-console-proxy/cert
+    mkdir $cert_dir
+    net_dev=$(cat $net_conf | grep 'network_device:' | cut -d: -f2)
+    myip=$(ifconfig $net_dev | grep 'inet ' | awk '{print $2}')
+    cat >/tmp/ca.info <<EOF
+cn = console-proxy
+ca
+cert_signing_key
+EOF
+    cd $cert_dir
+    certtool --generate-privkey >cakey.pem
+    certtool --generate-self-signed --load-privkey cakey.pem --template /tmp/ca.info --outfile cacert.pem
+    certtool --generate-privkey >serverkey.pem
+    cat <<EOF > /tmp/server.info
+organization = console-proxy
+cn = $myip
+tls_www_server
+encryption_key
+signing_key
+EOF
+certtool --generate-certificate --load-privkey serverkey.pem --load-ca-certificate cacert.pem --load-ca-privkey cakey.pem --template /tmp/server.info --outfile servercert.pem
+    rm -f /tmp/ca.info
+}
+
 # Generate host file
 function gen_hosts()
 {
@@ -146,6 +179,7 @@ diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 gen_hosts
 cd $cland_root_dir/deploy
 [ $(uname -m) != s390x ] && ansible-playbook cloudland.yml -e @$net_conf --tags epel
+inst_console_proxy
 ansible-playbook cloudland.yml -e @$net_conf --tags hosts,selinux,be_pkg,be_conf,firewall,imgrepo
 demo_router
 allinone_firewall

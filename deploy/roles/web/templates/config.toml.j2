@@ -2,6 +2,10 @@
 listen = "{{ hostvars[groups['web'][0]]['inventory_hostname'] }}:80"
 endpoint = "{{ hostvars[groups['web'][0]]['ansible_host'] }}:80"
 
+[console]
+host = "{{ hostvars[groups['web'][0]]['inventory_hostname'] }}"
+port = 9443
+
 [rest]
 listen = "{{ hostvars[groups['web'][0]]['inventory_hostname'] }}:4001"
 endpoint = "{{ hostvars[groups['web'][0]]['ansible_host'] }}:4001"

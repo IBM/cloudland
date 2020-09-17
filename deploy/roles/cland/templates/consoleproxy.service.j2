@@ -1,0 +1,13 @@
+[Unit]
+Description=cloudland service
+After=network.target
+
+[Service]
+Type=simple
+User=cland
+ExecStart=/opt/libvirt-console-proxy/build/virtconsoleproxyd --resolver-mode external --resolver-uri http://{{ hostvars[groups['web'][0]]['inventory_hostname'] }}/consoleresolver --listen-tls-ca /opt/libvirt-console-proxy/cert/cacert.pem --listen-tls-cert /opt/libvirt-console-proxy/cert/servercert.pem --listen-tls-key /opt/libvirt-console-proxy/cert/serverkey.pem --listen-addr 0.0.0.0:9443 --connect-insecure
+KillMode=process
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
