@@ -50,8 +50,7 @@ function vlan_status()
 {
     cd /opt/cloudland/cache/dnsmasq
     old_vlan_list=$(cat old_vlan_list)
-    vlan_list=$(ls vlan* 2>/dev/null)
-    vlan_list=$(echo "$vlan_list $(sudo ip netns list | grep vlan | cut -d' ' -f1)" | xargs | sed 's/vlan//g')
+    vlan_list=$(ls | grep vlan | grep -v old_vlan_list | xargs | sed 's/vlan//g')
     [ "$vlan_list" = "$old_vlan_list" ] && return
     vlan_arr=($vlan_list)
     nlist=$(ip netns list | grep vlan | cut -d' ' -f1 | xargs | sed 's/vlan//g')
