@@ -448,8 +448,8 @@ func (v *OpenshiftView) List(c *macaron.Context, store session.Store) {
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	offset := c.QueryInt64("offset")
@@ -497,14 +497,14 @@ func (v *OpenshiftView) Delete(c *macaron.Context, store session.Store) (err err
 	permit, err := memberShip.CheckOwner(model.Owner, "openshifts", id)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	err = openshiftAdmin.Delete(c.Req.Context(), id)
 	if err != nil {
-		code := http.StatusInternalServerError
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.JSON(200, map[string]interface{}{
@@ -519,8 +519,8 @@ func (v *OpenshiftView) Edit(c *macaron.Context, store session.Store) {
 	permit, err := memberShip.CheckOwner(model.Owner, "openshifts", id)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	db := DB()
@@ -549,8 +549,8 @@ func (v *OpenshiftView) Patch(c *macaron.Context, store session.Store) {
 	permit, err := memberShip.CheckOwner(model.Owner, "openshifts", id)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	flavor := c.QueryInt64("flavor")
@@ -585,8 +585,8 @@ func (v *OpenshiftView) New(c *macaron.Context, store session.Store) {
 	permit := memberShip.CheckPermission(model.Owner)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	db := DB()
@@ -613,8 +613,8 @@ func (v *OpenshiftView) State(c *macaron.Context, store session.Store) {
 	permit, err := memberShip.CheckOwner(model.Owner, "openshifts", id)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	status := c.QueryTrim("status")
@@ -633,8 +633,8 @@ func (v *OpenshiftView) Launch(c *macaron.Context, store session.Store) {
 	permit, err := memberShip.CheckOwner(model.Owner, "openshifts", id)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	hostname := c.QueryTrim("hostname")
@@ -653,8 +653,8 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	permit := memberShip.CheckPermission(model.Owner)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	redirectTo := "../openshifts"
