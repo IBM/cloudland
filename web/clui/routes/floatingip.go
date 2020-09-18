@@ -197,8 +197,8 @@ func (v *FloatingIpView) List(c *macaron.Context, store session.Store) {
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	offset := c.QueryInt64("offset")
@@ -245,29 +245,29 @@ func (v *FloatingIpView) Delete(c *macaron.Context, store session.Store) (err er
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "id does not exist"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	floatingipID, err := strconv.Atoi(id)
 	if err != nil {
 		log.Println("Invalid floating ip ID, %v", err)
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "floating_ips", int64(floatingipID))
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	err = floatingipAdmin.Delete(c.Req.Context(), int64(floatingipID))
 	if err != nil {
 		log.Println("Failed to delete floating ip, %v", err)
-		code := http.StatusInternalServerError
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.JSON(200, map[string]interface{}{
@@ -281,8 +281,8 @@ func (v *FloatingIpView) New(c *macaron.Context, store session.Store) {
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	db := DB()
@@ -300,8 +300,8 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	redirectTo := "../floatingips"
@@ -310,8 +310,8 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instID))
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	if ftype == "" {
@@ -343,8 +343,8 @@ func (v *FloatingIpView) Assign(c *macaron.Context, store session.Store) {
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	instID := c.QueryInt64("instance")
@@ -352,16 +352,16 @@ func (v *FloatingIpView) Assign(c *macaron.Context, store session.Store) {
 	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instID))
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	types := []string{"public", "private"}
 	floatingips, err := floatingipAdmin.Create(c.Req.Context(), int64(instID), 0, types, floatingIP, "")
 	if err != nil {
 		log.Println("Failed to create floating ip", err)
-		code := http.StatusInternalServerError
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	fipsData := &FloatingIps{Instance: instID}
