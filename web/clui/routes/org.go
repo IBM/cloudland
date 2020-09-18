@@ -310,29 +310,29 @@ func (v *OrgView) Delete(c *macaron.Context, store session.Store) (err error) {
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	id := c.Params("id")
 	if id == "" {
 		log.Println("ID is empty, %v", err)
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "ID is empty"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	orgID, err := strconv.Atoi(id)
 	if err != nil {
 		log.Println("Invalid organization ID, %v", err)
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	err = orgAdmin.Delete(c.Req.Context(), int64(orgID))
 	if err != nil {
 		log.Println("Failed to delete organization, %v", err)
-		code := http.StatusInternalServerError
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.JSON(200, map[string]interface{}{
@@ -346,8 +346,8 @@ func (v *OrgView) New(c *macaron.Context, store session.Store) {
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.HTML(200, "orgs_new")
@@ -358,20 +358,20 @@ func (v *OrgView) Edit(c *macaron.Context, store session.Store) {
 	db := DB()
 	id := c.Params("id")
 	if id == "" {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Id is Empty"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	orgID, err := strconv.Atoi(id)
 	if err != nil {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	if memberShip.Role != model.Admin && (memberShip.Role < model.Owner || memberShip.OrgID != int64(orgID)) {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	org := &model.Organization{Model: model.Model{ID: int64(orgID)}}
@@ -392,20 +392,20 @@ func (v *OrgView) Patch(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Id is Empty"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	orgID, err := strconv.Atoi(id)
 	if err != nil {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	if memberShip.Role != model.Admin && (memberShip.Role < model.Owner || memberShip.OrgID != int64(orgID)) {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	redirectTo := "../orgs/" + id
@@ -418,14 +418,14 @@ func (v *OrgView) Patch(c *macaron.Context, store session.Store) {
 		role, err := strconv.Atoi(r)
 		if err != nil {
 			log.Println("Failed to convert role", err)
-			code := http.StatusBadRequest
-			c.Error(code, http.StatusText(code))
+			c.Data["ErrorMsg"] = err.Error()
+			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
 		if memberShip.Role < model.Role(role) {
 			log.Println("Not authorized for this operation")
-			code := http.StatusUnauthorized
-			c.Error(code, http.StatusText(code))
+			c.Data["ErrorMsg"] = "Not authorized for this operation"
+			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
 		roleList = append(roleList, model.Role(role))
@@ -454,8 +454,8 @@ func (v *OrgView) Create(c *macaron.Context, store session.Store) {
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	redirectTo := "../orgs"

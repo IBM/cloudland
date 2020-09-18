@@ -128,20 +128,20 @@ func (v *FlavorView) Delete(c *macaron.Context, store session.Store) (err error)
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	id := c.ParamsInt64("id")
 	if id <= 0 {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "id <= 0"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	err = flavorAdmin.Delete(id)
 	if err != nil {
-		code := http.StatusInternalServerError
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.JSON(200, map[string]interface{}{
@@ -155,8 +155,8 @@ func (v *FlavorView) New(c *macaron.Context, store session.Store) {
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.HTML(200, "flavors_new")
@@ -167,8 +167,8 @@ func (v *FlavorView) Create(c *macaron.Context, store session.Store) {
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	redirectTo := "../flavors"
@@ -176,21 +176,21 @@ func (v *FlavorView) Create(c *macaron.Context, store session.Store) {
 	cores := c.Query("cpu")
 	cpu, err := strconv.Atoi(cores)
 	if err != nil {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	memory := c.QueryInt("memory")
 	if memory <= 0 {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "memory <= 0"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 
 	disk := c.QueryInt("disk")
 	if disk <= 0 {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "disk <= 0"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	swap := c.QueryInt("swap")

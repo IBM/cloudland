@@ -326,8 +326,8 @@ func (v *GlusterfsView) List(c *macaron.Context, store session.Store) {
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	offset := c.QueryInt64("offset")
@@ -375,14 +375,14 @@ func (v *GlusterfsView) Delete(c *macaron.Context, store session.Store) (err err
 	permit, err := memberShip.CheckOwner(model.Owner, "glusterfs", id)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	err = glusterfsAdmin.Delete(c.Req.Context(), id)
 	if err != nil {
-		code := http.StatusInternalServerError
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.JSON(200, map[string]interface{}{
@@ -397,8 +397,8 @@ func (v *GlusterfsView) Edit(c *macaron.Context, store session.Store) {
 	permit, err := memberShip.CheckOwner(model.Owner, "glusterfs", id)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	db := DB()
@@ -427,8 +427,8 @@ func (v *GlusterfsView) Patch(c *macaron.Context, store session.Store) {
 	permit, err := memberShip.CheckOwner(model.Owner, "glusterfs", id)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	flavor := c.QueryInt64("flavor")
@@ -465,8 +465,8 @@ func (v *GlusterfsView) New(c *macaron.Context, store session.Store) {
 	permit := memberShip.CheckPermission(model.Owner)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	db := DB()
@@ -502,8 +502,8 @@ func (v *GlusterfsView) State(c *macaron.Context, store session.Store) {
 	permit, err := memberShip.CheckOwner(model.Owner, "glusterfs", id)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	status := c.QueryTrim("status")
@@ -521,8 +521,8 @@ func (v *GlusterfsView) Create(c *macaron.Context, store session.Store) {
 	permit := memberShip.CheckPermission(model.Owner)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	redirectTo := "../glusterfs"
@@ -543,16 +543,16 @@ func (v *GlusterfsView) Create(c *macaron.Context, store session.Store) {
 	flavor := c.QueryInt64("flavor")
 	if flavor <= 0 {
 		log.Println("Invalid flavor ID")
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Invalid flavor ID"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	key := c.QueryInt64("key")
 	permit, err := memberShip.CheckOwner(model.Writer, "keys", key)
 	if !permit {
 		log.Println("Not authorized to access key")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized to access key"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	cluster := c.QueryInt64("cluster")
@@ -565,8 +565,8 @@ func (v *GlusterfsView) Create(c *macaron.Context, store session.Store) {
 	permit, err = memberShip.CheckOwner(model.Writer, "openshifts", cluster)
 	if !permit {
 		log.Println("Not authorized to access openshift cluser")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized to access openshift cluser"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")

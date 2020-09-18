@@ -360,8 +360,8 @@ func (v *GatewayView) List(c *macaron.Context, store session.Store) {
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	offset := c.QueryInt64("offset")
@@ -409,29 +409,29 @@ func (v *GatewayView) Delete(c *macaron.Context, store session.Store) (err error
 	id := c.Params("id")
 	if id == "" {
 		log.Println("Id is empty")
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Id is empty"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	gatewayID, err := strconv.Atoi(id)
 	if err != nil {
 		log.Println("Invalid gateway id, %v", err)
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "gateways", int64(gatewayID))
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	err = gatewayAdmin.Delete(c.Req.Context(), int64(gatewayID))
 	if err != nil {
 		log.Println("Failed to delete gateway, %v", err)
-		code := http.StatusInternalServerError
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.JSON(200, map[string]interface{}{
@@ -445,8 +445,8 @@ func (v *GatewayView) New(c *macaron.Context, store session.Store) {
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	_, subnets, err := subnetAdmin.List(c.Req.Context(), 0, -1, "", "", "router = 0")
@@ -467,15 +467,15 @@ func (v *GatewayView) Edit(c *macaron.Context, store session.Store) {
 	gatewayID, err := strconv.Atoi(id)
 	if err != nil {
 		log.Println("Invalid gateway id, %v", err)
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "gateways", int64(gatewayID))
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	gateway := &model.Gateway{Model: model.Model{ID: int64(gatewayID)}}
@@ -506,15 +506,15 @@ func (v *GatewayView) Patch(c *macaron.Context, store session.Store) {
 	gatewayID, err := strconv.Atoi(id)
 	if err != nil {
 		log.Println("Invalid gateway id, %v", err)
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "gateways", int64(gatewayID))
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	name := c.QueryTrim("name")
@@ -541,8 +541,8 @@ func (v *GatewayView) Patch(c *macaron.Context, store session.Store) {
 		permit, err = memberShip.CheckOwner(model.Writer, "subnets", int64(sID))
 		if !permit {
 			log.Println("Not authorized for this operation")
-			code := http.StatusUnauthorized
-			c.Error(code, http.StatusText(code))
+			c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 			return
 		}
 		subnetIDs = append(subnetIDs, int64(sID))
@@ -571,8 +571,8 @@ func (v *GatewayView) Create(c *macaron.Context, store session.Store) {
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	redirectTo := "../gateways"
@@ -601,8 +601,8 @@ func (v *GatewayView) Create(c *macaron.Context, store session.Store) {
 		permit, err = memberShip.CheckOwner(model.Writer, "subnets", int64(sID))
 		if !permit {
 			log.Println("Not authorized for this operation")
-			code := http.StatusUnauthorized
-			c.Error(code, http.StatusText(code))
+			c.Data["ErrorMsg"] = "Not authorized for this operation"
+			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
 		subnetIDs = append(subnetIDs, int64(sID))
