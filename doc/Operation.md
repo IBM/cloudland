@@ -83,6 +83,6 @@ Note with this kind of topology, you probably do not need public access to your 
 Now from gui, you can delete both public and private subnets and create new ones accordingly. For public subnet, name public, vlan 100, the ip range aligned with the network device 169.61.25.0/24 here for example; and for private subnet, name private, vlan 110, ip range 172.16.20.0/24
 
 # Deployment
-Refer to [deployment guide](Deployment)
+Refer to [deployment guide.md](Deployment)
 
 # Update Configurations 
