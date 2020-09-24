@@ -6,7 +6,7 @@
 }
 body:not(.full-width) {
   font-family: "PingFang SC", "Helvetica Neue", "Microsoft YaHei", Arial, Helvetica, sans-serif !important;
-  background-color: #fff;
+  background-color: #f5f7fd;
   overflow-y: scroll;
   overflow-x: auto;
   min-width: 1020px;
@@ -15,11 +15,11 @@ body:not(.full-width) {
   width: 99% !important;
 }
 .ui.container .ui.grid>[class*="four wide"].column {
-  width: 15% !important;
+  width: 20% !important;
   margin-left: 2rem;
 }
 .ui.container .ui.grid>[class*="twelve wide"].column {
-  width: 80% !important;
+  width: 75% !important;
 }
 h1,
 h2,
@@ -151,10 +151,8 @@ code.wrap {
 .ui.form .box.field {
   padding-left: 27px;
 }
-.ui.menu,
-.ui.vertical.menu,
-.ui.segment {
-  box-shadow: none;
+.ui.vertical.menu {
+  width: 20rem;
 }
 .ui .text.red {
   color: #d95c5c !important;
@@ -3125,6 +3123,7 @@ footer .ui.language .menu {
 .admin {
   padding-top: 15px;
   padding-bottom: 80px;
+  background-color: #f5f7fd;
 }
 .admin .table.segment {
   padding: 0;
