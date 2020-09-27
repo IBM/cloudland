@@ -295,7 +295,7 @@ func (v *UserView) LoginPost(c *macaron.Context, store session.Store) {
 	store.Set("org", organization)
 	store.Set("defsg", org.DefaultSG)
 	store.Set("members", members)
-	redirectTo := "/dashboard"
+	redirectTo := "/instances"
 	if c.Req.Header.Get("X-Json-Format") == "yes" {
 		cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
 		c.JSON(200, map[string]interface{}{
