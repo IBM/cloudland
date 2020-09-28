@@ -9,4 +9,3 @@ virt-install \
 --memory=1024 \
 --disk path=/opt/cloudland/cache/image/image-2.qcow2,bus=virtio,format=qcow2 \
 --network bridge=virbr0 \
---import &
