@@ -244,7 +244,8 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
 	}
 	
 	name := c.QueryTrim("name")
-	publicKey := c.QueryTrim("PublicKey")
+	publicKey := c.QueryTrim("pubkey")
+	log.Println("Your Public Key, %v", publicKey)
 	hostname := c.QueryTrim("host")
 	key, err := keyAdmin.Create(c.Req.Context(), name, publicKey)
 	if err != nil {
