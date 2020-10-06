@@ -28,7 +28,7 @@
                         <input id="haflag" name="haflag" value="{{ .i18n.Tr .Openshift.Haflag }}" disabled>
                     </div>
                     <div class="required inline field">
-                        <label for="flavor">{{.i18n.Tr "Flavor"}}</label>
+                        <label for="flavor">{{.i18n.Tr "Worker Flavor"}}</label>
                         <select name="flavor" id="flavor" class="ui selection dropdown">
 			            {{ range .Flavors }}
                               <option value="{{ .ID }}" {{ if eq $.Openshift.Flavor .ID }}selected{{end}}>{{ .ID }}-{{ .Name }}</option>

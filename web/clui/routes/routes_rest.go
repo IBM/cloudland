@@ -87,7 +87,8 @@ func TokenProcess(c *macaron.Context) {
 	claims, err := ParseToken(c.Req.Header.Get("X-Auth-Token"))
 	if err != nil {
 		log.Println(err.Error())
-		c.Error(http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	} else {
 		c.Data[ClaimKey] = claims

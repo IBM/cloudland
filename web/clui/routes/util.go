@@ -158,8 +158,8 @@ func CheckResIfExistByUUID(table, UUID string) (result bool, id int64, err error
 func CheckResWithErrorResponse(table, uuid string, c *macaron.Context) (err error) {
 	result, id, err := CheckResIfExistByUUID(table, uuid)
 	if err != nil {
-		code := http.StatusInternalServerError
-		c.Error(code, NewResponseError(fmt.Sprintf("check %s fail", table), err.Error(), code).Error())
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return err
 	} else if !result {
 		code := http.StatusNotFound
