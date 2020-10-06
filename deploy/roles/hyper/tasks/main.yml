@@ -89,7 +89,6 @@
     daemon_reload: yes
     state: restarted
   with_items:
-    - 'atd'
     - 'libvirtd'
     - 'NetworkManager'
     - 'scid'

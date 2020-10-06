@@ -85,6 +85,10 @@
     state: restarted
   tags: [fe_srv]
 
+- name: generate console proxy certs
+  script: gencert.sh
+  tags: [console]
+
 - name: start virt console proxy
   systemd: 
     name: consoleproxy

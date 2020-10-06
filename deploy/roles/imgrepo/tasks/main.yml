@@ -11,7 +11,7 @@
 
 - name: generate nginx certs
   script: gencert.sh
-  tags: [ssl]
+  tags: [nginx,ssl]
 
 - name: nginx ssl config
   template:

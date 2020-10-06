@@ -43,7 +43,7 @@ function inst_web()
 {
     cd $cland_root_dir/deploy
     ansible-playbook cloudland.yml -e @$net_conf --tags database
-    sudo yum -y install golang 
+    sudo yum -y install golang
     sudo chown -R cland.cland /usr/local
     sed -i '/export GO/d' ~/.bashrc
     echo 'export GOPROXY=https://goproxy.io' >> ~/.bashrc
@@ -79,28 +79,7 @@ function inst_console_proxy()
     sudo chown cland.cland libvirt-console-proxy
     cd libvirt-console-proxy
     go build -o build/virtconsoleproxyd cmd/virtconsoleproxyd/virtconsoleproxyd.go
-    cert_dir=/opt/libvirt-console-proxy/cert
-    mkdir $cert_dir
-    net_dev=$(cat $net_conf | grep 'network_device:' | cut -d: -f2)
-    myip=$(ifconfig $net_dev | grep 'inet ' | awk '{print $2}')
-    cat >/tmp/ca.info <<EOF
-cn = console-proxy
-ca
-cert_signing_key
-EOF
-    cd $cert_dir
-    certtool --generate-privkey >cakey.pem
-    certtool --generate-self-signed --load-privkey cakey.pem --template /tmp/ca.info --outfile cacert.pem
-    certtool --generate-privkey >serverkey.pem
-    cat <<EOF > /tmp/server.info
-organization = console-proxy
-cn = $myip
-tls_www_server
-encryption_key
-signing_key
-EOF
-certtool --generate-certificate --load-privkey serverkey.pem --load-ca-certificate cacert.pem --load-ca-privkey cakey.pem --template /tmp/server.info --outfile servercert.pem
-    rm -f /tmp/ca.info
+    cd $cland_root_dir/deploy
 }
 
 # Generate host file
@@ -179,10 +158,10 @@ diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 gen_hosts
 cd $cland_root_dir/deploy
 [ $(uname -m) != s390x ] && ansible-playbook cloudland.yml -e @$net_conf --tags epel
-inst_console_proxy
-ansible-playbook cloudland.yml -e @$net_conf --tags hosts,selinux,be_pkg,be_conf,firewall,imgrepo
+ansible-playbook cloudland.yml -e @$net_conf --tags hosts,selinux,be_pkg,be_conf,firewall
 demo_router
 allinone_firewall
 inst_web
-ansible-playbook cloudland.yml -e @$net_conf --tags be_srv,fe_srv
+inst_console_proxy
+ansible-playbook cloudland.yml -e @$net_conf --tags be_srv,fe_srv,console,imgrepo
 sudo chown -R cland.cland $cland_root_dir
