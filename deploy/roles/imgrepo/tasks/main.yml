@@ -9,6 +9,16 @@
     dest: /etc/nginx/nginx.conf
   tags: [nginx]
 
+- name: generate nginx certs
+  script: gencert.sh
+  tags: [ssl]
+
+- name: nginx ssl config
+  template:
+    src: ssl.conf.j2
+    dest: /etc/nginx/conf.d/ssl.conf
+  tags: [nginx,console,ssl]
+
 - name: start nginx service
   systemd:
     name: nginx

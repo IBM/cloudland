@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -29,7 +30,7 @@ import (
 
 func runArgs(cfg string) (args []interface{}) {
 	host := "127.0.0.1"
-	port := 80
+	port := 443
 	listen := viper.GetString(cfg)
 	if listen != "" {
 		items := strings.Split(listen, ":")
@@ -47,7 +48,15 @@ func runArgs(cfg string) (args []interface{}) {
 }
 
 func Run() (err error) {
-	New().Run(runArgs("api.listen")...)
+	m := New()
+	cert := viper.GetString("api.cert")
+	key := viper.GetString("api.key")
+	if cert != "" && key != "" {
+		listen := viper.GetString("api.listen")
+		http.ListenAndServeTLS(listen, cert, key, m)
+	} else {
+		m.Run(runArgs("api.listen")...)
+	}
 	return
 }
 
