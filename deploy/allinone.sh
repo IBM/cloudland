@@ -79,6 +79,8 @@ function inst_console_proxy()
     sudo chown cland.cland libvirt-console-proxy
     cd libvirt-console-proxy
     go build -o build/virtconsoleproxyd cmd/virtconsoleproxyd/virtconsoleproxyd.go
+    git clone https://github.com/novnc/noVNC.git /opt/cloudland/web/clui/public/novnc
+    rm -rf /opt/cloudland/web/clui/public/novnc/.git*
     cd $cland_root_dir/deploy
 }
 

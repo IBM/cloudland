@@ -5,8 +5,8 @@ key = "/etc/ssl/private/cland-selfsigned.key"
 cert = "/etc/ssl/certs/cland-selfsigned.crt"
 
 [console]
-host = "{{ hostvars[groups['web'][0]]['inventory_hostname'] }}"
-port = 9443
+host = "{{ hostvars[groups['web'][0]]['ansible_host'] }}"
+port = 443
 
 [rest]
 listen = "{{ hostvars[groups['web'][0]]['inventory_hostname'] }}:4001"

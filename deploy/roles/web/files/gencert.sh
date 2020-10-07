@@ -2,7 +2,9 @@
 
 cat <<EOF > /tmp/server.info
 organization = cloudland
+ip_address = 127.0.0.1
 tls_www_server
+ca
 encryption_key
 signing_key
 EOF
