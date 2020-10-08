@@ -4,7 +4,8 @@ checkcommit(){
   do
     git fetch
     HEADHASH=$(git rev-parse HEAD)
-    UPSTREAMHASH=$(git rev-parse master@{upstream})
+    UPSTREAMHASH=$(git rev-parse @{upstream})
+    BRANCHNAME=$(git rev-parse --abbrev-ref HEAD)
 
     if [ "$HEADHASH" != "$UPSTREAMHASH" ]
     then
@@ -20,12 +21,16 @@ checkcommit(){
       sudo rm -rf ./sci/
       sudo git clone https://github.com/IBM/cloudland.git
       sudo mv ./netconf.yml.bak ./cloudland/deploy/netconf.yml
+      cd /opt/cloudland/
+      git checkout "$BRANCHNAME"
       cd /opt/cloudland/deploy/
       ./allinone.sh
+      cd ..
+      exec ./autocheck.sh
     else
       echo "Code up to date"
     fi
-    sleep 1h
+    sleep 5m
   done
 }
 

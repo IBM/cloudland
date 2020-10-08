@@ -2,7 +2,5 @@ language: generic
 sudo: required
 before_install:
   - sudo useradd cland
-  - sudo echo 'cland ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers.d/cland
-  - sudo su cland
 install: ./deploy/allinone.sh
 script: true
