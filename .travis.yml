@@ -1,15 +1,14 @@
 language: generic
 sudo: required
 matrix:
-  - env: OS='centos:7'
+  include:
+    - env: OS='centos:7'
 git:
   clone: false
 before_install:
   - sudo useradd cland
-  - sudo su root
-  - echo 'cland ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers.d/cland
-  - sudo su cland
+  - sudo su - root -c "echo 'cland ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers.d/cland"
   - sudo git clone --branch=$TRAVIS_BRANCH https://github.com/$TRAVIS_REPO_SLUG.git /opt/cloudland
   - cd /opt/cloudland/deploy/
-install: ./allinone.sh
+install: sudo su - cland -c "bash ./allinone.sh"
 script: true

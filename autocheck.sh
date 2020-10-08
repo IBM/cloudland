@@ -19,10 +19,11 @@ checkcommit(){
       sudo rm -rf ./cloudland/
       sudo rm -rf ./libvirt-console-proxy/
       sudo rm -rf ./sci/
-      sudo git clone https://github.com/IBM/cloudland.git
+      sudo git clone https://github.com/hbcbs110/cloudland.git
       sudo mv ./netconf.yml.bak ./cloudland/deploy/netconf.yml
       cd /opt/cloudland/
       git checkout "$BRANCHNAME"
+      git pull
       cd /opt/cloudland/deploy/
       ./allinone.sh
       cd ..
