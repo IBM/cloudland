@@ -12,7 +12,7 @@ before_install:
   # - sudo git clone --branch=$TRAVIS_BRANCH https://github.com/$TRAVIS_REPO_SLUG.git /opt/cloudland
 install:
   - docker run -i $OS /bin/bash -c "yum install -y sudo;useradd cland;"
-  - docker run -i $OS /bin/bash -c "su - root -c \"echo 'cland ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers.d/cland\""
+  # - docker run -i $OS /bin/bash -c "su - root -c \"echo 'cland ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers.d/cland\""
   - docker run -i $OS /bin/bash -c "git clone --branch=$TRAVIS_BRANCH https://github.com/$TRAVIS_REPO_SLUG.git /opt/cloudland"
   - docker run -i $OS /bin/bash -c "su - cland<<EOF;cd /opt/cludland/deploy/;bash ./allinone.sh;"
   # - sudo su - cland <<EOF
