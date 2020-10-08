@@ -1,8 +1,11 @@
 language: generic
 sudo: required
+git:
+  clone: false
 before_install:
   - sudo useradd cland
-  - sudo cp -r ./cloudland/ /opt/cloudland
-  - cd /opt/cloudland/
-install: ./deploy/allinone.sh
+  - echo "$(cd $(dirname $0); pwd)"
+  - sudo git clone --branch=$TRAVIS_BRANCH https://github.com/$TRAVIS_REPO_SLUG.git /opt/cloudland
+  - cd /opt/cloudland/deploy/
+install: ./allinone.sh
 script: true
