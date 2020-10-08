@@ -2,5 +2,7 @@ language: generic
 sudo: required
 before_install:
   - sudo useradd cland
+  - sudo cp -r ./cloudland/ /opt/cloudland
+  - cd /opt/cloudland/
 install: ./deploy/allinone.sh
 script: true
