@@ -11,10 +11,12 @@ before_install:
   # - sudo su - root -c "echo 'cland ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers.d/cland"
   # - sudo git clone --branch=$TRAVIS_BRANCH https://github.com/$TRAVIS_REPO_SLUG.git /opt/cloudland
 install:
-  - docker run -i $OS /bin/bash -c "yum install -y sudo git vim;useradd cland;"
+  - docker run -i $OS /bin/bash -c "yum install -y sudo git vim;useradd cland;\
+  git clone --branch=$TRAVIS_BRANCH https://github.com/$TRAVIS_REPO_SLUG.git /opt/cloudland;\
+  su - cland<<EOF;cd /opt/cludland/deploy/;bash ./allinone.sh;"
   # - docker run -i $OS /bin/bash -c "su - root -c \"echo 'cland ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers.d/cland\""
-  - docker run -i $OS /bin/bash -c "git clone --branch=$TRAVIS_BRANCH https://github.com/$TRAVIS_REPO_SLUG.git /opt/cloudland"
-  - docker run -i $OS /bin/bash -c "su - cland<<EOF;cd /opt/cludland/deploy/;bash ./allinone.sh;"
+  # - docker run -i $OS /bin/bash -c "git clone --branch=$TRAVIS_BRANCH https://github.com/$TRAVIS_REPO_SLUG.git /opt/cloudland"
+  # - docker run -i $OS /bin/bash -c "su - cland<<EOF;cd /opt/cludland/deploy/;bash ./allinone.sh;"
   # - sudo su - cland <<EOF
   # - cd /opt/cloudland/deploy/;
   # - bash ./allinone.sh;
