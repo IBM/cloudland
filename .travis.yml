@@ -1,19 +1,24 @@
 language: generic
 sudo: required
-matrix:
-  include:
-    - env: OS='centos:7'
+# matrix:
+#   include:
+#     - env: OS='centos:7'
+services:
+  - docker
 git:
   clone: false
 before_install:
-  - docker pull $OS
+  # - docker pull $OS
   # - sudo useradd cland
   # - sudo su - root -c "echo 'cland ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers.d/cland"
   # - sudo git clone --branch=$TRAVIS_BRANCH https://github.com/$TRAVIS_REPO_SLUG.git /opt/cloudland
+  - sudo git clone --branch=$TRAVIS_BRANCH https://github.com/$TRAVIS_REPO_SLUG.git $TRAVIS_REPO_SLUG
 install:
-  - docker run -i $OS /bin/bash -c "yum install -y sudo git vim && useradd cland &&\
-  git clone --branch=$TRAVIS_BRANCH https://github.com/$TRAVIS_REPO_SLUG.git /opt/cloudland &&\
-  su - cland<<EOF && cd /opt/cludland/deploy/;bash ./allinone.sh"
+  - cd $TRAVIS_REPO_SLUG
+  - docker build -t centos_env .
+  # - docker run -i $OS /bin/bash -c "yum install -y sudo git vim && useradd cland &&\
+  # git clone --branch=$TRAVIS_BRANCH https://github.com/$TRAVIS_REPO_SLUG.git /opt/cloudland &&\
+  # su - cland<<EOF && cd /opt/cludland/deploy/;bash ./allinone.sh"
   # - docker run -i $OS /bin/bash -c "su - root -c \"echo 'cland ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers.d/cland\""
   # - docker run -i $OS /bin/bash -c "git clone --branch=$TRAVIS_BRANCH https://github.com/$TRAVIS_REPO_SLUG.git /opt/cloudland"
   # - docker run -i $OS /bin/bash -c "su - cland<<EOF;cd /opt/cludland/deploy/;bash ./allinone.sh;"
