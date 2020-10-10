@@ -33,4 +33,7 @@ checkcommit(){
   done
 }
 
-checkcommit
+if [ ! -n "$1" ]||[ "$1" == "commit" ]
+then
+    checkcommit
+fi
