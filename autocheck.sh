@@ -6,6 +6,7 @@ checkcommit(){
     HEADHASH=$(git rev-parse HEAD)
     UPSTREAMHASH=$(git rev-parse @{upstream})
     BRANCHNAME=$(git rev-parse --abbrev-ref HEAD)
+    REPOURL=$(git config --get remote.origin.url)
 
     if [ "$HEADHASH" != "$UPSTREAMHASH" ]
     then
@@ -19,11 +20,8 @@ checkcommit(){
       sudo rm -rf ./cloudland/
       sudo rm -rf ./libvirt-console-proxy/
       sudo rm -rf ./sci/
-      sudo git clone https://github.com/hbcbs110/cloudland.git
+      sudo git clone --branch=$BRANCHNAME $REPOURL
       sudo mv ./netconf.yml.bak ./cloudland/deploy/netconf.yml
-      cd /opt/cloudland/
-      git checkout "$BRANCHNAME"
-      git pull
       cd /opt/cloudland/deploy/
       ./allinone.sh
       cd ..
