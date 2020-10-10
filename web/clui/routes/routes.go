@@ -189,6 +189,7 @@ func New() (m *macaron.Macaron) {
 }
 
 func LinkHandler(c *macaron.Context, store session.Store) {
+	UrlBefore = "/"
 	link := strings.NewReplacer("%", "%25",
 		"#", "%23",
 		" ", "%20",
@@ -215,6 +216,6 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 		c.Data["Members"] = store.Get("members").([]*model.Member)
 	} else if link != "" && link != "/" && !strings.HasPrefix(link, "/login") && !strings.HasPrefix(link, "/consoleresolver") {
 		UrlBefore=link
-		c.Redirect("/")
+		c.Redirect("login?redirect_to=")
 	}
 }
