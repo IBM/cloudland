@@ -36,13 +36,27 @@ checkcommit(){
 }
 
 checktest(){
-    echo "checktest here from $1"
+  echo "checktest here from $1"
+  i=0
+  while :
+  do
+    status=$(curl https://$1/test)
+    echo $status
+    let i+=1
+    if [ "$status" == "DONE" ]
+    then
+      return 0
+    elif [ i -gt 100 ]||[ "$status" == "FAILED" ]
+    then
+      return 1
+    sleep 2
+  done
 }
 
 if [ ! -n "$1" ]||[ "$1" == "commit" ]
 then
-    checkcommit
+  checkcommit
 elif [ "$1" == "test" ]
 then
-    checktest $2
+  checktest $2
 fi
