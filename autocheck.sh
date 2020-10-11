@@ -46,9 +46,10 @@ checktest(){
     if [ "$status" == "DONE" ]
     then
       return 0
-    elif [ i -gt 100 ]||[ "$status" == "FAILED" ]
+    elif [ $i -gt 10 ]||[ "$status" == "FAILED" ]
     then
       return 1
+    fi
     sleep 2
   done
 }
