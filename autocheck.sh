@@ -36,7 +36,7 @@ checkcommit(){
 }
 
 checktest(){
-    echo "checktest here from $2"
+    echo "checktest here from $1"
 }
 
 if [ ! -n "$1" ]||[ "$1" == "commit" ]
@@ -44,5 +44,5 @@ then
     checkcommit
 elif [ "$1" == "test" ]
 then
-    checktest
+    checktest $2
 fi

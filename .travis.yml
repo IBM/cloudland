@@ -11,5 +11,4 @@ install:
   - cd $TRAVIS_REPO_SLUG
   - docker build --build-arg BRANCH=$TRAVIS_BRANCH --build-arg REPO=$TRAVIS_REPO_SLUG -t centos_env .
 script:
-  - cd $TRAVIS_REPO_SLUG
   - bash ./autocheck.sh test $TEST_ENV_IP
