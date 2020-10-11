@@ -2,7 +2,7 @@ checkcommit(){
   cd /opt/cloudland/
   while :
   do
-    git fetch
+    sudo git fetch
     HEADHASH=$(git rev-parse HEAD)
     UPSTREAMHASH=$(git rev-parse @{upstream})
     BRANCHNAME=$(git rev-parse --abbrev-ref HEAD)
@@ -22,15 +22,21 @@ checkcommit(){
       sudo rm -rf ./sci/
       sudo git clone --branch=$BRANCHNAME $REPOURL
       sudo mv ./netconf.yml.bak ./cloudland/deploy/netconf.yml
+      sudo cp /home/centos/server.crt ./cloudland/web/clui/public/server.crt
+      sudo cp /home/centos/server.key ./cloudland/web/clui/public/server.key
       cd /opt/cloudland/deploy/
       ./allinone.sh
       cd ..
-      exec ./autocheck.sh
+      sudo exec ./autocheck.sh
     else
       echo "Code up to date"
     fi
     sleep 5m
   done
+}
+
+checktest(){
+
 }
 
 if [ ! -n "$1" ]||[ "$1" == "commit" ]
