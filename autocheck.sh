@@ -36,10 +36,13 @@ checkcommit(){
 }
 
 checktest(){
-
+    echo "checktest here from $2"
 }
 
 if [ ! -n "$1" ]||[ "$1" == "commit" ]
 then
     checkcommit
+elif [ "$1" == "test" ]
+then
+    checktest
 fi
