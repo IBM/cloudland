@@ -7,6 +7,7 @@ checkcommit(){
     UPSTREAMHASH=$(git rev-parse @{upstream})
     BRANCHNAME=$(git rev-parse --abbrev-ref HEAD)
     REPOURL=$(git config --get remote.origin.url)
+    # BRANCHNAME=$(cat branchname)
 
     if [ "$HEADHASH" != "$UPSTREAMHASH" ]
     then
