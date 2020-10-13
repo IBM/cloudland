@@ -70,3 +70,6 @@ cloudrc.local
 /sci/stamp-h1
 /sci/usecase
 .vscode
+test_status
+/web/clui/public/server.crt
+/web/clui/public/server.key

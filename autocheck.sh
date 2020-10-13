@@ -21,11 +21,18 @@ checkcommit(){
       sudo rm -rf ./libvirt-console-proxy/
       sudo rm -rf ./sci/
       sudo git clone --branch=$BRANCHNAME $REPOURL
+      sudo echo "PENDING" > ./cloudland/test_status
       sudo mv ./netconf.yml.bak ./cloudland/deploy/netconf.yml
       sudo cp /home/centos/server.crt ./cloudland/web/clui/public/server.crt
       sudo cp /home/centos/server.key ./cloudland/web/clui/public/server.key
       cd /opt/cloudland/deploy/
       ./allinone.sh
+      if [ $? -eq 0 ]
+      then
+        sudo sed -i "s/PENDING/DONE/g" ../test_status
+      else
+        sudo sed -i "s/PENDING/FAILED/g" ../test_status
+      fi
       cd ..
       sudo exec ./autocheck.sh
     else
