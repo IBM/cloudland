@@ -38,7 +38,6 @@ checkcommit(){
       exec ./autocheck.sh
     else
       echo "Code up to date"
-      # modify
     fi
     sleep 5m
   done
