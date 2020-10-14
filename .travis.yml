@@ -9,6 +9,7 @@ before_install:
   - sudo git clone --branch=$TRAVIS_BRANCH https://github.com/$TRAVIS_REPO_SLUG.git $TRAVIS_REPO_SLUG
 install:
   - cd $TRAVIS_REPO_SLUG
+  - ls -a
   - docker build --build-arg BRANCH=$TRAVIS_BRANCH --build-arg REPO=$TRAVIS_REPO_SLUG -t centos_env .
 script:
   - bash ./autocheck.sh test $TEST_ENV_IP
