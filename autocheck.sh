@@ -35,7 +35,7 @@ checkcommit(){
         sudo sed -i "s/PENDING/FAILED/g" ../test_status
       fi
       cd ..
-      sudo exec ./autocheck.sh
+      exec ./autocheck.sh
     else
       echo "Code up to date"
     fi
