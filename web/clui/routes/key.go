@@ -174,6 +174,8 @@ func (v *KeyView) List(c *macaron.Context, store session.Store) {
 	c.HTML(200, "keys")
 }
 
+
+
 func (v *KeyView) Delete(c *macaron.Context, store session.Store) (err error) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
@@ -245,7 +247,8 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
 	
 	name := c.QueryTrim("name")
 	publicKey := c.QueryTrim("pubkey")
-	log.Println("Your Public Key, %v", publicKey)
+	log.Println("%v", name)
+	log.Println("%v", publicKey)
 	hostname := c.QueryTrim("host")
 	key, err := keyAdmin.Create(c.Req.Context(), name, publicKey)
 	if err != nil {
@@ -263,14 +266,32 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
 		c.JSON(200, key)
 		return
 	}
-	
-	var redirectTo string
-	if c.QueryTrim("flags") == ""{
-		redirectTo = "../keys"
-		c.Redirect(redirectTo)
-	}else{
-		redirectTo = "../instances?hostname=" + hostname
-		c.Redirect(redirectTo)
+	if c.QueryTrim("from_instance") != ""{
+		_, keys, err := keyAdmin.List(c.Req.Context(), 0, -1, "", "")
+		if err != nil {
+			log.Println("Failed to list keys, %v", err)
+			if c.Req.Header.Get("X-Json-Format") == "yes" {
+				c.JSON(500, map[string]interface{}{
+					"error": err.Error(),
+				})
+				return
+			}
+			c.Data["ErrorMsg"] = err.Error()
+			c.HTML(500, "500")
+			return
+		}
+		c.JSON(200, map[string]interface{}{
+			"keys": keys,
+		})
+	} else{
+		var redirectTo string
+		if c.QueryTrim("flags") == "" {
+			redirectTo = "../keys"
+			c.Redirect(redirectTo)
+		} else {
+			redirectTo = "../instances?hostname=" + hostname
+			c.Redirect(redirectTo)
+		}
 	}
 }
 
@@ -298,11 +319,20 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	
-	
-	c.Data["KeyName"] = name
-	c.Data["PublicKey"] = publicKey
-	c.Data["HostName"] = hostname
-	c.Data["PrivateKey"] = privateKey
-	c.HTML(200, "newKey")
+
+	if c.QueryTrim("from_instance") != ""{
+		fmt.Println("from_instance======"+c.QueryTrim("from_instance"))
+		c.JSON(200, map[string]interface{}{
+			"keyName": name,
+			"publicKey": publicKey,
+			"privateKey": privateKey,
+		})
+		return
+	} else {
+		c.Data["KeyName"] = name
+		c.Data["PublicKey"] = publicKey
+		c.Data["HostName"] = hostname
+		c.Data["PrivateKey"] = privateKey
+		c.HTML(200, "newKey")
+	}
 }
