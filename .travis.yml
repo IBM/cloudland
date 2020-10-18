@@ -1,14 +1,22 @@
 language: generic
 sudo: required
 services:
-  - docker
+- docker
 git:
   clone: false
 before_install:
-  # - docker pull $OS
-  - sudo git clone --branch=$TRAVIS_BRANCH https://github.com/$TRAVIS_REPO_SLUG.git $TRAVIS_REPO_SLUG
+- sudo git clone --branch=$TRAVIS_BRANCH https://github.com/$TRAVIS_REPO_SLUG.git
+  $TRAVIS_REPO_SLUG
 install:
-  - cd $TRAVIS_REPO_SLUG
-  - docker build --build-arg BRANCH=$TRAVIS_BRANCH --build-arg REPO=$TRAVIS_REPO_SLUG -t centos_env .
+- cd $TRAVIS_REPO_SLUG
+- openssl aes-256-cbc -K $encrypted_23c8022f8a29_key -iv $encrypted_23c8022f8a29_iv
+  -in skey.enc -out skey -d
+- ls -a
+- echo $TEST_IP
+- docker build --build-arg BRANCH=$TRAVIS_BRANCH --build-arg REPO=$TRAVIS_REPO_SLUG
+  -t centos_env .
 script:
-  - bash ./autocheck.sh test $TEST_ENV_IP
+- bash ./autocheck.sh test $TEST_ENV_IP
+env:
+  global:
+    secure: BWlf/tPyvP84VcXnLNOvfw8zFg6gclH/LNS7CB7RkCSC5awwY8E+bDfXGvpHaP08pNQ/V7Q48wCLr2MSaiLsSzTUt7g3uPHCDipTqmDnHnwyN0N0RvnuKPsE7osFtXd7ZFKWbk6VzQceiMGIB97Wuo5oq64kQhLqsAXRwINpl0oNtpJtihqBfD0mXSxd945ogl0YGekyh5PqkbtBLya/R3V1liSb0/rm2bBbbGDcuOWAkrHQCgmtKh9XuBTSXMBLEZ2EezoH4yYHfxp17CqKerUkvw3kG0w1crkDX+Rbzg4GwfKe2lTN4UbeHUKh/mcuSm4dV5eSKHPq37KXaAT9ynjJgKkTOJ+BCzlFPkFHkMp1G6MVoWM6qY30PmhPXCSWzGC9cRv43HgQEwgI4gg36UA8QKa1E5ovXb9LEU5CRsoMyFb2cRSHxB40C+XTjO/XDWVb+afiia/dnzoh1ugUxMOSGdY8LhB15ogGC/aCnfKL4SfmdPd5F/+FCQpu7bFb/8qdbkDxHF2HCU4iIyTeoTnKk891F+9zQFBrQ0D7K15ld1Vz8ebEqBNQUwISxCtkSvgDkF5aawqNMAcZl1h4od4aNBbbyki5oeRa3BzqXdYkTHxXluqmAxuo4nN29UVWJe1dJ7T5dVmp6Dd8Ps30iLibbzH7+TKT2gLw8k/dTHk=
