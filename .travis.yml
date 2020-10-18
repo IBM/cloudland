@@ -9,13 +9,14 @@ before_install:
   $TRAVIS_PULL_REQUEST_SLUG
 install:
 - cd $TRAVIS_PULL_REQUEST_SLUG
-- openssl aes-256-cbc -K $encrypted_23c8022f8a29_key -iv $encrypted_23c8022f8a29_iv
+- sudo openssl aes-256-cbc -K $encrypted_23c8022f8a29_key -iv $encrypted_23c8022f8a29_iv
   -in skey.enc -out skey -d
 - ls -a
 - echo $TEST_IP
 - docker build --build-arg BRANCH=$TRAVIS_PULL_REQUEST_BRANCH --build-arg REPO=$TRAVIS_PULL_REQUEST_SLUG
   -t centos_env .
 script:
+- ssh -i skey cland@$TEST_IP "ls"
 - bash ./autocheck.sh test $TEST_ENV_IP
 env:
   global:
