@@ -1,201 +1,409 @@
 {{template "_head" .}}
-
-<script type="text/javascript">
-    function storage() {
-        var hostname = document.getElementById("hostname").value;
-        var hyper = document.getElementById("hyper").value;
-        var count = document.getElementById("count").value;
-        var userData = document.getElementById("userdata").value;
-		
-		var create_key = document.getElementById("create_new_key");
-		create_key.href = create_key.href + "?hostname=" + hostname + "&hyper=" + hyper +"&count=" + count + "&userData=" + userData;
-    }
-</script>
-
 <div class="admin user">
+
     <div class="ui container">
+
         <div class="ui grid">
+
         {{template "_left" .}}
-<div class="user signup">
-	<div class="ui middle very relaxed page grid">
-        <div class="" >
-            <form class="ui form" action="{{.Link}}" method="post">
-                <h3 class="ui top attached header">
-                    {{.i18n.Tr "Create New Instance"}}
-                </h3>
-                <div class="ui attached segment">
-                    <div class="required inline field">
-                        <label for="hostname">{{.i18n.Tr "Hostname_prefix"}}</label>
-                        <input id="hostname" name="hostname" value="{{.HostName}}" autofocus required>
-                    </div>
-	            {{ if .IsAdmin }}
-                    <div class="required inline field">
-                        <label for="hyper">{{.i18n.Tr "Hyper"}}</label>
-                        <input id="hyper" name="hyper" value="-1" required>
-                    </div>
-                    {{ else }}
-                    <div class="required inline field" hidden>
-                        <label for="hyper">{{.i18n.Tr "Hyper"}}</label>
-                        <input id="hyper" name="hyper" value="-1" required>
-                    </div>
-	            {{ end }}
-                    <div class="required inline field">
-                        <label for="count">{{.i18n.Tr "Count"}}</label>
-                        <input id="count" name="count" value="1" required>
-                    </div>
-                    <div class="inline field">
-                        <label for="cluster">{{.i18n.Tr "Openshift Cluster"}}</label>
-						<div class="ui selection dropdown">
-						  <input id="cluster" name="cluster" type="hidden">
-						  <i class="dropdown icon"></i>
-						  <div class="default text">{{.i18n.Tr "None"}}</div>
-						  <div class="menu">
-                            {{ range .Openshifts }}
-							<div class="item" data-value={{.ID}} data-text={{.ID}}-{{.ClusterName}}>
-							  {{.ID}}-{{.ClusterName}}
-							</div>
+
+            <div class="user signup">
+
+                <div class="ui middle very relaxed page grid">
+
+                    <div class="" >
+
+                        <form class="ui form" action="{{.Link}}" method="post">
+
+                            <h3 class="ui top attached header">
+
+                                {{.i18n.Tr "Create New Instance"}}
+
+                            </h3>
+
+                            <div class="ui attached segment">
+
+                                <div class="required inline field">
+
+                                    <label for="hostname">{{.i18n.Tr "Hostname_prefix"}}</label>
+
+                                    <input id="hostname" name="hostname" value="{{.HostName}}" autofocus required>
+
+                                </div>
+
+                            {{ if .IsAdmin }}
+
+                                <div class="required inline field">
+
+                                    <label for="hyper">{{.i18n.Tr "Hyper"}}</label>
+
+                                    <input id="hyper" name="hyper" value="-1" required>
+
+                                </div>
+
+                                {{ else }}
+
+                                <div class="required inline field" hidden>
+
+                                    <label for="hyper">{{.i18n.Tr "Hyper"}}</label>
+
+                                    <input id="hyper" name="hyper" value="-1" required>
+
+                                </div>
+
                             {{ end }}
-						  </div>
-						</div>
+
+                                <div class="required inline field">
+
+                                    <label for="count">{{.i18n.Tr "Count"}}</label>
+
+                                    <input id="count" name="count" value="1" required>
+
+                                </div>
+
+                                <div class="inline field">
+
+                                    <label for="cluster">{{.i18n.Tr "Openshift Cluster"}}</label>
+
+                                    <div class="ui selection dropdown">
+
+                                      <input id="cluster" name="cluster" type="hidden">
+
+                                      <i class="dropdown icon"></i>
+
+                                      <div class="default text">{{.i18n.Tr "None"}}</div>
+
+                                      <div class="menu">
+
+                                        {{ range .Openshifts }}
+
+                                        <div class="item" data-value={{.ID}} data-text={{.ID}}-{{.ClusterName}}>
+
+                                          {{.ID}}-{{.ClusterName}}
+
+                                        </div>
+
+                                        {{ end }}
+
+                                      </div>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="inline field">
+
+                                    <label for="image">{{.i18n.Tr "Image"}}</label>
+
+                                    <div class="ui selection dropdown">
+
+                                      <input id="image" name="image" type="hidden">
+
+                                      <i class="dropdown icon"></i>
+
+                                      <div class="default text">{{.i18n.Tr "Image"}}</div>
+
+                                      <div class="menu">
+
+                                        {{ range .Images }}
+
+                                {{ if eq .Status "available" }}
+
+                                        <div class="item" data-value={{.ID}} data-text={{.Name}}>
+
+                                          {{.Name}}
+
+                                        </div>
+
+                                        {{ end }}
+
+                                        {{ end }}
+
+                                      </div>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="required inline field">
+
+                                    <label for="flavor">{{.i18n.Tr "Flavor"}}</label>
+
+                                    <div class="ui selection dropdown">
+
+                                      <input id="flavor" name="flavor" type="hidden">
+
+                                      <i class="dropdown icon"></i>
+
+                                      <div class="default text">{{.i18n.Tr "Flavor"}}</div>
+
+                                      <div class="menu">
+
+                                        {{ range .Flavors }}
+
+                                        <div class="item" data-value={{.ID}} data-text={{.Name}}>
+
+                                          {{.Name}}
+
+                                        </div>
+
+                                        {{ end }}
+
+                                      </div>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="required inline field">
+
+                                    <label for="primary">{{.i18n.Tr "Primary Interface"}}</label>
+
+                                    <div class="ui selection dropdown">
+
+                                      <input id="primary" name="primary" type="hidden">
+
+                                      <i class="dropdown icon"></i>
+
+                                      <div class="default text">{{.i18n.Tr "Subnet"}}</div>
+
+                                      <div class="menu">
+
+                                        {{ if .IsAdmin }}
+
+                                        {{ range .Subnets }}
+
+                                        <div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
+
+                                          {{.Name}}
+
+                                        </div>
+
+                                        {{ end }}
+
+                                        {{ else }}
+
+                                        {{ range .Subnets }}
+
+                                        {{ if eq .Type "internal" }}
+
+                                        <div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
+
+                                          {{.Name}}
+
+                                        </div>
+
+                                        {{ end }}
+
+                                        {{ end }}
+
+                                         {{ end }}
+
+                                      </div>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="inline field">
+
+                                    <label for="primaryip">{{.i18n.Tr "Primary IP"}}</label>
+
+                                    <input id="primaryip" name="primaryip" placeholder="10.10.50.100">
+
+                                </div>
+
+                                <div class="inline field">
+
+                                    <label for="primarymac">{{.i18n.Tr "Primary Mac"}}</label>
+
+                                    <input id="primarymac" name="primarymac" placeholder="52:54:41:12:ac:70">
+
+                                </div>
+
+                                <div class="inline field">
+
+                                    <label for="secondary">{{.i18n.Tr "Secondary Interfaces"}}</label>
+
+                                    <div class="ui multiple selection dropdown">
+
+                                      <input name="subnets" id="subnets" type="hidden">
+
+                                      <i class="dropdown icon"></i>
+
+                                      <div class="default text">{{.i18n.Tr "Subnets"}}</div>
+
+                                      <div class="menu">
+
+                                        {{ if .IsAdmin }}
+
+                                        {{ range .Subnets }}
+
+                                        <div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
+
+                                          {{.Name}}
+
+                                        </div>
+
+                                        {{ end }}
+
+                                        {{ else }}
+
+                                        {{ range .Subnets }}
+
+                                        {{ if eq .Type "internal" }}
+
+                                        <div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
+
+                                          {{.Name}}
+
+                                        </div>
+
+                                        {{ end }}
+
+                                        {{ end }}
+
+                                         {{ end }}
+
+                                      </div>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="inline field">
+
+                                    <label for="secgroups">{{.i18n.Tr "Security Groups"}}</label>
+
+                                    <div class="ui multiple selection dropdown">
+
+                                      <input id="secgroups" name="secgroups" type="hidden">
+
+                                      <i class="dropdown icon"></i>
+
+                                      <div class="default text">{{.i18n.Tr "Security Groups"}}</div>
+
+                                      <div class="menu">
+
+                                        {{ if .Secgroups }}
+
+                                        {{ range .Secgroups }}
+
+                                        <div class="item" data-value={{.ID}} data-text={{.Name}}>
+
+                                          {{.Name}}
+
+                                        </div>
+
+                                        {{ end }}
+
+                                        {{ end }}
+
+                                      </div>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="inline field">
+
+                                    <label for="keys">{{.i18n.Tr "Keys"}}</label>
+
+                                    <div class="ui multiple selection dropdown">
+
+                                      <input id="keys" name="keys" type="hidden">
+
+
+                                      <i class="dropdown icon"></i>
+
+                                      <div id="default_key" class="default text">{{.i18n.Tr "Key"}}</div>
+
+                                      <div id="keys_menu" class="menu">
+
+                                         {{ range .Keys }}
+
+                                         <div class="item" data-value={{.ID}} data-text={{.Name}}>
+
+                                              {{.Name}}
+
+                                         </div>
+
+                                         {{ end }}
+
+                                      </div>
+
+                                    </div>
+
+                                    <a id="button" class="ui green button" href="javascript:void(0)" >{{.i18n.Tr "Click To Create New Key"}}</a>
+
+                                </div>
+
+                                <div class="inline field">
+
+                                    <label>{{.i18n.Tr "User Data"}}</label>
+
+                                    <textarea id="userdata"  name="userdata" autocomplete="off"></textarea>
+
+                                </div>
+
+                                <div class="inline field">
+
+                                    <label></label>
+
+                                    <button class="ui green button">{{.i18n.Tr "Create New Instance"}}</button>
+
+                                </div>
+
+                            </div>
+
+                        </form>
                     </div>
-                    <div class="inline field">
-                        <label for="image">{{.i18n.Tr "Image"}}</label>
-						<div class="ui selection dropdown">
-						  <input id="image" name="image" type="hidden">
-						  <i class="dropdown icon"></i>
-						  <div class="default text">{{.i18n.Tr "Image"}}</div>
-						  <div class="menu">
-                            {{ range .Images }}
-		            {{ if eq .Status "available" }}
-							<div class="item" data-value={{.ID}} data-text={{.Name}}>
-							  {{.Name}}
+                    <div id="popupContact">
+                            <a id="popupContactClose">X</a>
+                            <h1>{{.i18n.Tr "Create New Key"}}</h1>
+                            <p id="contactArea">
+                                这是创建密钥的div
+                                <br/><br/>
+                                要关闭这个窗口，请点击右上方的X按钮或者进行
+                                <br/><br/>
+                            </p>
+                            <div id="find_it">
+                            <div class="required inline field">
+                                <label for="name">Name</label>
+                                <input id="name" name="name" autofocus required>
+                            </div>
+                            <div id="submit"><input type="submit" value="创建密钥" /></div>
+                            </div>
+                            <div id="instance_new_key" style="display: none;">
+								<div class="inline field">
+									 <label for="name">Name</label>
+									 <input id="keyName" name="keyName" value="" />
+								</div>
+								<div class="inline field">
+									<label>public Key</label>
+									<textarea id="pubkey"  name="pubkey" autocomplete="off" > </textarea>
+								</div>
+								<div id="privateK" class="inline field">
+									<label>private Key</label>
+									<textarea id="prikey" style="display:none" name="prikey" autocomplete="off" ></textarea>
+								</div>
+								<div class="inline field">
+									<label></label>
+									<button id="this_perfect_key" class="ui green button">{{.i18n.Tr "Confirm, I got private key"}}</button>
+								</div>
 							</div>
-                            {{ end }}
-                            {{ end }}
-						  </div>
-						</div>
                     </div>
-                    <div class="required inline field">
-                        <label for="flavor">{{.i18n.Tr "Flavor"}}</label>
-						<div class="ui selection dropdown">
-						  <input id="flavor" name="flavor" type="hidden">
-						  <i class="dropdown icon"></i>
-						  <div class="default text">{{.i18n.Tr "Flavor"}}</div>
-						  <div class="menu">
-                            {{ range .Flavors }}
-							<div class="item" data-value={{.ID}} data-text={{.Name}}>
-							  {{.Name}}
-							</div>
-                            {{ end }}
-						  </div>
-						</div>
-                    </div>
-                    <div class="required inline field">
-                        <label for="primary">{{.i18n.Tr "Primary Interface"}}</label>
-						<div class="ui selection dropdown">
-						  <input id="primary" name="primary" type="hidden">
-						  <i class="dropdown icon"></i>
-						  <div class="default text">{{.i18n.Tr "Subnet"}}</div>
-						  <div class="menu">
-						    {{ if .IsAdmin }}
-							{{ range .Subnets }}
-							<div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
-							  {{.Name}}
-							</div>
-							{{ end }}
-						    {{ else }}
-							{{ range .Subnets }}
-							{{ if eq .Type "internal" }}
-							<div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
-							  {{.Name}}
-							</div>
-							{{ end }}
-							{{ end }}
-						     {{ end }}
-						  </div>
-						</div>
-                    </div>
-                    <div class="inline field">
-                        <label for="primaryip">{{.i18n.Tr "Primary IP"}}</label>
-                        <input id="primaryip" name="primaryip" placeholder="10.10.50.100">
-                    </div>
-                    <div class="inline field">
-                        <label for="primarymac">{{.i18n.Tr "Primary Mac"}}</label>
-                        <input id="primarymac" name="primarymac" placeholder="52:54:41:12:ac:70">
-                    </div>
-                    <div class="inline field">
-					    <label for="secondary">{{.i18n.Tr "Secondary Interfaces"}}</label>
-						<div class="ui multiple selection dropdown">
-						  <input name="subnets" id="subnets" type="hidden">
-						  <i class="dropdown icon"></i>
-						  <div class="default text">{{.i18n.Tr "Subnets"}}</div>
-						  <div class="menu">
-						    {{ if .IsAdmin }}
-							{{ range .Subnets }}
-							<div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
-							  {{.Name}}
-							</div>
-							{{ end }}
-						    {{ else }}
-							{{ range .Subnets }}
-							{{ if eq .Type "internal" }}
-							<div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
-							  {{.Name}}
-							</div>
-							{{ end }}
-							{{ end }}
-						     {{ end }}
-						  </div>
-						</div>
-					</div>
-                    <div class="inline field">
-                        <label for="secgroups">{{.i18n.Tr "Security Groups"}}</label>
-						<div class="ui multiple selection dropdown">
-						  <input id="secgroups" name="secgroups" type="hidden">
-						  <i class="dropdown icon"></i>
-						  <div class="default text">{{.i18n.Tr "Security Groups"}}</div>
-						  <div class="menu">
-							{{ if .Secgroups }}
-                            {{ range .Secgroups }}
-							<div class="item" data-value={{.ID}} data-text={{.Name}}>
-							  {{.Name}}
-							</div>
-                            {{ end }}
-                            {{ end }}
-						  </div>
-						</div>
-                    </div>
-                    <div class="inline field">
-                        <label for="keys">{{.i18n.Tr "Keys"}}</label>
-						<div class="ui multiple selection dropdown">
-						  <input id="keys" name="keys" type="hidden">
-						  <i class="dropdown icon"></i>
-						  <div class="default text">{{.i18n.Tr "Key"}}</div>
-						  <div class="menu">
-                             {{ range .Keys }}
-                             <div class="item" data-value={{.ID}} data-text={{.Name}}>
-                                  {{.Name}}
-                             </div>
-                             {{ end }}
-						  </div>
-						</div>
-						<a id="create_new_key" class="ui green button" href="/keys/new" onclick="storage()"> Click to create key</a>
-                    </div>
-                    <div class="inline field">
-						<label>{{.i18n.Tr "User Data"}}</label>
-						<textarea id="userdata"  name="userdata" autocomplete="off"></textarea>
-                    </div>
-                    <div class="inline field">
-                        <label></label>
-                        <button class="ui green button">{{.i18n.Tr "Create New Instance"}}</button>
-                    </div>
+
+                    <div id="backgroundPopup"></div>
+
                 </div>
-            </form>
+
+            </div>
+
         </div>
-	</div>
+    </div>
+
 </div>
-</div>
-</div>
-</div>
+
 {{template "_footer" .}}
 
