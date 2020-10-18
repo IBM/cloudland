@@ -36,6 +36,7 @@
 
 	    <script src="/js/jquery-1.11.3.min.js"></script>
 	    <script src="/js/echarts.min.js"></script>
+	    <script src="/js/popup.js"></script>
 	    <script src="/js/libs/jquery.are-you-sure.js"></script>
 	    <link rel="stylesheet" href="/assets/font-awesome-4.6.3/css/font-awesome.min.css">
 	    <link rel="stylesheet" href="/assets/octicons-4.3.0/octicons.min.css">
@@ -65,6 +66,54 @@
 			 .ui.secondary.menu .dropdown.item > .menu { margin-top: 0; }
 		    </style>
 	    </noscript>
+
+	    <style type="text/css">
+        #backgroundPopup{
+            display:none;
+            position:fixed;
+            position:absolute;
+            height:100%;
+            width:100%;
+            top:0;
+            left:0;
+            background:#000000;
+            border:1px solid #cecece;
+            z-index:1;
+        }
+
+        #popupContact{
+            display:none;
+            position:fixed;
+            position:absolute;
+            height:384px;
+            width:408px;
+            background:#FFFFFF;
+            border:2px solid #cecece;
+            z-index:2;
+            padding:12px;
+            font-size:13px;
+        }
+
+        #popupContact h1{
+            text-align:left;
+            color:#6FA5FD;
+            font-size:22px;
+            font-weight:700;
+            border-bottom:1px dotted #D3D3D3;
+            padding-bottom:2px;
+            margin-bottom:20px;
+        }
+        #popupContactClose{
+            font-size:14px;
+            line-height:14px;
+            right:6px;
+            top:4px;
+            position:absolute;
+            color:#6fa5fd;
+            font-weight:700;
+            display:block;
+        }
+        </style>
 
 	    <!-- JavaScript -->
 	    <script src="/js/semantic-2.3.1.min.js"></script>
