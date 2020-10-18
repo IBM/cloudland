@@ -1,46 +1,28 @@
-checkcommit(){
+checkpr(){
   cd /opt/cloudland/
-  while :
-  do
-    sudo git fetch
-    HEADHASH=$(git rev-parse HEAD)
-    UPSTREAMHASH=$(git rev-parse @{upstream})
-    BRANCHNAME=$(git rev-parse --abbrev-ref HEAD)
-    REPOURL=$(git config --get remote.origin.url)
-    # BRANCHNAME=$(cat branchname)
+  sudo git fetch
+  BRANCHNAME=$1
+  PRSLUG=$2
 
-    if [ "$HEADHASH" != "$UPSTREAMHASH" ]
-    then
-      echo "Deploying new environment"
-      sudo systemctl stop hypercube
-      sudo systemctl stop cloudland
-      sudo systemctl stop cloudlet
-      sudo systemctl stop scid
-      cd /opt/
-      sudo mv ./cloudland/deploy/netconf.yml ./netconf.yml.bak
-      sudo rm -rf ./cloudland/
-      sudo rm -rf ./libvirt-console-proxy/
-      sudo rm -rf ./sci/
-      sudo git clone --branch=$BRANCHNAME $REPOURL
-      sudo echo "PENDING" > ./cloudland/test_status
-      sudo mv ./netconf.yml.bak ./cloudland/deploy/netconf.yml
-      sudo cp /home/centos/server.crt ./cloudland/web/clui/public/server.crt
-      sudo cp /home/centos/server.key ./cloudland/web/clui/public/server.key
-      cd /opt/cloudland/deploy/
-      ./allinone.sh
-      if [ $? -eq 0 ]
-      then
-        sudo sed -i "s/PENDING/DONE/g" ../test_status
-      else
-        sudo sed -i "s/PENDING/FAILED/g" ../test_status
-      fi
-      cd ..
-      exec ./autocheck.sh
-    else
-      echo "Code up to date"
-    fi
-    sleep 5m
-  done
+  echo "Deploying new environment"
+  sudo systemctl stop hypercube
+  sudo systemctl stop cloudland
+  sudo systemctl stop cloudlet
+  sudo systemctl stop scid
+  cd /opt/
+  sudo rm -rf ./cloudland/
+  sudo rm -rf ./libvirt-console-proxy/
+  sudo rm -rf ./sci/
+  sudo git clone --branch=$BRANCHNAME https://github.com/$PRSLUG.git
+  sudo echo "PENDING" > ./cloudland/web/clui/public/test_status
+  cd /opt/cloudland/deploy/
+  ./allinone.sh
+  if [ $? -eq 0 ]
+  then
+    sudo sed -i "s/PENDING/DONE/g" ../web/clui/public/test_status
+  else
+    sudo sed -i "s/PENDING/FAILED/g" ../web/clui/public/test_status
+  fi
 }
 
 checktest(){
@@ -48,7 +30,7 @@ checktest(){
   i=0
   while :
   do
-    status=$(curl https://$1/test)
+    status=$(curl -k https://$1/test_status)
     echo $status
     let i+=1
     if [ "$status" == "DONE" ]
@@ -62,9 +44,9 @@ checktest(){
   done
 }
 
-if [ ! -n "$1" ]||[ "$1" == "commit" ]
+if [ ! -n "$1" ]||[ "$1" == "pull_request" ]
 then
-  checkcommit
+  checkpr $2 $3
 elif [ "$1" == "test" ]
 then
   checktest $2
