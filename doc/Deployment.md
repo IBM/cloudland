@@ -68,6 +68,6 @@ For development, you can prepare one or more bare metals or VMs with nested kvm 
 ```   
 
 ## Adjust Networks
-Refer to network section in [operation guide](Operation)
+Refer to network section in [operation guide](Operation.md)
 # Production Deployment   
 Production environment can be upgraded from development environment. With a complete working development environment, you can create a few VMs to hold the clustered control plain, migrate the data to the new control plain.

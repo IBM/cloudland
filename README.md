@@ -38,4 +38,4 @@ Refer to [CONTRIBUTING.md](https://github.com/IBM/cloudland/wiki/contribution)
 
 Apache License 2.0, see [LICENSE](https://github.com/IBM/cloudland/blob/master/LICENSE).
 
-Visit [doc](https://github.com/IBM/cloudland/doc) for full documentation and guide.
+Visit [doc](https://github.com/IBM/cloudland/tree/master/doc) for full documentation and guide.

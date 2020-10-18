@@ -10,6 +10,10 @@
     owner: cland
     group: cland
 
+- name: generate cland certs
+  script: gencert.sh
+  tags: [web_conf]
+
 - name: cland ui config file
   template:
     src: config.toml.j2

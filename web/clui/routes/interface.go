@@ -153,21 +153,21 @@ func (v *InterfaceView) Edit(c *macaron.Context, store session.Store) {
 	db := DB()
 	id := c.Params("id")
 	if id == "" {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Id is Empty"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	ifaceID, err := strconv.Atoi(id)
 	if err != nil {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "interfaces", int64(ifaceID))
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	iface := &model.Interface{Model: model.Model{ID: int64(ifaceID)}}
@@ -193,8 +193,8 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 	permit, err := memberShip.CheckOwner(model.Writer, "subnets", int64(subnetID))
 	if !permit {
 		log.Println("Not authorized to access subnet")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized to access subnet"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	instID := c.QueryInt64("instance")
@@ -202,8 +202,8 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 		permit, err = memberShip.CheckOwner(model.Writer, "instances", int64(instID))
 		if !permit {
 			log.Println("Not authorized to access instance")
-			code := http.StatusUnauthorized
-			c.Error(code, http.StatusText(code))
+			c.Data["ErrorMsg"] = "Not authorized to access instance"
+			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
 	}
@@ -223,8 +223,8 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 			permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
 			if !permit {
 				log.Println("Not authorized to access security group")
-				code := http.StatusUnauthorized
-				c.Error(code, http.StatusText(code))
+				c.Data["ErrorMsg"] = "Not authorized to access security group"
+				c.HTML(http.StatusBadRequest, "error")
 				return
 			}
 			sgIDs = append(sgIDs, int64(sgID))
@@ -234,8 +234,8 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 		permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
 		if !permit {
 			log.Println("Not authorized to access security group")
-			code := http.StatusUnauthorized
-			c.Error(code, http.StatusText(code))
+			c.Data["ErrorMsg"] = "Not authorized to access security group"
+			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
 		sgIDs = append(sgIDs, sgID)
@@ -261,21 +261,21 @@ func (v *InterfaceView) Delete(c *macaron.Context, store session.Store) {
 	permit, err := memberShip.CheckOwner(model.Writer, "interfaces", id)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+			c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	iface := &model.Interface{Model: model.Model{ID: id}}
 	err = DB().Take(iface).Error
 	if err != nil {
-		code := http.StatusInternalServerError
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	err = DeleteInterface(ctx, iface)
 	if err != nil {
-		code := http.StatusInternalServerError
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.JSON(200, "ok")
@@ -286,21 +286,21 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 	redirectTo := "../instances"
 	id := c.Params("id")
 	if id == "" {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Id is Empty"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	ifaceID, err := strconv.Atoi(id)
 	if err != nil {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "interfaces", int64(ifaceID))
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	name := c.QueryTrim("name")
@@ -318,8 +318,8 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 			permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sID))
 			if !permit {
 				log.Println("Not authorized for this operation")
-				code := http.StatusUnauthorized
-				c.Error(code, http.StatusText(code))
+				c.Data["ErrorMsg"] = "Not authorized for this operation"
+				c.HTML(http.StatusBadRequest, "error")
 				return
 			}
 			sgIDs = append(sgIDs, int64(sID))
@@ -329,8 +329,8 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 		permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sID))
 		if !permit {
 			log.Println("Not authorized for this operation")
-			code := http.StatusUnauthorized
-			c.Error(code, http.StatusText(code))
+			c.Data["ErrorMsg"] = "Not authorized for this operation"
+			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
 		sgIDs = append(sgIDs, sID)

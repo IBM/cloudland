@@ -161,7 +161,7 @@ func (a *ConsoleView) ConsoleURL(c *macaron.Context, store session.Store) {
 	endpoint := viper.GetString("api.endpoint")
 	accessAddr := viper.GetString("console.host")
 	accessPort := viper.GetInt("console.port")
-	consoleURL := fmt.Sprintf("%s/novnc/vnc.html?host=%s&port=%d&autoconnect=true&path=websockify?token=%s", endpoint, accessAddr, accessPort, tokenString)
+	consoleURL := fmt.Sprintf("%s/novnc/vnc.html?host=%s&port=%d&autoconnect=true&encrypt=true&path=websockify?token=%s", endpoint, accessAddr, accessPort, tokenString)
 	c.Resp.Header().Set("Location", consoleURL)
 	c.JSON(301, nil)
 	return

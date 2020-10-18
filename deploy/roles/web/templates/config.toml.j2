@@ -1,6 +1,12 @@
 [api]
-listen = "{{ hostvars[groups['web'][0]]['inventory_hostname'] }}:80"
-endpoint = "{{ hostvars[groups['web'][0]]['ansible_host'] }}:80"
+listen = "127.0.0.1:5443"
+endpoint = "https://{{ hostvars[groups['web'][0]]['ansible_host'] }}:443"
+key = "/etc/ssl/private/cland-selfsigned.key"
+cert = "/etc/ssl/certs/cland-selfsigned.crt"
+
+[console]
+host = "{{ hostvars[groups['web'][0]]['ansible_host'] }}"
+port = 443
 
 [rest]
 listen = "{{ hostvars[groups['web'][0]]['inventory_hostname'] }}:4001"

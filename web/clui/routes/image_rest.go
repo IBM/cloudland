@@ -75,7 +75,8 @@ func (v *ImageRest) Create(c *macaron.Context) {
 	//check role
 	if claims.Role < model.Writer {
 		// if token was issued before promote user privilige, the user need to re-apply token
-		c.Error(http.StatusForbidden, http.StatusText(http.StatusForbidden))
+		c.Data["ErrorMsg"] = "claims.Role < model.Writer"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	uid := c.Data[claims.UID].(int64)

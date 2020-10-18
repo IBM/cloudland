@@ -43,7 +43,7 @@ function inst_web()
 {
     cd $cland_root_dir/deploy
     ansible-playbook cloudland.yml -e @$net_conf --tags database
-    sudo yum -y install golang 
+    sudo yum -y install golang
     sudo chown -R cland.cland /usr/local
     sed -i '/export GO/d' ~/.bashrc
     echo 'export GOPROXY=https://goproxy.io' >> ~/.bashrc
@@ -68,6 +68,20 @@ function inst_cland()
     make clean
     make
     make install
+}
+
+# Install libvirt console proxy
+function inst_console_proxy()
+{
+    sudo yum -y install libvirt-devel
+    cd /opt
+    sudo git clone https://github.com/libvirt/libvirt-console-proxy.git
+    sudo chown cland.cland libvirt-console-proxy
+    cd libvirt-console-proxy
+    go build -o build/virtconsoleproxyd cmd/virtconsoleproxyd/virtconsoleproxyd.go
+    git clone https://github.com/novnc/noVNC.git /opt/cloudland/web/clui/public/novnc
+    rm -rf /opt/cloudland/web/clui/public/novnc/.git*
+    cd $cland_root_dir/deploy
 }
 
 # Generate host file
@@ -127,6 +141,8 @@ function allinone_firewall()
 {
     sudo iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
     sudo iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
+    sudo iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
+    sudo iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
     sudo iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 4000 -j ACCEPT
     sudo iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 4000 -j ACCEPT
     sudo iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 9988 -j ACCEPT
@@ -146,9 +162,10 @@ diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 gen_hosts
 cd $cland_root_dir/deploy
 [ $(uname -m) != s390x ] && ansible-playbook cloudland.yml -e @$net_conf --tags epel
-ansible-playbook cloudland.yml -e @$net_conf --tags hosts,selinux,be_pkg,be_conf,firewall,imgrepo
+ansible-playbook cloudland.yml -e @$net_conf --tags hosts,selinux,be_pkg,be_conf,firewall
 demo_router
 allinone_firewall
 inst_web
-ansible-playbook cloudland.yml -e @$net_conf --tags be_srv,fe_srv
+inst_console_proxy
+ansible-playbook cloudland.yml -e @$net_conf --tags be_srv,fe_srv,console,imgrepo
 sudo chown -R cland.cland $cland_root_dir

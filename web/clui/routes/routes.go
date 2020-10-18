@@ -28,6 +28,8 @@ import (
 	"gopkg.in/macaron.v1"
 )
 
+var UrlBefore string
+
 func runArgs(cfg string) (args []interface{}) {
 	host := "127.0.0.1"
 	port := 443
@@ -48,9 +50,15 @@ func runArgs(cfg string) (args []interface{}) {
 }
 
 func Run() (err error) {
-	// New().Run(runArgs("api.listen")...)
 	m := New()
-	http.ListenAndServeTLS("0.0.0.0:443", "/opt/cloudland/web/clui/public/server.crt", "/opt/cloudland/web/clui/public/server.key", m)
+	cert := viper.GetString("api.cert")
+	key := viper.GetString("api.key")
+	if cert != "" && key != "" {
+		listen := viper.GetString("api.listen")
+		http.ListenAndServeTLS(listen, cert, key, m)
+	} else {
+		m.Run(runArgs("api.listen")...)
+	}
 	return
 }
 
@@ -181,6 +189,7 @@ func New() (m *macaron.Macaron) {
 }
 
 func LinkHandler(c *macaron.Context, store session.Store) {
+	UrlBefore = "/"
 	link := strings.NewReplacer("%", "%25",
 		"#", "%23",
 		" ", "%20",
@@ -206,6 +215,7 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 		c.Data["Organization"] = store.Get("org").(string)
 		c.Data["Members"] = store.Get("members").([]*model.Member)
 	} else if link != "" && link != "/" && !strings.HasPrefix(link, "/login") && !strings.HasPrefix(link, "/consoleresolver") {
-		c.Redirect("/")
+		UrlBefore=link
+		c.Redirect("login?redirect_to=")
 	}
 }

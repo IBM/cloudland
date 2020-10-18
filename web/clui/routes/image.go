@@ -125,8 +125,8 @@ func (v *ImageView) List(c *macaron.Context, store session.Store) {
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	offset := c.QueryInt64("offset")
@@ -172,27 +172,27 @@ func (v *ImageView) Delete(c *macaron.Context, store session.Store) (err error) 
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Id is empty"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	imageID, err := strconv.Atoi(id)
 	if err != nil {
-		code := http.StatusBadRequest
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "images", int64(imageID))
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	err = imageAdmin.Delete(c.Req.Context(), int64(imageID))
 	if err != nil {
-		code := http.StatusInternalServerError
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.JSON(200, map[string]interface{}{
@@ -206,8 +206,8 @@ func (v *ImageView) New(c *macaron.Context, store session.Store) {
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	_, instances, err := instanceAdmin.List(c.Req.Context(), 0, -1, "", "")
@@ -225,8 +225,8 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	redirectTo := "../images"

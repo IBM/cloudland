@@ -56,6 +56,13 @@ http {
         }
     }
 
+    server {
+        listen       80;
+        listen       [::]:80;
+        server_name  _;
+        return 301 https://{{ hostvars[groups['web'][0]]['ansible_host'] }};
+    }
+
 # Settings for a TLS enabled server.
 #
 #    server {
