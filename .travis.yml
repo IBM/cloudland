@@ -5,15 +5,15 @@ services:
 git:
   clone: false
 before_install:
-- sudo git clone --branch=$TRAVIS_BRANCH https://github.com/$TRAVIS_REPO_SLUG.git
-  $TRAVIS_REPO_SLUG
+- sudo git clone --branch=$TRAVIS_PULL_REQUEST_BRANCH https://github.com/$TRAVIS_PULL_REQUEST_SLUG.git
+  $TRAVIS_PULL_REQUEST_SLUG
 install:
-- cd $TRAVIS_REPO_SLUG
+- cd $TRAVIS_PULL_REQUEST_SLUG
 - openssl aes-256-cbc -K $encrypted_23c8022f8a29_key -iv $encrypted_23c8022f8a29_iv
   -in skey.enc -out skey -d
 - ls -a
 - echo $TEST_IP
-- docker build --build-arg BRANCH=$TRAVIS_BRANCH --build-arg REPO=$TRAVIS_REPO_SLUG
+- docker build --build-arg BRANCH=$TRAVIS_PULL_REQUEST_BRANCH --build-arg REPO=$TRAVIS_PULL_REQUEST_SLUG
   -t centos_env .
 script:
 - bash ./autocheck.sh test $TEST_ENV_IP
