@@ -43,17 +43,17 @@ func (point *KeyTemp) Create() (publicKey, fingerPrint, privateKey string, err e
 	// generate key
 	private, er := rsa.GenerateKey(rand.Reader, 1024)
 	if er != nil {
-			log.Println("failed to create privateKey ")
-			err = er
-			return
+		log.Println("failed to create privateKey ")
+		err = er
+		return
 	}
 	privateKeyPEM := &pem.Block{Type:"RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(private)}
 	privateKey = string(pem.EncodeToMemory(privateKeyPEM))
 	pub, er := ssh.NewPublicKey(&private.PublicKey)
 	if er != nil {
-			log.Println("failed to create publicKey")
-			err = er
-			return
+		log.Println("failed to create publicKey")
+		err = er
+		return
 	}
 	temp :=ssh.MarshalAuthorizedKey(pub)
 	publicKey = string(temp)
@@ -105,6 +105,7 @@ func (a *KeyAdmin) List(ctx context.Context, offset, limit int64, order, query s
 		query = fmt.Sprintf("name like '%%%s%%'", query)
 	}
 	where := memberShip.GetWhere()
+	keys = []*model.Key{}
 	if err = db.Model(&model.Key{}).Where(where).Where(query).Count(&total).Error; err != nil {
 		log.Println("DB failed to count keys, %v", err)
 		return
@@ -119,7 +120,6 @@ func (a *KeyAdmin) List(ctx context.Context, offset, limit int64, order, query s
 		db = db.Offset(0).Limit(-1)
 		for _, key := range keys {
 			key.OwnerInfo = &model.Organization{Model: model.Model{ID: key.Owner}}
-			
 			if err = db.Take(key.OwnerInfo).Error; err != nil {
 				log.Println("Failed to query owner info", err)
 				err = nil
@@ -248,10 +248,11 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
 	}	
 	name := c.QueryTrim("name")
 	publicKey := c.QueryTrim("PublicKey")
+	log.Println("Your Public Key, %v", publicKey)
 	hostname := c.QueryTrim("host")
 	fingerPrint := c.QueryTrim("fingerPrint")
 	log.Println("ddddddddddddddddddddd"+fingerPrint)
-	key, err := keyAdmin.Create(c.Req.Context(), name, publicKey,fingerPrint)
+	key, err := keyAdmin.Create(c.Req.Context(), name, publicKey, fingerPrint)
 	if err != nil {
 		log.Println("Failed to create key, %v", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
