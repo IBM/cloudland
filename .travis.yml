@@ -9,10 +9,7 @@ before_install:
   $TRAVIS_PULL_REQUEST_SLUG
 install:
 - cd $TRAVIS_PULL_REQUEST_SLUG
-- sudo openssl aes-256-cbc -K $encrypted_23c8022f8a29_key -iv $encrypted_23c8022f8a29_iv
-  -in skey.enc -out skey -d
-# - docker build --build-arg BRANCH=$TRAVIS_PULL_REQUEST_BRANCH --build-arg REPO=$TRAVIS_PULL_REQUEST_SLUG
-#   -t centos_env .
+- sudo openssl aes-256-cbc -K $encrypted_23c8022f8a29_key -iv $encrypted_23c8022f8a29_iv -in skey.enc -out skey -d
 script:
 - ssh-keyscan $TEST_IP >> $HOME/.ssh/known_hosts
 - ssh -i skey cland@$TEST_IP "cd /opt/cloudland/ && sudo bash ./autocheck.sh pull_request $TRAVIS_PULL_REQUEST_BRANCH $TRAVIS_PULL_REQUEST_SLUG"
