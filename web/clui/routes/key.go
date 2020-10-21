@@ -262,11 +262,10 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
 		return
 	}	
 	name := c.QueryTrim("name")
-	publicKey := c.QueryTrim("PublicKey")
+	publicKey := c.QueryTrim("pubkey")
 	log.Println("Your Public Key, %v", publicKey)
 	hostname := c.QueryTrim("host")
 	fingerPrint := c.QueryTrim("fingerPrint")
-	log.Println("ddddddddddddddddddddd"+fingerPrint)
 	key, err := keyAdmin.Create(c.Req.Context(), name, publicKey, fingerPrint)
 	if err != nil {
 		log.Println("Failed to create key, %v", err)
@@ -283,16 +282,34 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
 		c.JSON(200, key)
 		return
 	}
-	var redirectTo string
-	if c.QueryTrim("flags") == ""{
-		redirectTo = "../keys"
-		c.Redirect(redirectTo)
-	}else{
-		redirectTo = "../instances?hostname=" + hostname
-		c.Redirect(redirectTo)
+	if c.QueryTrim("from_instance") != ""{
+		_, keys, err := keyAdmin.List(c.Req.Context(), 0, -1, "", "")
+		if err != nil {
+			log.Println("Failed to list keys, %v", err)
+			if c.Req.Header.Get("X-Json-Format") == "yes" {
+				c.JSON(500, map[string]interface{}{
+					"error": err.Error(),
+				})
+				return
+			}
+			c.Data["ErrorMsg"] = err.Error()
+			c.HTML(500, "500")
+			return
+		}
+		c.JSON(200, map[string]interface{}{
+			"keys": keys,
+		})
+	} else{
+		var redirectTo string
+		if c.QueryTrim("flags") == "" {
+			redirectTo = "../keys"
+			c.Redirect(redirectTo)
+		} else {
+			redirectTo = "../instances?hostname=" + hostname
+			c.Redirect(redirectTo)
+		}
 	}
 }
-
 func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
@@ -301,6 +318,9 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
+	}
+	if c.QueryTrim("flags") != ""{
+		c.Data["InstanceFlag"] = 1
 	}
 	name := c.QueryTrim("name")
 	if c.QueryTrim("pubkey") != "" {
@@ -380,22 +400,26 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 		c.Redirect(redirectTo)
 	}else{
 		publicKey,fingerPrint,privateKey, err := keyTemp.Create() 
-		if err != nil {
-			log.Println("Failed to create key, %v", err)
-			if c.Req.Header.Get("X-Json-Format") == "yes" {
-				c.JSON(500, map[string]interface{}{
-					"error": err.Error(),
-				})
-				return
-			}
+		if err != nil{
+			log.Println("failed")
 			c.Data["ErrorMsg"] = err.Error()
-			c.HTML(500, "500")
+			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
-		c.Data["KeyName"] = name
-		c.Data["PublicKey"] = publicKey
-		c.Data["PrivateKey"] = privateKey
-		c.Data["fingerPrint"] = fingerPrint
-		c.HTML(200, "newKey")
+		if c.QueryTrim("from_instance") != ""{
+			fmt.Println("from_instance======"+c.QueryTrim("from_instance"))
+			c.JSON(200, map[string]interface{}{
+				"keyName": name,
+				"publicKey": publicKey,
+				"privateKey": privateKey,
+			})
+			return
+		} else {
+			c.Data["KeyName"] = name
+			c.Data["PublicKey"] = publicKey
+			c.Data["PrivateKey"] = privateKey
+			c.Data["fingerPrint"] = fingerPrint
+			c.HTML(200, "newKey")
+		}
 	}
 }
