@@ -22,6 +22,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"errors"
 
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/sca/dbs"
@@ -57,7 +58,24 @@ func (point *KeyTemp) Create() (publicKey, fingerPrint, privateKey string, err e
 	}
 	temp :=ssh.MarshalAuthorizedKey(pub)
 	publicKey = string(temp)
-	fingerPrint = ssh.FingerprintLegacyMD5(pub)
+	parts := strings.Fields(publicKey)
+	log.Printf("%s",parts)
+	fp := md5.Sum([]byte(parts[1]))
+	str := hex.EncodeToString(fp[:])
+	var buffer bytes.Buffer
+	log.Println(len(str))
+	for i:= 0;i < 30;i++{
+		buffer.WriteString(string(str[i]))
+		i++
+		buffer.WriteString(string(str[i]))
+		buffer.WriteString(":")
+	}
+	buffer.WriteString(string(str[30]))
+	buffer.WriteString(string(str[31]))
+	str2 := buffer.String()
+	log.Println(str2)
+	fingerPrint = str2
+	log.Println("qqqqqqqqqqq"+fingerPrint)
 	return
 }
 
@@ -307,8 +325,7 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 		str2 := buffer.String()
 		log.Println(str2)
 		fingerPrint := str2
-		log.Println("rrrrrrrrrrrrrrrrrrr")
-		log.Println(fingerPrint)
+		log.Println("999999999999999"+fingerPrint)
 		offset := c.QueryInt64("offset")
 		limit := c.QueryInt64("limit")
 		if limit == 0 {
@@ -332,20 +349,20 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 			c.HTML(500, "500")
 			return
 		}
-		var errorr string
+		var errorr error
 		for j:= 0; j < len(keys); j++ {
 			if fingerPrint == keys[j].FingerPrint{
-				errorr =  "This PublicKey Has Been Used"
-				break
+				errorr =  errors.New("This PublicKey Has Been Used")
+				log.Println("######")
+				log.Print(errorr)
 			}
 		}
-		if errorr !=""{
-			log.Println("This PublicKey Has Been Used")
+		if errorr != nil{
 			c.Data["ErrorMsg"] = errorr
 			c.HTML(500, "500")
 			return
 		}else{
-			key, err := keyAdmin.Create(c.Req.Context(), name, publicKey,fingerPrint)
+			key, err := keyAdmin.Create(c.Req.Context(), name, publicKey, fingerPrint)
 			if err != nil {
 				log.Println("Failed, %v", err)
 				if c.Req.Header.Get("X-Json-Format") == "yes" {
@@ -365,7 +382,7 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 		redirectTo := "../keys"
 		c.Redirect(redirectTo)
 	}else{
-		publicKey, fingerPrint, privateKey, err := keyTemp.Create() 
+		publicKey,fingerPrint,privateKey, err := keyTemp.Create() 
 		if err != nil {
 			log.Println("Failed to create key, %v", err)
 			if c.Req.Header.Get("X-Json-Format") == "yes" {
@@ -381,7 +398,7 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 		c.Data["KeyName"] = name
 		c.Data["PublicKey"] = publicKey
 		c.Data["PrivateKey"] = privateKey
-		c.Data["fingerPrint"] =fingerPrint
+		c.Data["fingerPrint"] = fingerPrint
 		c.HTML(200, "newKey")
 	}
 }
