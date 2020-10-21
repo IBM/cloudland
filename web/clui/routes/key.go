@@ -13,6 +13,10 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"bytes"
+	"encoding/hex"
+	"crypto/md5"
+	"strings"
 	"fmt"
 	"golang.org/x/crypto/ssh"
 	"log"
@@ -35,30 +39,32 @@ type KeyAdmin struct{}
 type KeyView struct{}
 type KeyTemp struct{}
 
-func (point *KeyTemp) Create() (publicKey, privateKey string, err error){
+func (point *KeyTemp) Create() (publicKey, fingerPrint, privateKey string, err error){
 	// generate key
 	private, er := rsa.GenerateKey(rand.Reader, 1024)
 	if er != nil {
-		log.Println("failed to create privateKey ")
-		err = er
-		return
+			log.Println("failed to create privateKey ")
+			err = er
+			return
 	}
 	privateKeyPEM := &pem.Block{Type:"RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(private)}
 	privateKey = string(pem.EncodeToMemory(privateKeyPEM))
 	pub, er := ssh.NewPublicKey(&private.PublicKey)
 	if er != nil {
-		log.Println("failed to create publicKey")
-		err = er
-		return
+			log.Println("failed to create publicKey")
+			err = er
+			return
 	}
-	publicKey = string(ssh.MarshalAuthorizedKey(pub))
+	temp :=ssh.MarshalAuthorizedKey(pub)
+	publicKey = string(temp)
+	fingerPrint = ssh.FingerprintLegacyMD5(pub)
 	return
 }
 
-func (a *KeyAdmin) Create(ctx context.Context, name, pubkey string) (key *model.Key, err error) {
+func (a *KeyAdmin) Create(ctx context.Context, name, pubkey, fingerprint string) (key *model.Key, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
-	key = &model.Key{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Name: name, PublicKey: pubkey}
+	key = &model.Key{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Name: name, PublicKey: pubkey, FingerPrint: fingerprint}
 	err = db.Create(key).Error
 	if err != nil {
 		log.Println("DB failed to create key, %v", err)
@@ -99,7 +105,6 @@ func (a *KeyAdmin) List(ctx context.Context, offset, limit int64, order, query s
 		query = fmt.Sprintf("name like '%%%s%%'", query)
 	}
 	where := memberShip.GetWhere()
-	keys = []*model.Key{}
 	if err = db.Model(&model.Key{}).Where(where).Where(query).Count(&total).Error; err != nil {
 		log.Println("DB failed to count keys, %v", err)
 		return
@@ -114,6 +119,7 @@ func (a *KeyAdmin) List(ctx context.Context, offset, limit int64, order, query s
 		db = db.Offset(0).Limit(-1)
 		for _, key := range keys {
 			key.OwnerInfo = &model.Organization{Model: model.Model{ID: key.Owner}}
+			
 			if err = db.Take(key.OwnerInfo).Error; err != nil {
 				log.Println("Failed to query owner info", err)
 				err = nil
@@ -121,7 +127,6 @@ func (a *KeyAdmin) List(ctx context.Context, offset, limit int64, order, query s
 			}
 		}
 	}
-
 	return
 }
 
@@ -221,8 +226,7 @@ func (v *KeyView) New(c *macaron.Context, store session.Store)(){
 	hostname := c.QueryTrim("hostname")
 	hyper := c.QueryTrim("hyper")
 	count := c.QueryTrim("count")
-	userData := c.QueryTrim("userData")
-	
+	userData := c.QueryTrim("userData")	
 	if hostname != ""{
 		c.Data["InstanceFlag"] = 1
 	}
@@ -241,13 +245,13 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
-	}
-	
+	}	
 	name := c.QueryTrim("name")
-	publicKey := c.QueryTrim("pubkey")
-	log.Println("Your Public Key, %v", publicKey)
+	publicKey := c.QueryTrim("PublicKey")
 	hostname := c.QueryTrim("host")
-	key, err := keyAdmin.Create(c.Req.Context(), name, publicKey)
+	fingerPrint := c.QueryTrim("fingerPrint")
+	log.Println("ddddddddddddddddddddd"+fingerPrint)
+	key, err := keyAdmin.Create(c.Req.Context(), name, publicKey,fingerPrint)
 	if err != nil {
 		log.Println("Failed to create key, %v", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
@@ -263,7 +267,6 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
 		c.JSON(200, key)
 		return
 	}
-	
 	var redirectTo string
 	if c.QueryTrim("flags") == ""{
 		redirectTo = "../keys"
@@ -274,8 +277,6 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
 	}
 }
 
-
-
 func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
@@ -285,24 +286,101 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	if c.QueryTrim("flags") != ""{
-		c.Data["InstanceFlag"] = 1
-	}
-	hostname := c.QueryTrim("host")
 	name := c.QueryTrim("name")
-	publicKey, privateKey, err := keyTemp.Create()
-	
-	if err != nil{
-		log.Println("failed")
-		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
-		return
+	if c.QueryTrim("pubkey") != "" {
+		publicKey := c.QueryTrim("pubkey")
+		parts := strings.Fields(publicKey)
+		log.Printf("%s",parts)
+		fp := md5.Sum([]byte(parts[1]))
+		str := hex.EncodeToString(fp[:])
+		var buffer bytes.Buffer
+		log.Println(len(str))
+		for i:= 0;i < 30;i++{
+			buffer.WriteString(string(str[i]))
+			i++
+			buffer.WriteString(string(str[i]))
+			buffer.WriteString(":")
+		}
+		buffer.WriteString(string(str[30]))
+		buffer.WriteString(string(str[31]))
+		str2 := buffer.String()
+		log.Println(str2)
+		fingerPrint := str2
+		log.Println("rrrrrrrrrrrrrrrrrrr")
+		log.Println(fingerPrint)
+		offset := c.QueryInt64("offset")
+		limit := c.QueryInt64("limit")
+		if limit == 0 {
+			limit = 16
+		}
+		order := c.QueryTrim("order")
+		if order == "" {
+			order = "-created_at"
+		}
+		query := c.QueryTrim("q")
+		_, keys, errr := keyAdmin.List(c.Req.Context(), offset, limit, order, query)
+		if errr != nil {
+			log.Println("Failed to list keys, %v", errr)
+			if c.Req.Header.Get("X-Json-Format") == "yes" {
+				c.JSON(500, map[string]interface{}{
+					"error": errr.Error(),
+				})
+				return
+			}
+			c.Data["ErrorMsg"] = errr.Error()
+			c.HTML(500, "500")
+			return
+		}
+		var errorr string
+		for j:= 0; j < len(keys); j++ {
+			if fingerPrint == keys[j].FingerPrint{
+				errorr =  "This PublicKey Has Been Used"
+				break
+			}
+		}
+		if errorr !=""{
+			log.Println("This PublicKey Has Been Used")
+			c.Data["ErrorMsg"] = errorr
+			c.HTML(500, "500")
+			return
+		}else{
+			key, err := keyAdmin.Create(c.Req.Context(), name, publicKey,fingerPrint)
+			if err != nil {
+				log.Println("Failed, %v", err)
+				if c.Req.Header.Get("X-Json-Format") == "yes" {
+					c.JSON(500, map[string]interface{}{
+						"error": err.Error(),
+					})
+				return
+				}
+				c.Data["ErrorMsg"] = err.Error()
+				c.HTML(500, "500")
+				return
+			} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+				c.JSON(200, key)
+				return
+			}
+		}
+		redirectTo := "../keys"
+		c.Redirect(redirectTo)
+	}else{
+		publicKey, fingerPrint, privateKey, err := keyTemp.Create() 
+		if err != nil {
+			log.Println("Failed to create key, %v", err)
+			if c.Req.Header.Get("X-Json-Format") == "yes" {
+				c.JSON(500, map[string]interface{}{
+					"error": err.Error(),
+				})
+				return
+			}
+			c.Data["ErrorMsg"] = err.Error()
+			c.HTML(500, "500")
+			return
+		}
+		c.Data["KeyName"] = name
+		c.Data["PublicKey"] = publicKey
+		c.Data["PrivateKey"] = privateKey
+		c.Data["fingerPrint"] =fingerPrint
+		c.HTML(200, "newKey")
 	}
-	
-	
-	c.Data["KeyName"] = name
-	c.Data["PublicKey"] = publicKey
-	c.Data["HostName"] = hostname
-	c.Data["PrivateKey"] = privateKey
-	c.HTML(200, "newKey")
 }
