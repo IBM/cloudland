@@ -23,7 +23,7 @@ checkpr(){
   else
     sudo sed -i "s/PENDING/FAILED/g" ../web/clui/public/test_status
   fi
-  ../tests/test3.sh
+  sudo ../tests/test3.sh
 }
 
 checktest(){
