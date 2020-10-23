@@ -19,13 +19,19 @@ checkpr(){
   ./allinone.sh
   if [ $? -eq 0 ]
   then
-    sudo sed -i "s/PENDING/DONE/g" ../web/clui/public/test_status
+    sudo echo "DONE" > ../web/clui/public/test_status
   else
-    sudo sed -i "s/PENDING/FAILED/g" ../web/clui/public/test_status
+    sudo echo "FAILED" > ../web/clui/public/test_status
   fi
   cd /opt/cloudland/tests/
   sudo echo "export endpoint=https://localhost" > testrc
   sudo bash /opt/cloudland/tests/test3.sh
+  if [ $? -eq 0 ]
+  then
+    sudo echo "DONE" > ../web/clui/public/test_status
+  else
+    sudo echo "FAILED" > ../web/clui/public/test_status
+  fi
 }
 
 checktest(){
