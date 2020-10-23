@@ -358,21 +358,25 @@
 
                         </form>
                     </div>
-                    <div id="popupContact">
+                    <form class="ui form" id="popupContact">
                             <a id="popupContactClose">X</a>
-                            <h1>{{.i18n.Tr "Create New Key"}}</h1>
-                            <p id="contactArea">
-                                这是创建密钥的div
-                                <br/><br/>
-                                要关闭这个窗口，请点击右上方的X按钮或者进行
-                                <br/><br/>
-                            </p>
+                            <h3 class="ui top attached header">
+                                 {{.i18n.Tr "Create New Key"}}
+                            </h3>
+
                             <div id="find_it">
-                            <div class="required inline field">
-                                <label for="name">Name</label>
-                                <input id="name" name="name" autofocus required>
-                            </div>
-                            <div id="submit"><input type="submit" value="创建密钥" /></div>
+                                <div class="required inline field">
+                                    <label for="name">Name</label>
+                                    <input id="name" name="name" autofocus required>
+                                </div>
+                                <div class="inline field">
+                                    <label>{{.i18n.Tr "Public Key"}}</label>
+                                    <textarea id="pubkey"  name="pubkey" autocomplete="off"></textarea>
+                                </div>
+                            <div id="submit" class="inline field">
+                                <label></label>
+                                <button class="ui green button" type="button">创建密钥</button>
+                                </div>
                             </div>
                             <div id="instance_new_key" style="display: none;">
 								<div class="inline field">
@@ -381,7 +385,7 @@
 								</div>
 								<div class="inline field">
 									<label>public Key</label>
-									<textarea id="pubkey"  name="pubkey" autocomplete="off" > </textarea>
+									<textarea id="pubKey"  name="pubKey" autocomplete="off" > </textarea>
 								</div>
 								<div id="privateK" class="inline field">
 									<label>private Key</label>
@@ -389,10 +393,10 @@
 								</div>
 								<div class="inline field">
 									<label></label>
-									<button id="this_perfect_key" class="ui green button">{{.i18n.Tr "Confirm, I got private key"}}</button>
+									<button id="this_perfect_key" class="ui green button" type="button">{{.i18n.Tr "Confirm, I got private key"}}</button>
 								</div>
 							</div>
-                    </div>
+                    </form>
 
                     <div id="backgroundPopup"></div>
 
