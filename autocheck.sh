@@ -23,8 +23,8 @@ checkpr(){
   else
     sudo sed -i "s/PENDING/FAILED/g" ../web/clui/public/test_status
   fi
-  sudo cat "export endpoint=https://localhost" > ../tests/testrc
-  sudo bash ../tests/test3.sh
+  sudo echo "export endpoint=https://localhost" > ../tests/testrc
+  sudo bash /opt/cloudland/tests/test3.sh
 }
 
 checktest(){
