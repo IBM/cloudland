@@ -24,7 +24,7 @@ checkpr(){
     sudo sed -i "s/PENDING/FAILED/g" ../web/clui/public/test_status
   fi
   sudo cat "export endpoint=https://localhost" > ../tests/testrc
-  sudo ../tests/test3.sh
+  sudo bash ../tests/test3.sh
 }
 
 checktest(){
