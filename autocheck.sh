@@ -63,10 +63,12 @@ pend(){
       echo $status
     elif [ "$status" == "DONE" ]||[ "$status" == "FAILED" ]
     then
+      echo "RUNNING"
       return 0
     elif [ $i -gt 90]
     then
-      return 1
+      echo "TIMEOUT"
+      exit 1
     fi
     let i+=1
     sleep 10
