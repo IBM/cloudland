@@ -1,6 +1,5 @@
 checkpr(){
-  cd /opt/cloudland/
-  sudo git fetch
+  sudo echo "PENDING" > /opt/test_status
   BRANCHNAME=$1
   PRSLUG=$2
 
@@ -20,6 +19,7 @@ checkpr(){
   if [ $? -ne 0 ]
   then
     sudo echo "FAILED" > ../web/clui/public/test_status
+    sudo echo "FAILED" > /opt/test_status
     exit 1
   fi
   cd /opt/cloudland/tests/
@@ -28,8 +28,10 @@ checkpr(){
   if [ $? -eq 0 ]
   then
     sudo echo "DONE" > ../web/clui/public/test_status
+    sudo echo "DONE" > /opt/test_status
   else
     sudo echo "FAILED" > ../web/clui/public/test_status
+    sudo echo "FAILED" > /opt/test_status
     exit 1
   fi
 }
@@ -57,7 +59,7 @@ pend(){
   i=0
   while :
   do
-    status=$(ssh -i skey cland@$1 'cat /opt/cloudland/web/clui/public/test_status')
+    status=$(ssh -i skey cland@$1 'cat /opt/test_status')
     if [ "$status" == "PENDING" ]
     then
       echo $status
@@ -65,7 +67,7 @@ pend(){
     then
       echo "RUNNING"
       return 0
-    elif [ $i -gt 90 ]
+    elif [ $i -gt 180 ]
     then
       echo "TIMEOUT"
       exit 1
