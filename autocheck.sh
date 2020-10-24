@@ -17,11 +17,10 @@ checkpr(){
   sudo echo "PENDING" > ./cloudland/web/clui/public/test_status
   cd /opt/cloudland/deploy/
   ./allinone.sh
-  if [ $? -eq 0 ]
+  if [ $? -ne 0 ]
   then
-    sudo echo "DONE" > ../web/clui/public/test_status
-  else
     sudo echo "FAILED" > ../web/clui/public/test_status
+    exit 1
   fi
   cd /opt/cloudland/tests/
   sudo echo "export endpoint=https://localhost" > testrc
@@ -31,6 +30,7 @@ checkpr(){
     sudo echo "DONE" > ../web/clui/public/test_status
   else
     sudo echo "FAILED" > ../web/clui/public/test_status
+    exit 1
   fi
 }
 
@@ -53,10 +53,33 @@ checktest(){
   done
 }
 
+pend(){
+  i=0
+  while :
+  do
+    status=$(curl -s -k https://$1/test_status)
+    if [ "$status" == "PENDING" ]
+    then
+      echo $status
+    elif [ "$status" == "DONE" ]||[ "$status" == "FAILED" ]
+    then
+      return 0
+    elif [ $i -gt 90]
+    then
+      return 1
+    fi
+    let i+=1
+    sleep 10
+  done
+}
+
 if [ ! -n "$1" ]||[ "$1" == "pull_request" ]
 then
   checkpr $2 $3
 elif [ "$1" == "test" ]
 then
   checktest $2
+elif [ "$1" == "queue" ]
+then
+  pend $2
 fi
