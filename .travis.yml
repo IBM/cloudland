@@ -9,7 +9,6 @@ before_install:
   $TRAVIS_PULL_REQUEST_SLUG
 install:
 - cd $TRAVIS_PULL_REQUEST_SLUG
-- sudo git branch
 - sudo openssl aes-256-cbc -K $encrypted_key_01 -iv $encrypted_iv_01 -in skey.enc -out skey -d
 - bash ./autocheck.sh queue $TEST_IP
 script:

@@ -57,7 +57,7 @@ pend(){
   i=0
   while :
   do
-    status=$(curl -s -k https://$1/test_status)
+    status=$(ssh -i skey cland@$1 'cat /opt/cloudland/web/clui/public/test_status')
     if [ "$status" == "PENDING" ]
     then
       echo $status
@@ -65,7 +65,7 @@ pend(){
     then
       echo "RUNNING"
       return 0
-    elif [ $i -gt 90]
+    elif [ $i -gt 90 ]
     then
       echo "TIMEOUT"
       exit 1
