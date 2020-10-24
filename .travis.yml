@@ -7,12 +7,12 @@ git:
 before_install:
 - sudo git clone --branch=$TRAVIS_PULL_REQUEST_BRANCH https://github.com/$TRAVIS_PULL_REQUEST_SLUG.git
   $TRAVIS_PULL_REQUEST_SLUG
+- ssh-keyscan $TEST_IP >> $HOME/.ssh/known_hosts
 install:
 - cd $TRAVIS_PULL_REQUEST_SLUG
 - sudo openssl aes-256-cbc -K $encrypted_key_01 -iv $encrypted_iv_01 -in skey.enc -out skey -d
 - bash ./autocheck.sh queue $TEST_IP
 script:
-- ssh-keyscan $TEST_IP >> $HOME/.ssh/known_hosts
 - ssh -i skey cland@$TEST_IP "cd /opt/cloudland/ && sudo bash ./autocheck.sh pull_request $TRAVIS_PULL_REQUEST_BRANCH $TRAVIS_PULL_REQUEST_SLUG"
 - bash ./autocheck.sh test $TEST_IP
 
