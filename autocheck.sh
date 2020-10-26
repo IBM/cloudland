@@ -1,6 +1,5 @@
 checkpr(){
-  cd /opt/cloudland/
-  sudo git fetch
+  sudo echo "PENDING" > /opt/test_status
   BRANCHNAME=$1
   PRSLUG=$2
 
@@ -17,13 +16,24 @@ checkpr(){
   sudo echo "PENDING" > ./cloudland/web/clui/public/test_status
   cd /opt/cloudland/deploy/
   ./allinone.sh
+  if [ $? -ne 0 ]
+  then
+    sudo echo "FAILED" > ../web/clui/public/test_status
+    sudo echo "FAILED" > /opt/test_status
+    exit 1
+  fi
+  cd /opt/cloudland/tests/
+  sudo echo "export endpoint=https://localhost" > testrc
+  sudo bash /opt/cloudland/tests/test3.sh
   if [ $? -eq 0 ]
   then
-    sudo sed -i "s/PENDING/DONE/g" ../web/clui/public/test_status
+    sudo echo "DONE" > ../web/clui/public/test_status
+    sudo echo "DONE" > /opt/test_status
   else
-    sudo sed -i "s/PENDING/FAILED/g" ../web/clui/public/test_status
+    sudo echo "FAILED" > ../web/clui/public/test_status
+    sudo echo "FAILED" > /opt/test_status
+    exit 1
   fi
-  ../tests/test3.sh
 }
 
 checktest(){
@@ -45,10 +55,35 @@ checktest(){
   done
 }
 
+pend(){
+  i=0
+  while :
+  do
+    status=$(ssh -i skey cland@$1 'cat /opt/test_status')
+    if [ "$status" == "PENDING" ]
+    then
+      echo $status
+    elif [ "$status" == "DONE" ]||[ "$status" == "FAILED" ]
+    then
+      echo "RUNNING"
+      return 0
+    elif [ $i -gt 180 ]
+    then
+      echo "TIMEOUT"
+      exit 1
+    fi
+    let i+=1
+    sleep 10
+  done
+}
+
 if [ ! -n "$1" ]||[ "$1" == "pull_request" ]
 then
   checkpr $2 $3
 elif [ "$1" == "test" ]
 then
   checktest $2
+elif [ "$1" == "queue" ]
+then
+  pend $2
 fi
