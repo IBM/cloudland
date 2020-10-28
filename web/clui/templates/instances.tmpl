@@ -43,7 +43,6 @@
 			type: "GET",
 			url: "/UpdateTable",
 			success: function (data){
-				console.log(data);
 				var html = "";
 				for(var i = 0; i < data.instancedata.length; i++){
 					html += "<tr>" +
@@ -86,6 +85,11 @@
 					if (data.instancedata[i].Status == 'error'){
 						html += data.instancedata[i].Reason;
 					}
+					html += "</td>" +
+                    "<td>";
+                    html += '<form name="submitForm' + data.instancedata[i].ID + '" method="post" target="_blank" action="/instances/' + data.instancedata[i].ID + '/console">' +
+                             	'<a href="javascript:document.submitForm' + data.instancedata[i].ID + '.submit()">VNC</a>' +
+                            '</form>';
 					html += "</td>" + 
 					"<td>";
 					html += data.instancedata[i].Hyper;
@@ -221,7 +225,7 @@
 					        {{ end }}
 						</td>
 			                        <td>{{$.i18n.Tr .Status}}{{ if eq .Status "error" }}: {{ .Reason }}{{ end }}</td>
-                                                <td>
+                        <td>
 							<form name="submitForm{{.ID}}" method="post" target="_blank" action="{{$Link}}/{{.ID}}/console">
 							<a href="javascript:document.submitForm{{.ID}}.submit()">VNC</a>
 							</form>
