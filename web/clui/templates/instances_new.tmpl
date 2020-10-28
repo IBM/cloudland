@@ -373,9 +373,10 @@
                                     <label>{{.i18n.Tr "Public Key"}}</label>
                                     <textarea id="pubkey"  name="pubkey" autocomplete="off"></textarea>
                                 </div>
-                            <div id="submit" class="inline field">
-                                <label></label>
-                                <button class="ui green button" type="button">创建密钥</button>
+                                <div class="inline field">
+                                    <label></label>
+                                    <button id="submit" class="ui green button" type="button">创建密钥</button>
+                                    <p id="errorMsg" style="color:red"></p>
                                 </div>
                             </div>
                             <div id="instance_new_key" style="display: none;">

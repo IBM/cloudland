@@ -12,16 +12,11 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"bytes"
-	"encoding/hex"
-	"crypto/md5"
-	"strings"
 	"fmt"
 	"golang.org/x/crypto/ssh"
 	"log"
 	"net/http"
 	"strconv"
-	"errors"
 
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/sca/dbs"
@@ -39,7 +34,7 @@ type KeyAdmin struct{}
 type KeyView struct{}
 type KeyTemp struct{}
 
-func (point *KeyTemp) Create() (publicKey, fingerPrint, privateKey string, err error){
+func (point *KeyTemp) Create() (publicKey, fingerPrint, privateKey string, err error) {
 	// generate key
 	private, er := rsa.GenerateKey(rand.Reader, 1024)
 	if er != nil {
@@ -47,7 +42,7 @@ func (point *KeyTemp) Create() (publicKey, fingerPrint, privateKey string, err e
 		err = er
 		return
 	}
-	privateKeyPEM := &pem.Block{Type:"RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(private)}
+	privateKeyPEM := &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(private)}
 	privateKey = string(pem.EncodeToMemory(privateKeyPEM))
 	pub, er := ssh.NewPublicKey(&private.PublicKey)
 	if er != nil {
@@ -55,23 +50,9 @@ func (point *KeyTemp) Create() (publicKey, fingerPrint, privateKey string, err e
 		err = er
 		return
 	}
-	temp :=ssh.MarshalAuthorizedKey(pub)
+	temp := ssh.MarshalAuthorizedKey(pub)
 	publicKey = string(temp)
-	parts := strings.Fields(publicKey)
-	fp := md5.Sum([]byte(parts[1]))
-	str := hex.EncodeToString(fp[:])
-	var buffer bytes.Buffer
-	for i:= 0;i < 30;i++{
-		buffer.WriteString(string(str[i]))
-		i++
-		buffer.WriteString(string(str[i]))
-		buffer.WriteString(":")
-	}
-	buffer.WriteString(string(str[30]))
-	buffer.WriteString(string(str[31]))
-	str2 := buffer.String()
-	log.Println(str2)
-	fingerPrint = str2
+	fingerPrint = ssh.FingerprintLegacyMD5(pub)
 	return
 }
 
@@ -237,18 +218,7 @@ func (v *KeyView) New(c *macaron.Context, store session.Store)(){
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	hostname := c.QueryTrim("hostname")
-	hyper := c.QueryTrim("hyper")
-	count := c.QueryTrim("count")
-	userData := c.QueryTrim("userData")
-	if hostname != ""{
-		c.Data["InstanceFlag"] = 1
-	}
-	c.Data["Hostname"] = hostname
-	c.Data["hyper"] = hyper
-	c.Data["count"] = count
-	c.Data["userData"] = userData
-	c.HTML(200, "keys_new");
+	c.HTML(200, "keys_new")
 }
 
 func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
@@ -263,7 +233,6 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
 	name := c.QueryTrim("name")
 	publicKey := c.QueryTrim("pubkey")
 	log.Println("Your Public Key, %v", publicKey)
-	hostname := c.QueryTrim("host")
 	fingerPrint := c.QueryTrim("fingerPrint")
 	key, err := keyAdmin.Create(c.Req.Context(), name, publicKey, fingerPrint)
 	if err != nil {
@@ -300,13 +269,8 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
 		})
 	} else{
 		var redirectTo string
-		if c.QueryTrim("flags") == "" {
-			redirectTo = "../keys"
-			c.Redirect(redirectTo)
-		} else {
-			redirectTo = "../instances?hostname=" + hostname
-			c.Redirect(redirectTo)
-		}
+		redirectTo = "../keys"
+		c.Redirect(redirectTo)
 	}
 }
 func (v *KeyView) Create(c *macaron.Context, store session.Store) {
@@ -318,77 +282,56 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	if c.QueryTrim("flags") != ""{
-		c.Data["InstanceFlag"] = 1
-	}
 	name := c.QueryTrim("name")
 	if c.QueryTrim("pubkey") != "" {
 		publicKey := c.QueryTrim("pubkey")
-		log.Println(publicKey)
-		parts := strings.Fields(publicKey)
-		log.Printf("%s",parts)
-		fp := md5.Sum([]byte(parts[1]))
-		str := hex.EncodeToString(fp[:])
-		var buffer bytes.Buffer
-		log.Println(len(str))
-		for i:= 0;i < 30;i++{
-			buffer.WriteString(string(str[i]))
-			i++
-			buffer.WriteString(string(str[i]))
-			buffer.WriteString(":")
-		}
-		buffer.WriteString(string(str[30]))
-		buffer.WriteString(string(str[31]))
-		str2 := buffer.String()
-		log.Println(str2)
-		fingerPrint := str2
-		log.Println("999999999999999"+fingerPrint)
-		offset := c.QueryInt64("offset")
-		limit := c.QueryInt64("limit")
-		if limit == 0 {
-			limit = 16
-		}
-		order := c.QueryTrim("order")
-		if order == "" {
-			order = "-created_at"
-		}
-		query := c.QueryTrim("q")
-		_, keys, errr := keyAdmin.List(c.Req.Context(), offset, limit, order, query)
-		if errr != nil {
-			log.Println("Failed to list keys, %v", errr)
-			if c.Req.Header.Get("X-Json-Format") == "yes" {
-				c.JSON(500, map[string]interface{}{
-					"error": errr.Error(),
+		pubKeyBytes := []byte(publicKey)
+		pub, _, _, _, puberr := ssh.ParseAuthorizedKey(pubKeyBytes)
+		if puberr != nil{
+			if c.QueryTrim("from_instance") != ""{
+				c.JSON(200, map[string]interface{}{
+					"error": "publicKey is wrong",
 				})
 				return
-			}
-			c.Data["ErrorMsg"] = errr.Error()
-			c.HTML(500, "500")
-			return
-		}
-		var errorr error
-		for j:= 0; j < len(keys); j++ {
-			if fingerPrint == keys[j].FingerPrint{
-				errorr =  errors.New("This PublicKey Has Been Used")
-				log.Println("######")
-				log.Print(errorr)
+			}else {
+				log.Println("publicKey is wrong")
+				c.Data["ErrorMsg"] = "publicKey is wrong"
+				c.HTML(http.StatusBadRequest, "error")
+				return
 			}
 		}
-		if errorr != nil{
-			c.Data["ErrorMsg"] = errorr
-			c.HTML(500, "500")
-			return
-		}else{
-			key, err := keyAdmin.Create(c.Req.Context(), name, publicKey, fingerPrint)
-			if err != nil {
-				log.Println("Failed, %v", err)
+		fingerPrint := ssh.FingerprintLegacyMD5(pub)
+		log.Println("fingerPrint:", fingerPrint)
+		db := DB()
+		var a []model.Key
+		x := db.Where(&model.Key{FingerPrint:fingerPrint}).Find(&a)
+
+		log.Println("x:")
+		log.Println(x.Value)
+		log.Println(len(*(x.Value.(*[]model.Key))))
+
+		if len(*(x.Value.(*[]model.Key))) != 0 {
+			if c.QueryTrim("from_instance") != "" {
+				c.JSON(200, map[string]interface{}{
+					"error": "This PublicKey Has Been Used",
+				})
+				return
+			}else {
+				c.Data["ErrorMsg"] = "This PublicKey Has Been Used"
+				c.HTML(http.StatusBadRequest, "error")
+				return
+			}
+		} else {
+			key, fperr := keyAdmin.Create(c.Req.Context(), name, publicKey, fingerPrint)
+			if fperr != nil {
+				log.Println("Failed, %v", fperr)
 				if c.Req.Header.Get("X-Json-Format") == "yes" {
 					c.JSON(500, map[string]interface{}{
-						"error": err.Error(),
+						"error": fperr.Error(),
 					})
 					return
 				}
-				c.Data["ErrorMsg"] = err.Error()
+				c.Data["ErrorMsg"] = fperr.Error()
 				c.HTML(500, "500")
 				return
 			} else if c.Req.Header.Get("X-Json-Format") == "yes" {
