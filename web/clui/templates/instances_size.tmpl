@@ -1,0 +1,109 @@
+{{template "_head" .}}
+<div class="admin user">
+
+    <div class="ui container">
+
+        <div class="ui grid">
+
+        {{template "_left" .}}
+			<div class="user signup">
+				<div class="ui middle very relaxed page grid">
+					<div class="" >
+						<form class="ui form" action="{{.Link}}" method="post">
+							<h3 class="ui top attached header">
+								{{.i18n.Tr "Update Instance"}}
+							</h3>
+							<div class="ui attached segment">
+								<div class="required inline field" style="display:none">
+									<label for="hostname">{{.i18n.Tr "Hostname"}}</label>
+									<input id="hostname" name="hostname" value="{{ .Instance.Hostname }}" required>
+								</div>
+								<div class="inline field" style="display:none">
+									<label for="createdat">{{.i18n.Tr "Created_At"}}</label>
+									<input id="createdat" name="createdat" value="{{ .Instance.CreatedAt }}" disabled>
+								</div>
+								<div class="inline field" style="display:none">
+									<label for="updatedat">{{.i18n.Tr "Updated_At"}}</label>
+									<input id="updatedat" name="updatedat" value="{{ .Instance.UpdatedAt }}" disabled>
+								</div>
+								<div class="inline field" style="display:none">
+									<label for="hyper">{{.i18n.Tr "Hyper"}}</label>
+									<input id="hyper" name="hyper" value="{{ .Instance.Hyper }}" {{ if or (not $.IsAdmin) (or (eq .Instance.Status "migrating") (eq .Instance.Status "updating") ) }}disabled{{ end }}>
+								</div>
+								<div class="inline field" style="display:none">
+									<label></label>
+									<span>{{ if eq .Instance.Status "migrating" }} {{.i18n.Tr "migrating"}} {{else}} {{.i18n.Tr "hyper_warning"}} {{ end }}</span>
+								</div>
+								<div class="inline field" style="display:none">
+									<label for="action">{{.i18n.Tr "Action"}}</label>
+									<select name="action" id="action" class="ui selection dropdown" {{ if or (eq .Instance.Status "migrating") (eq .Instance.Status "updating") }} disabled {{ end }}>
+										<option value="">{{ .i18n.Tr .Instance.Status }}</option>
+										<option value="shutdown">{{.i18n.Tr "shutdown"}}</option>
+										<option value="destroy">{{.i18n.Tr "destroy"}}</option>
+										<option value="start">{{.i18n.Tr "start"}}</option>
+										<option value="suspend">{{.i18n.Tr "suspend"}}</option>
+										<option value="resume">{{.i18n.Tr "resume"}}</option>
+									</select>
+								</div>
+								<div class="inline field" style="display:none">
+									<label></label>
+									<span>{{ if eq .Instance.Status "updating" }} {{.i18n.Tr "updating"}} {{else}} {{.i18n.Tr "action_warning"}} {{ end }}</span>
+								</div>
+								<div class="required inline field" >
+									<label for="flavor">{{.i18n.Tr "Flavor"}}</label>
+									<select name="flavor" id="flavor" class="ui selection dropdown" {{ if or (eq .Instance.Status "migrating") (eq .Instance.Status "updating") }} disabled {{ end }}>
+									   {{ range .Flavors }}
+										  <option value="{{ .ID }}" {{ if eq $.Instance.FlavorID .ID }}selected{{end}}>{{ .ID }}-{{ .Name }}</option>
+									   {{ end }}
+									</select>
+								</div>
+								<div class="inline field" style="display:none">
+									<label for="ifaces">{{.i18n.Tr "Interfaces"}}</label>
+									<select name="ifaces" id="ifaces" multiple="" class="ui multiple selection dropdown" {{ if or (eq .Instance.Status "migrating") (eq .Instance.Status "updating") }} disabled {{ end }}>
+										{{ if .Instance.Interfaces }}
+										  {{ range .Instance.Interfaces }}
+											 <option value="{{ .Address.SubnetID }}" selected>{{.Address.Subnet.Name}}-{{.Address.Address}}</option>
+										  {{ end }}
+										{{ end }}
+										{{ if .Subnets }}
+										  {{ if .IsAdmin }}
+											{{ range .Subnets }}
+											   <option value="{{ .ID }}" >{{.Name}}-{{.Network}}/{{.Netmask}}</option>
+											{{ end }}
+										  {{ else }}
+											{{ range .Subnets }}
+											{{ if eq .Type "internal" }}
+											   <option value="{{ .ID }}" >{{.Name}}-{{.Network}}/{{.Netmask}}</option>
+												{{ end }}
+											{{ end }}
+										  {{ end }}
+										{{ end }}
+									</select>
+								</div>
+						{{ if .Vnc }}
+						<div class="inline field" style="display:none">
+						<label for="vnc" name="vnc">{{.i18n.Tr "Vnc"}}</label>
+						<span>{{.Vnc.AccessAddress}}:{{.Vnc.AccessPort}}:{{.Vnc.Passwd}}</span>
+						</div>
+						{{ if .Vnc.ExpiredAt }}
+								<div class="inline field" style="display:none">
+								   <label></label>
+								   <span class="content vnc">
+										   ({{.i18n.Tr "Expires at"}} {{ .Vnc.ExpiredAt}})
+								   </span>
+							   </div>
+					   {{ end }}
+					   {{ end }}
+								<div class="inline field">
+									<label></label>
+									<button class="ui green button">{{.i18n.Tr "Update Instance"}}</button>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+{{template "_footer" .}}

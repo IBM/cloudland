@@ -32,7 +32,10 @@ function centerPopup(){
 function disablePopup(){   
     if(popupStatus==1){   
   
-        $("#backgroundPopup").hide();   
+        $("#backgroundPopup").hide();
+        $("#name").val("");
+        $("#pubkey").val("");
+        $("#errorMsg").html("");
         $("#popupContact").hide();
         popupStatus = 0;   
    }   
@@ -63,33 +66,34 @@ $(document).ready(function(){
             target.appendChild(pom);
         }
 
-        console.log("Hello");
-        if ($("#pubkey").val() != ""){
+        if ($("#pubkey").val() !== ""){
             $.ajax({
                 type: "POST",
-                url: "/keys/new?from_instance=1&name=" + $("#name").val() +"&pubkey="+$("#pubkey").val(),
+                url: "/keys/new",
+                data: {from_instance: "1", name:$("#name").val(), pubkey:$("#pubkey").val()},
                 success: function (data){
-                    console.log(data);
-                    var html = "";
-                    var i = 0;
-                    for (; i < data.keys.length; i++){
-                        html += '<div class="item" data-value="' + data.keys[i].ID + '" data-text="'+ data.keys[i].Name +'">' + data.keys[i].Name +'</div>';
+                    if (data.error !== undefined){
+                        console.log("hello world");
+                        $("#errorMsg").html(data.error);
+                    } else {
+                        var html = "";
+                        var i = 0;
+                        for (; i < data.keys.length; i++) {
+                            html += '<div class="item" data-value="' + data.keys[i].ID + '" data-text="' + data.keys[i].Name + '">' + data.keys[i].Name + '</div>';
+                        }
+                        $("#keys_menu").html(html);
+                        var element = $("#keys_menu").children("div:last-child");
+                        element.click();
+                        $("#name").val("");
+                        $("#pubkey").val("");
+                        popupStatus=1;
+                        disablePopup();
                     }
-                    $("#keys_menu").html(html);
-                    var element = $("#keys_menu").children("div:last-child");
-                    element.click();
-
-                    $("#name").val("");
-                    $("#pubkey").val("");
                 }
-
-
             });
-            popupStatus=1;
-            disablePopup();
+
         }
         else {
-            console.log("hello world");
             $("#find_it").hide();
             $.ajax({
                 type: "POST",
@@ -103,13 +107,11 @@ $(document).ready(function(){
 
                     var private_key = $("#prikey").val();
                     downloadPrivate("rsaPrivateKey.txt", private_key);
+                    $("#popupContactClose").hide();
+                    $("#instance_new_key").show();
                 }
             });
-            $("#popupContactClose").hide();
-            $("#instance_new_key").show();
         }
-
-
     });
     $("#this_perfect_key").click(function(){
         $("#popupContactClose").show();
@@ -127,6 +129,8 @@ $(document).ready(function(){
                 var element = $("#keys_menu").children("div:last-child");
                 element.click();
                 $("#name").val("");
+                $("#pubkey").val("");
+                $("#errorMsg").html("");
 
                 $("#find_it").show();
                 $("#instance_new_key").hide();

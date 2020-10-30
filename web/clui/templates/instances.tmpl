@@ -1,12 +1,5 @@
 {{template "_head" .}}
 <script type="text/javascript">
-    function storage() {
-        var hostname = document.getElementById("hideHost").value;
-		
-		var toCreate = document.getElementById("toCreate");
-		toCreate.href = toCreate.href + "?hostname=" + hostname;
-    }
-
     function getCookie(c_name, c_data)
     {
         c_start=document.cookie.indexOf(c_name + "=")
@@ -50,7 +43,6 @@
 			type: "GET",
 			url: "/UpdateTable",
 			success: function (data){
-				console.log(data);
 				var html = "";
 				for(var i = 0; i < data.instancedata.length; i++){
 					html += "<tr>" +
@@ -93,6 +85,11 @@
 					if (data.instancedata[i].Status == 'error'){
 						html += data.instancedata[i].Reason;
 					}
+					html += "</td>" +
+                    "<td>";
+                    html += '<form name="submitForm' + data.instancedata[i].ID + '" method="post" target="_blank" action="/instances/' + data.instancedata[i].ID + '/console">' +
+                             	'<a href="javascript:document.submitForm' + data.instancedata[i].ID + '.submit()">VNC</a>' +
+                            '</form>';
 					html += "</td>" + 
 					"<td>";
 					html += data.instancedata[i].Hyper;
@@ -168,7 +165,7 @@
 		            <h4 class="ui top attached header">
 			            {{.i18n.Tr "Instance_Manage_Panel"}} ({{.i18n.Tr "Total"}}: {{.Total}})
 			            <div class="ui right">
-				            <a id="toCreate" class="ui green tiny button" href="instances/new" onclick="storage()">{{.i18n.Tr "Create"}}</a>
+				            <a id="toCreate" class="ui green tiny button" href="instances/new">{{.i18n.Tr "Create"}}</a>
 							<div style="display:none">
 								<input id="hideHost" name="hideHost" value="{{.HostName}}">
 							</div>
@@ -228,7 +225,7 @@
 					        {{ end }}
 						</td>
 			                        <td>{{$.i18n.Tr .Status}}{{ if eq .Status "error" }}: {{ .Reason }}{{ end }}</td>
-                                                <td>
+                        <td>
 							<form name="submitForm{{.ID}}" method="post" target="_blank" action="{{$Link}}/{{.ID}}/console">
 							<a href="javascript:document.submitForm{{.ID}}.submit()">VNC</a>
 							</form>
