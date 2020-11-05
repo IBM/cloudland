@@ -273,6 +273,7 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
 		c.Redirect(redirectTo)
 	}
 }
+
 func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
@@ -290,12 +291,12 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 		if puberr != nil{
 			if c.QueryTrim("from_instance") != ""{
 				c.JSON(200, map[string]interface{}{
-					"error": "publicKey is wrong",
+					"error": "Public key is wrong",
 				})
 				return
 			}else {
-				log.Println("publicKey is wrong")
-				c.Data["ErrorMsg"] = "publicKey is wrong"
+				log.Println("Public key is wrong")
+				c.Data["ErrorMsg"] = "Public key is wrong"
 				c.HTML(http.StatusBadRequest, "error")
 				return
 			}
@@ -313,11 +314,11 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 		if len(*(x.Value.(*[]model.Key))) != 0 {
 			if c.QueryTrim("from_instance") != "" {
 				c.JSON(200, map[string]interface{}{
-					"error": "This PublicKey Has Been Used",
+					"error": "This public key has been used",
 				})
 				return
 			}else {
-				c.Data["ErrorMsg"] = "This PublicKey Has Been Used"
+				c.Data["ErrorMsg"] = "This public key has been used"
 				c.HTML(http.StatusBadRequest, "error")
 				return
 			}
