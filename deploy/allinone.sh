@@ -163,9 +163,9 @@ gen_hosts
 cd $cland_root_dir/deploy
 [ $(uname -m) != s390x ] && ansible-playbook cloudland.yml -e @$net_conf --tags epel
 ansible-playbook cloudland.yml -e @$net_conf --tags hosts,selinux,be_pkg,be_conf,firewall
-demo_router
 allinone_firewall
 inst_web
 inst_console_proxy
 ansible-playbook cloudland.yml -e @$net_conf --tags be_srv,fe_srv,console,imgrepo
+demo_router
 sudo chown -R cland.cland $cland_root_dir
