@@ -29,7 +29,7 @@ function inst_grpc() {
     cd $cland_root_dir
     grpc_pkg=/tmp/grpc.tar.gz
     grpc_url='http://www.bluecat.ltd/repo/grpc.tar.gz'
-    grep -q Ootpa /etc/redhat-release
+    grep -q 'release 8' /etc/redhat-release
     [ $? -eq 0 ] && grpc_url='http://www.bluecat.ltd/repo/grpc8.tar.gz'
     wget $grpc_url -O $grpc_pkg
     sudo tar -zxf $grpc_pkg -C /
