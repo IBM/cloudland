@@ -542,7 +542,7 @@ func (v *GatewayView) Patch(c *macaron.Context, store session.Store) {
 		if !permit {
 			log.Println("Not authorized for this operation")
 			c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
 		subnetIDs = append(subnetIDs, int64(sID))

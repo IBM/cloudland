@@ -88,7 +88,7 @@ type InstanceData struct {
 }
 
 type InstancesData struct {
-	Instances []*model.Instance  `json:"instancedata"`
+	Instances []*model.Instance `json:"instancedata"`
 }
 
 func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, imageID, flavorID, primaryID, clusterID int64, primaryIP, primaryMac string, subnetIDs, keyIDs []int64, sgIDs []int64, hyper int) (instance *model.Instance, err error) {
@@ -762,7 +762,7 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	c.HTML(200, "instances")
 }
 
-func (v *InstanceView) UpdateTable(c *macaron.Context, store session.Store){
+func (v *InstanceView) UpdateTable(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
@@ -797,9 +797,9 @@ func (v *InstanceView) UpdateTable(c *macaron.Context, store session.Store){
 	jsonData = &InstancesData{
 		Instances: instances,
 	}
-	
+
 	c.JSON(200, jsonData)
-	return 
+	return
 }
 
 func (v *InstanceView) Delete(c *macaron.Context, store session.Store) (err error) {
@@ -882,12 +882,28 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	hypers := []*model.Hyper{}
+	err = db.Where("hostid >= 0").Find(&hypers).Error
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+		return
+	}
+	zones := []*model.Zone{}
+	err = db.Find(&zones).Error
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+		return
+	}
 	c.Data["Images"] = images
 	c.Data["Flavors"] = flavors
 	c.Data["Subnets"] = subnets
 	c.Data["Openshifts"] = openshifts
 	c.Data["Secgroups"] = secgroups
 	c.Data["Keys"] = keys
+	c.Data["Hypers"] = hypers
+	c.Data["Zones"] = zones
 	c.HTML(200, "instances_new")
 }
 
@@ -948,17 +964,17 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 	c.Data["Instance"] = instance
 	c.Data["Subnets"] = subnets
 	c.Data["Flavors"] = flavors
-	
+
 	flag := c.QueryTrim("flag")
-	if flag == "ChangeHostname"{
+	if flag == "ChangeHostname" {
 		c.HTML(200, "instances_hostname")
-	}else if flag == "ChangeStatus"{
+	} else if flag == "ChangeStatus" {
 		c.HTML(200, "instances_status")
-	}else if flag == "MigrateInstance"{
+	} else if flag == "MigrateInstance" {
 		c.HTML(200, "instances_migrate")
-	}else if flag == "ResizeInstance"{
+	} else if flag == "ResizeInstance" {
 		c.HTML(200, "instances_size")
-	}else{
+	} else {
 		c.HTML(200, "instances_patch")
 	}
 }
@@ -975,7 +991,7 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 		return
 	}
 	flavor := c.QueryInt64("flavor")
-	hostname := c.QueryTrim("hostname")                                             
+	hostname := c.QueryTrim("hostname")
 	hyperID := c.QueryInt("hyper")
 	action := c.QueryTrim("action")
 	ifaces := c.QueryStrings("ifaces")
@@ -1014,7 +1030,7 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 		if !permit {
 			log.Println("Not authorized for this operation")
 			c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
 		subnetIDs = append(subnetIDs, int64(sID))

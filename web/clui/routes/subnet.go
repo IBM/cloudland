@@ -213,7 +213,7 @@ func setRouting(ctx context.Context, gatewayID int64, subnet *model.Subnet, rout
 	return
 }
 
-func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, gateway, start, end, rtype, dns, domain, dhcp string, routes string, cluster, owner int64) (subnet *model.Subnet, err error) {
+func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, zones, gateway, start, end, rtype, dns, domain, dhcp string, routes string, cluster, owner int64) (subnet *model.Subnet, err error) {
 	memberShip := GetMemberShip(ctx)
 	if owner == 0 {
 		owner = memberShip.OrgID
@@ -271,6 +271,23 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 		end = cidr.Dec(net.ParseIP(end)).String()
 	}
 	gateway = fmt.Sprintf("%s/%d", gateway, preSize)
+	zoneList := []*model.Zone{}
+	if zones != "" {
+		z := strings.Split(zones, ",")
+		for i := 0; i < len(z); i++ {
+			zID, err := strconv.Atoi(z[i])
+			if err != nil {
+				log.Println("Invalid secondary zone ID, %v", err)
+				continue
+			}
+			zone := &model.Zone{ID: int64(zID)}
+			zoneList = append(zoneList, zone)
+		}
+		err = db.Find(&zoneList).Error
+		if err != nil {
+			return
+		}
+	}
 	subnet = &model.Subnet{
 		Model:        model.Model{Creater: memberShip.UserID, Owner: owner},
 		Name:         name,
@@ -286,6 +303,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 		Vlan:         int64(vlanNo),
 		Type:         rtype,
 		Routes:       routes,
+		Zones:        zoneList,
 	}
 	err = db.Create(subnet).Error
 	if err != nil {
@@ -582,6 +600,13 @@ func (v *SubnetView) New(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
+	zones := []*model.Zone{}
+	err := DB().Find(&zones).Error
+	if err != nil {
+		log.Println("Database failed to query zones", err)
+		return
+	}
+	c.Data["Zones"] = zones
 	c.HTML(200, "subnets_new")
 }
 
@@ -780,6 +805,7 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 	rtype := c.QueryTrim("rtype")
 	network := c.QueryTrim("network")
 	netmask := c.QueryTrim("netmask")
+	zones := c.QueryTrim("zones")
 	gateway := c.QueryTrim("gateway")
 	routes := c.QueryTrim("routes")
 	start := c.QueryTrim("start")
@@ -796,7 +822,7 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	subnet, err := subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, gateway, start, end, rtype, dns, domain, dhcp, routeJson, 0, memberShip.OrgID)
+	subnet, err := subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, zones, gateway, start, end, rtype, dns, domain, dhcp, routeJson, 0, memberShip.OrgID)
 	if err != nil {
 		log.Println("Create subnet failed, %v", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {

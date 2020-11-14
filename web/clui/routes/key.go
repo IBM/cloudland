@@ -1,4 +1,3 @@
-
 /*
 Copyright <holder> All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
@@ -13,10 +12,11 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"golang.org/x/crypto/ssh"
 	"log"
 	"net/http"
 	"strconv"
+
+	"golang.org/x/crypto/ssh"
 
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/sca/dbs"
@@ -27,7 +27,7 @@ import (
 var (
 	keyAdmin = &KeyAdmin{}
 	keyView  = &KeyView{}
-	keyTemp = &KeyTemp{}
+	keyTemp  = &KeyTemp{}
 )
 
 type KeyAdmin struct{}
@@ -209,7 +209,7 @@ func (v *KeyView) Delete(c *macaron.Context, store session.Store) (err error) {
 	return
 }
 
-func (v *KeyView) New(c *macaron.Context, store session.Store)(){
+func (v *KeyView) New(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -221,7 +221,7 @@ func (v *KeyView) New(c *macaron.Context, store session.Store)(){
 	c.HTML(200, "keys_new")
 }
 
-func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
+func (v *KeyView) Confirm(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -250,7 +250,7 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
 		c.JSON(200, key)
 		return
 	}
-	if c.QueryTrim("from_instance") != ""{
+	if c.QueryTrim("from_instance") != "" {
 		_, keys, err := keyAdmin.List(c.Req.Context(), 0, -1, "", "")
 		if err != nil {
 			log.Println("Failed to list keys, %v", err)
@@ -267,7 +267,7 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
 		c.JSON(200, map[string]interface{}{
 			"keys": keys,
 		})
-	} else{
+	} else {
 		var redirectTo string
 		redirectTo = "../keys"
 		c.Redirect(redirectTo)
@@ -287,13 +287,13 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 		publicKey := c.QueryTrim("pubkey")
 		pubKeyBytes := []byte(publicKey)
 		pub, _, _, _, puberr := ssh.ParseAuthorizedKey(pubKeyBytes)
-		if puberr != nil{
-			if c.QueryTrim("from_instance") != ""{
+		if puberr != nil {
+			if c.QueryTrim("from_instance") != "" {
 				c.JSON(200, map[string]interface{}{
 					"error": "publicKey is wrong",
 				})
 				return
-			}else {
+			} else {
 				log.Println("publicKey is wrong")
 				c.Data["ErrorMsg"] = "publicKey is wrong"
 				c.HTML(http.StatusBadRequest, "error")
@@ -304,7 +304,7 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 		log.Println("fingerPrint:", fingerPrint)
 		db := DB()
 		var a []model.Key
-		x := db.Where(&model.Key{FingerPrint:fingerPrint}).Find(&a)
+		x := db.Where(&model.Key{FingerPrint: fingerPrint}).Find(&a)
 
 		log.Println("x:")
 		log.Println(x.Value)
@@ -316,7 +316,7 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 					"error": "This PublicKey Has Been Used",
 				})
 				return
-			}else {
+			} else {
 				c.Data["ErrorMsg"] = "This PublicKey Has Been Used"
 				c.HTML(http.StatusBadRequest, "error")
 				return
@@ -339,7 +339,7 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 				return
 			}
 		}
-		if c.QueryTrim("from_instance") != ""{
+		if c.QueryTrim("from_instance") != "" {
 			_, keys, err := keyAdmin.List(c.Req.Context(), 0, -1, "", "")
 			if err != nil {
 				log.Println("Failed to list keys, %v", err)
@@ -356,23 +356,23 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 			c.JSON(200, map[string]interface{}{
 				"keys": keys,
 			})
-		} else{
+		} else {
 			redirectTo := "../keys"
 			c.Redirect(redirectTo)
 		}
-	}else{
-		publicKey,fingerPrint,privateKey, err := keyTemp.Create()
-		if err != nil{
+	} else {
+		publicKey, fingerPrint, privateKey, err := keyTemp.Create()
+		if err != nil {
 			log.Println("failed")
 			c.Data["ErrorMsg"] = err.Error()
 			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
-		if c.QueryTrim("from_instance") != ""{
-			fmt.Println("from_instance======"+c.QueryTrim("from_instance"))
+		if c.QueryTrim("from_instance") != "" {
+			fmt.Println("from_instance======" + c.QueryTrim("from_instance"))
 			c.JSON(200, map[string]interface{}{
-				"keyName": name,
-				"publicKey": publicKey,
+				"keyName":    name,
+				"publicKey":  publicKey,
 				"privateKey": privateKey,
 			})
 			return
@@ -381,7 +381,7 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 			c.Data["PublicKey"] = publicKey
 			c.Data["PrivateKey"] = privateKey
 			c.Data["fingerPrint"] = fingerPrint
-			c.HTML(200, "newKey")
+			c.HTML(200, "new_key")
 		}
 	}
 }

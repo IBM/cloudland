@@ -44,7 +44,7 @@ func (a *HyperAdmin) List(offset, limit int64, order, query string) (total int64
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Where("hostid >= 0").Where(query).Find(&hypers).Error; err != nil {
+	if err = db.Preload("Zone").Where("hostid >= 0").Where(query).Find(&hypers).Error; err != nil {
 		return
 	}
 	db = db.Offset(0).Limit(-1)

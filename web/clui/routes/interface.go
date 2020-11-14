@@ -262,7 +262,7 @@ func (v *InterfaceView) Delete(c *macaron.Context, store session.Store) {
 	if !permit {
 		log.Println("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-			c.HTML(http.StatusBadRequest, "error")
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	iface := &model.Interface{Model: model.Model{ID: id}}
