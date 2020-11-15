@@ -1,7 +1,7 @@
 #!bin/bash
 
 path=$(cd $(dirname $0) && pwd)
-echo $path
+#echo $path
 
 source $path/testrc
 
@@ -24,7 +24,7 @@ mykey=$(cat key.txt | jq -r '.keys[0].ID')
 #curl -i -g -b cookie.txt -X POST -d "name=ziwang&network=10.4.35.56&netmask=255.255.255.240&dhcp="yes"" --insecure $endpoint/subnets/new
 
 echo "Create mygateway!"
-curl -s -b cookie.txt -X POST -d "name=mygateway&subnets=3" --insecure $endpoint/gateways/new
+curl -s -b cookie.txt -X POST -d "name=mygateway" --insecure $endpoint/gateways/new
 curl -s -o gateway.txt -b cookie.txt -X GET --insecure $endpoint/gateways -H "X-Json-Format:yes"
 mygateway=$(cat gateway.txt | jq '.gateways[0].ID')
 #echo $mygateway
@@ -40,16 +40,13 @@ if [ $vmstatus = "pending" ]; then
    echo "Create new VM instance succeeded!"
    echo "New VM's Hostname:$vmhostname"
    echo "New VM's Indexnumber:$vmid"
-   #echo "New VM's Key:$vmkey"
-   echo "Create floatingip!"
-   curl -s -b cookie.txt -X POST -d "instance=$vmid&ftype="public"" --insecure $endpoint/floatingips/new
+#   echo "New VM's Key:$vmkey"
 else
    echo "Create new VM instance failed!"
-   exit 1
 fi
 
-#echo "Create floatingip!"
-#curl -s -b cookie.txt -X POST -d "instance=$vmid&ftype="public"" --insecure $endpoint/floatingips/new
+echo "Create floatingip!"
+curl -s -b cookie.txt -X POST -d "instance=$vmid&ftype="public"" --insecure $endpoint/floatingips/new
 
 if [ -f "$cookiefile" ]; then
    #echo "Delete cookiefile!"
@@ -60,11 +57,15 @@ if [ -f "$keyfile" ]; then
    #echo "Delete keyfile!"
    rm $keyfile
 fi
+
 if [ -f "$gatewayfile" ]; then
-   echo "Delete gatewayfile!"
-   #rm $gatewayfile
+   #echo "Delete gatewayfile!"
+   rm $gatewayfile
 fi
+
 if [ -f "$vminfofile" ]; then
    #echo "Delete vminfofile!"
    rm $vminfofile
 fi
+
+
