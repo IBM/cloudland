@@ -55,7 +55,7 @@ func (a *ImageAdmin) Create(ctx context.Context, name, url, format, architecture
 		}
 	} else {
 		control := "inter=0"
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_image.sh '%d' '%s'", image.ID, url)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_image.sh '%d' '%s' '%s'", image.ID, url, hypervisorType)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Create image command execution failed", err)
