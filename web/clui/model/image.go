@@ -27,6 +27,11 @@ type Image struct {
 	MiniDisk     int32
 	MiniMem      int32
 	Size         int64
+	OsVersion	 string `gorm:"type:varchar(128)"`
+	DiskType	 string `gorm:"type:varchar(128)"`
+	HypervisorType string `gorm:"type:varchar(36)"`
+
+
 }
 
 func init() {
