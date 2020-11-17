@@ -29,7 +29,7 @@ function inst_grpc() {
     cd $cland_root_dir
     grpc_pkg=/tmp/grpc.tar.gz
     grpc_url='http://www.bluecat.ltd/repo/grpc.tar.gz'
-    grep -q Ootpa /etc/redhat-release
+    grep -q 'release 8' /etc/redhat-release
     [ $? -eq 0 ] && grpc_url='http://www.bluecat.ltd/repo/grpc8.tar.gz'
     wget $grpc_url -O $grpc_pkg
     sudo tar -zxf $grpc_pkg -C /
@@ -163,9 +163,9 @@ gen_hosts
 cd $cland_root_dir/deploy
 [ $(uname -m) != s390x ] && ansible-playbook cloudland.yml -e @$net_conf --tags epel
 ansible-playbook cloudland.yml -e @$net_conf --tags hosts,selinux,be_pkg,be_conf,firewall
-demo_router
 allinone_firewall
 inst_web
 inst_console_proxy
 ansible-playbook cloudland.yml -e @$net_conf --tags be_srv,fe_srv,console,imgrepo
+demo_router
 sudo chown -R cland.cland $cland_root_dir

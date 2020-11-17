@@ -282,7 +282,7 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 	if nworkers > openshift.WorkerNum {
 		for i := 0; i < int(nworkers-openshift.WorkerNum); i++ {
 			maxIndex++
-			hostname := fmt.Sprintf("worker-%d.%s", maxIndex, openshift.BaseDomain)
+			hostname := fmt.Sprintf("worker-%d.%s.%s", maxIndex, openshift.ClusterName, openshift.BaseDomain)
 			ipaddr := fmt.Sprintf("192.168.91.%d", maxIndex+20)
 			_, err = openshiftAdmin.Launch(ctx, id, hostname, ipaddr)
 			if err != nil {
@@ -293,8 +293,10 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 	} else {
 		for i := 0; i < int(openshift.WorkerNum-nworkers); i++ {
 			hostname := fmt.Sprintf("worker-%d", maxIndex)
+			fqdn1 := hostname + "." + openshift.ClusterName + "." + openshift.BaseDomain
+			fqdn2 := hostname + "." + openshift.BaseDomain
 			instance := &model.Instance{}
-			err = db.Where("(hostname = ? or hostname = ?) and cluster_id = ?", hostname, hostname+"."+openshift.BaseDomain, id).Take(instance).Error
+			err = db.Where("(hostname = ? or hostname = ? or hostname = ?) and cluster_id = ?", hostname, fqdn1, fqdn2, id).Take(instance).Error
 			if err != nil {
 				log.Println("Failed to query worker", err)
 				return
