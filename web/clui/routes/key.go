@@ -52,7 +52,6 @@ func (point *KeyTemp) Create() (publicKey, fingerPrint, privateKey string, err e
 	temp := ssh.MarshalAuthorizedKey(pub)
 	publicKey = string(temp)
 	fingerPrint = ssh.FingerprintLegacyMD5(pub)
-	log.Println("fingerPrint:", fingerPrint)
 	return
 }
 
