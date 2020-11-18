@@ -52,7 +52,6 @@ func (point *KeyTemp) Create() (publicKey, fingerPrint, privateKey string, err e
 	temp := ssh.MarshalAuthorizedKey(pub)
 	publicKey = string(temp)
 	fingerPrint = ssh.FingerprintLegacyMD5(pub)
-	log.Println("fingerPrint:", fingerPrint)
 	return
 }
 
@@ -88,7 +87,6 @@ func (a *KeyAdmin) CreateOrUseLocalKey(c *macaron.Context) {
 			}
 		}
 		fingerPrint := ssh.FingerprintLegacyMD5(pub)
-		log.Println("fingerPrint:", fingerPrint)
 		db := DB()
 		var a []model.Key
 		x := db.Where(&model.Key{FingerPrint: fingerPrint}).Find(&a)
