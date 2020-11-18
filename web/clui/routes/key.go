@@ -1,4 +1,3 @@
-
 /*
 Copyright <holder> All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
@@ -27,7 +26,7 @@ import (
 var (
 	keyAdmin = &KeyAdmin{}
 	keyView  = &KeyView{}
-	keyTemp = &KeyTemp{}
+	keyTemp  = &KeyTemp{}
 )
 
 type KeyAdmin struct{}
@@ -68,19 +67,19 @@ func (a *KeyAdmin) Create(ctx context.Context, name, pubkey, fingerprint string)
 	return
 }
 
-func (a *KeyAdmin) CreateOrUseLocalKey(c *macaron.Context)  {
+func (a *KeyAdmin) CreateOrUseLocalKey(c *macaron.Context) {
 	name := c.QueryTrim("name")
 	if c.QueryTrim("pubkey") != "" {
 		publicKey := c.QueryTrim("pubkey")
 		pubKeyBytes := []byte(publicKey)
 		pub, _, _, _, puberr := ssh.ParseAuthorizedKey(pubKeyBytes)
-		if puberr != nil{
-			if c.QueryTrim("from_instance") != ""{
+		if puberr != nil {
+			if c.QueryTrim("from_instance") != "" {
 				c.JSON(200, map[string]interface{}{
 					"error": "Public key is wrong",
 				})
 				return
-			}else {
+			} else {
 				log.Println("Public key is wrong")
 				c.Data["ErrorMsg"] = "Public key is wrong"
 				c.HTML(http.StatusBadRequest, "error")
@@ -91,8 +90,7 @@ func (a *KeyAdmin) CreateOrUseLocalKey(c *macaron.Context)  {
 		log.Println("fingerPrint:", fingerPrint)
 		db := DB()
 		var a []model.Key
-		x := db.Where(&model.Key{FingerPrint:fingerPrint}).Find(&a)
-		
+		x := db.Where(&model.Key{FingerPrint: fingerPrint}).Find(&a)
 
 		if len(*(x.Value.(*[]model.Key))) != 0 {
 			if c.QueryTrim("from_instance") != "" {
@@ -100,7 +98,7 @@ func (a *KeyAdmin) CreateOrUseLocalKey(c *macaron.Context)  {
 					"error": "This public key has been used",
 				})
 				return
-			}else {
+			} else {
 				c.Data["ErrorMsg"] = "This public key has been used"
 				c.HTML(http.StatusBadRequest, "error")
 				return
@@ -123,7 +121,7 @@ func (a *KeyAdmin) CreateOrUseLocalKey(c *macaron.Context)  {
 				return
 			}
 		}
-		if c.QueryTrim("from_instance") != ""{
+		if c.QueryTrim("from_instance") != "" {
 			_, keys, err := keyAdmin.List(c.Req.Context(), 0, -1, "", "")
 			if err != nil {
 				log.Println("Failed to list keys, %v", err)
@@ -140,23 +138,23 @@ func (a *KeyAdmin) CreateOrUseLocalKey(c *macaron.Context)  {
 			c.JSON(200, map[string]interface{}{
 				"keys": keys,
 			})
-		} else{
+		} else {
 			redirectTo := "../keys"
 			c.Redirect(redirectTo)
 		}
-	}else{
-		publicKey,fingerPrint,privateKey, err := keyTemp.Create()
-		if err != nil{
+	} else {
+		publicKey, fingerPrint, privateKey, err := keyTemp.Create()
+		if err != nil {
 			log.Println("failed")
 			c.Data["ErrorMsg"] = err.Error()
 			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
-		if c.QueryTrim("from_instance") != ""{
-			fmt.Println("from_instance======"+c.QueryTrim("from_instance"))
+		if c.QueryTrim("from_instance") != "" {
+			fmt.Println("from_instance======" + c.QueryTrim("from_instance"))
 			c.JSON(200, map[string]interface{}{
-				"keyName": name,
-				"publicKey": publicKey,
+				"keyName":    name,
+				"publicKey":  publicKey,
 				"privateKey": privateKey,
 			})
 			return
@@ -311,7 +309,7 @@ func (v *KeyView) Delete(c *macaron.Context, store session.Store) (err error) {
 	return
 }
 
-func (v *KeyView) New(c *macaron.Context, store session.Store)(){
+func (v *KeyView) New(c *macaron.Context, store session.Store) () {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -323,7 +321,7 @@ func (v *KeyView) New(c *macaron.Context, store session.Store)(){
 	c.HTML(200, "keys_new")
 }
 
-func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
+func (v *KeyView) Confirm(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -354,7 +352,7 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
 		c.JSON(200, key)
 		return
 	}
-	if c.QueryTrim("from_instance") != ""{
+	if c.QueryTrim("from_instance") != "" {
 		_, keys, err := keyAdmin.List(c.Req.Context(), 0, -1, "", "")
 		if err != nil {
 			log.Println("Failed to list keys, %v", err)
@@ -371,7 +369,7 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
 		c.JSON(200, map[string]interface{}{
 			"keys": keys,
 		})
-	} else{
+	} else {
 		var redirectTo string
 		redirectTo = "../keys"
 		c.Redirect(redirectTo)
