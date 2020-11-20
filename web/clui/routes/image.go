@@ -242,9 +242,9 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 
 	if hypervisorType == 0 {
 		hypervisor = "kvm"
-	}else if hypervisorType == 1{
+	} else if hypervisorType == 1 {
 		hypervisor = "zvm"
-	}else{
+	} else {
 		log.Println("hypervisorType Error")
 		return
 	}
