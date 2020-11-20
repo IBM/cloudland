@@ -1,12 +1,5 @@
 {{template "_head" .}}
 <script type="text/javascript">
-    function storage() {
-        var hostname = document.getElementById("hideHost").value;
-		
-		var toCreate = document.getElementById("toCreate");
-		toCreate.href = toCreate.href + "?hostname=" + hostname;
-    }
-
     function getCookie(c_name, c_data)
     {
         c_start=document.cookie.indexOf(c_name + "=")
@@ -44,13 +37,12 @@
             return c_data;
         }
     }
-	
+
 	function UpdateTable(){
 		$.ajax({
 			type: "GET",
 			url: "/UpdateTable",
 			success: function (data){
-				console.log(data);
 				var html = "";
 				for(var i = 0; i < data.instancedata.length; i++){
 					html += "<tr>" +
@@ -61,19 +53,19 @@
 					if (data.instancedata[i].Cluster !== null){
 						html += data.instancedata[i].Cluster.ClusterName;
 					}
-					html += '<a href="/instances/' + data.instancedata[i].ID + '">' + data.instancedata[i].Hostname + "</a></td>" + 
+					html += '<a href="/instances/' + data.instancedata[i].ID + '">' + data.instancedata[i].Hostname + "</a></td>" +
 					"<td>";
 					if (data.instancedata[i].Flavor !== null){
 						html += data.instancedata[i].Flavor.Name;
 					}
-					html += "</td>" + 
+					html += "</td>" +
 					"<td>";
 					if (data.instancedata[i].Image !== null){
 						html += data.instancedata[i].Image.Name;
 					}else{
 						html += data.instancedata[i].Hostname;
 					}
-					html += "</td>" + 
+					html += "</td>" +
 					"<td>";
 					if (data.instancedata[i].FloatingIps.length !== 0){
 						for (var t = 0; t < data.instancedata[i].FloatingIps.length; t++){
@@ -87,39 +79,50 @@
 							}
 						}
 					}
-					html += "</td>" + 
+					html += "</td>" +
 					"<td>";
 					html += getCookie("lang", data.instancedata[i].Status);
 					if (data.instancedata[i].Status == 'error'){
 						html += data.instancedata[i].Reason;
 					}
-					html += "</td>" + 
+					html += "</td>" +
+                    "<td>";
+                    html += '<form name="submitForm' + data.instancedata[i].ID + '" method="post" target="_blank" action="/instances/' + data.instancedata[i].ID + '/console">' +
+                             	'<a href="javascript:document.submitForm' + data.instancedata[i].ID + '.submit()">VNC</a>' +
+                            '</form>';
+					html += "</td>" +
 					"<td>";
 					html += data.instancedata[i].Hyper;
-					html += "</td>" + 
+					html += "</td>" +
 					"<td>";
 					html += data.instancedata[i].OwnerInfo.name;
-					html += "</td>" + 
+					html += "</td>" +
 					"<td>";
 					html += '<div class="ui selection dropdown">' +
 							'<input id="action" name="action" type="hidden">' +
 								'<i class="dropdown icon"></i>' +
-								'<div class="default text">Action</div>' + 
+								'<div class="default text">Action</div>' +
 									'<div class="menu">' +
-										'<div class="item" data-value="1" data-text="ChangeHostname">' +
+										'<div class="item" data-value="1" data-text="ChangeHostname         ">' +
 										'<a href="/instances/' + data.instancedata[i].ID + '?flag=ChangeHostname">{{$.i18n.Tr "ChangeHostname"}}</a>' +
-										'</div>' + 
-										'<div class="item" data-value="2" data-text="MigrateInstance">' +
-										'<a href="/instances/' + data.instancedata[i].ID + '?flag=MigrateInstance">{{$.i18n.Tr "MigrateInstance"}}</a>' +
-										'</div>' + 
-										'<div class="item" data-value="3" data-text="ResizeInstance">' +
-										'<a href="/instances/' + data.instancedata[i].ID + '?flag=ResizeInstance">{{$.i18n.Tr "ResizeInstance"}}</a>' +
-										'</div>' + 
-										'<div class="item" data-value="4" data-text="ChangeStatus">' +
-										'<a href="/instances/' + data.instancedata[i].ID + '?flag=ChangeStatus">{{$.i18n.Tr "ChangeStatus"}}</a>' +
 										'</div>' +
-										'<div class="item" data-value="5" data-text="DeleteInstance">'+
-                                        '<a class="delete-button" data-url="/instances/' + data.instancedata[i].ID +  '" data-id="' + data.instancedata[i].ID + '" href="javascript:void(0)">{{$.i18n.Tr "DeleteInstance"}}</a>' +
+										'<div class="item" data-value="2" data-text="MigrateInstance         ">' +
+										'<a href="/instances/' + data.instancedata[i].ID + '?flag=MigrateInstance">{{$.i18n.Tr "MigrateInstance"}}        </a>' +
+										'</div>' +
+										'<div class="item" data-value="3" data-text="ResizeInstance        ">' +
+										'<a href="/instances/' + data.instancedata[i].ID + '?flag=ResizeInstance">{{$.i18n.Tr "ResizeInstance"}}        </a>' +
+										'</div>' +
+										'<div class="item" data-value="4" data-text="ChangeStatus       ">' +
+										'<a href="/instances/' + data.instancedata[i].ID + '?flag=ChangeStatus">{{$.i18n.Tr "ChangeStatus"}}        </a>' +
+										'</div>' +
+										'<div class="item" data-value="5" data-text="StartInstance        ">' +
+                                        '<a href="/instances/' + data.instancedata[i].ID + '?flag=ChangeStatus&action=start">{{$.i18n.Tr "StartVM"}}        </a>' +
+                                        '</div>' +
+                                        '<div class="item" data-value="6" data-text="StopInstance        ">' +
+                                        '<a href="/instances/' + data.instancedata[i].ID + '?flag=ChangeStatus&action=shutdown">{{$.i18n.Tr "StopVM"}}        </a>' +
+                                        '</div>' +
+                                        '<div class="item" data-value="7" data-text="DeleteInstance        ">'+
+                                        '<a class="delete-button" data-url="/instances/' + data.instancedata[i].ID +  '" data-id="' + data.instancedata[i].ID + '" href="javascript:void(0)">{{$.i18n.Tr "DeleteInstance"}}        </a>' +
                                         '</div>' +
 									'</div>' +
 							'</div>';
@@ -151,13 +154,13 @@
                             return false;
                         });
 				}
-				
+
 			},
 		})
 	}
 	setInterval("UpdateTable()", 8000);
-		
-	
+
+
 </script>
 
     <div class="admin user">
@@ -168,7 +171,7 @@
 		            <h4 class="ui top attached header">
 			            {{.i18n.Tr "Instance_Manage_Panel"}} ({{.i18n.Tr "Total"}}: {{.Total}})
 			            <div class="ui right">
-				            <a id="toCreate" class="ui green tiny button" href="instances/new" onclick="storage()">{{.i18n.Tr "Create"}}</a>
+				            <a id="toCreate" class="ui green tiny button" href="instances/new">{{.i18n.Tr "Create"}}</a>
 							<div style="display:none">
 								<input id="hideHost" name="hideHost" value="{{.HostName}}">
 							</div>
@@ -228,7 +231,7 @@
 					        {{ end }}
 						</td>
 			                        <td>{{$.i18n.Tr .Status}}{{ if eq .Status "error" }}: {{ .Reason }}{{ end }}</td>
-                                                <td>
+                        <td>
 							<form name="submitForm{{.ID}}" method="post" target="_blank" action="{{$Link}}/{{.ID}}/console">
 							<a href="javascript:document.submitForm{{.ID}}.submit()">VNC</a>
 							</form>
@@ -243,20 +246,26 @@
 													<div class="default text">Action
 													</div>
 														<div class="menu">
-															<div class="item" data-value="1" data-text="ChangeHostname">
-																<a href="{{$Link}}/{{.ID}}?flag=ChangeHostname">{{$.i18n.Tr "ChangeHostname"}}</a>
+															<div class="item" data-value="1" data-text="ChangeHostname        ">
+																<a href="{{$Link}}/{{.ID}}?flag=ChangeHostname">{{$.i18n.Tr "ChangeHostname"}}        </a>
 															</div>
-															<div class="item" data-value="2" data-text="MigrateInstance">
-																<a href="{{$Link}}/{{.ID}}?flag=MigrateInstance">{{$.i18n.Tr "MigrateInstance"}}</a>
+															<div class="item" data-value="2" data-text="MigrateInstance        ">
+																<a href="{{$Link}}/{{.ID}}?flag=MigrateInstance">{{$.i18n.Tr "MigrateInstance"}}        </a>
 															</div>
-															<div class="item" data-value="3" data-text="ResizeInstance">
-																<a href="{{$Link}}/{{.ID}}?flag=ResizeInstance">{{$.i18n.Tr "ResizeInstance"}}</a>
+															<div class="item" data-value="3" data-text="ResizeInstance        ">
+																<a href="{{$Link}}/{{.ID}}?flag=ResizeInstance">{{$.i18n.Tr "ResizeInstance"}}        </a>
 															</div>
-															<div class="item" data-value="4" data-text="ChangeStatus">
-																<a href="{{$Link}}/{{.ID}}?flag=ChangeStatus">{{$.i18n.Tr "ChangeStatus"}}</a>
+															<div class="item" data-value="4" data-text="ChangeStatus        ">
+																<a href="{{$Link}}/{{.ID}}?flag=ChangeStatus">{{$.i18n.Tr "ChangeStatus"}}        </a>
 															</div>
-															<div class="item" data-value="5" data-text="DeleteInstance">
-                                                            	<a class="delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}" href="javascript:void(0)">{{$.i18n.Tr "DeleteInstance"}}</a>
+															<div class="item" data-value="5" data-text="StartInstance        ">
+                                                                <a href="{{$Link}}/{{.ID}}?flag=ChangeStatus&action=start">{{$.i18n.Tr "StartVM"}}        </a>
+                                                            </div>
+                                                            <div class="item" data-value="6" data-text="StopInstance        ">
+                                                                <a href="{{$Link}}/{{.ID}}?flag=ChangeStatus&action=shutdown">{{$.i18n.Tr "StopVM"}}        </a>
+                                                            </div>
+                                                            <div class="item" data-value="7" data-text="DeleteInstance        ">
+                                                                <a class="delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}" href="javascript:void(0)">{{$.i18n.Tr "DeleteInstance"}}        </a>
                                                             </div>
 														</div>
 										</div>
