@@ -9,7 +9,7 @@ The objective of this project is to develop a simple and extensible IaaS with ea
 ## Provision instances based on KVM
 As an IaaS solution, this is the main function for CloudLand. On top of it, people can freely deploy PaaS such as kubernetes.
 ## Software defined networks (SDN)
-CloudLand has a builtin simple SDN solution based on vxlan, with extentions, instances cross different regions or data centers can talk seamlessly.
+CloudLand has a builtin simple SDN solution based on vxlan, with extensions, instances cross different regions or data centers can talk seamlessly.
 ## Dynamic storage
 The volume solution is based on Gluster. Gluster has native integration with qemu which does not rely on fuse, this brings the benifit of efficiency.
 
