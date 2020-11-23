@@ -19,6 +19,7 @@ import (
 
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/sca/dbs"
+	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
 )
 
@@ -135,7 +136,7 @@ func (a *KeyAdmin) List(ctx context.Context, offset, limit int64, order, query s
 	return
 }
 
-func (v *KeyView) List(c *macaron.Context) {
+func (v *KeyView) List(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
@@ -184,7 +185,7 @@ func (v *KeyView) List(c *macaron.Context) {
 	c.HTML(200, "keys")
 }
 
-func (v *KeyView) Delete(c *macaron.Context) (err error) {
+func (v *KeyView) Delete(c *macaron.Context, store session.Store) (err error) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
@@ -219,7 +220,7 @@ func (v *KeyView) Delete(c *macaron.Context) (err error) {
 	return
 }
 
-func (v *KeyView) New(c *macaron.Context) () {
+func (v *KeyView) New(c *macaron.Context, store session.Store) () {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -231,7 +232,7 @@ func (v *KeyView) New(c *macaron.Context) () {
 	c.HTML(200, "keys_new")
 }
 
-func (v *KeyView) Confirm(c *macaron.Context) {
+func (v *KeyView) Confirm(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -286,7 +287,7 @@ func (v *KeyView) Confirm(c *macaron.Context) {
 	}
 }
 
-func (v *KeyView) SolvePrintedPublicKeyError(c *macaron.Context, err error) {
+func (v *KeyView) SolvePrintedPublicKeyError(c *macaron.Context, store session.Store, err error) {
 	if err != nil {
 		if c.QueryTrim("from_instance") != "" {
 			c.JSON(200, map[string]interface{}{
@@ -303,7 +304,7 @@ func (v *KeyView) SolvePrintedPublicKeyError(c *macaron.Context, err error) {
 	return
 }
 
-func (v *KeyView) SolvePublicKeyDbError(c *macaron.Context, name, publicKey, fingerPrint string) {
+func (v *KeyView) SolvePublicKeyDbError(c *macaron.Context, store session.Store, name, publicKey, fingerPrint string) {
 	key, err := keyAdmin.Create(c.Req.Context(), name, publicKey, fingerPrint)
 	if err != nil {
 		log.Println("Failed, %v", err)
@@ -323,7 +324,7 @@ func (v *KeyView) SolvePublicKeyDbError(c *macaron.Context, name, publicKey, fin
 	return
 }
 
-func (v *KeyView) SearchDbFingerPrint(c *macaron.Context, fingerPrint, publicKey, name string) {
+func (v *KeyView) SearchDbFingerPrint(c *macaron.Context, store session.Store, fingerPrint, publicKey, name string) {
 	db := DB()
 	var keydb []model.Key
 	x := db.Where(&model.Key{FingerPrint: fingerPrint}).Find(&keydb)
@@ -344,7 +345,7 @@ func (v *KeyView) SearchDbFingerPrint(c *macaron.Context, fingerPrint, publicKey
 	}
 }
 
-func (v *KeyView) SolveListKeyError(c *macaron.Context) {
+func (v *KeyView) SolveListKeyError(c *macaron.Context, store session.Store) {
 	if c.QueryTrim("from_instance") != "" {
 		_, keys, err := keyAdmin.List(c.Req.Context(), 0, -1, "", "")
 		if err != nil {
@@ -369,7 +370,7 @@ func (v *KeyView) SolveListKeyError(c *macaron.Context) {
 	return
 }
 
-func (v *KeyView) Create(c *macaron.Context) {
+func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
