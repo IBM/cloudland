@@ -72,7 +72,8 @@ if [ $rc -ne 0 ]; then
 fi
 
 # deploy
-rc=$(curl -s $zvm_service/guests/$vm_ID/action -X POST -d '{"action":"deploy", "image":"'"$img_name"'"}' | jq .rc)
+vm_meta="${cache_dir}/meta/${vm_ID}/cfgdrive.iso"
+rc=$(curl -s $zvm_service/guests/$vm_ID/action -X POST -d '{"action":"deploy", "image":"'"$img_name"'", "transportfiles":"'"$vm_meta"'"}' | jq .rc)
 if [ $rc -ne 0 ]; then
     # remove disk and user ?
     echo "$vm_ID: Deploy image failed!"
