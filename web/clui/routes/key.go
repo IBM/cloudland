@@ -1,4 +1,3 @@
-
 /*
 Copyright <holder> All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
@@ -27,7 +26,7 @@ import (
 var (
 	keyAdmin = &KeyAdmin{}
 	keyView  = &KeyView{}
-	keyTemp = &KeyTemp{}
+	keyTemp  = &KeyTemp{}
 )
 
 type KeyAdmin struct{}
@@ -52,6 +51,18 @@ func (point *KeyTemp) Create() (publicKey, fingerPrint, privateKey string, err e
 	}
 	temp := ssh.MarshalAuthorizedKey(pub)
 	publicKey = string(temp)
+	fingerPrint = ssh.FingerprintLegacyMD5(pub)
+	return
+}
+
+func (point *KeyTemp) CreateFingerPrint(publicKey string) (fingerPrint string, err error) {
+	pubKeyBytes := []byte(publicKey)
+	pub, _, _, _, puberr := ssh.ParseAuthorizedKey(pubKeyBytes)
+	if puberr != nil {
+		log.Println("Public key is wrong")
+		err = puberr
+		return
+	}
 	fingerPrint = ssh.FingerprintLegacyMD5(pub)
 	return
 }
@@ -209,7 +220,7 @@ func (v *KeyView) Delete(c *macaron.Context, store session.Store) (err error) {
 	return
 }
 
-func (v *KeyView) New(c *macaron.Context, store session.Store)(){
+func (v *KeyView) New(c *macaron.Context, store session.Store) () {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -221,7 +232,7 @@ func (v *KeyView) New(c *macaron.Context, store session.Store)(){
 	c.HTML(200, "keys_new")
 }
 
-func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
+func (v *KeyView) Confirm(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -233,7 +244,9 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
 	name := c.QueryTrim("name")
 	publicKey := c.QueryTrim("pubkey")
 	log.Println("Your Public Key, %v", publicKey)
-	fingerPrint := c.QueryTrim("fingerPrint")
+	pubKeyBytes := []byte(publicKey)
+	pub, _, _, _, _ := ssh.ParseAuthorizedKey(pubKeyBytes)
+	fingerPrint := ssh.FingerprintLegacyMD5(pub)
 	key, err := keyAdmin.Create(c.Req.Context(), name, publicKey, fingerPrint)
 	if err != nil {
 		log.Println("Failed to create key, %v", err)
@@ -250,7 +263,7 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
 		c.JSON(200, key)
 		return
 	}
-	if c.QueryTrim("from_instance") != ""{
+	if c.QueryTrim("from_instance") != "" {
 		_, keys, err := keyAdmin.List(c.Req.Context(), 0, -1, "", "")
 		if err != nil {
 			log.Println("Failed to list keys, %v", err)
@@ -267,12 +280,96 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store){
 		c.JSON(200, map[string]interface{}{
 			"keys": keys,
 		})
-	} else{
+	} else {
 		var redirectTo string
 		redirectTo = "../keys"
 		c.Redirect(redirectTo)
 	}
 }
+
+func (v *KeyView) SolvePrintedPublicKeyError(c *macaron.Context, store session.Store, err error) {
+	if err != nil {
+		if c.QueryTrim("from_instance") != "" {
+			c.JSON(200, map[string]interface{}{
+				"error": "Public key is wrong",
+			})
+			return
+		} else {
+			log.Println("Public key is wrong")
+			c.Data["ErrorMsg"] = "Public key is wrong"
+			c.HTML(http.StatusBadRequest, "error")
+			return
+		}
+	}
+	return
+}
+
+func (v *KeyView) SolvePublicKeyDbError(c *macaron.Context, store session.Store, name, publicKey, fingerPrint string) {
+	key, err := keyAdmin.Create(c.Req.Context(), name, publicKey, fingerPrint)
+	if err != nil {
+		log.Println("Failed, %v", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+		return
+	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, key)
+		return
+	}
+	return
+}
+
+func (v *KeyView) SearchDbFingerPrint(c *macaron.Context, store session.Store, fingerPrint, publicKey, name string) {
+	db := DB()
+	var keydb []model.Key
+	x := db.Where(&model.Key{FingerPrint: fingerPrint}).Find(&keydb)
+	length := len(*(x.Value.(*[]model.Key)))
+	if length != 0 {
+		if c.QueryTrim("from_instance") != "" {
+			c.JSON(200, map[string]interface{}{
+				"error": "This public key has been used",
+			})
+			return
+		} else {
+			c.Data["ErrorMsg"] = "This public key has been used"
+			c.HTML(http.StatusBadRequest, "error")
+			return
+		}
+	} else {
+		keyView.SolvePublicKeyDbError(c, name, publicKey, fingerPrint)
+	}
+}
+
+func (v *KeyView) SolveListKeyError(c *macaron.Context, store session.Store) {
+	if c.QueryTrim("from_instance") != "" {
+		_, keys, err := keyAdmin.List(c.Req.Context(), 0, -1, "", "")
+		if err != nil {
+			log.Println("Failed to list keys, %v", err)
+			if c.Req.Header.Get("X-Json-Format") == "yes" {
+				c.JSON(500, map[string]interface{}{
+					"error": err.Error(),
+				})
+				return
+			}
+			c.Data["ErrorMsg"] = err.Error()
+			c.HTML(500, "500")
+			return
+		}
+		c.JSON(200, map[string]interface{}{
+			"keys": keys,
+		})
+	} else {
+		redirectTo := "../keys"
+		c.Redirect(redirectTo)
+	}
+	return
+}
+
 func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
@@ -285,94 +382,23 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 	name := c.QueryTrim("name")
 	if c.QueryTrim("pubkey") != "" {
 		publicKey := c.QueryTrim("pubkey")
-		pubKeyBytes := []byte(publicKey)
-		pub, _, _, _, puberr := ssh.ParseAuthorizedKey(pubKeyBytes)
-		if puberr != nil{
-			if c.QueryTrim("from_instance") != ""{
-				c.JSON(200, map[string]interface{}{
-					"error": "publicKey is wrong",
-				})
-				return
-			}else {
-				log.Println("publicKey is wrong")
-				c.Data["ErrorMsg"] = "publicKey is wrong"
-				c.HTML(http.StatusBadRequest, "error")
-				return
-			}
-		}
-		fingerPrint := ssh.FingerprintLegacyMD5(pub)
-		log.Println("fingerPrint:", fingerPrint)
-		db := DB()
-		var a []model.Key
-		x := db.Where(&model.Key{FingerPrint:fingerPrint}).Find(&a)
-
-		log.Println("x:")
-		log.Println(x.Value)
-		log.Println(len(*(x.Value.(*[]model.Key))))
-
-		if len(*(x.Value.(*[]model.Key))) != 0 {
-			if c.QueryTrim("from_instance") != "" {
-				c.JSON(200, map[string]interface{}{
-					"error": "This PublicKey Has Been Used",
-				})
-				return
-			}else {
-				c.Data["ErrorMsg"] = "This PublicKey Has Been Used"
-				c.HTML(http.StatusBadRequest, "error")
-				return
-			}
-		} else {
-			key, fperr := keyAdmin.Create(c.Req.Context(), name, publicKey, fingerPrint)
-			if fperr != nil {
-				log.Println("Failed, %v", fperr)
-				if c.Req.Header.Get("X-Json-Format") == "yes" {
-					c.JSON(500, map[string]interface{}{
-						"error": fperr.Error(),
-					})
-					return
-				}
-				c.Data["ErrorMsg"] = fperr.Error()
-				c.HTML(500, "500")
-				return
-			} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-				c.JSON(200, key)
-				return
-			}
-		}
-		if c.QueryTrim("from_instance") != ""{
-			_, keys, err := keyAdmin.List(c.Req.Context(), 0, -1, "", "")
-			if err != nil {
-				log.Println("Failed to list keys, %v", err)
-				if c.Req.Header.Get("X-Json-Format") == "yes" {
-					c.JSON(500, map[string]interface{}{
-						"error": err.Error(),
-					})
-					return
-				}
-				c.Data["ErrorMsg"] = err.Error()
-				c.HTML(500, "500")
-				return
-			}
-			c.JSON(200, map[string]interface{}{
-				"keys": keys,
-			})
-		} else{
-			redirectTo := "../keys"
-			c.Redirect(redirectTo)
-		}
-	}else{
-		publicKey,fingerPrint,privateKey, err := keyTemp.Create()
-		if err != nil{
+		fingerPrint, puberr := keyTemp.CreateFingerPrint(publicKey)
+		keyView.SolvePrintedPublicKeyError(c, puberr)
+		keyView.SearchDbFingerPrint(c, fingerPrint, publicKey, name)
+		keyView.SolveListKeyError(c)
+	} else {
+		publicKey, fingerPrint, privateKey, err := keyTemp.Create()
+		if err != nil {
 			log.Println("failed")
 			c.Data["ErrorMsg"] = err.Error()
 			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
-		if c.QueryTrim("from_instance") != ""{
-			fmt.Println("from_instance======"+c.QueryTrim("from_instance"))
+		if c.QueryTrim("from_instance") != "" {
+			fmt.Println("from_instance:" + c.QueryTrim("from_instance"))
 			c.JSON(200, map[string]interface{}{
-				"keyName": name,
-				"publicKey": publicKey,
+				"keyName":    name,
+				"publicKey":  publicKey,
 				"privateKey": privateKey,
 			})
 			return
