@@ -35,6 +35,21 @@
 									<label for="architecture">{{.i18n.Tr "Architecture"}}</label>
 									<input id="architecture"  name="architecture" autocomplete="off">
 								</div>
+								<div class="required inline field">
+                                    <label for="osVersion">{{.i18n.Tr "OS Version"}}</label>
+                                    <input id="osVersion" name="osVersion" autocomplete="off">
+                                </div>
+                                <div class="inline field">
+                                    <label for="diskType">{{.i18n.Tr "Disk Type"}}</label>
+                                    <input id="diskType" name="diskType" autocomplete="off">
+                                </div>
+                                <div class="required inline field">
+                                    <label for="hypervisorType">{{.i18n.Tr "Hypervisor Type"}}</label>
+                                    <select name="hypervisorType" id="hypervisorType" class="ui selection dropdown">
+                                         <option value="0" selected>{{.i18n.Tr "KVM"}}</option>
+                                         <option value="1">{{.i18n.Tr "ZVM"}}</option>
+                                    </select>
+                                </div>
 								<div class="inline field">
 									<label></label>
 									<button class="ui green button">{{.i18n.Tr "Create New Image"}}</button>

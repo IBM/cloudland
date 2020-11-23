@@ -88,7 +88,7 @@ type InstanceData struct {
 }
 
 type InstancesData struct {
-	Instances []*model.Instance  `json:"instancedata"`
+	Instances []*model.Instance `json:"instancedata"`
 }
 
 func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, imageID, flavorID, primaryID, clusterID int64, primaryIP, primaryMac string, subnetIDs, keyIDs []int64, sgIDs []int64, hyper int) (instance *model.Instance, err error) {
@@ -175,6 +175,23 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			return
 		}
 		i++
+	}
+	return
+}
+
+func (a *InstanceAdmin) ChangeInstanceStatus(ctx context.Context, id int64, action string) (instance *model.Instance, err error) {
+	db := DB()
+	instance = &model.Instance{Model: model.Model{ID: id}}
+	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
+		log.Println("Failed to query instance ", err)
+		return
+	}
+	control := fmt.Sprintf("inter=%d", instance.Hyper)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh '%d' '%s'", instance.ID, action)
+	err = hyperExecute(ctx, control, command)
+	if err != nil {
+		log.Println("Delete vm command execution failed", err)
+		return
 	}
 	return
 }
@@ -762,7 +779,7 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	c.HTML(200, "instances")
 }
 
-func (v *InstanceView) UpdateTable(c *macaron.Context, store session.Store){
+func (v *InstanceView) UpdateTable(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
@@ -797,9 +814,9 @@ func (v *InstanceView) UpdateTable(c *macaron.Context, store session.Store){
 	jsonData = &InstancesData{
 		Instances: instances,
 	}
-	
+
 	c.JSON(200, jsonData)
-	return 
+	return
 }
 
 func (v *InstanceView) Delete(c *macaron.Context, store session.Store) (err error) {
@@ -882,6 +899,7 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	c.Data["HostName"] = c.QueryTrim("hostname")
 	c.Data["Images"] = images
 	c.Data["Flavors"] = flavors
 	c.Data["Subnets"] = subnets
@@ -901,6 +919,7 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 		return
 	}
 	instanceID, err := strconv.Atoi(id)
+
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
@@ -939,26 +958,46 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 			}
 		}
 	}
+	vnc, err := instanceAdmin.enableVnc(c.Req.Context(), instance)
+	if err != nil {
+		log.Println("Failed enable VNC", err)
+	}
 	_, flavors, err := flavorAdmin.List(0, -1, "", "")
 	if err := db.Find(&flavors).Error; err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
 	}
+	c.Data["Vnc"] = vnc
 	c.Data["Instance"] = instance
 	c.Data["Subnets"] = subnets
 	c.Data["Flavors"] = flavors
-	
+
 	flag := c.QueryTrim("flag")
-	if flag == "ChangeHostname"{
+	if flag == "ChangeHostname" {
 		c.HTML(200, "instances_hostname")
-	}else if flag == "ChangeStatus"{
-		c.HTML(200, "instances_status")
-	}else if flag == "MigrateInstance"{
+	} else if flag == "ChangeStatus" {
+		if c.QueryTrim("action") != "" {
+			instanceID64, err := strconv.ParseInt(id, 10, 64)
+			if err != nil {
+				log.Println("Change String to int64 failed", err)
+				return
+			}
+			_, vmError := instanceAdmin.ChangeInstanceStatus(c.Req.Context(), instanceID64, c.QueryTrim("action"))
+			if vmError != nil {
+				log.Println("Launch vm command execution failed", err)
+				return
+			}
+			redirectTo := "../instances"
+			c.Redirect(redirectTo)
+		} else {
+			c.HTML(200, "instances_status")
+		}
+	} else if flag == "MigrateInstance" {
 		c.HTML(200, "instances_migrate")
-	}else if flag == "ResizeInstance"{
+	} else if flag == "ResizeInstance" {
 		c.HTML(200, "instances_size")
-	}else{
+	} else {
 		c.HTML(200, "instances_patch")
 	}
 }
@@ -975,7 +1014,7 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 		return
 	}
 	flavor := c.QueryInt64("flavor")
-	hostname := c.QueryTrim("hostname")                                             
+	hostname := c.QueryTrim("hostname")
 	hyperID := c.QueryInt("hyper")
 	action := c.QueryTrim("action")
 	ifaces := c.QueryStrings("ifaces")
@@ -1014,7 +1053,7 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 		if !permit {
 			log.Println("Not authorized for this operation")
 			c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
 		subnetIDs = append(subnetIDs, int64(sID))
