@@ -29,6 +29,9 @@
 			                        <th>{{.i18n.Tr "Format"}}</th>
 			                        <th>{{.i18n.Tr "Status"}}</th>
 			                        <th>{{.i18n.Tr "Created_At"}}</th>
+			                        <th>{{.i18n.Tr "OS Version"}}</th>
+			                        <th>{{.i18n.Tr "Hypervisor Type"}}</th>
+			                        <th>{{.i18n.Tr "Disk Type"}}</th>
                                     <th>{{.i18n.Tr "Delete"}}</th>
 		                        </tr>
 	                        </thead>
@@ -43,6 +46,9 @@
 			                        <td>{{.Format}}</td>
 			                        <td>{{.Status}}</td>
 			                        <td><span title="Tue, 18 Dec 2018 14:24:59 &#43;0800">{{.CreatedAt}}</span></td>
+			                        <td>{{.OsVersion}}</td>
+			                        <td>{{.HypervisorType}}</td>
+			                        <td>{{.DiskType}}</td>
                                     <td><div class="delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}"><i class="dark purple trash alternate outline icon"></i></div></td>
 		                        </tr>
                                 {{ end }}
