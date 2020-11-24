@@ -12,5 +12,5 @@ if [ $rc -ne 0 ]; then
 fi
 
 rm -rf /tmp/cloudland/$vm_ID
-rm -f ${cache_dir}/meta/${vm_ID}.iso
+rm -rf ${cache_dir}/meta/${vm_ID}
 echo "|:-COMMAND-:| $(basename $0) '$1'"
