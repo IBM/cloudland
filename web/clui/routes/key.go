@@ -341,7 +341,7 @@ func (v *KeyView) SearchDbFingerPrint(c *macaron.Context, store session.Store, f
 			return
 		}
 	} else {
-		keyView.SolvePublicKeyDbError(c, name, publicKey, fingerPrint)
+		keyView.SolvePublicKeyDbError(c, store, name, publicKey, fingerPrint)
 	}
 }
 
@@ -383,9 +383,9 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 	if c.QueryTrim("pubkey") != "" {
 		publicKey := c.QueryTrim("pubkey")
 		fingerPrint, puberr := keyTemp.CreateFingerPrint(publicKey)
-		keyView.SolvePrintedPublicKeyError(c, puberr)
-		keyView.SearchDbFingerPrint(c, fingerPrint, publicKey, name)
-		keyView.SolveListKeyError(c)
+		keyView.SolvePrintedPublicKeyError(c, store, puberr)
+		keyView.SearchDbFingerPrint(c, store, fingerPrint, publicKey, name)
+		keyView.SolveListKeyError(c, store)
 	} else {
 		publicKey, fingerPrint, privateKey, err := keyTemp.Create()
 		if err != nil {
