@@ -79,12 +79,16 @@ type SecurityData struct {
 }
 
 type InstanceData struct {
-	Userdata string             `json:"userdata"`
-	Vlans    []*VlanInfo        `json:"vlans"`
-	Networks []*InstanceNetwork `json:"networks"`
-	Links    []*NetworkLink     `json:"links"`
-	Keys     []string           `json:"keys"`
-	SecRules []*SecurityData    `json:"security"`
+	Userdata  string             `json:"userdata"`
+	HyperType string             `json:"hyperType"`
+	OsVersion string             `json:"osVersion"`
+	DiskType  string             `json:"diskType"`
+	VSwitch   string             `json:"vswitch"`
+	Vlans     []*VlanInfo        `json:"vlans"`
+	Networks  []*InstanceNetwork `json:"networks"`
+	Links     []*NetworkLink     `json:"links"`
+	Keys      []string           `json:"keys"`
+	SecRules  []*SecurityData    `json:"security"`
 }
 
 type InstancesData struct {
@@ -242,7 +246,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 		}
 		disk := flavor.Disk - instance.Flavor.Disk + flavor.Ephemeral - instance.Flavor.Ephemeral
 		control := fmt.Sprintf("inter=%d cpu=%d memory=%d disk=%d network=%d", instance.Hyper, cpu, memory, disk, 0)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/resize_vm.sh '%d' '%d' '%d' '%d' '%d' '%d'", instance.ID, flavor.Cpu, flavor.Memory, flavor.Disk, flavor.Swap, flavor.Ephemeral)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/resize_vm.sh '%d' '%d' '%d' '%d' '%d' '%d' '%d'", instance.ID, flavor.Cpu, flavor.Memory, flavor.Disk, flavor.Swap, flavor.Ephemeral, disk)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Resize vm command execution failed", err)
@@ -520,13 +524,22 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet
 		}
 		securityData = append(securityData, sgr)
 	}
+	image := &model.Image{Model: model.Model{ID: instance.ImageID}}
+	hyperType := image.HypervisorType
+	osVersion := image.OsVersion
+	diskType := image.DiskType
+	vswitch := primary.VSwitch
 	instData := &InstanceData{
-		Userdata: userdata,
-		Vlans:    vlans,
-		Networks: instNetworks,
-		Links:    instLinks,
-		Keys:     instKeys,
-		SecRules: securityData,
+		Userdata:  userdata,
+		HyperType: hyperType,
+		OsVersion: osVersion,
+		DiskType:  diskType,
+		VSwitch:   vswitch,
+		Vlans:     vlans,
+		Networks:  instNetworks,
+		Links:     instLinks,
+		Keys:      instKeys,
+		SecRules:  securityData,
 	}
 	jsonData, err := json.Marshal(instData)
 	if err != nil {
