@@ -340,7 +340,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 	name := openshift.ClusterName + "-sn"
 	search := cluster + "." + domain
 	lbIP := "192.168.91.8"
-	subnet, err := subnetAdmin.Create(ctx, name, "", "192.168.91.0", "255.255.255.0", "", "", "", "", lbIP, search, "yes", "", openshift.ID, memberShip.OrgID)
+	subnet, err := subnetAdmin.Create(ctx, name, "", "192.168.91.0", "255.255.255.0", "", "", "", "", lbIP, search, "yes", "", "", openshift.ID, memberShip.OrgID)
 	if err != nil {
 		log.Println("Failed to create openshift subnet", err)
 		return
@@ -604,8 +604,15 @@ func (v *OpenshiftView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	_, subnets, err := subnetAdmin.List(ctx, 0, -1, "", "", "")
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+		return
+	}
 	c.Data["Flavors"] = flavors
 	c.Data["Keys"] = keys
+	c.Data["Subnets"] = subnets
 	c.HTML(200, "openshifts_new")
 }
 
