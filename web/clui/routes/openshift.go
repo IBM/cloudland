@@ -604,8 +604,15 @@ func (v *OpenshiftView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	_, subnets, err := subnetAdmin.List(ctx, 0, -1, "", "", "")
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+		return
+	}
 	c.Data["Flavors"] = flavors
 	c.Data["Keys"] = keys
+	c.Data["Subnets"] = subnets
 	c.HTML(200, "openshifts_new")
 }
 

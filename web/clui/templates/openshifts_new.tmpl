@@ -112,6 +112,22 @@
 									  </div>
 									</div>
 								</div>
+								<div class="inline field">
+								    <label for="primary">{{.i18n.Tr "Subnet"}}</label>
+								    <div class="ui selection dropdown">
+                                      <input id="primary" name="primary" type="hidden">
+                                      <i class="dropdown icon"></i>
+                                      <div class="default text">{{.i18n.Tr "Subnet"}}</div>
+                                      <div class="menu">
+                                        {{ range .Subnets }}
+                                            <div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
+                                              {{.Name}}
+                                            </div>
+                                        {{ end }}
+                                        </div>
+                                      </div>
+								</div>
+
 								<div class="required inline field">
 									<label for="key">{{.i18n.Tr "Key"}}</label>
 									<div class="ui selection dropdown">
