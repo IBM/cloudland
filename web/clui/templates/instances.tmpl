@@ -51,7 +51,7 @@
 					html += "</td>" +
 					"<td>";
 					if (data.instancedata[i].Cluster !== null){
-						html += data.instancedata[i].Cluster.ClusterName;
+						html += data.instancedata[i].Cluster.ClusterName + ':<br>';
 					}
 					html += '<a href="/instances/' + data.instancedata[i].ID + '">' + data.instancedata[i].Hostname + "</a></td>" +
 					"<td>";
