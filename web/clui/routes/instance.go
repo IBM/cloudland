@@ -144,11 +144,13 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			return
 		}
 		metadata := ""
-		_, metadata, err = a.buildMetadata(ctx, primary, primaryIP, primaryMac, subnets, keys, instance, userdata, secGroups)
+		var ifaces []*model.Interface
+		ifaces, metadata, err = a.buildMetadata(ctx, primary, primaryIP, primaryMac, subnets, keys, instance, userdata, secGroups)
 		if err != nil {
 			log.Println("Build instance metadata failed", err)
 			return
 		}
+		instance.Interfaces = ifaces
 		rcNeeded := fmt.Sprintf("cpu=%d memory=%d disk=%d network=%d", flavor.Cpu, flavor.Memory*1024, (flavor.Disk+flavor.Swap+flavor.Ephemeral)*1024*1024, 0)
 		control := "inter= " + rcNeeded
 		if i == 0 && hyper >= 0 {
