@@ -133,6 +133,10 @@ int NetLayer::createGroup(char *grpDesc)
         return -1;
     }
     *p = 0;
+    if (groupMap.find(name) != groupMap.end()
+		    && (groupMap[name].desc == savedDesc)) {
+	    return 0;
+    }
     vector<int> result;
     vector<string> tokens = string2Array(p + 1, ',');
     vector<string>::const_iterator it;
@@ -150,9 +154,6 @@ int NetLayer::createGroup(char *grpDesc)
         }
     }
     lock();
-    if (groupMap.find(name) != groupMap.end()) {
-        SCI_Group_free(groupMap[name].group);
-    }
     groupMap[name].group = SCI_GROUP_ALL;
     groupMap[name].desc = savedDesc;
     if (result.size() > 0) {

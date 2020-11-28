@@ -109,6 +109,9 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, typ
 		}
 		floatingips = append(floatingips, floatingip)
 		control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
+		if gateway.Hyper == gateway.Peer {
+			control = fmt.Sprintf("inter=%d", gateway.Hyper)
+		}
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_floating.sh '%d' '%s' '%s' '%s'", gateway.ID, ftype, floatingip.FipAddress, iface.Address.Address)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
@@ -137,6 +140,9 @@ func (a *FloatingIpAdmin) Delete(ctx context.Context, id int64) (err error) {
 	}
 	if floatingip.Gateway != nil {
 		control := fmt.Sprintf("toall=router-%d:%d,%d", floatingip.Gateway.ID, floatingip.Gateway.Hyper, floatingip.Gateway.Peer)
+		if floatingip.Gateway.Hyper == floatingip.Gateway.Peer {
+			control = fmt.Sprintf("inter=%d", floatingip.Gateway.Hyper)
+		}
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_floating.sh '%d' '%s' '%s' '%s'", floatingip.GatewayID, floatingip.Type, floatingip.FipAddress, floatingip.IntAddress)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {

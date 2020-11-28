@@ -191,6 +191,9 @@ func (a *GatewayAdmin) Update(ctx context.Context, id int64, name string, pubID,
 		}
 		if found == false {
 			control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
+			if gateway.Hyper == gateway.Peer {
+				control = fmt.Sprintf("inter=%d", gateway.Hyper)
+			}
 			command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_gateway.sh '%d' '%s' '%d'", gateway.ID, gsub.Gateway, gsub.Vlan)
 			err = hyperExecute(ctx, control, command)
 			if err != nil {
@@ -220,6 +223,9 @@ func (a *GatewayAdmin) Update(ctx context.Context, id int64, name string, pubID,
 				continue
 			}
 			control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
+			if gateway.Hyper == gateway.Peer {
+				control = fmt.Sprintf("inter=%d", gateway.Hyper)
+			}
 			command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_gw_route.sh '%d' '%s' '%d' 'soft' <<EOF\n%s\nEOF", gateway.ID, sub.Gateway, sub.Vlan, sub.Routes)
 			err = hyperExecute(ctx, control, command)
 			if err != nil {

@@ -128,7 +128,7 @@ func (a *GlusterfsAdmin) Update(ctx context.Context, id, heketiKey, flavorID int
 			userdata = fmt.Sprintf("%s\n./gluster.sh '%d' '%s'", userdata, glusterfs.ID, glusterfs.Endpoint)
 			sgIDs := []int64{secgroup.ID}
 			keyIDs := []int64{glusterfs.Key, glusterfs.HeketiKey}
-			_, err = instanceAdmin.Create(ctx, 1, hostname, userdata, 1, glusterfs.Flavor, glusterfs.SubnetID, glusterfs.ClusterID, ipaddr, "", nil, keyIDs, sgIDs, -1)
+			_, err = instanceAdmin.Create(ctx, 1, hostname, userdata, 1, glusterfs.Flavor, glusterfs.SubnetID, glusterfs.ClusterID, glusterfs.ZoneID, ipaddr, "", nil, keyIDs, sgIDs, -1)
 			if err != nil {
 				log.Println("Failed to launch a worker", err)
 				return
@@ -183,7 +183,7 @@ done
 	return
 }
 
-func (a *GlusterfsAdmin) Create(ctx context.Context, name, cookie string, nworkers int32, cluster, flavor, key int64) (glusterfs *model.Glusterfs, err error) {
+func (a *GlusterfsAdmin) Create(ctx context.Context, name, cookie string, nworkers int32, cluster, flavor, key, zone int64) (glusterfs *model.Glusterfs, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	glusterfs = &model.Glusterfs{
@@ -233,7 +233,7 @@ func (a *GlusterfsAdmin) Create(ctx context.Context, name, cookie string, nworke
 	userdata = fmt.Sprintf("%s\ncurl -k -O '%s/misc/glusterfs/heketi.sh'\nchmod +x heketi.sh", userdata, endpoint)
 	userdata = fmt.Sprintf("%s\n./heketi.sh '%d' '%s' '%s' '%d' '%d'", userdata, glusterfs.ID, endpoint, cookie, subnet.ID, nworkers)
 	tmpName := fmt.Sprintf("g%d-heketi", glusterfs.ID)
-	_, err = instanceAdmin.Create(ctx, 1, tmpName, userdata, 1, flavor, subnet.ID, cluster, "192.168.91.199", "", nil, keyIDs, sgIDs, -1)
+	_, err = instanceAdmin.Create(ctx, 1, tmpName, userdata, 1, flavor, subnet.ID, cluster, 0, "192.168.91.199", "", nil, keyIDs, sgIDs, -1)
 	if err != nil {
 		log.Println("Failed to create heketi instance", err)
 		return
@@ -562,6 +562,13 @@ func (v *GlusterfsView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(code, "error")
 		return
 	}
+	zone := c.QueryInt64("zone")
+	if zone < 0 {
+		code := http.StatusBadRequest
+		c.Data["ErrorMsg"] = "Zone must be >= 0"
+		c.HTML(code, "error")
+		return
+	}
 	permit, err = memberShip.CheckOwner(model.Writer, "openshifts", cluster)
 	if !permit {
 		log.Println("Not authorized to access openshift cluser")
@@ -570,7 +577,7 @@ func (v *GlusterfsView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
-	glusterfs, err := glusterfsAdmin.Create(c.Req.Context(), name, cookie, int32(nworkers), cluster, flavor, key)
+	glusterfs, err := glusterfsAdmin.Create(c.Req.Context(), name, cookie, int32(nworkers), cluster, flavor, key, zone)
 	if err != nil {
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{

@@ -91,7 +91,7 @@ type InstancesData struct {
 	Instances []*model.Instance `json:"instancedata"`
 }
 
-func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, imageID, flavorID, primaryID, clusterID int64, primaryIP, primaryMac string, subnetIDs, keyIDs []int64, sgIDs []int64, hyper int) (instance *model.Instance, err error) {
+func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, imageID, flavorID, primaryID, clusterID, zoneID int64, primaryIP, primaryMac string, subnetIDs, keyIDs []int64, sgIDs []int64, hyperID int) (instance *model.Instance, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	image := &model.Image{Model: model.Model{ID: imageID}}
@@ -112,14 +112,62 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		return
 	}
 	primary := &model.Subnet{Model: model.Model{ID: primaryID}}
-	if err = db.Preload("Netlink").Take(primary).Error; err != nil {
+	if err = db.Preload("Netlink").Preload("Zones").Take(primary).Error; err != nil {
 		log.Println("Primary subnet query failed", err)
 		return
 	}
 	subnets := []*model.Subnet{}
-	if err = db.Where(subnetIDs).Preload("Netlink").Find(&subnets).Error; err != nil {
+	if err = db.Where(subnetIDs).Preload("Netlink").Preload("Zones").Find(&subnets).Error; err != nil {
 		log.Println("Secondary subnets query failed", err)
 		return
+	}
+	hyperGroup := ""
+	if zoneID > 0 {
+		valid := false
+		for _, z := range primary.Zones {
+			if z.ID == zoneID {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			err = fmt.Errorf("Primary subnet doesn't cross this zone")
+			return
+		}
+		for _, sub := range subnets {
+			valid = false
+			for _, z := range sub.Zones {
+				if z.ID == zoneID {
+					valid = true
+					break
+				}
+			}
+			if !valid {
+				err = fmt.Errorf("Seconary subnet doesn't cross this zone")
+				return
+			}
+		}
+		if hyperID >= 0 {
+			hyper := &model.Hyper{Hostid: int32(hyperID), ZoneID: zoneID}
+			err = db.Where(hyper).Take(hyper).Error
+			if err != nil {
+				log.Println("Hypervisor is not in this zone", err)
+				return
+			}
+		}
+		hypers := []*model.Hyper{}
+		if err = db.Where("zone_id = ?", zoneID).Find(&hypers).Error; err != nil {
+			log.Println("Hypers query failed", err)
+			return
+		}
+		hyperGroup = fmt.Sprintf("group-zone-%d", zoneID)
+		for i, h := range hypers {
+			if i == 0 {
+				hyperGroup = fmt.Sprintf("%s:%d", hyperGroup, h.Hostid)
+			} else {
+				hyperGroup = fmt.Sprintf("%s,%d", hyperGroup, h.Hostid)
+			}
+		}
 	}
 	keys := []*model.Key{}
 	if err = db.Where(keyIDs).Find(&keys).Error; err != nil {
@@ -144,15 +192,20 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			return
 		}
 		metadata := ""
-		_, metadata, err = a.buildMetadata(ctx, primary, primaryIP, primaryMac, subnets, keys, instance, userdata, secGroups)
+		var ifaces []*model.Interface
+		ifaces, metadata, err = a.buildMetadata(ctx, primary, primaryIP, primaryMac, subnets, keys, instance, userdata, secGroups)
 		if err != nil {
 			log.Println("Build instance metadata failed", err)
 			return
 		}
+		instance.Interfaces = ifaces
 		rcNeeded := fmt.Sprintf("cpu=%d memory=%d disk=%d network=%d", flavor.Cpu, flavor.Memory*1024, (flavor.Disk+flavor.Swap+flavor.Ephemeral)*1024*1024, 0)
 		control := "inter= " + rcNeeded
-		if i == 0 && hyper >= 0 {
-			control = fmt.Sprintf("inter=%d %s", hyper, rcNeeded)
+		if zoneID > 0 {
+			control = "select=" + hyperGroup + " " + rcNeeded
+		}
+		if i == 0 && hyperID >= 0 {
+			control = fmt.Sprintf("inter=%d %s", hyperID, rcNeeded)
 		}
 		if primary.DomainSearch != "" {
 			hostname = hostname + "." + primary.DomainSearch
@@ -383,9 +436,9 @@ func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interf
 	}
 	control := ""
 	if netlink.Hyper >= 0 {
-		control = fmt.Sprintf("toall=vlan-%d:%d", iface.Address.Subnet.Vlan, netlink.Hyper)
-		if netlink.Peer >= 0 {
-			control = fmt.Sprintf("%s,%d", control, netlink.Peer)
+		control = fmt.Sprintf("inter=%d", netlink.Hyper)
+		if netlink.Peer >= 0 && netlink.Hyper != netlink.Peer {
+			control = fmt.Sprintf("toall=vlan-%d:%d,%d", iface.Address.Subnet.Vlan, netlink.Hyper, netlink.Peer)
 		}
 	} else if netlink.Peer >= 0 {
 		control = fmt.Sprintf("inter=%d", netlink.Peer)
@@ -425,9 +478,9 @@ func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subne
 	}
 	control := ""
 	if netlink.Hyper >= 0 {
-		control = fmt.Sprintf("toall=vlan-%d:%d", subnet.Vlan, netlink.Hyper)
-		if netlink.Peer >= 0 {
-			control = fmt.Sprintf("%s,%d", control, netlink.Peer)
+		control = fmt.Sprintf("inter=%d", netlink.Hyper)
+		if netlink.Peer >= 0 && netlink.Hyper != netlink.Peer {
+			control = fmt.Sprintf("toall=vlan-%d:%d,%d", subnet.Vlan, netlink.Hyper, netlink.Peer)
 		}
 	} else if netlink.Peer >= 0 {
 		control = fmt.Sprintf("inter=%d", netlink.Peer)
@@ -694,6 +747,9 @@ func (a *InstanceAdmin) enableVnc(ctx context.Context, instance *model.Instance)
 			}
 		}
 		control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
+		if gateway.Hyper != gateway.Peer {
+			control = fmt.Sprintf("inter=%d", gateway.Hyper)
+		}
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/enable_vnc_portmap.sh '%d' '%d' '%s' '%d' '%s' '%d'", instance.ID, gateway.ID, vnc.LocalAddress, vnc.LocalPort, raddress, rport)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
@@ -1132,6 +1188,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
+	zoneID := c.QueryInt64("zone")
 	cluster := c.QueryInt64("cluster")
 	if cluster < 0 {
 		log.Println("Invalid cluster ID", err)
@@ -1252,7 +1309,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		sgIDs = append(sgIDs, sgID)
 	}
 	userdata := c.QueryTrim("userdata")
-	instance, err := instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, image, flavor, int64(primaryID), cluster, ipAddr, macAddr, subnetIDs, keyIDs, sgIDs, hyperID)
+	instance, err := instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, image, flavor, int64(primaryID), cluster, zoneID, ipAddr, macAddr, subnetIDs, keyIDs, sgIDs, hyperID)
 	if err != nil {
 		log.Println("Create instance failed", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {

@@ -25,6 +25,7 @@ type Openshift struct {
 	WorkerFlavor int64
 	Key          int64
 	GlusterID    int64
+	ZoneID       int64
 }
 
 func init() {

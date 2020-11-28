@@ -199,6 +199,9 @@ func setRouting(ctx context.Context, gatewayID int64, subnet *model.Subnet, rout
 		return
 	}
 	control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
+	if gateway.Hyper == gateway.Peer {
+		control = fmt.Sprintf("inter=%d", gateway.Hyper)
+	}
 	if routeOnly {
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_route.sh '%d' '%d' '%s'<<EOF\n%s\nEOF", gateway.ID, subnet.Vlan, subnet.Type, subnet.Routes)
 		err = hyperExecute(ctx, control, command)
@@ -444,9 +447,9 @@ func (a *SubnetAdmin) Delete(ctx context.Context, id int64) (err error) {
 		}
 		control := ""
 		if netlink.Hyper >= 0 {
-			control = fmt.Sprintf("toall=vlan-%d:%d", subnet.Vlan, netlink.Hyper)
-			if netlink.Peer >= 0 {
-				control = fmt.Sprintf("%s,%d", control, netlink.Peer)
+			control = fmt.Sprintf("inter=%d", netlink.Hyper)
+			if netlink.Peer >= 0 && netlink.Hyper != netlink.Peer {
+				control = fmt.Sprintf("toall=vlan-%d:%d,%d", subnet.Vlan, netlink.Hyper, netlink.Peer)
 			}
 		} else if netlink.Peer >= 0 {
 			control = fmt.Sprintf("inter=%d", netlink.Peer)

@@ -39,6 +39,7 @@ void backHandler(void *user_param, sci_group_t group, void *buffer, int size)
     char *control = packer.unpackStr();
     char *command = NULL;
     char *inter = strstr(control, "inter=");
+    char *select = strstr(control, "select=");
     char *toall = strstr(control, "toall=");
     char *grp = strstr(control, "group=");
     char *type = strstr(control, "type=file");
@@ -78,7 +79,7 @@ void backHandler(void *user_param, sci_group_t group, void *buffer, int size)
         return;
     }
     command = packer.unpackStr();
-    if ((inter != NULL) || (toall != NULL) || (grp != NULL)) {
+    if ((inter != NULL) || (toall != NULL) || (grp != NULL) || (select != NULL)) {
         int bytes = 0;
         void *bufs[1];
         int sizes[1];

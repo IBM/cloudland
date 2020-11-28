@@ -15,6 +15,7 @@ import (
 type Zone struct {
 	ID        int64 `gorm:"primary_key"`
 	Name      string
+	Subnets   []*Subnet  `gorm:"many2many:subnet_zones;"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
