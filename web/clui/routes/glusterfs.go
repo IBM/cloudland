@@ -183,7 +183,7 @@ done
 	return
 }
 
-func (a *GlusterfsAdmin) Create(ctx context.Context, name, cookie string, nworkers int32, cluster, flavor, key, zone int64) (glusterfs *model.Glusterfs, err error) {
+func (a *GlusterfsAdmin) Create(ctx context.Context, name, cookie string, nworkers int32, cluster, flavor, key, zoneID int64) (glusterfs *model.Glusterfs, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	glusterfs = &model.Glusterfs{
@@ -219,7 +219,7 @@ func (a *GlusterfsAdmin) Create(ctx context.Context, name, cookie string, nworke
 		}
 		subnetIDs := []int64{subnet.ID}
 		tmpName = fmt.Sprintf("g%d-gw", glusterfs.ID)
-		_, err = gatewayAdmin.Create(ctx, tmpName, "", 0, 0, subnetIDs, memberShip.OrgID)
+		_, err = gatewayAdmin.Create(ctx, tmpName, "", 0, 0, subnetIDs, memberShip.OrgID, zoneID)
 		if err != nil {
 			log.Println("Failed to create gateway", err)
 			return
@@ -562,8 +562,8 @@ func (v *GlusterfsView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(code, "error")
 		return
 	}
-	zone := c.QueryInt64("zone")
-	if zone < 0 {
+	zoneID := c.QueryInt64("zone")
+	if zoneID < 0 {
 		code := http.StatusBadRequest
 		c.Data["ErrorMsg"] = "Zone must be >= 0"
 		c.HTML(code, "error")
@@ -577,7 +577,7 @@ func (v *GlusterfsView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
-	glusterfs, err := glusterfsAdmin.Create(c.Req.Context(), name, cookie, int32(nworkers), cluster, flavor, key, zone)
+	glusterfs, err := glusterfsAdmin.Create(c.Req.Context(), name, cookie, int32(nworkers), cluster, flavor, key, zoneID)
 	if err != nil {
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{

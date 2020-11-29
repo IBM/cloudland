@@ -13,12 +13,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
 	"net"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/IBM/cloudland/web/clui/grpcs"
 	"github.com/IBM/cloudland/web/clui/model"
@@ -185,7 +183,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		if count > 1 {
 			hostname = fmt.Sprintf("%s-%d", prefix, i+1)
 		}
-		instance = &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, ImageID: imageID, FlavorID: flavorID, Userdata: userdata, Status: "pending", ClusterID: clusterID}
+		instance = &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, ImageID: imageID, FlavorID: flavorID, Userdata: userdata, Status: "pending", ClusterID: clusterID, ZoneID: zoneID}
 		err = db.Create(instance).Error
 		if err != nil {
 			log.Println("DB create instance failed", err)
@@ -193,7 +191,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		}
 		metadata := ""
 		var ifaces []*model.Interface
-		ifaces, metadata, err = a.buildMetadata(ctx, primary, primaryIP, primaryMac, subnets, keys, instance, userdata, secGroups)
+		ifaces, metadata, err = a.buildMetadata(ctx, primary, primaryIP, primaryMac, subnets, keys, instance, userdata, secGroups, zoneID)
 		if err != nil {
 			log.Println("Build instance metadata failed", err)
 			return
@@ -379,7 +377,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 				log.Println("Failed to query subnet", err)
 				return
 			}
-			iface, err = a.createInterface(ctx, subnet, "", "", instance, ifname, secGroups)
+			iface, err = a.createInterface(ctx, subnet, "", "", instance, ifname, secGroups, instance.ZoneID)
 			control := fmt.Sprintf("inter=%d", instance.Hyper)
 			command := fmt.Sprintf("/opt/cloudland/scripts/backend/attach_nic.sh '%d' '%d' '%s' '%s' <<EOF\n%s\nEOF", instance.ID, iface.Address.Subnet.Vlan, iface.Address.Address, iface.MacAddr, jsonData)
 			err = hyperExecute(ctx, control, command)
@@ -455,10 +453,10 @@ func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interf
 	return
 }
 
-func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subnet, address, mac string, instance *model.Instance, ifname string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
+func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subnet, address, mac string, instance *model.Instance, ifname string, secGroups []*model.SecurityGroup, zoneID int64) (iface *model.Interface, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
-	iface, err = CreateInterface(ctx, subnet.ID, instance.ID, memberShip.OrgID, instance.Hyper, address, mac, ifname, "instance", secGroups)
+	iface, err = CreateInterface(ctx, subnet.ID, instance.ID, memberShip.OrgID, zoneID, instance.Hyper, address, mac, ifname, "instance", secGroups)
 	if err != nil {
 		log.Println("Failed to create interface")
 		return
@@ -496,13 +494,13 @@ func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subne
 	return
 }
 
-func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet, primaryIP, primaryMac string, subnets []*model.Subnet, keys []*model.Key, instance *model.Instance, userdata string, secGroups []*model.SecurityGroup) (interfaces []*model.Interface, metadata string, err error) {
+func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet, primaryIP, primaryMac string, subnets []*model.Subnet, keys []*model.Key, instance *model.Instance, userdata string, secGroups []*model.SecurityGroup, zoneID int64) (interfaces []*model.Interface, metadata string, err error) {
 	vlans := []*VlanInfo{}
 	instNetworks := []*InstanceNetwork{}
 	instLinks := []*NetworkLink{}
 	gateway := strings.Split(primary.Gateway, "/")[0]
 	instRoute := &NetworkRoute{Network: "0.0.0.0", Netmask: "0.0.0.0", Gateway: gateway}
-	iface, err := a.createInterface(ctx, primary, primaryIP, primaryMac, instance, "eth0", secGroups)
+	iface, err := a.createInterface(ctx, primary, primaryIP, primaryMac, instance, "eth0", secGroups, zoneID)
 	if err != nil {
 		log.Println("Allocate address for primary subnet %s--%s/%s failed, %v", primary.Name, primary.Network, primary.Netmask, err)
 		return
@@ -516,7 +514,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet
 	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, IpAddr: address, MacAddr: iface.MacAddr})
 	for i, subnet := range subnets {
 		ifname := fmt.Sprintf("eth%d", i+1)
-		iface, err = a.createInterface(ctx, subnet, "", "", instance, ifname, secGroups)
+		iface, err = a.createInterface(ctx, subnet, "", "", instance, ifname, secGroups, zoneID)
 		if err != nil {
 			log.Println("Allocate address for secondary subnet %s--%s/%s failed, %v", subnet.Name, subnet.Network, subnet.Netmask, err)
 			return
@@ -688,83 +686,6 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 		}
 	}
 
-	return
-}
-
-func (a *InstanceAdmin) enableVnc(ctx context.Context, instance *model.Instance) (vnc *model.Vnc, err error) {
-	db := DB()
-	vnc = &model.Vnc{InstanceID: int64(instance.ID)}
-	err = db.Where(vnc).Take(vnc).Error
-	if err != nil {
-		log.Println("VNC query failed", err)
-	}
-	expired := true
-	if vnc.ExpiredAt != nil {
-		expired = !vnc.ExpiredAt.After(time.Now())
-	}
-	if vnc.AccessAddress != "" && vnc.AccessPort > 0 && !expired {
-		log.Println("Vnc uri is still valid")
-		return
-	}
-	gateway := &model.Gateway{}
-	routerID := instance.Interfaces[0].Address.Subnet.Router
-	if routerID > 0 {
-		gateway.ID = routerID
-		err = db.Preload("Interfaces", "type = 'gateway_public'").Preload("Interfaces.Address").Take(gateway).Error
-		if err != nil || gateway.Interfaces == nil || len(gateway.Interfaces) == 0 {
-			log.Println("Failed to query instance gateway", err)
-			return
-		}
-	} else {
-		err = db.Preload("Interfaces", "type = 'gateway_public'").Preload("Interfaces.Address").Where("type = ?", "system").Take(gateway).Error
-		if err != nil && gorm.IsRecordNotFoundError(err) {
-			log.Println("Creating new system router")
-			_, err = gatewayAdmin.Create(ctx, "System-Router", "system", 0, 0, nil, 1)
-			if err != nil {
-				log.Println("Failed to create system router", err)
-			}
-			return
-		}
-	}
-	if vnc.LocalPort == 0 || expired {
-		vnc.Passwd = ""
-		control := fmt.Sprintf("inter=%d", instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/replace_vnc_passwd.sh '%d'", instance.ID)
-		err = hyperExecute(ctx, control, command)
-		if err != nil {
-			log.Println("Replace vnc password command execution failed", err)
-		}
-	}
-	if vnc.LocalPort != 0 && vnc.LocalAddress != "" && (vnc.AccessAddress == "" || vnc.AccessPort == 0 || expired) {
-		raddress := strings.Split(gateway.Interfaces[0].Address.Address, "/")[0]
-		count := 1
-		rport := 0
-		for count > 0 {
-			rport = rand.Intn(remoteMax-remoteMin) + remoteMin
-			if err = db.Model(&model.Vnc{}).Where("access_port = ? and router = ?", rport, routerID).Count(&count).Error; err != nil {
-				log.Println("Failed to query existing remote port", err)
-				return
-			}
-		}
-		control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
-		if gateway.Hyper != gateway.Peer {
-			control = fmt.Sprintf("inter=%d", gateway.Hyper)
-		}
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/enable_vnc_portmap.sh '%d' '%d' '%s' '%d' '%s' '%d'", instance.ID, gateway.ID, vnc.LocalAddress, vnc.LocalPort, raddress, rport)
-		err = hyperExecute(ctx, control, command)
-		if err != nil {
-			log.Println("Enable vnc portmap command execution failed", err)
-		}
-		vnc.Router = routerID
-		err = db.Where("instance_id = ?", instance.ID).Assign(vnc).FirstOrCreate(&model.Vnc{}).Error
-		if err != nil {
-			log.Println("Failed to update vnc", err)
-		}
-		vnc.AccessAddress = raddress
-		vnc.AccessPort = int32(rport)
-		expireAt := time.Now().Add(time.Minute * 30).UTC()
-		vnc.ExpiredAt = &expireAt
-	}
 	return
 }
 
@@ -1309,7 +1230,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		sgIDs = append(sgIDs, sgID)
 	}
 	userdata := c.QueryTrim("userdata")
-	instance, err := instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, image, flavor, int64(primaryID), cluster, zoneID, ipAddr, macAddr, subnetIDs, keyIDs, sgIDs, hyperID)
+	instances, err := instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, image, flavor, int64(primaryID), cluster, zoneID, ipAddr, macAddr, subnetIDs, keyIDs, sgIDs, hyperID)
 	if err != nil {
 		log.Println("Create instance failed", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
@@ -1321,7 +1242,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, err.Error())
 		return
 	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, instance)
+		c.JSON(200, instances)
 		return
 	}
 	c.Redirect(redirectTo)

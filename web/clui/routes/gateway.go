@@ -41,7 +41,7 @@ type SubnetIface struct {
 type GatewayAdmin struct{}
 type GatewayView struct{}
 
-func createGatewayIface(ctx context.Context, rtype string, gateway *model.Gateway, owner int64) (iface *model.Interface, subnet *model.Subnet, err error) {
+func createGatewayIface(ctx context.Context, rtype string, gateway *model.Gateway, owner, zoneID int64) (iface *model.Interface, subnet *model.Subnet, err error) {
 	db := DB()
 	subnets := []*model.Subnet{}
 	err = db.Where("type = ?", rtype).Find(&subnets).Error
@@ -59,7 +59,7 @@ func createGatewayIface(ctx context.Context, rtype string, gateway *model.Gatewa
 			name = fmt.Sprintf("pub%d", subnet.ID)
 			ifType = "gateway_private"
 		}
-		iface, err = CreateInterface(ctx, subnet.ID, gateway.ID, owner, gateway.Hyper, "", "", name, ifType, nil)
+		iface, err = CreateInterface(ctx, subnet.ID, gateway.ID, owner, zoneID, gateway.Hyper, "", "", name, ifType, nil)
 		if err == nil {
 			log.Println("Created gateway interface from subnet", err)
 			break
@@ -68,7 +68,7 @@ func createGatewayIface(ctx context.Context, rtype string, gateway *model.Gatewa
 	return
 }
 
-func (a *GatewayAdmin) Create(ctx context.Context, name, stype string, pubID, priID int64, subnetIDs []int64, owner int64) (gateway *model.Gateway, err error) {
+func (a *GatewayAdmin) Create(ctx context.Context, name, stype string, pubID, priID int64, subnetIDs []int64, owner, zoneID int64) (gateway *model.Gateway, err error) {
 	memberShip := GetMemberShip(ctx)
 	if owner == 0 {
 		owner = memberShip.OrgID
@@ -79,7 +79,7 @@ func (a *GatewayAdmin) Create(ctx context.Context, name, stype string, pubID, pr
 		log.Println("Failed to get valid vrrp vni %s, %v", vni, err)
 		return
 	}
-	gateway = &model.Gateway{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Name: name, Type: stype, VrrpVni: int64(vni), VrrpAddr: "169.254.169.250/24", PeerAddr: "169.254.169.251/24", Status: "pending"}
+	gateway = &model.Gateway{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Name: name, Type: stype, VrrpVni: int64(vni), VrrpAddr: "169.254.169.250/24", PeerAddr: "169.254.169.251/24", Status: "pending", ZoneID: zoneID}
 	err = db.Create(gateway).Error
 	if err != nil {
 		log.Println("DB failed to create gateway, %v", err)
@@ -88,8 +88,8 @@ func (a *GatewayAdmin) Create(ctx context.Context, name, stype string, pubID, pr
 	var pubIface *model.Interface
 	var pubSubnet *model.Subnet
 	if pubID == 0 {
-		pubIface, pubSubnet, err = createGatewayIface(ctx, "public", gateway, owner)
-		if err != nil {
+		pubIface, pubSubnet, err = createGatewayIface(ctx, "public", gateway, owner, zoneID)
+		if err != nil || pubIface == nil {
 			log.Println("DB failed to create public interface", err)
 			return
 		}
@@ -100,7 +100,7 @@ func (a *GatewayAdmin) Create(ctx context.Context, name, stype string, pubID, pr
 			log.Println("DB failed to query public subnet, %v", err)
 			return
 		}
-		pubIface, err = CreateInterface(ctx, pubSubnet.ID, gateway.ID, owner, gateway.Hyper, "", "", fmt.Sprintf("pub%d", pubSubnet.ID), "gateway_public", nil)
+		pubIface, err = CreateInterface(ctx, pubSubnet.ID, gateway.ID, owner, zoneID, gateway.Hyper, "", "", fmt.Sprintf("pub%d", pubSubnet.ID), "gateway_public", nil)
 		if err != nil {
 			log.Println("DB failed to create public interface, %v", err)
 			return
@@ -109,8 +109,8 @@ func (a *GatewayAdmin) Create(ctx context.Context, name, stype string, pubID, pr
 	var priIface *model.Interface
 	var priSubnet *model.Subnet
 	if priID == 0 {
-		priIface, priSubnet, err = createGatewayIface(ctx, "private", gateway, owner)
-		if err != nil {
+		priIface, priSubnet, err = createGatewayIface(ctx, "private", gateway, owner, zoneID)
+		if err != nil || priIface == nil {
 			log.Println("DB failed to create private interface", err)
 			return
 		}
@@ -121,7 +121,7 @@ func (a *GatewayAdmin) Create(ctx context.Context, name, stype string, pubID, pr
 			log.Println("DB failed to query private subnet, %v", err)
 			return
 		}
-		priIface, err = CreateInterface(ctx, priSubnet.ID, gateway.ID, owner, gateway.Hyper, "", "", fmt.Sprintf("pri%d", priSubnet.ID), "gateway_private", nil)
+		priIface, err = CreateInterface(ctx, priSubnet.ID, gateway.ID, owner, zoneID, gateway.Hyper, "", "", fmt.Sprintf("pri%d", priSubnet.ID), "gateway_private", nil)
 		if err != nil {
 			log.Println("DB failed to create private interface, %v", err)
 			return
@@ -131,7 +131,7 @@ func (a *GatewayAdmin) Create(ctx context.Context, name, stype string, pubID, pr
 	if subnetIDs != nil && len(subnetIDs) > 0 {
 		for _, sID := range subnetIDs {
 			var subnet *model.Subnet
-			subnet, err = SetGateway(ctx, sID, gateway.ID)
+			subnet, err = SetGateway(ctx, sID, zoneID, gateway)
 			if err != nil {
 				log.Println("DB failed to set gateway, %v", err)
 				return
@@ -232,7 +232,7 @@ func (a *GatewayAdmin) Update(ctx context.Context, id int64, name string, pubID,
 				log.Println("Set gateway failed")
 				continue
 			}
-			_, err = SetGateway(ctx, sub.ID, gateway.ID)
+			_, err = SetGateway(ctx, sub.ID, gateway.ZoneID, gateway)
 			if err != nil {
 				log.Println("DB failed to update router for subnet", err)
 				continue
@@ -462,7 +462,15 @@ func (v *GatewayView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	zones := []*model.Zone{}
+	err = DB().Find(&zones).Error
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+		return
+	}
 	c.Data["Subnets"] = subnets
+	c.Data["Zones"] = zones
 	c.HTML(200, "gateways_new")
 }
 
@@ -583,6 +591,7 @@ func (v *GatewayView) Create(c *macaron.Context, store session.Store) {
 	}
 	redirectTo := "../gateways"
 	name := c.QueryTrim("name")
+	zoneID := c.QueryInt64("zone")
 	pubSubnet := c.QueryTrim("public")
 	priSubnet := c.QueryTrim("private")
 	subnets := c.QueryTrim("subnets")
@@ -613,7 +622,7 @@ func (v *GatewayView) Create(c *macaron.Context, store session.Store) {
 		}
 		subnetIDs = append(subnetIDs, int64(sID))
 	}
-	_, err = gatewayAdmin.Create(c.Req.Context(), name, "", int64(pubID), int64(priID), subnetIDs, memberShip.OrgID)
+	_, err = gatewayAdmin.Create(c.Req.Context(), name, "", int64(pubID), int64(priID), subnetIDs, memberShip.OrgID, zoneID)
 	if err != nil {
 		log.Println("Failed to create gateway, %v", err)
 		c.HTML(500, "500")

@@ -98,6 +98,9 @@
 					html += data.instancedata[i].OwnerInfo.name;
 					html += "</td>" + 
 					"<td>";
+					html += data.instancedata[i].Zone.Name;
+					html += "</td>" + 
+					"<td>";
 					html += '<div class="ui selection dropdown">' +
 							'<input id="action" name="action" type="hidden">' +
 								'<i class="dropdown icon"></i>' +
@@ -196,6 +199,7 @@
 			                        <th>{{.i18n.Tr "Hyper"}}</th>
 			                        <th>{{.i18n.Tr "Owner"}}</th>
 									{{ end }}
+			                        <th>{{.i18n.Tr "Zone"}}</th>
                                     <th>{{.i18n.Tr "Action"}}</th>
 		                        </tr>
 	                        </thead>
@@ -234,6 +238,7 @@
 			                        <td>{{.Hyper}}</td>
 			                        <td>{{.OwnerInfo.Name}}</td>
 						{{ end }}
+			                        <td>{{ if .Zone }}{{.Zone.Name}}{{ end }}</td>
                                     <td><div class="ui selection dropdown">
 											<input id="action" name="action" type="hidden">
 												<i class="dropdown icon"></i>

@@ -21,7 +21,9 @@ type Gateway struct {
 	VrrpAddr   string       `gorm:"type:varchar(64)"`
 	PeerAddr   string       `gorm:"type:varchar(64)"`
 	Interfaces []*Interface `gorm:"foreignkey:Device"`
-	Subnets    []*Subnet    `gorm:"foreignkey:Router"`
+	Subnets    []*Subnet    `gorm:"many2many:subnet_routers;"`
+	ZoneID     int64
+	Zone       *Zone     `gorm:"foreignkey:ZoneID"`
 }
 
 func init() {

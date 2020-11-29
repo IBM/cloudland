@@ -198,6 +198,7 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	instID := c.QueryInt64("instance")
+	zoneID := c.QueryInt64("zone")
 	if instID > 0 {
 		permit, err = memberShip.CheckOwner(model.Writer, "instances", int64(instID))
 		if !permit {
@@ -245,7 +246,7 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 		log.Println("Security group query failed", err)
 		return
 	}
-	iface, err := CreateInterface(ctx, subnetID, instID, memberShip.OrgID, -1, address, mac, ifname, "instance", secGroups)
+	iface, err := CreateInterface(ctx, subnetID, instID, memberShip.OrgID, zoneID, -1, address, mac, ifname, "instance", secGroups)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
 			"error": err.Error(),
@@ -404,18 +405,39 @@ func DeallocateAddress(ctx context.Context, ifaces []*model.Interface) (err erro
 	return
 }
 
-func SetGateway(ctx context.Context, subnetID, routerID int64) (subnet *model.Subnet, err error) {
+func SetGateway(ctx context.Context, subnetID, zoneID int64, router *model.Gateway) (subnet *model.Subnet, err error) {
 	var db *gorm.DB
 	ctx, db = getCtxDB(ctx)
 	subnet = &model.Subnet{
 		Model: model.Model{ID: subnetID},
 	}
-	err = db.Model(subnet).Take(subnet).Error
+	err = db.Model(subnet).Preload("Routers").Preload("Zones").Take(subnet).Error
 	if err != nil {
 		log.Println("Failed to get subnet, %v", err)
 		return nil, err
 	}
-	subnet.Router = routerID
+	found := false
+	for _, z := range subnet.Zones {
+		if z.ID == zoneID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		log.Println("Subnet does not cross this zone")
+		err = fmt.Errorf("Subnet does not cross this zone")
+		return
+	}
+	subnet.Router = router.ID
+	found = false
+	for _, r := range subnet.Routers {
+		if r.ID == router.ID {
+			found = true
+		}
+	}
+	if !found {
+		subnet.Routers = append(subnet.Routers, router)
+	}
 	err = db.Model(subnet).Save(subnet).Error
 	if err != nil {
 		log.Println("Failed to set gateway, %v", err)
@@ -447,9 +469,27 @@ func genMacaddr() (mac string, err error) {
 	return mac, nil
 }
 
-func CreateInterface(ctx context.Context, subnetID, ID, owner int64, hyper int32, address, mac, ifaceName, ifType string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
+func CreateInterface(ctx context.Context, subnetID, ID, owner, zoneID int64, hyper int32, address, mac, ifaceName, ifType string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
 	var db *gorm.DB
 	ctx, db = getCtxDB(ctx)
+	subnet := &model.Subnet{Model: model.Model{ID: subnetID}}
+	err = db.Preload("Zones").Take(subnet).Error
+	if err != nil {
+		log.Println("DB failed to query subnet, %v", err)
+		return
+	}
+	found := false
+	for _, z := range subnet.Zones {
+		if z.ID == zoneID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		log.Println("Subnet does not cross this zone")
+		err = fmt.Errorf("Subnet does not cross this zone")
+		return
+	}
 	primary := false
 	if ifaceName == "eth0" {
 		primary = true
@@ -470,6 +510,7 @@ func CreateInterface(ctx context.Context, subnetID, ID, owner int64, hyper int32
 		Hyper:     hyper,
 		Type:      ifType,
 		Mtu:       1450,
+		ZoneID:    zoneID,
 		Secgroups: secGroups,
 	}
 	if ifType == "instance" {

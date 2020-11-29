@@ -18,6 +18,23 @@
 									<label for="name">{{.i18n.Tr "Name"}}</label>
 									<input id="name" name="name" autofocus required>
 								</div>
+								<div class="required inline field">
+									<label for="zone">{{.i18n.Tr "Zone"}}</label>
+									<div class="ui selection dropdown">
+									  <input id="zone" name="zone" type="hidden" required>
+									  <i class="dropdown icon"></i>
+									  <div class="default text">{{.i18n.Tr "None"}}</div>
+									  <div class="menu">
+										{{ if .Zones }}
+										{{ range .Zones }}
+										<div class="item" data-value={{.ID}} data-text={{.Name}}>
+										  {{.Name}}
+										</div>
+										{{ end }}
+										{{ end }}
+									  </div>
+									</div>
+								</div>
 								{{if .IsAdmin }}
 								<div class="inline field">
 									<label for="public">{{.i18n.Tr "Public Gateway"}}</label>

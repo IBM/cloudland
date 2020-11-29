@@ -29,6 +29,8 @@ type Instance struct {
 	Keys        []*Key     `gorm:"many2many:InstanceKeys;"`
 	Userdata    string     `gorm:"type:text"`
 	Hyper       int32      `gorm:"default:-1"`
+	ZoneID      int64
+	Zone        *Zone     `gorm:"foreignkey:ZoneID"`
 }
 
 func init() {

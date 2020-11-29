@@ -24,6 +24,7 @@ type Subnet struct {
 	ClusterID    int64
 	Vlan         int64
 	Zones        []*Zone  `gorm:"many2many:subnet_zones;"`
+	Routers      []*Gateway  `gorm:"many2many:subnet_routers;"`
 	Netlink      *Network `gorm:"foreignkey:Vlan;AssociationForeignKey:Vlan"`
 	Type         string   `gorm:"type:varchar(20);default:'internal'"`
 	Router       int64

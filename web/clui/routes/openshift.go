@@ -198,7 +198,7 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 		return
 	}
 	metadata := ""
-	_, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, primaryIP.String(), "", nil, nil, instance, "", secGroups)
+	_, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, primaryIP.String(), "", nil, nil, instance, "", secGroups, openshift.ZoneID)
 	if err != nil {
 		log.Println("Build instance metadata failed", err)
 		return
@@ -317,7 +317,7 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 	return
 }
 
-func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie, haflag, version, extIP string, nworkers int32, lflavor, mflavor, wflavor, key, zone int64, hostrec, bundle, registry string) (openshift *model.Openshift, err error) {
+func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie, haflag, version, extIP string, nworkers int32, lflavor, mflavor, wflavor, key, zoneID int64, hostrec, bundle, registry string) (openshift *model.Openshift, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	openshift = &model.Openshift{
@@ -331,6 +331,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 		MasterFlavor: mflavor,
 		WorkerFlavor: wflavor,
 		Key:          key,
+		ZoneID:       zoneID,
 	}
 	err = db.Create(openshift).Error
 	if err != nil {
@@ -347,7 +348,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 	}
 	name = openshift.ClusterName + "-gw"
 	subnetIDs := []int64{subnet.ID}
-	_, err = gatewayAdmin.Create(ctx, name, "", 0, 0, subnetIDs, memberShip.OrgID)
+	_, err = gatewayAdmin.Create(ctx, name, "", 0, 0, subnetIDs, memberShip.OrgID, zoneID)
 	if err != nil {
 		log.Println("Failed to create gateway", err)
 		return
@@ -368,7 +369,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 	}
 	encParts := base64.StdEncoding.EncodeToString([]byte(parts))
 	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' '%s' '%d' '%s' '%s' '%s'<<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, haflag, nworkers, version, extIP, hostrec, encParts)
-	_, err = instanceAdmin.Create(ctx, 1, name, userdata, 1, lflavor, subnet.ID, openshift.ID, zone, lbIP, "", nil, keyIDs, sgIDs, -1)
+	_, err = instanceAdmin.Create(ctx, 1, name, userdata, 1, lflavor, subnet.ID, openshift.ID, zoneID, lbIP, "", nil, keyIDs, sgIDs, -1)
 	if err != nil {
 		log.Println("Failed to create oc first instance", err)
 		return

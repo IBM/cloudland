@@ -400,7 +400,7 @@ func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, gateway 
 	err = db.Where("vlan = ?", subnet.Vlan).Find(&subnets).Error
 	if err == nil && len(subnets) > 0 {
 		for _, s := range subnets {
-			fipIface, err = CreateInterface(ctx, s.ID, floatingipID, owner, -1, address, "", name, "floating", nil)
+			fipIface, err = CreateInterface(ctx, s.ID, floatingipID, owner, gateway.ZoneID, -1, address, "", name, "floating", nil)
 			if err == nil {
 				break
 			}

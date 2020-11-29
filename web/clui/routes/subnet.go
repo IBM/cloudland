@@ -348,17 +348,19 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 			return
 		}
 	}
-	_ = execNetwork(ctx, netlink, subnet, owner)
+	for _, z := range zoneList {
+		_ = execNetwork(ctx, netlink, subnet, owner, z.ID)
+	}
 	return
 }
 
-func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subnet, owner int64) (err error) {
+func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subnet, owner, zoneID int64) (err error) {
 	if subnet.Dhcp == "no" {
 		return
 	}
 	if netlink.Hyper < 0 {
 		var dhcp1 *model.Interface
-		dhcp1, err = CreateInterface(ctx, subnet.ID, netlink.ID, owner, -1, "", "", "dhcp-1", "dhcp", nil)
+		dhcp1, err = CreateInterface(ctx, subnet.ID, netlink.ID, owner, zoneID, -1, "", "", "dhcp-1", "dhcp", nil)
 		if err != nil {
 			log.Println("Failed to allocate dhcp first address", err)
 			return
@@ -373,7 +375,7 @@ func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subn
 	}
 	if netlink.Peer < 0 {
 		var dhcp2 *model.Interface
-		dhcp2, err = CreateInterface(ctx, subnet.ID, netlink.ID, owner, -1, "", "", "dhcp-2", "dhcp", nil)
+		dhcp2, err = CreateInterface(ctx, subnet.ID, netlink.ID, owner, zoneID, -1, "", "", "dhcp-2", "dhcp", nil)
 		if err != nil {
 			log.Println("Failed to allocate dhcp first address", err)
 			return
@@ -495,7 +497,7 @@ func (a *SubnetAdmin) List(ctx context.Context, offset, limit int64, order, quer
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Preload("Netlink").Where(where).Where(query).Where(sql).Find(&subnets).Error; err != nil {
+	if err = db.Preload("Netlink").Preload("Zones").Where(where).Where(query).Where(sql).Find(&subnets).Error; err != nil {
 		return
 	}
 	permit := memberShip.CheckPermission(model.Admin)
