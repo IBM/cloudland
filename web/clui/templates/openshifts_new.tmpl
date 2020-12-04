@@ -68,6 +68,41 @@
 									</div>
 								</div>
 								<div class="required inline field">
+									<label for="version">{{.i18n.Tr "InfrastructureType"}}</label>
+									<div class="ui selection dropdown">
+									  <input id="infrtype" name="infrtype" type="hidden" required>
+									  <i class="dropdown icon"></i>
+									  <div class="default text">{{.i18n.Tr "InfrastructureType"}}</div>
+									  <div class="menu">
+										<div class="item" data-value=zVM data-text=zVM>
+										  zVM
+										</div>
+										<div class="item" data-value=zKVM data-text=zKVM>
+										  zKVM
+										</div>
+										<div class="item" data-value=x86KVM data-text=x86KVM>
+										  x86KVM
+										</div>
+									  </div>
+									</div>
+								</div>
+								<div class="required inline field">
+									<label for="version">{{.i18n.Tr "StorageBackend"}}</label>
+									<div class="ui selection dropdown">
+									  <input id="sback" name="sback" type="hidden" required>
+									  <i class="dropdown icon"></i>
+									  <div class="default text">{{.i18n.Tr "StorageBackend"}}</div>
+									  <div class="menu">
+										<div class="item" data-value=DASD data-text=DASD>
+										  DASD
+										</div>
+										<div class="item" data-value=FCP data-text=FCP>
+										  FCP
+										</div>									
+									  </div>
+									</div>
+								</div>														
+								<div class="required inline field">
 									<label for="lflavor">{{.i18n.Tr "LB_Flavor"}}</label>
 									<div class="ui selection dropdown">
 									  <input id="lflavor" name="lflavor" type="hidden">
@@ -147,6 +182,14 @@
 									<label>{{.i18n.Tr "Pull Secret"}}</label>
 									<textarea id="secret" name="secret" autocomplete="off" required></textarea>
 								</div>
+								<div class="inline field">
+									<label>{{.i18n.Tr "additionalTrustBundle"}}</label>
+									<textarea id="secret" name="atbundle" autocomplete="off" required></textarea>
+								</div>
+								<div class="inline field">
+									<label>{{.i18n.Tr "imageContentSources"}}</label>
+									<textarea id="secret" name="secret" autocomplete="off" required></textarea>
+								</div>																
 								<div class="inline field">
 									<label></label>
 									<button class="ui green button">{{.i18n.Tr "Create New Openshift Cluster"}}</button>
