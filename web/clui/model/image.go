@@ -30,6 +30,7 @@ type Image struct {
 	OsVersion      string `gorm:"type:varchar(128)"`
 	DiskType       string `gorm:"type:varchar(128)"`
 	HypervisorType string `gorm:"type:varchar(36)"`
+	UserName       string `gorm:"type:varchar(128)"`
 }
 
 func init() {

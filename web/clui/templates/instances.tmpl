@@ -42,14 +42,16 @@
 		$.ajax({
 			type: "GET",
 			url: "/UpdateTable",
-			success: function (data){
+			success: function (data) {
 				var html = "";
 				for(var i = 0; i < data.instancedata.length; i++){
 					html += "<tr>" +
 					"<td>";
-					html += '<a href="/instances/' + data.instancedata[i].ID + '">' + data.instancedata[i].ID + "</a>";
-					html += "</td>" +
-					"<td>";
+					if (data.is_admin === true) {
+                        html += '<a href="/instances/' + data.instancedata[i].ID + '">' + data.instancedata[i].ID + "</a>";
+                        html += "</td>" +
+                        "<td>";
+					}
 					if (data.instancedata[i].Cluster !== null){
 						html += data.instancedata[i].Cluster.ClusterName + ':<br>';
 					}
@@ -92,12 +94,14 @@
                             '</form>';
 					html += "</td>" +
 					"<td>";
-					html += data.instancedata[i].Hyper;
-					html += "</td>" +
-					"<td>";
-					html += data.instancedata[i].OwnerInfo.name;
-					html += "</td>" +
-					"<td>";
+					if (data.is_admin === true) {
+                        html += data.instancedata[i].Hyper;
+                        html += "</td>" +
+                        "<td>";
+                        html += data.instancedata[i].OwnerInfo.name;
+                        html += "</td>" +
+                        "<td>";
+                    }
 					html += '<div class="ui selection dropdown">' +
 							'<input id="action" name="action" type="hidden">' +
 								'<i class="dropdown icon"></i>' +
