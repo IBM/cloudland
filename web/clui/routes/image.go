@@ -31,9 +31,6 @@ type ImageView struct{}
 func (a *ImageAdmin) Create(ctx context.Context, osVersion, diskType, hypervisorType, userName, name, url, format, architecture string, instID int64) (image *model.Image, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
-	if architecture == "" {
-		architecture = "x86-64"
-	}
 	image = &model.Image{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, OsVersion: osVersion, DiskType: diskType, HypervisorType: hypervisorType, UserName:userName, Name: name, OSCode: name, Format: format, Status: "creating", Architecture: architecture}
 	err = db.Create(image).Error
 	if err != nil {
@@ -233,7 +230,8 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	name := c.QueryTrim("name")
 	url := c.QueryTrim("url")
 	format := c.QueryTrim("format")
-	architecture := c.QueryTrim("architecture")
+	architectureType := c.QueryInt64("architecture")
+	architecture := ""
 	instance := c.QueryInt64("instance")
 	osVersion := c.QueryTrim("osVersion")
 	diskType := c.QueryTrim("diskType")
@@ -248,6 +246,12 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	} else {
 		log.Println("hypervisorType Error")
 		return
+	}
+	
+	if architectureType == 0 {
+		architecture = "x86-64"
+	} else {
+		architecture = "s390x"
 	}
 
 	image, err := imageAdmin.Create(c.Req.Context(), osVersion, diskType, hypervisor, userName, name, url, format, architecture, instance)

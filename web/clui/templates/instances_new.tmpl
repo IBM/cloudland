@@ -109,10 +109,9 @@
 
                                 {{ if eq .Status "available" }}
 
-                                        <div class="item" data-value={{.ID}} data-text={{.Name}} onclick="alert($(this).children('.UserName').get(0).id)">
+                                        <div class="item" data-value={{.ID}} data-text={{.Name}}>
 
                                           {{.Name}}|{{.OsVersion}}|{{.HypervisorType}}
-                                          <div id="{{.UserName}}" class="UserName"></div>
 
                                         </div>
 
@@ -374,10 +373,9 @@
                                     <label>{{.i18n.Tr "Public Key"}}</label>
                                     <textarea id="pubkey"  name="pubkey" autocomplete="off"></textarea>
                                 </div>
-                                <div class="inline field">
-                                    <label></label>
-                                    <button id="submit" class="ui green button" type="button">创建密钥</button>
-                                    <p id="errorMsg" style="color:red"></p>
+                            <div id="submit" class="inline field">
+                                <label></label>
+                                <button class="ui green button" type="button">创建密钥</button>
                                 </div>
                             </div>
                             <div id="instance_new_key" style="display: none;">
