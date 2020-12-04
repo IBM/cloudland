@@ -109,9 +109,10 @@
 
                                 {{ if eq .Status "available" }}
 
-                                        <div class="item" data-value={{.ID}} data-text={{.Name}}>
+                                        <div class="item" data-value={{.ID}} data-text={{.Name}} onclick="alert($(this).children('.UserName').get(0).id)">
 
                                           {{.Name}}|{{.OsVersion}}|{{.HypervisorType}}
+                                          <div id="{{.UserName}}" class="UserName"></div>
 
                                         </div>
 
@@ -358,7 +359,7 @@
 
                         </form>
                     </div>
-                    <form class="ui form" id="popupContact">
+                    <div class="ui form" id="popupContact">
                             <a id="popupContactClose">X</a>
                             <h3 class="ui top attached header">
                                  {{.i18n.Tr "Create New Key"}}
@@ -396,7 +397,7 @@
 									<button id="this_perfect_key" class="ui green button" type="button">{{.i18n.Tr "Confirm, I got private key"}}</button>
 								</div>
 							</div>
-                    </form>
+                    </div>
 
                     <div id="backgroundPopup"></div>
 
