@@ -1,4 +1,18 @@
 {{template "_head" .}}
+<script type="text/javascript">
+
+    $("#storbackend").dropdown({
+        onChange:function(a,b){
+            if( b == "FCP"){
+                $( ".lbconfig, .bootconfig, .masterconfig, .workerconfig" ).hide();
+            }else{
+                $( ".lbconfig, .bootconfig, .masterconfig, .workerconfig" ).show();
+            }
+        }
+    });
+
+</script>
+
 <div class="admin user">
 
     <div class="ui container">
@@ -86,7 +100,7 @@
 									  </div>
 									</div>
 								</div>
-								<div class="required inline field">
+								<div class="required inline field" id="storbackend">
 									<label for="version">{{.i18n.Tr "StorageBackend"}}</label>
 									<div class="ui selection dropdown">
 									  <input id="sback" name="sback" type="hidden" required>
@@ -101,7 +115,23 @@
 										</div>									
 									  </div>
 									</div>
-								</div>														
+								</div>
+								<div class="hidden inline field lbconfig" >
+									<label>{{.i18n.Tr "LB_Config"}}</label>
+									<textarea id="lbconfig" name="lbconfig" autocomplete="off" required></textarea>
+								</div>
+								<div class="hidden inline field bootconfig">
+									<label>{{.i18n.Tr "Boot_Config"}}</label>
+									<textarea id="bootConfig" name="bootConfig" autocomplete="off" required></textarea>
+								</div>
+								<div class="inline field masterconfig">
+									<label>{{.i18n.Tr "Master_Config"}}</label>
+									<textarea id="masterconfig" name="masterconfig" autocomplete="off" required></textarea>
+								</div>
+								<div class="hidden inline field workerconfig">
+									<label>{{.i18n.Tr "Worker_Config"}}</label>
+									<textarea id="workerconfig" name="workerconfig" autocomplete="off" required></textarea>
+								</div>																																												
 								<div class="required inline field">
 									<label for="lflavor">{{.i18n.Tr "LB_Flavor"}}</label>
 									<div class="ui selection dropdown">
