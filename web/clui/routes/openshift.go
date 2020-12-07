@@ -201,11 +201,13 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 		return
 	}
 	metadata := ""
-	_, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, ipaddr, "", nil, nil, instance, "", secGroups)
+	var ifaces []*model.Interface
+	ifaces, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, ipaddr, "", nil, nil, instance, "", secGroups)
 	if err != nil {
 		log.Println("Build instance metadata failed", err)
 		return
 	}
+	instance.Interfaces = ifaces
 	count := 0
 	err = db.Model(&model.Instance{}).Where("cluster_id = ? and hostname like ?", id, "%worker%").Count(&count).Error
 	if err != nil {
@@ -324,21 +326,20 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	openshift = &model.Openshift{
-		Model:        model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID},
-		ClusterName:  cluster,
-		BaseDomain:   domain,
-		Status:       "creating",
-		Haflag:       haflag,
-		Version:      version,
-		Flavor:       lflavor,
-		MasterFlavor: mflavor,
-		WorkerFlavor: wflavor,
-		Key:          key,
-		InfrastructureType: infrtype,
-		StorageBackend: sback,
+		Model:                 model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID},
+		ClusterName:           cluster,
+		BaseDomain:            domain,
+		Status:                "creating",
+		Haflag:                haflag,
+		Version:               version,
+		Flavor:                lflavor,
+		MasterFlavor:          mflavor,
+		WorkerFlavor:          wflavor,
+		Key:                   key,
+		InfrastructureType:    infrtype,
+		StorageBackend:        sback,
 		AdditionalTrustBundle: atbundle,
-		ImageContentSources: icsources,
-		
+		ImageContentSources:   icsources,
 	}
 	err = db.Create(openshift).Error
 	if err != nil {
@@ -702,7 +703,7 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	sback := c.QueryTrim("sback")
 	atbundle := c.QueryTrim("atbundle")
 	icsources := c.QueryTrim("icsources")
-	
+
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
 	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, version, extIP, int32(nworkers), lflavor, mflavor, wflavor, key, hostrec, bundle, registry, infrtype, sback, atbundle, icsources)
 	if err != nil {
