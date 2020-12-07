@@ -178,11 +178,14 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 		IP:   net.ParseIP(subnet.Network),
 		Mask: net.IPMask(net.ParseIP(subnet.Netmask).To4()),
 	}
-	primaryIP := net.ParseIP(ipaddr)
-	if !inNet.Contains(primaryIP) {
-		log.Println("Invalid IP address or not belonging to subnet")
-		err = fmt.Errorf("Invalid IP address or not belonging to subnet")
-		return
+	var primaryIP net.IP
+	if ipaddr != "" {
+		primaryIP = net.ParseIP(ipaddr)
+		if !inNet.Contains(primaryIP) {
+			log.Println("Invalid IP address or not belonging to subnet")
+			err = fmt.Errorf("Invalid IP address or not belonging to subnet")
+			return
+		}
 	}
 	secgroup := &model.SecurityGroup{Model: model.Model{Owner: memberShip.OrgID}, Name: "openshift"}
 	err = db.Where(secgroup).Take(secgroup).Error
@@ -198,7 +201,7 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 		return
 	}
 	metadata := ""
-	_, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, primaryIP.String(), "", nil, nil, instance, "", secGroups)
+	_, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, ipaddr, "", nil, nil, instance, "", secGroups)
 	if err != nil {
 		log.Println("Build instance metadata failed", err)
 		return
