@@ -317,7 +317,7 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 	return
 }
 
-func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie, haflag, version, extIP string, nworkers int32, lflavor, mflavor, wflavor, key int64, hostrec, bundle, registry string) (openshift *model.Openshift, err error) {
+func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie, haflag, version, extIP string, nworkers int32, lflavor, mflavor, wflavor, key int64, hostrec, bundle, registry, infrtype, sback, atbundle, icsources string) (openshift *model.Openshift, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	openshift = &model.Openshift{
@@ -331,6 +331,11 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 		MasterFlavor: mflavor,
 		WorkerFlavor: wflavor,
 		Key:          key,
+		InfrastructureType: infrtype,
+		StorageBackend: sback,
+		AdditionalTrustBundle: atbundle,
+		ImageContentSources: icsources,
+		
 	}
 	err = db.Create(openshift).Error
 	if err != nil {
@@ -690,8 +695,13 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	mflavor := c.QueryInt64("mflavor")
 	wflavor := c.QueryInt64("wflavor")
 	key := c.QueryInt64("key")
+	infrtype := c.QueryTrim("infrtype")
+	sback := c.QueryTrim("sback")
+	atbundle := c.QueryTrim("atbundle")
+	icsources := c.QueryTrim("icsources")
+	
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
-	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, version, extIP, int32(nworkers), lflavor, mflavor, wflavor, key, hostrec, bundle, registry)
+	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, version, extIP, int32(nworkers), lflavor, mflavor, wflavor, key, hostrec, bundle, registry, infrtype, sback, atbundle, icsources)
 	if err != nil {
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{

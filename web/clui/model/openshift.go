@@ -25,6 +25,10 @@ type Openshift struct {
 	WorkerFlavor int64
 	Key          int64
 	GlusterID    int64
+	InfrastructureType  string `gorm:"type:varchar(256)"`
+	StorageBackend  string `gorm:"type:varchar(256)"`
+	AdditionalTrustBundle   string `gorm:"type:varchar(256)"`
+	ImageContentSources  string `gorm:"type:varchar(256)"`
 }
 
 func init() {
