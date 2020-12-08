@@ -1,17 +1,4 @@
 {{template "_head" .}}
-<script type="text/javascript">
-
-    $("#storbackend").dropdown({
-        onChange:function(a,b){
-            if( b == "FCP"){
-                $( ".lbconfig, .bootconfig, .masterconfig, .workerconfig" ).hide();
-            }else{
-                $( ".lbconfig, .bootconfig, .masterconfig, .workerconfig" ).show();
-            }
-        }
-    });
-
-</script>
 
 <div class="admin user">
 
@@ -107,28 +94,28 @@
 									  <i class="dropdown icon"></i>
 									  <div class="default text">{{.i18n.Tr "StorageBackend"}}</div>
 									  <div class="menu">
-										<div class="item" data-value=DASD data-text=DASD>
+										<div class="item" data-value=DASD data-text=DASD onclick='$( ".lbconfig" ).hide();$( ".bootconfig" ).hide();$( ".masterconfig" ).hide();$( ".workerconfig" ).hide();' >
 										  DASD
 										</div>
-										<div class="item" data-value=FCP data-text=FCP>
+										<div class="item" data-value=FCP data-text=FCP onclick='$( ".lbconfig" ).show();$( ".bootconfig" ).show();$( ".masterconfig" ).show();$( ".workerconfig" ).show();' >
 										  FCP
 										</div>									
 									  </div>
 									</div>
 								</div>
-								<div class="hidden inline field lbconfig" >
+								<div class="inline field lbconfig" hidden >
 									<label>{{.i18n.Tr "LB_Config"}}</label>
 									<textarea id="lbconfig" name="lbconfig" autocomplete="off" required></textarea>
 								</div>
-								<div class="hidden inline field bootconfig">
+								<div class="hidden inline field bootconfig" hidden >
 									<label>{{.i18n.Tr "Boot_Config"}}</label>
 									<textarea id="bootConfig" name="bootConfig" autocomplete="off" required></textarea>
 								</div>
-								<div class="inline field masterconfig">
+								<div class="inline field masterconfig" hidden >
 									<label>{{.i18n.Tr "Master_Config"}}</label>
 									<textarea id="masterconfig" name="masterconfig" autocomplete="off" required></textarea>
 								</div>
-								<div class="hidden inline field workerconfig">
+								<div class="hidden inline field workerconfig" hidden >
 									<label>{{.i18n.Tr "Worker_Config"}}</label>
 									<textarea id="workerconfig" name="workerconfig" autocomplete="off" required></textarea>
 								</div>																																												
