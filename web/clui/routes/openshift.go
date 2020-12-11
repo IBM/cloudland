@@ -326,16 +326,20 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	openshift = &model.Openshift{
-		Model:        model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID},
-		ClusterName:  cluster,
-		BaseDomain:   domain,
-		Status:       "creating",
-		Haflag:       haflag,
-		Version:      version,
-		Flavor:       lflavor,
-		MasterFlavor: mflavor,
-		WorkerFlavor: wflavor,
-		Key:          key,
+		Model:                 model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID},
+		ClusterName:           cluster,
+		BaseDomain:            domain,
+		Status:                "creating",
+		Haflag:                haflag,
+		Version:               version,
+		Flavor:                lflavor,
+		MasterFlavor:          mflavor,
+		WorkerFlavor:          wflavor,
+		Key:                   key,
+		InfrastructureType:    infrtype,
+		StorageBackend:        sback,
+		AdditionalTrustBundle: atbundle,
+		ImageContentSources:   icsources,
 	}
 	err = db.Create(openshift).Error
 	if err != nil {
@@ -366,7 +370,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 		log.Println("Failed to create gateway", err)
 		return
 	}
-	secgroup, _ := a.createSecgroup(ctx, "openshift", "192.168.91.0/24", memberShip.OrgID)
+	secgroup, err := a.createSecgroup(ctx, "openshift", "192.168.91.0/24", memberShip.OrgID)
 	lbname := "lb"
 	keyIDs := []int64{key}
 	sgIDs := []int64{secgroup.ID}
