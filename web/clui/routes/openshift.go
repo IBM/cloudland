@@ -335,38 +335,31 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 		log.Println("DB failed to create openshift", err)
 		return
 	}
-	lbIP := "192.168.91.8"
-	var subnet *model.Subnet
-	var subneterr error
-	if subnetID==0{
+	lbIP := ""
+	subnet := &model.Subnet{Model: model.Model{ID: subnetID}}
+	if subnetID == 0 {
+		lbIP = "192.168.91.8"
 		subnetname := openshift.ClusterName + "-sn"
 		search := cluster + "." + domain
-		subnet, subneterr = subnetAdmin.Create(ctx, subnetname, "", "192.168.91.0", "255.255.255.0", "", "", "", "", lbIP, search, "yes", "", "", openshift.ID, memberShip.OrgID)
-		if subneterr != nil {
+		subnet, err = subnetAdmin.Create(ctx, subnetname, "", "192.168.91.0", "255.255.255.0", "", "", "", "", lbIP, search, "yes", "", "", openshift.ID, memberShip.OrgID)
+		if err != nil {
 			log.Println("Failed to create openshift subnet", err)
 			return
 		}
 	} else {
-		var subnetdb []model.Subnet
-		subnettemp := db.Where("id=?",subnetID).Find(&subnetdb)
-		subnettempvalue := subnettemp.Value.(*[]model.Subnet)
-		subnetvalueaddress:=*subnettempvalue
-		subnet = &subnetvalueaddress[0]
-		log.Printf("%T",subnet)
-		log.Println(*subnet)
+		if err = db.Take(subnet).Error; err != nil {
+			log.Println("Subnet query failed", err)
+			return
+		}
 	}
-	log.Printf("%T",subnet)
-	log.Println(*subnet)
 	subnetIDs := []int64{subnet.ID}
-	log.Println("qqqqqqqqqqqqqqqqqqqqq")
-	log.Println(subnetIDs)
 	gatewayname := openshift.ClusterName + "-gw"
 	_, err = gatewayAdmin.Create(ctx, gatewayname, "", 0, 0, subnetIDs, memberShip.OrgID)
 	if err != nil {
 		log.Println("Failed to create gateway", err)
 		return
 	}
-	secgroup, err := a.createSecgroup(ctx, "openshift", "192.168.91.0/24", memberShip.OrgID)
+	secgroup, _ := a.createSecgroup(ctx, "openshift", "192.168.91.0/24", memberShip.OrgID)
 	lbname := "lb"
 	keyIDs := []int64{key}
 	sgIDs := []int64{secgroup.ID}
@@ -706,10 +699,8 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	subnet := c.QueryInt64("subnet")
 	key := c.QueryInt64("key")
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
-	log.Println("###############")
-	log.Println(subnet)
 	permit, err := memberShip.CheckOwner(model.Writer, "subnets", int64(subnet))
-	openshift, err:= openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, version, extIP, int32(nworkers), lflavor, mflavor, wflavor, key, subnet, hostrec, bundle, registry)
+	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, version, extIP, int32(nworkers), lflavor, mflavor, wflavor, key, subnet, hostrec, bundle, registry)
 	if err != nil {
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
