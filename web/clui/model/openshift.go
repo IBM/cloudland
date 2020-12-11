@@ -1,6 +1,5 @@
 /*
 Copyright <holder> All Rights Reserved.
-
 SPDX-License-Identifier: Apache-2.0
 */
 
@@ -18,7 +17,8 @@ type Openshift struct {
 	Status       string `gorm:"type:varchar(32)"`
 	Haflag       string
 	Instances    []*Instance `gorm:"foreignkey:ClusterID"`
-	Subnet       *Subnet     `gorm:"foreignkey:ClusterID"`
+	SubnetID	 int64
+	Subnet       *Subnet     `gorm:"foreignkey:subnetID"`
 	WorkerNum    int32
 	Flavor       int64
 	MasterFlavor int64
