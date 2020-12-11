@@ -322,7 +322,7 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 	return
 }
 
-func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie, haflag, version, extIP string, nworkers int32, lflavor, mflavor, wflavor, key int64, hostrec, bundle, registry, infrtype, sback, atbundle, icsources string) (openshift *model.Openshift, err error) {
+func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie, haflag, version, extIP string, nworkers int32, lflavor, mflavor, wflavor, key int64, hostrec, bundle, registry, infrtype, sback, lbconfigs, btconfigs, masterconfigs, workerconfigs, atbundle, icsources string) (openshift *model.Openshift, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	openshift = &model.Openshift{
@@ -701,11 +701,16 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	key := c.QueryInt64("key")
 	infrtype := c.QueryTrim("infrtype")
 	sback := c.QueryTrim("sback")
+	lbconfigs := c.QueryTrim("lbconfigs")
+	btconfigs := c.QueryTrim("btconfigs")
+	masterconfigs := c.QueryTrim("masterconfigs")
+	workerconfigs := c.QueryTrim("workerconfigs")
 	atbundle := c.QueryTrim("atbundle")
 	icsources := c.QueryTrim("icsources")
+	
 
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
-	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, version, extIP, int32(nworkers), lflavor, mflavor, wflavor, key, hostrec, bundle, registry, infrtype, sback, atbundle, icsources)
+	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, version, extIP, int32(nworkers), lflavor, mflavor, wflavor, key, hostrec, bundle, registry, infrtype, sback, lbconfigs, btconfigs, masterconfigs, workerconfigs, atbundle, icsources)
 	if err != nil {
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
