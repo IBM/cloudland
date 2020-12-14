@@ -32,6 +32,8 @@
 			                        <th>{{.i18n.Tr "OS Version"}}</th>
 			                        <th>{{.i18n.Tr "Hypervisor Type"}}</th>
 			                        <th>{{.i18n.Tr "Disk Type"}}</th>
+			                        <th>{{.i18n.Tr "Default Username"}}</th>
+			                        <th>{{.i18n.Tr "Architecture"}}</th>
                                     <th>{{.i18n.Tr "Delete"}}</th>
 		                        </tr>
 	                        </thead>
@@ -49,6 +51,8 @@
 			                        <td>{{.OsVersion}}</td>
 			                        <td>{{.HypervisorType}}</td>
 			                        <td>{{.DiskType}}</td>
+			                        <td>{{.UserName}}</td>
+			                        <td>{{.Architecture}}</td>
                                     <td><div class="delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}"><i class="dark purple trash alternate outline icon"></i></div></td>
 		                        </tr>
                                 {{ end }}

@@ -88,8 +88,11 @@ type InstanceData struct {
 }
 
 type InstancesData struct {
-	Instances []*model.Instance `json:"instancedata"`
+	Instances []*model.Instance  `json:"instancedata"`
+	IsAdmin   bool               `json:"is_admin"`
+
 }
+
 
 func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, imageID, flavorID, primaryID, clusterID int64, primaryIP, primaryMac string, subnetIDs, keyIDs []int64, sgIDs []int64, hyper int) (instance *model.Instance, err error) {
 	memberShip := GetMemberShip(ctx)
@@ -181,7 +184,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 	return
 }
 
-func (a *InstanceAdmin) ChangeInstanceStatus(ctx context.Context, id int64, action string) (instance *model.Instance, err error) {
+func (a *InstanceAdmin) ChangeInstanceStatus(ctx context.Context, id int64, action string)  (instance *model.Instance, err error){
 	db := DB()
 	instance = &model.Instance{Model: model.Model{ID: id}}
 	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
@@ -197,6 +200,7 @@ func (a *InstanceAdmin) ChangeInstanceStatus(ctx context.Context, id int64, acti
 	}
 	return
 }
+
 
 func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname, action string, subnetIDs, sgIDs []int64, hyper int) (instance *model.Instance, err error) {
 	db := DB()
@@ -781,7 +785,7 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	c.HTML(200, "instances")
 }
 
-func (v *InstanceView) UpdateTable(c *macaron.Context, store session.Store) {
+func (v *InstanceView) UpdateTable(c *macaron.Context, store session.Store){
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
@@ -815,10 +819,11 @@ func (v *InstanceView) UpdateTable(c *macaron.Context, store session.Store) {
 	var jsonData *InstancesData
 	jsonData = &InstancesData{
 		Instances: instances,
+		IsAdmin: memberShip.CheckPermission(model.Admin),
 	}
-
+	
 	c.JSON(200, jsonData)
-	return
+	return 
 }
 
 func (v *InstanceView) Delete(c *macaron.Context, store session.Store) (err error) {
@@ -974,7 +979,7 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 	c.Data["Instance"] = instance
 	c.Data["Subnets"] = subnets
 	c.Data["Flavors"] = flavors
-
+	
 	flag := c.QueryTrim("flag")
 	if flag == "ChangeHostname" {
 		c.HTML(200, "instances_hostname")
@@ -1016,7 +1021,7 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 		return
 	}
 	flavor := c.QueryInt64("flavor")
-	hostname := c.QueryTrim("hostname")
+	hostname := c.QueryTrim("hostname")                                             
 	hyperID := c.QueryInt("hyper")
 	action := c.QueryTrim("action")
 	ifaces := c.QueryStrings("ifaces")
@@ -1055,7 +1060,7 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 		if !permit {
 			log.Println("Not authorized for this operation")
 			c.Data["ErrorMsg"] = "Not authorized for this operation"
-			c.HTML(http.StatusBadRequest, "error")
+		c.HTML(http.StatusBadRequest, "error")
 			return
 		}
 		subnetIDs = append(subnetIDs, int64(sID))

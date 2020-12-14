@@ -31,9 +31,12 @@
 									<label for="url">{{.i18n.Tr "Download Url"}}</label>
 									<input id="url" name="url" autocomplete="off">
 								</div>
-								<div class="inline field">
+								<div class="required inline field">
 									<label for="architecture">{{.i18n.Tr "Architecture"}}</label>
-									<input id="architecture"  name="architecture" autocomplete="off">
+									<select name="architecture" id="architecture" class="ui selection dropdown">
+                                         <option value="0" selected>x86-64</option>
+                                         <option value="1">s390x</option>
+                                    </select>
 								</div>
 								<div class="required inline field">
                                     <label for="osVersion">{{.i18n.Tr "OS Version"}}</label>
@@ -49,6 +52,10 @@
                                          <option value="0" selected>{{.i18n.Tr "KVM"}}</option>
                                          <option value="1">{{.i18n.Tr "ZVM"}}</option>
                                     </select>
+                                </div>
+                                <div class="required inline field">
+                                    <label for="userName">{{.i18n.Tr "Default Username"}}</label>
+                                    <input id="userName" name="userName" autocomplete="off">
                                 </div>
 								<div class="inline field">
 									<label></label>
