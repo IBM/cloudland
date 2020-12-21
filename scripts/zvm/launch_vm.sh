@@ -17,11 +17,19 @@ ephemeral_size=$8
 vm_stat=error
 vm_vnc=""
 
-metadata=$(base64 -d)
-vswitch=$(jq .vswitch <<< $metadata | tr -d '"')
-os_version=$(jq .osVersion <<< $metadata | tr -d '"')
-disk_type=$(jq .diskType <<< $metadata | tr -d '"')
+md=$(cat)
+metadata=$(echo $md | base64 -d)
+vswitch=$(jq .zvm[0].vswitch <<< $metadata | tr -d '"')
+os_version=$(jq .zvm[0].osVersion <<< $metadata | tr -d '"')
+disk_type=$(jq .zvm[0].diskType <<< $metadata | tr -d '"')
 hyper_type=$(jq .hyperType <<< $metadata | tr -d '"')
+dns=$(jq .dns <<< $metadata | tr -d '"')
+if [ -z "$dns" ]; then
+    dns=$dns_server
+fi
+if [ -z "$dns" ]; then
+    dns='8.8.8.8'
+fi
 
 # import image if it doesn't exist
 img_name_json="\"$img_name\""
@@ -43,7 +51,7 @@ if [ ! -n "$imageExists" ]; then
     fi
 fi
 
-./build_meta.sh "$vm_ID" "$vm_name" <<< $metadata >/dev/null 2>&1
+./build_meta.sh "$vm_ID" "$vm_name" <<< $md >/dev/null 2>&1
 
 # get network information from metadata
 ip_address=$(jq .networks[0].ip_address <<< $metadata | tr -d '"')
@@ -82,7 +90,7 @@ if [ $rc -ne 0 ]; then
 fi
 
 # create network interface
-rc=$(curl -s $zvm_service/guests/$vm_ID/interface -X POST -d '{"interface":{"os_version":"'"$os_version"'", "guest_networks":[{"ip_addr":"'"$ip_address"'", "gateway_addr":"'"$gateway"'", "cidr":"'"$cidr"'"}]}}'  | jq .rc)
+rc=$(curl -s $zvm_service/guests/$vm_ID/interface -X POST -d '{"interface":{"os_version":"'"$os_version"'", "guest_networks":[{"ip_addr":"'"$ip_address"'", "dns_addr":["'"$dns"'"], "gateway_addr":"'"$gateway"'", "cidr":"'"$cidr"'"}]}}'  | jq .rc)
 if [ $rc -ne 0 ]; then
     # remove disk and user ?
     echo "$vm_ID: Create network failed!"

@@ -78,12 +78,23 @@ type SecurityData struct {
 	PortMax     int32  `json:"port_max"`
 }
 
+type ZvmData struct {
+	OsVersion string `json:"osVersion"`
+	DiskType  string `json:"diskType"`
+	VSwitch   string `json:"vswitch"`
+}
+
+type OcpData struct {
+	OcpVersion string `json:"ocpVersion"`
+	Service    string `json:"service"`
+}
+
 type InstanceData struct {
 	Userdata  string             `json:"userdata"`
 	HyperType string             `json:"hyperType"`
-	OsVersion string             `json:"osVersion"`
-	DiskType  string             `json:"diskType"`
-	VSwitch   string             `json:"vswitch"`
+	DNS       string             `json:"dns"`
+	ZVM       []*ZvmData         `json:"zvm"`
+	OCP       []*OcpData         `json:"ocp"`
 	Vlans     []*VlanInfo        `json:"vlans"`
 	Networks  []*InstanceNetwork `json:"networks"`
 	Links     []*NetworkLink     `json:"links"`
@@ -148,7 +159,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			return
 		}
 		metadata := ""
-		_, metadata, err = a.buildMetadata(ctx, primary, primaryIP, primaryMac, subnets, keys, instance, userdata, secGroups)
+		_, metadata, err = a.buildMetadata(ctx, primary, primaryIP, primaryMac, subnets, keys, instance, userdata, secGroups, clusterID, "")
 		if err != nil {
 			log.Println("Build instance metadata failed", err)
 			return
@@ -464,7 +475,7 @@ func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subne
 	return
 }
 
-func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet, primaryIP, primaryMac string, subnets []*model.Subnet, keys []*model.Key, instance *model.Instance, userdata string, secGroups []*model.SecurityGroup) (interfaces []*model.Interface, metadata string, err error) {
+func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet, primaryIP, primaryMac string, subnets []*model.Subnet, keys []*model.Key, instance *model.Instance, userdata string, secGroups []*model.SecurityGroup, clusterID int64, service string) (interfaces []*model.Interface, metadata string, err error) {
 	vlans := []*VlanInfo{}
 	instNetworks := []*InstanceNetwork{}
 	instLinks := []*NetworkLink{}
@@ -526,15 +537,36 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet
 	}
 	image := &model.Image{Model: model.Model{ID: instance.ImageID}}
 	hyperType := image.HypervisorType
-	osVersion := image.OsVersion
-	diskType := image.DiskType
-	vswitch := primary.VSwitch
+	dns := primary.NameServer
+	zvm := []*ZvmData{}
+	if hyperType == "zvm" {
+		zd := &ZvmData{
+			OsVersion: image.OsVersion,
+			DiskType:  image.DiskType,
+			VSwitch:   primary.VSwitch,
+		}
+		zvm = append(zvm, zd)
+	}
+	ocp := []*OcpData{}
+	if clusterID > 0 {
+		openshift := &model.Openshift{Model: model.Model{ID: clusterID}}
+		err = DB().Take(openshift).Error
+		if err != nil {
+			log.Println("Invalid OCP cluster ", clusterID)
+			return
+		}
+		od := &OcpData{
+			OcpVersion: openshift.Version,
+			Service:    service,
+		}
+		ocp = append(ocp, od)
+	}
 	instData := &InstanceData{
 		Userdata:  userdata,
 		HyperType: hyperType,
-		OsVersion: osVersion,
-		DiskType:  diskType,
-		VSwitch:   vswitch,
+		DNS:       dns,
+		ZVM:       zvm,
+		OCP:       ocp,
 		Vlans:     vlans,
 		Networks:  instNetworks,
 		Links:     instLinks,

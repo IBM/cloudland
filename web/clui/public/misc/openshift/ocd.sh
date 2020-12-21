@@ -12,8 +12,9 @@ cookie=$5
 haflag=$6
 nworkers=$7
 version=$8
-lb_ip=$9
-host_rec=${10}
+hyper=$9
+lb_ip=${10}
+host_rec=${11}
 seq_max=100
 cloud_user=rhel
 
@@ -234,6 +235,7 @@ function download_pkgs()
     cd /opt
     conf_url=$endpoint/misc/openshift/ocd.conf
     [ -n "$version" ] && conf_url=${conf_url}.${version}
+    [ -n "$hyper" ] && conf_url=${conf_url}.${hyper}
     wget --no-check-certificate $conf_url -O ocd.conf
     source ocd.conf
     wget --no-check-certificate -O /usr/share/nginx/html/rhcos.raw.gz $coreos_image_url

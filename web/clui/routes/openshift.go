@@ -198,7 +198,8 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 		return
 	}
 	metadata := ""
-	_, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, primaryIP.String(), "", nil, nil, instance, "", secGroups)
+	service := "" // TODO: point to LB
+	_, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, primaryIP.String(), "", nil, nil, instance, "", secGroups, id, service)
 	if err != nil {
 		log.Println("Build instance metadata failed", err)
 		return
@@ -367,8 +368,10 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 		parts = fmt.Sprintf("%s\n%s\n", parts, registry)
 	}
 	encParts := base64.StdEncoding.EncodeToString([]byte(parts))
-	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' '%s' '%d' '%s' '%s' '%s'<<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, haflag, nworkers, version, extIP, hostrec, encParts)
-	_, err = instanceAdmin.Create(ctx, 1, name, userdata, 1, lflavor, subnet.ID, openshift.ID, lbIP, "", nil, keyIDs, sgIDs, -1)
+	hyper := "zvm" // TODO: change according to the real hypervisor
+	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' '%s' '%d' '%s' '%s' '%s' '%s'<<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, haflag, nworkers, version, hyper, extIP, hostrec, encParts)
+	lbImg := 1 // TODO: change to correct image id
+	_, err = instanceAdmin.Create(ctx, 1, name, userdata, lbImg, lflavor, subnet.ID, openshift.ID, lbIP, "", nil, keyIDs, sgIDs, -1)
 	if err != nil {
 		log.Println("Failed to create oc first instance", err)
 		return
