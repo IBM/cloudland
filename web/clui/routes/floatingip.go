@@ -62,7 +62,7 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, typ
 	} else {
 		iface = instance.Interfaces[0]
 	}
-	if iface.Address.Subnet.Router == 0 {
+	if iface.Address.Subnet.Router == 0 || iface.Address.Subnet.Type != "internal" {
 		err = fmt.Errorf("Floating IP can not be created without a gateway")
 		log.Println("Floating IP can not be created without a gateway")
 		return
@@ -357,19 +357,18 @@ func (v *FloatingIpView) Assign(c *macaron.Context, store session.Store) {
 		return
 	}
 	types := []string{"public", "private"}
+	fipsData := &FloatingIps{Instance: instID}
 	floatingips, err := floatingipAdmin.Create(c.Req.Context(), int64(instID), 0, types, floatingIP, "")
 	if err != nil {
 		log.Println("Failed to create floating ip", err)
-		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
-	fipsData := &FloatingIps{Instance: instID}
-	for _, fip := range floatingips {
-		if fip.Type == "public" {
-			fipsData.PublicIp = fip.FipAddress
-		} else if fip.Type == "private" {
-			fipsData.PrivateIp = fip.FipAddress
+		fipsData.PublicIp = floatingIP
+	} else {
+		for _, fip := range floatingips {
+			if fip.Type == "public" {
+				fipsData.PublicIp = fip.FipAddress
+			} else if fip.Type == "private" {
+				fipsData.PrivateIp = fip.FipAddress
+			}
 		}
 	}
 	c.JSON(200, fipsData)

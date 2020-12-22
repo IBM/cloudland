@@ -202,7 +202,8 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 	}
 	metadata := ""
 	var ifaces []*model.Interface
-	ifaces, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, ipaddr, "", nil, nil, instance, "", secGroups)
+	//ifaces, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, ipaddr, "", nil, nil, instance, "", secGroups)
+	ifaces, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, "", "", nil, nil, instance, "", secGroups)
 	if err != nil {
 		log.Println("Build instance metadata failed", err)
 		return
@@ -325,6 +326,23 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie, haflag, version, extIP string, nworkers int32, lflavor, mflavor, wflavor, key, subnetID int64, hostrec, bundle, registry, infrtype, sback, atbundle, icsources string) (openshift *model.Openshift, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
+	lbIP := ""
+	subnet := &model.Subnet{Model: model.Model{ID: subnetID}}
+	if subnetID == 0 {
+		lbIP = "192.168.91.8"
+		subnetname := openshift.ClusterName + "-sn"
+		search := cluster + "." + domain
+		subnet, err = subnetAdmin.Create(ctx, subnetname, "", "192.168.91.0", "255.255.255.0", "", "", "", "", lbIP, search, "yes", "", "", memberShip.OrgID)
+		if err != nil {
+			log.Println("Failed to create openshift subnet", err)
+			return
+		}
+	} else {
+		if err = db.Take(subnet).Error; err != nil {
+			log.Println("Subnet query failed", err)
+			return
+		}
+	}
 	openshift = &model.Openshift{
 		Model:                 model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID},
 		ClusterName:           cluster,
@@ -335,6 +353,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 		Flavor:                lflavor,
 		MasterFlavor:          mflavor,
 		WorkerFlavor:          wflavor,
+		SubnetID:              subnet.ID,
 		Key:                   key,
 		InfrastructureType:    infrtype,
 		StorageBackend:        sback,
@@ -346,29 +365,14 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 		log.Println("DB failed to create openshift", err)
 		return
 	}
-	lbIP := ""
-	subnet := &model.Subnet{Model: model.Model{ID: subnetID}}
-	if subnetID == 0 {
-		lbIP = "192.168.91.8"
-		subnetname := openshift.ClusterName + "-sn"
-		search := cluster + "." + domain
-		subnet, err = subnetAdmin.Create(ctx, subnetname, "", "192.168.91.0", "255.255.255.0", "", "", "", "", lbIP, search, "yes", "", "", openshift.ID, memberShip.OrgID)
+	if subnet.Type == "internal" {
+		subnetIDs := []int64{subnet.ID}
+		gatewayname := openshift.ClusterName + "-gw"
+		_, err = gatewayAdmin.Create(ctx, gatewayname, "", 0, 0, subnetIDs, memberShip.OrgID)
 		if err != nil {
-			log.Println("Failed to create openshift subnet", err)
+			log.Println("Failed to create gateway", err)
 			return
 		}
-	} else {
-		if err = db.Take(subnet).Error; err != nil {
-			log.Println("Subnet query failed", err)
-			return
-		}
-	}
-	subnetIDs := []int64{subnet.ID}
-	gatewayname := openshift.ClusterName + "-gw"
-	_, err = gatewayAdmin.Create(ctx, gatewayname, "", 0, 0, subnetIDs, memberShip.OrgID)
-	if err != nil {
-		log.Println("Failed to create gateway", err)
-		return
 	}
 	secgroup, err := a.createSecgroup(ctx, "openshift", "192.168.91.0/24", memberShip.OrgID)
 	lbname := "lb"
@@ -385,7 +389,8 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 		parts = fmt.Sprintf("%s\n%s\n", parts, registry)
 	}
 	encParts := base64.StdEncoding.EncodeToString([]byte(parts))
-	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' '%s' '%d' '%s' '%s' '%s'<<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, haflag, nworkers, version, extIP, hostrec, encParts)
+	log.Println("lbIP======", lbIP)
+	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' '%s' '%d' '%s' '%s' '%s'<<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, haflag, nworkers, version, lbIP, hostrec, encParts)
 	_, err = instanceAdmin.Create(ctx, 1, lbname, userdata, 1, lflavor, subnet.ID, openshift.ID, lbIP, "", nil, keyIDs, sgIDs, -1)
 	if err != nil {
 		log.Println("Failed to create oc first instance", err)
@@ -416,7 +421,7 @@ func (a *OpenshiftAdmin) Delete(ctx context.Context, id int64) (err error) {
 		return
 	}
 	subnet := openshift.Subnet
-	if subnet != nil {
+	if subnet != nil && subnet.Type == "internal" {
 		if subnet.Router != 0 {
 			err = gatewayAdmin.Delete(ctx, subnet.Router)
 			if err != nil {
@@ -666,6 +671,8 @@ func (v *OpenshiftView) Launch(c *macaron.Context, store session.Store) {
 	}
 	hostname := c.QueryTrim("hostname")
 	ipaddr := c.QueryTrim("ipaddr")
+	log.Println("------------------------------------------------------")
+	log.Println("ipaddr===" + ipaddr)
 	instance, err := openshiftAdmin.Launch(c.Req.Context(), id, hostname, ipaddr)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{

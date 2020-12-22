@@ -39,6 +39,7 @@ template=$template_dir/openshift.xml
 [ $(uname -m) = s390x ] && template=$template_dir/ocd_linux1.xml
 cp $template $vm_xml
 vlans=$(jq .vlans <<< $metadata)
+echo $vlans >> /tmp/jinlings_vlan.log
 core_ip=$(jq -r .[0].ip_address <<< $vlans)
 sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_disk#g; s/CORE_IP/$core_ip/g; s/HOSTNAME/$hname/g; s/ROLE_IGN/${role}.ign/g;" $vm_xml
 state=error

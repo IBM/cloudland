@@ -76,7 +76,7 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 		log.Println("DB failed to update orgabization default security group", err)
 		return
 	}
-	_, err = subnetAdmin.Create(ctx, name, "", "192.168.127.0", "255.255.255.0", "", "", "", "", "", "", "yes", "", "", 0, org.ID)
+	_, err = subnetAdmin.Create(ctx, name, "", "192.168.127.0", "255.255.255.0", "", "", "", "", "", "", "yes", "", "", org.ID)
 	if err != nil {
 		log.Println("Failed to create demo subnet", err)
 		err = nil

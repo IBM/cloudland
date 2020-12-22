@@ -262,7 +262,7 @@ func (v *InterfaceView) Delete(c *macaron.Context, store session.Store) {
 	if !permit {
 		log.Println("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-			c.HTML(http.StatusBadRequest, "error")
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	iface := &model.Interface{Model: model.Model{ID: id}}
@@ -413,6 +413,11 @@ func SetGateway(ctx context.Context, subnetID, routerID int64) (subnet *model.Su
 	err = db.Model(subnet).Take(subnet).Error
 	if err != nil {
 		log.Println("Failed to get subnet, %v", err)
+		return nil, err
+	}
+	if subnet.Type != "internal" {
+		log.Println("Only internal gateway can be set gateway")
+		err = fmt.Errorf("Only internal gateway can be set gateway")
 		return nil, err
 	}
 	subnet.Router = routerID

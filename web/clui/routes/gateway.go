@@ -219,6 +219,11 @@ func (a *GatewayAdmin) Update(ctx context.Context, id int64, name string, pubID,
 				log.Println("DB failed to query subnet, %v", err)
 				continue
 			}
+			if sub.Type != "internal" {
+				err = fmt.Errorf("Only internal gateway can set gateway")
+				log.Println("%v", err)
+				continue
+			}
 			control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
 			command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_gw_route.sh '%d' '%s' '%d' 'soft' <<EOF\n%s\nEOF", gateway.ID, sub.Gateway, sub.Vlan, sub.Routes)
 			err = hyperExecute(ctx, control, command)
@@ -542,7 +547,7 @@ func (v *GatewayView) Patch(c *macaron.Context, store session.Store) {
 		if !permit {
 			log.Println("Not authorized for this operation")
 			c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
 		subnetIDs = append(subnetIDs, int64(sID))

@@ -213,7 +213,7 @@ func setRouting(ctx context.Context, gatewayID int64, subnet *model.Subnet, rout
 	return
 }
 
-func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, gateway, start, end, rtype, dns, domain, dhcp, vSwitch string, routes string, cluster, owner int64) (subnet *model.Subnet, err error) {
+func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, gateway, start, end, rtype, dns, domain, dhcp, vSwitch string, routes string, owner int64) (subnet *model.Subnet, err error) {
 	memberShip := GetMemberShip(ctx)
 	if owner == 0 {
 		owner = memberShip.OrgID
@@ -282,7 +282,6 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 		NameServer:   dns,
 		DomainSearch: domain,
 		Dhcp:         dhcp,
-		ClusterID:    cluster,
 		Vlan:         int64(vlanNo),
 		Type:         rtype,
 		Routes:       routes,
@@ -798,7 +797,7 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	subnet, err := subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, gateway, start, end, rtype, dns, domain, dhcp, vSwitch, routeJson, 0, memberShip.OrgID)
+	subnet, err := subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, gateway, start, end, rtype, dns, domain, dhcp, vSwitch, routeJson, memberShip.OrgID)
 	if err != nil {
 		log.Println("Create subnet failed, %v", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
