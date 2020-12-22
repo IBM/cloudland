@@ -178,11 +178,14 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 		IP:   net.ParseIP(subnet.Network),
 		Mask: net.IPMask(net.ParseIP(subnet.Netmask).To4()),
 	}
-	primaryIP := net.ParseIP(ipaddr)
-	if !inNet.Contains(primaryIP) {
-		log.Println("Invalid IP address or not belonging to subnet")
-		err = fmt.Errorf("Invalid IP address or not belonging to subnet")
-		return
+	var primaryIP net.IP
+	if ipaddr != "" {
+		primaryIP = net.ParseIP(ipaddr)
+		if !inNet.Contains(primaryIP) {
+			log.Println("Invalid IP address or not belonging to subnet")
+			err = fmt.Errorf("Invalid IP address or not belonging to subnet")
+			return
+		}
 	}
 	secgroup := &model.SecurityGroup{Model: model.Model{Owner: memberShip.OrgID}, Name: "openshift"}
 	err = db.Where(secgroup).Take(secgroup).Error
@@ -198,11 +201,13 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 		return
 	}
 	metadata := ""
-	_, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, primaryIP.String(), "", nil, nil, instance, "", secGroups, openshift.ZoneID)
+	var ifaces []*model.Interface
+	ifaces, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, ipaddr, "", nil, nil, instance, "", secGroups, openshift.ZoneID)
 	if err != nil {
 		log.Println("Build instance metadata failed", err)
 		return
 	}
+	instance.Interfaces = ifaces
 	count := 0
 	err = db.Model(&model.Instance{}).Where("cluster_id = ? and hostname like ?", id, "%worker%").Count(&count).Error
 	if err != nil {
@@ -317,21 +322,25 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 	return
 }
 
-func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie, haflag, version, extIP string, nworkers int32, lflavor, mflavor, wflavor, key, zoneID int64, hostrec, bundle, registry string) (openshift *model.Openshift, err error) {
+func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie, haflag, version, extIP string, nworkers int32, lflavor, mflavor, wflavor, key, zoneID int64, hostrec, bundle, registry, infrtype, sback, atbundle, icsources string) (openshift *model.Openshift, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	openshift = &model.Openshift{
-		Model:        model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID},
-		ClusterName:  cluster,
-		BaseDomain:   domain,
-		Status:       "creating",
-		Haflag:       haflag,
-		Version:      version,
-		Flavor:       lflavor,
-		MasterFlavor: mflavor,
-		WorkerFlavor: wflavor,
-		Key:          key,
-		ZoneID:       zoneID,
+		Model:                 model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID},
+		ClusterName:           cluster,
+		BaseDomain:            domain,
+		Status:                "creating",
+		Haflag:                haflag,
+		Version:               version,
+		Flavor:                lflavor,
+		MasterFlavor:          mflavor,
+		WorkerFlavor:          wflavor,
+		Key:                   key,
+		ZoneID:                zoneID,
+		InfrastructureType:    infrtype,
+		StorageBackend:        sback,
+		AdditionalTrustBundle: atbundle,
+		ImageContentSources:   icsources,
 	}
 	err = db.Create(openshift).Error
 	if err != nil {
@@ -341,7 +350,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 	name := openshift.ClusterName + "-sn"
 	search := cluster + "." + domain
 	lbIP := "192.168.91.8"
-	subnet, err := subnetAdmin.Create(ctx, name, "", "192.168.91.0", "255.255.255.0", "", "", "", "", "", lbIP, search, "yes", "", openshift.ID, memberShip.OrgID)
+	subnet, err := subnetAdmin.Create(ctx, name, "", "192.168.91.0", "255.255.255.0", "", "", "", "", "", "", lbIP, search, "yes", "", openshift.ID, memberShip.OrgID)
 	if err != nil {
 		log.Println("Failed to create openshift subnet", err)
 		return
@@ -605,8 +614,15 @@ func (v *OpenshiftView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	_, subnets, err := subnetAdmin.List(ctx, 0, -1, "", "", "")
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+		return
+	}
 	c.Data["Flavors"] = flavors
 	c.Data["Keys"] = keys
+	c.Data["Subnets"] = subnets
 	c.HTML(200, "openshifts_new")
 }
 
@@ -685,8 +701,13 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	wflavor := c.QueryInt64("wflavor")
 	key := c.QueryInt64("key")
 	zone := c.QueryInt64("zone")
+	infrtype := c.QueryTrim("infrtype")
+	sback := c.QueryTrim("sback")
+	atbundle := c.QueryTrim("atbundle")
+	icsources := c.QueryTrim("icsources")
+
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
-	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, version, extIP, int32(nworkers), lflavor, mflavor, wflavor, key, zone, hostrec, bundle, registry)
+	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, version, extIP, int32(nworkers), lflavor, mflavor, wflavor, key, zone, hostrec, bundle, registry, infrtype, sback, atbundle, icsources)
 	if err != nil {
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{

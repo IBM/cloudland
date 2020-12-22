@@ -62,15 +62,22 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, typ
 	} else {
 		iface = instance.Interfaces[0]
 	}
-	if iface.Address.Subnet.Router == 0 {
+	if len(iface.Address.Subnet.Routers) == 0 {
 		err = fmt.Errorf("Floating IP can not be created without a gateway")
 		log.Println("Floating IP can not be created without a gateway")
 		return
 	}
-	gateway := &model.Gateway{Model: model.Model{ID: iface.Address.Subnet.Router}}
-	err = db.Take(gateway).Error
-	if err != nil {
-		log.Println("DB failed to query gateway", err)
+	hasRouter := false
+	var gateway *model.Gateway
+	for _, gw := range iface.Address.Subnet.Routers {
+		if gw.ZoneID == instance.ZoneID {
+			hasRouter = true
+			gateway = gw
+			break
+		}
+	}
+	if !hasRouter {
+		log.Println("No gateway for the instance subnet in this zone")
 		return
 	}
 	err = db.Set("gorm:auto_preload", true).Find(&gateway.Interfaces).Error

@@ -216,7 +216,7 @@ func setRouting(ctx context.Context, gatewayID int64, subnet *model.Subnet, rout
 	return
 }
 
-func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, zones, gateway, start, end, rtype, dns, domain, dhcp string, routes string, cluster, owner int64) (subnet *model.Subnet, err error) {
+func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, zones, gateway, start, end, rtype, dns, domain, dhcp, vSwitch string, routes string, cluster, owner int64) (subnet *model.Subnet, err error) {
 	memberShip := GetMemberShip(ctx)
 	if owner == 0 {
 		owner = memberShip.OrgID
@@ -284,10 +284,16 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 				continue
 			}
 			zone := &model.Zone{ID: int64(zID)}
+			err = db.Take(&zone).Error
+			if err != nil {
+				continue
+			}
 			zoneList = append(zoneList, zone)
 		}
+	} else {
 		err = db.Find(&zoneList).Error
 		if err != nil {
+			log.Println("Failed to query zones, %v", err)
 			return
 		}
 	}
@@ -307,6 +313,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 		Type:         rtype,
 		Routes:       routes,
 		Zones:        zoneList,
+		VSwitch:      vSwitch,
 	}
 	err = db.Create(subnet).Error
 	if err != nil {
@@ -818,6 +825,7 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 	dns := c.QueryTrim("dns")
 	domain := c.QueryTrim("domain")
 	dhcp := c.QueryTrim("dhcp")
+	vSwitch := c.QueryTrim("vSwitch")
 	if dhcp != "no" {
 		dhcp = "yes"
 	}
@@ -827,7 +835,7 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	subnet, err := subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, zones, gateway, start, end, rtype, dns, domain, dhcp, routeJson, 0, memberShip.OrgID)
+	subnet, err := subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, zones, gateway, start, end, rtype, dns, domain, dhcp, vSwitch, routeJson, 0, memberShip.OrgID)
 	if err != nil {
 		log.Println("Create subnet failed, %v", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {

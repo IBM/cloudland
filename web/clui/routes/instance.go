@@ -119,8 +119,35 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		log.Println("Secondary subnets query failed", err)
 		return
 	}
-	hyperGroup := ""
-	if zoneID > 0 {
+	if hyperID >= 0 {
+		hyper := &model.Hyper{Hostid: int32(hyperID)}
+		err = db.Where(hyper).Take(hyper).Error
+		if err != nil {
+			log.Println("Failed to query hypervisor", err)
+			return
+		}
+		if zoneID > 0 && hyper.ZoneID != zoneID {
+			log.Println("Hypervisor is not in this zone", err)
+			err = fmt.Errorf("Hypervisor is not in this zone")
+			return
+		}
+	}
+	if zoneID <= 0 {
+		for _, pz := range primary.Zones {
+			count := 0
+			for _, sub := range subnets {
+				for _, z := range sub.Zones {
+					if z.ID == pz.ID {
+						count++
+					}
+				}
+			}
+			if len(subnets) == count {
+				zoneID = pz.ID
+				break
+			}
+		}
+	} else {
 		valid := false
 		for _, z := range primary.Zones {
 			if z.ID == zoneID {
@@ -145,26 +172,28 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 				return
 			}
 		}
-		if hyperID >= 0 {
-			hyper := &model.Hyper{Hostid: int32(hyperID), ZoneID: zoneID}
-			err = db.Where(hyper).Take(hyper).Error
-			if err != nil {
-				log.Println("Hypervisor is not in this zone", err)
-				return
-			}
-		}
-		hypers := []*model.Hyper{}
-		if err = db.Where("zone_id = ?", zoneID).Find(&hypers).Error; err != nil {
-			log.Println("Hypers query failed", err)
-			return
-		}
-		hyperGroup = fmt.Sprintf("group-zone-%d", zoneID)
-		for i, h := range hypers {
-			if i == 0 {
-				hyperGroup = fmt.Sprintf("%s:%d", hyperGroup, h.Hostid)
-			} else {
-				hyperGroup = fmt.Sprintf("%s,%d", hyperGroup, h.Hostid)
-			}
+	}
+	hypers := []*model.Hyper{}
+	where := fmt.Sprintf("zone_id = %d", zoneID)
+	if image.Architecture != "" {
+		where = fmt.Sprintf("%s and type = '%s'", where, image.Architecture)
+	}
+	if err = db.Where(where).Find(&hypers).Error; err != nil {
+		log.Println("Hypers query failed", err)
+		fmt.Errorf("Hypers query failed %s", err)
+		return
+	}
+	if len(hypers) == 0 {
+		log.Println("No qualified hypervisor")
+		fmt.Errorf("No qualified hypervisor %s", where)
+		return
+	}
+	hyperGroup := fmt.Sprintf("group-zone-%d", zoneID)
+	for i, h := range hypers {
+		if i == 0 {
+			hyperGroup = fmt.Sprintf("%s:%d", hyperGroup, h.Hostid)
+		} else {
+			hyperGroup = fmt.Sprintf("%s,%d", hyperGroup, h.Hostid)
 		}
 	}
 	keys := []*model.Key{}
@@ -198,10 +227,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		}
 		instance.Interfaces = ifaces
 		rcNeeded := fmt.Sprintf("cpu=%d memory=%d disk=%d network=%d", flavor.Cpu, flavor.Memory*1024, (flavor.Disk+flavor.Swap+flavor.Ephemeral)*1024*1024, 0)
-		control := "inter= " + rcNeeded
-		if zoneID > 0 {
-			control = "select=" + hyperGroup + " " + rcNeeded
-		}
+		control := "select=" + hyperGroup + " " + rcNeeded
 		if i == 0 && hyperID >= 0 {
 			control = fmt.Sprintf("inter=%d %s", hyperID, rcNeeded)
 		}
@@ -226,6 +252,23 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			return
 		}
 		i++
+	}
+	return
+}
+
+func (a *InstanceAdmin) ChangeInstanceStatus(ctx context.Context, id int64, action string) (instance *model.Instance, err error) {
+	db := DB()
+	instance = &model.Instance{Model: model.Model{ID: id}}
+	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
+		log.Println("Failed to query instance ", err)
+		return
+	}
+	control := fmt.Sprintf("inter=%d", instance.Hyper)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh '%d' '%s'", instance.ID, action)
+	err = hyperExecute(ctx, control, command)
+	if err != nil {
+		log.Println("Delete vm command execution failed", err)
+		return
 	}
 	return
 }
@@ -873,6 +916,7 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	c.Data["HostName"] = c.QueryTrim("hostname")
 	c.Data["Images"] = images
 	c.Data["Flavors"] = flavors
 	c.Data["Subnets"] = subnets
@@ -894,6 +938,7 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 		return
 	}
 	instanceID, err := strconv.Atoi(id)
+
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
@@ -946,7 +991,22 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 	if flag == "ChangeHostname" {
 		c.HTML(200, "instances_hostname")
 	} else if flag == "ChangeStatus" {
-		c.HTML(200, "instances_status")
+		if c.QueryTrim("action") != "" {
+			instanceID64, err := strconv.ParseInt(id, 10, 64)
+			if err != nil {
+				log.Println("Change String to int64 failed", err)
+				return
+			}
+			_, vmError := instanceAdmin.ChangeInstanceStatus(c.Req.Context(), instanceID64, c.QueryTrim("action"))
+			if vmError != nil {
+				log.Println("Launch vm command execution failed", err)
+				return
+			}
+			redirectTo := "../instances"
+			c.Redirect(redirectTo)
+		} else {
+			c.HTML(200, "instances_status")
+		}
 	} else if flag == "MigrateInstance" {
 		c.HTML(200, "instances_migrate")
 	} else if flag == "ResizeInstance" {

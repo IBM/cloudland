@@ -149,19 +149,33 @@ func (a *GatewayAdmin) Create(ctx context.Context, name, stype string, pubID, pr
 		log.Println("Failed to marshal gateway json data, %v", err)
 		return
 	}
-	control := fmt.Sprintf("inter=")
+	hypers := []*model.Hyper{}
+	if err = db.Where("zone_id = ?", zoneID).Find(&hypers).Error; err != nil {
+		log.Println("Hypers query failed", err)
+		return
+	}
+	hyperGroup := fmt.Sprintf("group-zone-%d", zoneID)
+	for i, h := range hypers {
+		if i == 0 {
+			hyperGroup = fmt.Sprintf("%s:%d", hyperGroup, h.Hostid)
+		} else {
+			hyperGroup = fmt.Sprintf("%s,%d", hyperGroup, h.Hostid)
+		}
+	}
+	control := "select=" + hyperGroup
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh '%d' '%s' '%s' '%s' '%s' '%d' '%s' 'MASTER' <<EOF\n%s\nEOF", gateway.ID, pubSubnet.Gateway, priSubnet.Gateway, pubIface.Address.Address, priIface.Address.Address, vni, gateway.VrrpAddr, jsonData)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Create master router command execution failed, %v", err)
 		return
 	}
-	control = fmt.Sprintf("inter=")
-	command = fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh '%d' '%s' '%s' '%s' '%s' '%d' '%s' 'SLAVE' <<EOF\n%s\nEOF", gateway.ID, pubSubnet.Gateway, priSubnet.Gateway, pubIface.Address.Address, priIface.Address.Address, vni, gateway.PeerAddr, jsonData)
-	err = hyperExecute(ctx, control, command)
-	if err != nil {
-		log.Println("Create peer router command execution failed, %v", err)
-		return
+	if len(hypers) > 1 {
+		command = fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh '%d' '%s' '%s' '%s' '%s' '%d' '%s' 'SLAVE' <<EOF\n%s\nEOF", gateway.ID, pubSubnet.Gateway, priSubnet.Gateway, pubIface.Address.Address, priIface.Address.Address, vni, gateway.PeerAddr, jsonData)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Create peer router command execution failed, %v", err)
+			return
+		}
 	}
 	return
 }
@@ -455,21 +469,27 @@ func (v *GatewayView) New(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	_, subnets, err := subnetAdmin.List(c.Req.Context(), 0, -1, "", "", "router = 0")
-	if err != nil {
-		log.Println("DB failed to query subnets, %v", err)
-		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(500, "500")
-		return
-	}
 	zones := []*model.Zone{}
-	err = DB().Find(&zones).Error
+	err := DB().Find(&zones).Error
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
 	}
-	c.Data["Subnets"] = subnets
+	subnets := []*model.Subnet{}
+	err = DB().Set("gorm:auto_preload", true).Where("type = 'internal'").Find(&subnets).Error
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+		return
+	}
+	subnetList := []*model.Subnet{}
+	for _, subnet := range subnets {
+		if len(subnet.Routers) < len(zones) {
+			subnetList = append(subnetList, subnet)
+		}
+	}
+	c.Data["Subnets"] = subnetList
 	c.Data["Zones"] = zones
 	c.HTML(200, "gateways_new")
 }

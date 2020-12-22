@@ -11,9 +11,9 @@ cat >$sqlfile <<EOF
 INSERT  INTO "flavors" ("id","created_at","updated_at","deleted_at","name","cpu","memory","disk") VALUES (1, '$datetime','$datetime',NULL,'m1.tiny',1,256,8) RETURNING "flavors"."id";
 INSERT  INTO "flavors" ("id","created_at","updated_at","deleted_at","name","cpu","memory","disk") VALUES (2, '$datetime','$datetime',NULL,'m1.normal',4,6144,120) RETURNING "flavors"."id";
 ALTER sequence "flavors_id_seq" restart with 3;
-INSERT  INTO "images" ("id","created_at","updated_at","deleted_at","name","os_code","format","architecture","status","href","checksum") VALUES (1,'$datetime','$datetime',NULL,'centos7','core','qcow2','x86-64','available','','') RETURNING "images"."id";
-INSERT  INTO "images" ("id","created_at","updated_at","deleted_at","name","os_code","format","architecture","status","href","checksum") VALUES (2,'$datetime','$datetime',NULL,'ubuntu1804','bionic','qcow2','x86-64','available','','') RETURNING "images"."id";
-INSERT  INTO "images" ("id","created_at","updated_at","deleted_at","name","os_code","format","architecture","status","href","checksum") VALUES (3,'$datetime','$datetime',NULL,'ubuntu1604','xenial','qcow2','x86-64','available','','') RETURNING "images"."id";
+INSERT  INTO "images" ("id","created_at","updated_at","deleted_at","name","os_code","format","architecture","status","href","checksum") VALUES (1,'$datetime','$datetime',NULL,'centos7','core','qcow2','x86_64','available','','') RETURNING "images"."id";
+INSERT  INTO "images" ("id","created_at","updated_at","deleted_at","name","os_code","format","architecture","status","href","checksum") VALUES (2,'$datetime','$datetime',NULL,'ubuntu1804','bionic','qcow2','x86_64','available','','') RETURNING "images"."id";
+INSERT  INTO "images" ("id","created_at","updated_at","deleted_at","name","os_code","format","architecture","status","href","checksum") VALUES (3,'$datetime','$datetime',NULL,'ubuntu1604','xenial','qcow2','x86_64','available','','') RETURNING "images"."id";
 ALTER sequence "images_id_seq" restart with 4;
 INSERT  INTO "subnets" ("id","created_at","updated_at","deleted_at","name","network","netmask","gateway","start","end","vlan","type","router") VALUES (1,'$datetime','$datetime',NULL,'public','192.168.71.0','255.255.255.0','192.168.71.1/24','192.168.71.100','192.168.71.150',$pub_vlan,'public',0) RETURNING "subnets"."id";
 INSERT  INTO "addresses" ("created_at","updated_at","deleted_at","address","netmask","type","subnet_id","interface") VALUES ('$datetime','$datetime',NULL,'192.168.71.100/24','255.255.255.0','ipv4',1,0);

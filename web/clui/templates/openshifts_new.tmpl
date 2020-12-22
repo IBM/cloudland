@@ -1,4 +1,18 @@
 {{template "_head" .}}
+<script type="text/javascript">
+
+    $("#storbackend").dropdown({
+        onChange:function(a,b){
+            if( b == "FCP"){
+                $( ".lbconfig, .bootconfig, .masterconfig, .workerconfig" ).hide();
+            }else{
+                $( ".lbconfig, .bootconfig, .masterconfig, .workerconfig" ).show();
+            }
+        }
+    });
+
+</script>
+
 <div class="admin user">
 
     <div class="ui container">
@@ -68,6 +82,57 @@
 									</div>
 								</div>
 								<div class="required inline field">
+									<label for="version">{{.i18n.Tr "InfrastructureType"}}</label>
+									<div class="ui selection dropdown">
+									  <input id="infrtype" name="infrtype" type="hidden" required>
+									  <i class="dropdown icon"></i>
+									  <div class="default text">{{.i18n.Tr "InfrastructureType"}}</div>
+									  <div class="menu">
+										<div class="item" data-value=zVM data-text=zVM>
+										  zVM
+										</div>
+										<div class="item" data-value=zKVM data-text=zKVM>
+										  zKVM
+										</div>
+										<div class="item" data-value=x86KVM data-text=x86KVM>
+										  x86KVM
+										</div>
+									  </div>
+									</div>
+								</div>
+								<div class="required inline field" id="storbackend">
+									<label for="version">{{.i18n.Tr "StorageBackend"}}</label>
+									<div class="ui selection dropdown">
+									  <input id="sback" name="sback" type="hidden" required>
+									  <i class="dropdown icon"></i>
+									  <div class="default text">{{.i18n.Tr "StorageBackend"}}</div>
+									  <div class="menu">
+										<div class="item" data-value=DASD data-text=DASD>
+										  DASD
+										</div>
+										<div class="item" data-value=FCP data-text=FCP>
+										  FCP
+										</div>									
+									  </div>
+									</div>
+								</div>
+								<div class="hidden inline field lbconfig" >
+									<label>{{.i18n.Tr "LB_Config"}}</label>
+									<textarea id="lbconfig" name="lbconfig" autocomplete="off" required></textarea>
+								</div>
+								<div class="hidden inline field bootconfig">
+									<label>{{.i18n.Tr "Boot_Config"}}</label>
+									<textarea id="bootConfig" name="bootConfig" autocomplete="off" required></textarea>
+								</div>
+								<div class="inline field masterconfig">
+									<label>{{.i18n.Tr "Master_Config"}}</label>
+									<textarea id="masterconfig" name="masterconfig" autocomplete="off" required></textarea>
+								</div>
+								<div class="hidden inline field workerconfig">
+									<label>{{.i18n.Tr "Worker_Config"}}</label>
+									<textarea id="workerconfig" name="workerconfig" autocomplete="off" required></textarea>
+								</div>																																												
+								<div class="required inline field">
 									<label for="lflavor">{{.i18n.Tr "LB_Flavor"}}</label>
 									<div class="ui selection dropdown">
 									  <input id="lflavor" name="lflavor" type="hidden">
@@ -112,6 +177,22 @@
 									  </div>
 									</div>
 								</div>
+								<div class="inline field">
+								    <label for="primary">{{.i18n.Tr "Subnet"}}</label>
+								    <div class="ui selection dropdown">
+                                      <input id="primary" name="primary" type="hidden">
+                                      <i class="dropdown icon"></i>
+                                      <div class="default text">{{.i18n.Tr "Subnet"}}</div>
+                                      <div class="menu">
+                                        {{ range .Subnets }}
+                                            <div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
+                                              {{.Name}}
+                                            </div>
+                                        {{ end }}
+                                        </div>
+                                      </div>
+								</div>
+
 								<div class="required inline field">
 									<label for="key">{{.i18n.Tr "Key"}}</label>
 									<div class="ui selection dropdown">
@@ -131,6 +212,14 @@
 									<label>{{.i18n.Tr "Pull Secret"}}</label>
 									<textarea id="secret" name="secret" autocomplete="off" required></textarea>
 								</div>
+								<div class="inline field">
+									<label>{{.i18n.Tr "additionalTrustBundle"}}</label>
+									<textarea id="atbundle" name="atbundle" autocomplete="off" required></textarea>
+								</div>
+								<div class="inline field">
+									<label>{{.i18n.Tr "imageContentSources"}}</label>
+									<textarea id="icsources" name="icsources" autocomplete="off" required></textarea>
+								</div>																
 								<div class="inline field">
 									<label></label>
 									<button class="ui green button">{{.i18n.Tr "Create New Openshift Cluster"}}</button>
