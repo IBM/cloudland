@@ -12,8 +12,9 @@ cookie=$5
 haflag=$6
 nworkers=$7
 version=$8
-lb_ip=$9
-host_rec=${10}
+hyper_type=$9
+lb_ip=${10}
+host_rec=${11}
 seq_max=100
 cloud_user=rhel
 public_ip=""
@@ -24,6 +25,7 @@ cat /etc/redhat-release | grep -q CentOS
 #master_1_ip=""
 #master_2_ip=""
 #bstrap_ip=""
+declare -a workers_res
 declare -a workers_ip
 #declare -a workers_res_ip
 #for i in $(seq 0 $seq_max); do
@@ -182,9 +184,9 @@ EOF
         fi
     done
     cat >> $haconf <<EOF
-
 backend router_http
-
+    mode http
+    balance roundrobin
 EOF
     for i in $(seq 0 $seq_max); do
         if [ $i -lt $nworkers ]; then
@@ -201,7 +203,7 @@ EOF
 
 function setup_nginx()
 {
-    yum install -y nginx
+    #yum install -y nginx
     cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak
     cat > /etc/nginx/nginx.conf <<EOF
 user nginx;
@@ -269,6 +271,7 @@ function download_pkgs()
     cd /opt
     conf_url=$endpoint/misc/openshift/ocd.conf
     [ -n "$version" ] && conf_url=${conf_url}.${version}
+    [ -n "$hyper_type" ] && conf_url=${conf_url}.${hyper_type}
     wget --no-check-certificate $conf_url -O ocd.conf
     source ocd.conf
     wget --no-check-certificate -O /usr/share/nginx/html/rhcos.raw.gz $coreos_image_url
@@ -317,6 +320,7 @@ sshKey: '$ssh_key'
 $parts
 EOF
     sed -i "/^$/d" install-config.yaml
+    sed -i "/^{}/d" install-config.yaml
     mkdir /opt/backup
     cp install-config.yaml /opt/backup
     cd /opt/$cluster_name
@@ -417,43 +421,55 @@ function launch_cluster()
     fi
     cd /opt/$cluster_name
     bstrap_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=bootstrap.${cluster_name}.${base_domain}&ipaddr=${public_ip}")
-    date >> /tmp/jinlings.log
-    echo $bstrap_res >> /tmp/jinlings.log
-    bstrap_ID=$(jq -r .ID <<< $bstrap_res)
-    bstrap_ip=$(jq -r .'Interfaces[0].Address.Address' <<< $bstrap_res)
+    bstrap_interfaces=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=bootstrap.${cluster_name}.${base_domain} --cookie $cookie)
+    date > /tmp/jinlings.log
+    echo $bstrap_interfaces > /tmp/jinlings.log
+    bstrap_ID=$(jq -r .'instances[0].ID' <<< $bstrap_interfaces)
+    bstrap_ip=$(jq -r .'instances[0].Interfaces[0].Address.Address' <<< $bstrap_interfaces)
     bstrap_ip=${bstrap_ip%/*}
+    echo " boostrapIP is  $bstrap_ip" > /tmp/jinlings.log
     echo "~~~~~~~++++~~~~~~"
     curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=bootstrap"
     curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=masters"
     master_0_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-0.${cluster_name}.${base_domain}&ipaddr=${public_ip}")
-    master_0_ip=$(jq -r .'Interfaces[0].Address.Address' <<< $master_0_res)
+    master_0_interfaces=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=master-0.${cluster_name}.${base_domain} --cookie $cookie)
+    master_0_ip=$(jq -r .'instances[0].Interfaces[0].Address.Address' <<< $master_0_interfaces)
     master_0_ip=${master_0_ip%/*}
-    echo " masterip is  $master_0_ip" >> /tmp/jinlings.log
+    echo " master_0_ip is  $master_0_ip" > /tmp/jinlings.log
     sleep 3
     if [ "$haflag" = "yes" ]; then
         master_1_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-1.${cluster_name}.${base_domain}&ipaddr=${public_ip}")
-        master_1_ip=$(jq -r .'Interfaces[0].Address.Address' <<< $master_1_res)
+        master_1_interfaces=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=master-1.${cluster_name}.${base_domain} --cookie $cookie)
+        master_1_ip=$(jq -r .'instances[0].Interfaces[0].Address.Address' <<< $master_1_interfaces)
         master_1_ip=${master_1_ip%/*}
+        echo " master_1_ip is  $master_1_ip" > /tmp/jinlings.log
         sleep 3
         master_2_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-2.${cluster_name}.${base_domain}&ipaddr=${public_ip}")
-        master_2_ip=$( jq -r .'Interfaces[0].Address.Address' <<< $master_2_res)
+        master_2_interfaces=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=master-2.${cluster_name}.${base_domain} --cookie $cookie)
+        master_2_ip=$( jq -r .'instances[0].Interfaces[0].Address.Address' <<< $master_2_interfaces)
         master_2_ip=${master_2_ip%/*}
+        echo " master_2_ip is  $master_2_ip" > /tmp/jinlings.log
         sleep 3
     fi
     curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=workers"
-    workers_ip[0]=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-0.${cluster_name}.${base_domain}&ipaddr=${public_ip}" | jq -r .'Interfaces[0].Address.Address')
+    workers_res[0]=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-0.${cluster_name}.${base_domain}&ipaddr=${public_ip}")
+    workers_ip[0]=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=worker-0.${cluster_name}.${base_domain} --cookie $cookie | jq -r .'instances[0].Interfaces[0].Address.Address')
     workers_ip[0]=${workers_ip[0]%/*}
+    echo " worker_0_ip is  $workers_ip[0]" > /tmp/jinlings.log
     sleep 3
-    workers_ip[1]=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-1.${cluster_name}.${base_domain}&ipaddr=${public_ip}" | jq -r .'Interfaces[0].Address.Address')
+    workers_res[1]=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-1.${cluster_name}.${base_domain}&ipaddr=${public_ip}")
+    workers_ip[1]=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=worker-1.${cluster_name}.${base_domain} --cookie $cookie | jq -r .'instances[0].Interfaces[0].Address.Address')
     workers_ip[1]=${workers_ip[1]%/*}
     echo "~~~~~~~~+++++++~~~~~~~~"
-    echo "workerip is $workers_ip[1]" >> /tmp/jinlings.log
+    echo "worker_1_ip is $workers_ip[1]" > /tmp/jinlings.log
     let more=$nworkers-2
     for i in $(seq 1 $more); do
         let index=$i+1
         let last=$index+20
-        workers_ip[$index]=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-$index.${cluster_name}.${base_domain}&ipaddr=${public_ip}" | jq -r .'Interfaces[0].Address.Address')
+        workers_res[$index]=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-$index.${cluster_name}.${base_domain}&ipaddr=${public_ip}")
+        workers_ip[$index]=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=worker-$index.${cluster_name}.${base_domain} --cookie $cookie | jq -r .'instances[0].Interfaces[0].Address.Address')
         workers_ip[$index]=${workers_ip[$index]%/*}
+        echo " worker_($index)_ip is  $workers_ip[$index]" > /tmp/jinlings.log
         sleep 3
     done
 }
@@ -506,7 +522,7 @@ sed -i 's/^SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
 systemctl stop firewalld
 systemctl disable firewalld
 systemctl mask firewalld
-yum -y install wget jq nc
+yum -y install wget jq nc nginx
 download_pkgs
 get_lb_ip
 launch_cluster
