@@ -76,17 +76,33 @@ type SecurityData struct {
 	PortMax     int32  `json:"port_max"`
 }
 
+type ZvmData struct {
+	OsVersion string `json:"osVersion"`
+	DiskType  string `json:"diskType"`
+	VSwitch   string `json:"vswitch"`
+}
+
+type OcpData struct {
+	OcpVersion string `json:"ocpVersion"`
+	Service    string `json:"service"`
+}
+
 type InstanceData struct {
-	Userdata string             `json:"userdata"`
-	Vlans    []*VlanInfo        `json:"vlans"`
-	Networks []*InstanceNetwork `json:"networks"`
-	Links    []*NetworkLink     `json:"links"`
-	Keys     []string           `json:"keys"`
-	SecRules []*SecurityData    `json:"security"`
+	Userdata  string             `json:"userdata"`
+	HyperType string             `json:"hyperType"`
+	DNS       string             `json:"dns"`
+	ZVM       []*ZvmData         `json:"zvm"`
+	OCP       []*OcpData         `json:"ocp"`
+	Vlans     []*VlanInfo        `json:"vlans"`
+	Networks  []*InstanceNetwork `json:"networks"`
+	Links     []*NetworkLink     `json:"links"`
+	Keys      []string           `json:"keys"`
+	SecRules  []*SecurityData    `json:"security"`
 }
 
 type InstancesData struct {
 	Instances []*model.Instance `json:"instancedata"`
+	IsAdmin   bool              `json:"is_admin"`
 }
 
 func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, imageID, flavorID, primaryID, clusterID, zoneID int64, primaryIP, primaryMac string, subnetIDs, keyIDs []int64, sgIDs []int64, hyperID int) (instance *model.Instance, err error) {
@@ -104,16 +120,19 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			return
 		}
 	}
+	log.Printf("Image id %d", imageID)
 	flavor := &model.Flavor{Model: model.Model{ID: flavorID}}
 	if err = db.Find(flavor).Error; err != nil {
 		log.Println("Flavor query failed", err)
 		return
 	}
+	log.Printf("Flavor id %d", flavor.ID)
 	primary := &model.Subnet{Model: model.Model{ID: primaryID}}
 	if err = db.Preload("Netlink").Preload("Zones").Take(primary).Error; err != nil {
 		log.Println("Primary subnet query failed", err)
 		return
 	}
+	log.Printf("primary id %d", primary.ID)
 	subnets := []*model.Subnet{}
 	if err = db.Where(subnetIDs).Preload("Netlink").Preload("Zones").Find(&subnets).Error; err != nil {
 		log.Println("Secondary subnets query failed", err)
@@ -175,8 +194,8 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 	}
 	hypers := []*model.Hyper{}
 	where := fmt.Sprintf("zone_id = %d", zoneID)
-	if image.Architecture != "" {
-		where = fmt.Sprintf("%s and type = '%s'", where, image.Architecture)
+	if image.HypervisorType != "" {
+		where = fmt.Sprintf("%s and type = '%s'", where, image.HypervisorType)
 	}
 	if err = db.Where(where).Find(&hypers).Error; err != nil {
 		log.Println("Hypers query failed", err)
@@ -220,7 +239,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		}
 		metadata := ""
 		var ifaces []*model.Interface
-		ifaces, metadata, err = a.buildMetadata(ctx, primary, primaryIP, primaryMac, subnets, keys, instance, userdata, secGroups, zoneID)
+		ifaces, metadata, err = a.buildMetadata(ctx, primary, primaryIP, primaryMac, subnets, keys, instance, userdata, secGroups, zoneID, clusterID, "")
 		if err != nil {
 			log.Println("Build instance metadata failed", err)
 			return
@@ -319,7 +338,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 		}
 		disk := flavor.Disk - instance.Flavor.Disk + flavor.Ephemeral - instance.Flavor.Ephemeral
 		control := fmt.Sprintf("inter=%d cpu=%d memory=%d disk=%d network=%d", instance.Hyper, cpu, memory, disk, 0)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/resize_vm.sh '%d' '%d' '%d' '%d' '%d' '%d'", instance.ID, flavor.Cpu, flavor.Memory, flavor.Disk, flavor.Swap, flavor.Ephemeral)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/resize_vm.sh '%d' '%d' '%d' '%d' '%d' '%d' '%d'", instance.ID, flavor.Cpu, flavor.Memory, flavor.Disk, flavor.Swap, flavor.Ephemeral, disk)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Resize vm command execution failed", err)
@@ -537,7 +556,7 @@ func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subne
 	return
 }
 
-func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet, primaryIP, primaryMac string, subnets []*model.Subnet, keys []*model.Key, instance *model.Instance, userdata string, secGroups []*model.SecurityGroup, zoneID int64) (interfaces []*model.Interface, metadata string, err error) {
+func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet, primaryIP, primaryMac string, subnets []*model.Subnet, keys []*model.Key, instance *model.Instance, userdata string, secGroups []*model.SecurityGroup, zoneID, clusterID int64, service string) (interfaces []*model.Interface, metadata string, err error) {
 	vlans := []*VlanInfo{}
 	instNetworks := []*InstanceNetwork{}
 	instLinks := []*NetworkLink{}
@@ -597,13 +616,43 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet
 		}
 		securityData = append(securityData, sgr)
 	}
+	image := &model.Image{Model: model.Model{ID: instance.ImageID}}
+	hyperType := image.HypervisorType
+	dns := primary.NameServer
+	zvm := []*ZvmData{}
+	if hyperType == "zvm" {
+		zd := &ZvmData{
+			OsVersion: image.OsVersion,
+			DiskType:  image.DiskType,
+			VSwitch:   primary.VSwitch,
+		}
+		zvm = append(zvm, zd)
+	}
+	ocp := []*OcpData{}
+	if clusterID > 0 {
+		openshift := &model.Openshift{Model: model.Model{ID: clusterID}}
+		err = DB().Take(openshift).Error
+		if err != nil {
+			log.Println("Invalid OCP cluster ", clusterID)
+			return
+		}
+		od := &OcpData{
+			OcpVersion: openshift.Version,
+			Service:    service,
+		}
+		ocp = append(ocp, od)
+	}
 	instData := &InstanceData{
-		Userdata: userdata,
-		Vlans:    vlans,
-		Networks: instNetworks,
-		Links:    instLinks,
-		Keys:     instKeys,
-		SecRules: securityData,
+		Userdata:  userdata,
+		HyperType: hyperType,
+		DNS:       dns,
+		ZVM:       zvm,
+		OCP:       ocp,
+		Vlans:     vlans,
+		Networks:  instNetworks,
+		Links:     instLinks,
+		Keys:      instKeys,
+		SecRules:  securityData,
 	}
 	jsonData, err := json.Marshal(instData)
 	if err != nil {
@@ -816,6 +865,7 @@ func (v *InstanceView) UpdateTable(c *macaron.Context, store session.Store) {
 	var jsonData *InstancesData
 	jsonData = &InstancesData{
 		Instances: instances,
+		IsAdmin:   memberShip.CheckPermission(model.Admin),
 	}
 
 	c.JSON(200, jsonData)

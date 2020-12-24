@@ -212,7 +212,7 @@ func (a *GlusterfsAdmin) Create(ctx context.Context, name, cookie string, nworke
 		subnet = openshift.Subnet
 	} else {
 		tmpName := fmt.Sprintf("g%d-sn", glusterfs.ID)
-		subnet, err = subnetAdmin.Create(ctx, tmpName, "", "192.168.91.0", "255.255.255.0", "", "", "", "", "", "", "", "", "yes", "", 0, memberShip.OrgID)
+		subnet, err = subnetAdmin.Create(ctx, tmpName, "", "192.168.91.0", "255.255.255.0", "", "", "", "", "", "", "", "yes", "", "", memberShip.OrgID)
 		if err != nil {
 			log.Println("Failed to create glusterfs subnet", err)
 			return

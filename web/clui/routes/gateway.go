@@ -236,6 +236,11 @@ func (a *GatewayAdmin) Update(ctx context.Context, id int64, name string, pubID,
 				log.Println("DB failed to query subnet, %v", err)
 				continue
 			}
+			if sub.Type != "internal" {
+				err = fmt.Errorf("Only internal gateway can set gateway")
+				log.Println("%v", err)
+				continue
+			}
 			control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
 			if gateway.Hyper == gateway.Peer {
 				control = fmt.Sprintf("inter=%d", gateway.Hyper)

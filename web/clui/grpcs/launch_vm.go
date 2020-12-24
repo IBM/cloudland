@@ -65,17 +65,10 @@ func LaunchVM(ctx context.Context, job *model.Job, args []string) (status string
 	} else if argn >= 4 {
 		reason = args[4]
 	}
-	hyper := &model.Hyper{Hostid: int32(hyperID)}
-	err = db.Where(hyper).Take(hyper).Error
-	if err != nil {
-		log.Println("Failed to query hyper", err)
-		return
-	}
 	err = db.Model(&instance).Updates(map[string]interface{}{
-		"status":  serverStatus,
-		"hyper":   int32(hyperID),
-		"zone_id": hyper.ZoneID,
-		"reason":  reason}).Error
+		"status": serverStatus,
+		"hyper":  int32(hyperID),
+		"reason": reason}).Error
 	if err != nil {
 		log.Println("Failed to update instance", err)
 		return

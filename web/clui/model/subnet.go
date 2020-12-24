@@ -21,7 +21,6 @@ type Subnet struct {
 	NameServer   string `gorm:"type:varchar(64)"`
 	DomainSearch string `gorm:"type:varchar(256)"`
 	Dhcp         string `gorm:"type:varchar(16)"`
-	ClusterID    int64
 	Vlan         int64
 	Zones        []*Zone  `gorm:"many2many:subnet_zones;"`
 	Routers      []*Gateway  `gorm:"many2many:subnet_routers;"`

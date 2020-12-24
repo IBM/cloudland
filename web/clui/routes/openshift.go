@@ -174,19 +174,6 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 		err = fmt.Errorf("Cluster has no built-in subnet")
 		return
 	}
-	inNet := &net.IPNet{
-		IP:   net.ParseIP(subnet.Network),
-		Mask: net.IPMask(net.ParseIP(subnet.Netmask).To4()),
-	}
-	var primaryIP net.IP
-	if ipaddr != "" {
-		primaryIP = net.ParseIP(ipaddr)
-		if !inNet.Contains(primaryIP) {
-			log.Println("Invalid IP address or not belonging to subnet")
-			err = fmt.Errorf("Invalid IP address or not belonging to subnet")
-			return
-		}
-	}
 	secgroup := &model.SecurityGroup{Model: model.Model{Owner: memberShip.OrgID}, Name: "openshift"}
 	err = db.Where(secgroup).Take(secgroup).Error
 	if err != nil {
@@ -202,7 +189,7 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 	}
 	metadata := ""
 	var ifaces []*model.Interface
-	ifaces, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, ipaddr, "", nil, nil, instance, "", secGroups, openshift.ZoneID)
+	ifaces, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, "", "", nil, nil, instance, "", secGroups, openshift.ZoneID, openshift.ID, "")
 	if err != nil {
 		log.Println("Build instance metadata failed", err)
 		return
@@ -322,9 +309,34 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 	return
 }
 
-func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie, haflag, version, extIP string, nworkers int32, lflavor, mflavor, wflavor, key, zoneID int64, hostrec, bundle, registry, infrtype, sback, atbundle, icsources string) (openshift *model.Openshift, err error) {
+func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie, haflag, version, extIP string, nworkers int32, lflavor, mflavor, wflavor, key, zoneID, subnetID int64, hostrec, infrtype, sback, atbundle, icsources string) (openshift *model.Openshift, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
+	lbIP := ""
+	subnet := &model.Subnet{Model: model.Model{ID: subnetID}}
+	if subnetID == 0 {
+		lbIP = "192.168.91.8"
+		subnetname := openshift.ClusterName + "-sn"
+		search := cluster + "." + domain
+		zone := fmt.Sprintf("%d", zoneID)
+		subnet, err = subnetAdmin.Create(ctx, subnetname, "", "192.168.91.0", "255.255.255.0", zone, "", "", "", "", lbIP, search, "yes", "", "", memberShip.OrgID)
+		if err != nil {
+			log.Println("Failed to create openshift subnet", err)
+			return
+		}
+		subnetIDs := []int64{subnet.ID}
+		gatewayname := openshift.ClusterName + "-gw"
+		_, err = gatewayAdmin.Create(ctx, gatewayname, "", 0, 0, subnetIDs, memberShip.OrgID, zoneID)
+		if err != nil {
+			log.Println("Failed to create gateway", err)
+			return
+		}
+	} else {
+		if err = db.Take(subnet).Error; err != nil {
+			log.Println("Subnet query failed", err)
+			return
+		}
+	}
 	openshift = &model.Openshift{
 		Model:                 model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID},
 		ClusterName:           cluster,
@@ -335,6 +347,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 		Flavor:                lflavor,
 		MasterFlavor:          mflavor,
 		WorkerFlavor:          wflavor,
+		SubnetID:              subnet.ID,
 		Key:                   key,
 		ZoneID:                zoneID,
 		InfrastructureType:    infrtype,
@@ -347,38 +360,27 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 		log.Println("DB failed to create openshift", err)
 		return
 	}
-	name := openshift.ClusterName + "-sn"
-	search := cluster + "." + domain
-	lbIP := "192.168.91.8"
-	subnet, err := subnetAdmin.Create(ctx, name, "", "192.168.91.0", "255.255.255.0", "", "", "", "", "", "", lbIP, search, "yes", "", openshift.ID, memberShip.OrgID)
-	if err != nil {
-		log.Println("Failed to create openshift subnet", err)
-		return
-	}
-	name = openshift.ClusterName + "-gw"
-	subnetIDs := []int64{subnet.ID}
-	_, err = gatewayAdmin.Create(ctx, name, "", 0, 0, subnetIDs, memberShip.OrgID, zoneID)
-	if err != nil {
-		log.Println("Failed to create gateway", err)
-		return
-	}
-	secgroup, err := a.createSecgroup(ctx, "openshift", "192.168.91.0/24", memberShip.OrgID)
-	name = "lb"
+	preSize, _ := net.IPMask(net.ParseIP(subnet.Netmask).To4()).Size()
+	cidr := fmt.Sprintf("%s/%d", subnet.Network, preSize)
+	secgroup, err := a.createSecgroup(ctx, "openshift", cidr, memberShip.OrgID)
+	lbname := "lb"
 	keyIDs := []int64{key}
 	sgIDs := []int64{secgroup.ID}
 	endpoint := viper.GetString("api.endpoint")
 	userdata := getUserdata("ocd")
 	userdata = fmt.Sprintf("%s\ncurl -k -O '%s/misc/openshift/ocd.sh'\nchmod +x ocd.sh", userdata, endpoint)
 	parts := fmt.Sprintf("pullSecret: '%s'\n", secret)
-	if bundle != "" {
-		parts = fmt.Sprintf("%s\n%s\n", parts, bundle)
+	if atbundle != "" {
+		parts = fmt.Sprintf("%s\n%s\n", parts, atbundle)
 	}
-	if registry != "" {
-		parts = fmt.Sprintf("%s\n%s\n", parts, registry)
+	if icsources != "" {
+		parts = fmt.Sprintf("%s\n%s\n", parts, icsources)
 	}
 	encParts := base64.StdEncoding.EncodeToString([]byte(parts))
-	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' '%s' '%d' '%s' '%s' '%s'<<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, haflag, nworkers, version, extIP, hostrec, encParts)
-	_, err = instanceAdmin.Create(ctx, 1, name, userdata, 1, lflavor, subnet.ID, openshift.ID, zoneID, lbIP, "", nil, keyIDs, sgIDs, -1)
+	infraType := openshift.InfrastructureType
+	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' '%s' '%d' '%s' '%s' '%s' '%s'<<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, haflag, nworkers, version, infraType, lbIP, hostrec, encParts)
+	lbImg := 1
+	_, err = instanceAdmin.Create(ctx, 1, lbname, userdata, int64(lbImg), lflavor, subnet.ID, openshift.ID, zoneID, lbIP, "", nil, keyIDs, sgIDs, -1)
 	if err != nil {
 		log.Println("Failed to create oc first instance", err)
 		return
@@ -408,7 +410,7 @@ func (a *OpenshiftAdmin) Delete(ctx context.Context, id int64) (err error) {
 		return
 	}
 	subnet := openshift.Subnet
-	if subnet != nil {
+	if subnet != nil && subnet.Type == "internal" {
 		if subnet.Router != 0 {
 			err = gatewayAdmin.Delete(ctx, subnet.Router)
 			if err != nil {
@@ -658,6 +660,8 @@ func (v *OpenshiftView) Launch(c *macaron.Context, store session.Store) {
 	}
 	hostname := c.QueryTrim("hostname")
 	ipaddr := c.QueryTrim("ipaddr")
+	log.Println("------------------------------------------------------")
+	log.Println("ipaddr===" + ipaddr)
 	instance, err := openshiftAdmin.Launch(c.Req.Context(), id, hostname, ipaddr)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
@@ -685,8 +689,6 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	}
 	secret := c.QueryTrim("secret")
 	hostrec := c.QueryTrim("hostrec")
-	bundle := c.QueryTrim("bundle")
-	registry := c.QueryTrim("registry")
 	nworkers := c.QueryInt("nworkers")
 	if nworkers < 2 {
 		code := http.StatusBadRequest
@@ -699,6 +701,7 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	lflavor := c.QueryInt64("lflavor")
 	mflavor := c.QueryInt64("mflavor")
 	wflavor := c.QueryInt64("wflavor")
+	subnet := c.QueryInt64("subnet")
 	key := c.QueryInt64("key")
 	zone := c.QueryInt64("zone")
 	infrtype := c.QueryTrim("infrtype")
@@ -707,7 +710,8 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	icsources := c.QueryTrim("icsources")
 
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
-	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, version, extIP, int32(nworkers), lflavor, mflavor, wflavor, key, zone, hostrec, bundle, registry, infrtype, sback, atbundle, icsources)
+	permit, err := memberShip.CheckOwner(model.Writer, "subnets", int64(subnet))
+	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, version, extIP, int32(nworkers), lflavor, mflavor, wflavor, key, zone, subnet, hostrec, infrtype, sback, atbundle, icsources)
 	if err != nil {
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{

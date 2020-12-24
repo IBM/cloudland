@@ -81,8 +81,7 @@ func InstanceStatus(ctx context.Context, job *model.Job, args []string) (status 
 			continue
 		}
 		if instance.Status != status {
-			query := fmt.Sprintf("status = '%s'", "migrating")
-			err = db.Unscoped().Model(instance).Where(query).Update(map[string]interface{}{
+			err = db.Unscoped().Model(instance).Update(map[string]interface{}{
 				"status":     status,
 				"deleted_at": nil,
 			}).Error

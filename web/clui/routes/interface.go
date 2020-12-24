@@ -416,6 +416,11 @@ func SetGateway(ctx context.Context, subnetID, zoneID int64, router *model.Gatew
 		log.Println("Failed to get subnet, %v", err)
 		return nil, err
 	}
+	if subnet.Type != "internal" {
+		log.Println("Only internal gateway can be set gateway")
+		err = fmt.Errorf("Only internal gateway can be set gateway")
+		return nil, err
+	}
 	found := false
 	for _, z := range subnet.Zones {
 		if z.ID == zoneID {
@@ -438,6 +443,7 @@ func SetGateway(ctx context.Context, subnetID, zoneID int64, router *model.Gatew
 	if !found {
 		subnet.Routers = append(subnet.Routers, router)
 	}
+	subnet.Router = router.ID
 	err = db.Model(subnet).Save(subnet).Error
 	if err != nil {
 		log.Println("Failed to set gateway, %v", err)

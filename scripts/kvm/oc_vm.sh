@@ -30,6 +30,7 @@ if [ ! -f "$image_cache/$ramdisk" ]; then
     wget -q $image_repo/$ramdisk -O $image_cache/$ramdisk
 fi
 metadata=$(cat)
+echo $metadata > /tmp/jinling_meta.log
 [ -z "$vm_mem" ] && vm_mem='1024m'
 [ -z "$vm_cpu" ] && vm_cpu=1
 let vm_mem=${vm_mem%[m|M]}*1024
@@ -39,8 +40,12 @@ template=$template_dir/openshift.xml
 [ $(uname -m) = s390x ] && template=$template_dir/ocd_linux1.xml
 cp $template $vm_xml
 vlans=$(jq .vlans <<< $metadata)
+echo $vlans > /tmp/jinlings_vlan.log
 core_ip=$(jq -r .[0].ip_address <<< $vlans)
-sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_disk#g; s/CORE_IP/$core_ip/g; s/HOSTNAME/$hname/g; s/ROLE_IGN/${role}.ign/g;" $vm_xml
+gw_ip=$(jq .networks[0].routes[0].gateway <<< $metadata | tr -d '"')
+lb_ip=$(jq .ocp[0].service <<< $metadata | tr -d '"')
+sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_disk#g; s/CORE_IP/$core_ip/g;s/GATEWAY/$gw_ip/g; s/HOSTNAME/$hname/g; s/LB_IP/$lb_ip/g; s/ROLE_IGN/${role}.ign/g;" $vm_xml
+#sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_disk#g; s/CORE_IP/$core_ip/g; s/HOSTNAME/$hname/g; s/ROLE_IGN/${role}.ign/g;" $vm_xml
 state=error
 virsh define $vm_xml
 nvlan=$(jq length <<< $vlans)

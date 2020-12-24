@@ -1,4 +1,4 @@
-#!/bin/bash -xv
+#!/bin/bash
 cd `dirname $0`
 source ../cloudrc
 [ $# -lt 2 ] && echo "$0 <vm_ID> <vm_name>" && exit -1
@@ -6,17 +6,17 @@ source ../cloudrc
 vm_ID=$1
 vm_name=$2
 [ "${vm_name%%.*}" = "$vm_name" ] && vm_name=${vm_name}.$cloud_domain
-working_dir=/tmp/$vm_ID
+working_dir=/tmp/cloudland/$vm_ID
 latest_dir=$working_dir/openstack/latest
 mkdir -p $latest_dir
 
 vm_meta=$(cat)
-userdata=$(jq -r '.userdata' <<< $vm_meta)
+userdata=$(echo $vm_meta | base64 -d | jq -r .userdata)
 if [ -n "$userdata" ]; then
-   echo "$userdata" > $latest_dir/user_data
+   echo $vm_meta | base64 -d | jq -r .userdata > $latest_dir/user_data
 fi
 
-pub_keys=$(jq -r '.keys' <<< $vm_meta)
+pub_keys=$(echo $vm_meta | base64 -d | jq -r '.keys')
 admin_pass=`openssl rand -base64 12`
 random_seed=`cat /dev/urandom | head -c 512 | base64 -w 0`
 (
@@ -43,9 +43,8 @@ random_seed=`cat /dev/urandom | head -c 512 | base64 -w 0`
     echo '}'
 ) > $latest_dir/meta_data.json
 
-dns=$(jq -r .dns <<< $vm_meta)
-[ -z "$dns" ] && dns=$dns_server
-net_json=$(jq 'del(.userdata) | del(.vlans) | del(.keys) | del(.security) | del(.zvm) | del(.ocp) | del(.hyperType) | del(.dns)' <<< $vm_meta | jq --arg dns $dns '.services[0].type = "dns" | .services[0].address |= .+$dns')
-echo "$net_json" > $latest_dir/network_data.json
+# vm_meta=$(echo $vm_meta | base64 -d)
+# net_json=$(jq 'del(.userdata) | del(.zvm) | del(.ocp) | del(.dns) | del(.hyperType) | del(.vlans) | del(.keys) | del(.security)' <<< $vm_meta | jq --arg dns $dns_server '.services[0].type = "dns" | .services[0].address |= .+$dns')
 
-mkisofs -quiet -R -V config-2 -o ${cache_dir}/meta/${vm_ID}.iso $working_dir &> /dev/null
+mkdir -p ${cache_dir}/meta/${vm_ID}
+mkisofs -quiet -R -V config-2 -o ${cache_dir}/meta/${vm_ID}/cfgdrive.iso  $working_dir &> /dev/null
