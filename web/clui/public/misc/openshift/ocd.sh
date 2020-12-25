@@ -37,29 +37,29 @@ function  get_lb_ip()
 {
 public_ip=$(grep '^IPADDR' /etc/sysconfig/network-scripts/ifcfg-eth0)
 public_ip=${public_ip##*=}
-echo "public_ip is $public_ip" >> /tmp/jinlings_ip.log
+echo "public_ip is $public_ip" >> /tmp/cloudland_ip.log
 }
 
 function setup_dns()
 {
     instID=$(cat /var/lib/cloud/data/instance-id | cut -d'-' -f2)
-    echo "insID IS $instID">> /tmp/jinlings.log
+    echo "insID IS $instID">> /tmp/cloudland.log
     count=0
     while [ -z "$public_ip" -a $count -lt 10 ]; do
-        echo "instID is $instID" >> /tmp/jinlings.log
-        echo "~~~~~~~+++++~~~~~~" >> /tmp/jinlings.log
+        echo "instID is $instID" >> /tmp/cloudland.log
+        echo "~~~~~~~+++++~~~~~~" >> /tmp/cloudland.log
         #data=$(curl -k -XPOST $endpoint/floatingips/assign --cookie "$cookie" --data "instance=$instID" --data "floatingIP=$lb_ip")
         #data=$(curl -k -XPOST $endpoint/floatingips/assign --cookie "$cookie" --data "instance=$instID")
         #working_dir=/tmp/inst-$instID
         #latest_dir=$working_dir/openstack/latest
         #public_ip=$(grep '^IPADDR' /etc/sysconfig/network-scripts/ifcfg-eth0)
         #data=$(cat $latest_dir/network_data.json)
-        #echo $data >> /tmp/jinlings_data.log
-        #echo "lb_ip is $lb_ip" >> /tmp/jinlings.log
+        #echo $data >> /tmp/cloudland_data.log
+        #echo "lb_ip is $lb_ip" >> /tmp/cloudland.log
         #LB_IP=$(jq  -r .networks[0].ip_address <<< $data)
         #public_ip=$LB_IP
         #public_ip=${public_ip##*=}
-        #echo "public_ip is $public_ip" >> /tmp/jinlings_ip.log
+        #echo "public_ip is $public_ip" >> /tmp/cloudland_ip.log
         let count=$count+1
         sleep 1
     done
@@ -285,12 +285,12 @@ function download_pkgs()
 function ignite_files()
 {
     echo "~~~~~~~~~+++++~~~~~~~~~"
-    #pwd
+    pwd
     parts=$(cat | base64 -d | sed -s 's/\r//')
     ssh_key=$(cat /home/$cloud_user/.ssh/authorized_keys | tail -1)
-    rm -rf $cluster_name
-    mkdir $cluster_name
-    #cd $cluster_name
+    
+    #rm -rf $cluster_name
+    #mkdir $cluster_name
     mreplica=1
     [ "$haflag" = "yes" ] && mreplica=3
     cat > install-config.yaml <<EOF
@@ -320,26 +320,26 @@ sshKey: '$ssh_key'
 $parts
 EOF
     sed -i "/^$/d" install-config.yaml
-    sed -i "/^{}/d" install-config.yaml
+    #sed -i "/^{}/d" install-config.yaml
     mkdir /opt/backup
     cp install-config.yaml /opt/backup
     cd /opt/$cluster_name
-    echo " create manifests now" >> /tmp/jinlings.log
+    echo " create manifests now" >> /tmp/cloudland.log
     ../openshift-install create manifests
     sed -i "s/mastersSchedulable: true/mastersSchedulable: false/" manifests/cluster-scheduler-02-config.yml
-    echo " manifests running completed "  >> /tmp/jinlings.log
+    echo " manifests running completed "  >> /tmp/cloudland.log
     cp -rf ../$cluster_name /opt/backup
     pwd
-    echo " starting to create ignition-configs file " >> /tmp/jinlings.log
+    echo " starting to create ignition-configs file " >> /tmp/cloudland.log
     ../openshift-install create ignition-configs
-    echo " ignition-configs file completed" >> /tmp/jinlings.log
+    echo " ignition-configs file completed" >> /tmp/cloudland.log
     cp -rf ../$cluster_name /opt/backup
     ignite_dir=/usr/share/nginx/html/ignition
     rm -rf $ignite_dir
     mkdir $ignite_dir
     cp *.ign $ignite_dir
     chmod a+r $ignite_dir/*
-    echo "copy ignition file completed " >> /tmp/jinlings.log
+    echo "copy ignition file completed " >> /tmp/cloudland.log
     cat >>/root/.bashrc <<EOF
 export KUBECONFIG=/opt/$cluster_name/auth/kubeconfig
 export PS1='[\u@\h.$cluster_name \w]\\$ '
@@ -422,46 +422,47 @@ function launch_cluster()
     cd /opt/$cluster_name
     bstrap_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=bootstrap.${cluster_name}.${base_domain}&ipaddr=${public_ip}")
     bstrap_interfaces=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=bootstrap.${cluster_name}.${base_domain} --cookie $cookie)
-    date > /tmp/jinlings.log
-    echo $bstrap_interfaces > /tmp/jinlings.log
+    date > /tmp/cloudland.log
+    echo $bstrap_interfaces > /tmp/cloudland.log
     bstrap_ID=$(jq -r .'instances[0].ID' <<< $bstrap_interfaces)
     bstrap_ip=$(jq -r .'instances[0].Interfaces[0].Address.Address' <<< $bstrap_interfaces)
     bstrap_ip=${bstrap_ip%/*}
-    echo " boostrapIP is  $bstrap_ip" > /tmp/jinlings.log
+    echo " boostrapIP is  $bstrap_ip" > /tmp/cloudland.log
     echo "~~~~~~~++++~~~~~~"
     curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=bootstrap"
+    sleep 3
     curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=masters"
     master_0_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-0.${cluster_name}.${base_domain}&ipaddr=${public_ip}")
     master_0_interfaces=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=master-0.${cluster_name}.${base_domain} --cookie $cookie)
     master_0_ip=$(jq -r .'instances[0].Interfaces[0].Address.Address' <<< $master_0_interfaces)
     master_0_ip=${master_0_ip%/*}
-    echo " master_0_ip is  $master_0_ip" > /tmp/jinlings.log
-    sleep 3
+    echo " master_0_ip is  $master_0_ip" > /tmp/cloudland.log
+    sleep 50
     if [ "$haflag" = "yes" ]; then
         master_1_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-1.${cluster_name}.${base_domain}&ipaddr=${public_ip}")
         master_1_interfaces=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=master-1.${cluster_name}.${base_domain} --cookie $cookie)
         master_1_ip=$(jq -r .'instances[0].Interfaces[0].Address.Address' <<< $master_1_interfaces)
         master_1_ip=${master_1_ip%/*}
-        echo " master_1_ip is  $master_1_ip" > /tmp/jinlings.log
-        sleep 3
+        echo " master_1_ip is  $master_1_ip" > /tmp/cloudland.log
+        sleep 50
         master_2_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-2.${cluster_name}.${base_domain}&ipaddr=${public_ip}")
         master_2_interfaces=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=master-2.${cluster_name}.${base_domain} --cookie $cookie)
         master_2_ip=$( jq -r .'instances[0].Interfaces[0].Address.Address' <<< $master_2_interfaces)
         master_2_ip=${master_2_ip%/*}
-        echo " master_2_ip is  $master_2_ip" > /tmp/jinlings.log
-        sleep 3
+        echo " master_2_ip is  $master_2_ip" > /tmp/cloudland.log
+        sleep 50
     fi
     curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=workers"
     workers_res[0]=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-0.${cluster_name}.${base_domain}&ipaddr=${public_ip}")
     workers_ip[0]=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=worker-0.${cluster_name}.${base_domain} --cookie $cookie | jq -r .'instances[0].Interfaces[0].Address.Address')
     workers_ip[0]=${workers_ip[0]%/*}
-    echo " worker_0_ip is  $workers_ip[0]" > /tmp/jinlings.log
-    sleep 3
+    echo " worker_0_ip is  $workers_ip[0]" > /tmp/cloudland.log
+    sleep 50
     workers_res[1]=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-1.${cluster_name}.${base_domain}&ipaddr=${public_ip}")
     workers_ip[1]=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=worker-1.${cluster_name}.${base_domain} --cookie $cookie | jq -r .'instances[0].Interfaces[0].Address.Address')
     workers_ip[1]=${workers_ip[1]%/*}
     echo "~~~~~~~~+++++++~~~~~~~~"
-    echo "worker_1_ip is $workers_ip[1]" > /tmp/jinlings.log
+    echo "worker_1_ip is $workers_ip[1]" > /tmp/cloudland.log
     let more=$nworkers-2
     for i in $(seq 1 $more); do
         let index=$i+1
@@ -469,8 +470,8 @@ function launch_cluster()
         workers_res[$index]=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-$index.${cluster_name}.${base_domain}&ipaddr=${public_ip}")
         workers_ip[$index]=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=worker-$index.${cluster_name}.${base_domain} --cookie $cookie | jq -r .'instances[0].Interfaces[0].Address.Address')
         workers_ip[$index]=${workers_ip[$index]%/*}
-        echo " worker_($index)_ip is  $workers_ip[$index]" > /tmp/jinlings.log
-        sleep 3
+        echo " worker_($index)_ip is  $workers_ip[$index]" > /tmp/cloudland.log
+        sleep 50
     done
 }
 
@@ -482,7 +483,7 @@ function wait_ocd()
         [ $? -eq 0 ] && break
     done
     ../openshift-install wait-for bootstrap-complete --log-level debug
-    echo "bootstrap-complete runnning completed " >> /tmp/jinlings.log
+    echo "bootstrap-complete runnning completed " >> /tmp/cloudland.log
     curl -k -XDELETE $endpoint/instances/$bstrap_ID --cookie $cookie
     nodes=3
     [ "$haflag" = "yes" ] && nodes=5
@@ -502,7 +503,7 @@ function wait_ocd()
     done
     #setup_nfs_pv
     ../openshift-install wait-for install-complete
-    echo "install-complete" >>  /tmp/jinlings.log
+    echo "install-complete" >>  /tmp/cloudland.log
     curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=complete"
     let nodes=$nodes+$more
     while true; do
