@@ -7,34 +7,24 @@
 #include "remotexec.pb.h"
 
 #include <functional>
+#include <grpc/impl/codegen/port_platform.h>
 #include <grpcpp/impl/codegen/async_generic_service.h>
 #include <grpcpp/impl/codegen/async_stream.h>
 #include <grpcpp/impl/codegen/async_unary_call.h>
 #include <grpcpp/impl/codegen/client_callback.h>
 #include <grpcpp/impl/codegen/client_context.h>
 #include <grpcpp/impl/codegen/completion_queue.h>
+#include <grpcpp/impl/codegen/message_allocator.h>
 #include <grpcpp/impl/codegen/method_handler.h>
 #include <grpcpp/impl/codegen/proto_utils.h>
 #include <grpcpp/impl/codegen/rpc_method.h>
 #include <grpcpp/impl/codegen/server_callback.h>
+#include <grpcpp/impl/codegen/server_callback_handlers.h>
 #include <grpcpp/impl/codegen/server_context.h>
 #include <grpcpp/impl/codegen/service_type.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/stub_options.h>
 #include <grpcpp/impl/codegen/sync_stream.h>
-
-namespace grpc_impl {
-class CompletionQueue;
-class ServerCompletionQueue;
-class ServerContext;
-}  // namespace grpc_impl
-
-namespace grpc {
-namespace experimental {
-template <typename RequestT, typename ResponseT>
-class MessageAllocator;
-}  // namespace experimental
-}  // namespace grpc
 
 namespace com {
 namespace ibm {
@@ -70,10 +60,28 @@ class RemoteExec final {
       virtual ~experimental_async_interface() {}
       virtual void Execute(::grpc::ClientContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, std::function<void(::grpc::Status)>) = 0;
       virtual void Execute(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, std::function<void(::grpc::Status)>) = 0;
+      #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      virtual void Execute(::grpc::ClientContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      #else
       virtual void Execute(::grpc::ClientContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) = 0;
+      #endif
+      #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      virtual void Execute(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      #else
       virtual void Execute(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) = 0;
+      #endif
+      #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      virtual void Transmit(::grpc::ClientContext* context, ::com::ibm::cloudland::scripts::TransmitAck* response, ::grpc::ClientWriteReactor< ::com::ibm::cloudland::scripts::FileChunk>* reactor) = 0;
+      #else
       virtual void Transmit(::grpc::ClientContext* context, ::com::ibm::cloudland::scripts::TransmitAck* response, ::grpc::experimental::ClientWriteReactor< ::com::ibm::cloudland::scripts::FileChunk>* reactor) = 0;
+      #endif
     };
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    typedef class experimental_async_interface async_interface;
+    #endif
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    async_interface* async() { return experimental_async(); }
+    #endif
     virtual class experimental_async_interface* experimental_async() { return nullptr; }
   private:
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::com::ibm::cloudland::scripts::ExecuteReply>* AsyncExecuteRaw(::grpc::ClientContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest& request, ::grpc::CompletionQueue* cq) = 0;
@@ -106,9 +114,21 @@ class RemoteExec final {
      public:
       void Execute(::grpc::ClientContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, std::function<void(::grpc::Status)>) override;
       void Execute(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, std::function<void(::grpc::Status)>) override;
+      #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      void Execute(::grpc::ClientContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, ::grpc::ClientUnaryReactor* reactor) override;
+      #else
       void Execute(::grpc::ClientContext* context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) override;
+      #endif
+      #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      void Execute(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, ::grpc::ClientUnaryReactor* reactor) override;
+      #else
       void Execute(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::com::ibm::cloudland::scripts::ExecuteReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) override;
+      #endif
+      #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      void Transmit(::grpc::ClientContext* context, ::com::ibm::cloudland::scripts::TransmitAck* response, ::grpc::ClientWriteReactor< ::com::ibm::cloudland::scripts::FileChunk>* reactor) override;
+      #else
       void Transmit(::grpc::ClientContext* context, ::com::ibm::cloudland::scripts::TransmitAck* response, ::grpc::experimental::ClientWriteReactor< ::com::ibm::cloudland::scripts::FileChunk>* reactor) override;
+      #endif
      private:
       friend class Stub;
       explicit experimental_async(Stub* stub): stub_(stub) { }
@@ -184,19 +204,28 @@ class RemoteExec final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     ExperimentalWithCallbackMethod_Execute() {
-      ::grpc::Service::experimental().MarkMethodCallback(0,
-        new ::grpc_impl::internal::CallbackUnaryHandler< ::com::ibm::cloudland::scripts::ExecuteRequest, ::com::ibm::cloudland::scripts::ExecuteReply>(
-          [this](::grpc::ServerContext* context,
-                 const ::com::ibm::cloudland::scripts::ExecuteRequest* request,
-                 ::com::ibm::cloudland::scripts::ExecuteReply* response,
-                 ::grpc::experimental::ServerCallbackRpcController* controller) {
-                   return this->Execute(context, request, response, controller);
-                 }));
-    }
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      ::grpc::Service::
+    #else
+      ::grpc::Service::experimental().
+    #endif
+        MarkMethodCallback(0,
+          new ::grpc_impl::internal::CallbackUnaryHandler< ::com::ibm::cloudland::scripts::ExecuteRequest, ::com::ibm::cloudland::scripts::ExecuteReply>(
+            [this](
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+                   ::grpc::CallbackServerContext*
+    #else
+                   ::grpc::experimental::CallbackServerContext*
+    #endif
+                     context, const ::com::ibm::cloudland::scripts::ExecuteRequest* request, ::com::ibm::cloudland::scripts::ExecuteReply* response) { return this->Execute(context, request, response); }));}
     void SetMessageAllocatorFor_Execute(
         ::grpc::experimental::MessageAllocator< ::com::ibm::cloudland::scripts::ExecuteRequest, ::com::ibm::cloudland::scripts::ExecuteReply>* allocator) {
-      static_cast<::grpc_impl::internal::CallbackUnaryHandler< ::com::ibm::cloudland::scripts::ExecuteRequest, ::com::ibm::cloudland::scripts::ExecuteReply>*>(
-          ::grpc::Service::experimental().GetHandler(0))
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
+    #else
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::experimental().GetHandler(0);
+    #endif
+      static_cast<::grpc_impl::internal::CallbackUnaryHandler< ::com::ibm::cloudland::scripts::ExecuteRequest, ::com::ibm::cloudland::scripts::ExecuteReply>*>(handler)
               ->SetMessageAllocator(allocator);
     }
     ~ExperimentalWithCallbackMethod_Execute() override {
@@ -207,7 +236,14 @@ class RemoteExec final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual void Execute(::grpc::ServerContext* /*context*/, const ::com::ibm::cloudland::scripts::ExecuteRequest* /*request*/, ::com::ibm::cloudland::scripts::ExecuteReply* /*response*/, ::grpc::experimental::ServerCallbackRpcController* controller) { controller->Finish(::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "")); }
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    virtual ::grpc::ServerUnaryReactor* Execute(
+      ::grpc::CallbackServerContext* /*context*/, const ::com::ibm::cloudland::scripts::ExecuteRequest* /*request*/, ::com::ibm::cloudland::scripts::ExecuteReply* /*response*/)
+    #else
+    virtual ::grpc::experimental::ServerUnaryReactor* Execute(
+      ::grpc::experimental::CallbackServerContext* /*context*/, const ::com::ibm::cloudland::scripts::ExecuteRequest* /*request*/, ::com::ibm::cloudland::scripts::ExecuteReply* /*response*/)
+    #endif
+      { return nullptr; }
   };
   template <class BaseClass>
   class ExperimentalWithCallbackMethod_Transmit : public BaseClass {
@@ -215,9 +251,20 @@ class RemoteExec final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     ExperimentalWithCallbackMethod_Transmit() {
-      ::grpc::Service::experimental().MarkMethodCallback(1,
-        new ::grpc_impl::internal::CallbackClientStreamingHandler< ::com::ibm::cloudland::scripts::FileChunk, ::com::ibm::cloudland::scripts::TransmitAck>(
-          [this] { return this->Transmit(); }));
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      ::grpc::Service::
+    #else
+      ::grpc::Service::experimental().
+    #endif
+        MarkMethodCallback(1,
+          new ::grpc_impl::internal::CallbackClientStreamingHandler< ::com::ibm::cloudland::scripts::FileChunk, ::com::ibm::cloudland::scripts::TransmitAck>(
+            [this](
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+                   ::grpc::CallbackServerContext*
+    #else
+                   ::grpc::experimental::CallbackServerContext*
+    #endif
+                     context, ::com::ibm::cloudland::scripts::TransmitAck* response) { return this->Transmit(context, response); }));
     }
     ~ExperimentalWithCallbackMethod_Transmit() override {
       BaseClassMustBeDerivedFromService(this);
@@ -227,10 +274,19 @@ class RemoteExec final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::experimental::ServerReadReactor< ::com::ibm::cloudland::scripts::FileChunk, ::com::ibm::cloudland::scripts::TransmitAck>* Transmit() {
-      return new ::grpc_impl::internal::UnimplementedReadReactor<
-        ::com::ibm::cloudland::scripts::FileChunk, ::com::ibm::cloudland::scripts::TransmitAck>;}
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    virtual ::grpc::ServerReadReactor< ::com::ibm::cloudland::scripts::FileChunk>* Transmit(
+      ::grpc::CallbackServerContext* /*context*/, ::com::ibm::cloudland::scripts::TransmitAck* /*response*/)
+    #else
+    virtual ::grpc::experimental::ServerReadReactor< ::com::ibm::cloudland::scripts::FileChunk>* Transmit(
+      ::grpc::experimental::CallbackServerContext* /*context*/, ::com::ibm::cloudland::scripts::TransmitAck* /*response*/)
+    #endif
+      { return nullptr; }
   };
+  #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+  typedef ExperimentalWithCallbackMethod_Execute<ExperimentalWithCallbackMethod_Transmit<Service > > CallbackService;
+  #endif
+
   typedef ExperimentalWithCallbackMethod_Execute<ExperimentalWithCallbackMethod_Transmit<Service > > ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_Execute : public BaseClass {
@@ -312,14 +368,20 @@ class RemoteExec final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     ExperimentalWithRawCallbackMethod_Execute() {
-      ::grpc::Service::experimental().MarkMethodRawCallback(0,
-        new ::grpc_impl::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
-          [this](::grpc::ServerContext* context,
-                 const ::grpc::ByteBuffer* request,
-                 ::grpc::ByteBuffer* response,
-                 ::grpc::experimental::ServerCallbackRpcController* controller) {
-                   this->Execute(context, request, response, controller);
-                 }));
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      ::grpc::Service::
+    #else
+      ::grpc::Service::experimental().
+    #endif
+        MarkMethodRawCallback(0,
+          new ::grpc_impl::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+                   ::grpc::CallbackServerContext*
+    #else
+                   ::grpc::experimental::CallbackServerContext*
+    #endif
+                     context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->Execute(context, request, response); }));
     }
     ~ExperimentalWithRawCallbackMethod_Execute() override {
       BaseClassMustBeDerivedFromService(this);
@@ -329,7 +391,14 @@ class RemoteExec final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual void Execute(::grpc::ServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/, ::grpc::experimental::ServerCallbackRpcController* controller) { controller->Finish(::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "")); }
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    virtual ::grpc::ServerUnaryReactor* Execute(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)
+    #else
+    virtual ::grpc::experimental::ServerUnaryReactor* Execute(
+      ::grpc::experimental::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)
+    #endif
+      { return nullptr; }
   };
   template <class BaseClass>
   class ExperimentalWithRawCallbackMethod_Transmit : public BaseClass {
@@ -337,9 +406,20 @@ class RemoteExec final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     ExperimentalWithRawCallbackMethod_Transmit() {
-      ::grpc::Service::experimental().MarkMethodRawCallback(1,
-        new ::grpc_impl::internal::CallbackClientStreamingHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
-          [this] { return this->Transmit(); }));
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      ::grpc::Service::
+    #else
+      ::grpc::Service::experimental().
+    #endif
+        MarkMethodRawCallback(1,
+          new ::grpc_impl::internal::CallbackClientStreamingHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+                   ::grpc::CallbackServerContext*
+    #else
+                   ::grpc::experimental::CallbackServerContext*
+    #endif
+                     context, ::grpc::ByteBuffer* response) { return this->Transmit(context, response); }));
     }
     ~ExperimentalWithRawCallbackMethod_Transmit() override {
       BaseClassMustBeDerivedFromService(this);
@@ -349,9 +429,14 @@ class RemoteExec final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::experimental::ServerReadReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>* Transmit() {
-      return new ::grpc_impl::internal::UnimplementedReadReactor<
-        ::grpc::ByteBuffer, ::grpc::ByteBuffer>;}
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    virtual ::grpc::ServerReadReactor< ::grpc::ByteBuffer>* Transmit(
+      ::grpc::CallbackServerContext* /*context*/, ::grpc::ByteBuffer* /*response*/)
+    #else
+    virtual ::grpc::experimental::ServerReadReactor< ::grpc::ByteBuffer>* Transmit(
+      ::grpc::experimental::CallbackServerContext* /*context*/, ::grpc::ByteBuffer* /*response*/)
+    #endif
+      { return nullptr; }
   };
   template <class BaseClass>
   class WithStreamedUnaryMethod_Execute : public BaseClass {

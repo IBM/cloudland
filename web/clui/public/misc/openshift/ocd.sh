@@ -16,60 +16,31 @@ hyper_type=$9
 lb_ip=${10}
 host_rec=${11}
 seq_max=100
-cloud_user=rhel
-public_ip=""
-cat /etc/redhat-release | grep -q CentOS
-[ $? -eq 0 ] && cloud_user=centos
 
-#master_0_ip=""
-#master_1_ip=""
-#master_2_ip=""
-#bstrap_ip=""
+cloud_user=$(cat /etc/sudoers.d/*-cloud-init-users | grep NOPASSWD:ALL | tail -1 | cut -d' ' -f1)
+
 declare -a workers_res
 declare -a workers_ip
-#declare -a workers_res_ip
-#for i in $(seq 0 $seq_max); do
-#    let suffix=$i+20
-#    workers_ip[$i]="192.168.91.$suffix"
-#done
-
-function  get_lb_ip()
-{
-public_ip=$(grep '^IPADDR' /etc/sysconfig/network-scripts/ifcfg-eth0)
-public_ip=${public_ip##*=}
-echo "public_ip is $public_ip" >> /tmp/jinlings_ip.log
-}
 
 function setup_dns()
 {
     instID=$(cat /var/lib/cloud/data/instance-id | cut -d'-' -f2)
-    echo "insID IS $instID">> /tmp/jinlings.log
     count=0
     while [ -z "$public_ip" -a $count -lt 10 ]; do
-        echo "instID is $instID" >> /tmp/jinlings.log
-        echo "~~~~~~~+++++~~~~~~" >> /tmp/jinlings.log
-        #data=$(curl -k -XPOST $endpoint/floatingips/assign --cookie "$cookie" --data "instance=$instID" --data "floatingIP=$lb_ip")
-        #data=$(curl -k -XPOST $endpoint/floatingips/assign --cookie "$cookie" --data "instance=$instID")
-        #working_dir=/tmp/inst-$instID
-        #latest_dir=$working_dir/openstack/latest
-        #public_ip=$(grep '^IPADDR' /etc/sysconfig/network-scripts/ifcfg-eth0)
-        #data=$(cat $latest_dir/network_data.json)
-        #echo $data >> /tmp/jinlings_data.log
-        #echo "lb_ip is $lb_ip" >> /tmp/jinlings.log
-        #LB_IP=$(jq  -r .networks[0].ip_address <<< $data)
-        #public_ip=$LB_IP
-        #public_ip=${public_ip##*=}
-        #echo "public_ip is $public_ip" >> /tmp/jinlings_ip.log
+        if [ -n "lb_ip" ]; then
+            data=$(curl -k -XPOST $endpoint/floatingips/assign --cookie "$cookie" --data "instance=$instID" --data "floatingIP=$lb_ip")
+            public_ip=$(jq  -r .networks[0].ip_address <<< $data)
+	else 
+            lb_ip=$(ip addr | grep "inet .*brd" | head -1 | awk '{print $2}' | cut -d'/' -f1)
+            public_ip=$lb_ip
+        fi
         let count=$count+1
         sleep 1
     done
-    #[ -z "$public_ip" ] && public_ip=192.168.91.8
-    #[ -z "$public_ip" ] && public_ip=9.115.78.84
     dns_server=$(grep '^nameserver' /etc/resolv.conf | head -1 | awk '{print $2}')
     if [ -z "$dns_server" -o "$dns_server" = "127.0.0.1" ]; then
         dns_server=8.8.8.8
     fi
-    #dns_server=9.115.78.223
     [ -n "$host_rec" ] && host_rec="$(echo $host_rec | tr ':' ' ')"
     yum install -y dnsmasq
     cp /etc/dnsmasq.conf /etc/dnsmasq.conf.bak
@@ -516,6 +487,7 @@ function wait_ocd()
 }
 
 setenforce Permissive
+curl -k $endpoint/misc/openshift/ocd_lb_yum.repo -o /etc/yum.repos.d/oc.repo
 sed -i 's/^SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
 [ $(uname -m) != s390x ] && yum -y install epel-release
 [ "$(uname -m)" = "s390x" ] && yum -y install rng-tools && systemctl start rngd
@@ -524,7 +496,6 @@ systemctl disable firewalld
 systemctl mask firewalld
 yum -y install wget jq nc nginx
 download_pkgs
-get_lb_ip
 launch_cluster
 setup_dns
 setup_lb

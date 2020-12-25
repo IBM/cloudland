@@ -105,6 +105,34 @@ type InstancesData struct {
 	IsAdmin   bool              `json:"is_admin"`
 }
 
+func (a *InstanceAdmin) getHyperGroup(imageType string, zoneID int64) (hyperGroup string, err error) {
+	db := DB()
+	hypers := []*model.Hyper{}
+	where := fmt.Sprintf("zone_id = %d", zoneID)
+	if imageType != "" {
+		where = fmt.Sprintf("%s and type = '%s'", where, imageType)
+	}
+	if err = db.Where(where).Find(&hypers).Error; err != nil {
+		log.Println("Hypers query failed", err)
+		fmt.Errorf("Hypers query failed %s", err)
+		return
+	}
+	if len(hypers) == 0 {
+		log.Println("No qualified hypervisor")
+		fmt.Errorf("No qualified hypervisor %s", where)
+		return
+	}
+	hyperGroup = fmt.Sprintf("group-zone-%d", zoneID)
+	for i, h := range hypers {
+		if i == 0 {
+			hyperGroup = fmt.Sprintf("%s:%d", hyperGroup, h.Hostid)
+		} else {
+			hyperGroup = fmt.Sprintf("%s,%d", hyperGroup, h.Hostid)
+		}
+	}
+	return
+}
+
 func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, imageID, flavorID, primaryID, clusterID, zoneID int64, primaryIP, primaryMac string, subnetIDs, keyIDs []int64, sgIDs []int64, hyperID int) (instance *model.Instance, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
@@ -192,28 +220,10 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			}
 		}
 	}
-	hypers := []*model.Hyper{}
-	where := fmt.Sprintf("zone_id = %d", zoneID)
-	if image.HypervisorType != "" {
-		where = fmt.Sprintf("%s and type = '%s'", where, image.HypervisorType)
-	}
-	if err = db.Where(where).Find(&hypers).Error; err != nil {
-		log.Println("Hypers query failed", err)
-		fmt.Errorf("Hypers query failed %s", err)
+	hyperGroup, err := instanceAdmin.getHyperGroup(image.HypervisorType, zoneID)
+	if err != nil {
+		log.Println("No valid hypervisor", err)
 		return
-	}
-	if len(hypers) == 0 {
-		log.Println("No qualified hypervisor")
-		fmt.Errorf("No qualified hypervisor %s", where)
-		return
-	}
-	hyperGroup := fmt.Sprintf("group-zone-%d", zoneID)
-	for i, h := range hypers {
-		if i == 0 {
-			hyperGroup = fmt.Sprintf("%s:%d", hyperGroup, h.Hostid)
-		} else {
-			hyperGroup = fmt.Sprintf("%s,%d", hyperGroup, h.Hostid)
-		}
 	}
 	keys := []*model.Key{}
 	if err = db.Where(keyIDs).Find(&keys).Error; err != nil {
@@ -617,6 +627,11 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet
 		securityData = append(securityData, sgr)
 	}
 	image := &model.Image{Model: model.Model{ID: instance.ImageID}}
+	err = DB().Take(image).Error
+	if err != nil {
+		log.Println("Invalid image ", instance.ImageID)
+		return
+	}
 	hyperType := image.HypervisorType
 	dns := primary.NameServer
 	zvm := []*ZvmData{}
