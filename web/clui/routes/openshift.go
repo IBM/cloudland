@@ -189,7 +189,7 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 	}
 	metadata := ""
 	var ifaces []*model.Interface
-	ifaces, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, "", "", nil, nil, instance, "", secGroups, openshift.ZoneID, openshift.ID, "")
+	ifaces, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, "", "", nil, nil, instance, "", secGroups, openshift.ZoneID, openshift.ID, ipaddr)
 	if err != nil {
 		log.Println("Build instance metadata failed", err)
 		return
@@ -377,7 +377,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 	}
 	encParts := base64.StdEncoding.EncodeToString([]byte(parts))
 	infraType := openshift.InfrastructureType
-	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' '%s' '%d' '%s' '%s' '%s' '%s'<<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, haflag, nworkers, version, infraType, lbIP, hostrec, encParts)
+	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' '%s' '%d' '%s' '%s' '%s' '%s'<<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, haflag, nworkers, version, infraType, extIP, hostrec, encParts)
 	lbImg := imageID
 	_, err = instanceAdmin.Create(ctx, 1, lbname, userdata, int64(lbImg), lflavor, subnet.ID, openshift.ID, zoneID, lbIP, "", nil, keyIDs, sgIDs, -1)
 	if err != nil {
@@ -621,6 +621,12 @@ func (v *OpenshiftView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	images := []*model.Image{}
+	if err := db.Find(&images).Error; err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+		return
+	}
 	zones := []*model.Zone{}
 	err = db.Find(&zones).Error
 	if err != nil {
@@ -628,6 +634,7 @@ func (v *OpenshiftView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	c.Data["Images"] = images
 	c.Data["Flavors"] = flavors
 	c.Data["Keys"] = keys
 	c.Data["Subnets"] = subnets

@@ -374,7 +374,7 @@ func (v *FloatingIpView) Assign(c *macaron.Context, store session.Store) {
 	floatingips, err := floatingipAdmin.Create(c.Req.Context(), int64(instID), 0, types, floatingIP, "")
 	if err != nil {
 		log.Println("Failed to create floating ip", err)
-		fipsData.PublicIp = floatingIP
+		fipsData.PublicIp = ""
 	} else {
 		for _, fip := range floatingips {
 			if fip.Type == "public" {

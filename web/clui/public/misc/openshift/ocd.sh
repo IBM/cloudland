@@ -2,7 +2,7 @@
 
 cd $(dirname $0)
 
-[ $# -lt 8 ] && echo "$0 <cluster_id> <cluster_name> <base_domain> <endpoint> <cookie> <ha_flag> <nworkers> <version> <lb_ip> <host_record>" && exit 1
+[ $# -lt 8 ] && echo "$0 <cluster_id> <cluster_name> <base_domain> <endpoint> <cookie> <ha_flag> <nworkers> <version> <lb_external_ip> <host_record>" && exit 1
 
 cluster_id=$1
 cluster_name=$2
@@ -13,7 +13,7 @@ haflag=$6
 nworkers=$7
 version=$8
 hyper_type=$9
-lb_ip=${10}
+lb_ext_ip=${10}
 host_rec=${11}
 seq_max=100
 
@@ -27,16 +27,12 @@ function setup_dns()
     instID=$(cat /var/lib/cloud/data/instance-id | cut -d'-' -f2)
     count=0
     while [ -z "$public_ip" -a $count -lt 10 ]; do
-        if [ -n "lb_ip" ]; then
-            data=$(curl -k -XPOST $endpoint/floatingips/assign --cookie "$cookie" --data "instance=$instID" --data "floatingIP=$lb_ip")
-            public_ip=$(jq  -r .networks[0].ip_address <<< $data)
-	else 
-            lb_ip=$(ip addr | grep "inet .*brd" | head -1 | awk '{print $2}' | cut -d'/' -f1)
-            public_ip=$lb_ip
-        fi
+        data=$(curl -k -XPOST $endpoint/floatingips/assign --cookie "$cookie" --data "instance=$instID" --data "floatingIP=$lb_ext_ip")
+        public_ip=$(jq  -r .networks[0].ip_address <<< $data)
         let count=$count+1
         sleep 1
     done
+    [ -z "$public_ip" ] && public_ip=$local_ip
     dns_server=$(grep '^nameserver' /etc/resolv.conf | head -1 | awk '{print $2}')
     if [ -z "$dns_server" -o "$dns_server" = "127.0.0.1" ]; then
         dns_server=8.8.8.8
@@ -67,7 +63,7 @@ EOF
 $host_rec
 $public_ip dns.${cluster_name}.${base_domain}
 $public_ip loadbalancer.${cluster_name}.${base_domain}  api.${cluster_name}.${base_domain}  lb.${cluster_name}.${base_domain}
-$public_ip api-int.${cluster_name}.${base_domain}
+$local_ip api-int.${cluster_name}.${base_domain}
 $bstrap_ip bootstrap.${cluster_name}.${base_domain}
 $master_0_ip master-0.${cluster_name}.${base_domain}  etcd-0.${cluster_name}.${base_domain}
 $master_1_ip master-1.${cluster_name}.${base_domain}  etcd-1.${cluster_name}.${base_domain}
@@ -391,7 +387,7 @@ function launch_cluster()
       mkdir $cluster_name
     fi
     cd /opt/$cluster_name
-    bstrap_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=bootstrap.${cluster_name}.${base_domain}&ipaddr=${public_ip}")
+    bstrap_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=bootstrap.${cluster_name}.${base_domain}&ipaddr=${local_ip}")
     bstrap_interfaces=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=bootstrap.${cluster_name}.${base_domain} --cookie $cookie)
     date > /tmp/cloudland.log
     echo $bstrap_interfaces > /tmp/cloudland.log
@@ -403,20 +399,20 @@ function launch_cluster()
     curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=bootstrap"
     sleep 3
     curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=masters"
-    master_0_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-0.${cluster_name}.${base_domain}&ipaddr=${public_ip}")
+    master_0_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-0.${cluster_name}.${base_domain}&ipaddr=${local_ip}")
     master_0_interfaces=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=master-0.${cluster_name}.${base_domain} --cookie $cookie)
     master_0_ip=$(jq -r .'instances[0].Interfaces[0].Address.Address' <<< $master_0_interfaces)
     master_0_ip=${master_0_ip%/*}
     echo " master_0_ip is  $master_0_ip" > /tmp/cloudland.log
     sleep 50
     if [ "$haflag" = "yes" ]; then
-        master_1_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-1.${cluster_name}.${base_domain}&ipaddr=${public_ip}")
+        master_1_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-1.${cluster_name}.${base_domain}&ipaddr=${local_ip}")
         master_1_interfaces=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=master-1.${cluster_name}.${base_domain} --cookie $cookie)
         master_1_ip=$(jq -r .'instances[0].Interfaces[0].Address.Address' <<< $master_1_interfaces)
         master_1_ip=${master_1_ip%/*}
         echo " master_1_ip is  $master_1_ip" > /tmp/cloudland.log
         sleep 50
-        master_2_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-2.${cluster_name}.${base_domain}&ipaddr=${public_ip}")
+        master_2_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-2.${cluster_name}.${base_domain}&ipaddr=${local_ip}")
         master_2_interfaces=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=master-2.${cluster_name}.${base_domain} --cookie $cookie)
         master_2_ip=$( jq -r .'instances[0].Interfaces[0].Address.Address' <<< $master_2_interfaces)
         master_2_ip=${master_2_ip%/*}
@@ -424,12 +420,12 @@ function launch_cluster()
         sleep 50
     fi
     curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=workers"
-    workers_res[0]=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-0.${cluster_name}.${base_domain}&ipaddr=${public_ip}")
+    workers_res[0]=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-0.${cluster_name}.${base_domain}&ipaddr=${local_ip}")
     workers_ip[0]=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=worker-0.${cluster_name}.${base_domain} --cookie $cookie | jq -r .'instances[0].Interfaces[0].Address.Address')
     workers_ip[0]=${workers_ip[0]%/*}
     echo " worker_0_ip is  $workers_ip[0]" > /tmp/cloudland.log
     sleep 50
-    workers_res[1]=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-1.${cluster_name}.${base_domain}&ipaddr=${public_ip}")
+    workers_res[1]=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-1.${cluster_name}.${base_domain}&ipaddr=${local_ip}")
     workers_ip[1]=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=worker-1.${cluster_name}.${base_domain} --cookie $cookie | jq -r .'instances[0].Interfaces[0].Address.Address')
     workers_ip[1]=${workers_ip[1]%/*}
     echo "~~~~~~~~+++++++~~~~~~~~"
@@ -438,7 +434,7 @@ function launch_cluster()
     for i in $(seq 1 $more); do
         let index=$i+1
         let last=$index+20
-        workers_res[$index]=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-$index.${cluster_name}.${base_domain}&ipaddr=${public_ip}")
+        workers_res[$index]=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-$index.${cluster_name}.${base_domain}&ipaddr=${local_ip}")
         workers_ip[$index]=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=worker-$index.${cluster_name}.${base_domain} --cookie $cookie | jq -r .'instances[0].Interfaces[0].Address.Address')
         workers_ip[$index]=${workers_ip[$index]%/*}
         echo " worker_($index)_ip is  $workers_ip[$index]" > /tmp/cloudland.log
@@ -492,6 +488,7 @@ curl -k $endpoint/misc/openshift/ocd_lb_yum.repo -o /etc/yum.repos.d/oc.repo
 sed -i 's/^SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
 [ $(uname -m) != s390x ] && yum -y install epel-release
 [ "$(uname -m)" = "s390x" ] && yum -y install rng-tools && systemctl start rngd
+local_ip=$(ip addr | grep "inet .*brd" | head -1 | awk '{print $2}' | cut -d'/' -f1)
 systemctl stop firewalld
 systemctl disable firewalld
 systemctl mask firewalld
