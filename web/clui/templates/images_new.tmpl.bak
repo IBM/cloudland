@@ -49,9 +49,9 @@
                                 <div class="required inline field">
                                     <label for="hypervisorType">{{.i18n.Tr "Hypervisor Type"}}</label>
                                     <select name="hypervisorType" id="hypervisorType" class="ui selection dropdown">
-                                         <option value="xkvm" selected>{{.i18n.Tr "KVM on x86-64"}}</option>
-                                         <option value="zkvm" selected>{{.i18n.Tr "KVM on Z"}}</option>
-                                         <option value="zvm">{{.i18n.Tr "z/VM"}}</option>
+                                         <option value="xkvm" selected>{{.i18n.Tr "xkvm"}}</option>
+                                         <option value="zkvm" selected>{{.i18n.Tr "zkvm"}}</option>
+                                         <option value="zvm">{{.i18n.Tr "zvm"}}</option>
                                     </select>
                                 </div>
                                 {{ if .IsAdmin }}

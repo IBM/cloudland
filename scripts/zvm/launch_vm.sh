@@ -19,6 +19,7 @@ vm_vnc=""
 
 md=$(cat)
 metadata=$(echo $md | base64 -d)
+
 vswitch=$(jq .zvm[0].vswitch <<< $metadata | tr -d '"')
 os_version=$(jq .zvm[0].osVersion <<< $metadata | tr -d '"')
 disk_type=$(jq .zvm[0].diskType <<< $metadata | tr -d '"')
@@ -38,11 +39,22 @@ if [ ! -n "$imageExists" ]; then
     echo "Import image $img_name"
     rc=0
 
+    if [ ! -f "$image_cache/$img_name" ]; then
+        wget -q $image_repo/$img_name -O $image_cache/$img_name
+    fi
+    if [ ! -f "$image_cache/$img_name" ]; then
+        echo "Sync image $img_name failed!"
+        echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' 'Sync image $img_name failed!'"
+        exit -1
+    fi 
+
     if [ $os_version = "rhcos4" ]; then
         rc=`curl -s $zvm_service/images -X POST -d '{"image": {"url": "'"$image_repo/$img_name"'", "image_meta": {"os_version": "'"$os_version"'", "disk_type": "'"$disk_type"'"}, "image_name": "'"$img_name"'"}}' | jq .rc`        
     else
         rc=`curl -s $zvm_service/images -X POST -d '{"image": {"url": "'"$image_repo/$img_name"'", "image_meta": {"os_version": "'"$os_version"'"}, "image_name": "'"$img_name"'"}}' | jq .rc`
     fi
+
+    rm -f $image_cache/$img_name
 
     if [ $rc -ne 0 ]; then
         echo "Import image $img_name failed!"
@@ -61,11 +73,15 @@ network=$(ipcalc -n $ip_address $netmask | tr -d NETWORK=)
 prefix=$(ipcalc -p $ip_address $netmask | tr -d PREFIX=)
 cidr="$network/$prefix"
 
+mkdir -p /tmp/cloudland/pending
+touch /tmp/cloudland/pending/$vm_ID
+
 # create guest
 rc=`curl -s $zvm_service/guests -X POST -d '{"guest":{"userid":"'"$vm_ID"'", "vcpus":'$vm_cpu', "max_cpu":'$vm_cpu', "memory":'$vm_mem', "max_mem":"'"${vm_mem}"'M", "ipl_from":"100"}}' | jq .rc`
 if [ $rc -ne 0 ]; then
     echo "Create $vm_ID failed!"
     echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' 'Create $vm_ID failed!'"
+    rm -f /tmp/cloudland/pending/$vm_ID
     exit -1
 fi
 
@@ -76,6 +92,7 @@ if [ $rc -ne 0 ]; then
     # remove user ?
     echo "$vm_ID: Add disk failed!"
     echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' '$vm_ID: Add disk failed!'"
+    rm -f /tmp/cloudland/pending/$vm_ID
     exit -1
 fi
 
@@ -86,6 +103,7 @@ if [ $rc -ne 0 ]; then
     # remove disk and user ?
     echo "$vm_ID: Deploy image failed!"
     echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' '$vm_ID: Deploy image failed!'"
+    rm -f /tmp/cloudland/pending/$vm_ID
     exit -1
 fi
 
@@ -95,6 +113,7 @@ if [ $rc -ne 0 ]; then
     # remove disk and user ?
     echo "$vm_ID: Create network failed!"
     echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' '$vm_ID: Create network failed!'"
+    rm -f /tmp/cloudland/pending/$vm_ID
     exit -1
 fi
 
@@ -104,6 +123,7 @@ if [ $rc -ne 0 ]; then
     # remove disk and user ?
     echo "$vm_ID: Couple to vswitch failed!"
     echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' '$vm_ID: Couple to vswitch failed!'"
+    rm -f /tmp/cloudland/pending/$vm_ID
     exit -1
 fi
 
@@ -113,6 +133,7 @@ if [ $rc -ne 0 ]; then
     # remove disk and user ?
     echo "$vm_ID: vswitch grant failed!"
     echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' '$vm_ID: vswitch grant failed!'"
+    rm -f /tmp/cloudland/pending/$vm_ID
     exit -1
 fi
 
@@ -122,8 +143,11 @@ if [ $rc -ne 0 ]; then
     # remove disk and user ?
     echo "$vm_ID: Start VM failed!"
     echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' '$vm_ID: Start VM failed!'"
+    rm -f /tmp/cloudland/pending/$vm_ID
     exit -1
 fi
+
+rm -f /tmp/cloudland/pending/$vm_ID
 
 vm_stat=running
 echo "|:-COMMAND-:| $(basename $0) '$ID' '$vm_stat' '$SCI_CLIENT_ID' 'unknown'"

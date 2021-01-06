@@ -310,7 +310,7 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 	return
 }
 
-func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie, haflag, version, extIP string, nworkers int32, imageID, lflavor, mflavor, wflavor, key, zoneID, subnetID int64, hostrec, infrtype, sback, atbundle, icsources string) (openshift *model.Openshift, err error) {
+func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie, haflag, version, extIP string, nworkers int32, lflavor, mflavor, wflavor, key, zoneID, subnetID int64, hostrec, infrtype, sback, atbundle, icsources string) (openshift *model.Openshift, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	lbIP := ""
@@ -378,7 +378,13 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 	encParts := base64.StdEncoding.EncodeToString([]byte(parts))
 	infraType := openshift.InfrastructureType
 	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' '%s' '%d' '%s' '%s' '%s' '%s'<<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, haflag, nworkers, version, infraType, extIP, hostrec, encParts)
-	lbImg := imageID
+	image := &model.Image{}
+	err = db.Where("hypervisor_type = ?", infraType).Take(image).Error
+	if err != nil {
+		log.Println("No valid LB image exists", err)
+		return
+	}
+	lbImg := image.ID
 	_, err = instanceAdmin.Create(ctx, 1, lbname, userdata, int64(lbImg), lflavor, subnet.ID, openshift.ID, zoneID, lbIP, "", nil, keyIDs, sgIDs, -1)
 	if err != nil {
 		log.Println("Failed to create oc first instance", err)
@@ -621,12 +627,6 @@ func (v *OpenshiftView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
-	images := []*model.Image{}
-	if err := db.Find(&images).Error; err != nil {
-		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(500, "500")
-		return
-	}
 	zones := []*model.Zone{}
 	err = db.Find(&zones).Error
 	if err != nil {
@@ -634,7 +634,6 @@ func (v *OpenshiftView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
-	c.Data["Images"] = images
 	c.Data["Flavors"] = flavors
 	c.Data["Keys"] = keys
 	c.Data["Subnets"] = subnets
@@ -712,13 +711,6 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	}
 	version := c.QueryTrim("version")
 	extIP := c.QueryTrim("extip")
-	image := c.QueryInt64("image")
-	if image <= 0 {
-		log.Println("No valid image ID")
-		c.Data["ErrorMsg"] = "No valid image ID"
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
 	lflavor := c.QueryInt64("lflavor")
 	mflavor := c.QueryInt64("mflavor")
 	wflavor := c.QueryInt64("wflavor")
@@ -732,7 +724,7 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
 	permit, err := memberShip.CheckOwner(model.Writer, "subnets", int64(subnet))
-	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, version, extIP, int32(nworkers), image, lflavor, mflavor, wflavor, key, zone, subnet, hostrec, infrtype, sback, atbundle, icsources)
+	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, version, extIP, int32(nworkers), lflavor, mflavor, wflavor, key, zone, subnet, hostrec, infrtype, sback, atbundle, icsources)
 	if err != nil {
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{

@@ -53,29 +53,31 @@
 									  </div>
 									</div>
 								</div>
+                                                                <div class="required inline field">
+                                                                        <label for="version">{{.i18n.Tr "InfrastructureType"}}</label>
+                                                                        <div class="ui selection dropdown">
+                                                                          <input id="infrtype" name="infrtype" type="hidden" required>
+                                                                          <i class="dropdown icon"></i>
+                                                                          <div class="default text">{{.i18n.Tr "InfrastructureType"}}</div>
+                                                                          <div class="menu">
+                                                                                <div class="item" data-value=zvm data-text=zvm>
+                                                                                  z/VM
+                                                                                </div>
+                                                                                <div class="item" data-value=zkvm data-text=zkvm>
+                                                                                  KVM on Z
+                                                                                </div>
+                                                                                <div class="item" data-value=xkvm data-text=xkvm>
+                                                                                  KVM on x86-64
+                                                                                </div>
+                                                                          </div>
+                                                                        </div>
+                                                                </div>
 							{{ if .IsAdmin }}
 								<div class="inline field">
 									<label for="extip">{{.i18n.Tr "LoadBalancer_IP"}}</label>
 									<input id="extip"  name="extip">
 								</div>
 							{{ end }}
-							<div class="required inline field">
-							    <label for="image">{{.i18n.Tr "LoadBalancer_Image"}}</label>
-							    <div class="ui selection dropdown">
-							      <input id="image" name="image" type="hidden" required>
-							      <i class="dropdown icon"></i>
-							      <div class="default text">{{.i18n.Tr "Image"}}</div>
-							      <div class="menu">
-								{{ range .Images }}
-							{{ if eq .Status "available" }}
-								<div class="item" data-value={{.ID}} data-text={{.Name}}>
-								  {{.Name}}|{{.OsVersion}}|{{.HypervisorType}}
-								</div>
-								{{ end }}
-								{{ end }}
-							      </div>
-							    </div>
-							</div>
 								<div class="inline field">
 									<label for="haflag">{{.i18n.Tr "High Available"}}</label>
 									<div class="ui selection dropdown">

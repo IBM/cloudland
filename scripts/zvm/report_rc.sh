@@ -8,16 +8,16 @@ function calc_resource()
     virtual_cpu=0
     virtual_memory=0
 
-    guest_output=$(curl -s $zvm_service/guests | jq .output)
-    num_guest=$(echo $guest_output | jq length)
-    for((i=0;i<$num_guest;i++));  do
-        guest=$(echo $guest_output | jq .[$i] | tr -d '"')
-        guest_info=$(curl -s $zvm_service/guests/$guest/info | jq .output)
-        vcpu=$(echo $guest_info | jq .num_cpu)
-        vmem=$(echo $guest_info | jq .max_mem_kb)
-        let virtual_cpu=$virtual_cpu+$vcpu
-        let virtual_memory=$virtual_memory+$vmem/1024
-    done
+    #guest_output=$(curl -s $zvm_service/guests | jq .output)
+    #num_guest=$(echo $guest_output | jq length)
+    #for((i=0;i<$num_guest;i++));  do
+    #    guest=$(echo $guest_output | jq .[$i] | tr -d '"')
+    #    guest_info=$(curl -s $zvm_service/guests/$guest/info | jq .output)
+    #    vcpu=$(echo $guest_info | jq .num_cpu)
+    #    vmem=$(echo $guest_info | jq .max_mem_kb)
+    #    let virtual_cpu=$virtual_cpu+$vcpu
+    #    let virtual_memory=$virtual_memory+$vmem/1024
+    #done
 
     host_info=$(curl -s $zvm_service/host | jq .output)
     disk_available=$(echo $host_info | jq .disk_available)
@@ -27,6 +27,13 @@ function calc_resource()
     cpu=$virtual_cpu
     cpu_total=$virtual_cpu
     let memory_available=$memory_total-$virtual_memory
+
+    cpu=8
+    cpu_total=8
+    let memory_available=memory_available*1024
+    let memory_total=memory_total*1024
+    let disk_available=disk_available*1024*1024*1024
+    let disk_total=disk_total*1024*1024*1024
 
     state=1
     if [ -f "$run_dir/disabled" ]; then
@@ -39,7 +46,7 @@ function calc_resource()
     old_resource_list=$(cat old_resource_list)
     resource_list="'$cpu' '$cpu_total' '$memory_available' '$memory_total' '$disk_available' '$disk_total' '$state'"
     [ "$resource_list" = "$old_resource_list" ] && return
-    echo "|:-COMMAND-:| hyper_status.sh '$SCI_CLIENT_ID' '$HOSTNAME' '$cpu' '$cpu_total' '$memory_available' '$memory_total' '$disk_available' '$disk_total' '$state'"
+    echo "|:-COMMAND-:| hyper_status.sh '$SCI_CLIENT_ID' '$HOSTNAME' '$cpu' '$cpu_total' '$memory_available' '$memory_total' '$disk_available' '$disk_total' '$state' '$HYPER_TYPE' '$ZONE_NAME'"
     echo "'$cpu' '$cpu_total' '$memory_available' '$memory_total' '$disk_available' '$disk_total' '$state'" >/opt/cloudland/run/old_resource_list
 }
 
@@ -51,6 +58,9 @@ function inst_status()
     num_guest=$(echo $guest_output | jq length)
     for((i=0;i<$num_guest;i++));  do
         guest=$(echo $guest_output | jq .[$i] | tr -d '"')
+        if [ -e /tmp/cloudland/pending/$guest ]; then
+            continue
+        fi
         ID=$(echo ${guest:3:5})
         ID="0x$ID"
         ID=$(printf "%d" $ID)

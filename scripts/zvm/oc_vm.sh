@@ -33,6 +33,7 @@ if [ -z "$dns" ]; then
     dns='8.8.8.8'
 fi
 
+# get network information from metadata
 ip_address=$(jq .networks[0].ip_address <<< $metadata | tr -d '"')
 netmask=$(jq .networks[0].netmask <<< $metadata | tr -d '"')
 gateway=$(jq .networks[0].routes[0].gateway <<< $metadata | tr -d '"')
@@ -40,11 +41,15 @@ network=$(ipcalc -n $ip_address $netmask | tr -d NETWORK=)
 prefix=$(ipcalc -p $ip_address $netmask | tr -d PREFIX=)
 cidr="$network/$prefix"
 
+mkdir -p /tmp/cloudland/pending
+touch /tmp/cloudland/pending/$vm_ID
+
 # create guest
 rc=`curl -s $zvm_service/guests -X POST -d '{"guest":{"userid":"'"$vm_ID"'", "vcpus":'$vm_cpu', "max_cpu":'$vm_cpu', "memory":'$vm_mem', "max_mem":"'"${vm_mem}"'M", "ipl_from":"c"}}' | jq .rc`
 if [ $rc -ne 0 ]; then
     echo "Create $vm_ID failed!"
     echo "|:-COMMAND-:| launch_vm.sh '$ID' '$vm_stat' '$SCI_CLIENT_ID' 'Create $vm_ID failed!'"
+    rm -f /tmp/cloudland/pending/$vm_ID
     exit -1
 fi
 
@@ -54,6 +59,7 @@ if [ $rc -ne 0 ]; then
     # remove user ?
     echo "$vm_ID: Add disk failed!"
     echo "|:-COMMAND-:| launch_vm.sh '$ID' '$vm_stat' '$SCI_CLIENT_ID' '$vm_ID: Add disk failed!'"
+    rm -f /tmp/cloudland/pending/$vm_ID
     exit -1
 fi
 
@@ -63,6 +69,7 @@ if [ $rc -ne 0 ]; then
     # remove disk and user ?
     echo "$vm_ID: Create network failed!"
     echo "|:-COMMAND-:| launch_vm.sh '$ID' '$vm_stat' '$SCI_CLIENT_ID' '$vm_ID: Create network failed!'"
+    rm -f /tmp/cloudland/pending/$vm_ID
     exit -1
 fi
 
@@ -72,6 +79,7 @@ if [ $rc -ne 0 ]; then
     # remove disk and user ?
     echo "$vm_ID: Couple to vswitch failed!"
     echo "|:-COMMAND-:| launch_vm.sh '$ID' '$vm_stat' '$SCI_CLIENT_ID' '$vm_ID: Couple to vswitch failed!'"
+    rm -f /tmp/cloudland/pending/$vm_ID
     exit -1
 fi
 
@@ -81,10 +89,10 @@ if [ $rc -ne 0 ]; then
     # remove disk and user ?
     echo "$vm_ID: vswitch grant failed!"
     echo "|:-COMMAND-:| launch_vm.sh '$ID' '$vm_stat' '$SCI_CLIENT_ID' '$vm_ID: vswitch grant failed!'"
+    rm -f /tmp/cloudland/pending/$vm_ID
     exit -1
 fi
 
-# punch files
 mkdir -p $image_cache/ocp/$ocp_version/$hyper_type
 kernel=ocp/$ocp_version/$hyper_type/rhcos-installer-kernel
 if [ ! -f "$image_cache/$kernel" ]; then
@@ -92,6 +100,7 @@ if [ ! -f "$image_cache/$kernel" ]; then
     if [ ! -f "$image_cache/$kernel" ]; then
         echo "$vm_ID: no kernel file!"
         echo "|:-COMMAND-:| launch_vm.sh '$ID' '$vm_stat' '$SCI_CLIENT_ID' '$vm_ID: no kernel file!'"
+        rm -f /tmp/cloudland/pending/$vm_ID
         exit -1
     fi
 fi
@@ -101,6 +110,7 @@ if [ ! -f "$image_cache/$ramdisk" ]; then
     if [ ! -f "$image_cache/$ramdisk" ]; then
         echo "$vm_ID: no ramdisk file!"
         echo "|:-COMMAND-:| launch_vm.sh '$ID' '$vm_stat' '$SCI_CLIENT_ID' '$vm_ID: no ramdisk file!'"
+        rm -f /tmp/cloudland/pending/$vm_ID
         exit -1
     fi
 fi
@@ -129,11 +139,14 @@ if [ $rc -ne 0 ]; then
     # remove disk and user ?
     echo "$vm_ID: Start VM failed!"
     echo "|:-COMMAND-:| launch_vm.sh '$ID' '$vm_stat' '$SCI_CLIENT_ID' '$vm_ID: Start VM failed!'"
+    rm -f /tmp/cloudland/pending/$vm_ID
     exit -1
 fi
 
 # reset IPL 100
 smcli Image_Definition_Update_DM -T $vm_ID -k "IPL=VDEV=100"
+
+rm -f /tmp/cloudland/pending/$vm_ID
 
 vm_stat=running
 echo "|:-COMMAND-:| launch_vm.sh '$ID' '$vm_stat' '$SCI_CLIENT_ID' 'unknown'"

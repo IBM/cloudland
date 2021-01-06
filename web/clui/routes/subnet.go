@@ -574,26 +574,26 @@ func (v *SubnetView) Delete(c *macaron.Context, store session.Store) (err error)
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is Empty"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	subnetID, err := strconv.Atoi(id)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "subnets", int64(subnetID))
 	if !permit {
 		log.Println("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	err = subnetAdmin.Delete(c.Req.Context(), int64(subnetID))
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.JSON(200, map[string]interface{}{

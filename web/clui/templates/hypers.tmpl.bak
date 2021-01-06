@@ -25,6 +25,7 @@
 			                        <th>{{.i18n.Tr "Children"}}</th>
 			                        <th>{{.i18n.Tr "Status"}}</th>
 			                        <th>{{.i18n.Tr "Zone"}}</th>
+			                        <th>{{.i18n.Tr "Type"}}</th>
 			                        <th>{{.i18n.Tr "Cpu"}}</th>
 			                        <th>{{.i18n.Tr "Memory"}}(K)</th>
 			                        <th>{{.i18n.Tr "Disk"}}(B)</th>
@@ -41,6 +42,7 @@
 			                        <td>{{.Children}}</td>
 			                        <td>{{.Status}}</td>
 			                        <td>{{.Zone.Name}}</td>
+			                        <td>{{.Type}}</td>
 			                        <td>{{.Resource.Cpu}}/<br>{{.Resource.CpuTotal}}</td>
 			                        <td>{{.Resource.Memory}}/<br>{{.Resource.MemoryTotal}}</td>
 			                        <td>{{.Resource.Disk}}/<br>{{.Resource.DiskTotal}}</td>

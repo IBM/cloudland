@@ -38,7 +38,7 @@
 					<div class="ui selection dropdown">
 					  <input id="hyper" name="hyper" type="hidden" value="-1">
 					  <i class="dropdown icon"></i>
-					  <div class="default text">{{.i18n.Tr "Random"}}</div>
+					  <div class="default text">{{.i18n.Tr "auto"}}</div>
 					  <div class="menu">
 						{{ if .Hypers }}
 						{{ range .Hypers }}
@@ -107,8 +107,19 @@
                                 {{ if eq .Status "available" }}
 
                                         <div class="item" data-value={{.ID}} data-text={{.Name}}>
+                                          {{ if eq .HypervisorType "zvm" }}
 
-                                          {{.Name}}|{{.OsVersion}}|{{.HypervisorType}}
+                                          {{.Name}} for z/VM
+
+                                          {{ else if eq .HypervisorType "zkvm" }}
+                                          
+                                          {{.Name}} for KVM on Z
+
+                                          {{ else if eq .HypervisorType "xkvm" }}
+
+                                          {{.Name}} for KVM on x86-64
+
+                                          {{ end }}
 
                                         </div>
 

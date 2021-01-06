@@ -82,7 +82,8 @@ func InstanceStatus(ctx context.Context, job *model.Job, args []string) (status 
 		}
 		if instance.Status != status {
 			err = db.Unscoped().Model(instance).Update(map[string]interface{}{
-				"status": status,
+				"status":     status,
+				"deleted_at": nil,
 			}).Error
 			if err != nil {
 				log.Println("Failed to update status", err)
@@ -91,14 +92,16 @@ func InstanceStatus(ctx context.Context, job *model.Job, args []string) (status 
 		if instance.Hyper != int32(hyperID) {
 			instance.Hyper = int32(hyperID)
 			err = db.Unscoped().Model(instance).Update(map[string]interface{}{
-				"hyper": int32(hyperID),
+				"hyper":      int32(hyperID),
+				"deleted_at": nil,
 			}).Error
 			if err != nil {
 				log.Println("Failed to hypervisor", err)
 			}
 			err = db.Unscoped().Model(&model.Interface{}).Where("instance = ?", instance.ID).Update(map[string]interface{}{
-				"hyper":   int32(hyperID),
-				"zone_id": hyper.ZoneID,
+				"hyper":      int32(hyperID),
+				"zone_id":    hyper.ZoneID,
+				"deleted_at": nil,
 			}).Error
 			if err != nil {
 				log.Println("Failed to update interface", err)

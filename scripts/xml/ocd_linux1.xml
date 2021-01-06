@@ -7,7 +7,7 @@
     <type arch='s390x' machine='s390-ccw-virtio-rhel7.6.0'>hvm</type>
     <kernel>/opt/cloudland/cache/image/rhcos-installer-kernel</kernel>
     <initrd>/opt/cloudland/cache/image/rhcos-installer-initramfs.img</initrd>
-    <cmdline>console=ttyS0 nomodeset rd.neednet=1 coreos.inst=yes ip=CORE_IP::192.168.91.1:24:HOSTNAME::none:1450 nameserver=192.168.91.8 coreos.inst.install_dev=vda coreos.inst.image_url=http://192.168.91.8:8080/rhcos.raw.gz coreos.inst.ignition_url=http://192.168.91.8:8080/ignition/ROLE_IGN</cmdline>
+    <cmdline>console=ttyS0 nomodeset rd.neednet=1 coreos.inst=yes ip=CORE_IP::GATEWAY:24:HOSTNAME::none:1450 nameserver=LB_IP coreos.inst.install_dev=vda coreos.inst.image_url=http://LB_IP:8080/rhcos.raw.gz coreos.inst.ignition_url=http://LB_IP:8080/ignition/ROLE_IGN</cmdline>
     <boot dev='hd'/>
   </os>
   <features>

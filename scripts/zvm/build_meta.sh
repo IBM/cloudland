@@ -13,6 +13,7 @@ mkdir -p $latest_dir
 vm_meta=$(cat)
 userdata=$(echo $vm_meta | base64 -d | jq -r .userdata)
 if [ -n "$userdata" ]; then
+   #echo "$userdata" > $latest_dir/user_data
    echo $vm_meta | base64 -d | jq -r .userdata > $latest_dir/user_data
 fi
 
@@ -44,7 +45,8 @@ random_seed=`cat /dev/urandom | head -c 512 | base64 -w 0`
 ) > $latest_dir/meta_data.json
 
 # vm_meta=$(echo $vm_meta | base64 -d)
-# net_json=$(jq 'del(.userdata) | del(.zvm) | del(.ocp) | del(.dns) | del(.hyperType) | del(.vlans) | del(.keys) | del(.security)' <<< $vm_meta | jq --arg dns $dns_server '.services[0].type = "dns" | .services[0].address |= .+$dns')
+# net_json=$(jq 'del(.userdata) | del(.vswitch) | del(.osVersion) | del(.diskType) | del(.hyperType) | del(.dns) | del(.vlans) | del(.keys) | del(.security)' <<< $vm_meta | jq --arg dns $dns_server '.services[0].type = "dns" | .services[0].address |= .+$dns')
+
 
 mkdir -p ${cache_dir}/meta/${vm_ID}
 mkisofs -quiet -R -V config-2 -o ${cache_dir}/meta/${vm_ID}/cfgdrive.iso  $working_dir &> /dev/null

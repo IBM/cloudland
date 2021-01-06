@@ -70,6 +70,14 @@ $master_1_ip master-1.${cluster_name}.${base_domain}  etcd-1.${cluster_name}.${b
 $master_2_ip master-2.${cluster_name}.${base_domain}  etcd-2.${cluster_name}.${base_domain}
 EOF
 
+    for i in $(seq 0 $seq_max); do  
+       if [  -n "${workers_ip[$i]}" ]; then
+            cat >> /etc/dnsmasq.openshift.addnhosts <<EOF
+${workers_ip[$i]} worker-$i.${cluster_name}.${base_domain}
+EOF
+       fi
+    done
+
     echo -e "nameserver 127.0.0.1\nsearch ${cluster_name}.${base_domain}" > /etc/resolv.conf
     systemctl restart dnsmasq
     systemctl enable dnsmasq
@@ -130,19 +138,31 @@ backend machine_config
     server master-1 master-1.${cluster_name}.${base_domain}:22623 check
     server master-2 master-2.${cluster_name}.${base_domain}:22623 check
 
-EOF
-
-    cat >> $haconf <<EOF
 backend router_https
     balance roundrobin
     option ssl-hello-chk
-
 EOF
+
+    for i in $(seq 0 $seq_max); do
+        if [ $i -lt $nworkers ]; then
+            cat >> $haconf <<EOF
+    server worker-$i worker-$i.${cluster_name}.${base_domain}:443 check
+EOF
+        fi
+    done
     cat >> $haconf <<EOF
 backend router_http
     mode http
     balance roundrobin
 EOF
+    for i in $(seq 0 $seq_max); do
+        if [ $i -lt $nworkers ]; then
+            cat >> $haconf <<EOF
+    server worker-$i worker-$i.${cluster_name}.${base_domain}:80 check
+EOF
+
+        fi
+    done
 
     systemctl restart haproxy
     systemctl enable haproxy
@@ -399,20 +419,6 @@ function launch_cluster()
         echo " master_2_ip is  $master_2_ip" > /tmp/cloudland.log
         sleep 50
     fi
-}
-
-function wait_ocd()
-{
-    while true; do
-        sleep 5
-        nc -zv $bstrap_ip 6443
-        [ $? -eq 0 ] && break
-    done
-    ../openshift-install wait-for bootstrap-complete --log-level debug
-    echo "bootstrap-complete runnning completed " >> /tmp/cloudland.log
-    #curl -k -XDELETE $endpoint/instances/$bstrap_ID --cookie $cookie
-
-    # start worker
     curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=workers"
     workers_res[0]=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-0.${cluster_name}.${base_domain}&ipaddr=${local_ip}")
     workers_ip[0]=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=worker-0.${cluster_name}.${base_domain} --cookie $cookie | jq -r .'instances[0].Interfaces[0].Address.Address')
@@ -434,50 +440,18 @@ function wait_ocd()
         echo " worker_($index)_ip is  $workers_ip[$index]" > /tmp/cloudland.log
         sleep 50
     done
+}
 
-    systemctl stop dnsmasq
-    for i in $(seq 0 $seq_max); do
-       if [  -n "${workers_ip[$i]}" ]; then
-            cat >> /etc/dnsmasq.openshift.addnhosts <<EOF
-${workers_ip[$i]} worker-$i.${cluster_name}.${base_domain}
-EOF
-       fi
+function wait_ocd()
+{
+    while true; do
+        sleep 5
+        nc -zv $bstrap_ip 6443
+        [ $? -eq 0 ] && break
     done
-    systemctl start dnsmasq
-
-    # haproxy
-    haconf=/etc/haproxy/haproxy.cfg
-    systemctl stop haproxy
-    sed -i '/^backend router_https/,$d' $haconf
-    cat >> $haconf <<EOF
-backend router_https
-    balance roundrobin
-    option ssl-hello-chk
-EOF
-    for i in $(seq 0 $seq_max); do
-        if [ $i -lt $nworkers ]; then
-            cat >> $haconf <<EOF
-    server worker-$i worker-$i.${cluster_name}.${base_domain}:443 check
-EOF
-        fi
-    done
-    cat >> $haconf <<EOF
-backend router_http
-    mode http
-    balance roundrobin
-EOF
-    for i in $(seq 0 $seq_max); do
-        if [ $i -lt $nworkers ]; then
-            cat >> $haconf <<EOF
-    server worker-$i worker-$i.${cluster_name}.${base_domain}:80 check
-EOF
-        fi
-    done
-
-    systemctl restart haproxy
-
-    sleep 5
-
+    ../openshift-install wait-for bootstrap-complete --log-level debug
+    echo "bootstrap-complete runnning completed " >> /tmp/cloudland.log
+    curl -k -XDELETE $endpoint/instances/$bstrap_ID --cookie $cookie
     nodes=3
     [ "$haflag" = "yes" ] && nodes=5
     export KUBECONFIG=auth/kubeconfig
@@ -498,7 +472,6 @@ EOF
     ../openshift-install wait-for install-complete
     echo "install-complete" >>  /tmp/cloudland.log
     curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=complete"
-    curl -k -XDELETE $endpoint/instances/$bstrap_ID --cookie $cookie
     let nodes=$nodes+$more
     while true; do
         sleep 5
