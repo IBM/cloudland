@@ -23,7 +23,7 @@ metadata=$(echo $md | base64 -d)
 vswitch=$(jq .zvm[0].vswitch <<< $metadata | tr -d '"')
 os_version=$(jq .zvm[0].osVersion <<< $metadata | tr -d '"')
 disk_type=$(jq .zvm[0].diskType <<< $metadata | tr -d '"')
-hyper_type=$(jq .hyperType <<< $metadata | tr -d '"')
+virt_type=$(jq .virt_type <<< $metadata | tr -d '"')
 dns=$(jq .dns <<< $metadata | tr -d '"')
 if [ -z "$dns" ]; then
     dns=$dns_server

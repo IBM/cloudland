@@ -28,10 +28,10 @@ var (
 type ImageAdmin struct{}
 type ImageView struct{}
 
-func (a *ImageAdmin) Create(ctx context.Context, osVersion, diskType, hypervisorType, userName, name, url, format, architecture string, instID int64, isLB bool) (image *model.Image, err error) {
+func (a *ImageAdmin) Create(ctx context.Context, osVersion, diskType, virtType, userName, name, url, format, architecture string, instID int64, isLB bool) (image *model.Image, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
-	image = &model.Image{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, OsVersion: osVersion, DiskType: diskType, HypervisorType: hypervisorType, UserName: userName, Name: name, OSCode: name, Format: format, Status: "creating", Architecture: architecture, OpenShiftLB: isLB}
+	image = &model.Image{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, OsVersion: osVersion, DiskType: diskType, VirtType: virtType, UserName: userName, Name: name, OSCode: name, Format: format, Status: "creating", Architecture: architecture, OpenShiftLB: isLB}
 	err = db.Create(image).Error
 	if err != nil {
 		log.Println("DB create image failed, %v", err)
@@ -52,7 +52,7 @@ func (a *ImageAdmin) Create(ctx context.Context, osVersion, diskType, hypervisor
 		}
 	} else {
 		control := "inter=0"
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_image.sh '%d' '%s' '%s'", image.ID, url, hypervisorType)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_image.sh '%d' '%s' '%s'", image.ID, url, virtType)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Create image command execution failed", err)
@@ -235,7 +235,7 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	instance := c.QueryInt64("instance")
 	osVersion := c.QueryTrim("osVersion")
 	diskType := c.QueryTrim("diskType")
-	hypervisorType := c.QueryTrim("hypervisorType")
+	virtType := c.QueryTrim("virtType")
 	userName := c.QueryTrim("userName")
 	isOcpLB := c.QueryTrim("ocpLB")
 	isLB := false
@@ -251,7 +251,7 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 		architecture = "s390x"
 	}
 
-	image, err := imageAdmin.Create(c.Req.Context(), osVersion, diskType, hypervisorType, userName, name, url, format, architecture, instance, isLB)
+	image, err := imageAdmin.Create(c.Req.Context(), osVersion, diskType, virtType, userName, name, url, format, architecture, instance, isLB)
 	if err != nil {
 		log.Println("Create instance failed", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {

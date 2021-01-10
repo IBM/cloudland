@@ -24,7 +24,7 @@ vswitch=$(jq .zvm[0].vswitch <<< $metadata | tr -d '"')
 ocp_version=$(jq .ocp[0].ocpVersion <<< $metadata | tr -d '"')
 service=$(jq .ocp[0].service <<< $metadata | tr -d '"')
 os_version=rhcos4
-hyper_type=$(jq .hyperType <<< $metadata | tr -d '"')
+virt_type=$(jq .virt_type <<< $metadata | tr -d '"')
 dns=$(jq .dns <<< $metadata | tr -d '"')
 if [ -z "$dns" ]; then
     dns=$dns_server
@@ -93,8 +93,8 @@ if [ $rc -ne 0 ]; then
     exit -1
 fi
 
-mkdir -p $image_cache/ocp/$ocp_version/$hyper_type
-kernel=ocp/$ocp_version/$hyper_type/rhcos-installer-kernel
+mkdir -p $image_cache/ocp/$ocp_version/$virt_type
+kernel=ocp/$ocp_version/$virt_type/rhcos-installer-kernel
 if [ ! -f "$image_cache/$kernel" ]; then
     wget -q $image_repo/$kernel -O $image_cache/$kernel
     if [ ! -f "$image_cache/$kernel" ]; then
@@ -104,7 +104,7 @@ if [ ! -f "$image_cache/$kernel" ]; then
         exit -1
     fi
 fi
-ramdisk=ocp/$ocp_version/$hyper_type/rhcos-installer-initramfs.img
+ramdisk=ocp/$ocp_version/$virt_type/rhcos-installer-initramfs.img
 if [ ! -f "$image_cache/$ramdisk" ]; then
     wget -q $image_repo/$ramdisk -O $image_cache/$ramdisk
     if [ ! -f "$image_cache/$ramdisk" ]; then

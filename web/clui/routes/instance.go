@@ -88,16 +88,16 @@ type OcpData struct {
 }
 
 type InstanceData struct {
-	Userdata  string             `json:"userdata"`
-	HyperType string             `json:"hyperType"`
-	DNS       string             `json:"dns"`
-	ZVM       []*ZvmData         `json:"zvm"`
-	OCP       []*OcpData         `json:"ocp"`
-	Vlans     []*VlanInfo        `json:"vlans"`
-	Networks  []*InstanceNetwork `json:"networks"`
-	Links     []*NetworkLink     `json:"links"`
-	Keys      []string           `json:"keys"`
-	SecRules  []*SecurityData    `json:"security"`
+	Userdata string             `json:"userdata"`
+	VirtType string             `json:"virt_type"`
+	DNS      string             `json:"dns"`
+	ZVM      []*ZvmData         `json:"zvm"`
+	OCP      []*OcpData         `json:"ocp"`
+	Vlans    []*VlanInfo        `json:"vlans"`
+	Networks []*InstanceNetwork `json:"networks"`
+	Links    []*NetworkLink     `json:"links"`
+	Keys     []string           `json:"keys"`
+	SecRules []*SecurityData    `json:"security"`
 }
 
 type InstancesData struct {
@@ -632,10 +632,10 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet
 		log.Println("Invalid image ", instance.ImageID)
 		return
 	}
-	hyperType := image.HypervisorType
+	virtType := image.VirtType
 	dns := primary.NameServer
 	zvm := []*ZvmData{}
-	if hyperType == "zvm" {
+	if virtType == "zvm" {
 		zd := &ZvmData{
 			OsVersion: image.OsVersion,
 			DiskType:  image.DiskType,
@@ -658,16 +658,16 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet
 		ocp = append(ocp, od)
 	}
 	instData := &InstanceData{
-		Userdata:  userdata,
-		HyperType: hyperType,
-		DNS:       dns,
-		ZVM:       zvm,
-		OCP:       ocp,
-		Vlans:     vlans,
-		Networks:  instNetworks,
-		Links:     instLinks,
-		Keys:      instKeys,
-		SecRules:  securityData,
+		Userdata: userdata,
+		VirtType: virtType,
+		DNS:      dns,
+		ZVM:      zvm,
+		OCP:      ocp,
+		Vlans:    vlans,
+		Networks: instNetworks,
+		Links:    instLinks,
+		Keys:     instKeys,
+		SecRules: securityData,
 	}
 	jsonData, err := json.Marshal(instData)
 	if err != nil {

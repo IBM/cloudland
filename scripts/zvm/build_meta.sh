@@ -45,7 +45,7 @@ random_seed=`cat /dev/urandom | head -c 512 | base64 -w 0`
 ) > $latest_dir/meta_data.json
 
 # vm_meta=$(echo $vm_meta | base64 -d)
-# net_json=$(jq 'del(.userdata) | del(.vswitch) | del(.osVersion) | del(.diskType) | del(.hyperType) | del(.dns) | del(.vlans) | del(.keys) | del(.security)' <<< $vm_meta | jq --arg dns $dns_server '.services[0].type = "dns" | .services[0].address |= .+$dns')
+# net_json=$(jq 'del(.userdata) | del(.vswitch) | del(.osVersion) | del(.diskType) | del(.virt_type) | del(.dns) | del(.vlans) | del(.keys) | del(.security)' <<< $vm_meta | jq --arg dns $dns_server '.services[0].type = "dns" | .services[0].address |= .+$dns')
 
 
 mkdir -p ${cache_dir}/meta/${vm_ID}

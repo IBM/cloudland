@@ -76,10 +76,10 @@ func HyperStatus(ctx context.Context, job *model.Job, args []string) (status str
 		log.Println("Invalid hypervisor status", err)
 		hyperStatus = 1
 	}
-	hyperType := "x86_64"
+	virtType := "xkvm"
 	zoneName := ""
 	if argn > 11 {
-		hyperType = args[10]
+		virtType = args[10]
 		zoneName = args[11]
 	}
 	zone := &model.Zone{Name: zoneName}
@@ -108,7 +108,7 @@ func HyperStatus(ctx context.Context, job *model.Job, args []string) (status str
 		return
 	}
 	hyper.Status = int32(hyperStatus)
-	hyper.Type = hyperType
+	hyper.VirtType = virtType
 	hyper.Zone = zone
 	err = db.Save(hyper).Error
 	if err != nil {

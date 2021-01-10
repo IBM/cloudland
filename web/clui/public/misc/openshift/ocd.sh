@@ -2,7 +2,7 @@
 
 cd $(dirname $0)
 
-[ $# -lt 8 ] && echo "$0 <cluster_id> <cluster_name> <base_domain> <endpoint> <cookie> <ha_flag> <nworkers> <version> <lb_external_ip> <host_record>" && exit 1
+[ $# -lt 10 ] && echo "$0 <cluster_id> <cluster_name> <base_domain> <endpoint> <cookie> <ha_flag> <nworkers> <version> <virtual_type> <lb_external_ip> <host_record>" && exit 1
 
 cluster_id=$1
 cluster_name=$2
@@ -12,7 +12,7 @@ cookie=$5
 haflag=$6
 nworkers=$7
 version=$8
-hyper_type=$9
+virt_type=$9
 lb_ext_ip=${10}
 host_rec=${11}
 seq_max=100
@@ -218,7 +218,7 @@ function download_pkgs()
     cd /opt
     conf_url=$endpoint/misc/openshift/ocd.conf
     [ -n "$version" ] && conf_url=${conf_url}.${version}
-    [ -n "$hyper_type" ] && conf_url=${conf_url}.${hyper_type}
+    [ -n "$virt_type" ] && conf_url=${conf_url}.${virt_type}
     wget --no-check-certificate $conf_url -O ocd.conf
     source ocd.conf
     wget --no-check-certificate -O /usr/share/nginx/html/rhcos.raw.gz $coreos_image_url
