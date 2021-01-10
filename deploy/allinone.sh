@@ -1,5 +1,10 @@
 #!/bin/bash
 
+datetime=$(date +'%Y-%m-%d-%H:%M:%S')
+logfile=/tmp/allinone-deploy-$datetime.log
+echo "Install is in progress... Log file is $logfile"
+exec &> >(tee $logfile)
+
 cland_root_dir=/opt/cloudland
 cd $(dirname $0)
 [ $PWD != "$cland_root_dir/deploy" ] && echo "Please clone cloudland into /opt" && exit 1
@@ -170,3 +175,5 @@ inst_console_proxy
 ansible-playbook cloudland.yml -e @$net_conf --tags be_srv,fe_srv,console,imgrepo
 demo_router
 sudo chown -R cland.cland $cland_root_dir
+
+echo "Installation completes. Log file is /tmp/allinone-deploy-2021-01-10-10:42:09.log"
