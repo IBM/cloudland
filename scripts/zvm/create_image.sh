@@ -15,7 +15,7 @@ curl -s $url -o $image
 format=$(qemu-img info $image | grep 'file format' | cut -d' ' -f3)
 [ "$format" = "qcow2" -o "$format" = "raw" ] && state=available
 [ ! -s "$image" ] && state=error
-[ $virt_type = "zvm" ] && format=img
+[ "$virt_type" = "zvm" ] && format=img
 mv $image ${image}.${format}
-#sync_target /opt/cloudland/cache/image
+sync_target /opt/cloudland/cache/image
 echo "|:-COMMAND-:| $(basename $0) '$ID' '$state' '$format'"

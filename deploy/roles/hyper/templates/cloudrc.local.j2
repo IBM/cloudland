@@ -1,5 +1,4 @@
 # -*- mode: sh -*-
-cloud_no=0
 cloud_domain={{ domain_name }}
 image_repo=http://{{ hostvars[groups['hyper'][0]]['inventory_hostname'] }}:4000
 dns_server={{ dns_server }}
@@ -18,4 +17,3 @@ mem_limit=32768
 vol_limit=100
 disk_inc_limit=100
 use_lb=true
-portmap_remote_ip={{ ansible_env['SSH_CLIENT'].split() | first }}

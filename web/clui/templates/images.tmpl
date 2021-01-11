@@ -31,7 +31,6 @@
 			                        <th>{{.i18n.Tr "Created_At"}}</th>
 			                        <th>{{.i18n.Tr "OS Version"}}</th>
 			                        <th>{{.i18n.Tr "Hypervisor Type"}}</th>
-			                        <th>{{.i18n.Tr "Disk Type"}}</th>
 			                        <th>{{.i18n.Tr "Default Username"}}</th>
 			                        <th>{{.i18n.Tr "Architecture"}}</th>
                                     <th>{{.i18n.Tr "Delete"}}</th>
@@ -49,8 +48,17 @@
 			                        <td>{{.Status}}</td>
 			                        <td><span title="Tue, 18 Dec 2018 14:24:59 &#43;0800">{{.CreatedAt}}</span></td>
 			                        <td>{{.OsVersion}}</td>
-			                        <td>{{.HypervisorType}}</td>
-			                        <td>{{.DiskType}}</td>
+                                                <td> 
+                                                    {{ if eq .HypervisorType "zkvm" }}
+                                                        KVM on Z
+                                                    {{ else }}
+                                                        {{ if eq .HypervisorType "zvm" }}
+                                                            z/VM
+                                                        {{ else }}
+                                                            KVM on x86-64
+                                                        {{ end }}
+                                                    {{ end }}
+                                                </td>
 			                        <td>{{.UserName}}</td>
 			                        <td>{{.Architecture}}</td>
                                     <td><div class="delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}"><i class="dark purple trash alternate outline icon"></i></div></td>

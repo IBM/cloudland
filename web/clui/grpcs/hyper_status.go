@@ -76,6 +76,20 @@ func HyperStatus(ctx context.Context, job *model.Job, args []string) (status str
 		log.Println("Invalid hypervisor status", err)
 		hyperStatus = 1
 	}
+	virtType := "xkvm"
+	zoneName := ""
+	if argn > 11 {
+		virtType = args[10]
+		zoneName = args[11]
+	}
+	zone := &model.Zone{Name: zoneName}
+	if zoneName != "" {
+		err = db.Where("name = ?", zoneName).FirstOrCreate(zone).Error
+		if err != nil {
+			log.Println("Failed to create zone", err)
+			return
+		}
+	}
 	err = db.Where("hostid = ?", hyperID).FirstOrCreate(&model.Resource{Hostid: int32(hyperID)}).Error
 	if err != nil {
 		log.Println("Failed to create resource", err)
@@ -94,6 +108,8 @@ func HyperStatus(ctx context.Context, job *model.Job, args []string) (status str
 		return
 	}
 	hyper.Status = int32(hyperStatus)
+	hyper.VirtType = virtType
+	hyper.Zone = zone
 	err = db.Save(hyper).Error
 	if err != nil {
 		log.Println("Failed to save hypervisor", err)

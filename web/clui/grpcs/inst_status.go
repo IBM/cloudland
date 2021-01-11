@@ -48,6 +48,12 @@ func InstanceStatus(ctx context.Context, job *model.Job, args []string) (status 
 		log.Println("Invalid hypervisor ID", err)
 		return
 	}
+	hyper := &model.Hyper{Hostid: int32(hyperID)}
+	err = db.Where(hyper).Take(hyper).Error
+	if err != nil {
+		log.Println("Failed to query hyper", err)
+		return
+	}
 	statusList := strings.Split(args[2], " ")
 	for i := 0; i < len(statusList); i += 2 {
 		instID, err := strconv.Atoi(statusList[i])
@@ -75,10 +81,8 @@ func InstanceStatus(ctx context.Context, job *model.Job, args []string) (status 
 			continue
 		}
 		if instance.Status != status {
-			query := fmt.Sprintf("status = '%s'", "migrating")
-			err = db.Unscoped().Model(instance).Where(query).Update(map[string]interface{}{
-				"status":     status,
-				"deleted_at": nil,
+			err = db.Unscoped().Model(instance).Update(map[string]interface{}{
+				"status": status,
 			}).Error
 			if err != nil {
 				log.Println("Failed to update status", err)
@@ -87,15 +91,14 @@ func InstanceStatus(ctx context.Context, job *model.Job, args []string) (status 
 		if instance.Hyper != int32(hyperID) {
 			instance.Hyper = int32(hyperID)
 			err = db.Unscoped().Model(instance).Update(map[string]interface{}{
-				"hyper":      int32(hyperID),
-				"deleted_at": nil,
+				"hyper": int32(hyperID),
 			}).Error
 			if err != nil {
 				log.Println("Failed to hypervisor", err)
 			}
 			err = db.Unscoped().Model(&model.Interface{}).Where("instance = ?", instance.ID).Update(map[string]interface{}{
-				"hyper":      int32(hyperID),
-				"deleted_at": nil,
+				"hyper":   int32(hyperID),
+				"zone_id": hyper.ZoneID,
 			}).Error
 			if err != nil {
 				log.Println("Failed to update interface", err)

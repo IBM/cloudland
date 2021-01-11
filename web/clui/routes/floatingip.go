@@ -62,15 +62,22 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, typ
 	} else {
 		iface = instance.Interfaces[0]
 	}
-	if iface.Address.Subnet.Router == 0 {
+	if len(iface.Address.Subnet.Routers) == 0 || iface.Address.Subnet.Type != "internal" {
 		err = fmt.Errorf("Floating IP can not be created without a gateway")
 		log.Println("Floating IP can not be created without a gateway")
 		return
 	}
-	gateway := &model.Gateway{Model: model.Model{ID: iface.Address.Subnet.Router}}
-	err = db.Take(gateway).Error
-	if err != nil {
-		log.Println("DB failed to query gateway", err)
+	hasRouter := false
+	var gateway *model.Gateway
+	for _, gw := range iface.Address.Subnet.Routers {
+		if gw.ZoneID == instance.ZoneID {
+			hasRouter = true
+			gateway = gw
+			break
+		}
+	}
+	if !hasRouter {
+		log.Println("No gateway for the instance subnet in this zone")
 		return
 	}
 	err = db.Set("gorm:auto_preload", true).Find(&gateway.Interfaces).Error
@@ -109,6 +116,9 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, typ
 		}
 		floatingips = append(floatingips, floatingip)
 		control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
+		if gateway.Hyper == gateway.Peer {
+			control = fmt.Sprintf("inter=%d", gateway.Hyper)
+		}
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_floating.sh '%d' '%s' '%s' '%s'", gateway.ID, ftype, floatingip.FipAddress, iface.Address.Address)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
@@ -137,6 +147,9 @@ func (a *FloatingIpAdmin) Delete(ctx context.Context, id int64) (err error) {
 	}
 	if floatingip.Gateway != nil {
 		control := fmt.Sprintf("toall=router-%d:%d,%d", floatingip.Gateway.ID, floatingip.Gateway.Hyper, floatingip.Gateway.Peer)
+		if floatingip.Gateway.Hyper == floatingip.Gateway.Peer {
+			control = fmt.Sprintf("inter=%d", floatingip.Gateway.Hyper)
+		}
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_floating.sh '%d' '%s' '%s' '%s'", floatingip.GatewayID, floatingip.Type, floatingip.FipAddress, floatingip.IntAddress)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
@@ -357,19 +370,18 @@ func (v *FloatingIpView) Assign(c *macaron.Context, store session.Store) {
 		return
 	}
 	types := []string{"public", "private"}
+	fipsData := &FloatingIps{Instance: instID}
 	floatingips, err := floatingipAdmin.Create(c.Req.Context(), int64(instID), 0, types, floatingIP, "")
 	if err != nil {
 		log.Println("Failed to create floating ip", err)
-		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
-	fipsData := &FloatingIps{Instance: instID}
-	for _, fip := range floatingips {
-		if fip.Type == "public" {
-			fipsData.PublicIp = fip.FipAddress
-		} else if fip.Type == "private" {
-			fipsData.PrivateIp = fip.FipAddress
+		fipsData.PublicIp = ""
+	} else {
+		for _, fip := range floatingips {
+			if fip.Type == "public" {
+				fipsData.PublicIp = fip.FipAddress
+			} else if fip.Type == "private" {
+				fipsData.PrivateIp = fip.FipAddress
+			}
 		}
 	}
 	c.JSON(200, fipsData)
@@ -394,7 +406,7 @@ func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, gateway 
 	err = db.Where("vlan = ?", subnet.Vlan).Find(&subnets).Error
 	if err == nil && len(subnets) > 0 {
 		for _, s := range subnets {
-			fipIface, err = CreateInterface(ctx, s.ID, floatingipID, owner, -1, address, "", name, "floating", nil)
+			fipIface, err = CreateInterface(ctx, s.ID, floatingipID, owner, gateway.ZoneID, -1, address, "", name, "floating", nil)
 			if err == nil {
 				break
 			}

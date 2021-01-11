@@ -33,13 +33,23 @@
 
                             {{ if .IsAdmin }}
 
-                                <div class="required inline field">
-
-                                    <label for="hyper">{{.i18n.Tr "Hyper"}}</label>
-
-                                    <input id="hyper" name="hyper" value="-1" required>
-
-                                </div>
+				<div class="inline field">
+					<label for="hyper">{{.i18n.Tr "Hyper"}}</label>
+					<div class="ui selection dropdown">
+					  <input id="hyper" name="hyper" type="hidden" value="-1">
+					  <i class="dropdown icon"></i>
+					  <div class="default text">{{.i18n.Tr "auto"}}</div>
+					  <div class="menu">
+						{{ if .Hypers }}
+						{{ range .Hypers }}
+						<div class="item" data-value={{.Hostid}} data-text={{.Hostname}}>
+						  {{.Hostname}}
+						</div>
+						{{ end }}
+						{{ end }}
+					  </div>
+					</div>
+				</div>
 
                                 {{ else }}
 
@@ -52,6 +62,23 @@
                                 </div>
 
                             {{ end }}
+				<div class="inline field">
+					<label for="zone">{{.i18n.Tr "Zone"}}</label>
+					<div class="ui selection dropdown">
+					  <input id="zone" name="zone" type="hidden">
+					  <i class="dropdown icon"></i>
+					  <div class="default text">{{.i18n.Tr "None"}}</div>
+					  <div class="menu">
+						{{ if .Zones }}
+						{{ range .Zones }}
+						<div class="item" data-value={{.ID}} data-text={{.Name}}>
+						  {{.Name}}
+						</div>
+						{{ end }}
+						{{ end }}
+					  </div>
+					</div>
+				</div>
 
                                 <div class="required inline field">
 
@@ -61,43 +88,13 @@
 
                                 </div>
 
-                                <div class="inline field">
-
-                                    <label for="cluster">{{.i18n.Tr "Openshift Cluster"}}</label>
-
-                                    <div class="ui selection dropdown">
-
-                                      <input id="cluster" name="cluster" type="hidden">
-
-                                      <i class="dropdown icon"></i>
-
-                                      <div class="default text">{{.i18n.Tr "None"}}</div>
-
-                                      <div class="menu">
-
-                                        {{ range .Openshifts }}
-
-                                        <div class="item" data-value={{.ID}} data-text={{.ID}}-{{.ClusterName}}>
-
-                                          {{.ID}}-{{.ClusterName}}
-
-                                        </div>
-
-                                        {{ end }}
-
-                                      </div>
-
-                                    </div>
-
-                                </div>
-
-                                <div class="inline field">
+                                <div class="required inline field">
 
                                     <label for="image">{{.i18n.Tr "Image"}}</label>
 
                                     <div class="ui selection dropdown">
 
-                                      <input id="image" name="image" type="hidden">
+                                      <input id="image" name="image" type="hidden" required>
 
                                       <i class="dropdown icon"></i>
 
@@ -110,8 +107,19 @@
                                 {{ if eq .Status "available" }}
 
                                         <div class="item" data-value={{.ID}} data-text={{.Name}}>
+                                          {{ if eq .HypervisorType "zvm" }}
 
-                                          {{.Name}}|{{.OsVersion}}|{{.HypervisorType}}
+                                          {{.Name}} for z/VM
+
+                                          {{ else if eq .HypervisorType "zkvm" }}
+                                          
+                                          {{.Name}} for KVM on Z
+
+                                          {{ else if eq .HypervisorType "xkvm" }}
+
+                                          {{.Name}} for KVM on x86-64
+
+                                          {{ end }}
 
                                         </div>
 

@@ -69,4 +69,6 @@ cloudrc.local
 /sci/scia/scia64
 /sci/stamp-h1
 /sci/usecase
+/sci/autom4te.cache
+/src/remotexec/remotexec*.pb.*
 .vscode

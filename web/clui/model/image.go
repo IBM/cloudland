@@ -23,13 +23,14 @@ type Image struct {
 	OsHashValue    string `gorm:"type:varchar(36)"`
 	Holder         string `gorm:"type:varchar(36)"`
 	Protected      bool
+	OpenShiftLB    bool   `gorm:"default:false"`
 	Visibility     string `gorm:"type:varchar(36)"`
 	MiniDisk       int32
 	MiniMem        int32
 	Size           int64
 	OsVersion      string `gorm:"type:varchar(128)"`
 	DiskType       string `gorm:"type:varchar(128)"`
-	HypervisorType string `gorm:"type:varchar(36)"`
+	VirtType       string `gorm:"type:varchar(36)"`
 	UserName       string `gorm:"type:varchar(128)"`
 }
 

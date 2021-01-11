@@ -111,6 +111,7 @@ Status RemoteExecServiceImpl::Execute(ServerContext* context, const ExecuteReque
     packer.packStr(control);
     packer.packStr(command);
     char *inter = strstr(control, "inter=");
+    char *select = strstr(control, "select=");
     char *group = strstr(control, "group=");
     char *toall = strstr(control, "toall=");
     char *mkgrp = strstr(control, "mkgrp=");
@@ -145,13 +146,23 @@ Status RemoteExecServiceImpl::Execute(ServerContext* context, const ExecuteReque
                 log_info("Message ID: %d control: %s command: %s was sent to scheduler", msgID, control, command);
             }
         } else if (group != NULL) {
-            log_info("Message ID: %d control: %s command: %s was sent to scheduler", msgID, control, command);
+            log_info("Message ID: %d control: %s command: %s was sent to group", msgID, control, command);
             char *name = group + strlen("group=");
             char *p = strchr(group, ' ');
             if (p != NULL) {
                 *p = '\0';
             }
             sciNet.sendMessage(message, length, name);
+        } else if (select != NULL) {
+            log_info("Message ID: %d control: %s command: %s was sent to group member", msgID, control, command);
+            char *desc = select + strlen("select=");
+            sciNet.createGroup(desc);
+            char *p = strchr(select, ':');
+            if (p != NULL) {
+                *p = '\0';
+            }
+	    char *name = desc;
+            sciNet.sendMessage(message, length, name, true);
         } else if (toall != NULL) {
             log_info("Message ID: %d control: %s command: %s was sent to all", msgID, control, command);
             char *name = toall + strlen("toall=");

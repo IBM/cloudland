@@ -1,5 +1,10 @@
 #!/bin/bash
 
+datetime=$(date +'%Y-%m-%d-%H:%M:%S')
+logfile=/tmp/allinone-deploy-$datetime.log
+echo "Install is in progress... Log file is $logfile"
+exec &> >(tee $logfile)
+
 cland_root_dir=/opt/cloudland
 cd $(dirname $0)
 [ $PWD != "$cland_root_dir/deploy" ] && echo "Please clone cloudland into /opt" && exit 1
@@ -105,9 +110,11 @@ function gen_hosts()
     sudo bash -c "echo '$myip $hname' >> /etc/hosts"
     echo $hname > $cland_root_dir/etc/host.list
     mkdir -p $cland_root_dir/deploy/hosts
+    virt_type=xkvm
+    [ "$hyper_type" != "x86_64" ] && virt_type=zkvm
     cat > $cland_root_dir/deploy/hosts/hosts <<EOF
 [hyper]
-$hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key client_id=0
+$hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key client_id=0 zone_name=zone0 virt_type=$virt_type
 
 [cland]
 $hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key
@@ -159,9 +166,10 @@ diff /opt/sci/lib64/libsci.so.0.0.0 $cland_root_dir/sci/libsci/.libs/libsci.so.0
 diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 [ $? -ne 0 ] && inst_cland
 
+hyper_type=$(uname -m)
 gen_hosts
 cd $cland_root_dir/deploy
-[ $(uname -m) != s390x ] && ansible-playbook cloudland.yml -e @$net_conf --tags epel
+[ "$hyper_type" != s390x ] && ansible-playbook cloudland.yml -e @$net_conf --tags epel
 ansible-playbook cloudland.yml -e @$net_conf --tags hosts,selinux,be_pkg,be_conf,firewall
 allinone_firewall
 inst_web
@@ -169,3 +177,5 @@ inst_console_proxy
 ansible-playbook cloudland.yml -e @$net_conf --tags be_srv,fe_srv,console,imgrepo
 demo_router
 sudo chown -R cland.cland $cland_root_dir
+
+echo "Installation completes. Log file is /tmp/allinone-deploy-2021-01-10-10:42:09.log"

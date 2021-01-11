@@ -33,7 +33,7 @@ var (
 func RunDaemon(cmd *cobra.Command, args []string) (err error) {
 	g, _ := errgroup.WithContext(context.Background())
 	g.Go(routes.Run)
-	g.Go(routes.RunRest)
+	// g.Go(routes.RunRest)
 	g.Go(grpcs.Run)
 	return g.Wait()
 }

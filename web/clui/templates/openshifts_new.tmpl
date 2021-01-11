@@ -36,6 +36,42 @@
 									<label for="basedomain">{{.i18n.Tr "Base_Domain"}}</label>
 									<input id="basedomain"  name="basedomain" required>
 								</div>
+								<div class="required inline field">
+									<label for="zone">{{.i18n.Tr "Zone"}}</label>
+									<div class="ui selection dropdown">
+									  <input id="zone" name="zone" type="hidden" required>
+									  <i class="dropdown icon"></i>
+									  <div class="default text">{{.i18n.Tr "None"}}</div>
+									  <div class="menu">
+										{{ if .Zones }}
+										{{ range .Zones }}
+										<div class="item" data-value={{.ID}} data-text={{.Name}}>
+										  {{.Name}}
+										</div>
+										{{ end }}
+										{{ end }}
+									  </div>
+									</div>
+								</div>
+                                                                <div class="required inline field">
+                                                                        <label for="version">{{.i18n.Tr "InfrastructureType"}}</label>
+                                                                        <div class="ui selection dropdown">
+                                                                          <input id="infrtype" name="infrtype" type="hidden" required>
+                                                                          <i class="dropdown icon"></i>
+                                                                          <div class="default text">{{.i18n.Tr "InfrastructureType"}}</div>
+                                                                          <div class="menu">
+                                                                                <div class="item" data-value=zvm data-text=zvm>
+                                                                                  z/VM
+                                                                                </div>
+                                                                                <div class="item" data-value=zkvm data-text=zkvm>
+                                                                                  KVM on Z
+                                                                                </div>
+                                                                                <div class="item" data-value=xkvm data-text=xkvm>
+                                                                                  KVM on x86-64
+                                                                                </div>
+                                                                          </div>
+                                                                        </div>
+                                                                </div>
 							{{ if .IsAdmin }}
 								<div class="inline field">
 									<label for="extip">{{.i18n.Tr "LoadBalancer_IP"}}</label>
@@ -81,57 +117,6 @@
 									  </div>
 									</div>
 								</div>
-								<div class="required inline field">
-									<label for="version">{{.i18n.Tr "InfrastructureType"}}</label>
-									<div class="ui selection dropdown">
-									  <input id="infrtype" name="infrtype" type="hidden" required>
-									  <i class="dropdown icon"></i>
-									  <div class="default text">{{.i18n.Tr "InfrastructureType"}}</div>
-									  <div class="menu">
-										<div class="item" data-value=zVM data-text=zVM>
-										  zVM
-										</div>
-										<div class="item" data-value=zKVM data-text=zKVM>
-										  zKVM
-										</div>
-										<div class="item" data-value=x86KVM data-text=x86KVM>
-										  x86KVM
-										</div>
-									  </div>
-									</div>
-								</div>
-								<div class="required inline field" id="storbackend">
-									<label for="version">{{.i18n.Tr "StorageBackend"}}</label>
-									<div class="ui selection dropdown">
-									  <input id="sback" name="sback" type="hidden" required>
-									  <i class="dropdown icon"></i>
-									  <div class="default text">{{.i18n.Tr "StorageBackend"}}</div>
-									  <div class="menu">
-										<div class="item" data-value=DASD data-text=DASD>
-										  DASD
-										</div>
-										<div class="item" data-value=FCP data-text=FCP>
-										  FCP
-										</div>									
-									  </div>
-									</div>
-								</div>
-								<div class="hidden inline field lbconfig" >
-									<label>{{.i18n.Tr "LB_Config"}}</label>
-									<textarea id="lbconfig" name="lbconfig" autocomplete="off" required></textarea>
-								</div>
-								<div class="hidden inline field bootconfig">
-									<label>{{.i18n.Tr "Boot_Config"}}</label>
-									<textarea id="bootConfig" name="bootConfig" autocomplete="off" required></textarea>
-								</div>
-								<div class="inline field masterconfig">
-									<label>{{.i18n.Tr "Master_Config"}}</label>
-									<textarea id="masterconfig" name="masterconfig" autocomplete="off" required></textarea>
-								</div>
-								<div class="hidden inline field workerconfig">
-									<label>{{.i18n.Tr "Worker_Config"}}</label>
-									<textarea id="workerconfig" name="workerconfig" autocomplete="off" required></textarea>
-								</div>																																												
 								<div class="required inline field">
 									<label for="lflavor">{{.i18n.Tr "LB_Flavor"}}</label>
 									<div class="ui selection dropdown">
@@ -212,14 +197,14 @@
 									<label>{{.i18n.Tr "Pull Secret"}}</label>
 									<textarea id="secret" name="secret" autocomplete="off" required></textarea>
 								</div>
-								<div class="inline field">
-									<label>{{.i18n.Tr "additionalTrustBundle"}}</label>
-									<textarea id="atbundle" name="atbundle" autocomplete="off" required></textarea>
-								</div>
-								<div class="inline field">
-									<label>{{.i18n.Tr "imageContentSources"}}</label>
-									<textarea id="icsources" name="icsources" autocomplete="off" required></textarea>
-								</div>																
+                                                                <div class="inline field">
+                                                                        <label>{{.i18n.Tr "additionalTrustBundle"}}</label>
+                                                                        <textarea id="atbundle" name="atbundle" autocomplete="off"></textarea>
+                                                                </div>
+                                                                <div class="inline field">
+                                                                        <label>{{.i18n.Tr "imageContentSources"}}</label>
+                                                                        <textarea id="icsources" name="icsources" autocomplete="off"></textarea>
+                                                                </div>
 								<div class="inline field">
 									<label></label>
 									<button class="ui green button">{{.i18n.Tr "Create New Openshift Cluster"}}</button>

@@ -230,6 +230,7 @@ int filter_input(void *user_param, sci_group_t group, void *buffer, int size)
     char *grp = strstr(control, "group=");
     char *report = strstr(control, "report");
     char *toall = strstr(control, "toall=");
+    char *select = strstr(control, "select=");
 
     if (report != NULL) {
         long total_cpu;
@@ -243,7 +244,7 @@ int filter_input(void *user_param, sci_group_t group, void *buffer, int size)
         long total_load;
         long load = getValue(message, "load=", &total_load);
         rcManager->setAvailibility(beID, cpu, total_cpu, memory, total_memory, disk, total_disk, network, total_network, load, total_load);
-    } else if ((inter != NULL) || (grp != NULL)) {
+    } else if ((inter != NULL) || (grp != NULL) || (select != NULL)) {
         int target = (int)getValue(control, "inter=", NULL);
         if (target < 0) {
             if (target == myID) {

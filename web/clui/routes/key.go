@@ -12,10 +12,11 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"golang.org/x/crypto/ssh"
 	"log"
 	"net/http"
 	"strconv"
+
+	"golang.org/x/crypto/ssh"
 
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/sca/dbs"
@@ -220,7 +221,7 @@ func (v *KeyView) Delete(c *macaron.Context, store session.Store) (err error) {
 	return
 }
 
-func (v *KeyView) New(c *macaron.Context, store session.Store) () {
+func (v *KeyView) New(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -407,7 +408,7 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 			c.Data["PublicKey"] = publicKey
 			c.Data["PrivateKey"] = privateKey
 			c.Data["fingerPrint"] = fingerPrint
-			c.HTML(200, "newKey")
+			c.HTML(200, "new_key")
 		}
 	}
 }

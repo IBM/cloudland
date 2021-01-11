@@ -1,0 +1,11 @@
+[epel7]
+gpgcheck = 0
+enabled = 1
+baseurl = http://172.16.36.30/yumrepo/clefos_epel7
+name = epel7
+
+[rhel78]
+gpgcheck = 0
+enabled = 1
+baseurl = http://172.16.36.30/mirrors/mounted/rhel78
+name = rhel78

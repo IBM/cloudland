@@ -2,7 +2,7 @@
 
 cd $(dirname $0)
 
-[ $# -lt 8 ] && echo "$0 <cluster_id> <cluster_name> <base_domain> <endpoint> <cookie> <ha_flag> <nworkers> <version> <lb_ip> <host_record>" && exit 1
+[ $# -lt 10 ] && echo "$0 <cluster_id> <cluster_name> <base_domain> <endpoint> <cookie> <ha_flag> <nworkers> <version> <virtual_type> <lb_external_ip> <host_record>" && exit 1
 
 cluster_id=$1
 cluster_name=$2
@@ -12,32 +12,31 @@ cookie=$5
 haflag=$6
 nworkers=$7
 version=$8
-lb_ip=$9
-host_rec=${10}
+virt_type=$9
+lb_ext_ip=${10}
+host_rec=${11}
 seq_max=100
-cloud_user=rhel
 
-cat /etc/redhat-release | grep -q CentOS
-[ $? -eq 0 ] && cloud_user=centos
+cloud_user=$(cat /etc/sudoers.d/*-cloud-init-users | grep NOPASSWD:ALL | tail -1 | cut -d' ' -f1)
+
+declare -a workers_res
+declare -a workers_ip
 
 function setup_dns()
 {
     instID=$(cat /var/lib/cloud/data/instance-id | cut -d'-' -f2)
     count=0
     while [ -z "$public_ip" -a $count -lt 10 ]; do
-        data=$(curl -k -XPOST $endpoint/floatingips/assign --cookie "$cookie" --data "instance=$instID" --data "floatingIP=$lb_ip")
-        echo $data
-        public_ip=$(jq  -r .public_ip <<< $data)
-        public_ip=${public_ip%%/*}
+        data=$(curl -k -XPOST $endpoint/floatingips/assign --cookie "$cookie" --data "instance=$instID" --data "floatingIP=$lb_ext_ip")
+        public_ip=$(jq  -r .networks[0].ip_address <<< $data)
         let count=$count+1
         sleep 1
     done
-    [ -z "$public_ip" ] && public_ip=192.168.91.8
+    #[ -z "$public_ip" ] && public_ip=$local_ip
     dns_server=$(grep '^nameserver' /etc/resolv.conf | head -1 | awk '{print $2}')
     if [ -z "$dns_server" -o "$dns_server" = "127.0.0.1" ]; then
         dns_server=8.8.8.8
     fi
-
     [ -n "$host_rec" ] && host_rec="$(echo $host_rec | tr ':' ' ')"
     yum install -y dnsmasq
     cp /etc/dnsmasq.conf /etc/dnsmasq.conf.bak
@@ -45,7 +44,7 @@ function setup_dns()
 no-resolv
 server=$dns_server
 local=/${cluster_name}.${base_domain}/
-address=/apps.${cluster_name}.${base_domain}/$public_ip
+address=/apps.${cluster_name}.${base_domain}/$local_ip
 srv-host=_etcd-server-ssl._tcp.${cluster_name}.${base_domain},etcd-0.${cluster_name}.${base_domain},2380,0,10
 EOF
     if [ "$haflag" = "yes" ]; then
@@ -62,20 +61,14 @@ EOF
 
     cat > /etc/dnsmasq.openshift.addnhosts <<EOF
 $host_rec
-$public_ip dns.${cluster_name}.${base_domain}
-$public_ip loadbalancer.${cluster_name}.${base_domain}  api.${cluster_name}.${base_domain}  lb.${cluster_name}.${base_domain}
-192.168.91.8 api-int.${cluster_name}.${base_domain}
-192.168.91.9 bootstrap.${cluster_name}.${base_domain}
-192.168.91.10 master-0.${cluster_name}.${base_domain}  etcd-0.${cluster_name}.${base_domain}
-192.168.91.11 master-1.${cluster_name}.${base_domain}  etcd-1.${cluster_name}.${base_domain}
-192.168.91.12 master-2.${cluster_name}.${base_domain}  etcd-2.${cluster_name}.${base_domain}
+$local_ip dns.${cluster_name}.${base_domain}
+$local_ip loadbalancer.${cluster_name}.${base_domain}  api.${cluster_name}.${base_domain}  lb.${cluster_name}.${base_domain}
+$local_ip api-int.${cluster_name}.${base_domain}
+$bstrap_ip bootstrap.${cluster_name}.${base_domain}
+$master_0_ip master-0.${cluster_name}.${base_domain}  etcd-0.${cluster_name}.${base_domain}
+$master_1_ip master-1.${cluster_name}.${base_domain}  etcd-1.${cluster_name}.${base_domain}
+$master_2_ip master-2.${cluster_name}.${base_domain}  etcd-2.${cluster_name}.${base_domain}
 EOF
-    for i in $(seq 0 $seq_max); do
-        let suffix=$i+20
-        cat >> /etc/dnsmasq.openshift.addnhosts <<EOF
-192.168.91.$suffix worker-$i.${cluster_name}.${base_domain}
-EOF
-    done
 
     echo -e "nameserver 127.0.0.1\nsearch ${cluster_name}.${base_domain}" > /etc/resolv.conf
     systemctl restart dnsmasq
@@ -137,27 +130,19 @@ backend machine_config
     server master-1 master-1.${cluster_name}.${base_domain}:22623 check
     server master-2 master-2.${cluster_name}.${base_domain}:22623 check
 
+EOF
+
+    cat >> $haconf <<EOF
 backend router_https
     balance roundrobin
     option ssl-hello-chk
-EOF
 
-    for i in $(seq 0 $seq_max); do
-        cat >> $haconf <<EOF
-    server worker-$i worker-$i.${cluster_name}.${base_domain}:443 check
 EOF
-    done
     cat >> $haconf <<EOF
-
 backend router_http
     mode http
     balance roundrobin
 EOF
-    for i in $(seq 0 $seq_max); do
-        cat >> $haconf <<EOF
-    server worker-$i worker-$i.${cluster_name}.${base_domain}:80 check
-EOF
-    done
 
     systemctl restart haproxy
     systemctl enable haproxy
@@ -165,7 +150,7 @@ EOF
 
 function setup_nginx()
 {
-    yum install -y nginx
+    #yum install -y nginx
     cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak
     cat > /etc/nginx/nginx.conf <<EOF
 user nginx;
@@ -230,10 +215,10 @@ EOF
 
 function download_pkgs()
 {
-    yum install -y wget nc jq
     cd /opt
     conf_url=$endpoint/misc/openshift/ocd.conf
     [ -n "$version" ] && conf_url=${conf_url}.${version}
+    [ -n "$virt_type" ] && conf_url=${conf_url}.${virt_type}
     wget --no-check-certificate $conf_url -O ocd.conf
     source ocd.conf
     wget --no-check-certificate -O /usr/share/nginx/html/rhcos.raw.gz $coreos_image_url
@@ -246,11 +231,13 @@ function download_pkgs()
 
 function ignite_files()
 {
+    echo "~~~~~~~~~+++++~~~~~~~~~"
+    pwd
     parts=$(cat | base64 -d | sed -s 's/\r//')
     ssh_key=$(cat /home/$cloud_user/.ssh/authorized_keys | tail -1)
-    rm -rf $cluster_name
-    mkdir $cluster_name
-    cd $cluster_name
+    
+    #rm -rf $cluster_name
+    #mkdir $cluster_name
     mreplica=1
     [ "$haflag" = "yes" ] && mreplica=3
     cat > install-config.yaml <<EOF
@@ -280,18 +267,26 @@ sshKey: '$ssh_key'
 $parts
 EOF
     sed -i "/^$/d" install-config.yaml
+    #sed -i "/^{}/d" install-config.yaml
     mkdir /opt/backup
     cp install-config.yaml /opt/backup
+    cd /opt/$cluster_name
+    echo " create manifests now" >> /tmp/cloudland.log
     ../openshift-install create manifests
     sed -i "s/mastersSchedulable: true/mastersSchedulable: false/" manifests/cluster-scheduler-02-config.yml
+    echo " manifests running completed "  >> /tmp/cloudland.log
     cp -rf ../$cluster_name /opt/backup
+    pwd
+    echo " starting to create ignition-configs file " >> /tmp/cloudland.log
     ../openshift-install create ignition-configs
+    echo " ignition-configs file completed" >> /tmp/cloudland.log
     cp -rf ../$cluster_name /opt/backup
     ignite_dir=/usr/share/nginx/html/ignition
     rm -rf $ignite_dir
     mkdir $ignite_dir
     cp *.ign $ignite_dir
     chmod a+r $ignite_dir/*
+    echo "copy ignition file completed " >> /tmp/cloudland.log
     cat >>/root/.bashrc <<EOF
 export KUBECONFIG=/opt/$cluster_name/auth/kubeconfig
 export PS1='[\u@\h.$cluster_name \w]\\$ '
@@ -325,11 +320,11 @@ metadata:
   name: nfs-pv
 spec:
   capacity:
-    storage: 100Gi 
+    storage: 100Gi
   accessModes:
-  - ReadWriteMany 
-  nfs: 
-    path: /opt/$cluster_name/data 
+  - ReadWriteMany
+  nfs:
+    path: /opt/$cluster_name/data
     server: 192.168.91.8
   persistentVolumeReclaimPolicy: Recycle
 EOF
@@ -368,32 +363,121 @@ EOF
 
 function launch_cluster()
 {
+    if [ ! -d $cluster_name  ];then
+      mkdir $cluster_name
+    fi
     cd /opt/$cluster_name
-    bstrap_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=bootstrap.${cluster_name}.${base_domain};ipaddr=192.168.91.9")
-    bstrap_ID=$(jq -r .ID <<< $bstrap_res)
+    bstrap_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=bootstrap.${cluster_name}.${base_domain}&ipaddr=${local_ip}")
+    bstrap_interfaces=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=bootstrap.${cluster_name}.${base_domain} --cookie $cookie)
+    date > /tmp/cloudland.log
+    echo $bstrap_interfaces > /tmp/cloudland.log
+    bstrap_ID=$(jq -r .'instances[0].ID' <<< $bstrap_interfaces)
+    bstrap_ip=$(jq -r .'instances[0].Interfaces[0].Address.Address' <<< $bstrap_interfaces)
+    bstrap_ip=${bstrap_ip%/*}
+    echo " boostrapIP is  $bstrap_ip" > /tmp/cloudland.log
+    echo "~~~~~~~++++~~~~~~"
     curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=bootstrap"
+    sleep 3
+    curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=masters"
+    master_0_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-0.${cluster_name}.${base_domain}&ipaddr=${local_ip}")
+    master_0_interfaces=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=master-0.${cluster_name}.${base_domain} --cookie $cookie)
+    master_0_ip=$(jq -r .'instances[0].Interfaces[0].Address.Address' <<< $master_0_interfaces)
+    master_0_ip=${master_0_ip%/*}
+    echo " master_0_ip is  $master_0_ip" > /tmp/cloudland.log
+    sleep 50
+    if [ "$haflag" = "yes" ]; then
+        master_1_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-1.${cluster_name}.${base_domain}&ipaddr=${local_ip}")
+        master_1_interfaces=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=master-1.${cluster_name}.${base_domain} --cookie $cookie)
+        master_1_ip=$(jq -r .'instances[0].Interfaces[0].Address.Address' <<< $master_1_interfaces)
+        master_1_ip=${master_1_ip%/*}
+        echo " master_1_ip is  $master_1_ip" > /tmp/cloudland.log
+        sleep 50
+        master_2_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-2.${cluster_name}.${base_domain}&ipaddr=${local_ip}")
+        master_2_interfaces=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=master-2.${cluster_name}.${base_domain} --cookie $cookie)
+        master_2_ip=$( jq -r .'instances[0].Interfaces[0].Address.Address' <<< $master_2_interfaces)
+        master_2_ip=${master_2_ip%/*}
+        echo " master_2_ip is  $master_2_ip" > /tmp/cloudland.log
+        sleep 50
+    fi
+}
+
+function wait_ocd()
+{
     while true; do
         sleep 5
-        nc -zv 192.168.91.9 6443
+        nc -zv $bstrap_ip 6443
         [ $? -eq 0 ] && break
     done
-    curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=masters"
-    curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-0.${cluster_name}.${base_domain};ipaddr=192.168.91.10"
-    sleep 3
-    if [ "$haflag" = "yes" ]; then
-        curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-1.${cluster_name}.${base_domain};ipaddr=192.168.91.11"
-        sleep 3
-        curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-2.${cluster_name}.${base_domain};ipaddr=192.168.91.12"
-        sleep 3
-    fi
-    curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=workers"
-    curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-0.${cluster_name}.${base_domain};ipaddr=192.168.91.20"
-    sleep 3
-    curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-1.${cluster_name}.${base_domain};ipaddr=192.168.91.21"
-    sleep 3
-    sleep 60
     ../openshift-install wait-for bootstrap-complete --log-level debug
-    curl -k -XDELETE $endpoint/instances/$bstrap_ID --cookie $cookie
+    echo "bootstrap-complete runnning completed " >> /tmp/cloudland.log
+    #curl -k -XDELETE $endpoint/instances/$bstrap_ID --cookie $cookie
+
+    # start worker
+    curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=workers"
+    workers_res[0]=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-0.${cluster_name}.${base_domain}&ipaddr=${local_ip}")
+    workers_ip[0]=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=worker-0.${cluster_name}.${base_domain} --cookie $cookie | jq -r .'instances[0].Interfaces[0].Address.Address')
+    workers_ip[0]=${workers_ip[0]%/*}
+    echo " worker_0_ip is  $workers_ip[0]" > /tmp/cloudland.log
+    sleep 50
+    workers_res[1]=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-1.${cluster_name}.${base_domain}&ipaddr=${local_ip}")
+    workers_ip[1]=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=worker-1.${cluster_name}.${base_domain} --cookie $cookie | jq -r .'instances[0].Interfaces[0].Address.Address')
+    workers_ip[1]=${workers_ip[1]%/*}
+    echo "~~~~~~~~+++++++~~~~~~~~"
+    echo "worker_1_ip is $workers_ip[1]" > /tmp/cloudland.log
+    let more=$nworkers-2
+    for i in $(seq 1 $more); do
+        let index=$i+1
+        let last=$index+20
+        workers_res[$index]=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-$index.${cluster_name}.${base_domain}&ipaddr=${local_ip}")
+        workers_ip[$index]=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=worker-$index.${cluster_name}.${base_domain} --cookie $cookie | jq -r .'instances[0].Interfaces[0].Address.Address')
+        workers_ip[$index]=${workers_ip[$index]%/*}
+        echo " worker_($index)_ip is  $workers_ip[$index]" > /tmp/cloudland.log
+        sleep 50
+    done
+
+    systemctl stop dnsmasq
+    for i in $(seq 0 $seq_max); do
+       if [  -n "${workers_ip[$i]}" ]; then
+            cat >> /etc/dnsmasq.openshift.addnhosts <<EOF
+${workers_ip[$i]} worker-$i.${cluster_name}.${base_domain}
+EOF
+       fi
+    done
+    systemctl start dnsmasq
+
+    # haproxy
+    haconf=/etc/haproxy/haproxy.cfg
+    systemctl stop haproxy
+    sed -i '/^backend router_https/,$d' $haconf
+    cat >> $haconf <<EOF
+backend router_https
+    balance roundrobin
+    option ssl-hello-chk
+EOF
+    for i in $(seq 0 $seq_max); do
+        if [ $i -lt $nworkers ]; then
+            cat >> $haconf <<EOF
+    server worker-$i worker-$i.${cluster_name}.${base_domain}:443 check
+EOF
+        fi
+    done
+    cat >> $haconf <<EOF
+backend router_http
+    mode http
+    balance roundrobin
+EOF
+    for i in $(seq 0 $seq_max); do
+        if [ $i -lt $nworkers ]; then
+            cat >> $haconf <<EOF
+    server worker-$i worker-$i.${cluster_name}.${base_domain}:80 check
+EOF
+        fi
+    done
+
+    systemctl restart haproxy
+
+    sleep 5
+
     nodes=3
     [ "$haflag" = "yes" ] && nodes=5
     export KUBECONFIG=auth/kubeconfig
@@ -410,16 +494,11 @@ function launch_cluster()
         ../oc get clusteroperators image-registry
         [ $? -eq 0 ] && break
     done
-    setup_nfs_pv
+    #setup_nfs_pv
     ../openshift-install wait-for install-complete
+    echo "install-complete" >>  /tmp/cloudland.log
     curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=complete"
-    let more=$nworkers-2
-    for i in $(seq 1 $more); do
-        let index=$i+1
-        let last=$index+20
-        curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-$index.${cluster_name}.${base_domain};ipaddr=192.168.91.$last"
-        sleep 3
-    done
+    curl -k -XDELETE $endpoint/instances/$bstrap_ID --cookie $cookie
     let nodes=$nodes+$more
     while true; do
         sleep 5
@@ -432,16 +511,19 @@ function launch_cluster()
 }
 
 setenforce Permissive
+curl -k $endpoint/misc/openshift/ocd_lb_yum.repo -o /etc/yum.repos.d/oc.repo
 sed -i 's/^SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
 [ $(uname -m) != s390x ] && yum -y install epel-release
 [ "$(uname -m)" = "s390x" ] && yum -y install rng-tools && systemctl start rngd
+local_ip=$(ip addr | grep "inet .*brd" | head -1 | awk '{print $2}' | cut -d'/' -f1)
 systemctl stop firewalld
 systemctl disable firewalld
 systemctl mask firewalld
-yum -y install jq
+yum -y install wget jq nc nginx
+download_pkgs
+launch_cluster
 setup_dns
 setup_lb
 setup_nginx
-download_pkgs
 ignite_files
-launch_cluster
+wait_ocd

@@ -27,6 +27,23 @@
 									<input id="netmask"  name="netmask" required>
 								</div>
 								<div class="inline field">
+									<label for="zones">{{.i18n.Tr "Zones"}}</label>
+									<div class="ui multiple selection dropdown">
+									  <input name="zones" id="zones" type="hidden">
+									  <i class="dropdown icon"></i>
+									  <div class="default text">{{.i18n.Tr "Zones"}}</div>
+									  <div class="menu">
+										{{ if .Zones }}
+										{{ range .Zones }}
+										<div class="item" data-value={{.ID}} data-text={{.Name}}>
+										  {{.Name}}
+										</div>
+										{{ end }}
+										{{ end }}
+									  </div>
+									</div>
+								</div>
+								<div class="inline field">
 									<label for="gateway">{{.i18n.Tr "Gateway"}}</label>
 									<input id="gateway"  name="gateway">
 								</div>
