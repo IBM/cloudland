@@ -22,6 +22,7 @@ for (( i=1; i <= $count; i++ )); do
     else
         vni=${br_name#br}
         ./clear_link.sh $vni
+        ./rm_fdb.sh $vm_ID
         ./clear_sg_chain.sh $vif_dev
     fi
     sidecar span log $span "Callback: clear_vnic.sh '$vif_dev'"
