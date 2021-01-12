@@ -11,10 +11,11 @@ latest_dir=$working_dir/openstack/latest
 mkdir -p $latest_dir
 
 vm_meta=$(cat)
-userdata=$(jq -r '.userdata' <<< $vm_meta)
+userdata=$(echo $vm_meta | base64 -d | jq -r .userdata)
 if [ -n "$userdata" ]; then
-   echo "$userdata" > $latest_dir/user_data
+   echo $vm_meta | base64 -d | jq -r .userdata > $latest_dir/user_data
 fi
+vm_meta=$(echo $vm_meta | base64 -d)
 
 pub_keys=$(jq -r '.keys' <<< $vm_meta)
 admin_pass=`openssl rand -base64 12`
