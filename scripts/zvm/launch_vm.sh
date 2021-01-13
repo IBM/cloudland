@@ -77,7 +77,12 @@ mkdir -p /tmp/cloudland/pending
 touch /tmp/cloudland/pending/$vm_ID
 
 # create guest
-rc=`curl -s $zvm_service/guests -X POST -d '{"guest":{"userid":"'"$vm_ID"'", "vcpus":'$vm_cpu', "max_cpu":'$vm_cpu', "memory":'$vm_mem', "max_mem":"'"${vm_mem}"'M", "ipl_from":"100"}}' | jq .rc`
+if [ $vm_mem -lt 9999 ]; then
+    rc=`curl -s $zvm_service/guests -X POST -d '{"guest":{"userid":"'"$vm_ID"'", "vcpus":'$vm_cpu', "max_cpu":'$vm_cpu', "memory":'$vm_mem', "max_mem":"'"${vm_mem}"'M", "ipl_from":"100"}}' | jq .rc`
+else
+    let vm_mem=$vm_mem/1024
+    rc=`curl -s $zvm_service/guests -X POST -d '{"guest":{"userid":"'"$vm_ID"'", "vcpus":'$vm_cpu', "max_cpu":'$vm_cpu', "memory":'$vm_mem', "max_mem":"'"${vm_mem}"'G", "ipl_from":"100"}}' | jq .rc`
+fi
 if [ $rc -ne 0 ]; then
     echo "Create $vm_ID failed!"
     echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' 'Create $vm_ID failed!'"
