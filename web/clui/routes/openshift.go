@@ -638,6 +638,7 @@ func (v *OpenshiftView) New(c *macaron.Context, store session.Store) {
 	c.Data["Keys"] = keys
 	c.Data["Subnets"] = subnets
 	c.Data["Zones"] = zones
+	c.Data["UserID"] = store.Get("uid").(int64)
 	c.HTML(200, "openshifts_new")
 }
 

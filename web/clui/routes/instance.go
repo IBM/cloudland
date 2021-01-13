@@ -990,6 +990,7 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 	c.Data["Keys"] = keys
 	c.Data["Hypers"] = hypers
 	c.Data["Zones"] = zones
+	c.Data["UserID"] = store.Get("uid").(int64)
 	c.HTML(200, "instances_new")
 }
 
@@ -1269,13 +1270,6 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	if err != nil {
 		log.Println("Invalid primary subnet ID, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
-	permit, err = memberShip.CheckAdmin(model.Writer, "subnets", int64(primaryID))
-	if !permit {
-		log.Println("Not authorized to access subnet")
-		c.Data["ErrorMsg"] = "Need Write permissions"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}

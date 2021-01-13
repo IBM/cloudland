@@ -557,6 +557,7 @@ func (v *SubnetView) List(c *macaron.Context, store session.Store) {
 	c.Data["Total"] = total
 	c.Data["Pages"] = pages
 	c.Data["Query"] = query
+	c.Data["UserID"] = store.Get("uid").(int64)
 	if c.Req.Header.Get("X-Json-Format") == "yes" {
 		c.JSON(200, map[string]interface{}{
 			"subnets": subnets,
