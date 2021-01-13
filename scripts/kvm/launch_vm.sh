@@ -73,8 +73,6 @@ while [ $i -lt $nvlan ]; do
     mac=$(jq -r .[$i].mac_address <<< $vlans)
     jq .security <<< $metadata | ./attach_nic.sh $ID $vlan $ip $mac 
     let i=$i+1
-    echo $mac > $xml_dir/${vm_ID}_mac.log
-    chmod 775 $xml_dir/${vm_ID}_mac.log
 done
 virsh start $vm_ID
 [ $? -eq 0 ] && state=running && ./replace_vnc_passwd.sh $ID
