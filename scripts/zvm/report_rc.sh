@@ -8,28 +8,30 @@ function calc_resource()
     virtual_cpu=0
     virtual_memory=0
 
-    #guest_output=$(curl -s $zvm_service/guests | jq .output)
-    #num_guest=$(echo $guest_output | jq length)
-    #for((i=0;i<$num_guest;i++));  do
-    #    guest=$(echo $guest_output | jq .[$i] | tr -d '"')
-    #    guest_info=$(curl -s $zvm_service/guests/$guest/info | jq .output)
-    #    vcpu=$(echo $guest_info | jq .num_cpu)
-    #    vmem=$(echo $guest_info | jq .max_mem_kb)
-    #    let virtual_cpu=$virtual_cpu+$vcpu
-    #    let virtual_memory=$virtual_memory+$vmem/1024
-    #done
+    guest_output=$(curl -s $zvm_service/guests | jq .output)
+    num_guest=$(echo $guest_output | jq length)
+    for((i=0;i<$num_guest;i++));  do
+       guest=$(echo $guest_output | jq .[$i] | tr -d '"')
+       guest_info=$(curl -s $zvm_service/guests/$guest/info | jq .output)
+       vcpu=$(echo $guest_info | jq .num_cpu)
+       vmem=$(echo $guest_info | jq .max_mem_kb)
+       let virtual_cpu=$virtual_cpu+$vcpu
+       let virtual_memory=$virtual_memory+$vmem/1024
+    done
 
     host_info=$(curl -s $zvm_service/host | jq .output)
     disk_available=$(echo $host_info | jq .disk_available)
     disk_total=$(echo $host_info | jq .disk_total)
     memory_total=$(echo $host_info | jq .memory_mb)
 
+    cpu_total=$(curl -s $zvm_service/host | jq .output.vcpus)
+    let cpu_total=$cpu_total*$cpu_over_ratio
     cpu=$virtual_cpu
-    cpu_total=$virtual_cpu
-    let memory_available=$memory_total-$virtual_memory
+    let cpu=$cpu_total-$cpu
+    [ $cpu -lt 0 ] && cpu=0
 
-    cpu=8
-    cpu_total=8
+    let memory_available=$memory_total-$virtual_memory
+    [ $memory_available -lt 0 ] && memory_available=0
     let memory_available=memory_available*1024
     let memory_total=memory_total*1024
     let disk_available=disk_available*1024*1024*1024
