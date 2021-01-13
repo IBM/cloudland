@@ -49,10 +49,10 @@
 			                        <td><span title="Tue, 18 Dec 2018 14:24:59 &#43;0800">{{.CreatedAt}}</span></td>
 			                        <td>{{.OsVersion}}</td>
                                                 <td> 
-                                                    {{ if eq .HypervisorType "zkvm" }}
+                                                    {{ if eq .VirtType "zkvm" }}
                                                         KVM on Z
                                                     {{ else }}
-                                                        {{ if eq .HypervisorType "zvm" }}
+                                                        {{ if eq .VirtType "zvm" }}
                                                             z/VM
                                                         {{ else }}
                                                             KVM on x86-64
