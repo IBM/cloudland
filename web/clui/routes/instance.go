@@ -943,7 +943,8 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 		return
 	}
 	ctx := c.Req.Context()
-	_, subnets, err := subnetAdmin.List(ctx, 0, -1, "", "", "")
+	sql := fmt.Sprintf("type = 'public' or owner = %d", memberShip.OrgID)
+	_, subnets, err := subnetAdmin.List(ctx, 0, -1, "", "", sql)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
@@ -990,7 +991,6 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 	c.Data["Keys"] = keys
 	c.Data["Hypers"] = hypers
 	c.Data["Zones"] = zones
-	c.Data["UserID"] = store.Get("uid").(int64)
 	c.HTML(200, "instances_new")
 }
 

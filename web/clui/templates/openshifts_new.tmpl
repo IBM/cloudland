@@ -170,11 +170,9 @@
                                     <div class="default text">{{.i18n.Tr "Subnet"}}</div>
                                     <div class="menu">
                                       {{ range .Subnets }}
-										{{ if or (eq $.UserID .Owner) (eq .Type "public") }}
                                       <div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
                                         {{.Name}}
                                       </div>
-										{{ end }}
                                       {{ end }}
                                     </div>
                                     </div>

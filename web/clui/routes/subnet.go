@@ -496,7 +496,7 @@ func (a *SubnetAdmin) List(ctx context.Context, offset, limit int64, order, quer
 	where := ""
 	wm := memberShip.GetWhere()
 	if wm != "" {
-		where = fmt.Sprintf("type != 'internal' or %s", wm)
+		where = fmt.Sprintf("type = 'public' or %s", wm)
 	}
 	subnets = []*model.Subnet{}
 	if err = db.Model(&model.Subnet{}).Where(where).Where(query).Where(sql).Count(&total).Error; err != nil {

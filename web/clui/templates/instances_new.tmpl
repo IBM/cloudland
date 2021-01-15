@@ -179,15 +179,11 @@
 
                                         {{ range .Subnets }}
 
-					                              {{ if or (eq $.UserID .Owner) (eq .Type "public") }}
-
                                         <div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
 
                                           {{.Name}}
 
                                         </div>
-
-					                              {{ end }}
 
                                         {{ end }}
 
@@ -229,15 +225,11 @@
 
                                         {{ range .Subnets }}
 
-					                              {{ if or (eq $.UserID .Owner) (eq .Type "public") }}
-
                                         <div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
 
                                           {{.Name}}
 
                                         </div>
-
-					                              {{ end }}
 
                                         {{ end }}
 
