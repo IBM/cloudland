@@ -220,7 +220,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			}
 		}
 	}
-	hyperGroup, err := instanceAdmin.getHyperGroup(image.HypervisorType, zoneID)
+	hyperGroup, err := instanceAdmin.getHyperGroup(image.VirtType, zoneID)
 	if err != nil {
 		log.Println("No valid hypervisor", err)
 		return
