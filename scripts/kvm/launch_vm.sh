@@ -1,4 +1,4 @@
-#!/bin/bash -xv
+#!/bin/bash
 
 cd $(dirname $0)
 source ../cloudrc
@@ -65,7 +65,6 @@ if [ "$ephemeral_size" -gt 0 ]; then
     virsh attach-disk $vm_ID $ephemeral vdb --config
 fi
 vlans=$(jq .vlans <<< $metadata)
-echo "Vlans is $vlans" >> /tmp/cloudland_launch_vlans.log
 nvlan=$(jq length <<< $vlans)
 i=0
 while [ $i -lt $nvlan ]; do
