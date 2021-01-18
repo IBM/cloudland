@@ -419,7 +419,6 @@ func (v *SecruleView) Create(c *macaron.Context, store session.Store) {
 	c.Redirect(redirectTo)
 }
 func (v *SecruleView) Edit(c *macaron.Context, store session.Store) {
-	//memberShip := GetMemberShip(c.Req.Context())
 	db := DB()
 	id := c.Params("id")
 	secruleID, err := strconv.Atoi(id)
@@ -440,9 +439,6 @@ func (v *SecruleView) Edit(c *macaron.Context, store session.Store) {
         c.HTML(200, "secrules_patch")
 }
 func (v *SecruleView) Patch(c *macaron.Context, store session.Store) {
-//	memberShip := GetMemberShip(c.Req.Context())
-	sgid := c.Params("sgid")
-	secgroupID, err := strconv.Atoi(sgid)
         redirectTo := "../secrules"
         id := c.Params("id")
         secruleID, err := strconv.Atoi(id)
@@ -452,14 +448,6 @@ func (v *SecruleView) Patch(c *macaron.Context, store session.Store) {
                 c.HTML(http.StatusBadRequest, "error")
                 return
         }
-//	secgroup := c.Params("SecurityGroup")
-//	sgID,err := strconv.Atoi(secgroup)
-//	 if err != nil {
-//                log.Printf("Invalid security group ID, %v", err)
-//		c.Data["ErrorMsg"] = err.Error()
-  //              c.HTML(http.StatusBadRequest, "error")
-    //            return
-      //  }
 	remoteIp := c.QueryTrim("remoteip")
 	direction := c.QueryTrim("direction")
 	protocol := c.QueryTrim("protocol")
