@@ -943,7 +943,8 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 		return
 	}
 	ctx := c.Req.Context()
-	_, subnets, err := subnetAdmin.List(ctx, 0, -1, "", "", "")
+	sql := fmt.Sprintf("type = 'public' or owner = %d", memberShip.OrgID)
+	_, subnets, err := subnetAdmin.List(ctx, 0, -1, "", "", sql)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
@@ -1269,13 +1270,6 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	if err != nil {
 		log.Println("Invalid primary subnet ID, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
-	permit, err = memberShip.CheckAdmin(model.Writer, "subnets", int64(primaryID))
-	if !permit {
-		log.Println("Not authorized to access subnet")
-		c.Data["ErrorMsg"] = "Need Write permissions"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}

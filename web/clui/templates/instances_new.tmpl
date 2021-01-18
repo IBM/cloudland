@@ -177,8 +177,6 @@
 
                                       <div class="menu">
 
-                                        {{ if .IsAdmin }}
-
                                         {{ range .Subnets }}
 
                                         <div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
@@ -188,24 +186,6 @@
                                         </div>
 
                                         {{ end }}
-
-                                        {{ else }}
-
-                                        {{ range .Subnets }}
-
-                                        {{ if eq .Type "internal" }}
-
-                                        <div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
-
-                                          {{.Name}}
-
-                                        </div>
-
-                                        {{ end }}
-
-                                        {{ end }}
-
-                                         {{ end }}
 
                                       </div>
 
@@ -243,8 +223,6 @@
 
                                       <div class="menu">
 
-                                        {{ if .IsAdmin }}
-
                                         {{ range .Subnets }}
 
                                         <div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
@@ -254,24 +232,6 @@
                                         </div>
 
                                         {{ end }}
-
-                                        {{ else }}
-
-                                        {{ range .Subnets }}
-
-                                        {{ if eq .Type "internal" }}
-
-                                        <div class="item" data-value={{.ID}} data-text={{.Name}}--{{.Network}}/{{.Netmask}}>
-
-                                          {{.Name}}
-
-                                        </div>
-
-                                        {{ end }}
-
-                                        {{ end }}
-
-                                         {{ end }}
 
                                       </div>
 
