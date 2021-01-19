@@ -496,7 +496,7 @@ func (a *SubnetAdmin) List(ctx context.Context, offset, limit int64, order, quer
 	where := ""
 	wm := memberShip.GetWhere()
 	if wm != "" {
-		where = fmt.Sprintf("type != 'internal' or %s", wm)
+		where = fmt.Sprintf("type = 'public' or %s", wm)
 	}
 	subnets = []*model.Subnet{}
 	if err = db.Model(&model.Subnet{}).Where(where).Where(query).Where(sql).Count(&total).Error; err != nil {
@@ -557,6 +557,7 @@ func (v *SubnetView) List(c *macaron.Context, store session.Store) {
 	c.Data["Total"] = total
 	c.Data["Pages"] = pages
 	c.Data["Query"] = query
+	c.Data["UserID"] = store.Get("uid").(int64)
 	if c.Req.Header.Get("X-Json-Format") == "yes" {
 		c.JSON(200, map[string]interface{}{
 			"subnets": subnets,

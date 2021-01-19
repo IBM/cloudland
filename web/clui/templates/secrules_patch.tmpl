@@ -1,0 +1,74 @@
+{{template "_head" .}}
+<div class="user signup">
+				<div class="ui middle very relaxed page grid">
+					<div class="column" >
+						<form class="ui form" action="{{.Link}}" method="post">
+							<h3 class="ui top attached header">
+								{{.i18n.Tr "Update Security Rule"}}
+							</h3>
+							<div class="ui attached segment">
+								<div class="required inline field">
+									<label for="remoteip">{{.i18n.Tr "RemoteIp"}}</label>
+									<input id="remoteip" name="remoteip" value="{{ .Secrules.RemoteIp }}" required>
+								</div>
+								<div class="required inline field">
+									<label for="direction">{{.i18n.Tr "Direction"}}</label>
+									  <select name="direction" id="direction" class="ui selection dropdown">
+											{{ if eq .Secrules.Direction  "ingress" }}
+											<option value="{{ .Secrules.Direction }}" selected >{{.i18n.Tr "ingress"}}</option>
+											<option>{{.i18n.Tr "egress"}}</option>
+											{{ end }}
+											{{ if eq .Secrules.Direction  "egress" }}
+											<option>{{.i18n.Tr "ingress"}}</option>
+                                                                                        <option value="{{ .Secrules.Direction }}" selected>{{.i18n.Tr "egress"}}</option>
+											{{ end }}
+                                                                           </select>
+								</div>
+								<div class="required inline field">
+									<label for="protocol">{{.i18n.Tr "Protocol"}}</label>
+									  <select name="protocol" id="protocol" class="ui selection dropdown">
+										        {{ if eq .Secrules.Protocol "tcp"}}
+											<option value="{{ .Secrules.Protocol }}" selected >{{.i18n.Tr "tcp"}}</option>
+											<option>{{.i18n.Tr "udp"}}</option>
+											<option>{{.i18n.Tr "icmp"}}</option>
+											<option>{{.i18n.Tr "vrrp"}}</option>
+											{{ end }}
+											{{ if eq .Secrules.Protocol "udp"}}
+											<option>{{.i18n.Tr "tcp"}}</option>
+											<option value="{{ .Secrules.Protocol }}" selected >{{.i18n.Tr "udp"}}</option>
+											<option>{{.i18n.Tr "icmp"}}</option>
+                                                                                        <option>{{.i18n.Tr "vrrp"}}</option>
+                                                                                        {{ end }}
+											{{ if eq .Secrules.Protocol "icmp"}}
+											<option>{{.i18n.Tr "tcp"}}</option>
+											<option>{{.i18n.Tr "udp"}}</option>
+											<option value="{{ .Secrules.Protocol }}" selected >{{.i18n.Tr "icmp"}}</option>
+											 <option>{{.i18n.Tr "vrrp"}}</option>
+                                                                                        {{ end }}
+											{{ if eq .Secrules.Protocol "vrrp"}}
+											<option>{{.i18n.Tr "tcp"}}</option>
+                                                                                        <option>{{.i18n.Tr "udp"}}</option>
+											<option>{{.i18n.Tr "icmp"}}</option>
+											<option value="{{ .Secrules.Protocol }}" selected >{{.i18n.Tr "vrrp"}}</option>
+											{{ end }}
+									   </select>							
+								</div>
+								<div class="inline field">
+									<label for="portmin">{{.i18n.Tr "PortMin_Type"}}</label>
+									<input id="portmin" name="portmin"i value="{{ .Secrules.PortMin }}">
+								</div>
+								<div class="inline field">
+									<label for="portmax">{{.i18n.Tr "PortMax_Code"}}</label>
+									<input id="portmax" name="portmax"  value="{{ .Secrules.PortMax }}">
+								</div>
+								<div class="inline field">
+									<label></label>
+									<button class="ui green button">{{.i18n.Tr "Update Security Rule"}}</button>
+								</div>
+							</div>
+						</form>
+					</div>
+</div>
+{{template "_footer" .}}
+
+

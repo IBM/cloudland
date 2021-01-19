@@ -15,6 +15,7 @@ count=$(echo $vm_xml | xmllint --xpath 'count(/domain/devices/interface)' -)
 for (( i=1; i <= $count; i++ )); do
     vif_dev=$(echo $vm_xml | xmllint --xpath "string(/domain/devices/interface[$i]/target/@dev)" -)
     br_name=$(echo $vm_xml | xmllint --xpath "string(/domain/devices/interface[$i]/source/@bridge)" -)
+    mac_addr=$(echo $vm_xml | xmllint --xpath "string(/domain/devices/interface[$i]/mac/@address)" -)
     if [ "$use_lb" = "false" ]; then
         br_name=br$SCI_CLIENT_ID
         result=$(icp-tower --ovs-bridge=$br_name gate remove --interface $vif_dev)
@@ -22,6 +23,7 @@ for (( i=1; i <= $count; i++ )); do
     else
         vni=${br_name#br}
         ./clear_link.sh $vni
+        ./rm_fdb.sh $mac_addr
         ./clear_sg_chain.sh $vif_dev
     fi
     sidecar span log $span "Callback: clear_vnic.sh '$vif_dev'"

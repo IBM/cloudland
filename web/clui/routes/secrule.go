@@ -13,6 +13,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/sca/dbs"
@@ -77,6 +78,71 @@ func (a *SecruleAdmin) ApplySecgroup(ctx context.Context, secgroup *model.Securi
 		}
 	}
 	return
+}
+
+func (a *SecruleAdmin) Update(ctx context.Context,id int64, remoteIp, direction, protocol string, portMin, portMax int) (secrule *model.SecurityRule, err error) {
+	db := DB()
+	//secrule = &model.SecurityRule{Model: model.Model{ID: id}}
+	secrules := &model.SecurityRule{Model: model.Model{ID: id}}
+	err = db.Take(secrules).Error
+	if err != nil {
+		log.Println("DB failed to query security rules ", err)
+                return
+	}
+	//remoteip
+	if remoteIp != "" {
+		netLen := strings.Split(remoteIp, "/")
+		NetLen, _ := strconv.Atoi(netLen[1])
+		if ( NetLen < 0 || NetLen > 32 ) {
+			log.Println("Invalid Netmask,fill in valid one")
+			err = fmt.Errorf("Invalid Netmask for RemoteIp, please fill a valid one")
+                        return
+		}
+		secrules.RemoteIp = remoteIp
+	}
+	//direction
+	if direction != "" {
+		secrules.Direction = direction
+	}
+	if protocol != "" {
+                secrules.Protocol = protocol
+        }
+	if portMin <= portMax {
+		if portMin > 0 && portMin < 65536 {
+                	secrules.PortMin = int32(portMin)
+			if portMax > 0 && portMax < 65536 {
+				secrules.PortMax = int32(portMax)
+                	} else if portMax > 65535 {
+               			 log.Println("it's out of range, please input less than 65536")
+				 err = fmt.Errorf("it's invalid port for PortMax, please fill a valid port")
+                                 return
+			} else {
+				secrules.PortMax = -1
+			}
+		} else if ( portMin < -1 || portMin == 0 ) {
+			log.Println("it's out of range,please fill a valid port")
+			err = fmt.Errorf("it's invalid port for PortMin, please fill a valid port")
+                        return
+		} else if portMin > 65535 {
+			log.Println("it's out of range, please input less than 65537")
+			err = fmt.Errorf("it's invalid port for PortMin, please fill a valid port")
+                        return
+		} else {
+			secrules.PortMin = -1
+		}
+	
+	} else {
+		log.Println("PortMax should be greater than PortMin")
+		err = fmt.Errorf("PortMax should be greater than PortMin")
+		return
+	}
+	err = db.Save(secrules).Error
+        if err != nil {
+                log.Println("DB failed to save sucurity rule ", err)
+                return
+        }
+	return
+
 }
 
 func (a *SecruleAdmin) Create(ctx context.Context, sgID, owner int64, remoteIp, direction, protocol string, portMin, portMax int) (secrule *model.SecurityRule, err error) {
@@ -325,7 +391,7 @@ func (v *SecruleView) Create(c *macaron.Context, store session.Store) {
 	secgroupID, err := strconv.Atoi(sgid)
 	if err != nil {
 		log.Println("Invalid security group ID", err)
-		c.Data["ErrorMsg"] = err.Error()
+		c.Data["Error:Msg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
@@ -351,4 +417,61 @@ func (v *SecruleView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	c.Redirect(redirectTo)
+}
+func (v *SecruleView) Edit(c *macaron.Context, store session.Store) {
+	db := DB()
+	id := c.Params("id")
+	secruleID, err := strconv.Atoi(id)
+        if err != nil {
+                log.Println("Security Rule ID is empty")
+                c.Data["ErrorMsg"] = "Security Rule ID is empty"
+                c.HTML(http.StatusBadRequest, "error")
+                return
+        }
+	secrules := &model.SecurityRule{Model: model.Model{ID: int64(secruleID)}}
+	err = db.Take(secrules).Error
+	if err != nil {
+		log.Println("Database failed to query security rules", err)
+                return
+        }
+        c.Data["Secrules"] = secrules
+	log.Println(secrules)
+        c.HTML(200, "secrules_patch")
+}
+func (v *SecruleView) Patch(c *macaron.Context, store session.Store) {
+        redirectTo := "../secrules"
+        id := c.Params("id")
+        secruleID, err := strconv.Atoi(id)
+	if err != nil {
+                log.Println("Invalid secure rule ID, %v", err)
+                c.Data["ErrorMsg"] = err.Error()
+                c.HTML(http.StatusBadRequest, "error")
+                return
+        }
+	remoteIp := c.QueryTrim("remoteip")
+	direction := c.QueryTrim("direction")
+	protocol := c.QueryTrim("protocol")
+	min := c.QueryTrim("portmin")
+	max := c.QueryTrim("portmax")
+	portMin, err := strconv.Atoi(min)
+	portMax, err := strconv.Atoi(max)
+	secrule, err := secruleAdmin.Update(c.Req.Context(),int64(secruleID), remoteIp, direction, protocol, portMin, portMax)
+	if err != nil {
+                log.Println("Create Security Rules failed, %v", err)
+                c.Data["ErrorMsg"] = err.Error()
+                if c.Req.Header.Get("X-Json-Format") == "yes" {
+                        c.JSON(500, map[string]interface{}{
+                                "error": err.Error(),
+                        })
+                        return
+                }
+                c.HTML(http.StatusBadRequest, "error")
+                return
+        } else if c.Req.Header.Get("X-Json-Format") == "yes" {
+                c.JSON(200, secrule)
+                return
+        }
+        c.Redirect(redirectTo)
+
+
 }
