@@ -310,9 +310,15 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 	return
 }
 
-func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie, haflag, version, extIP string, nworkers int32, lflavor, mflavor, wflavor, key, zoneID, subnetID int64, hostrec, infrtype, sback, atbundle, icsources string) (openshift *model.Openshift, err error) {
+func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie, haflag, version, extIP string, nworkers int32, lflavor, mflavor, wflavor, key, zoneID, subnetID, registryID int64, hostrec, infrtype, sback, atbundle, icsources string) (openshift *model.Openshift, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
+	registry := model.Registry{}
+	if err = db.First(&registry, registryID).Error; err != nil {
+		return
+	}
+	version = registry.OcpVersion
+	log.Println("version=%s", version)
 	lbIP := ""
 	subnet := &model.Subnet{Model: model.Model{ID: subnetID}}
 	if subnetID == 0 {
@@ -634,10 +640,18 @@ func (v *OpenshiftView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
+	registrys := []*model.Registry{}
+	err = db.Find(&registrys).Error
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+		return
+	}
 	c.Data["Flavors"] = flavors
 	c.Data["Keys"] = keys
 	c.Data["Subnets"] = subnets
 	c.Data["Zones"] = zones
+	c.Data["Registrys"] = registrys
 	c.HTML(200, "openshifts_new")
 }
 
@@ -709,6 +723,7 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(code, "error")
 		return
 	}
+	registry := c.QueryInt64("registry")
 	version := c.QueryTrim("version")
 	extIP := c.QueryTrim("extip")
 	lflavor := c.QueryInt64("lflavor")
@@ -724,7 +739,7 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
 	permit, err := memberShip.CheckOwner(model.Writer, "subnets", int64(subnet))
-	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, version, extIP, int32(nworkers), lflavor, mflavor, wflavor, key, zone, subnet, hostrec, infrtype, sback, atbundle, icsources)
+	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, version, extIP, int32(nworkers), lflavor, mflavor, wflavor, key, zone, subnet, registry, hostrec, infrtype, sback, atbundle, icsources)
 	if err != nil {
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{

@@ -117,6 +117,23 @@
 									  </div>
 									</div>
 								</div>
+                                                                <div class="required inline field">
+                                                                        <label for="registry">{{.i18n.Tr "Registry"}}</label>
+                                                                        <div class="ui selection dropdown">
+                                                                          <input id="registry" name="registry" type="hidden" required>
+                                                                          <i class="dropdown icon"></i>
+                                                                          <div class="default text">{{.i18n.Tr "None"}}</div>
+                                                                          <div class="menu">
+                                                                                {{ if .Registrys }}
+                                                                                {{ range .Registrys }}
+                                                                                <div class="item" data-value={{.ID}} data-text={{.Label}}>
+                                                                                  {{.Label}}
+                                                                                </div>
+                                                                                {{ end }}
+                                                                                {{ end }}
+                                                                          </div>
+                                                                        </div>
+                                                                </div>
 								<div class="required inline field">
 									<label for="lflavor">{{.i18n.Tr "LB_Flavor"}}</label>
 									<div class="ui selection dropdown">
