@@ -110,7 +110,7 @@ func (a *InstanceAdmin) getHyperGroup(imageType string, zoneID int64) (hyperGrou
 	hypers := []*model.Hyper{}
 	where := fmt.Sprintf("zone_id = %d", zoneID)
 	if imageType != "" {
-		where = fmt.Sprintf("%s and type = '%s'", where, imageType)
+		where = fmt.Sprintf("%s and virt_type = '%s'", where, imageType)
 	}
 	if err = db.Where(where).Find(&hypers).Error; err != nil {
 		log.Println("Hypers query failed", err)
@@ -634,6 +634,9 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet
 	}
 	virtType := image.VirtType
 	dns := primary.NameServer
+	if dns == primaryIP {
+		dns = ""
+	}
 	zvm := []*ZvmData{}
 	if virtType == "zvm" {
 		zd := &ZvmData{

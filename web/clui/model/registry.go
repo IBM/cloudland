@@ -14,7 +14,7 @@ type Registry struct {
 	Model
 	Label           string `gorm:"type:varchar(128)"`
 	OcpVersion      string `gorm:"type:varchar(128)"`
-	RegistryContent string `gorm:"type:varchar(128)"`
+	RegistryContent string `gorm:"type:varchar(2048)"`
 }
 
 func init() {

@@ -54,7 +54,7 @@
 									</div>
 								</div>
                                                                 <div class="required inline field">
-                                                                        <label for="version">{{.i18n.Tr "InfrastructureType"}}</label>
+                                                                        <label for="InfrastructureType">{{.i18n.Tr "InfrastructureType"}}</label>
                                                                         <div class="ui selection dropdown">
                                                                           <input id="infrtype" name="infrtype" type="hidden" required>
                                                                           <i class="dropdown icon"></i>
@@ -105,18 +105,35 @@
 									  <i class="dropdown icon"></i>
 									  <div class="default text">Version</div>
 									  <div class="menu">
+										<div class="item" data-value=4.6 data-text=4.6>
+										  4.6
+										</div>
 										<div class="item" data-value=4.5 data-text=4.5>
 										  4.5
 										</div>
 										<div class="item" data-value=4.4 data-text=4.4>
 										  4.4
 										</div>
-										<div class="item" data-value=4.3 data-text=4.3>
-										  4.3
-										</div>
 									  </div>
 									</div>
 								</div>
+                                                                <div class="inline field">
+                                                                        <label for="registry">{{.i18n.Tr "Registry"}}</label>
+                                                                        <div class="ui selection dropdown">
+                                                                          <input id="registry" name="registry" type="hidden" required>
+                                                                          <i class="dropdown icon"></i>
+                                                                          <div class="default text">{{.i18n.Tr "None"}}</div>
+                                                                          <div class="menu">
+                                                                                {{ if .Registrys }}
+                                                                                {{ range .Registrys }}
+                                                                                <div class="item" data-value={{.ID}} data-text={{.Label}}>
+                                                                                  {{.Label}}
+                                                                                </div>
+                                                                                {{ end }}
+                                                                                {{ end }}
+                                                                          </div>
+                                                                        </div>
+                                                                </div>
 								<div class="required inline field">
 									<label for="lflavor">{{.i18n.Tr "LB_Flavor"}}</label>
 									<div class="ui selection dropdown">

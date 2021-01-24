@@ -9,14 +9,16 @@ ID=$1
 vm_ID=inst-$1
 vm_xml=$xml_dir/$vm_ID/${vm_ID}.xml
 
+virsh detach-interface $vm_ID bridge --mac 52:54:11:22:33:44 --live
 count=0
-while [ $count -le 100 ]; do
+while [ $count -le 500 ]; do
     sleep 5
     virsh list | grep $vm_ID
     [ $? -ne 0 ] && break
     let count=$count+1
 done
 if [ $? -eq 0 ]; then
+    virsh detach-interface $vm_ID bridge --mac 52:54:11:22:33:44 --config
     virsh dumpxml $vm_ID 2>/dev/null > ${vm_xml}.dump
     mv -f ${vm_xml}.dump $vm_xml
     virsh undefine $vm_ID
