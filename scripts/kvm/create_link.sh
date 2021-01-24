@@ -9,7 +9,6 @@ vlan=$1
 vm_br=br$vlan
 interface=$2
 
-vxlan_mcast_addr=172.16.36.123
 cat /proc/net/dev | grep -q "\<$vm_br\>:"
 if [ $? -eq 0 ]; then
     [ "$vlan" = "$external_vlan" -o "$vlan" = "$internal_vlan" ] && exit 0

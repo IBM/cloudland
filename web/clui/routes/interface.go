@@ -422,12 +422,19 @@ func SetGateway(ctx context.Context, subnetID, zoneID int64, router *model.Gatew
 		return nil, err
 	}
 	found := false
+	log.Println("going to for circle")
+	log.Println("SetGateway,zoneID=", zoneID)
 	for _, z := range subnet.Zones {
+		log.Println("setGatewayzoneID=", zoneID)
 		if z.ID == zoneID {
+			log.Println("z.ID=", z.ID)
+			log.Println("setGatewayzoneID=", zoneID)
 			found = true
 			break
 		}
 	}
+	log.Println("SetGateway")
+	log.Println("found=", found)
 	if !found {
 		log.Println("Subnet does not cross this zone")
 		err = fmt.Errorf("Subnet does not cross this zone")
