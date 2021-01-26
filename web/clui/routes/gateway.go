@@ -42,7 +42,6 @@ type GatewayAdmin struct{}
 type GatewayView struct{}
 
 func createGatewayIface(ctx context.Context, rtype string, gateway *model.Gateway, owner, zoneID int64) (iface *model.Interface, subnet *model.Subnet, err error) {
-	log.Println("start to createGatewayIface")
 	db := DB()
 	subnets := []*model.Subnet{}
 	err = db.Where("type = ?", rtype).Find(&subnets).Error
@@ -60,7 +59,6 @@ func createGatewayIface(ctx context.Context, rtype string, gateway *model.Gatewa
 			name = fmt.Sprintf("pub%d", subnet.ID)
 			ifType = "gateway_private"
 		}
-		log.Println("start to invoke CreateInterface")
 		iface, err = CreateInterface(ctx, subnet.ID, gateway.ID, owner, zoneID, gateway.Hyper, "", "", name, ifType, nil)
 		if err == nil {
 			log.Println("Created gateway interface from subnet", err)
@@ -618,13 +616,10 @@ func (v *GatewayView) Create(c *macaron.Context, store session.Store) {
 	}
 	redirectTo := "../gateways"
 	name := c.QueryTrim("name")
-	log.Println("create gateway name=",name)
 	zoneID := c.QueryInt64("zone")
-	log.Println("create gateway zoneID=",zoneID)
 	pubSubnet := c.QueryTrim("public")
 	priSubnet := c.QueryTrim("private")
 	subnets := c.QueryTrim("subnets")
-	log.Println("create gateway subnets=",subnets)
 	pubID, err := strconv.Atoi(pubSubnet)
 	if err != nil {
 		log.Println("Invalid public subnet id, %v", err)
@@ -652,9 +647,7 @@ func (v *GatewayView) Create(c *macaron.Context, store session.Store) {
 		}
 		subnetIDs = append(subnetIDs, int64(sID))
 	}
-	log.Println("starting to create gateway")
 	gateway, err := gatewayAdmin.Create(c.Req.Context(), name, "", int64(pubID), int64(priID), subnetIDs, memberShip.OrgID, zoneID)
-	log.Println("finished to create gateway")
 	if err != nil {
 		log.Println("Failed to create gateway, %v", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
