@@ -239,6 +239,7 @@ func (a *OrgAdmin) List(ctx context.Context, offset, limit int64, order, query s
 	if query != "" {
 		query = fmt.Sprintf("name like '%%%s%%'", query)
 	}
+	log.Println("connect to DB org list")
 	db := DB()
 	user := &model.User{Model: model.Model{ID: memberShip.UserID}}
 	err = db.Take(user).Error
@@ -246,25 +247,27 @@ func (a *OrgAdmin) List(ctx context.Context, offset, limit int64, order, query s
 		log.Println("DB failed to query user, %v", err)
 		return
 	}
-	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	where := ""
-	if memberShip.Role != model.Admin {
-		where = fmt.Sprintf("owner = %d", user.ID)
-	}
-	if err = db.Model(&model.Organization{}).Where(where).Where(query).Count(&total).Error; err != nil {
+	where := memberShip.GetWhere()
+	orgs = []*model.Organization{}
+	if err = db.Model(&orgs).Where(where).Where(query).Count(&total).Error; err != nil {
+		log.Println("DB failed to count organizations, %v", err)
 		return
 	}
+	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
 	err = db.Where(where).Where(query).Find(&orgs).Error
 	if err != nil {
-		log.Println("DB failed to query organizations, %v", err)
-		return
-	}
+	           log.Println("DB failed to query organizations, %v", err)
+	           return
+        }
+
 	return
 }
 
 func (v *OrgView) List(c *macaron.Context, store session.Store) {
 	offset := c.QueryInt64("offset")
+	log.Println("offset=",offset)
 	limit := c.QueryInt64("limit")
+	log.Println("limit=",limit)
 	if limit == 0 {
 		limit = 16
 	}
