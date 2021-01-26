@@ -239,7 +239,6 @@ func (a *OrgAdmin) List(ctx context.Context, offset, limit int64, order, query s
 	if query != "" {
 		query = fmt.Sprintf("name like '%%%s%%'", query)
 	}
-	log.Println("connect to DB org list")
 	db := DB()
 	user := &model.User{Model: model.Model{ID: memberShip.UserID}}
 	err = db.Take(user).Error
