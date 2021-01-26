@@ -264,9 +264,7 @@ func (a *OrgAdmin) List(ctx context.Context, offset, limit int64, order, query s
 
 func (v *OrgView) List(c *macaron.Context, store session.Store) {
 	offset := c.QueryInt64("offset")
-	log.Println("offset=",offset)
 	limit := c.QueryInt64("limit")
-	log.Println("limit=",limit)
 	if limit == 0 {
 		limit = 16
 	}
