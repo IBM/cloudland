@@ -41,12 +41,12 @@
 									{{ if $.IsAdmin }}
 			                        <td>{{.ID}}</td>
 									{{ end }}
-			                        <td><a href="/{{.Secgroup}}">{{.Secgroup}}</a></td>
-			                        <td><a href="/{{.RemoteIp}}">{{.RemoteIp}}</a></td>
-			                        <td><a href="/{{.Direction}}">{{.Direction}}</a></td>
-			                        <td><a href="/{{.Protocol}}">{{.Protocol}}</a></td>
-			                        <td><a href="/{{.PortMin}}">{{.PortMin}}</a></td>
-			                        <td><a href="/{{.PortMax}}">{{.PortMax}}</a></td>
+			                        <td><a href="{{$Link}}/{{.ID}}">{{.Secgroup}}</a></td>
+			                        <td><a href="{{$Link}}/{{.ID}}">{{.RemoteIp}}</a></td>
+			                        <td><a href="{{$Link}}/{{.ID}}">{{.Direction}}</a></td>
+			                        <td><a href="{{$Link}}/{{.ID}}">{{.Protocol}}</a></td>
+			                        <td><a href="{{$Link}}/{{.ID}}">{{.PortMin}}</a></td>
+			                        <td><a href="{{$Link}}/{{.ID}}">{{.PortMax}}</a></td>
                                     <td><div class="delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}"><i class="dark purple trash alternate outline icon"></i></div></td>
 		                        </tr>
                                 {{ end }}
