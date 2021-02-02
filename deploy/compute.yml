@@ -1,0 +1,5 @@
+- name: deploy compute node
+  hosts: "{{ hostname }}"
+  become_user: root
+  roles:
+    - {role: hyper, become: yes, tags: [hyper]}

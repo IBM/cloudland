@@ -5,6 +5,8 @@
 
 - name: init database
   command: postgresql-setup initdb
+  args: 
+    creates: /var/lib/pgsql/initdb_postgresql.log
   ignore_errors: yes
 
 - name: cland ui config file
@@ -27,6 +29,6 @@
   tags: [pg_srv]
 
 - name: run pg script
-  script: postgres.sh {{ db_passwd }}
+  script: postgres.sh
   tags: [pg_sh]
   ignore_errors: yes
