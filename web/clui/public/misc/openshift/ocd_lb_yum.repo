@@ -1,0 +1,9 @@
+[base]
+name=RedHat-7 - Base
+baseurl=http://9.181.142.116/redhat/yum/server/7/7.9/x86_64/os/
+gpgcheck=0
+
+[epel]
+name=RedHat-7 - Epel
+baseurl=http://9.181.142.116/redhat/yum/server/7/7.9/x86_64/optional/os/
+gpgcheck=0

@@ -246,19 +246,19 @@ func (a *OrgAdmin) List(ctx context.Context, offset, limit int64, order, query s
 		log.Println("DB failed to query user, %v", err)
 		return
 	}
-	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	where := ""
-	if memberShip.Role != model.Admin {
-		where = fmt.Sprintf("owner = %d", user.ID)
-	}
-	if err = db.Model(&model.Organization{}).Where(where).Where(query).Count(&total).Error; err != nil {
+	where := memberShip.GetWhere()
+	orgs = []*model.Organization{}
+	if err = db.Model(&orgs).Where(where).Where(query).Count(&total).Error; err != nil {
+		log.Println("DB failed to count organizations, %v", err)
 		return
 	}
+	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
 	err = db.Where(where).Where(query).Find(&orgs).Error
 	if err != nil {
 		log.Println("DB failed to query organizations, %v", err)
-		return
-	}
+	        return
+        }
+
 	return
 }
 

@@ -647,10 +647,22 @@ func (v *GatewayView) Create(c *macaron.Context, store session.Store) {
 		}
 		subnetIDs = append(subnetIDs, int64(sID))
 	}
-	_, err = gatewayAdmin.Create(c.Req.Context(), name, "", int64(pubID), int64(priID), subnetIDs, memberShip.OrgID, zoneID)
+	gateway, err := gatewayAdmin.Create(c.Req.Context(), name, "", int64(pubID), int64(priID), subnetIDs, memberShip.OrgID, zoneID)
 	if err != nil {
 		log.Println("Failed to create gateway, %v", err)
-		c.HTML(500, "500")
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+                                "error": err.Error(),
+                        })
+
+                        return
+		}
+			
+	   		c.Data["ErrorMsg"] = err.Error()
+			c.HTML(http.StatusBadRequest, "error")
+	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200,gateway)
+		return
 	}
 	c.Redirect(redirectTo)
 }
