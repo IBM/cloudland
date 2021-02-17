@@ -1,14 +1,20 @@
-- name: deploy imgrepo
-  hosts: imgrepo
+- name: base
+  hosts: all
   become_user: root
   roles:
-    - {role: imgrepo, become: yes, tags: [imgrepo]}
+    - {role: base, become: yes, tags: [base]}
 
 - name: deploy cland
   hosts: cland
   become_user: root
   roles:
     - {role: cland, become: yes, tags: [cland]}
+
+- name: deploy imgrepo
+  hosts: imgrepo
+  become_user: root
+  roles:
+    - {role: imgrepo, become: yes, tags: [imgrepo]}
 
 - name: deploy web
   hosts: web

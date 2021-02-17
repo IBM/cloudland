@@ -19,6 +19,7 @@ echo "Checking following prerequisite packages and install them via yum if neces
 echo "$packages"
 for i in $packages
 do
+    echo "Checking $i ..."
     rpm -q $i > /dev/null 2>&1
     if [ $? -ne 0 ]; then
         sudo yum install -y $i > /dev/null 2>&1
@@ -74,18 +75,31 @@ $hname ansible_host=$ip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key
 [hyper]
 EOF
 
+admin_passwd="passw0rd"
+db_passwd="passw0rd"
+new_conf="yes"
+
+if [ ! -e "/opt/cloudland/web/clui/conf/config.toml" ]; then
+    read -s -p "Set the 'admin' login password: " admin_passwd
+    echo
+    read -s -p "Set the database login password: " db_passwd
+    echo
+else
+    new_conf="no"
+    db_passwd=$(grep 'user=postgres' /opt/cloudland/web/clui/conf/config.toml | awk '{print $6}' | awk -F '=' '{print $2}')
+fi
 
 cd $cland_root_dir/deploy
 
 # deploy controller (base database, web and cland)
-ansible-playbook controller.yml -e "admin_passwd=passw0rd" --tags imgrepo,database,web,console,fe_srv,firewall
+ansible-playbook controller.yml -e "admin_passwd=$admin_passwd db_passwd=$db_passwd new_conf=$new_conf" --tags hosts,selinux,imgrepo,database,web,console,fe_srv,firewall
 
 # process compute nodes
 compute=$(jq -r .compute < $conf)
 length=$(echo $compute | jq length)
 let end=length-1
 if [ $end -lt 0 ]; then
-    ansible-playbook service.yml --tags hosts,selinux,start_cloudland
+    ansible-playbook service.yml --tags start_cloudland
 else
     ./deploy_compute.sh 0 $end
 fi

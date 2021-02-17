@@ -71,7 +71,7 @@ function inst_console_proxy()
 {
     cd /opt
     git clone https://github.com/libvirt/libvirt-console-proxy.git
-    chown cland.cland libvirt-console-proxy
+    chown -R cland:cland libvirt-console-proxy
 
 su cland << EOF
     cd /opt/libvirt-console-proxy
@@ -94,14 +94,6 @@ if [ $? -ne 0 ]; then
     echo 'cland ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers.d/cland
 else
     echo "User cland already exists."
-fi
-
-# create group cland if it is necessary
-grep -E "cland" /etc/group > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-    groupadd cland
-else
-    echo "Group cland already exits."
 fi
 
 # configure golang for cland

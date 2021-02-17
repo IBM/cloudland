@@ -18,6 +18,7 @@
   template:
     src: config.toml.j2
     dest: /opt/cloudland/web/clui/conf/config.toml
+  when: new_conf == 'yes'
   tags: [web_conf]
 
 - name: copy service files

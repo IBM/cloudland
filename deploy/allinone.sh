@@ -110,8 +110,8 @@ function gen_hosts()
     sudo bash -c "echo '$myip $hname' >> /etc/hosts"
     echo $hname > $cland_root_dir/etc/host.list
     mkdir -p $cland_root_dir/deploy/hosts
-    virt_type=xkvm
-    [ "$hyper_type" != "x86_64" ] && virt_type=zkvm
+    virt_type=kvm-x86_64
+    [ "$hyper_type" != "x86_64" ] && virt_type=kvm-s390x
     cat > $cland_root_dir/deploy/hosts/hosts <<EOF
 [hyper]
 $hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key client_id=0 zone_name=zone0 virt_type=$virt_type

@@ -12,16 +12,20 @@ release=$2
 echo "Prepare packages..."
 
 # prepare grpc
-tar czf /tmp/grpc.tar.gz /usr/local/bin /usr/local/include /usr/local/lib
+if [ ! -e '/tmp/grpc.tar.gz' ]; then
+    tar czf /tmp/grpc.tar.gz /usr/local/bin /usr/local/include /usr/local/lib
+fi
 
 # prepare cloudland package
 rm -rf /tmp/opt
 mkdir -p /tmp/opt
-cp -R /opt/sci /opt/cloudland /opt/libvirt-console-proxy /tmp/opt
+# copy files to /tmp/opt
+rsync -a --exclude={'.git','cache/*','run/*','log/*','etc/*','scripts/cloudrc.local','web/clui/conf/config.toml','web/clui/public/misc/openshift/*','deploy/conf.json'} /opt/cloudland /tmp/opt
+rsync -a /opt/sci /tmp/opt
+rsync -a --exclude={'cert/*'} /opt/libvirt-console-proxy /tmp/opt
 cland_root_dir=/tmp/opt/cloudland
 # clear cloudland git files
 cd $cland_root_dir
-rm -rf .git
 commitID="unknown"
 if [ -e "commitID" ]; then
     commitID=$(cat commitID)
@@ -54,8 +58,6 @@ Summary:        CloudLand is a light weight IaaS
 License:        Apache License 2.0
 URL:            https://github.com/IBM/cloudland
 
-Requires(post):       ansible,wget,jq,net-tools,gnutls-utils,iptables,iptables-services,postgresql,postgresql-server,postgresql-contrib
-
 %description
 Cloudland installer which will copy packed grpc and cloudland to /tmp/cloudland.
 There are two packages:
@@ -76,11 +78,6 @@ grep -E "cland" /etc/passwd > /dev/null 2>&1
 if [ $? -ne 0 ]; then
     useradd cland
     echo 'cland ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers.d/cland
-fi
-# create group cland if it is necessary
-grep -E "cland" /etc/group > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-    groupadd cland
 fi
 chown -R cland:cland /opt/cloudland
 chown -R cland:cland /opt/libvirt-console-proxy

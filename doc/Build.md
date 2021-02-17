@@ -1,14 +1,14 @@
-# Build from source and Build RPM package
+# Build from source (for development) and Build RPM package
 
 ## Prerequisite
-A Linux build server with following tools installed:
+A Linux build server (For s390x, like LinuxOne, please use RedHat Enterprise Linux 8.3+) with following tools installed:
 1. Build tools:
    1. gRPC C++ implementation:
       - Installation path: /usr/local (dafault gRPC path to build RPM package)
    2. make, gcc, etc. to build C/C++ codes
-      - Used to build SCI binaries and CloudLand binaries
+      - For SCI binaries and CloudLand binaries
    3. golang
-      - Used to build web/clui
+      - For web/clui
 2. git to access GitHub
 3. rpmbuild to build RPM package (optional)
 
@@ -17,10 +17,10 @@ A Linux build server with following tools installed:
 # Download source code from GitHub to /opt
 git clone https://github.com/IBM/cloudland.git /opt
 
-# Go build the source code folder
+# Go to the source code folder
 cd /opt/cloudland
 
-# Build the binaries, you can continue the installation if the build server and controller is the same machine.
+# Build the binaries. Continue the installation if the build server is also the controller.
 ./build.sh
 
 # (Optional) Build RPM package after building the binaries
@@ -43,4 +43,4 @@ cd /opt/cloudland
    1. grpc.tar.gz contains the gRPC files from /usr/local
    2. cloudland.tar.gz contains the three folders listed above. They are copied to /tmp, and are packaged after running 'make clean'
    3. The two zipped files are not deleted automatically now.
-7. The RPM package can be installed on controller via yum, which will release the two packages, grpc.tar.gz and cloudland.tar.gz, to /tmp. grpc.tar.gz will be unpacked to / so it will be released to /usr/local. cloudland.tar.gz will be unpacked to /opt so there will be three folders: /opt/cloudland, /opt/sci and /opt/libvirt-console-proxy. The installation only unpacks the files. You need to deploy the controller and compute nodes before using CloudLand. See [Deployment](Deployment.md) for more information.
+7. The RPM package can be installed on controller via yum, which will release the two packages, grpc.tar.gz and cloudland.tar.gz, to /tmp. grpc.tar.gz will be unpacked to / so it will be released to /usr/local. cloudland.tar.gz will be unpacked to /opt so there will be three folders: /opt/cloudland, /opt/sci and /opt/libvirt-console-proxy. The installation only unpacks the files. You need to deploy the controller and compute nodes before using CloudLand. See [Installation](Installation.md) for more information.

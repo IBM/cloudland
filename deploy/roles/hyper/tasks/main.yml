@@ -14,7 +14,7 @@
 
 - name: install common packages
   yum:
-    name: ['sqlite', 'jq', 'mkisofs', 'NetworkManager', 'net-tools', 'iptables-services']
+    name: ['sqlite', 'jq', 'wget', 'mkisofs', 'NetworkManager', 'net-tools', 'iptables-services']
     state: present
   ignore_errors: yes
   tags: [be_pkg]
@@ -88,7 +88,7 @@
   with_items:
     - { src: "/opt/cloudland/scripts", dest: "/opt/cloudland", owner: 'cland', group: 'cland' }
   when: hostname != controller
-  tags: [sync, scripts]
+  tags: [sync, scripts, scripts_only]
 
 - name: link backend to zvm
   file:
@@ -99,7 +99,7 @@
     owner: 'cland'
     group: 'cland'
   when: virt_type == 'zvm'
-  tags: [be_conf, scripts]
+  tags: [be_conf, scripts, scripts_only]
 
 - name: link backend to kvm
   file:
@@ -110,7 +110,7 @@
     owner: 'cland'
     group: 'cland'
   when: virt_type != 'zvm'
-  tags: [be_conf, scripts]
+  tags: [be_conf, scripts, scripts_only]
 
 - name: create cloudrc local file for zvm
   template:
@@ -130,8 +130,8 @@
     owner: "{{ item.owner }}"
     group: "{{ item.owner }}"
   with_items:
-    - {src: 'cloudrc.local.zkvm.j2', dest: '/opt/cloudland/scripts/cloudrc.local', owner: 'cland', group: 'cland'}
-  when: virt_type == 'zkvm'
+    - {src: 'cloudrc.local.kvm-s390x.j2', dest: '/opt/cloudland/scripts/cloudrc.local', owner: 'cland', group: 'cland'}
+  when: virt_type == 'kvm-s390x'
   tags: [be_conf, scripts]
 
 - name: create cloudrc local file for kvm
@@ -141,8 +141,8 @@
     owner: "{{ item.owner }}"
     group: "{{ item.owner }}"
   with_items:
-    - {src: 'cloudrc.local.kvm.j2', dest: '/opt/cloudland/scripts/cloudrc.local', owner: 'cland', group: 'cland'}
-  when: virt_type == 'kvm'
+    - {src: 'cloudrc.local.kvm-x86_64.j2', dest: '/opt/cloudland/scripts/cloudrc.local', owner: 'cland', group: 'cland'}
+  when: virt_type == 'kvm-x86_64'
   tags: [be_conf, scripts]
 
 - name: synchronize cloudlet
@@ -242,9 +242,24 @@
   tags: [firewall]
   ignore_errors: yes
 
-- name: Allow cland necessary ports
+- name: start iptables service
+  systemd: 
+    name: iptables
+    enabled: yes
+    daemon_reload: yes
+    state: restarted
+  tags: [firewall]
+
+- name: Allow necessary ports for ZVM
   script: firewall.sh {{ hostvars[groups['web'][0]]['ansible_host'] }}
   tags: [firewall]
+  when: virt_type == 'zvm'
+  ignore_errors: yes
+
+- name: Allow necessary ports for KVM
+  script: firewall.sh {{ hostvars[groups['web'][0]]['ansible_host'] }} {{ network_external_vlan }}
+  tags: [firewall]
+  when: virt_type != 'zvm'
   ignore_errors: yes
 
 - name: Load nr_bridge kernel module

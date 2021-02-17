@@ -246,7 +246,7 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	}
 
 	if architectureType == 0 {
-		architecture = "x86-64"
+		architecture = "x86_64"
 	} else {
 		architecture = "s390x"
 	}
