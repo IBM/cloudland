@@ -15,7 +15,7 @@
 							</h3>
 							<div class="ui attached segment">
 								<div class="required inline field">
-									<label for="name">{{.i18n.Tr "Label"}}</label>
+									<label for="label">{{.i18n.Tr "Label"}}</label>
 									<input id="label" name="label" autofocus required>
 								</div>
 								<div class="required inline field">
@@ -42,8 +42,32 @@
 								</div>
 								<div class="required inline field">
 									<label for="registrycontent">{{.i18n.Tr "RegistryContent"}}</label>
-                                                                        <textarea id="registrycontent"  name="registrycontent" autocomplete="off" required></textarea>
+                                    <textarea id="registrycontent"  name="registrycontent" autocomplete="off" required></textarea>
 								</div>
+								<div class="required inline field">
+									<label for="initramfs">{{.i18n.Tr "RHCOS initramfs"}}</label>
+									<input id="initramfs" name="initramfs" autofocus required>
+								</div>
+								<div class="required inline field">
+									<label for="kernel">{{.i18n.Tr "RHCOS kernel"}}</label>
+									<input id="kernel" name="kernel" autofocus required>
+								</div>
+								<div class="required inline field">
+									<label for="image">{{.i18n.Tr "RHCOS image"}}</label>
+									<input id="image" name="image" autofocus required>
+								</div>
+								<div class="required inline field">
+									<label for="installer">{{.i18n.Tr "OCP installer"}}</label>
+									<input id="installer" name="installer" autofocus required>
+								</div>
+								<div class="required inline field">
+									<label for="cli">{{.i18n.Tr "oc cli"}}</label>
+									<input id="cli" name="cli" autofocus required>
+								</div>
+								<div class="required inline field">
+									<label for="kubelet">{{.i18n.Tr "kubelet"}}</label>
+									<input id="kubelet" name="kubelet" autofocus required>
+								</div>																																													
 								{{ if .IsAdmin }}
 								<div class="inline field">
 									<label></label>
