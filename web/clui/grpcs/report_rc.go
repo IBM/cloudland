@@ -58,7 +58,7 @@ func ReportRC(ctx context.Context, job *model.Job, args []string) (status string
 		} else if key == "disk" {
 			disk, err = strconv.ParseInt(vp[0], 10, 64)
 			diskTotal, err = strconv.ParseInt(vp[1], 10, 64)
-		} else {
+		} else if key != "network" && key != "load" {
 			log.Println("Undefined resource type")
 		}
 		if err != nil {

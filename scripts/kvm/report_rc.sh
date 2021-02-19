@@ -39,7 +39,7 @@ function probe_arp()
 
 function inst_status()
 {
-    old_inst_list=$(cat $image_dir/old_inst_list)
+    old_inst_list=$(cat $image_dir/old_inst_list 2>/dev/null)
     inst_list=$(sudo virsh list --all | tail -n +3 | cut -d' ' -f3- | xargs | sed 's/inst-//g;s/shut off/shut_off/g')
     [ "$inst_list" = "$old_inst_list" ] && return
     [ -n "$inst_list" ] && echo "|:-COMMAND-:| inst_status.sh '$SCI_CLIENT_ID' '$inst_list'"
@@ -49,7 +49,7 @@ function inst_status()
 function vlan_status()
 {
     cd /opt/cloudland/cache/dnsmasq
-    old_vlan_list=$(cat old_vlan_list)
+    old_vlan_list=$(cat old_vlan_list 2>/dev/null)
     vlan_list=$(ls | grep vlan | grep -v old_vlan_list | xargs | sed 's/vlan//g')
     [ "$vlan_list" = "$old_vlan_list" ] && return
     vlan_arr=($vlan_list)
@@ -72,7 +72,7 @@ function vlan_status()
 function router_status()
 {
     cd /opt/cloudland/cache/router
-    old_router_list=$(cat old_router_list)
+    old_router_list=$(cat old_router_list 2>/dev/null)
     router_list=$(ls router* 2>/dev/null)
     router_list=$(echo "$router_list $(sudo ip netns list | grep router | cut -d' ' -f1)" | xargs | sed 's/router-//g')
     [ "$router_list" = "$old_router_list" ] && return
@@ -122,7 +122,7 @@ function calc_resource()
         echo "cpu=$cpu/$total_cpu memory=$memory/$total_memory disk=$disk/$total_disk network=$network/$total_network load=$load/$total_load"
     fi
     cd /opt/cloudland/run
-    old_resource_list=$(cat old_resource_list)
+    old_resource_list=$(cat old_resource_list 2>/dev/null)
     resource_list="'$cpu' '$total_cpu' '$memory' '$total_memory' '$disk' '$total_disk' '$state'"
     [ "$resource_list" = "$old_resource_list" ] && return
     echo "|:-COMMAND-:| hyper_status.sh '$SCI_CLIENT_ID' '$HOSTNAME' '$cpu' '$total_cpu' '$memory' '$total_memory' '$disk' '$total_disk' '$state' '$VIRT_TYPE' '$ZONE_NAME'"

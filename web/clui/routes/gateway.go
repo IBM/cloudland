@@ -652,16 +652,16 @@ func (v *GatewayView) Create(c *macaron.Context, store session.Store) {
 		log.Println("Failed to create gateway, %v", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
-                                "error": err.Error(),
-                        })
+				"error": err.Error(),
+			})
 
-                        return
+			return
 		}
-			
-	   		c.Data["ErrorMsg"] = err.Error()
-			c.HTML(http.StatusBadRequest, "error")
+
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200,gateway)
+		c.JSON(200, gateway)
 		return
 	}
 	c.Redirect(redirectTo)

@@ -17,10 +17,8 @@ function update_cland()
     make clean
     make
     sudo systemctl stop cloudland
-    sudo systemctl stop cloudlet
     make install
     sudo systemctl start cloudland
-    sudo systemctl start cloudlet
 }
 
 function update_sci()

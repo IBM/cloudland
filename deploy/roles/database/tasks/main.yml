@@ -5,9 +5,11 @@
 
 - name: init database
   command: postgresql-setup initdb
+  args: 
+    creates: /var/lib/pgsql/initdb_postgresql.log
   ignore_errors: yes
 
-- name: cland ui config file
+- name: pg hba config
   template:
     src: pg_hba.conf.j2
     dest: /var/lib/pgsql/data/pg_hba.conf
@@ -27,6 +29,6 @@
   tags: [pg_srv]
 
 - name: run pg script
-  script: postgres.sh {{ db_passwd }}
+  script: postgres.sh  {{ db_passwd }}
   tags: [pg_sh]
   ignore_errors: yes
