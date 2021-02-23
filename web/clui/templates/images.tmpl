@@ -49,13 +49,13 @@
 			                        <td><span title="Tue, 18 Dec 2018 14:24:59 &#43;0800">{{.CreatedAt}}</span></td>
 			                        <td>{{.OsVersion}}</td>
                                                 <td> 
-                                                    {{ if eq .VirtType "zkvm" }}
+                                                    {{ if eq .VirtType "kvm-s390x" }}
                                                         KVM on Z
                                                     {{ else }}
                                                         {{ if eq .VirtType "zvm" }}
                                                             z/VM
                                                         {{ else }}
-                                                            KVM on x86-64
+                                                            KVM on x86_64
                                                         {{ end }}
                                                     {{ end }}
                                                 </td>

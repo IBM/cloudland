@@ -34,7 +34,7 @@
 								<div class="required inline field">
 									<label for="architecture">{{.i18n.Tr "Architecture"}}</label>
 									<select name="architecture" id="architecture" class="ui selection dropdown">
-                                         <option value="0" selected>x86-64</option>
+                                         <option value="0" selected>x86_64</option>
                                          <option value="1">s390x</option>
                                     </select>
 								</div>
@@ -49,8 +49,8 @@
                                 <div class="required inline field">
                                     <label for="virtType">{{.i18n.Tr "Virtualization Type"}}</label>
                                     <select name="virtType" id="virtType" class="ui selection dropdown">
-                                         <option value="xkvm" selected>{{.i18n.Tr "KVM on x86-64"}}</option>
-                                         <option value="zkvm" selected>{{.i18n.Tr "KVM on Z"}}</option>
+                                         <option value="kvm-x86_64" selected>{{.i18n.Tr "KVM on x86_64"}}</option>
+                                         <option value="kvm-s390x" selected>{{.i18n.Tr "KVM on Z"}}</option>
                                          <option value="zvm">{{.i18n.Tr "z/VM"}}</option>
                                     </select>
                                 </div>

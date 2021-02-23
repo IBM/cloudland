@@ -1,0 +1,24 @@
+- name: base
+  hosts: all
+  become_user: root
+  roles:
+    - {role: base, become: yes, tags: [base]}
+
+- name: deploy cland
+  hosts: cland
+  become_user: root
+  roles:
+    - {role: cland, become: yes, tags: [cland]}
+
+- name: deploy imgrepo
+  hosts: imgrepo
+  become_user: root
+  roles:
+    - {role: imgrepo, become: yes, tags: [imgrepo]}
+
+- name: deploy web
+  hosts: web
+  become_user: root
+  roles:
+    - {role: database, become: yes, tags: [database]}
+    - {role: web, become: yes, tags: [web]}

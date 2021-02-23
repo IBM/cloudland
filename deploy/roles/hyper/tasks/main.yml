@@ -1,19 +1,36 @@
-- name: install packages
-  yum: 
-    name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'git', 'python-pip', 'NetworkManager', 'net-tools', 'iptables-services', 'dnsmasq-utils', 'conntrack-tools']
+# - name: install packages
+#   yum: 
+#     name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'git', 'python-pip', 'NetworkManager', 'net-tools', 'iptables-services', 'dnsmasq-utils', 'conntrack-tools']
+#     state: present
+#   when: ansible_distribution_major_version == '7'
+#   tags: [be_pkg]
+
+# - name: install packages
+#   yum: 
+#     name: ['@Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'git', 'python3-pip', 'NetworkManager', 'net-tools', 'iptables-services', 'dnsmasq-utils', 'conntrack-tools']
+#     state: present
+#   when: ansible_distribution_major_version == '8'
+#   tags: [be_pkg]
+
+- name: install common packages
+  yum:
+    name: ['sqlite', 'jq', 'wget', 'mkisofs', 'NetworkManager', 'net-tools', 'iptables-services']
     state: present
-  when: ansible_distribution_major_version == '7'
+  ignore_errors: yes
   tags: [be_pkg]
 
-- name: install packages
-  yum: 
-    name: ['@Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'git', 'python3-pip', 'NetworkManager', 'net-tools', 'iptables-services', 'dnsmasq-utils', 'conntrack-tools']
+- name: install packages for kvm
+  yum:
+    name: ['qemu-kvm', 'qemu-img', 'libvirt', 'libvirt-client', 'dnsmasq', 'keepalived', 'dnsmasq-utils', 'conntrack-tools']
     state: present
-  when: ansible_distribution_major_version == '8'
+  when: virt_type != "zvm"
+  ignore_errors: yes
   tags: [be_pkg]
 
 - pip:
     name: pyparsing
+  when: virt_type != "zvm"
+  ignore_errors: yes
   tags: [be_pkg]
 
 - name: creates cloudland directory
@@ -21,8 +38,10 @@
     path: "{{ item }}"
     state: directory
     owner: cland
+    group: cland
   with_items:
     - /opt/cloudland
+    - /opt/cloudland/log
     - /opt/cloudland/run
     - /opt/cloudland/cache
     - /opt/cloudland/cache/backup
@@ -33,23 +52,107 @@
     - /opt/cloudland/cache/volume
     - /opt/cloudland/cache/dnsmasq
     - /opt/cloudland/cache/xml
+  when: hostname != controller
   tags: [sync]
 
-- name: synchronize cloudland and grpc
-  synchronize:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    rsync_opts: "--exclude=cache,--exclude=log,--exclude=db,--exclude=run"
-  with_items:
-    - {src: '/opt/cloudland', dest: '/opt', owner: 'cland'}
-  tags: [sync]
+# - name: synchronize cloudland and grpc
+#   synchronize:
+#     src: "{{ item.src }}"
+#     dest: "{{ item.dest }}"
+#     rsync_opts: "--exclude=cache,--exclude=log,--exclude=db,--exclude=run"
+#   with_items:
+#     - {src: '/opt/cloudland', dest: '/opt', owner: 'cland'}
+#   tags: [sync]
 
 - name: copy sci binaries
   copy: 
     src: /opt/sci
     dest: /opt
     mode: preserve
+  when: hostname != controller
   tags: [sci]
+
+- name: copy sci service file
+  copy: 
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: preserve
+  with_items:
+    - {src: 'scid.service', dest: '/lib/systemd/system', owner: 'root'}
+  tags: [be_srv, sci]
+
+- name: copy scripts
+  synchronize:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  with_items:
+    - { src: "/opt/cloudland/scripts", dest: "/opt/cloudland", owner: 'cland', group: 'cland' }
+  when: hostname != controller
+  tags: [sync, scripts, scripts_only]
+
+- name: link backend to zvm
+  file:
+    src: /opt/cloudland/scripts/zvm
+    dest: /opt/cloudland/scripts/backend
+    state: link
+    force: yes
+    owner: 'cland'
+    group: 'cland'
+  when: virt_type == 'zvm'
+  tags: [be_conf, scripts, scripts_only]
+
+- name: link backend to kvm
+  file:
+    src: /opt/cloudland/scripts/kvm
+    dest: /opt/cloudland/scripts/backend
+    state: link
+    force: yes
+    owner: 'cland'
+    group: 'cland'
+  when: virt_type != 'zvm'
+  tags: [be_conf, scripts, scripts_only]
+
+- name: create cloudrc local file for zvm
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.owner }}"
+  with_items:
+    - {src: 'cloudrc.local.zvm.j2', dest: '/opt/cloudland/scripts/cloudrc.local', owner: 'cland', group: 'cland'}
+  when: virt_type == 'zvm'
+  tags: [be_conf, scripts]
+
+- name: create cloudrc local file for kvm on Z
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.owner }}"
+  with_items:
+    - {src: 'cloudrc.local.kvm-s390x.j2', dest: '/opt/cloudland/scripts/cloudrc.local', owner: 'cland', group: 'cland'}
+  when: virt_type == 'kvm-s390x'
+  tags: [be_conf, scripts]
+
+- name: create cloudrc local file for kvm
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.owner }}"
+  with_items:
+    - {src: 'cloudrc.local.kvm-x86_64.j2', dest: '/opt/cloudland/scripts/cloudrc.local', owner: 'cland', group: 'cland'}
+  when: virt_type == 'kvm-x86_64'
+  tags: [be_conf, scripts]
+
+- name: synchronize cloudlet
+  synchronize:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  with_items:
+    - { src: "/opt/cloudland/bin", dest: "/opt/cloudland", owner: 'cland', group: 'cland' }
+  when: hostname != controller
+  tags: [sync, cloudlet]
 
 - name: create cloudlet environment file
   template:
@@ -58,29 +161,37 @@
     owner: "{{ item.owner }}"
   with_items:
     - {src: 'cloudlet.j2', dest: '/etc/sysconfig/cloudlet', owner: 'root'}
-  tags: [be_srv] 
- 
-- name: create cloudlet cloudrc local file
-  template:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    owner: "{{ item.owner }}"
-  with_items:
-    - {src: 'cloudrc.local.j2', dest: '/opt/cloudland/scripts/cloudrc.local', owner: 'cland'}
-  tags: [be_conf] 
-  when: client_id == 0
- 
-- name: copy service file
+  tags: [be_srv, cloudlet]
+
+- name: copy cloudlet service file
   copy: 
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
     mode: preserve
   with_items:
     - {src: 'cloudlet.service', dest: '/lib/systemd/system', owner: 'root'}
-    - {src: 'scid.service', dest: '/lib/systemd/system', owner: 'root'}
+  tags: [be_srv, cloudlet]
+ 
+- name: copy compute service file
+  copy: 
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: preserve
+  with_items:
     - {src: 'recover_onboot.service', dest: '/lib/systemd/system', owner: 'root'}
     - {src: 'kvm-nested.conf', dest: '/etc/modprobe.d', owner: 'root'}
+  when: virt_type != 'zvm'
   tags: [be_srv]
+
+- name: start scid services
+  systemd: 
+    name: "{{ item }}"
+    enabled: yes
+    daemon_reload: yes
+    state: restarted
+  with_items:
+    - 'scid'
+  tags: [be_srv, sci]
 
 - name: start cloudlet services
   systemd: 
@@ -89,19 +200,38 @@
     daemon_reload: yes
     state: restarted
   with_items:
-    - 'libvirtd'
-    - 'NetworkManager'
-    - 'scid'
     - 'cloudlet'
+  tags: [start_cloudlet]
+
+- name: set compute services libvirtd
+  systemd: 
+    name: "{{ item }}"
+    enabled: yes
+    daemon_reload: yes
+    state: restarted
+  with_items:
+    - 'libvirtd'
+  when: virt_type != 'zvm'
+  tags: [be_srv]
+
+- name: set compute services NetworkManager and iptables
+  systemd: 
+    name: "{{ item }}"
+    enabled: yes
+    daemon_reload: yes
+    state: restarted
+  with_items:
+    - 'NetworkManager'
     - 'iptables'
   tags: [be_srv]
 
-- name: start cloudlet services
+- name: start recover_onboot services
   systemd: 
     name: recover_onboot
     enabled: yes
     daemon_reload: yes
     state: stopped
+  when: virt_type != 'zvm'
   tags: [be_srv]
 
 - name: mask firewalld service
@@ -112,45 +242,65 @@
   tags: [firewall]
   ignore_errors: yes
 
-- name: Allow cland necessary ports
+- name: start iptables service
+  systemd: 
+    name: iptables
+    enabled: yes
+    daemon_reload: yes
+    state: restarted
+  tags: [firewall]
+
+- name: Allow necessary ports for ZVM
   script: firewall.sh {{ hostvars[groups['web'][0]]['ansible_host'] }}
   tags: [firewall]
+  when: virt_type == 'zvm'
+  ignore_errors: yes
+
+- name: Allow necessary ports for KVM
+  script: firewall.sh {{ hostvars[groups['web'][0]]['ansible_host'] }} {{ network_external_vlan }}
+  tags: [firewall]
+  when: virt_type != 'zvm'
   ignore_errors: yes
 
 - name: Load nr_bridge kernel module
   modprobe:
     name: br_netfilter
     state: present
+  when: virt_type != 'zvm'
   tags: [sysctl]
 
 - name: Apply sysctl bridge-nf-call-iptables
   sysctl:
     name: net.bridge.bridge-nf-call-iptables
     state: present
-    value: 1
+    value: '1'
     reload: yes
+  when: virt_type != 'zvm'
   tags: [sysctl]
 
 - name: Apply sysctl bridge-nf-call-arptables
   sysctl:
     name: net.bridge.bridge-nf-call-arptables
     state: present
-    value: 1
+    value: '1'
     reload: yes
+  when: virt_type != 'zvm'
   tags: [sysctl]
 
 - name: Apply sysctl bridge-nf-call-ip6tables
   sysctl:
     name: net.bridge.bridge-nf-call-ip6tables
     state: present
-    value: 1
+    value: '1'
     reload: yes
+  when: virt_type != 'zvm'
   tags: [sysctl]
 
 - name: Apply sysctl net.netfilter.nf_conntrack_max
   sysctl:
     name: net.netfilter.nf_conntrack_max
     state: present
-    value: 6553600
+    value: '6553600'
     reload: yes
+  when: virt_type != 'zvm'
   tags: [sysctl]

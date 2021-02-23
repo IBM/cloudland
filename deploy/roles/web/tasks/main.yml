@@ -1,7 +1,7 @@
-- name: install postgresql packages
-  yum: 
-    name: ['postgresql']
-    state: present
+# - name: install postgresql packages
+#   yum: 
+#     name: ['postgresql']
+#     state: present
 
 - name: create conf directory
   file:
@@ -18,19 +18,8 @@
   template:
     src: config.toml.j2
     dest: /opt/cloudland/web/clui/conf/config.toml
+  when: new_conf == 'yes'
   tags: [web_conf]
-
-- name: ocd shell config
-  copy:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    mode: preserve
-  with_items:
-    - {src: 'ocd.conf', dest: '/opt/cloudland/web/clui/public/misc/openshift/ocd.conf', owner: 'cland'}
-    - {src: 'ocd.conf.4.2', dest: '/opt/cloudland/web/clui/public/misc/openshift/ocd.conf.4.2', owner: 'cland'}
-    - {src: 'ocd.conf.4.3', dest: '/opt/cloudland/web/clui/public/misc/openshift/ocd.conf.4.3', owner: 'cland'}
-    - {src: 'ocd.conf.4.4', dest: '/opt/cloudland/web/clui/public/misc/openshift/ocd.conf.4.4', owner: 'cland'}
-  tags: [ocd_conf]
 
 - name: copy service files
   copy:
@@ -49,7 +38,7 @@
     state: restarted
   tags: [web_srv]
 
-- name: init test data
-  script: testdata.sh {{ db_passwd }} {{ hostvars[groups['database'][0]]['inventory_hostname'] }} {{ network_external_vlan }} {{ network_internal_vlan }}
-  tags: [test]
-  ignore_errors: yes
+# - name: init test data
+#   script: testdata.sh {{ db_passwd }} {{ hostvars[groups['database'][0]]['inventory_hostname'] }} {{ network_external_vlan }} {{ network_internal_vlan }}
+#   tags: [test]
+#   ignore_errors: yes

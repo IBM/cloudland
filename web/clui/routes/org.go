@@ -256,8 +256,8 @@ func (a *OrgAdmin) List(ctx context.Context, offset, limit int64, order, query s
 	err = db.Where(where).Where(query).Find(&orgs).Error
 	if err != nil {
 		log.Println("DB failed to query organizations, %v", err)
-	        return
-        }
+		return
+	}
 
 	return
 }

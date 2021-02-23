@@ -16,7 +16,7 @@ type Zone struct {
 	ID        int64 `gorm:"primary_key"`
 	Name      string
 	Default   bool
-	Subnets   []*Subnet  `gorm:"many2many:subnet_zones;"`
+	Subnets   []*Subnet `gorm:"many2many:subnet_zones;"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

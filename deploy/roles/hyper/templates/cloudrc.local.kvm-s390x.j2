@@ -1,7 +1,10 @@
 # -*- mode: sh -*-
-cloud_domain={{ domain_name }}
-image_repo=http://{{ hostvars[groups['hyper'][0]]['inventory_hostname'] }}:4000
+image_repo=http://{{ hostvars[groups['imgrepo'][0]]['inventory_hostname'] }}:4000
 dns_server={{ dns_server }}
+cloud_domain={{ domain_name }}
+cpu_over_ratio={{ cpu_over_ratio }}
+mem_over_ratio={{ mem_over_ratio }}
+disk_over_ratio={{ disk_over_ratio }}
 external_vlan={{ network_external_vlan }}
 internal_vlan={{ network_internal_vlan }}
 vxlan_mcast_addr={{ multicast_group }}
@@ -9,11 +12,4 @@ vxlan_interface={{ network_device }}
 vlan_interface={{ network_device }}
 zlayer2_interface={{ zlayer2_iface }}
 vnc_interface={{ vnc_device }}
-cpu_over_ratio={{ cpu_ratio }}
-mem_over_ratio={{ mem_ratio }}
-disk_over_ratio={{ disk_ratio }}
-cpu_limit=10
-mem_limit=32768
-vol_limit=100
-disk_inc_limit=100
 use_lb=true

@@ -1,0 +1,8 @@
+image_repo=http://{{ hostvars[groups['imgrepo'][0]]['inventory_hostname'] }}:4000
+dns_server={{ dns_server }}
+cloud_domain={{ domain_name }}
+cpu_over_ratio={{ cpu_over_ratio }}
+mem_over_ratio={{ mem_over_ratio }}
+disk_over_ratio={{ disk_over_ratio }}
+guest_userid_template=ZCC%05X
+zvm_service=http://127.0.0.1:8080

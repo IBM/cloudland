@@ -111,13 +111,13 @@
 
                                           {{.Name}} for z/VM
 
-                                          {{ else if eq .VirtType "zkvm" }}
+                                          {{ else if eq .VirtType "kvm-s390x" }}
                                           
                                           {{.Name}} for KVM on Z
 
-                                          {{ else if eq .VirtType "xkvm" }}
+                                          {{ else if eq .VirtType "kvm-x86_64" }}
 
-                                          {{.Name}} for KVM on x86-64
+                                          {{.Name}} for KVM on x86_64
 
                                           {{ end }}
 
