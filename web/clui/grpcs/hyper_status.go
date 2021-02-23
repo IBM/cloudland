@@ -78,9 +78,11 @@ func HyperStatus(ctx context.Context, job *model.Job, args []string) (status str
 	}
 	virtType := "xkvm"
 	zoneName := ""
+	hostIP := ""
 	if argn > 11 {
 		virtType = args[10]
 		zoneName = args[11]
+		hostIP = args[12]
 	}
 	zone := &model.Zone{Name: zoneName}
 	if zoneName != "" {
@@ -110,6 +112,7 @@ func HyperStatus(ctx context.Context, job *model.Job, args []string) (status str
 	hyper.Status = int32(hyperStatus)
 	hyper.VirtType = virtType
 	hyper.Zone = zone
+	hyper.HostIP = hostIP
 	err = db.Save(hyper).Error
 	if err != nil {
 		log.Println("Failed to save hypervisor", err)

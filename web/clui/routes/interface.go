@@ -405,7 +405,7 @@ func DeallocateAddress(ctx context.Context, ifaces []*model.Interface) (err erro
 	return
 }
 
-func SetGateway(ctx context.Context, subnetID, zoneID int64, router *model.Gateway) (subnet *model.Subnet, err error) {
+func SetGateway(ctx context.Context, subnetID, zoneID, owner int64, router *model.Gateway) (subnet *model.Subnet, iface *model.Interface, err error) {
 	var db *gorm.DB
 	ctx, db = getCtxDB(ctx)
 	subnet = &model.Subnet{
@@ -414,12 +414,17 @@ func SetGateway(ctx context.Context, subnetID, zoneID int64, router *model.Gatew
 	err = db.Model(subnet).Preload("Routers").Preload("Zones").Take(subnet).Error
 	if err != nil {
 		log.Println("Failed to get subnet, %v", err)
-		return nil, err
+		return
 	}
 	if subnet.Type != "internal" {
 		log.Println("Only internal gateway can be set gateway")
 		err = fmt.Errorf("Only internal gateway can be set gateway")
-		return nil, err
+		return
+	}
+	iface, err = CreateInterface(ctx, subnetID, router.ID, owner, zoneID, -1, subnet.Gateway, "", "subnet-gw", "gateway", nil)
+	if err != nil {
+		log.Println("Failed to create gateway subnet interface", err)
+		return
 	}
 	found := false
 	log.Println("going to for circle")
@@ -454,7 +459,7 @@ func SetGateway(ctx context.Context, subnetID, zoneID int64, router *model.Gatew
 	err = db.Model(subnet).Save(subnet).Error
 	if err != nil {
 		log.Println("Failed to set gateway, %v", err)
-		return nil, err
+		return
 	}
 	return
 }

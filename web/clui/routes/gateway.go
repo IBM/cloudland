@@ -34,6 +34,7 @@ type StaticRoute struct {
 
 type SubnetIface struct {
 	Address string         `json:"ip_address"`
+	MacAddr string         `json:"mac_address"`
 	Vni     int64          `json:"vni"`
 	Routes  []*StaticRoute `json:"routes,omitempty"`
 }
@@ -58,6 +59,8 @@ func createGatewayIface(ctx context.Context, rtype string, gateway *model.Gatewa
 		} else if rtype == "private" {
 			name = fmt.Sprintf("pub%d", subnet.ID)
 			ifType = "gateway_private"
+		} else {
+			continue
 		}
 		iface, err = CreateInterface(ctx, subnet.ID, gateway.ID, owner, zoneID, gateway.Hyper, "", "", name, ifType, nil)
 		if err == nil {
@@ -131,7 +134,8 @@ func (a *GatewayAdmin) Create(ctx context.Context, name, stype string, pubID, pr
 	if subnetIDs != nil && len(subnetIDs) > 0 {
 		for _, sID := range subnetIDs {
 			var subnet *model.Subnet
-			subnet, err = SetGateway(ctx, sID, zoneID, gateway)
+			var iface *model.Interface
+			subnet, iface, err = SetGateway(ctx, sID, zoneID, owner, gateway)
 			if err != nil {
 				log.Println("DB failed to set gateway, %v", err)
 				return
@@ -141,7 +145,7 @@ func (a *GatewayAdmin) Create(ctx context.Context, name, stype string, pubID, pr
 			if err != nil {
 				log.Println("Failed to unmarshal routes", err)
 			}
-			intIfaces = append(intIfaces, &SubnetIface{Address: subnet.Gateway, Vni: subnet.Vlan, Routes: routes})
+			intIfaces = append(intIfaces, &SubnetIface{Address: subnet.Gateway, MacAddr: iface.MacAddr, Vni: subnet.Vlan, Routes: routes})
 		}
 	}
 	jsonData, err := json.Marshal(intIfaces)
@@ -241,19 +245,19 @@ func (a *GatewayAdmin) Update(ctx context.Context, id int64, name string, pubID,
 				log.Println("%v", err)
 				continue
 			}
+			_, iface, err := SetGateway(ctx, sub.ID, gateway.ZoneID, gateway.Owner, gateway)
+			if err != nil {
+				log.Println("DB failed to update router for subnet", err)
+				continue
+			}
 			control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
 			if gateway.Hyper == gateway.Peer {
 				control = fmt.Sprintf("inter=%d", gateway.Hyper)
 			}
-			command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_gw_route.sh '%d' '%s' '%d' 'soft' <<EOF\n%s\nEOF", gateway.ID, sub.Gateway, sub.Vlan, sub.Routes)
+			command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_gw_route.sh '%d' '%s' '%s' '%d' 'soft' <<EOF\n%s\nEOF", gateway.ID, sub.Gateway, iface.MacAddr, sub.Vlan, sub.Routes)
 			err = hyperExecute(ctx, control, command)
 			if err != nil {
 				log.Println("Set gateway failed")
-				continue
-			}
-			_, err = SetGateway(ctx, sub.ID, gateway.ZoneID, gateway)
-			if err != nil {
-				log.Println("DB failed to update router for subnet", err)
 				continue
 			}
 		}
@@ -652,16 +656,16 @@ func (v *GatewayView) Create(c *macaron.Context, store session.Store) {
 		log.Println("Failed to create gateway, %v", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
-                                "error": err.Error(),
-                        })
+				"error": err.Error(),
+			})
 
-                        return
+			return
 		}
-			
-	   		c.Data["ErrorMsg"] = err.Error()
-			c.HTML(http.StatusBadRequest, "error")
+
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200,gateway)
+		c.JSON(200, gateway)
 		return
 	}
 	c.Redirect(redirectTo)
