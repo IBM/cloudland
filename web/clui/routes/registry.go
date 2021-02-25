@@ -26,12 +26,18 @@ var (
 type RegistryAdmin struct{}
 type RegistryView struct{}
 
-func (a *RegistryAdmin) Create(label, ocpVersion, registryContent string) (registry *model.Registry, err error) {
+func (a *RegistryAdmin) Create(label, ocpVersion, registryContent, initramfs, kernel, image, installer, cli, kubelet string) (registry *model.Registry, err error) {
 	db := DB()
 	registry = &model.Registry{
 		Label:           label,
 		OcpVersion:      ocpVersion,
 		RegistryContent: registryContent,
+		Initramfs:       initramfs,
+		Kernel:          kernel,
+		Image:           image,
+		Installer:       installer,
+		Cli:             cli,
+		Kubelet:         kubelet,
 	}
 	err = db.Create(registry).Error
 	return
@@ -69,6 +75,7 @@ func (a *RegistryAdmin) List(offset, limit int64, order, query string) (total in
 
 	registrys = []*model.Registry{}
 	if err = db.Model(&model.Registry{}).Where(query).Count(&total).Error; err != nil {
+		log.Println("Failed to query registrys:", err)
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
@@ -171,7 +178,14 @@ func (v *RegistryView) Create(c *macaron.Context, store session.Store) {
 	label := c.Query("label")
 	ocpVersion := c.Query("ocpversion")
 	registryContent := c.Query("registrycontent")
-	registry, err := registryAdmin.Create(label, ocpVersion, registryContent)
+	initramfs := c.Query("initramfs")
+	kernel := c.Query("kernel")
+	image := c.Query("image")
+	installer := c.Query("installer")
+	cli := c.Query("cli")
+	kubelet := c.Query("kubelet")
+
+	registry, err := registryAdmin.Create(label, ocpVersion, registryContent, initramfs, kernel, image, installer, cli, kubelet)
 	if err != nil {
 		log.Println("Create registry failed", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
