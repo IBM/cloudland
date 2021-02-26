@@ -2,7 +2,9 @@ Welcome to CloudLand wiki!
     
 [Introduction](Introduction.md)   
 
-[Deployment](Deployment.md)   
+[Build](Build.md)
+
+[Installation](Installation.md)
 
 [User Manual](Manual.md)
 

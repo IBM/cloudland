@@ -4,6 +4,6 @@ external_vlan: 5000
 internal_vlan: 5010
 dns_server: 114.114.114.114
 multicast_group: 225.10.10.1
-cpu_ratio: 1
-mem_ratio: 1
-disk_ratio: 1
+cpu_over_ratio: 1
+mem_over_ratio: 1
+disk_over_ratio: 1

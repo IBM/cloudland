@@ -1,0 +1,17 @@
+- name: base
+  hosts: all
+  become_user: root
+  roles:
+    - {role: base, become: yes, tags: [base]}
+
+- name: service from controller
+  hosts: cland
+  become_user: root
+  roles:
+    - {role: cland, become: yes, tags: [cland]}
+
+- name: service from compute nodes
+  hosts: hyper
+  become_user: root
+  roles:
+    - {role: hyper, become: yes, tags: [hyper]}

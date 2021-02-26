@@ -1,0 +1,126 @@
+"Important": 
+    1. id of the compute node must be incremented from 0, No interruption allowed.
+    2. When adding new node, copy 0, 1 or 2 accoridng to the 'virt_type', change the id and modify the details.
+    3. virt_type: zvm(id 0 below), kvm-s390x (kvm on Z, id 1 below) and kvm-x86_64(id 2 below). (Version 1 only supports same architecture, so support zvm and kvm on Z at the same time, or kvm on x86_64 only)
+    4. zone_name: Plan ahead to divide the nodes, will be related to the Subnets.
+    5. ratio: Change the over ration for cpu, mem and disk according to the real settings of the compute node.
+    6. for virt_type 'zvm': we needs zccsdk to manage z/VM, so be sure that the zccsdk service: http://127.0.0.1:8080 is available from the zvm hypervisor.
+    7. kvm-s390x vs kvm-x86_64: kvm-s390x configuration needs "zlayer2_iface" for fdb
+
+Example: (description)
+{
+    "controller": {
+        "hostname": "<hostname of the controller>",
+        "ip": "<ip of controller, login cloudland via https:[ip] >"
+    },
+    "compute": [
+        {
+            "id": 0,
+            "hostname": "<hostname of the node>",
+            "ip": "<ip of the node>",
+            "virt_type": "zvm",
+            "zone_name": "<name of the zone>",
+            "cpu_over_ratio": 10,
+            "mem_over_ratio": 1,
+            "disk_over_ratio": 1,
+            "dns_server": "<ip of the dns server>",
+            "domain_name": "<name of the domain>"
+        },
+        {
+            "id": 1,
+            "hostname": "<hostname of the node>",
+            "ip": "<ip of the node>",
+            "virt_type": "kvm-s390x",
+            "zone_name": "<name of the zone>",
+            "cpu_over_ratio": 10,
+            "mem_over_ratio": 1,
+            "disk_over_ratio": 1,
+            "dns_server": "<ip of the dns server>",
+            "domain_name": "<name of the domain>",
+            "zlayer2_iface": "the network interface used for KVM on Z to configure fdb",
+            "network_device": "<the vlan/vxlan interface>",
+            "vnc_device": "<network interface used for vnc>",
+            "network_external_vlan": "<the bridge for externl network>",
+            "network_internal_vlan": "<the bridge for internal network>",
+            "multicast_group": "<vxlan multicast address>",
+            "portmap_remote_ip": "<ip for portmap>"
+        },
+        {
+            "id": 2,
+            "hostname": "<hostname of the node>",
+            "ip": "<ip of the node>",
+            "virt_type": "kvm-x86_64",
+            "zone_name": "<name of the zone>",
+            "cpu_over_ratio": 10,
+            "mem_over_ratio": 1,
+            "disk_over_ratio": 1,
+            "dns_server": "<ip of the dns server>",
+            "domain_name": "<name of the domain>",
+            "network_device": "<the vlan/vxlan interface>",
+            "vnc_device": "<network interface used for vnc>",
+            "network_external_vlan": "<the bridge for externl network>",
+            "network_internal_vlan": "<the bridge for internal network>",
+            "multicast_group": "<vxlan multicast address>",
+            "portmap_remote_ip": "<ip for portmap>"
+        }
+    ]
+}
+
+Example:
+{
+    "controller": {
+        "hostname": "controller",
+        "ip": "172.16.0.100"
+    },
+    "compute": [
+        {
+            "id": 0,
+            "hostname": "compute0",
+            "ip": "172.16.0.101",
+            "virt_type": "zvm",
+            "zone_name": "zone_zvm",
+            "cpu_over_ratio": 10,
+            "mem_over_ratio": 1,
+            "disk_over_ratio": 1,
+            "dns_server": "172.16.0.100",
+            "domain_name": "linuxone.ibm.com"
+        },
+        {
+            "id": 1,
+            "hostname": "compute1",
+            "ip": "172.16.0.102",
+            "virt_type": "kvm-s390x",
+            "zone_name": "zone_kvm",
+            "cpu_over_ratio": 10,
+            "mem_over_ratio": 1,
+            "disk_over_ratio": 1,
+            "dns_server": "172.16.0.100",
+            "domain_name": "linuxone.ibm.com",
+            "zlayer2_iface": "enccw0.0.3000",
+            "network_device": "enccw0.0.3000",
+            "vnc_device": "enccw0.0.3000",
+            "network_external_vlan": "5000",
+            "network_internal_vlan": "5010",
+            "multicast_group": "225.10.10.125"
+        },
+        {
+            "id": 2,
+            "hostname": "compute2",
+            "ip": "172.16.0.103",
+            "virt_type": "kvm-x86_64",
+            "zone_name": "zone_kvm",
+            "cpu_over_ratio": 10,
+            "mem_over_ratio": 1,
+            "disk_over_ratio": 1,
+            "dns_server": "172.16.0.100",
+            "domain_name": "linuxone.ibm.com",
+            "zlayer2_iface": "enccw0.0.3000",
+            "network_device": "enccw0.0.3000",
+            "vnc_device": "enccw0.0.3000",
+            "network_external_vlan": "5000",
+            "network_internal_vlan": "5010",
+            "multicast_group": "225.10.10.125"
+        }
+        
+    ]
+}

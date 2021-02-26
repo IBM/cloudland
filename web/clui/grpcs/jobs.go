@@ -18,12 +18,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/spf13/viper"
 	"github.com/IBM/cloudland/web/clui/jobs"
+	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/clui/scripts"
 	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/IBM/cloudland/web/sca/logs"
-	"github.com/IBM/cloudland/web/clui/model"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -40,8 +40,8 @@ func GetJobService() *jobService {
 	if JobService == nil {
 		JobService = &jobService{
 			Tracing: logs.StartTracing("Job"),
-			locker: sync.Mutex{},
-			chans:  map[int32]chan *jobs.Event{},
+			locker:  sync.Mutex{},
+			chans:   map[int32]chan *jobs.Event{},
 		}
 	}
 	return JobService
@@ -156,7 +156,7 @@ func (js *jobService) FirstOrCreate(ctx context.Context, pj *jobs.Job) (job *mod
 
 func (js *jobService) Run(req *jobs.RunRequest, rs jobs.JobService_RunServer) (err error) {
 	ctx := rs.Context()
-	sp, ctx:= js.StartLogging(ctx, "JobRun")
+	sp, ctx := js.StartLogging(ctx, "JobRun")
 	sp.Info(sp.Context())
 	defer sp.Finish()
 	wait := req.GetWait()
@@ -227,7 +227,7 @@ func (js *jobService) RunOnce(ctx context.Context, req *jobs.Job) (
 }
 
 func (js *jobService) Execute(ctx context.Context, job *model.Job) (err error) {
-	sp, ctx:= js.StartLogging(ctx, "JobExecute")
+	sp, ctx := js.StartLogging(ctx, "JobExecute")
 	defer sp.Finish()
 	req := &scripts.ExecuteRequest{
 		Id:      int32(job.ID),
@@ -253,7 +253,7 @@ func (js *jobService) notify(event *jobs.Event) (err error) {
 }
 
 func (js *jobService) Notify(ctx context.Context, req *jobs.NotifyRequest) (rep *jobs.NotifyReply, err error) {
-	sp, ctx:= js.StartLogging(ctx, "JobNotify")
+	sp, ctx := js.StartLogging(ctx, "JobNotify")
 	defer sp.Finish()
 	event := req.GetEvent()
 	rep = &jobs.NotifyReply{}
@@ -262,7 +262,7 @@ func (js *jobService) Notify(ctx context.Context, req *jobs.NotifyRequest) (rep 
 }
 
 func (js *jobService) Delete(ctx context.Context, req *jobs.DeleteRequest) (rep *jobs.DeleteReply, err error) {
-	sp, ctx:= js.StartLogging(ctx, "JobDelete")
+	sp, ctx := js.StartLogging(ctx, "JobDelete")
 	defer sp.Finish()
 	sp.Info(sp.Context())
 	callback := req.GetCallback()
@@ -290,7 +290,7 @@ func (js *jobService) Delete(ctx context.Context, req *jobs.DeleteRequest) (rep 
 }
 
 func (js *jobService) Invoke(ctx context.Context, req *jobs.InvokeRequest) (rep *jobs.InvokeReply, err error) {
-	sp, ctx:= js.StartLogging(ctx, "JobInvoke")
+	sp, ctx := js.StartLogging(ctx, "JobInvoke")
 	defer sp.Finish()
 	rep = &jobs.InvokeReply{}
 	var job *model.Job
@@ -306,7 +306,7 @@ func (js *jobService) Invoke(ctx context.Context, req *jobs.InvokeRequest) (rep 
 
 func (js *jobService) List(req *jobs.ListRequest, ls jobs.JobService_ListServer) (err error) {
 	ctx := ls.Context()
-	sp, ctx:= js.StartLogging(ctx, "JobList")
+	sp, ctx := js.StartLogging(ctx, "JobList")
 	defer sp.Finish()
 	callback := req.GetCallback()
 	unscoped := req.GetUnscoped()

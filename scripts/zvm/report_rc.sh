@@ -1,3 +1,5 @@
+#!/bin/bash
+
 cd `dirname $0`
 source ../cloudrc
 
@@ -45,16 +47,16 @@ function calc_resource()
         echo "cpu=$cpu/$cpu_total memory=$memory_available/$memory_total disk=$disk_available/$disk_total"
     fi
     cd /opt/cloudland/run
-    old_resource_list=$(cat old_resource_list)
+    old_resource_list=$(cat old_resource_list 2>/dev/null)
     resource_list="'$cpu' '$cpu_total' '$memory_available' '$memory_total' '$disk_available' '$disk_total' '$state'"
     [ "$resource_list" = "$old_resource_list" ] && return
-    echo "|:-COMMAND-:| hyper_status.sh '$SCI_CLIENT_ID' '$HOSTNAME' '$cpu' '$cpu_total' '$memory_available' '$memory_total' '$disk_available' '$disk_total' '$state' '$HYPER_TYPE' '$ZONE_NAME'"
+    echo "|:-COMMAND-:| hyper_status.sh '$SCI_CLIENT_ID' '$HOSTNAME' '$cpu' '$cpu_total' '$memory_available' '$memory_total' '$disk_available' '$disk_total' '$state' '$VIRT_TYPE' '$ZONE_NAME'"
     echo "'$cpu' '$cpu_total' '$memory_available' '$memory_total' '$disk_available' '$disk_total' '$state'" >/opt/cloudland/run/old_resource_list
 }
 
 function inst_status()
 {
-    old_inst_list=$(cat $image_dir/old_inst_list)
+    old_inst_list=$(cat $image_dir/old_inst_list 2>/dev/null)
     inst_list=""
     guest_output=$(curl -s $zvm_service/guests | jq .output)
     num_guest=$(echo $guest_output | jq length)

@@ -36,7 +36,7 @@ type Hyper struct {
 	VirtType  string
 	ZoneID    int64
 	Zone      *Zone     `gorm:"foreignkey:ZoneID"`
-	Resource  *Resource `gorm:"foreignkey:Hostid;AssociationForeignKey:Hostid`
+	Resource  *Resource `gorm:"foreignkey:Hostid;AssociationForeignKey:Hostid"`
 }
 
 func init() {

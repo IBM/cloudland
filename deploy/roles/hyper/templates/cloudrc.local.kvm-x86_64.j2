@@ -1,0 +1,14 @@
+# -*- mode: sh -*-
+image_repo=http://{{ hostvars[groups['imgrepo'][0]]['inventory_hostname'] }}:4000
+dns_server={{ dns_server }}
+cloud_domain={{ domain_name }}
+cpu_over_ratio={{ cpu_over_ratio }}
+mem_over_ratio={{ mem_over_ratio }}
+disk_over_ratio={{ disk_over_ratio }}
+external_vlan={{ network_external_vlan }}
+internal_vlan={{ network_internal_vlan }}
+vxlan_mcast_addr={{ multicast_group }}
+vxlan_interface={{ network_device }}
+vlan_interface={{ network_device }}
+vnc_interface={{ vnc_device }}
+use_lb=true

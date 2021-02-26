@@ -250,7 +250,7 @@ function download_pkgs()
 
 function ignite_files()
 {
-    echo "~~~~~~~~~+++++~~~~~~~~~"
+    echo "~~~~~~~~~start to ignite file~~~~~~~~~"
     pwd
     parts=$(cat | base64 -d | sed -s 's/\r//')
     ssh_key=$(cat /home/$cloud_user/.ssh/authorized_keys | tail -1)
@@ -289,6 +289,7 @@ $parts
 EOF
     sed -i "/^$/d" install-config.yaml
     #sed -i "/^{}/d" install-config.yaml
+    echo "start to backup"
     mkdir /opt/backup
     cp install-config.yaml /opt/backup
     cd /opt/$cluster_name

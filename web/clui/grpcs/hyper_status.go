@@ -76,7 +76,7 @@ func HyperStatus(ctx context.Context, job *model.Job, args []string) (status str
 		log.Println("Invalid hypervisor status", err)
 		hyperStatus = 1
 	}
-	virtType := "xkvm"
+	virtType := "kvm-x86_64"
 	zoneName := ""
 	hostIP := ""
 	if argn > 11 {

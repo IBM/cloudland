@@ -120,7 +120,7 @@ func (a *UserAdmin) Update(ctx context.Context, id int64, password string, membe
 
 func (a *UserAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, users []*model.User, err error) {
 	memberShip := GetMemberShip(ctx)
-	log.Println("memberShip in users is ",memberShip)
+	log.Println("memberShip in users is ", memberShip)
 	log.Println("start to connect to DB useradmin.list")
 	db := DB()
 	if limit == 0 {
@@ -554,7 +554,7 @@ func (v *UserView) Create(c *macaron.Context, store session.Store) {
 
 	if confirm != password {
 		log.Println("Passwords do not match")
-		c.Data["ErrorMsg"]= "Passwords do not match"
+		c.Data["ErrorMsg"] = "Passwords do not match"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
