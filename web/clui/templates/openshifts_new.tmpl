@@ -1,13 +1,10 @@
 {{template "_head" .}}
 <script type="text/javascript">
 
-    $("#storbackend").dropdown({
+    $("#registry").dropdown({
         onChange:function(a,b){
-            if( b == "FCP"){
-                $( ".lbconfig, .bootconfig, .masterconfig, .workerconfig" ).hide();
-            }else{
-                $( ".lbconfig, .bootconfig, .masterconfig, .workerconfig" ).show();
-            }
+            alert(a);
+            alert(b);
         }
     });
 

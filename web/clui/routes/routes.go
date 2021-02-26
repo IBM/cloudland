@@ -139,6 +139,7 @@ func New() (m *macaron.Macaron) {
 	m.Get("/registrys/new", registryView.New)
 	m.Post("/registrys/new", registryView.Create)
 	m.Delete("/registrys/:id", registryView.Delete)
+	m.Get("/registry/:id", registryView.GetData)
 	m.Get("/images", imageView.List)
 	m.Get("/images/new", imageView.New)
 	m.Post("/images/new", imageView.Create)
