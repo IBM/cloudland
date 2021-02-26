@@ -1,7 +1,6 @@
 {{template "_head" .}}
 <script type="text/javascript">
-
-    $("#registry").dropdown({
+    $(".checkregistry").dropdown({
         onChange:function(a,b){
             alert(a);
             alert(b);
@@ -91,13 +90,13 @@
 									  </div>
 									</div>
 								</div>
-								<div class="required inline field">
+								<div class="required inline field" >
 									<label for="nworkers">{{.i18n.Tr "Number of Workers"}}</label>
 									<input id="nworker"  name="nworkers" value="2" required>
 								</div>
-                                                                <div class="required inline field">
+                                                                <div class="required inline field checkregistry" >
                                                                         <label for="registry">{{.i18n.Tr "Registry"}}</label>
-                                                                        <div class="ui selection dropdown">
+                                                                        <div class="ui selection dropdown" id="checkregistry">
                                                                           <input id="registry" name="registry" type="hidden">
                                                                           <i class="dropdown icon"></i>
                                                                           <div class="default text">{{.i18n.Tr "None"}}</div>
@@ -112,10 +111,12 @@
                                                                           </div>
                                                                         </div>
                                                                 </div>
+<!--
                                                                 <div class="inline field">
                                                                         <label for="version">{{.i18n.Tr "Version"}}</label>
                                                                         <input id="version" name="version" autofocus  disabled>
                                                                 </div>
+-->
 								<div class="required inline field">
 									<label for="lflavor">{{.i18n.Tr "LB_Flavor"}}</label>
 									<div class="ui selection dropdown">
