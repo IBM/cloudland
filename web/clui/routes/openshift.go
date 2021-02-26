@@ -310,7 +310,7 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 	return
 }
 
-func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, cookie, haflag, version, extIP string, nworkers int32, lflavor, mflavor, wflavor, key, zoneID, subnetID, registryID int64, hostrec, infrtype, sback, atbundle, icsources string) (openshift *model.Openshift, err error) {
+func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, cookie, haflag, extIP string, nworkers int32, lflavor, mflavor, wflavor, key, zoneID, subnetID, registryID int64, hostrec, infrtype string) (openshift *model.Openshift, err error) {
 	memberShip := GetMemberShip(ctx)
 	log.Println("it's in Creating openshift")
 	db := DB()
@@ -322,7 +322,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 	registryContent := registry.RegistryContent
 	log.Println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~registryContent==" + registryContent)
 	log.Println("version in openshift")
-	version = registry.OcpVersion
+	version := registry.OcpVersion
 	log.Println("version=%s", version)
 
 	lbIP := ""
@@ -366,7 +366,6 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 		Key:                key,
 		ZoneID:             zoneID,
 		InfrastructureType: infrtype,
-		StorageBackend:     sback,
 	}
 	log.Println("~~~~creating~~~")
 	err = db.Create(openshift).Error
@@ -732,7 +731,7 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	if haflag == "" {
 		haflag = "no"
 	}
-	secret := c.QueryTrim("secret")
+	//secret := c.QueryTrim("secret")
 	hostrec := c.QueryTrim("hostrec")
 	nworkers := c.QueryInt("nworkers")
 	if nworkers < 2 {
@@ -742,7 +741,7 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	registry := c.QueryInt64("registry")
-	version := c.QueryTrim("version")
+	//version := c.QueryTrim("version")
 	extIP := c.QueryTrim("extip")
 	lflavor := c.QueryInt64("lflavor")
 	mflavor := c.QueryInt64("mflavor")
@@ -751,13 +750,13 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 	key := c.QueryInt64("key")
 	zone := c.QueryInt64("zone")
 	infrtype := c.QueryTrim("infrtype")
-	sback := c.QueryTrim("sback")
-	atbundle := c.QueryTrim("atbundle")
-	icsources := c.QueryTrim("icsources")
+	//sback := c.QueryTrim("sback")
+	//atbundle := c.QueryTrim("atbundle")
+	//icsources := c.QueryTrim("icsources")
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
 	permit, err := memberShip.CheckOwner(model.Writer, "subnets", int64(subnet))
 	log.Println("openshift create in viewCreate")
-	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, secret, cookie, haflag, version, extIP, int32(nworkers), lflavor, mflavor, wflavor, key, zone, subnet, registry, hostrec, infrtype, sback, atbundle, icsources)
+	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, cookie, haflag, extIP, int32(nworkers), lflavor, mflavor, wflavor, key, zone, subnet, registry, hostrec, infrtype)
 	if err != nil {
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
