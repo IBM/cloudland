@@ -15,6 +15,7 @@ if [ $? -eq 0 ]; then
 else
     nmcli connection add con-name $vm_br type bridge ifname $vm_br ipv4.method static ipv4.addresses 169.254.169.254/32
     nmcli connection up $vm_br
+    apply_bridge -I $vm_br
 fi
 cat /proc/net/dev | grep -q "\<v-$vlan\>:"
 if [ $? -ne 0 ]; then
