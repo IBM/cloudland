@@ -30,13 +30,13 @@ type FdbRule struct {
 	OuterIP  string `json:"outer_ip"`
 }
 
-func sendFdbRules(ctx context.Context, instance *model.Instance) (err error) {
+func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript string) (err error) {
 	db := dbs.DB()
-	allSubnets := []*model.Subnet{}
+	allSubnets := []int64{}
 	instanceRules := []*FdbRule{}
 	spreadRules := []*FdbRule{}
 	for _, iface := range instance.Interfaces {
-		allSubnets = append(allSubnets, iface.Address.Subnet)
+		allSubnets = append(allSubnets, iface.Address.SubnetID)
 		hyper := &model.Hyper{}
 		err = db.Where("hostid = ?", instance.Hyper).Take(hyper).Error
 		if err != nil || hyper.Hostid < 0 {
@@ -47,10 +47,10 @@ func sendFdbRules(ctx context.Context, instance *model.Instance) (err error) {
 	}
 	allIfaces := []*model.Interface{}
 	hyperSet := make(map[int32]struct{})
-	for _, subnet := range allSubnets {
-		err := db.Preload("Addresses").Preload("Addresses.Subnet").Where("subnet = ?", subnet.ID).Find(allIfaces).Error
+	for _, subnetID := range allSubnets {
+		err := db.Preload("Address").Preload("Address.Subnet").Where("subnet = ?", subnetID).Find(&allIfaces).Error
 		if err != nil {
-			log.Println("Failed to query all interfaces")
+			log.Println("Failed to query all interfaces", err)
 			continue
 		}
 		for _, iface := range allIfaces {
@@ -58,7 +58,7 @@ func sendFdbRules(ctx context.Context, instance *model.Instance) (err error) {
 				hyper := &model.Hyper{}
 				err = db.Where("hostid = ? and hostid != ?", iface.Hyper, instance.Hyper).Take(hyper).Error
 				if err != nil {
-					log.Println("Failed to query hypervisor")
+					log.Println("Failed to query hypervisor", err)
 					continue
 				}
 				hyperSet[iface.Hyper] = struct{}{}
@@ -66,7 +66,7 @@ func sendFdbRules(ctx context.Context, instance *model.Instance) (err error) {
 			} else if iface.Device > 0 {
 				gateway := &model.Gateway{Model: model.Model{ID: iface.Device}}
 				if err != nil {
-					log.Println("Failed to query gateway")
+					log.Println("Failed to query gateway", err)
 					continue
 				}
 				hyperSet[gateway.Hyper] = struct{}{}
@@ -74,21 +74,21 @@ func sendFdbRules(ctx context.Context, instance *model.Instance) (err error) {
 				hyper1 := &model.Hyper{}
 				err = db.Where("hostid = ? and hostid != ?", gateway.Hyper, instance.Hyper).Take(hyper1).Error
 				if err != nil {
-					log.Println("Failed to query hypervisor")
+					log.Println("Failed to query hypervisor", err)
 					continue
 				}
 				instanceRules = append(instanceRules, &FdbRule{Instance: iface.Instance, Vni: iface.Address.Subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper1.HostIP})
 				hyper2 := &model.Hyper{}
 				err = db.Where("hostid = ? and hostid != ?", gateway.Hyper, instance.Hyper).Take(hyper2).Error
 				if err != nil {
-					log.Println("Failed to query hypervisor")
+					log.Println("Failed to query hypervisor", err)
 					continue
 				}
 				instanceRules = append(instanceRules, &FdbRule{Instance: iface.Instance, Vni: iface.Address.Subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper2.HostIP})
 			}
 		}
 	}
-	if len(hyperSet) > 0 {
+	if len(hyperSet) > 0 && len(spreadRules) > 0 {
 		hyperList := fmt.Sprintf("group-fdb-%d", instance.ID)
 		i := 0
 		for key := range hyperSet {
@@ -99,9 +99,9 @@ func sendFdbRules(ctx context.Context, instance *model.Instance) (err error) {
 			}
 			i++
 		}
-		fdbJson, _ := json.Marshal(instanceRules)
+		fdbJson, _ := json.Marshal(spreadRules)
 		control := "toall=" + hyperList
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/add_fwrule.sh <<EOF\n%s\nEOF", fdbJson)
+		command := fmt.Sprintf("%s <<EOF\n%s\nEOF", fdbScript, fdbJson)
 		err = HyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Add_fwrule execution failed", err)
@@ -111,7 +111,7 @@ func sendFdbRules(ctx context.Context, instance *model.Instance) (err error) {
 	if len(instanceRules) > 0 {
 		fdbJson, _ := json.Marshal(instanceRules)
 		control := fmt.Sprintf("inter=%d", instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/add_fwrule.sh <<EOF\n%s\nEOF", fdbJson)
+		command := fmt.Sprintf("%s <<EOF\n%s\nEOF", fdbScript, fdbJson)
 		err = HyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Add_fwrule execution failed", err)
@@ -148,7 +148,7 @@ func LaunchVM(ctx context.Context, job *model.Job, args []string) (status string
 		}
 		return
 	}
-	err = db.Preload("Interfaces").Where(instance).Take(instance).Error
+	err = db.Preload("Interfaces").Preload("Interfaces.Address").Preload("Interfaces.Address.Subnet").Take(instance).Error
 	if err != nil {
 		log.Println("Invalid instance ID", err)
 		reason = err.Error()
@@ -180,9 +180,9 @@ func LaunchVM(ctx context.Context, job *model.Job, args []string) (status string
 		log.Println("Failed to update interface", err)
 		return
 	}
-	err = sendFdbRules(ctx, instance)
+	err = sendFdbRules(ctx, instance, "/opt/cloudland/scripts/backend/add_fwrule.sh")
 	if err != nil {
-		log.Println("Failed to update interface", err)
+		log.Println("Failed to send fdb rules", err)
 		return
 	}
 	return

@@ -72,6 +72,14 @@ function apply_vnic()
     service iptables save
 }
 
+function apply_bridge()
+{
+    action=$1
+    mybr=$2
+    apply_fw $action FORWARD -i $mybr -o $mybr -j ACCEPT
+    service iptables save
+}
+
 function sidecar()
 {
     [ -x /usr/local/bin/sidecar ] && /usr/local/bin/sidecar $@
