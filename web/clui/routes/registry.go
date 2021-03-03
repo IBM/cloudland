@@ -202,3 +202,29 @@ func (v *RegistryView) Create(c *macaron.Context, store session.Store) {
 	}
 	c.Redirect(redirectTo)
 }
+
+func (v *RegistryView) GetData(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.ParamsInt64("id")
+	permit, err := memberShip.CheckPermission(model.Owner)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(500, map[string]interface{}{
+            "error": err.Error(),
+		})
+		return
+	}
+	db := DB()
+	registry := &model.Registry{Model: model.Model{ID: id}}
+	err = db.Take(registry).Error
+	if err != nil {
+		log.Println("Failed ro query registry", err)
+		c.JSON(500, map[string]interface{}{
+            "error": err.Error(),
+		})
+	}
+	
+	c.JSON(200, registry)
+}
+
+
