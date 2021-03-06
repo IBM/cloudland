@@ -64,7 +64,7 @@ func createGatewayIface(ctx context.Context, rtype string, gateway *model.Gatewa
 		}
 		iface, err = CreateInterface(ctx, subnet.ID, gateway.ID, owner, zoneID, gateway.Hyper, "", "", name, ifType, nil)
 		if err == nil {
-			log.Println("Created gateway interface from subnet", err)
+			log.Println("Created gateway interface from subnet")
 			break
 		}
 	}

@@ -365,7 +365,7 @@ func AllocateAddress(ctx context.Context, subnetID, ifaceID int64, ipaddr, addrT
 	}
 	address = &model.Address{Subnet: subnet}
 	if ipaddr == "" {
-		err = db.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ?", subnetID, false).Take(address).Error
+		err = db.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ? and address != ?", subnetID, false, subnet.Gateway).Take(address).Error
 	} else {
 		if !strings.Contains(ipaddr, "/") {
 			preSize, _ := net.IPMask(net.ParseIP(subnet.Netmask).To4()).Size()

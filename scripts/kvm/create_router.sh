@@ -16,6 +16,7 @@ vrrp_ip=$7
 role=$8
 
 [ -z "$router" -o -z "$ext_ip" -o -z "$int_ip" ] && exit 1
+[ "$proxy_mode" = "yes" -a "$role" = "SLAVE" ] && exit 0
 
 ip netns add $router
 #ip netns exec $router iptables -A INPUT -m mark --mark 0x1/0xffff -j ACCEPT

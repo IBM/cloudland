@@ -5,7 +5,8 @@ source ../cloudrc
 
 [ $# -lt 2 ] && echo "$0 <router> <vrrp_vni>" && exit -1
 
-router=router-$1
+ID=$1
+router=router-$ID
 vrrp_vni=$2
 [ -z "$router" ] && exit 1
 
@@ -30,3 +31,4 @@ ip netns del $router
 router_dir=/opt/cloudland/cache/router/$router
 kill $(cat $router_dir/keepalived.pid)
 rm -rf $router_dir
+echo "|:-COMMAND-:| $(basename $0) '$ID' '$SCI_CLIENT_ID'"

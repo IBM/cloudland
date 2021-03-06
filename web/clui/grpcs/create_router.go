@@ -35,10 +35,20 @@ func CreateRouter(ctx context.Context, job *model.Job, args []string) (status st
 		return
 	}
 	gateway := &model.Gateway{Model: model.Model{ID: int64(gwID)}}
-	err = db.Where(gateway).Take(gateway).Error
+	err = db.Preload("Subnets").Where(gateway).Take(gateway).Error
 	if err != nil {
-		log.Println("Invalid instance ID", err)
+		log.Println("Invalid gateway ID", err)
 		return
+	}
+	devIfaces := []*model.Interface{}
+	for _, subnet := range gateway.Subnets {
+		iface := &model.Interface{}
+		err = db.Where("subnet = ? and device = ? and type='gateway'", subnet.ID, gateway.ID).Preload("Address").Preload("Address.Subnet").Take(iface).Error
+		if err != nil {
+			log.Println("Failed to query interface", err)
+			return
+		}
+		devIfaces = append(devIfaces, iface)
 	}
 	hyperID := -1
 	hyperID, err = strconv.Atoi(args[2])
@@ -53,6 +63,11 @@ func CreateRouter(ctx context.Context, job *model.Job, args []string) (status st
 	}
 	if err != nil {
 		log.Println("Update hyper/Peer ID failed", err)
+		return
+	}
+	err = sendFdbRules(ctx, devIfaces, int32(hyperID), "/opt/cloudland/scripts/backend/add_fwrule.sh")
+	if err != nil {
+		log.Println("Failed to send fdb rules", err)
 		return
 	}
 	return

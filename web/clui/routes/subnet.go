@@ -335,6 +335,12 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 			ip = cidr.Inc(ip)
 		}
 	}
+	// Create record for gateway
+	address := &model.Address{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Address: gateway, Netmask: netmask, Type: "ipv4", SubnetID: subnet.ID}
+	err = db.Create(address).Error
+	if err != nil {
+		log.Println("Database create address for gateway failed, %v", err)
+	}
 	netlink := &model.Network{Vlan: int64(vlanNo)}
 	if vlanNo < 4096 {
 		netlink.Type = "vlan"
