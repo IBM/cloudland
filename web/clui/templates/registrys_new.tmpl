@@ -18,6 +18,14 @@
 									<label for="label">{{.i18n.Tr "Label"}}</label>
 									<input id="label" name="label" autofocus required>
 								</div>
+                                <div class="required inline field">
+                                    <label for="virtType">{{.i18n.Tr "Virtualization Type"}}</label>
+                                    <select name="virtType" id="virtType" class="ui selection dropdown">
+                                         <option value="kvm-x86_64" selected>{{.i18n.Tr "KVM on x86_64"}}</option>
+                                         <option value="kvm-s390x" selected>{{.i18n.Tr "KVM on Z"}}</option>
+                                         <option value="zvm">{{.i18n.Tr "z/VM"}}</option>
+                                    </select>
+                                </div>								
 								<div class="required inline field">
 									<label for="ocpversion">{{.i18n.Tr "OcpVersion"}}</label>
                                                                         <div class="ui selection dropdown">

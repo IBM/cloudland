@@ -26,7 +26,7 @@ var (
 type RegistryAdmin struct{}
 type RegistryView struct{}
 
-func (a *RegistryAdmin) Create(label, ocpVersion, registryContent, initramfs, kernel, image, installer, cli, kubelet string) (registry *model.Registry, err error) {
+func (a *RegistryAdmin) Create(label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli, kubelet string) (registry *model.Registry, err error) {
 	db := DB()
 	registry = &model.Registry{
 		Label:           label,
@@ -39,6 +39,13 @@ func (a *RegistryAdmin) Create(label, ocpVersion, registryContent, initramfs, ke
 		Cli:             cli,
 		Kubelet:         kubelet,
 	}
+	
+	control := "inter=0"
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_registry_image.sh '%d' '%s' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs, kernel, image, installer, cli, kubelet, virtType)
+	err = hyperExecute(ctx, control, command)
+	if err != nil {
+		log.Println("Create registry image command execution failed", err)
+		return}
 	err = db.Create(registry).Error
 	return
 }
@@ -176,6 +183,7 @@ func (v *RegistryView) Create(c *macaron.Context, store session.Store) {
 	}
 	redirectTo := "../registrys"
 	label := c.Query("label")
+	virtType := c.QueryTrim("virtType")
 	ocpVersion := c.Query("ocpversion")
 	registryContent := c.Query("registrycontent")
 	initramfs := c.Query("initramfs")
@@ -185,7 +193,7 @@ func (v *RegistryView) Create(c *macaron.Context, store session.Store) {
 	cli := c.Query("cli")
 	kubelet := c.Query("kubelet")
 
-	registry, err := registryAdmin.Create(label, ocpVersion, registryContent, initramfs, kernel, image, installer, cli, kubelet)
+	registry, err := registryAdmin.Create(label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli, kubelet)
 	if err != nil {
 		log.Println("Create registry failed", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
