@@ -187,11 +187,29 @@ func (v *RegistryView) Create(c *macaron.Context, store session.Store) {
 	ocpVersion := c.Query("ocpversion")
 	registryContent := c.Query("registrycontent")
 	initramfs := c.Query("initramfs")
+	if(initramfs.substring(0,1)=="/"){
+	    initramfs = "file://"+initramfs
+	}
 	kernel := c.Query("kernel")
+	if(kernel.substring(0,1)=="/"){
+	    kernel = "file://"+kernel
+	}
 	image := c.Query("image")
+	if(image.substring(0,1)=="/"){
+	    image = "file://"+image
+	}	
 	installer := c.Query("installer")
+	if(installer.substring(0,1)=="/"){
+	    installer = "file://"+installer
+	}	
 	cli := c.Query("cli")
+	if(cli.substring(0,1)=="/"){
+	    cli = "file://"+cli
+	}	
 	kubelet := c.Query("kubelet")
+	if(kubelet.substring(0,1)=="/"){
+	    kubelet = "file://"+kubelet
+	}
 
 	registry, err := registryAdmin.Create(label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli, kubelet)
 	if err != nil {
