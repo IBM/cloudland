@@ -3,7 +3,7 @@
 cd `dirname $0`
 source ../cloudrc
 
-[ $# -lt 6 ] && echo "$0 <vlan> <network> <netmask> <gateway> <dhcp_ip> [tag_id] [role] [name_server] [domain_search]" && exit -1
+[ $# -lt 6 ] && echo "$0 <vlan> <network> <netmask> <gateway> <dhcp_ip> [tag_id] [role] [name_server] [domain_search] [mac_address]" && exit -1
 
 vlan=$1
 network=$2
@@ -14,6 +14,7 @@ tag_id=$6
 role=$7
 name_server=$8
 domain_search=$9
+mac_address=${10}
 [ -z "$name_server" ] && name_server=$dns_server
 
 vm_br=br$vlan
@@ -30,6 +31,7 @@ if [ ! -f /var/run/netns/$nspace ]; then
     ip link set tap-$vlan up
     apply_vnic -I tap-$vlan
     ip link set ns-$vlan netns $nspace
+    [ -n "$mac_address" ] && ip netns exec $nspace ip link set ns-$vlan address $mac_address
     ip netns exec $nspace ip link set ns-$vlan up
     ip netns exec $nspace ip link set lo up
 fi
@@ -68,4 +70,4 @@ fi
 ip netns exec $nspace $cmd
 role_file=$dmasq_dir/$nspace/${nspace}.$role
 touch $role_file
-echo "|:-COMMAND-:| $(basename $0) '$vlan' '$SCI_CLIENT_ID' '$role'"
+echo "|:-COMMAND-:| $(basename $0) '$vlan' '$SCI_CLIENT_ID' '$role' '$mac_address'"

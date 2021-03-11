@@ -314,17 +314,18 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 	memberShip := GetMemberShip(ctx)
 	log.Println("it's in Creating openshift")
 	db := DB()
-	log.Println("registry in  openshift")
-	registry := model.Registry{}
-	if err = db.First(&registry, registryID).Error; err != nil {
-		return
-	}
-	registryContent := registry.RegistryContent
-	log.Println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~registryContent==" + registryContent)
-	log.Println("version in openshift")
-	version = registry.OcpVersion
-	log.Println("version=%s", version)
-
+	/*
+		log.Println("registry in  openshift")
+		registry := model.Registry{}
+		if err = db.First(&registry, registryID).Error; err != nil {
+			return
+		}
+		registryContent := registry.RegistryContent
+		log.Println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~registryContent==" + registryContent)
+		log.Println("version in openshift")
+		version = registry.OcpVersion
+		log.Println("version=%s", version)
+	*/
 	lbIP := ""
 	log.Println("subnet in openshift")
 	subnet := &model.Subnet{Model: model.Model{ID: subnetID}}
@@ -383,16 +384,14 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, secret, co
 	endpoint := viper.GetString("api.endpoint")
 	userdata := getUserdata("ocd")
 	userdata = fmt.Sprintf("%s\ncurl -k -O '%s/misc/openshift/ocd.sh'\nchmod +x ocd.sh", userdata, endpoint)
-	/*
-		parts := fmt.Sprintf("pullSecret: '%s'\n", secret)
-		if atbundle != "" {
-			parts = fmt.Sprintf("%s\n%s\n", parts, atbundle)
-		}
-		if icsources != "" {
-			parts = fmt.Sprintf("%s\n%s\n", parts, icsources)
-		}
-	*/
-	parts := fmt.Sprintf("\n%s\n", registryContent)
+	parts := fmt.Sprintf("pullSecret: '%s'\n", secret)
+	if atbundle != "" {
+		parts = fmt.Sprintf("%s\n%s\n", parts, atbundle)
+	}
+	if icsources != "" {
+		parts = fmt.Sprintf("%s\n%s\n", parts, icsources)
+	}
+	// parts := fmt.Sprintf("\n%s\n", registryContent)
 	encParts := base64.StdEncoding.EncodeToString([]byte(parts))
 	infraType := openshift.InfrastructureType
 	log.Println("invoking ocd.sh")

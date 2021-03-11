@@ -58,17 +58,23 @@ func CreateRouter(ctx context.Context, job *model.Job, args []string) (status st
 	}
 	if args[3] == "MASTER" {
 		err = db.Model(&gateway).Updates(map[string]interface{}{"hyper": int32(hyperID), "status": "active"}).Error
+		if err != nil {
+			log.Println("Update hyper/Peer ID failed", err)
+			return
+		}
+		iface := &model.Interface{}
+		err = db.Model(&iface).Where("device = ? and type = 'gateway'", gwID).Updates(map[string]interface{}{"hyper": int32(hyperID)}).Error
+		if err != nil {
+			log.Println("Failed to send fdb rules", err)
+			return
+		}
+		err = sendFdbRules(ctx, devIfaces, int32(hyperID), "/opt/cloudland/scripts/backend/add_fwrule.sh")
+		if err != nil {
+			log.Println("Failed to send fdb rules", err)
+			return
+		}
 	} else if args[3] == "SLAVE" {
 		err = db.Model(&gateway).Updates(map[string]interface{}{"peer": int32(hyperID)}).Error
-	}
-	if err != nil {
-		log.Println("Update hyper/Peer ID failed", err)
-		return
-	}
-	err = sendFdbRules(ctx, devIfaces, int32(hyperID), "/opt/cloudland/scripts/backend/add_fwrule.sh")
-	if err != nil {
-		log.Println("Failed to send fdb rules", err)
-		return
 	}
 	return
 }

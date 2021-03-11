@@ -54,30 +54,14 @@ func sendFdbRules(ctx context.Context, devIfaces []*model.Interface, hyperNode i
 			continue
 		}
 		for _, iface := range allIfaces {
-			if iface.Hyper >= 0 {
-				hyper := &model.Hyper{}
-				err = db.Where("hostid = ? and hostid != ?", iface.Hyper, hyperNode).Take(hyper).Error
-				if err != nil {
-					log.Println("Failed to query hypervisor", err)
-					continue
-				}
-				hyperSet[iface.Hyper] = struct{}{}
-				localRules = append(localRules, &FdbRule{Instance: iface.Name, Vni: iface.Address.Subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper.HostIP})
-			} else if iface.Device >= 0 {
-				gateway := &model.Gateway{Model: model.Model{ID: iface.Device}}
-				if err != nil {
-					log.Println("Failed to query gateway", err)
-					continue
-				}
-				hyperSet[gateway.Hyper] = struct{}{}
-				hyper1 := &model.Hyper{}
-				err = db.Where("hostid = ? and hostid != ?", gateway.Hyper, hyperNode).Take(hyper1).Error
-				if err != nil {
-					log.Println("Failed to query hypervisor", err)
-					continue
-				}
-				localRules = append(localRules, &FdbRule{Instance: iface.Name, Vni: iface.Address.Subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper1.HostIP})
+			hyper := &model.Hyper{}
+			err = db.Where("hostid = ? and hostid != ?", iface.Hyper, hyperNode).Take(hyper).Error
+			if err != nil {
+				log.Println("Failed to query hypervisor", err)
+				continue
 			}
+			hyperSet[iface.Hyper] = struct{}{}
+			localRules = append(localRules, &FdbRule{Instance: iface.Name, Vni: iface.Address.Subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper.HostIP})
 		}
 	}
 	if len(hyperSet) > 0 && len(spreadRules) > 0 {
