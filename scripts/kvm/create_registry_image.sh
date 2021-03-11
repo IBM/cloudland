@@ -18,11 +18,11 @@ virt_type=$9
 base_dir=$image_cache/$version/$virt_type
 mkdir -p $base_dir
 
-wget $initramfs -o $base_dir/rhcos-installer-initramfs.img
-wget $kernel -o $base_dir/rhcos-installer-kernel
-wget $image -o $base_dir/image
-wget $installer -o $base_dir/install
-wget $cli -o $base_dir/cli
-wget $kubelet -o $base_dir/kubelet
+curl $initramfs -o $base_dir/rhcos-installer-initramfs.img
+curl $kernel -o $base_dir/rhcos-installer-kernel
+curl $image -o $base_dir/rhcos-rootfs.img
+curl $installer -o $base_dir/openshift-install
+curl $cli -o $base_dir/oc
+curl $kubelet -o $base_dir/kubelet
 #sync_target /opt/cloudland/cache/image
 echo "|:-COMMAND-:| $(basename $0) '$ID' '$base_dir' "
