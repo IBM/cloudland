@@ -16,7 +16,7 @@ dmasq_dir=/opt/cloudland/cache/dnsmasq
 mudata_dir=/opt/cloudland/mudata
 snapshot_dir=/var/snapshot
 deploy_dir=/opt/cloudland/deploy
-vxlan_db=/opt/cloudland/fb/vxlan.db
+vxlan_db=/opt/cloudland/db/cloudland.db
 cland_private_key=$deploy_dir/.ssh/cland.key
 export JAEGER_SERVICE_NAME="SCI-Backend"
 span=$(basename $0 .sh)
@@ -126,7 +126,7 @@ function action_target()
 
 function sql_exec()
 {
-    sqlite3 $vxlan_db $*
+    sqlite3 $vxlan_db "$*"
 }
 
 if [ "$span" != "report_rc" ]; then

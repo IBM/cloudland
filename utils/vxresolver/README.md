@@ -19,7 +19,7 @@ iptables -t nat -A OUTPUT -d 169.254.169.254/32 -p udp -m udp --dport 4789 -j DN
 
 ## Dtabase schema
    ```
-CREATE TABLE VTEP (id INTEGER PRIMARY KEY AUTOINCREMENT, vni INTEGER, inner_ip varchar(32), inner_mac varchar(48), outer_ip varchar(32));
+CREATE TABLE VTEP (id INTEGER PRIMARY KEY AUTOINCREMENT, instance varchar(32), vni INTEGER, inner_ip varchar(32), inner_mac varchar(48), outer_ip varchar(32));
    ```
 ## Start vxresolver
    ```

@@ -14,5 +14,6 @@ while [ $i -lt $len ]; do
     inner_mac=$(jq -r inner_mac <<< $rule)
     outer_ip=$(jq -r inner_ip <<< $rule)
     bridge fdb del $inner_mac dev v-$vni dst $outer_ip
+    sql_exec "delete from vxlan_rules where inner_mac='$inner_mac'"
     let i=$i+1
 done
