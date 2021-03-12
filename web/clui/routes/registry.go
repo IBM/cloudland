@@ -8,9 +8,11 @@ SPDX-License-Identifier: Apache-2.0
 package routes
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/sca/dbs"
@@ -26,7 +28,7 @@ var (
 type RegistryAdmin struct{}
 type RegistryView struct{}
 
-func (a *RegistryAdmin) Create(label, ocpVersion, registryContent, initramfs, kernel, image, installer, cli, kubelet string) (registry *model.Registry, err error) {
+func (a *RegistryAdmin) Create(ctx context.Context, label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli, kubelet string) (registry *model.Registry, err error) {
 	db := DB()
 	registry = &model.Registry{
 		Label:           label,
@@ -38,6 +40,14 @@ func (a *RegistryAdmin) Create(label, ocpVersion, registryContent, initramfs, ke
 		Installer:       installer,
 		Cli:             cli,
 		Kubelet:         kubelet,
+	}
+
+	control := "inter=0"
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_registry_image.sh '%d' '%s' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs, kernel, image, installer, cli, kubelet, virtType)
+	err = hyperExecute(ctx, control, command)
+	if err != nil {
+		log.Println("Create registry image command execution failed", err)
+		return
 	}
 	err = db.Create(registry).Error
 	return
@@ -176,16 +186,35 @@ func (v *RegistryView) Create(c *macaron.Context, store session.Store) {
 	}
 	redirectTo := "../registrys"
 	label := c.Query("label")
+	virtType := c.QueryTrim("virtType")
 	ocpVersion := c.Query("ocpversion")
 	registryContent := c.Query("registrycontent")
 	initramfs := c.Query("initramfs")
+	if strings.Contains(initramfs, "http") {
+		initramfs = "file://" + initramfs
+	}
 	kernel := c.Query("kernel")
+	if strings.Contains(kernel, "http") {
+		kernel = "file://" + kernel
+	}
 	image := c.Query("image")
+	if strings.Contains(image, "http") {
+		image = "file://" + image
+	}
 	installer := c.Query("installer")
+	if strings.Contains(installer, "http") {
+		installer = "file://" + installer
+	}
 	cli := c.Query("cli")
+	if strings.Contains(cli, "http") {
+		cli = "file://" + cli
+	}
 	kubelet := c.Query("kubelet")
+	if strings.Contains(kubelet, "http") {
+		kubelet = "file://" + kubelet
+	}
 
-	registry, err := registryAdmin.Create(label, ocpVersion, registryContent, initramfs, kernel, image, installer, cli, kubelet)
+	registry, err := registryAdmin.Create(c.Req.Context(), label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli, kubelet)
 	if err != nil {
 		log.Println("Create registry failed", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
@@ -206,25 +235,23 @@ func (v *RegistryView) Create(c *macaron.Context, store session.Store) {
 func (v *RegistryView) GetData(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.ParamsInt64("id")
-	permit, err := memberShip.CheckPermission(model.Owner)
+	permit := memberShip.CheckPermission(model.Owner)
 	if !permit {
 		log.Println("Not authorized for this operation")
 		c.JSON(500, map[string]interface{}{
-            "error": err.Error(),
+			"error": "Not authorized for this operation",
 		})
 		return
 	}
 	db := DB()
 	registry := &model.Registry{Model: model.Model{ID: id}}
-	err = db.Take(registry).Error
+	err := db.Take(registry).Error
 	if err != nil {
 		log.Println("Failed ro query registry", err)
 		c.JSON(500, map[string]interface{}{
-            "error": err.Error(),
+			"error": err.Error(),
 		})
 	}
-	
+
 	c.JSON(200, registry)
 }
-
-
