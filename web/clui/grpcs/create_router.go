@@ -24,7 +24,7 @@ func CreateRouter(ctx context.Context, job *model.Job, args []string) (status st
 	//|:-COMMAND-:| create_router.sh 5 277 MASTER
 	db := dbs.DB()
 	argn := len(args)
-	if argn < 4 {
+	if argn < 5 {
 		err = fmt.Errorf("Wrong params")
 		log.Println("Invalid args", err)
 		return
@@ -59,22 +59,28 @@ func CreateRouter(ctx context.Context, job *model.Job, args []string) (status st
 	if args[3] == "MASTER" {
 		err = db.Model(&gateway).Updates(map[string]interface{}{"hyper": int32(hyperID), "status": "active"}).Error
 		if err != nil {
-			log.Println("Update hyper/Peer ID failed", err)
+			log.Println("Update hyper ID failed", err)
 			return
 		}
-		iface := &model.Interface{}
-		err = db.Model(&iface).Where("device = ? and type = 'gateway'", gwID).Updates(map[string]interface{}{"hyper": int32(hyperID)}).Error
-		if err != nil {
-			log.Println("Failed to send fdb rules", err)
-			return
-		}
-		err = sendFdbRules(ctx, devIfaces, int32(hyperID), "/opt/cloudland/scripts/backend/add_fwrule.sh")
-		if err != nil {
-			log.Println("Failed to send fdb rules", err)
-			return
+		if args[4] == "yes" {
+			iface := &model.Interface{}
+			err = db.Model(&iface).Where("device = ? and type = 'gateway'", gwID).Updates(map[string]interface{}{"hyper": int32(hyperID)}).Error
+			if err != nil {
+				log.Println("Failed to send fdb rules", err)
+				return
+			}
+			err = sendFdbRules(ctx, devIfaces, int32(hyperID), "/opt/cloudland/scripts/backend/add_fwrule.sh")
+			if err != nil {
+				log.Println("Failed to send fdb rules", err)
+				return
+			}
 		}
 	} else if args[3] == "SLAVE" {
 		err = db.Model(&gateway).Updates(map[string]interface{}{"peer": int32(hyperID)}).Error
+		if err != nil {
+			log.Println("Update peer ID failed", err)
+			return
+		}
 	}
 	return
 }

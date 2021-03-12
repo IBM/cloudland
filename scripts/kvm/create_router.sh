@@ -112,4 +112,4 @@ while [ $i -lt $n ]; do
 done
 
 ip netns exec $router bash -c "echo 1 >/proc/sys/net/ipv4/ip_forward"
-echo "|:-COMMAND-:| $(basename $0) '$ID' '$SCI_CLIENT_ID' '$role'"
+echo "|:-COMMAND-:| $(basename $0) '$ID' '$SCI_CLIENT_ID' '$role' '$proxy_mode'"
