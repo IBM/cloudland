@@ -429,6 +429,6 @@ func (v *RegistryView) Edit(c *macaron.Context, store session.Store) {
 		return
 	}
 	c.Data["Registry"] = registry
-	c.HTML(200, "registry_patch")
+	c.HTML(200, "registrys_patch")
 }
 
