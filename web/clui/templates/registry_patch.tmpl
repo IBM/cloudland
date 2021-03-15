@@ -1,0 +1,82 @@
+{{template "_head" .}}
+<div class="user signup">
+	<div class="ui middle very relaxed page grid">
+        <div class="column" >
+            <form class="ui form" action="{{.Link}}" method="post" autocomplete="off">
+                <h3 class="ui top attached header">
+                    {{.i18n.Tr "Update"}} {{.Registry.Label}}
+                </h3>
+                <div class="ui attached segment">
+                    <div class="inline field">
+                        <label for="label">{{.i18n.Tr "Label"}}</label>
+                        <input id="label" name="label" autofocus required value="{{ .Registry.Label }}" >
+                    </div>
+                    <div class="required inline field">
+                        <label for="virtType">{{.i18n.Tr "Virtualization Type"}}</label>
+                            <select name="virtType" id="virtType" class="ui selection dropdown">
+                                <option value="kvm-x86_64" {{ if eq $.Registry.VirtType "kvm-x86_64" }}selected{{end}}>{{.i18n.Tr "KVM on x86_64"}}</option>
+                                <option value="kvm-s390x" {{ if eq $.Registry.VirtType "kvm-s390x" }}selected{{end}}>{{.i18n.Tr "KVM on Z"}}</option>
+                                <option value="zvm" {{ if eq $.Registry.VirtType "zvm" }}selected{{end}}>{{.i18n.Tr "z/VM"}}</option>
+                            </select>
+                    </div>
+<div class="required inline field">
+									<label for="ocpversion">{{.i18n.Tr "OcpVersion"}}</label>
+                                        <div class="ui selection dropdown">
+                                                                        	<input id="ocpversion" name="ocpversion" type="hidden" required>
+                                                                                <i class="dropdown icon"></i>
+                                                                               	<div class="default text">Version</div>
+                                                                               	<div class="menu">
+                                                                                        <div class="item" data-value=4.6 data-text=4.6 {{ if eq .Registry.OcpVersion "4.6" }}selected{{end}}>
+                                                                                            4.6
+                                                                                        </div>
+                                                                                	<div class="item" data-value=4.5 data-text=4.5 {{ if eq .Registry.OcpVersion "4.5" }}selected{{end}}>
+                                                                                       	    4.5
+                                                                                   	</div>
+                                                                                   	<div class="item" data-value=4.4 data-text=4.4 {{ if eq .Registry.OcpVersion "4.4" }}selected{{end}}>
+                                                                                            4.4
+                                                                                   	</div>
+                                                                                   	<div class="item" data-value=4.3 data-text=4.3 {{ if eq .Registry.OcpVersion "4.3" }}selected{{end}}>
+                                                                                            4.3
+                                                                                   	</div>
+                                                                               </div>
+ 									</div>
+								</div>
+								<div class="required inline field">
+									<label for="registrycontent">{{.i18n.Tr "RegistryContent"}}</label>
+                                    <textarea id="registrycontent"  name="registrycontent" autocomplete="off" value="{{ .Registry.RegistryContent }}" required></textarea>
+								</div>
+								<div class="required inline field">
+									<label for="initramfs">{{.i18n.Tr "RHCOS initramfs"}}</label>
+									<input id="initramfs" name="initramfs" autofocus value="{{ .Registry.Initramfs }}" required>
+								</div>
+								<div class="required inline field">
+									<label for="kernel">{{.i18n.Tr "RHCOS kernel"}}</label>
+									<input id="kernel" name="kernel" autofocus value="{{ .Registry.Kernel }}" required>
+								</div>
+								<div class="required inline field">
+									<label for="image">{{.i18n.Tr "RHCOS image"}}</label>
+									<input id="image" name="image" autofocus value="{{ .Registry.Image }}" required>
+								</div>
+								<div class="required inline field">
+									<label for="installer">{{.i18n.Tr "OCP installer"}}</label>
+									<input id="installer" name="installer" autofocus value="{{ .Registry.Installer }}" required>
+								</div>
+								<div class="required inline field">
+									<label for="cli">{{.i18n.Tr "oc cli"}}</label>
+									<input id="cli" name="cli" autofocus value="{{ .Registry.Cli }}" required>
+								</div>
+								<div class="required inline field">
+									<label for="kubelet">{{.i18n.Tr "kubelet"}}</label>
+									<input id="kubelet" name="kubelet" autofocus value="{{ .Registry.Kubelet }}" required>
+								</div>				                     
+                    <div class="inline field">
+                        <label></label>
+                        <button class="ui green button">{{.i18n.Tr "Update"}}</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+	</div>
+</div>
+{{template "_footer" .}}
+
