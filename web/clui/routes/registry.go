@@ -10,14 +10,14 @@ package routes
 import (
 	"context"
 	"fmt"
-	"log"
-	"net/http"
-	"strings"
-
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
+	"log"
+	"net/http"
+	"strconv"
+	"strings"
 )
 
 var (
@@ -42,37 +42,37 @@ func (a *RegistryAdmin) Create(ctx context.Context, label, virtType, ocpVersion,
 		Cli:             cli,
 		Kubelet:         kubelet,
 	}
-	
-	initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, kubelet_bak := ""
+
+	initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, kubelet_bak := "", "", "", "", "", ""
 	if strings.Contains(initramfs, "http") {
 		initramfs_bak = "file://" + initramfs
-	}else{
-	    initramfs_bak = initramfs
+	} else {
+		initramfs_bak = initramfs
 	}
 	if strings.Contains(kernel, "http") {
 		kernel_bak = "file://" + kernel
-	}else{
-		kernel_bak = kernel	
+	} else {
+		kernel_bak = kernel
 	}
 	if strings.Contains(image, "http") {
 		image_bak = "file://" + image
-	}else{
-		image_bak = image	
+	} else {
+		image_bak = image
 	}
 	if strings.Contains(installer, "http") {
 		installer_bak = "file://" + installer
-	}else{
-		installer_bak = installer	
+	} else {
+		installer_bak = installer
 	}
 	if strings.Contains(cli, "http") {
 		cli_bak = "file://" + cli
-	}else{
-	    cli_bak = cli
+	} else {
+		cli_bak = cli
 	}
 	if strings.Contains(kubelet, "http") {
 		kubelet_bak = "file://" + kubelet
-	}else{
-	    kubelet_bak = kubelet
+	} else {
+		kubelet_bak = kubelet
 	}
 
 	control := "inter=0"
@@ -129,14 +129,14 @@ func (a *RegistryAdmin) List(offset, limit int64, order, query string) (total in
 	return
 }
 
-func (a *RegistryAdmin) Update(ctx context.Context, id int64,  label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli, kubelet string) (registry *model.Registry, err error) {
+func (a *RegistryAdmin) Update(ctx context.Context, id int64, label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli, kubelet string) (registry *model.Registry, err error) {
 	db := DB()
-	registry = &model.User{Model: model.Model{ID: id}}
-	
+	registry = &model.Registry{Model: model.Model{ID: id}}
+
 	if registry.Label != label {
 		registry.Label = label
 	}
-	
+
 	if registry.VirtType != virtType {
 		registry.VirtType = virtType
 	}
@@ -144,65 +144,65 @@ func (a *RegistryAdmin) Update(ctx context.Context, id int64,  label, virtType, 
 	if registry.OcpVersion != ocpVersion {
 		registry.OcpVersion = ocpVersion
 	}
-	
+
 	if registry.RegistryContent != registryContent {
 		registry.RegistryContent = registryContent
 	}
 
 	if registry.Initramfs != initramfs {
 		registry.Initramfs = initramfs
-	}				
+	}
 
 	if registry.Kernel != kernel {
 		registry.Kernel = kernel
 	}
-	
+
 	if registry.Image != image {
 		registry.Image = image
 	}
-	
+
 	if registry.Installer != installer {
 		registry.Installer = installer
 	}
-	
+
 	if registry.Cli != cli {
 		registry.Cli = cli
 	}
-	
+
 	if registry.Kubelet != kubelet {
 		registry.Kubelet = kubelet
-	}					
-	
-	initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, kubelet_bak := ""
+	}
+
+	initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, kubelet_bak := "", "", "", "", "", ""
 	if strings.Contains(initramfs, "http") {
 		initramfs_bak = "file://" + initramfs
-	}else{
-	    initramfs_bak = initramfs
+	} else {
+		initramfs_bak = initramfs
 	}
 	if strings.Contains(kernel, "http") {
 		kernel_bak = "file://" + kernel
-	}else{
-		kernel_bak = kernel	
+	} else {
+		kernel_bak = kernel
 	}
 	if strings.Contains(image, "http") {
 		image_bak = "file://" + image
-	}else{
-		image_bak = image	
+	} else {
+		image_bak = image
 	}
 	if strings.Contains(installer, "http") {
 		installer_bak = "file://" + installer
-	}else{
-		installer_bak = installer	
+	} else {
+		installer_bak = installer
 	}
 	if strings.Contains(cli, "http") {
 		cli_bak = "file://" + cli
-	}else{
-	    cli_bak = cli
+	} else {
+		cli_bak = cli
 	}
 	if strings.Contains(kubelet, "http") {
 		kubelet_bak = "file://" + kubelet
-	}else{
-	    kubelet_bak = kubelet
+	} else {
+		kubelet_bak = kubelet
 	}
 
 	control := "inter=0"
@@ -212,14 +212,13 @@ func (a *RegistryAdmin) Update(ctx context.Context, id int64,  label, virtType, 
 		log.Println("Update registry image command execution failed", err)
 		return
 	}
-	
-    if err = db.Save(registry).Error; err != nil {
+
+	if err = db.Save(registry).Error; err != nil {
 		log.Println("Failed to save registry", err)
 		return
-    }
+	}
 	return
 }
-
 
 func (v *RegistryView) List(c *macaron.Context, store session.Store) {
 	offset := c.QueryInt64("offset")
@@ -326,7 +325,6 @@ func (v *RegistryView) Create(c *macaron.Context, store session.Store) {
 
 	kubelet := c.Query("kubelet")
 
-
 	registry, err := registryAdmin.Create(c.Req.Context(), label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli, kubelet)
 	if err != nil {
 		log.Println("Create registry failed", err)
@@ -368,7 +366,7 @@ func (v *RegistryView) Patch(c *macaron.Context, store session.Store) {
 		return
 	}
 
-    label := c.Query("label")
+	label := c.Query("label")
 	virtType := c.QueryTrim("virtType")
 	ocpVersion := c.Query("ocpversion")
 	registryContent := c.Query("registrycontent")
@@ -431,4 +429,3 @@ func (v *RegistryView) Edit(c *macaron.Context, store session.Store) {
 	c.Data["Registry"] = registry
 	c.HTML(200, "registrys_patch")
 }
-
