@@ -69,6 +69,13 @@ $master_0_ip master-0.${cluster_name}.${base_domain}  etcd-0.${cluster_name}.${b
 $master_1_ip master-1.${cluster_name}.${base_domain}  etcd-1.${cluster_name}.${base_domain}
 $master_2_ip master-2.${cluster_name}.${base_domain}  etcd-2.${cluster_name}.${base_domain}
 EOF
+    for i in $(seq 0 $seq_max); do
+        if [  -n "${workers_ip[$i]}" ]; then
+            cat >> /etc/dnsmasq.openshift.addnhosts <<EOF
+${workers_ip[$i]} worker-$i.${cluster_name}.${base_domain}
+EOF
+        fi
+    done
 
     echo -e "nameserver 127.0.0.1\nsearch ${cluster_name}.${base_domain}" > /etc/resolv.conf
     systemctl restart dnsmasq
@@ -130,19 +137,30 @@ backend machine_config
     server master-1 master-1.${cluster_name}.${base_domain}:22623 check
     server master-2 master-2.${cluster_name}.${base_domain}:22623 check
 
-EOF
-
-    cat >> $haconf <<EOF
 backend router_https
     balance roundrobin
     option ssl-hello-chk
-
 EOF
+    for i in $(seq 0 $seq_max); do
+        if [ $i -lt $nworkers ]; then
+            cat >> $haconf <<EOF
+    server worker-$i worker-$i.${cluster_name}.${base_domain}:443 check
+EOF
+        fi
+    done
     cat >> $haconf <<EOF
+
 backend router_http
     mode http
     balance roundrobin
 EOF
+    for i in $(seq 0 $seq_max); do
+        if [ $i -lt $nworkers ]; then
+            cat >> $haconf <<EOF
+    server worker-$i worker-$i.${cluster_name}.${base_domain}:80 check
+EOF
+        fi
+    done
 
     systemctl restart haproxy
     systemctl enable haproxy
@@ -222,6 +240,7 @@ function download_pkgs()
     wget --no-check-certificate $conf_url -O ocd.conf
     source ocd.conf
     wget --no-check-certificate -O /usr/share/nginx/html/rhcos.raw.gz $coreos_image_url
+    wget --no-check-certificate -O /usr/share/nginx/html/rhcos-rootfs.img $coreos_rootfs_url
     wget --no-check-certificate -O openshift-install-linux.tgz $openshift_installer
     wget --no-check-certificate -O openshift-client-linux.tgz $openshift_client
     tar -zxf openshift-install-linux.tgz
@@ -231,11 +250,11 @@ function download_pkgs()
 
 function ignite_files()
 {
-    echo "~~~~~~~~~+++++~~~~~~~~~"
+    echo "~~~~~~~~~start to ignite file~~~~~~~~~"
     pwd
     parts=$(cat | base64 -d | sed -s 's/\r//')
     ssh_key=$(cat /home/$cloud_user/.ssh/authorized_keys | tail -1)
-    
+
     #rm -rf $cluster_name
     #mkdir $cluster_name
     mreplica=1
@@ -247,10 +266,12 @@ compute:
 - hyperthreading: Enabled
   name: worker
   replicas: 0
+  architecture: amd64
 controlPlane:
   hyperthreading: Enabled
   name: master
   replicas: $mreplica
+  architecture: amd64
 metadata:
   name: $cluster_name
 networking:
@@ -267,7 +288,8 @@ sshKey: '$ssh_key'
 $parts
 EOF
     sed -i "/^$/d" install-config.yaml
-    #sed -i "/^{}/d" install-config.yaml
+    sed -i "s/architecture.*$/architecture: s390x/" install-config.yaml
+    echo "start to backup"
     mkdir /opt/backup
     cp install-config.yaml /opt/backup
     cd /opt/$cluster_name
@@ -384,41 +406,28 @@ function launch_cluster()
     master_0_ip=$(jq -r .'instances[0].Interfaces[0].Address.Address' <<< $master_0_interfaces)
     master_0_ip=${master_0_ip%/*}
     echo " master_0_ip is  $master_0_ip" > /tmp/cloudland.log
-    sleep 50
+    sleep 5
     if [ "$haflag" = "yes" ]; then
         master_1_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-1.${cluster_name}.${base_domain}&ipaddr=${local_ip}")
         master_1_interfaces=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=master-1.${cluster_name}.${base_domain} --cookie $cookie)
         master_1_ip=$(jq -r .'instances[0].Interfaces[0].Address.Address' <<< $master_1_interfaces)
         master_1_ip=${master_1_ip%/*}
         echo " master_1_ip is  $master_1_ip" > /tmp/cloudland.log
-        sleep 50
+        sleep 5
         master_2_res=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=master-2.${cluster_name}.${base_domain}&ipaddr=${local_ip}")
         master_2_interfaces=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=master-2.${cluster_name}.${base_domain} --cookie $cookie)
         master_2_ip=$( jq -r .'instances[0].Interfaces[0].Address.Address' <<< $master_2_interfaces)
         master_2_ip=${master_2_ip%/*}
         echo " master_2_ip is  $master_2_ip" > /tmp/cloudland.log
-        sleep 50
-    fi
-}
-
-function wait_ocd()
-{
-    while true; do
         sleep 5
-        nc -zv $bstrap_ip 6443
-        [ $? -eq 0 ] && break
-    done
-    ../openshift-install wait-for bootstrap-complete --log-level debug
-    echo "bootstrap-complete runnning completed " >> /tmp/cloudland.log
-    #curl -k -XDELETE $endpoint/instances/$bstrap_ID --cookie $cookie
-
+    fi
     # start worker
     curl -k -XPOST $endpoint/openshifts/$cluster_id/state --cookie $cookie --data "status=workers"
     workers_res[0]=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-0.${cluster_name}.${base_domain}&ipaddr=${local_ip}")
     workers_ip[0]=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=worker-0.${cluster_name}.${base_domain} --cookie $cookie | jq -r .'instances[0].Interfaces[0].Address.Address')
     workers_ip[0]=${workers_ip[0]%/*}
     echo " worker_0_ip is  $workers_ip[0]" > /tmp/cloudland.log
-    sleep 50
+    sleep 5
     workers_res[1]=$(curl -k -XPOST $endpoint/openshifts/$cluster_id/launch --cookie $cookie --data "hostname=worker-1.${cluster_name}.${base_domain}&ipaddr=${local_ip}")
     workers_ip[1]=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=worker-1.${cluster_name}.${base_domain} --cookie $cookie | jq -r .'instances[0].Interfaces[0].Address.Address')
     workers_ip[1]=${workers_ip[1]%/*}
@@ -432,52 +441,27 @@ function wait_ocd()
         workers_ip[$index]=$(curl -k -s -H "X-Json-Format: yes" -XGET $endpoint/instances?q=worker-$index.${cluster_name}.${base_domain} --cookie $cookie | jq -r .'instances[0].Interfaces[0].Address.Address')
         workers_ip[$index]=${workers_ip[$index]%/*}
         echo " worker_($index)_ip is  $workers_ip[$index]" > /tmp/cloudland.log
-        sleep 50
+        sleep 5
     done
+}
 
-    systemctl stop dnsmasq
-    for i in $(seq 0 $seq_max); do
-       if [  -n "${workers_ip[$i]}" ]; then
-            cat >> /etc/dnsmasq.openshift.addnhosts <<EOF
-${workers_ip[$i]} worker-$i.${cluster_name}.${base_domain}
-EOF
-       fi
+function wait_ocd()
+{
+    while true; do
+        sleep 5
+        nc -zv $bstrap_ip 6443
+        [ $? -eq 0 ] && break
     done
-    systemctl start dnsmasq
-
-    # haproxy
-    haconf=/etc/haproxy/haproxy.cfg
-    systemctl stop haproxy
-    sed -i '/^backend router_https/,$d' $haconf
-    cat >> $haconf <<EOF
-backend router_https
-    balance roundrobin
-    option ssl-hello-chk
-EOF
-    for i in $(seq 0 $seq_max); do
-        if [ $i -lt $nworkers ]; then
-            cat >> $haconf <<EOF
-    server worker-$i worker-$i.${cluster_name}.${base_domain}:443 check
-EOF
-        fi
-    done
-    cat >> $haconf <<EOF
-backend router_http
-    mode http
-    balance roundrobin
-EOF
-    for i in $(seq 0 $seq_max); do
-        if [ $i -lt $nworkers ]; then
-            cat >> $haconf <<EOF
-    server worker-$i worker-$i.${cluster_name}.${base_domain}:80 check
-EOF
-        fi
-    done
-
-    systemctl restart haproxy
-
+    ../openshift-install wait-for bootstrap-complete --log-level debug
+    echo "bootstrap-complete runnning completed " >> /tmp/cloudland.log
+    curl -k -XDELETE $endpoint/instances/$bstrap_ID --cookie $cookie
     sleep 5
 
+    # delete bootstrap record in haproxy
+    haconf=/etc/haproxy/haproxy.cfg
+    systemctl stop haproxy
+    sed -i "/bootstrap/d" $haconf
+    systemctl start haproxy
     nodes=3
     [ "$haflag" = "yes" ] && nodes=5
     export KUBECONFIG=auth/kubeconfig
@@ -511,7 +495,8 @@ EOF
 }
 
 setenforce Permissive
-curl -k $endpoint/misc/openshift/ocd_lb_yum.repo -o /etc/yum.repos.d/oc.repo
+curl -I -k $endpoint/misc/openshift/ocd_lb_yum_${virt_type}.repo --cookie $cookie | grep '404 Not Found'
+[ $? -ne 0 ] && curl -k $endpoint/misc/openshift/ocd_lb_yum_${virt_type}.repo -o /etc/yum.repos.d/oc.repo
 sed -i 's/^SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
 [ $(uname -m) != s390x ] && yum -y install epel-release
 [ "$(uname -m)" = "s390x" ] && yum -y install rng-tools && systemctl start rngd
