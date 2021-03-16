@@ -24,4 +24,18 @@ for inst in $(virsh list --all | grep 'shut off' | awk '{print $2}'); do
     virsh start $inst
 done
 
+#add mac to fdb after recovering
+inface1=$vlan_interface
+instances=`virsh list --all | grep inst | awk '{print $2}'`
+for instance in $instances
+do
+   macs=`virsh domiflist $instance | grep 52:| awk '{print $5}'`
+   echo "$instance MAC addresses are: $macs"
+   for mac in $macs
+   do
+        echo "Registing $mac"
+        /usr/sbin/bridge fdb add $mac dev $inface1 2>/dev/null
+   done
+   echo "br-ex1 fbd sync done for $instance"
+done
 exit 0
