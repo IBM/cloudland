@@ -70,6 +70,7 @@ EOF
 function inst_console_proxy()
 {
     cd /opt
+    rm -rf libvirt-console-proxy
     git clone https://github.com/libvirt/libvirt-console-proxy.git
     chown -R cland:cland libvirt-console-proxy
 

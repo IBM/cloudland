@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/exec"
 	"strconv"
 
 	"github.com/IBM/cloudland/web/clui/model"
@@ -27,6 +29,11 @@ var (
 
 type ImageAdmin struct{}
 type ImageView struct{}
+
+func FileExist(filename string) bool {
+	_, err := os.Lstat(filename)
+	return !os.IsNotExist(err)
+}
 
 func (a *ImageAdmin) Create(ctx context.Context, osVersion, diskType, virtType, userName, name, url, format, architecture string, instID int64, isLB bool) (image *model.Image, err error) {
 	memberShip := GetMemberShip(ctx)
@@ -51,11 +58,31 @@ func (a *ImageAdmin) Create(ctx context.Context, osVersion, diskType, virtType, 
 			return
 		}
 	} else {
-		control := "inter=0"
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_image.sh '%d' '%s' '%s'", image.ID, url, virtType)
-		err = hyperExecute(ctx, control, command)
+		command := "/opt/cloudland/scripts/kvm/create_image.sh " + strconv.Itoa(int(image.ID)) + " " + url + " " + virtType
+		cmd := exec.Command("/bin/bash", "-c", command)
+		err = cmd.Run()
 		if err != nil {
 			log.Println("Create image command execution failed", err)
+			return
+		}
+		image = &model.Image{Model: model.Model{ID: int64(image.ID)}}
+		err = db.Take(image).Error
+		if err != nil {
+			log.Println("Invalid image ID", err)
+			return
+		}
+		image.Status = "available"
+		file := "/opt/cloudland/cache/image/image-" + strconv.Itoa(int(image.ID))
+		if FileExist(file + ".img") {
+			image.Format = "img"
+		} else if FileExist(file + ".qcow2") {
+			image.Format = "qcow2"
+		} else {
+			image.Format = "raw"
+		}
+		err = db.Save(image).Error
+		if err != nil {
+			log.Println("Update image failed", err)
 			return
 		}
 	}
@@ -78,11 +105,11 @@ func (a *ImageAdmin) Delete(ctx context.Context, id int64) (err error) {
 		return
 	}
 	if image.Status == "available" {
-		control := "inter="
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_image.sh '%d', '%s'", image.ID, image.Format)
-		err = hyperExecute(ctx, control, command)
+		command := "/opt/cloudland/scripts/kvm/clear_image.sh " + strconv.Itoa(int(image.ID)) + " " + image.Format
+		cmd := exec.Command("/bin/bash", "-c", command)
+		err = cmd.Run()
 		if err != nil {
-			log.Println("Clear image command execution failed", err)
+			log.Println("Create image command execution failed", err)
 			return
 		}
 	}
