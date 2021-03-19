@@ -21,7 +21,6 @@ type Registry struct {
 	Image           string `gorm:"type:varchar(1280)"`
 	Installer       string `gorm:"type:varchar(1280)"`
 	Cli             string `gorm:"type:varchar(1280)"`
-	Kubelet         string `gorm:"type:varchar(1280)"`
 }
 
 func init() {

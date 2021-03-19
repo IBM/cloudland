@@ -28,7 +28,7 @@ var (
 type RegistryAdmin struct{}
 type RegistryView struct{}
 
-func (a *RegistryAdmin) Create(ctx context.Context, label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli, kubelet string) (registry *model.Registry, err error) {
+func (a *RegistryAdmin) Create(ctx context.Context, label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli string) (registry *model.Registry, err error) {
 	db := DB()
 	registry = &model.Registry{
 		Label:           label,
@@ -40,10 +40,9 @@ func (a *RegistryAdmin) Create(ctx context.Context, label, virtType, ocpVersion,
 		Image:           image,
 		Installer:       installer,
 		Cli:             cli,
-		Kubelet:         kubelet,
 	}
 
-	initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, kubelet_bak := "", "", "", "", "", ""
+	initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak := "", "", "", "", ""
 	if strings.Contains(initramfs, "http") {
 		initramfs_bak = "file://" + initramfs
 	} else {
@@ -69,14 +68,9 @@ func (a *RegistryAdmin) Create(ctx context.Context, label, virtType, ocpVersion,
 	} else {
 		cli_bak = cli
 	}
-	if strings.Contains(kubelet, "http") {
-		kubelet_bak = "file://" + kubelet
-	} else {
-		kubelet_bak = kubelet
-	}
 
 	control := "inter=0"
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_registry_image.sh '%d' '%s' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, kubelet_bak, virtType)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_registry_image.sh '%d' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, virtType)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Create registry image command execution failed", err)
@@ -129,7 +123,7 @@ func (a *RegistryAdmin) List(offset, limit int64, order, query string) (total in
 	return
 }
 
-func (a *RegistryAdmin) Update(ctx context.Context, id int64, label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli, kubelet string) (registry *model.Registry, err error) {
+func (a *RegistryAdmin) Update(ctx context.Context, id int64, label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli string) (registry *model.Registry, err error) {
 	db := DB()
 	registry = &model.Registry{Model: model.Model{ID: id}}
 
@@ -169,11 +163,7 @@ func (a *RegistryAdmin) Update(ctx context.Context, id int64, label, virtType, o
 		registry.Cli = cli
 	}
 
-	if registry.Kubelet != kubelet {
-		registry.Kubelet = kubelet
-	}
-
-	initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, kubelet_bak := "", "", "", "", "", ""
+	initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak := "", "", "", "", ""
 	if strings.Contains(initramfs, "http") {
 		initramfs_bak = "file://" + initramfs
 	} else {
@@ -199,14 +189,9 @@ func (a *RegistryAdmin) Update(ctx context.Context, id int64, label, virtType, o
 	} else {
 		cli_bak = cli
 	}
-	if strings.Contains(kubelet, "http") {
-		kubelet_bak = "file://" + kubelet
-	} else {
-		kubelet_bak = kubelet
-	}
 
 	control := "inter=0"
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_registry_image.sh '%d' '%s' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, kubelet_bak, virtType)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_registry_image.sh '%d' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, virtType)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Update registry image command execution failed", err)
@@ -323,9 +308,7 @@ func (v *RegistryView) Create(c *macaron.Context, store session.Store) {
 
 	cli := c.Query("cli")
 
-	kubelet := c.Query("kubelet")
-
-	registry, err := registryAdmin.Create(c.Req.Context(), label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli, kubelet)
+	registry, err := registryAdmin.Create(c.Req.Context(), label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli)
 	if err != nil {
 		log.Println("Create registry failed", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
@@ -375,8 +358,7 @@ func (v *RegistryView) Patch(c *macaron.Context, store session.Store) {
 	image := c.Query("image")
 	installer := c.Query("installer")
 	cli := c.Query("cli")
-	kubelet := c.Query("kubelet")
-	registry, err := registryAdmin.Update(c.Req.Context(), int64(registryID), label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli, kubelet)
+	registry, err := registryAdmin.Update(c.Req.Context(), int64(registryID), label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli)
 	if err != nil {
 		log.Println("Failed to update registry, %v", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
