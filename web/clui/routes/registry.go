@@ -44,33 +44,35 @@ func (a *RegistryAdmin) Create(ctx context.Context, label, virtType, ocpVersion,
 
 	initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak := "", "", "", "", ""
 	if strings.Contains(initramfs, "http") {
-		initramfs_bak = "file://" + initramfs
-	} else {
 		initramfs_bak = initramfs
+	} else {
+		initramfs_bak = "file://" + initramfs
 	}
 	if strings.Contains(kernel, "http") {
-		kernel_bak = "file://" + kernel
-	} else {
 		kernel_bak = kernel
+	} else {
+		kernel_bak = "file://" + kernel
 	}
 	if strings.Contains(image, "http") {
-		image_bak = "file://" + image
-	} else {
 		image_bak = image
+	} else {
+		image_bak = "file://" + image
 	}
 	if strings.Contains(installer, "http") {
-		installer_bak = "file://" + installer
-	} else {
 		installer_bak = installer
+	} else {
+		installer_bak = "file://" + installer
 	}
 	if strings.Contains(cli, "http") {
-		cli_bak = "file://" + cli
-	} else {
 		cli_bak = cli
+	} else {
+		cli_bak = "file://" + cli
 	}
 
 	control := "inter=0"
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_registry_image.sh '%d' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, virtType)
+
+	log.Println("command:" + command)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Create registry image command execution failed", err)
