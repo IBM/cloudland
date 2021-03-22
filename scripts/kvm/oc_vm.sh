@@ -44,9 +44,9 @@ echo $vlans > /tmp/cloudland_vlan.log
 core_ip=$(jq -r .[0].ip_address <<< $vlans)
 gw_ip=$(jq .networks[0].routes[0].gateway <<< $metadata | tr -d '"')
 lb_ip=$(jq .ocp[0].service <<< $metadata | tr -d '"')
-vxlink=v-$(jq -r .[0].vlan <<< $vlans)
-mtu_size=1500
-[ -d "/sys/devices/virtual/net/$vxlink" ] && mtu_size=1450
+vlan=$(jq -r .[0].vlan <<< $vlans)
+mtu_size=1450
+[ "$vlan" = "$external_vlan" ] && mtu_size=1500
 sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_disk#g; s/CORE_IP/$core_ip/g;s/GATEWAY/$gw_ip/g; s/MTU_SIZE/$mtu_size/g; s/HOSTNAME/$hname/g; s/LB_IP/$lb_ip/g; s/ROLE_IGN/${role}.ign/g;" $vm_xml
 state=error
 virsh define $vm_xml
