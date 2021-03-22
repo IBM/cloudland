@@ -5,9 +5,9 @@
   <vcpu placement='static'>VM_CPU</vcpu>
   <os>
     <type arch='x86_64'>hvm</type>
-    <kernel>/opt/cloudland/cache/image/rhcos-installer-kernel</kernel>
-    <initrd>/opt/cloudland/cache/image/rhcos-installer-initramfs.img</initrd>
-    <cmdline>console=ttyS0 nomodeset rd.neednet=1 coreos.inst=yes ip=CORE_IP::GATEWAY:24:HOSTNAME:ens3:none:MTU_SIZE nameserver=LB_IP coreos.inst.install_dev=vda coreos.live.rootfs_url=http://LB_IP:8080/rhcos-rootfs.img coreos.inst.ignition_url=http://LB_IP:8080/ignition/ROLE_IGN</cmdline>
+    <kernel>OCP_KERNEL</kernel>
+    <initrd>OCP_INITRAMFS</initrd>
+    <cmdline>console=ttyS0 nomodeset rd.neednet=1 coreos.inst=yes ip=CORE_IP::GATEWAY:24:HOSTNAME:ens3:none:MTU_SIZE nameserver=LB_IP ip=ens5:dhcp coreos.inst.install_dev=vda coreos.live.rootfs_url=http://LB_IP:8080/rhcos-rootfs.img coreos.inst.ignition_url=http://LB_IP:8080/ignition/ROLE_IGN</cmdline>
     <boot dev='hd'/>
   </os>
   <features>
