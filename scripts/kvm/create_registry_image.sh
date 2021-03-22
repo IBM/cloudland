@@ -14,7 +14,7 @@ installer=$6
 cli=$7
 virt_type=$8
 
-base_dir=$image_cache/$version/$virt_type
+base_dir=$image_cache/ocp/$version/$virt_type
 mkdir -p $base_dir
 
 curl $initramfs -o $base_dir/rhcos-installer-initramfs.img
