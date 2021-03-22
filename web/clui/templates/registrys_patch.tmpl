@@ -1,0 +1,78 @@
+{{template "_head" .}}
+
+<div class="admin user">
+
+    <div class="ui container">
+
+        <div class="ui grid">
+
+        {{template "_left" .}}
+            <div class="user signup">
+                <div class="ui middle very relaxed page grid">
+                    <div class="" >
+						<form class="ui form" action="{{.Link}}" method="post">
+							<h3 class="ui top attached header">
+								{{.i18n.Tr "Update Registry"}}
+							</h3>
+							<div class="ui attached segment">
+								<div class="required inline field">
+									<label for="label">{{.i18n.Tr "Label"}}</label>
+									<input id="label" name="label" value="{{ .Registry.Label }}" autofocus required>
+								</div>
+                                <div class="required inline field">
+                                    <label for="virtType">{{.i18n.Tr "Virtualization Type"}}</label>
+                                    <select name="virtType" id="virtType" class="ui selection dropdown">
+                                         <option value="kvm-x86_64"  {{ if eq .Registry.VirtType "kvm-x86_64" }} selected="selected"  {{end}}>{{.i18n.Tr "KVM on x86_64"}}</option>
+                                         <option value="kvm-s390x"  {{ if eq .Registry.VirtType "kvm-s390x" }} selected="selected" {{end}}>{{.i18n.Tr "KVM on Z"}}</option>
+                                         <option value="zvm"  {{ if eq .Registry.VirtType "zvm" }} selected="selected" {{end}}>{{.i18n.Tr "z/VM"}}</option>
+                                    </select>
+                                </div>								
+								<div class="required inline field">
+									<label for="ocpversion">{{.i18n.Tr "OcpVersion"}}</label>
+                                                                                <select name="ocpversion" id="ocpversion" class="ui selection dropdown">
+                                         <option value="4.6"  {{ if eq .Registry.OcpVersion "4.6" }} selected="selected" {{end}}>4.6</option>
+                                         <option value="4.5"  {{ if eq .Registry.OcpVersion "4.5" }} selected="selected" {{end}}>4.5</option>
+                                         <option value="4.4"  {{ if eq .Registry.OcpVersion "4.4" }} selected="selected" {{end}}>4.4</option>
+                                         <option value="4.3"  {{ if eq .Registry.OcpVersion "4.3" }} selected="selected" {{end}}>4.3</option>
+                                    </select> 
+								</div>
+								<div class="required inline field">
+									<label for="registrycontent">{{.i18n.Tr "RegistryContent"}}</label>
+                                    <textarea id="registrycontent"  name="registrycontent"  required>{{ .Registry.RegistryContent }}</textarea>
+								</div>
+								<div class="required inline field">
+									<label for="initramfs">{{.i18n.Tr "RHCOS initramfs"}}</label>
+									<input id="initramfs" name="initramfs" value="{{ .Registry.Initramfs }}" autofocus required>
+								</div>
+								<div class="required inline field">
+									<label for="kernel">{{.i18n.Tr "RHCOS kernel"}}</label>
+									<input id="kernel" name="kernel" value="{{ .Registry.Kernel }}" autofocus required>
+								</div>
+								<div class="required inline field">
+									<label for="image">{{.i18n.Tr "RHCOS image"}}</label>
+									<input id="image" name="image" value="{{ .Registry.Image }}" autofocus required>
+								</div>
+								<div class="required inline field">
+									<label for="installer">{{.i18n.Tr "OCP installer"}}</label>
+									<input id="installer" name="installer" value="{{ .Registry.Installer }}" autofocus required>
+								</div>
+								<div class="required inline field">
+									<label for="cli">{{.i18n.Tr "oc cli"}}</label>
+									<input id="cli" name="cli" value="{{ .Registry.Cli }}" autofocus required>
+								</div>
+								{{ if .IsAdmin }}
+								<div class="inline field">
+									<label></label>
+									<button class="ui green button">{{.i18n.Tr "Update Registry"}}</button>
+								</div>
+								{{ end }}
+							</div>
+						</form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{template "_footer" .}}
+
