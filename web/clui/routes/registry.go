@@ -10,14 +10,14 @@ package routes
 import (
 	"context"
 	"fmt"
-	"log"
-	"net/http"
-	"strings"
-
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
+	"log"
+	"net/http"
+	"strconv"
+	"strings"
 )
 
 var (
@@ -28,22 +28,51 @@ var (
 type RegistryAdmin struct{}
 type RegistryView struct{}
 
-func (a *RegistryAdmin) Create(ctx context.Context, label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli, kubelet string) (registry *model.Registry, err error) {
+func (a *RegistryAdmin) Create(ctx context.Context, label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli string) (registry *model.Registry, err error) {
 	db := DB()
 	registry = &model.Registry{
 		Label:           label,
 		OcpVersion:      ocpVersion,
+		VirtType:        virtType,
 		RegistryContent: registryContent,
 		Initramfs:       initramfs,
 		Kernel:          kernel,
 		Image:           image,
 		Installer:       installer,
 		Cli:             cli,
-		Kubelet:         kubelet,
+	}
+
+	initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak := "", "", "", "", ""
+	if strings.Contains(initramfs, "http") {
+		initramfs_bak = initramfs
+	} else {
+		initramfs_bak = "file://" + initramfs
+	}
+	if strings.Contains(kernel, "http") {
+		kernel_bak = kernel
+	} else {
+		kernel_bak = "file://" + kernel
+	}
+	if strings.Contains(image, "http") {
+		image_bak = image
+	} else {
+		image_bak = "file://" + image
+	}
+	if strings.Contains(installer, "http") {
+		installer_bak = installer
+	} else {
+		installer_bak = "file://" + installer
+	}
+	if strings.Contains(cli, "http") {
+		cli_bak = cli
+	} else {
+		cli_bak = "file://" + cli
 	}
 
 	control := "inter=0"
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_registry_image.sh '%d' '%s' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs, kernel, image, installer, cli, kubelet, virtType)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_registry_image.sh '%d' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, virtType)
+
+	log.Println("command:" + command)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Create registry image command execution failed", err)
@@ -93,6 +122,88 @@ func (a *RegistryAdmin) List(offset, limit int64, order, query string) (total in
 		return
 	}
 
+	return
+}
+
+func (a *RegistryAdmin) Update(ctx context.Context, id int64, label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli string) (registry *model.Registry, err error) {
+	db := DB()
+	registry = &model.Registry{Model: model.Model{ID: id}}
+
+	if registry.Label != label {
+		registry.Label = label
+	}
+
+	if registry.VirtType != virtType {
+		registry.VirtType = virtType
+	}
+
+	if registry.OcpVersion != ocpVersion {
+		registry.OcpVersion = ocpVersion
+	}
+
+	if registry.RegistryContent != registryContent {
+		registry.RegistryContent = registryContent
+	}
+
+	if registry.Initramfs != initramfs {
+		registry.Initramfs = initramfs
+	}
+
+	if registry.Kernel != kernel {
+		registry.Kernel = kernel
+	}
+
+	if registry.Image != image {
+		registry.Image = image
+	}
+
+	if registry.Installer != installer {
+		registry.Installer = installer
+	}
+
+	if registry.Cli != cli {
+		registry.Cli = cli
+	}
+
+	initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak := "", "", "", "", ""
+	if strings.Contains(initramfs, "http") {
+		initramfs_bak = "file://" + initramfs
+	} else {
+		initramfs_bak = initramfs
+	}
+	if strings.Contains(kernel, "http") {
+		kernel_bak = "file://" + kernel
+	} else {
+		kernel_bak = kernel
+	}
+	if strings.Contains(image, "http") {
+		image_bak = "file://" + image
+	} else {
+		image_bak = image
+	}
+	if strings.Contains(installer, "http") {
+		installer_bak = "file://" + installer
+	} else {
+		installer_bak = installer
+	}
+	if strings.Contains(cli, "http") {
+		cli_bak = "file://" + cli
+	} else {
+		cli_bak = cli
+	}
+
+	control := "inter=0"
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_registry_image.sh '%d' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, virtType)
+	err = hyperExecute(ctx, control, command)
+	if err != nil {
+		log.Println("Update registry image command execution failed", err)
+		return
+	}
+
+	if err = db.Save(registry).Error; err != nil {
+		log.Println("Failed to save registry", err)
+		return
+	}
 	return
 }
 
@@ -190,31 +301,16 @@ func (v *RegistryView) Create(c *macaron.Context, store session.Store) {
 	ocpVersion := c.Query("ocpversion")
 	registryContent := c.Query("registrycontent")
 	initramfs := c.Query("initramfs")
-	if strings.Contains(initramfs, "http") {
-		initramfs = "file://" + initramfs
-	}
-	kernel := c.Query("kernel")
-	if strings.Contains(kernel, "http") {
-		kernel = "file://" + kernel
-	}
-	image := c.Query("image")
-	if strings.Contains(image, "http") {
-		image = "file://" + image
-	}
-	installer := c.Query("installer")
-	if strings.Contains(installer, "http") {
-		installer = "file://" + installer
-	}
-	cli := c.Query("cli")
-	if strings.Contains(cli, "http") {
-		cli = "file://" + cli
-	}
-	kubelet := c.Query("kubelet")
-	if strings.Contains(kubelet, "http") {
-		kubelet = "file://" + kubelet
-	}
 
-	registry, err := registryAdmin.Create(c.Req.Context(), label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli, kubelet)
+	kernel := c.Query("kernel")
+
+	image := c.Query("image")
+
+	installer := c.Query("installer")
+
+	cli := c.Query("cli")
+
+	registry, err := registryAdmin.Create(c.Req.Context(), label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli)
 	if err != nil {
 		log.Println("Create registry failed", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
@@ -232,26 +328,88 @@ func (v *RegistryView) Create(c *macaron.Context, store session.Store) {
 	c.Redirect(redirectTo)
 }
 
-func (v *RegistryView) GetData(c *macaron.Context, store session.Store) {
+func (v *RegistryView) Patch(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
-	id := c.ParamsInt64("id")
-	permit := memberShip.CheckPermission(model.Owner)
+	id := c.Params("id")
+	if id == "" {
+		c.Data["ErrorMsg"] = "Id is Empty"
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	registryID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Failed to get input id, %v", err)
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	permit, err := memberShip.CheckUser(int64(registryID))
 	if !permit {
 		log.Println("Not authorized for this operation")
-		c.JSON(500, map[string]interface{}{
-			"error": "Not authorized for this operation",
-		})
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+
+	label := c.Query("label")
+	virtType := c.QueryTrim("virtType")
+	ocpVersion := c.Query("ocpversion")
+	registryContent := c.Query("registrycontent")
+	initramfs := c.Query("initramfs")
+	kernel := c.Query("kernel")
+	image := c.Query("image")
+	installer := c.Query("installer")
+	cli := c.Query("cli")
+	registry, err := registryAdmin.Update(c.Req.Context(), int64(registryID), label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli)
+	if err != nil {
+		log.Println("Failed to update registry, %v", err)
+		if c.Req.Header.Get("X-Json-Format") == "yes" {
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
+		c.JSON(200, registry)
+		return
+	}
+	c.HTML(200, "ok")
+}
+
+func (v *RegistryView) Edit(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.Params("id")
+	if id == "" {
+		c.Data["ErrorMsg"] = "Id is Empty"
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	registryID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Failed to get input id, %v", err)
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	permit, err := memberShip.CheckUser(int64(registryID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	db := DB()
-	registry := &model.Registry{Model: model.Model{ID: id}}
-	err := db.Take(registry).Error
+	registry := &model.Registry{Model: model.Model{ID: int64(registryID)}}
+	err = db.Set("gorm:auto_preload", true).Take(registry).Error
 	if err != nil {
-		log.Println("Failed ro query registry", err)
-		c.JSON(500, map[string]interface{}{
-			"error": err.Error(),
-		})
+		log.Println("Failed to query registry", err)
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
+		return
 	}
-
-	c.JSON(200, registry)
+	c.Data["Registry"] = registry
+	c.HTML(200, "registrys_patch")
 }

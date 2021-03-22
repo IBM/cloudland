@@ -28,7 +28,7 @@
                                 </div>								
 								<div class="required inline field">
 									<label for="ocpversion">{{.i18n.Tr "OcpVersion"}}</label>
-                                                                        <div class="ui selection dropdown">
+                                        <div class="ui selection dropdown">
                                                                         	<input id="ocpversion" name="ocpversion" type="hidden" required>
                                                                                 <i class="dropdown icon"></i>
                                                                                	<div class="default text">Version</div>
@@ -72,10 +72,6 @@
 									<label for="cli">{{.i18n.Tr "oc cli"}}</label>
 									<input id="cli" name="cli" autofocus required>
 								</div>
-								<div class="required inline field">
-									<label for="kubelet">{{.i18n.Tr "kubelet"}}</label>
-									<input id="kubelet" name="kubelet" autofocus required>
-								</div>																																													
 								{{ if .IsAdmin }}
 								<div class="inline field">
 									<label></label>
