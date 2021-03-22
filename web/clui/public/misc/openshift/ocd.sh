@@ -239,7 +239,6 @@ function download_pkgs()
     [ -n "$virt_type" ] && conf_url=${conf_url}.${virt_type}
     wget --no-check-certificate $conf_url -O ocd.conf
     source ocd.conf
-    wget --no-check-certificate -O /usr/share/nginx/html/rhcos.raw.gz $coreos_image_url
     wget --no-check-certificate -O /usr/share/nginx/html/rhcos-rootfs.img $coreos_rootfs_url
     wget --no-check-certificate -O openshift-install-linux.tgz $openshift_installer
     wget --no-check-certificate -O openshift-client-linux.tgz $openshift_client
