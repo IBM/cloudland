@@ -20,7 +20,7 @@ fi
 rm -rf /tmp/opt
 mkdir -p /tmp/opt
 # copy files to /tmp/opt
-rsync -a --exclude={'.git','cache/*','run/*','log/*','etc/*','scripts/cloudrc.local','web/clui/conf/config.toml','web/clui/public/misc/openshift/*','deploy/conf.json'} /opt/cloudland /tmp/opt
+rsync -a --exclude={'.git','cache/*','run/*','log/*','etc/*','scripts/cloudrc.local','web/clui/conf/config.toml','web/clui/public/misc/openshift/*','deploy/conf.json'} --include={'web/clui/public/misc/openshift/ocd.sh'} /opt/cloudland /tmp/opt
 rsync -a /opt/sci /tmp/opt
 rsync -a --exclude={'cert/*'} /opt/libvirt-console-proxy /tmp/opt
 cland_root_dir=/tmp/opt/cloudland
