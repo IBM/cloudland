@@ -18,6 +18,7 @@ install:
   -in skey.enc -out ~/.ssh/skey -d
 - ls -alrt ~/.ssh
 - chmod 600 ~/.ssh/skey
+- cat autocheck.sh
 - bash ./autocheck.sh queue $TEST_IP
 script:
 - ssh -i ~/.ssh/skey cland@$TEST_IP "cd /opt/cloudland/ && sudo bash ./autocheck.sh
