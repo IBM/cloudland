@@ -17,6 +17,7 @@ install:
 - openssl aes-256-cbc -K $encrypted_e6df4bfe5d89_key -iv $encrypted_e6df4bfe5d89_iv
   -in skey.enc -out ~/.ssh/skey -d
 - ls -alrt ~/.ssh
+- chmod 600 ~/.ssh/skey
 - bash ./autocheck.sh queue $TEST_IP
 script:
 - ssh -i ~/.ssh/skey cland@$TEST_IP "cd /opt/cloudland/ && sudo bash ./autocheck.sh
