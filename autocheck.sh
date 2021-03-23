@@ -67,7 +67,7 @@ pend(){
     then
       echo "RUNNING"
       return 0
-    elif [ $i -gt 180 ]
+    elif [ $i -gt 20 ]
     then
       echo "TIMEOUT"
       exit 1
