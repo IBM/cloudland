@@ -3,17 +3,22 @@ sudo: required
 services:
 - docker
 git:
-  clone: false
+  clone: true
 before_install:
-- sudo git clone --branch=$TRAVIS_PULL_REQUEST_BRANCH https://github.com/$TRAVIS_PULL_REQUEST_SLUG.git
-  $TRAVIS_PULL_REQUEST_SLUG
 - ssh-keyscan $TEST_IP >> $HOME/.ssh/known_hosts
 install:
-- cd $TRAVIS_PULL_REQUEST_SLUG
-- sudo openssl aes-256-cbc -K $encrypted_key_01 -iv $encrypted_iv_01 -in skey.enc -out skey -d
+- pwd
+- ls -alrt
+- ls -alrt ~/.ssh
+- cat ~/.ssh/known_hosts
+- cat ~/.ssh/authorized_keys
+- cat ~/.ssh/config
+- ls -alrt
+- openssl aes-256-cbc -K $encrypted_e6df4bfe5d89_key -iv $encrypted_e6df4bfe5d89_iv
+  -in skey.enc -out ~/.ssh/skey -d
+- ls -alrt ~/.ssh
 - bash ./autocheck.sh queue $TEST_IP
 script:
-- ssh -i skey cland@$TEST_IP "cd /opt/cloudland/ && 
-  sudo bash ./autocheck.sh pull_request $TRAVIS_PULL_REQUEST_BRANCH $TRAVIS_PULL_REQUEST_SLUG"
+- ssh -i ~/.ssh/skey cland@$TEST_IP "cd /opt/cloudland/ && sudo bash ./autocheck.sh
+  pull_request $TRAVIS_PULL_REQUEST_BRANCH $TRAVIS_PULL_REQUEST_SLUG"
 - bash ./autocheck.sh test $TEST_IP
-
