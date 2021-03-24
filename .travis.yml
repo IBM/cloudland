@@ -20,7 +20,6 @@ install:
 - chmod 600 ~/.ssh/skey
 - ls -lrt deploy
 - ls -lrt web/clui/public
-- cat web/clui/public/test_status
 - cat autocheck.sh
 - bash ./autocheck.sh queue $TEST_IP
 script:
