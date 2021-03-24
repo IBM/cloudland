@@ -14,10 +14,9 @@ checkpr(){
   sudo git clone --branch=$BRANCHNAME https://github.com/$PRSLUG.git
   sudo touch ./cloudland/web/clui/public/test_status
   sudo chown cland:cland ./cloudland/web/clui/public/test_status
-  ls -lrt ./cloudland/web/clui/public/test_status
+  ls -lrt ./cloudland/web/clui/public/test_status >/opt/test.log
   sudo echo "PENDING" > ./cloudland/web/clui/public/test_status
-  cd /opt/cloudland/deploy/
-  ./deploy.sh
+  ssh -i ~/.ssh/skey cland@148.100.78.58 && cd /opt/cloudland/deploy/ && ./deploy.sh
   if [ $? -ne 0 ]
   then
     sudo echo "FAILED" > ../web/clui/public/test_status
