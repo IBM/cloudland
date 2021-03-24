@@ -15,7 +15,7 @@
             "disk_over_ratio": 1,
             "dns_server": "8.8.8.8",
             "domain_name": "linuxone.build.com"
-        },       
+        }      
         
     ]
 }
