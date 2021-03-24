@@ -2,7 +2,7 @@ checkpr(){
   sudo echo "PENDING" > /opt/test_status
   BRANCHNAME=$1
   PRSLUG=$2
-
+  TEST_IP=$3
   echo "Deploying new environment"
   sudo systemctl stop hypercube
   sudo systemctl stop cloudland
@@ -14,6 +14,7 @@ checkpr(){
   sudo rm -rf ./sci/
   sudo git clone --branch=$BRANCHNAME https://github.com/$PRSLUG.git
   sudo echo "PENDING" > ./cloudland/web/clui/public/test_status
+  ssh -i ~/.ssh/skey cland@$3
   cd /opt/cloudland/deploy/
   ./deploy.sh
   if [ $? -ne 0 ]
@@ -79,7 +80,7 @@ pend(){
 
 if [ ! -n "$1" ]||[ "$1" == "pull_request" ]
 then
-  checkpr $2 $3
+  checkpr $2 $3 $4
 elif [ "$1" == "test" ]
 then
   checktest $2
