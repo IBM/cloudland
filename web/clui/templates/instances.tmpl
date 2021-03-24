@@ -39,9 +39,18 @@
     }
 
 	function UpdateTable(){
+                var queryURL = window.location.search;
+                var offset;
+                var searchURL;
+                if(typeof queryURL  == "undefined" || queryURL == null || queryURL == ""){
+                    searchURL = "/UpdateTable?offset=0";
+                }else{
+                    offset = queryURL.split("=")[1];
+                    searchURL = "/UpdateTable?offset="+offset;
+                }
 		$.ajax({
 			type: "GET",
-			url: "/UpdateTable",
+			url: searchURL,
 			success: function (data) {
 				var html = "";
 				for(var i = 0; i < data.instancedata.length; i++){
