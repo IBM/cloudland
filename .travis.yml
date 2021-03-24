@@ -23,7 +23,5 @@ install:
 - cat autocheck.sh
 - bash ./autocheck.sh queue $TEST_IP
 script:
-- sudo chown cland:cland cloudland
-- sudo chown travis:travis autocheck.sh
-- ssh -i ~/.ssh/skey cland@$TEST_IP "cd /opt/cloudland/ && whoami && bash ./autocheck.sh pull_request $TRAVIS_PULL_REQUEST_BRANCH $TRAVIS_PULL_REQUEST_SLUG"
+- ssh -i ~/.ssh/skey cland@$TEST_IP "cd /opt/cloudland/ && whoami && sudo chown cland:cland cloudland && sudo chown travis:travis autocheck.sh && bash ./autocheck.sh pull_request $TRAVIS_PULL_REQUEST_BRANCH $TRAVIS_PULL_REQUEST_SLUG"
 - bash ./autocheck.sh test $TEST_IP
