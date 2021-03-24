@@ -16,8 +16,10 @@ checkpr(){
   sudo chown cland:cland ./cloudland/web/clui/public/test_status
   ls -lrt ./cloudland/web/clui/public/test_status >/opt/test.log
   sudo echo "PENDING" > ./cloudland/web/clui/public/test_status
-  whoami
-  ssh -i ~/.ssh/skey cland@148.100.78.58 && cd /opt/cloudland/deploy/ && whoami&& ./deploy.sh
+ # whoami
+  #ssh -i ~/.ssh/skey cland@148.100.78.58 &
+  cd /opt/cloudland/deploy/
+  ./deploy.sh
   if [ $? -ne 0 ]
   then
     sudo echo "FAILED" > ../web/clui/public/test_status
