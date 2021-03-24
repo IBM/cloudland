@@ -15,7 +15,7 @@ checkpr(){
   sudo git clone --branch=$BRANCHNAME https://github.com/$PRSLUG.git
   sudo echo "PENDING" > ./cloudland/web/clui/public/test_status
   cd /opt/cloudland/deploy/
-  ./allinone.sh
+  ./deploy.sh
   if [ $? -ne 0 ]
   then
     sudo echo "FAILED" > ../web/clui/public/test_status
@@ -67,7 +67,7 @@ pend(){
     then
       echo "RUNNING"
       return 0
-    elif [ $i -gt 20 ]
+    elif [ $i -gt 100 ]
     then
       echo "TIMEOUT"
       exit 1

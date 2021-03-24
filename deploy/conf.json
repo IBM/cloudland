@@ -1,0 +1,21 @@
+{
+    "controller": {
+        "hostname": "clandbuild",
+        "ip": "148.100.78.58"
+    },
+    "compute": [
+        {
+            "id": 0,
+            "hostname": "clandbuild",
+            "ip": "148.100.78.58",
+            "virt_type": "kvm-s390x",
+            "zone_name": "zone0",
+            "cpu_over_ratio": 1,
+            "mem_over_ratio": 1,
+            "disk_over_ratio": 1,
+            "dns_server": "8.8.8.8",
+            "domain_name": "linuxone.build.com"
+        },       
+        
+    ]
+}
