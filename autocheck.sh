@@ -13,7 +13,7 @@ checkpr(){
   sudo rm -rf ./sci/
   sudo git clone --branch=$BRANCHNAME https://github.com/$PRSLUG.git
   sudo touch ./cloudland/web/clui/public/test_status
-  sudo chown cland:cland ./cloudland/web/clui/public/test_status
+  sudo chown -R cland:cland cloudland/
   sudo echo "PENDING" > ./cloudland/web/clui/public/test_status
  # whoami
   #ssh -i ~/.ssh/skey cland@148.100.78.58 &
