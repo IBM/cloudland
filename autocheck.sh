@@ -2,7 +2,6 @@ checkpr(){
   sudo echo "PENDING" > /opt/test_status
   BRANCHNAME=$1
   PRSLUG=$2
-  TEST_IP=$3
   echo "Deploying new environment"
   sudo systemctl stop hypercube
   sudo systemctl stop cloudland
@@ -13,8 +12,9 @@ checkpr(){
   sudo rm -rf ./libvirt-console-proxy/
   sudo rm -rf ./sci/
   sudo git clone --branch=$BRANCHNAME https://github.com/$PRSLUG.git
+  sudo touch ./cloudland/web/clui/public/test_status
+  sudo chown cland:cland ./cloudland/web/clui/public/test_status
   sudo echo "PENDING" > ./cloudland/web/clui/public/test_status
-  ssh -i ~/.ssh/skey cland@$3
   cd /opt/cloudland/deploy/
   ./deploy.sh
   if [ $? -ne 0 ]
