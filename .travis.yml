@@ -18,7 +18,6 @@ install:
   -in skey.enc -out ~/.ssh/skey -d
 - ls -alrt ~/.ssh
 - chmod 600 ~/.ssh/skey
-- cat /opt/test_status
 - ls -lrt /opt/cloudland/deploy
 - cat autocheck.sh
 - bash ./autocheck.sh queue $TEST_IP
