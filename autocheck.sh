@@ -16,7 +16,6 @@ checkpr(){
   sudo chown -R cland:cland cloudland/
   sudo echo "PENDING" > ./cloudland/web/clui/public/test_status
   echo "Build grpc"
-  # commitID=$(sudo cat /root/cloudland-grpc/commit)
   sudo ls -lrt /root/cloudland-grpc
   echo "$?"
   sudo ls -lrt /root/cloudland-grpc | grep 'grpc.*tar.gz$'
