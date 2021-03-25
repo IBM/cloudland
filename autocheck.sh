@@ -26,7 +26,8 @@ checkpr(){
         installed_release=$(sudo cat /root/grpc/Makefile | grep "CPP_VERSION =" | cut -d = -f2) 
         echo "$current_latest_release" >> ~/sort_release.log
         echo "$installed_release" >> ~/sort_release.log
-        if [ " cat ~/sort_release.log | sort -V | head -n 1" != $current_latest_release ];then
+	cat ~/sort_release.log
+        if [ "cat ~/sort_release.log | sort -V | head -n 1" != "$current_latest_release" ];then
             cd /opt/cloudland
 	    sudo ./build_grpc.sh
 	#else 
