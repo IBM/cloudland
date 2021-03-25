@@ -15,6 +15,12 @@ checkpr(){
   sudo touch ./cloudland/web/clui/public/test_status
   sudo chown -R cland:cland cloudland/
   sudo echo "PENDING" > ./cloudland/web/clui/public/test_status
+  echo "Build Prequisites"
+  cd /opt/cloudland
+  ./build.sh
+  echo "Build rpm Package"
+  ./build_rpm.sh
+  echo "Deploy cloudland"
   cd /opt/cloudland/deploy/
   ./deploy.sh
   if [ $? -ne 0 ]
