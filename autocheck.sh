@@ -24,14 +24,14 @@ checkpr(){
 	echo "grpc package existed"   
         current_latest_release=$(sudo cat /root/cloudland-grpc/release_tag | awk '{print substr($1,2)}')
         installed_release=$(sudo cat /root/grpc/Makefile | grep "CPP_VERSION =" | cut -d = -f2) 
-        echo "$current_latest_release" >> ~/sort_release.log
-        echo "$installed_release" >> ~/sort_release.log
-	cat ~/sort_release.log
-        if [ "cat ~/sort_release.log | sort -V | head -n 1" != "$current_latest_release" ];then
+	echo "$current_latest_release" >> ~/sort_release_`date +%H%M`.log
+        echo "$installed_release" >> ~/sort_release_`date +%H%M`.log
+	cat ~/sort_release_`date +%H%M`.log
+        if [ "cat ~/sort_release_`date +%H%M`.log | sort -V | head -n 1" != "$current_latest_release" ];then
             cd /opt/cloudland
 	    sudo ./build_grpc.sh
-	#else 
-	    #return 0
+	else 
+	    exit 0
         fi       
   else
        echo "grpc package not existed"
