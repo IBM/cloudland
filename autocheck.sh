@@ -30,8 +30,6 @@ checkpr(){
 	if [ "$(cat ~/sort_release_`date +%H%M`.log | sort -V | head -n 1)" != "$current_latest_release" ];then
             cd /opt/cloudland
 	    sudo ./build_grpc.sh
-	else 
-	    exit 0
         fi       
   else
        echo "grpc package not existed"
