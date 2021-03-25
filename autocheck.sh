@@ -15,6 +15,24 @@ checkpr(){
   sudo touch ./cloudland/web/clui/public/test_status
   sudo chown -R cland:cland cloudland/
   sudo echo "PENDING" > ./cloudland/web/clui/public/test_status
+  echo "Build grpc"
+  # commitID=$(sudo cat /root/cloudland-grpc/commit)
+  ls -lrt /root/cloudland-grpc | grep grpc-*.tar.gz
+  if [ $? -eq 0 ];then
+	echo "grpc package existed"   
+        current_latest_release=$(cat /root/cloudland-grpc/release_tag | awk '{print substr($1,2)}')
+        installed_release=$(cat /root/grpc/Makefile | grep "CPP_VERSION =" | cut -d = -f2) 
+        echo "$current_latest_release" >> /root/sort_release.log
+        echo "$installed_release" >> /root/sort_release.log
+        if [ "cat sort_release.log | sort -V | head -n 1" != $current_latest_release ]
+            sudo ./build_grpc.sh
+	#else 
+	    #return 0
+        fi       
+  else
+       echo "grpc package not existed"
+       sudo ./build_grpc.sh
+  fi
   echo "Build Prequisites"
   cd /opt/cloudland
   sudo ./build.sh
