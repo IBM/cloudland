@@ -17,9 +17,9 @@ checkpr(){
   sudo echo "PENDING" > ./cloudland/web/clui/public/test_status
   echo "Build Prequisites"
   cd /opt/cloudland
-  ./build.sh
+  sudo ./build.sh
   echo "Build rpm Package"
-  ./build_rpm.sh 1.1 1.0
+  sudo ./build_rpm.sh 1.1 1.0
   echo "Deploy cloudland"
   cd /opt/cloudland/deploy/
   ./deploy.sh
