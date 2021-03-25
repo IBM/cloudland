@@ -77,7 +77,7 @@ pend(){
     sleep 10
   done
 }
-
+# check status
 if [ ! -n "$1" ]||[ "$1" == "pull_request" ]
 then
   checkpr $2 $3 $4
