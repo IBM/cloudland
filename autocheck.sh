@@ -27,7 +27,7 @@ checkpr(){
 	echo "$current_latest_release" >> ~/sort_release_`date +%H%M`.log
         echo "$installed_release" >> ~/sort_release_`date +%H%M`.log
 	cat ~/sort_release_`date +%H%M`.log
-        if [ "cat ~/sort_release_`date +%H%M`.log | sort -V | head -n 1" != "$current_latest_release" ];then
+	if [ "$(cat ~/sort_release_`date +%H%M`.log | sort -V | head -n 1)" != "$current_latest_release" ];then
             cd /opt/cloudland
 	    sudo ./build_grpc.sh
 	else 
