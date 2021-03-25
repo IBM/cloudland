@@ -22,11 +22,11 @@ checkpr(){
   sudo ls -lrt /root/cloudland-grpc | grep 'grpc.*tar.gz$'
   if [ $? -eq 0 ];then
 	echo "grpc package existed"   
-        current_latest_release=$(cat /root/cloudland-grpc/release_tag | awk '{print substr($1,2)}')
-        installed_release=$(cat /root/grpc/Makefile | grep "CPP_VERSION =" | cut -d = -f2) 
-        echo "$current_latest_release" >> /root/sort_release.log
-        echo "$installed_release" >> /root/sort_release.log
-        if [ "cat sort_release.log | sort -V | head -n 1" != $current_latest_release ];then
+        current_latest_release=$(sudo cat /root/cloudland-grpc/release_tag | awk '{print substr($1,2)}')
+        installed_release=$(sudo cat /root/grpc/Makefile | grep "CPP_VERSION =" | cut -d = -f2) 
+        echo "$current_latest_release" >> ~/sort_release.log
+        echo "$installed_release" >> ~/sort_release.log
+        if [ " cat ~/sort_release.log | sort -V | head -n 1" != $current_latest_release ];then
             cd /opt/cloudland
 	    sudo ./build_grpc.sh
 	#else 
