@@ -23,7 +23,7 @@ checkpr(){
   if [ $? -eq 0 ];then
 	echo "grpc package existed"   
         current_latest_release=$(sudo cat /root/cloudland-grpc/release_tag | awk '{print substr($1,2)}')
-        installed_release=$(sudo cat /root/grpc/Makefile | grep "CPP_VERSION =" | cut -d = -f2) 
+        installed_release=$(sudo cat /root/grpc/Makefile | grep "CPP_VERSION = " | awk '{print $3}') 
 	echo "$current_latest_release" >> ~/sort_release_`date +%H%M`.log
         echo "$installed_release" >> ~/sort_release_`date +%H%M`.log
 	cat ~/sort_release_`date +%H%M`.log
