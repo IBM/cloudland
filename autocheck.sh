@@ -32,6 +32,7 @@ checkpr(){
         fi       
   else
        echo "grpc package not existed"
+       cd /opt/cloudland
        sudo ./build_grpc.sh
   fi
   echo "Build Prequisites"
