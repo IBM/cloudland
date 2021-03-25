@@ -17,7 +17,7 @@ checkpr(){
   sudo echo "PENDING" > ./cloudland/web/clui/public/test_status
   echo "Build grpc"
   # commitID=$(sudo cat /root/cloudland-grpc/commit)
-  ls -lrt /root/cloudland-grpc | grep grpc-*.tar.gz
+  sudo ls -lrt /root/cloudland-grpc | grep grpc-*.tar.gz
   if [ $? -eq 0 ];then
 	echo "grpc package existed"   
         current_latest_release=$(cat /root/cloudland-grpc/release_tag | awk '{print substr($1,2)}')
@@ -25,7 +25,8 @@ checkpr(){
         echo "$current_latest_release" >> /root/sort_release.log
         echo "$installed_release" >> /root/sort_release.log
         if [ "cat sort_release.log | sort -V | head -n 1" != $current_latest_release ];then
-            sudo ./build_grpc.sh
+            cd /opt/cloudland
+	    sudo ./build_grpc.sh
 	#else 
 	    #return 0
         fi       
