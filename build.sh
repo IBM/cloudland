@@ -1,5 +1,26 @@
 #!/bin/bash
 
+set -ex
+
+# Check root
+if [[ `whoami` != "root" ]]; then
+    echo "Not root"
+    exit -1
+fi
+
+# Build grpc
+if [[ $# -ge 1 && "$1" = "grpc" ]]; then
+    release_tag="latest"
+    if [[ $# -ge 2 ]]; then 
+        release_tag=$2
+    fi
+    /bin/bash /opt/cloudland/build_grpc.sh "$release_tag"
+fi
+
+# Install tools
+yum groupinstall -y "Development Tools"
+yum install -y git golang
+
 cland_root_dir=/opt/cloudland
 
 # folders used by cloudland
@@ -30,7 +51,7 @@ function inst_cland()
 {
     # Setup grpc env
     export PATH=$PATH:/usr/local/bin
-    export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+    export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig
 
     # Build and install cland to /opt/cloudland/bin and /opt/cloudland/lib64
     cd $cland_root_dir/src
@@ -70,6 +91,7 @@ EOF
 function inst_console_proxy()
 {
     cd /opt
+    rm -rf libvirt-console-proxy
     git clone https://github.com/libvirt/libvirt-console-proxy.git
     chown -R cland:cland libvirt-console-proxy
 

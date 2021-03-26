@@ -4,7 +4,7 @@ set -ex
 
 # Check root
 if [[ `whoami` != "root" ]]; then
-    echo "not root"
+    echo "Not root"
     exit -1
 fi
 
@@ -17,7 +17,7 @@ rm -rf /root/cloudland-grpc
 mkdir -p /root/cloudland-grpc
 
 # Get release tag from input
-release_tag=0
+release_tag="latest"
 if [[ $# -eq 1 ]]; then
     release_tag=$1
 fi
@@ -26,11 +26,11 @@ fi
 rm -rf /root/grpc
 # Download source code
 cd /root
-if [[ $release_tag -eq 0 ]]; then
+if [[ "$release_tag" = "latest" ]]; then
     release_tag=$(curl -s https://api.github.com/repos/grpc/grpc/releases/latest | jq -r .tag_name)
     echo "$release_tag" > /root/cloudland-grpc/release_tag
 fi
-git clone -b $release_tag https://github.com/grpc/grpc
+git clone -b "$release_tag" https://github.com/grpc/grpc
 
 # Update submodule
 cd /root/grpc
@@ -108,4 +108,4 @@ commitID=$(cat commit)
 tar czf grpc-${commitID}.tar.gz usr
 
 # Install grpc to /usr/local
-#tar xzf grpc-${commitID}.tar.gz -C /
+tar xzf grpc-${commitID}.tar.gz -C /
