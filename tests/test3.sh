@@ -36,7 +36,7 @@ vmhostname=$(cat vminfo.txt | jq -r '.Hostname')
 vmid=$(cat vminfo.txt | jq -r '.ID')
 #vmkey=$(cat vminfo.txt | jq '.Keys')
 #echo $vmstatus
-if [ $vmstatus = "pending" ]; then
+if [ $vmstatus == "pending" ]; then
    echo "Create new VM instance succeeded!"
    echo "New VM's Hostname:$vmhostname"
    echo "New VM's Indexnumber:$vmid"
