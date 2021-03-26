@@ -1,5 +1,13 @@
 #!/bin/bash
 
+set -ex
+
+# Check root
+if [[ `whoami` != "root" ]]; then
+    echo "Not root"
+    exit -1
+fi
+
 if [ $# -lt 2 ]; then
     echo "$0 <version> <release>"
     exit -1
@@ -11,10 +19,19 @@ release=$2
 
 echo "Prepare packages..."
 
+# Install rpmbuild
+yum groupinstall -y "RPM Development Tools"
+
+# Install tools
+yum install -y rsync
+
 # prepare grpc
-if [ ! -e '/tmp/grpc.tar.gz' ]; then
-    tar czf /tmp/grpc.tar.gz /usr/local/bin /usr/local/include /usr/local/lib
+commitID=$(cat /root/cloudland-grpc/commit)
+if [[ "$commitID" = "" ]]; then
+    echo "No grpc found from /root/cloudland-grpc. Refer to build_grpc.sh to generate the package."
+    exit -1
 fi
+cp /root/cloudland-grpc/grpc-$(commitID).tar.gz /tmp/grpc.tar.gz
 
 # prepare cloudland package
 rm -rf /tmp/opt
