@@ -20,6 +20,9 @@ git clone https://github.com/IBM/cloudland.git /opt/cloudland
 # Go to the source code folder
 cd /opt/cloudland
 
+# Build grpc library
+./build_grpc.sh
+
 # Build the binaries. Continue the installation if the build server is also the controller.
 ./build.sh
 
