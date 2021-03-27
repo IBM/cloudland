@@ -15,7 +15,7 @@ A Linux build server (For s390x, like LinuxOne, please use RedHat Enterprise Lin
 ## Build binaries and RPM package
 ```
 # Download source code from GitHub to /opt
-git clone https://github.com/IBM/cloudland.git /opt
+git clone https://github.com/IBM/cloudland.git /opt/cloudland
 
 # Go to the source code folder
 cd /opt/cloudland
