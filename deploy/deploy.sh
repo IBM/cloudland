@@ -80,9 +80,11 @@ db_passwd="passw0rd"
 new_conf="yes"
 
 if [ ! -e "/opt/cloudland/web/clui/conf/config.toml" ]; then
-    read -s -p "Set the 'admin' login password: " admin_passwd
+    #read -s -p "Set the 'admin' login password: " admin_passwd
+    admin_passwd="passw0rd"
     echo
-    read -s -p "Set the database login password: " db_passwd
+    #read -s -p "Set the database login password: " db_passwd
+    db_passwd="passw0rd"
     echo
 else
     new_conf="no"

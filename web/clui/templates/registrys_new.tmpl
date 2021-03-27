@@ -18,13 +18,24 @@
 									<label for="label">{{.i18n.Tr "Label"}}</label>
 									<input id="label" name="label" autofocus required>
 								</div>
+                                <div class="required inline field">
+                                    <label for="virtType">{{.i18n.Tr "Virtualization Type"}}</label>
+                                    <select name="virtType" id="virtType" class="ui selection dropdown">
+                                         <option value="kvm-x86_64" selected>{{.i18n.Tr "KVM on x86_64"}}</option>
+                                         <option value="kvm-s390x" selected>{{.i18n.Tr "KVM on Z"}}</option>
+                                         <option value="zvm">{{.i18n.Tr "z/VM"}}</option>
+                                    </select>
+                                </div>								
 								<div class="required inline field">
 									<label for="ocpversion">{{.i18n.Tr "OcpVersion"}}</label>
-                                                                        <div class="ui selection dropdown">
+                                        <div class="ui selection dropdown">
                                                                         	<input id="ocpversion" name="ocpversion" type="hidden" required>
                                                                                 <i class="dropdown icon"></i>
                                                                                	<div class="default text">Version</div>
                                                                                	<div class="menu">
+											<div class="item" data-value=4.7 data-text=4.7>
+                                                                                            4.7
+                                                                                        </div>
                                                                                         <div class="item" data-value=4.6 data-text=4.6>
                                                                                             4.6
                                                                                         </div>
@@ -64,10 +75,6 @@
 									<label for="cli">{{.i18n.Tr "oc cli"}}</label>
 									<input id="cli" name="cli" autofocus required>
 								</div>
-								<div class="required inline field">
-									<label for="kubelet">{{.i18n.Tr "kubelet"}}</label>
-									<input id="kubelet" name="kubelet" autofocus required>
-								</div>																																													
 								{{ if .IsAdmin }}
 								<div class="inline field">
 									<label></label>

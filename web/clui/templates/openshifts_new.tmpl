@@ -1,16 +1,6 @@
 {{template "_head" .}}
 <script type="text/javascript">
 
-    $("#storbackend").dropdown({
-        onChange:function(a,b){
-            if( b == "FCP"){
-                $( ".lbconfig, .bootconfig, .masterconfig, .workerconfig" ).hide();
-            }else{
-                $( ".lbconfig, .bootconfig, .masterconfig, .workerconfig" ).show();
-            }
-        }
-    });
-
 </script>
 
 <div class="admin user">
@@ -94,33 +84,14 @@
 									  </div>
 									</div>
 								</div>
-								<div class="required inline field">
+								<div class="required inline field" >
 									<label for="nworkers">{{.i18n.Tr "Number of Workers"}}</label>
 									<input id="nworker"  name="nworkers" value="2" required>
 								</div>
-								<div class="required inline field">
-									<label for="version">{{.i18n.Tr "Version"}}</label>
-									<div class="ui selection dropdown">
-									  <input id="version" name="version" type="hidden" required>
-									  <i class="dropdown icon"></i>
-									  <div class="default text">Version</div>
-									  <div class="menu">
-										<div class="item" data-value=4.6 data-text=4.6>
-										  4.6
-										</div>
-										<div class="item" data-value=4.5 data-text=4.5>
-										  4.5
-										</div>
-										<div class="item" data-value=4.4 data-text=4.4>
-										  4.4
-										</div>
-									  </div>
-									</div>
-								</div>
-                                                                <div class="inline field">
+                                                                <div class="required inline field checkregistry" >
                                                                         <label for="registry">{{.i18n.Tr "Registry"}}</label>
-                                                                        <div class="ui selection dropdown">
-                                                                          <input id="registry" name="registry" type="hidden" required>
+                                                                        <div class="ui selection dropdown" id="checkregistry">
+                                                                          <input id="registry" name="registry" type="hidden">
                                                                           <i class="dropdown icon"></i>
                                                                           <div class="default text">{{.i18n.Tr "None"}}</div>
                                                                           <div class="menu">
@@ -134,6 +105,8 @@
                                                                           </div>
                                                                         </div>
                                                                 </div>
+
+
 								<div class="required inline field">
 									<label for="lflavor">{{.i18n.Tr "LB_Flavor"}}</label>
 									<div class="ui selection dropdown">
@@ -210,22 +183,10 @@
 									  </div>
 									</div>
 								</div>
-								<div class="required inline field">
-									<label>{{.i18n.Tr "Pull Secret"}}</label>
-									<textarea id="secret" name="secret" autocomplete="off" required></textarea>
-								</div>
-                                                                <div class="inline field">
-                                                                        <label>{{.i18n.Tr "additionalTrustBundle"}}</label>
-                                                                        <textarea id="atbundle" name="atbundle" autocomplete="off"></textarea>
-                                                                </div>
-                                                                <div class="inline field">
-                                                                        <label>{{.i18n.Tr "imageContentSources"}}</label>
-                                                                        <textarea id="icsources" name="icsources" autocomplete="off"></textarea>
-                                                                </div>
-								<div class="inline field">
-									<label></label>
-									<button class="ui green button">{{.i18n.Tr "Create New Openshift Cluster"}}</button>
-								</div>
+                                <div class="inline field">
+                                        <label></label>
+                                        <button class="ui green button">{{.i18n.Tr "Create New Openshift Cluster"}}</button>
+                                </div>
 							</div>
 						</form>
 					</div>

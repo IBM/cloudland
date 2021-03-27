@@ -42,7 +42,7 @@
 			                        <td>{{.Children}}</td>
 			                        <td>{{.HostIP}}</td>
 			                        <td>{{.Status}}</td>
-			                        <td>{{.Zone.Name}}</td>
+			                        <td>{{ if .Zone}}{{.Zone.Name}}{{end}}</td>
 			                        <td>{{.Resource.Cpu}}/<br>{{.Resource.CpuTotal}}</td>
 			                        <td>{{.Resource.Memory}}/<br>{{.Resource.MemoryTotal}}</td>
 			                        <td>{{.Resource.Disk}}/<br>{{.Resource.DiskTotal}}</td>

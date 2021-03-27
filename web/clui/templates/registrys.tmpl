@@ -25,13 +25,7 @@
 			                        <th>{{.i18n.Tr "ID"}}</th>
 			                        <th>{{.i18n.Tr "Label"}}</th>
 			                        <th>{{.i18n.Tr "OcpVersion"}}</th>
-			                        <th>{{.i18n.Tr "RegistryContent"}}</th>
-                                                <th>{{.i18n.Tr "RHCOS initramfs"}}</th>
-                                                <th>{{.i18n.Tr "RHCOS kernel"}}</th>
-                                                <th>{{.i18n.Tr "RHCOS image"}}</th>
-                                                <th>{{.i18n.Tr "OCP installer"}}</th>
-                                                <th>{{.i18n.Tr "oc cli"}}</th>
-                                                <th>{{.i18n.Tr "kubelet"}}</th>
+			                        <th>{{.i18n.Tr "RegistryContent"}}</th>                                                
                                     <th>{{.i18n.Tr "Delete"}}</th>
 		                        </tr>
 	                        </thead>
@@ -39,16 +33,10 @@
                                 {{ $Link := .Link }}
                                 {{ range .Registrys }}
 		                        <tr>
-			                        <td>{{.ID}}</td>
-			                        <td>{{.Label}}</td>
+			                        <td><a href="{{$Link}}/{{.ID}}">{{.ID}}</a></td>
+			                        <td><a href="{{$Link}}/{{.ID}}">{{.Label}}</a></td>
 			                        <td>{{.OcpVersion}}</td>
-			                        <td>{{.RegistryContent}}</td>
-                                                <td>{{.Initramfs}}</td>
-                                                <td>{{.Kernel}}</td>
-                                                <td>{{.Image}}</td>
-                                                <td>{{.Installer}}</td>
-                                                <td>{{.Cli}}</td>
-                                                <td>{{.Kubelet}}</td>
+			                        <td>{{.RegistryContent}}</td>                                             
                                     <td><div class="delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}"><i class="dark purple trash alternate outline icon"></i></div></td>
 		                        </tr>
                                 {{ end }}
