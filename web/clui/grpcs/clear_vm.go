@@ -36,7 +36,7 @@ func ClearVM(ctx context.Context, job *model.Job, args []string) (status string,
 	}
 	reason := ""
 	instance := &model.Instance{Model: model.Model{ID: int64(instID)}}
-	err = db.Take(instance).Error
+	err = db.Preload("Interfaces").Preload("Interfaces.Address").Preload("Interfaces.Address.Subnet").Take(instance).Error
 	if err != nil {
 		log.Println("Invalid instance ID", err)
 		reason = err.Error()
@@ -46,6 +46,11 @@ func ClearVM(ctx context.Context, job *model.Job, args []string) (status string,
 		"status": "deleted",
 		"reason": reason}).Error
 	if err != nil {
+		return
+	}
+	err = sendFdbRules(ctx, instance.Interfaces, instance.Hyper, "/opt/cloudland/scripts/backend/del_fwrule.sh")
+	if err != nil {
+		log.Println("Failed to send clear fdb rules", err)
 		return
 	}
 	return

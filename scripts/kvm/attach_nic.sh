@@ -21,3 +21,8 @@ if [ $? -ne 0 ]; then
 fi
 ./create_sg_chain.sh $nic_name $vm_ip $vm_mac
 ./apply_sg_rule.sh $nic_name
+
+vx_dev=/sys/devices/virtual/net/v-$vlan
+if [ -d  "$vx_dev"  ]; then
+    sql_exec "insert into vtep (instance, vni, inner_ip, inner_mac, outer_ip) values ('$vm_ID', '$vlan', '$vm_ip', '$vm_mac', '127.0.0.1')"
+fi
