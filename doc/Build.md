@@ -11,6 +11,10 @@ A Linux build server (For s390x, like LinuxOne, please use RedHat Enterprise Lin
       - For web/clui
 2. git to access GitHub
 3. rpmbuild to build RPM package (optional)
+In short   
+```
+yum -y install git golang rpmbuild
+```
 
 ## Build binaries and RPM package
 ```
