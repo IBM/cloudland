@@ -10,18 +10,7 @@ fi
 
 # Install tools
 yum groupinstall -y "Development Tools"
-yum install epel-release
-yum install -y git jq
-grep -q 'release 7' /etc/redhat-release
-if [ $? -eq 0 ]; then
-    wget https://github.com/Kitware/CMake/releases/download/v3.20.0/cmake-3.20.0-linux-x86_64.sh -O /root/cmake.sh
-    chmod +x /root/cmake.sh
-    /root/cmake.sh --skip-license --prefix=/usr/local
-    export PATH=/usr/local/bin:$PATH
-    yum -y install centos-release-scl
-    yum -y install devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-binutils
-    source /opt/rh/devtoolset-9/enable
-fi
+yum install -y cmake git jq
 
 # grpc target folder
 rm -rf /root/cloudland-grpc
@@ -97,6 +86,7 @@ mkdir -p "cmake/build"
 pushd "cmake/build"
 cmake \
   -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_PREFIX_PATH="/root/cloudland-grpc/usr/local" \
   -DgRPC_INSTALL=ON \
   -DgRPC_BUILD_TESTS=OFF \
   -DgRPC_CARES_PROVIDER=package \
@@ -119,4 +109,5 @@ commitID=$(cat commit)
 tar czf grpc-${commitID}.tar.gz usr
 
 # Install grpc to /usr/local
-#tar xzf grpc-${commitID}.tar.gz -C /
+# tar xzf grpc-${commitID}.tar.gz -C /
+

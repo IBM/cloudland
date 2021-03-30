@@ -8,44 +8,7 @@ if [[ `whoami` != "root" ]]; then
     exit -1
 fi
 
-# Install tools
-yum groupinstall -y "Development Tools"
-yum install epel-release
-yum install -y git jq
-grep -q 'release 7' /etc/redhat-release
-if [ $? -eq 0 ]; then
-    wget https://github.com/Kitware/CMake/releases/download/v3.20.0/cmake-3.20.0-linux-x86_64.sh -O /root/cmake.sh
-    chmod +x /root/cmake.sh
-    /root/cmake.sh --skip-license --prefix=/usr/local
-    export PATH=/usr/local/bin:$PATH
-    yum -y install centos-release-scl
-    yum -y install devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-binutils
-    source /opt/rh/devtoolset-9/enable
-fi
-
-# grpc target folder
-rm -rf /root/cloudland-grpc
-mkdir -p /root/cloudland-grpc
-
-# Get release tag from input
-release_tag="latest"
-if [[ $# -eq 1 ]]; then
-    release_tag=$1
-fi
-
-# Clear grpc
-rm -rf /root/grpc
-# Download source code
-cd /root
-if [[ "$release_tag" = "latest" ]]; then
-    release_tag=$(curl -s https://api.github.com/repos/grpc/grpc/releases/latest | jq -r .tag_name)
-    echo "$release_tag" > /root/cloudland-grpc/release_tag
-fi
-git clone -b "$release_tag" https://github.com/grpc/grpc
-
-# Update submodule
 cd /root/grpc
-git submodule update --init
 
 # Get and save commitID
 commitID=$(git rev-parse --short HEAD 2>/dev/null)
@@ -97,6 +60,7 @@ mkdir -p "cmake/build"
 pushd "cmake/build"
 cmake \
   -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_PREFIX_PATH="/root/cloudland-grpc/usr/local" \
   -DgRPC_INSTALL=ON \
   -DgRPC_BUILD_TESTS=OFF \
   -DgRPC_CARES_PROVIDER=package \
@@ -119,4 +83,4 @@ commitID=$(cat commit)
 tar czf grpc-${commitID}.tar.gz usr
 
 # Install grpc to /usr/local
-#tar xzf grpc-${commitID}.tar.gz -C /
+# tar xzf grpc-${commitID}.tar.gz -C /
