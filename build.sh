@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -ex
-
 # Check root
 if [[ `whoami` != "root" ]]; then
     echo "Not root"
@@ -110,8 +108,11 @@ function get_noVNC()
     chown -R cland:cland $cland_root_dir
 }
 
+ls
+
 # create user cland if it is necessary
-grep -E "cland" /etc/passwd > /dev/null 2>&1
+grep cland /etc/passwd
+
 if [ $? -ne 0 ]; then
     useradd cland
     echo 'cland ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers.d/cland

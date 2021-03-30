@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -ex
-
 # Check root
 if [[ `whoami` != "root" ]]; then
     echo "Not root"
@@ -31,7 +29,7 @@ if [[ "$commitID" = "" ]]; then
     echo "No grpc found from /root/cloudland-grpc. Refer to build_grpc.sh to generate the package."
     exit -1
 fi
-cp /root/cloudland-grpc/grpc-$(commitID).tar.gz /tmp/grpc.tar.gz
+cp /root/cloudland-grpc/grpc-${commitID}.tar.gz /tmp/grpc.tar.gz
 
 # prepare cloudland package
 rm -rf /tmp/opt
