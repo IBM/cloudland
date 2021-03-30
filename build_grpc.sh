@@ -12,36 +12,51 @@ fi
 yum groupinstall -y "Development Tools"
 yum install -y cmake git jq
 
-# grpc target folder
-rm -rf /root/cloudland-grpc
-mkdir -p /root/cloudland-grpc
-
 # Get release tag from input
 release_tag="latest"
 if [[ $# -eq 1 ]]; then
     release_tag=$1
 fi
 
-# Clear grpc
-rm -rf /root/grpc
-# Download source code
-cd /root
-if [[ "$release_tag" = "latest" ]]; then
-    release_tag=$(curl -s https://api.github.com/repos/grpc/grpc/releases/latest | jq -r .tag_name)
-    echo "$release_tag" > /root/cloudland-grpc/release_tag
+# Download or not ?
+download=1
+latest_release=$(curl -s https://api.github.com/repos/grpc/grpc/releases/latest | jq -r .tag_name)
+if [[ -e "/root/cloudland-grpc/release_tag" ]]; then
+    current_release=$(cat /root/cloudland-grpc/release_tag)
+    if [[ "$current_release" = "$release_tag" || "$current_release" = "$latest_release" ]]; then
+        download=0
+    fi
 fi
-git clone -b "$release_tag" https://github.com/grpc/grpc
 
-# Update submodule
-cd /root/grpc
-git submodule update --init
+if [[ $download -eq 1 ]]; then
+    # grpc target folder
+    rm -rf /root/cloudland-grpc
+    mkdir -p /root/cloudland-grpc
 
-# Get and save commitID
-commitID=$(git rev-parse --short HEAD 2>/dev/null)
-if [ "$commitID" = "" ]; then
-    commitID="NaN"
+    # Clear grpc
+    rm -rf /root/grpc
+    
+    # Download source code
+    cd /root
+    if [[ "$release_tag" = "latest" ]]; then
+        release_tag=$(curl -s https://api.github.com/repos/grpc/grpc/releases/latest | jq -r .tag_name)
+        echo "$release_tag" > /root/cloudland-grpc/release_tag
+    fi
+    git clone -b "$release_tag" https://github.com/grpc/grpc
+
+    # Update submodule
+    cd /root/grpc
+    git submodule update --init
+
+    # Get and save commitID
+    commitID=$(git rev-parse --short HEAD 2>/dev/null)
+    if [ "$commitID" = "" ]; then
+        commitID="NaN"
+    fi
+    echo "$commitID" > /root/cloudland-grpc/commit
 fi
-echo "$commitID" > /root/cloudland-grpc/commit
+
+pushd "/root/grpc"
 
 # Install openssl to replace boringssl
 yum install -y openssl-devel
@@ -86,6 +101,7 @@ mkdir -p "cmake/build"
 pushd "cmake/build"
 cmake \
   -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_PREFIX_PATH="/root/cloudland-grpc/usr/local" \
   -DgRPC_INSTALL=ON \
   -DgRPC_BUILD_TESTS=OFF \
   -DgRPC_CARES_PROVIDER=package \
@@ -109,3 +125,5 @@ tar czf grpc-${commitID}.tar.gz usr
 
 # Install grpc to /usr/local
 tar xzf grpc-${commitID}.tar.gz -C /
+
+popd
