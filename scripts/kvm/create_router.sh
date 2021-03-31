@@ -16,6 +16,7 @@ vrrp_ip=$7
 role=$8
 
 [ -z "$router" -o -z "$ext_ip" -o -z "$int_ip" ] && exit 1
+[ "$proxy_mode" = "yes" -a "$role" = "SLAVE" ] && exit 0
 
 ip netns add $router
 #ip netns exec $router iptables -A INPUT -m mark --mark 0x1/0xffff -j ACCEPT
@@ -94,7 +95,7 @@ case \$STATE in
 esac
 EOF
 chmod +x $notify_sh
-./set_gateway.sh $router $vrrp_ip $vrrp_vni hard
+./set_gateway.sh "$router" "$vrrp_ip" "" "$vrrp_vni" "hard"
 pid_file=$router_dir/keepalived.pid
 ip netns exec $router keepalived -f $vrrp_conf -p $pid_file -r $router_dir/vrrp.pid -c $router_dir/checkers.pid
 
@@ -103,11 +104,12 @@ i=0
 n=$(jq length <<< $interfaces)
 while [ $i -lt $n ]; do
     addr=$(jq -r .[$i].ip_address <<< $interfaces)
+    mac=$(jq -r .[$i].mac_address <<< $interfaces)
     vni=$(jq -r .[$i].vni <<< $interfaces)
     routes=$(jq -r .[$i].routes <<< $interfaces)
-    ./set_gw_route.sh $router $addr $vni soft <<< $routes
+    ./set_gw_route.sh $router $addr $mac $vni soft <<< $routes
     let i=$i+1
 done
 
 ip netns exec $router bash -c "echo 1 >/proc/sys/net/ipv4/ip_forward"
-echo "|:-COMMAND-:| $(basename $0) '$ID' '$SCI_CLIENT_ID' '$role'"
+echo "|:-COMMAND-:| $(basename $0) '$ID' '$SCI_CLIENT_ID' '$role' '$proxy_mode'"

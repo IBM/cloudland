@@ -39,11 +39,46 @@
     }
 
 	function UpdateTable(){
+                var queryURL = window.location.search;
+                var offset;
+                var searchURL;
+                if(typeof queryURL  == "undefined" || queryURL == null || queryURL == ""){
+                    searchURL = "/UpdateTable?offset=0";
+                }else{
+                    offset = queryURL.split("=")[1];
+                    searchURL = "/UpdateTable?offset="+offset;
+                }
 		$.ajax({
 			type: "GET",
-			url: "/UpdateTable",
+			url: searchURL,
 			success: function (data) {
-				var html = "";
+                                var page1 = '<a class="active item"><a href="/instances?offset=';
+                                var page2 = '">';
+                                var page3 = '</a></a>';
+                                var page_content =  "";
+                                var instants_num = data.instancedata.length;
+                                var temp_num = 32/inst_num;                                
+                                var count = Math.floor(temp_num);
+                                var temp_num2;
+                                var temp_num3;
+                                console.log(temp_num);
+                                console.log(count);
+                                if(count>1){
+                                    for(var k=0;k<count;k++){
+                                        temp_num2 = k*16;
+                                        temp_num3 = k+1;
+                                        page_content = page_content+page1+ temp_num2 +page2+temp_num3+page3;
+            
+                                    }
+                                    if(temp_num>count){
+                                        count = count*16;
+                                        temp_num3 = temp_num3+1;
+                                        page_content = page_content+page1+ count +page2+temp_num3+page3;
+                                    } 
+                                }
+                                $("#page_content").html(page_content);
+
+                                var html = "";
 				for(var i = 0; i < data.instancedata.length; i++){
 					html += "<tr>" +
 					"<td>";
@@ -286,7 +321,7 @@
 		            </div>
 		            <div class="ui attached segment">
                                  {{ if .Pages}}
-                                 <div class="ui pagination menu">
+                                 <div class="ui pagination menu" id="page_content" >
                                      {{ range  $index, $element := .Pages }}
                                          <a class="active item">
                                              <a href="{{$Link}}?offset={{$element.Offset}}">{{ $element.Number }}</a>

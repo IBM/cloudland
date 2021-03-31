@@ -1,6 +1,36 @@
 checkpr(){
+  whoami
+  cd /opt
+  sudo chown -R cland:cland cloudland/
+  echo "PENDING" > ./cloudland/web/clui/public/test_status
+  echo "Build grpc"
+  sudo ls -lrt /root/cloudland-grpc
+  echo "$?"
+  sudo ls -lrt /root/cloudland-grpc | grep 'grpc.*tar.gz$'
+  if [ $? -eq 0 ];then
+	echo "grpc package existed"   
+        current_latest_release=$(sudo cat /root/cloudland-grpc/release_tag | awk '{print substr($1,2)}')
+        installed_release=$(sudo cat /root/grpc/Makefile | grep "CPP_VERSION = " | awk '{print $3}') 
+	echo "$current_latest_release" >> ~/sort_release_`date +%H%M`.log
+        echo "$installed_release" >> ~/sort_release_`date +%H%M`.log
+	cat ~/sort_release_`date +%H%M`.log
+	if [ "$(cat ~/sort_release_`date +%H%M`.log | sort -V | head -n 1)" != "$current_latest_release" ];then
+            cd /opt/cloudland
+	    sudo ./build_grpc.sh
+        fi       
+  else
+       echo "grpc package not existed"
+       cd /opt/cloudland
+       sudo ./build_grpc.sh
+  fi
+  echo "Build Prequisites"
+  cd /opt/cloudland
+  sudo ./build.sh
+  echo "Build rpm Package"
+  sudo ./build_rpm.sh 1.1 1.0
+  echo "Deploy cloudland"
   cd /opt/cloudland/deploy/
-  ./allinone.sh
+  ./deploy.sh
   if [ $? -ne 0 ]
   then
     sudo echo "FAILED" > ../web/clui/public/test_status
@@ -51,7 +81,7 @@ pend(){
     then
       echo "RUNNING"
       return 0
-    elif [ $i -gt 180 ]
+    elif [ $i -gt 100 ]
     then
       echo "TIMEOUT"
       exit 1
@@ -60,10 +90,14 @@ pend(){
     sleep 10
   done
 }
-
+# check status
 if [ ! -n "$1" ]||[ "$1" == "pull_request" ]
 then
+<<<<<<< HEAD
   checkpr
+=======
+  checkpr $2 $3 $4
+>>>>>>> 0d3ebf5b59469138e687d0d0dbaedd9d5b244b83
 elif [ "$1" == "test" ]
 then
   checktest $2

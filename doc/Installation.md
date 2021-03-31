@@ -92,7 +92,7 @@ Note:
 ## Suggested OS for build server, controller and compute nodes
 - Red Hat Enterprise Linux 8.3 or above
 ## Controller:
-1. yum is used to install following softwares: 
+1. yum is used to install following softwares, and you may need to install *epel* repo first: 
    - **ansible jq gnutls-utils iptables iptables-services postgresql postgresql-server postgresql-contrib**
 2. user '**cland**' is added and granted (for ansible deployment)
    ```
@@ -117,7 +117,7 @@ Note:
    ```
 
 ## Compute nodes:
-1. yum is used to install following softwares:
+1. yum is used to install following softwares, and you may need to install *epel* repo first:
    1. **sqlite jq mkisofs NetworkManager net-tools iptables iptables-services**
    2. For KVM on x86_64 and KVM on s390x: 
       1. **Compute node uses KVM to manage virtual machines**
@@ -132,6 +132,7 @@ Note:
 3. The **cland.key.pub** from controller are added to the **/home/cland/.ssh/authorized_keys** on each compute node
     - use ssh-copy-id from controller
     - or, copy cland.key.pub from controller and paste the content to the /home/cland/.ssh/authorized_keys on each compute node directly
+    - verify if ```ssh -i ~/.ssh/cland.key cland@compute-node-X``` from cland@control-node can work without password prompt
 4. (Current release) Network requirement for KVM and KVM on Z:
    1. Refer to [Operation](Operation.md) to configure the network manually. 
    2. When configure the [conf.json](#confjson), set the "network_external_vlan" and "network_internal_vlan" according to the network configuration, like bridge 5000 and 5010.
