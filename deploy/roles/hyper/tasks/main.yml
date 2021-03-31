@@ -304,3 +304,9 @@
     reload: yes
   when: virt_type != 'zvm'
   tags: [sysctl]
+
+- name: Bridge the external network
+  script: bridge_ext.sh 
+  when: bridge_external = 'true'
+  tags: [bridge_ext]
+  tags: [sysctl]

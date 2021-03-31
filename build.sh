@@ -1,5 +1,24 @@
 #!/bin/bash
 
+# Check root
+if [[ `whoami` != "root" ]]; then
+    echo "Not root"
+    exit -1
+fi
+
+# Build grpc
+if [[ $# -ge 1 && "$1" = "grpc" ]]; then
+    release_tag="latest"
+    if [[ $# -ge 2 ]]; then 
+        release_tag=$2
+    fi
+    /bin/bash /opt/cloudland/build_grpc.sh "$release_tag"
+fi
+
+# Install tools
+yum groupinstall -y "Development Tools"
+yum install -y git golang
+
 cland_root_dir=/opt/cloudland
 
 # folders used by cloudland
@@ -30,7 +49,7 @@ function inst_cland()
 {
     # Setup grpc env
     export PATH=$PATH:/usr/local/bin
-    export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+    export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig
 
     # Build and install cland to /opt/cloudland/bin and /opt/cloudland/lib64
     cd $cland_root_dir/src
@@ -83,13 +102,17 @@ EOF
 # Download noVNC
 function get_noVNC()
 {
+    rm -rf "$cland_root_dir/web/clui/public/novnc"
     git clone https://github.com/novnc/noVNC.git $cland_root_dir/web/clui/public/novnc
     rm -rf $cland_root_dir/web/clui/public/novnc/.git*
     chown -R cland:cland $cland_root_dir
 }
 
+ls
+
 # create user cland if it is necessary
-grep -E "cland" /etc/passwd > /dev/null 2>&1
+grep cland /etc/passwd
+
 if [ $? -ne 0 ]; then
     useradd cland
     echo 'cland ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers.d/cland

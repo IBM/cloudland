@@ -335,6 +335,12 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 			ip = cidr.Inc(ip)
 		}
 	}
+	// Create record for gateway
+	address := &model.Address{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Address: gateway, Netmask: netmask, Type: "ipv4", SubnetID: subnet.ID}
+	err = db.Create(address).Error
+	if err != nil {
+		log.Println("Database create address for gateway failed, %v", err)
+	}
 	netlink := &model.Network{Vlan: int64(vlanNo)}
 	if vlanNo < 4096 {
 		netlink.Type = "vlan"
@@ -372,7 +378,7 @@ func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subn
 			return
 		}
 		control := fmt.Sprintf("inter=")
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_net.sh '%d' '%s' '%s' '%s' '%s' '%d' 'FIRST' '%s' '%s'", netlink.Vlan, subnet.Network, subnet.Netmask, subnet.Gateway, dhcp1.Address.Address, subnet.ID, subnet.NameServer, subnet.DomainSearch)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_net.sh '%d' '%s' '%s' '%s' '%s' '%d' 'FIRST' '%s' '%s' '%s'", netlink.Vlan, subnet.Network, subnet.Netmask, subnet.Gateway, dhcp1.Address.Address, subnet.ID, subnet.NameServer, subnet.DomainSearch, dhcp1.MacAddr)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Failed to create first dhcp", err)
@@ -387,7 +393,7 @@ func execNetwork(ctx context.Context, netlink *model.Network, subnet *model.Subn
 			return
 		}
 		control := fmt.Sprintf("inter=")
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_net.sh '%d' '%s' '%s' '%s' '%s' '%d' 'SECOND' '%s' '%s'", netlink.Vlan, subnet.Network, subnet.Netmask, subnet.Gateway, dhcp2.Address.Address, subnet.ID, subnet.NameServer, subnet.DomainSearch)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_net.sh '%d' '%s' '%s' '%s' '%s' '%d' 'SECOND' '%s' '%s' '%s'", netlink.Vlan, subnet.Network, subnet.Netmask, subnet.Gateway, dhcp2.Address.Address, subnet.ID, subnet.NameServer, subnet.DomainSearch, dhcp2.MacAddr)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Failed to create second dhcp", err)

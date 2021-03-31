@@ -21,7 +21,7 @@ cat /proc/net/dev | grep -q "\<v-$vlan\>:"
 if [ $? -ne 0 ]; then
     if [ $vlan -ge 4095 ]; then
         [ -z "$interface" ] && interface=$vxlan_interface
-        nmcli connection add con-name v-$vlan type vxlan id $vlan ifname v-$vlan remote $vxlan_mcast_addr dev $interface ipv4.method disabled master $vm_br
+        nmcli connection add con-name v-$vlan type vxlan id $vlan vxlan.proxy $proxy_mode ifname v-$vlan remote $vxlan_mcast_addr dev $interface ipv4.method disabled master $vm_br
     else
         [ -z "$interface" ] && interface=$vlan_interface
         nmcli connection add con-name v-$vlan type vlan id $vlan ifname v-$vlan dev $interface ipv4.method disabled master $vm_br

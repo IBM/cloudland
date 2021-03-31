@@ -124,14 +124,7 @@ fi
 mkdir -p $xml_dir/$vm_ID
 parmfile=$xml_dir/$vm_ID/parmfile
 cat > $parmfile <<EOF
-rd.neednet=1 coreos.inst=yes coreos.inst.install_dev=dasda
-coreos.inst.image_url=http://$service:8080/rhcos.raw.gz
-coreos.inst.ignition_url=http://$service:8080/ignition/${role}.ign
-rd.dasd=0.0.0100
-ip=$ip_address::$gateway:$netmask:::none
-nameserver=$service
-rd.znet=qeth,0.0.1000,0.0.1001,0.0.1002,layer2=1,portno=0
-zfcp.allow_lun_scan=0 cio_ignore=all,!condev
+rd.neednet=1 coreos.inst.install_dev=dasda coreos.live.rootfs_url=http://$service:8080/rhcos-rootfs.img coreos.inst.ignition_url=http://$service:8080/ignition/${role}.ign rd.dasd=0.0.0100 ip=$ip_address::$gateway:$netmask:::none nameserver=$service rd.znet=qeth,0.0.1000,0.0.1001,0.0.1002,layer2=1,portno=0 zfcp.allow_lun_scan=0 cio_ignore=all,!condev
 EOF
 
 vmur punch -r -u $vm_ID -N RHCOS.KERNEL $image_cache/$kernel

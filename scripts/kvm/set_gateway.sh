@@ -3,13 +3,14 @@
 cd `dirname $0`
 source ../cloudrc
 
-[ $# -lt 3 ] && echo "$0 <router> <gateway> <vni> [hard | soft]" && exit -1
+[ $# -lt 4 ] && echo "$0 <router> <gateway> <mac> <vni> [hard | soft]" && exit -1
 
 router=$1
 [ "${router/router-/}" = "$router" ] && router=router-$1
 addr=$2
-vni=$3
-mode=$4
+mac=$3
+vni=$4
+mode=$5
 [ -z "$mode" ] && mode='soft'
 
 bcast=$(ipcalc -b $addr | cut -d= -f2)
@@ -30,6 +31,7 @@ sed -i "\#.* dev $iface#d" $vrrp_conf
 #    ip netns exec $router ip addr del $addr dev $iface
 #done
 
+ip netns exec $router ip link set $iface address $mac
 if [ "$mode" = "hard" ]; then
     ip netns exec $router ip addr add $addr brd $bcast dev $iface
 else

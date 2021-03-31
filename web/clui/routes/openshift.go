@@ -383,13 +383,13 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, cookie, ha
 	userdata := getUserdata("ocd")
 	userdata = fmt.Sprintf("%s\ncurl -k -O '%s/misc/openshift/ocd.sh'\nchmod +x ocd.sh", userdata, endpoint)
 	/*
-		parts := fmt.Sprintf("pullSecret: '%s'\n", secret)
-		if atbundle != "" {
-			parts = fmt.Sprintf("%s\n%s\n", parts, atbundle)
-		}
-		if icsources != "" {
-			parts = fmt.Sprintf("%s\n%s\n", parts, icsources)
-		}
+		        parts := fmt.Sprintf("pullSecret: '%s'\n", secret)
+			if atbundle != "" {
+				parts = fmt.Sprintf("%s\n%s\n", parts, atbundle)
+			}
+			if icsources != "" {
+				parts = fmt.Sprintf("%s\n%s\n", parts, icsources)
+			}
 	*/
 	parts := fmt.Sprintf("\n%s\n", registryContent)
 	encParts := base64.StdEncoding.EncodeToString([]byte(parts))
