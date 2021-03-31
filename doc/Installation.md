@@ -117,7 +117,7 @@ Note:
    ```
 
 ## Compute nodes:
-1. yum is used to install following softwares:
+1. yum is used to install following softwares, you may need to install *epel* repo first:
    1. **sqlite jq mkisofs NetworkManager net-tools iptables iptables-services**
    2. For KVM on x86_64 and KVM on s390x: 
       1. **Compute node uses KVM to manage virtual machines**
