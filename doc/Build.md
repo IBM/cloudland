@@ -1,7 +1,7 @@
 # Build from source (for development) and Build RPM package
 
 ## Prerequisite
-A Linux build server (For s390x, like LinuxOne, please use RedHat Enterprise Linux 8.3+) with following tools installed:
+A Linux build server (For s390x, like LinuxOne, please use RedHat Enterprise Linux 8.3+, for x86-64, the OS needs to be 7.5+) with following tools installed:
 1. Build tools:
    1. gRPC C++ implementation:
       - Installation path: /usr/local (dafault gRPC path to build RPM package)
@@ -20,7 +20,7 @@ git clone https://github.com/IBM/cloudland.git /opt/cloudland
 # Go to the source code folder
 cd /opt/cloudland
 
-# Build grpc library
+# Build grpc library, skip this step if this is built already
 ./build_grpc.sh
 
 # Build the binaries. Continue the installation if the build server is also the controller.
