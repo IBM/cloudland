@@ -659,6 +659,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet
 			Service:    service,
 		}
 		ocp = append(ocp, od)
+		virtType = openshift.InfrastructureType
 	}
 	instData := &InstanceData{
 		Userdata: userdata,

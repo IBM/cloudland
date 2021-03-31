@@ -1,20 +1,9 @@
 checkpr(){
-  sudo echo "PENDING" > /opt/test_status
-  BRANCHNAME=$1
-  PRSLUG=$2
-  echo "Deploying new environment"
-  sudo systemctl stop hypercube
-  sudo systemctl stop cloudland
-  sudo systemctl stop cloudlet
-  sudo systemctl stop scid
-  cd /opt/
-  sudo rm -rf ./cloudland/
-  sudo rm -rf ./libvirt-console-proxy/
-  sudo rm -rf ./sci/
-  sudo git clone --branch=$BRANCHNAME https://github.com/$PRSLUG.git
-  sudo touch ./cloudland/web/clui/public/test_status
+  VERSION=$1
+  RELEASE=$2
+  cd /opt
   sudo chown -R cland:cland cloudland/
-  sudo echo "PENDING" > ./cloudland/web/clui/public/test_status
+  echo "PENDING" > ./cloudland/web/clui/public/test_status
   echo "Build grpc"
   sudo ls -lrt /root/cloudland-grpc
   echo "$?"
@@ -39,7 +28,7 @@ checkpr(){
   cd /opt/cloudland
   sudo ./build.sh
   echo "Build rpm Package"
-  sudo ./build_rpm.sh 1.1 1.0
+  sudo ./build_rpm.sh $VERSION $RELEASE
   echo "Deploy cloudland"
   cd /opt/cloudland/deploy/
   ./deploy.sh
@@ -81,7 +70,6 @@ checktest(){
     sleep 2
   done
 }
-
 pend(){
   i=0
   while :
@@ -106,7 +94,7 @@ pend(){
 # check status
 if [ ! -n "$1" ]||[ "$1" == "pull_request" ]
 then
-  checkpr $2 $3 $4
+  checkpr $2 $3
 elif [ "$1" == "test" ]
 then
   checktest $2
