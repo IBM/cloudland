@@ -92,7 +92,7 @@ Note:
 ## Suggested OS for build server, controller and compute nodes
 - Red Hat Enterprise Linux 8.3 or above
 ## Controller:
-1. yum is used to install following softwares: 
+1. yum is used to install following softwares, and you may need to install *epel* repo first: 
    - **ansible jq gnutls-utils iptables iptables-services postgresql postgresql-server postgresql-contrib**
 2. user '**cland**' is added and granted (for ansible deployment)
    ```
@@ -117,7 +117,7 @@ Note:
    ```
 
 ## Compute nodes:
-1. yum is used to install following softwares, you may need to install *epel* repo first:
+1. yum is used to install following softwares, and you may need to install *epel* repo first:
    1. **sqlite jq mkisofs NetworkManager net-tools iptables iptables-services**
    2. For KVM on x86_64 and KVM on s390x: 
       1. **Compute node uses KVM to manage virtual machines**
