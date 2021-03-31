@@ -25,7 +25,7 @@ yum install -y rsync
 
 # prepare grpc
 commitID=$(cat /root/cloudland-grpc/commit)
-if [[ "$commitID" = "" ]]; then
+if [[ "$commitID" = "" || ! -e "/root/cloudland-grpc/grpc-${commitID}.tar.gz" ]]; then
     echo "No grpc found from /root/cloudland-grpc. Refer to build_grpc.sh to generate the package."
     exit -1
 fi
