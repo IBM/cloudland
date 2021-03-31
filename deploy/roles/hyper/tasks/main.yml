@@ -123,7 +123,16 @@
   when: virt_type == 'zvm'
   tags: [be_conf, scripts]
 
+- name: register network_device
+  script: get_netdev.sh "hostvars[inventory_hostname]['ansible_env'].SSH_CONNECTION.split(' ')[2]"
+  register: netdev
+
 - name: create cloudrc local file for kvm on Z
+  vars:
+    network_device: "{{ netdev.stdout }}"
+    zlayer2_interface: "{{ netdev.stdout }}"
+    layer3_device: br5000
+    vnc_device: br5000
   template:
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
@@ -135,6 +144,10 @@
   tags: [be_conf, scripts]
 
 - name: create cloudrc local file for kvm
+  vars:
+    network_device: "{{ netdev.stdout }}"
+    layer3_device: br5000
+    vnc_device: br5000
   template:
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
@@ -307,6 +320,4 @@
 
 - name: Bridge the external network
   script: bridge_ext.sh 
-  when: bridge_external = 'true'
   tags: [bridge_ext]
-  tags: [sysctl]

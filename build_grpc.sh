@@ -10,8 +10,8 @@ fi
 
 # Install tools
 yum groupinstall -y "Development Tools"
-yum install epel-release
-yum install -y git jq
+yum install -y epel-release
+yum install -y git jq wget
 grep -q 'release 7' /etc/redhat-release
 if [ $? -eq 0 ]; then
     wget https://github.com/Kitware/CMake/releases/download/v3.20.0/cmake-3.20.0-linux-x86_64.sh -O /root/cmake.sh
