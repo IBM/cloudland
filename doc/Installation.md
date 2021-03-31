@@ -132,6 +132,7 @@ Note:
 3. The **cland.key.pub** from controller are added to the **/home/cland/.ssh/authorized_keys** on each compute node
     - use ssh-copy-id from controller
     - or, copy cland.key.pub from controller and paste the content to the /home/cland/.ssh/authorized_keys on each compute node directly
+    - verify if ```ssh -i ~/.ssh/cland.key cland@compute-node-X``` from cland@control-node can work without password prompt
 4. (Current release) Network requirement for KVM and KVM on Z:
    1. Refer to [Operation](Operation.md) to configure the network manually. 
    2. When configure the [conf.json](#confjson), set the "network_external_vlan" and "network_internal_vlan" according to the network configuration, like bridge 5000 and 5010.
