@@ -10,6 +10,7 @@ url=$2
 virt_type=$3
 
 state=error
+mkdir -p $image_cache
 image=$image_cache/image-$1
 curl -s $url -o $image
 format=$(qemu-img info $image | grep 'file format' | cut -d' ' -f3)
@@ -18,4 +19,4 @@ format=$(qemu-img info $image | grep 'file format' | cut -d' ' -f3)
 [ $virt_type = "zvm" ] && format=img
 mv $image ${image}.${format}
 #sync_target /opt/cloudland/cache/image
-echo "|:-COMMAND-:| $(basename $0) '$ID' '$state' '$format'"
+#echo "|:-COMMAND-:| $(basename $0) '$ID' '$state' '$format'"

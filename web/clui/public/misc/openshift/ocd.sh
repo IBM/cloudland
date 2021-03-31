@@ -239,7 +239,6 @@ function download_pkgs()
     [ -n "$virt_type" ] && conf_url=${conf_url}.${virt_type}
     wget --no-check-certificate $conf_url -O ocd.conf
     source ocd.conf
-    wget --no-check-certificate -O /usr/share/nginx/html/rhcos.raw.gz $coreos_image_url
     wget --no-check-certificate -O /usr/share/nginx/html/rhcos-rootfs.img $coreos_rootfs_url
     wget --no-check-certificate -O openshift-install-linux.tgz $openshift_installer
     wget --no-check-certificate -O openshift-client-linux.tgz $openshift_client
@@ -288,7 +287,7 @@ sshKey: '$ssh_key'
 $parts
 EOF
     sed -i "/^$/d" install-config.yaml
-    #sed -i "/^{}/d" install-config.yaml
+    sed -i "s/architecture.*$/architecture: s390x/" install-config.yaml
     echo "start to backup"
     mkdir /opt/backup
     cp install-config.yaml /opt/backup
@@ -495,8 +494,8 @@ function wait_ocd()
 }
 
 setenforce Permissive
-curl -I -k $endpoint/misc/openshift/ocd_lb_yum.repo --cookie $cookie | grep '404 Not Found'
-[ $? -ne 0 ] && curl -k $endpoint/misc/openshift/ocd_lb_yum.repo -o /etc/yum.repos.d/oc.repo
+curl -I -k $endpoint/misc/openshift/ocd_lb_yum_${virt_type}.repo --cookie $cookie | grep '404 Not Found'
+[ $? -ne 0 ] && curl -k $endpoint/misc/openshift/ocd_lb_yum_${virt_type}.repo -o /etc/yum.repos.d/oc.repo
 sed -i 's/^SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
 [ $(uname -m) != s390x ] && yum -y install epel-release
 [ "$(uname -m)" = "s390x" ] && yum -y install rng-tools && systemctl start rngd
