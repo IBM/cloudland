@@ -1,5 +1,4 @@
 checkpr(){
-  whoami
   cd /opt
   sudo chown -R cland:cland cloudland/
   echo "PENDING" > ./cloudland/web/clui/public/test_status
