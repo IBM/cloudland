@@ -1,19 +1,4 @@
 checkpr(){
-  sudo echo "PENDING" > /opt/test_status
-  BRANCHNAME=$1
-  PRSLUG=$2
-
-  echo "Deploying new environment"
-  sudo systemctl stop hypercube
-  sudo systemctl stop cloudland
-  sudo systemctl stop cloudlet
-  sudo systemctl stop scid
-  cd /opt/
-  sudo rm -rf ./cloudland/
-  sudo rm -rf ./libvirt-console-proxy/
-  sudo rm -rf ./sci/
-  sudo git clone --branch=$BRANCHNAME https://github.com/$PRSLUG.git
-  sudo echo "PENDING" > ./cloudland/web/clui/public/test_status
   cd /opt/cloudland/deploy/
   ./allinone.sh
   if [ $? -ne 0 ]
@@ -54,12 +39,11 @@ checktest(){
     sleep 2
   done
 }
-
 pend(){
   i=0
   while :
   do
-    status=$(ssh -i skey cland@$1 'cat /opt/test_status')
+    status=$(ssh -i ~/.ssh/skey cland@$1 'cat /opt/test_status')
     if [ "$status" == "PENDING" ]
     then
       echo $status
@@ -79,7 +63,7 @@ pend(){
 
 if [ ! -n "$1" ]||[ "$1" == "pull_request" ]
 then
-  checkpr $2 $3
+  checkpr
 elif [ "$1" == "test" ]
 then
   checktest $2
