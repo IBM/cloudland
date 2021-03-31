@@ -28,7 +28,7 @@ mkdir -p $cland_root_dir/{etc,log,run,cache} $cland_root_dir/cache/{image,instan
 function get_commitid()
 {
     cd $cland_root_dir
-    commitID=$(git rev-parse HEAD 2>/dev/null)
+    commitID=$(git rev-parse --short HEAD 2>/dev/null)
     if [ "$commitID" = "" ]; then
         commitID="not available"
     fi
@@ -108,8 +108,6 @@ function get_noVNC()
     chown -R cland:cland $cland_root_dir
 }
 
-ls
-
 # create user cland if it is necessary
 grep cland /etc/passwd
 
@@ -131,7 +129,28 @@ EOF
 
 get_commitid
 inst_sci
+if [[ ! -d "/opt/sci" ]]; then
+    echo "Error: SCI build failed."
+    exit -1
+fi
+
 inst_cland
+pushd "$cland_root_dir/bin/"
+if [[ ! -e "cloudland" || ! -e "cloudlet" || ! -e "grpcfile" || ! -e "grpcmsg" ]]; then
+    echo "Error: CloudLand build failed."
+    exit -1
+fi
+popd
+
 build_clui
+pushd "$cland_root_dir/web/clui"
+if [[ ! -e "clui" ]]; then
+    echo "Error: CloudLand clui build failed."
+    exit -1
+fi
+popd
+
 inst_console_proxy
 get_noVNC
+
+cd $cland_root_dir
