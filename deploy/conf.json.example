@@ -25,6 +25,10 @@ Example: (description)
             "disk_over_ratio": 1,
             "dns_server": "<ip of the dns server>",
             "domain_name": "<name of the domain>"
+            "network_external_vlan": "<vlan id for external routing, default 5000>",
+            "network_internal_vlan": "<vlan id for internal routing, default 5010>>",
+            "domain_name": "<name of the domain>"
+            "proxy_mode": "<use arp proxy mode or not, default no>"
         },
         {
             "id": 1,

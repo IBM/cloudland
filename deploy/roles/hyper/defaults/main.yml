@@ -7,3 +7,4 @@ multicast_group: 225.10.10.1
 cpu_over_ratio: 1
 mem_over_ratio: 1
 disk_over_ratio: 1
+proxy_mode: no

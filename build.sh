@@ -39,6 +39,7 @@ function get_commitid()
 function inst_sci()
 {
     cd $cland_root_dir/sci
+    source /opt/rh/devtoolset-9/enable
     ./configure
     make
     make install
@@ -50,6 +51,7 @@ function inst_cland()
     # Setup grpc env
     export PATH=$PATH:/usr/local/bin
     export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig
+    source /opt/rh/devtoolset-9/enable
 
     # Build and install cland to /opt/cloudland/bin and /opt/cloudland/lib64
     cd $cland_root_dir/src
@@ -154,3 +156,5 @@ inst_console_proxy
 get_noVNC
 
 cd $cland_root_dir
+
+echo Build completes, you can build rpm package with build_rpm.sh now""
