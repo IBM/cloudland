@@ -82,7 +82,7 @@ su cland << EOF
 
     # Build
     cd $cland_root_dir/web/clui
-    go build
+    CGO_ENABLED=0 go build -a -ldflags '-extldflags "-static"'
 EOF
 
 }
