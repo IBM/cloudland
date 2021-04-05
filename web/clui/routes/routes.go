@@ -21,9 +21,9 @@ import (
 	"strings"
 
 	"github.com/IBM/cloudland/web/clui/model"
+	"github.com/go-macaron/binding"
 	"github.com/go-macaron/i18n"
 	"github.com/go-macaron/session"
-	"github.com/go-macaron/binding"
 	_ "github.com/go-macaron/session/postgres"
 	"github.com/spf13/viper"
 	"gopkg.in/macaron.v1"
@@ -91,7 +91,7 @@ func New() (m *macaron.Macaron) {
 	m.Get("/dashboard/getdata", dashboard.GetData)
 	m.Get("/login", userView.LoginGet)
 	m.Post("/login", userView.LoginPost)
-	m.Post("/ap1/login", binding.Bind(APIUserView{}), apiUserView.LoginPost)
+	m.Post("/api/login", binding.Bind(APIUserView{}), apiUserView.LoginPost)
 	m.Get("/hypers", hyperView.List)
 	m.Get("/users", userView.List)
 	m.Get("/users/:id", userView.Edit)
@@ -225,20 +225,20 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 		}
 		c.Data["Organization"] = store.Get("org").(string)
 		c.Data["Members"] = store.Get("members").([]*model.Member)
-	} else if link != "" && link != "/" && !strings.HasPrefix(link, "/login") && !strings.HasPrefix(link, "/consoleresolver" && strings.HasPrefix(link, "/api")) {
-		
+	} else if link != "" && link != "/" && !strings.HasPrefix(link, "/login") && !strings.HasPrefix(link, "/consoleresolver") && strings.HasPrefix(link, "/api") {
+
 		if strings.HasPrefix(link, "/api") {
-	        if 	!strings.HasPrefix(link, "/api/login"){
-	        	c.JSON(401, map[string]interface{}{
-			        "ErrorMsg":   "user unauthorized",
-		        })
-		        return
-	        }
-		
-		}else {
+			if !strings.HasPrefix(link, "/api/login") {
+				c.JSON(401, map[string]interface{}{
+					"ErrorMsg": "user unauthorized",
+				})
+				return
+			}
+
+		} else {
 			UrlBefore = link
-		    c.Redirect("login?redirect_to=")
+			c.Redirect("login?redirect_to=")
 		}
-		
+
 	}
 }
