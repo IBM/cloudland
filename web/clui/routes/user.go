@@ -31,11 +31,17 @@ import (
 var (
 	userAdmin = &UserAdmin{}
 	userView  = &UserView{}
+	apiUserView  = &APIUserView{}
 )
 
 type UserAdmin struct{}
 
 type UserView struct{}
+
+type APIUserView struct{
+    username string
+    password string
+}
 
 func (a *UserAdmin) Create(ctx context.Context, username, password string) (user *model.User, err error) {
 	memberShip := GetMemberShip(ctx)
@@ -311,6 +317,56 @@ func (v *UserView) LoginPost(c *macaron.Context, store session.Store) {
 	}
 	c.Redirect(redirectTo)
 }
+
+
+func (v *APIUserView) LoginPost(c *macaron.Context, store session.Store) {
+	username := v.username
+	password := v.password
+	user, err := userAdmin.Validate(c.Req.Context(), username, password)
+	if err != nil {
+		c.JSON(401, map[string]interface{}{
+			"ErrorMsg":   err.Error(),
+		})
+		return
+	}
+	organization := username
+	uid := user.ID
+	oid, role, token, _, _, err := userAdmin.AccessToken(uid, username, organization)
+	if err != nil {
+		log.Println("Failed to get token", err)
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg":   err.Error(),
+		})
+		return
+	}
+	members := []*model.Member{}
+	err = dbs.DB().Where("user_name = ?", username).Find(&members).Error
+	if err != nil {
+		log.Println("Failed to query organizations, ", err)
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg":   err.Error(),
+		})
+	}
+	org, err := orgAdmin.Get(organization)
+	store.Set("login", username)
+	store.Set("uid", uid)
+	store.Set("oid", oid)
+	store.Set("role", role)
+	store.Set("act", token)
+	store.Set("org", organization)
+	store.Set("defsg", org.DefaultSG)
+	store.Set("members", members)
+	redirectTo := UrlBefore
+	c.JSON(200, map[string]interface{}{
+        "user":   username,
+		"uid":    uid,
+		"oid":    oid,
+		"token":  token,
+	})
+	return
+	
+}
+
 
 func (v *UserView) List(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
