@@ -28,9 +28,9 @@ import (
 )
 
 var (
-	instanceAdmin = &InstanceAdmin{}
-	instanceView  = &InstanceView{}
-	apiinstanceView  = &APIInstanceView{}
+	instanceAdmin   = &InstanceAdmin{}
+	instanceView    = &InstanceView{}
+	apiInstanceView = &APIInstanceView{}
 )
 
 type InstanceAdmin struct{}
@@ -1380,14 +1380,13 @@ func (v *APIInstanceView) List(c *macaron.Context, store session.Store) {
 	if !permit {
 		log.Println("Not authorized for this operation")
 		c.JSON(500, map[string]interface{}{
-				"ErrorMsg": "Not authorized for this operation",
+			"ErrorMsg": "Not authorized for this operation",
 		})
-			
+
 		return
 	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
-	hostname := c.QueryTrim("hostname")
 	if limit == 0 {
 		limit = 16
 	}
@@ -1399,19 +1398,18 @@ func (v *APIInstanceView) List(c *macaron.Context, store session.Store) {
 	total, instances, err := instanceAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
-			"error": "Query instances error:"+err.Error(),
+			"error": "Query instances error:" + err.Error(),
 		})
 		return
 	}
 	pages := GetPages(total, limit)
 
 	c.JSON(200, map[string]interface{}{
-        "instances": instances,
+		"instances": instances,
 		"total":     total,
 		"pages":     pages,
 		"query":     query,
 	})
 	return
-	
 
 }
