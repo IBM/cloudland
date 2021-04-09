@@ -56,13 +56,12 @@
                                 var page2 = '">';
                                 var page3 = '</a></a>';
                                 var page_content =  "";
-                                var instants_num = data.instancedata.length;
-                                var temp_num = 32/inst_num;                                
-                                var count = Math.floor(temp_num);
+                                var instants_num = data.total;
+                                var temp_num = instants_num/16;                                
+                                var count = Math.ceil(temp_num);
                                 var temp_num2;
                                 var temp_num3;
-                                console.log(temp_num);
-                                console.log(count);
+                                
                                 if(count>1){
                                     for(var k=0;k<count;k++){
                                         temp_num2 = k*16;

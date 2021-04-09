@@ -106,6 +106,7 @@ type InstanceData struct {
 type InstancesData struct {
 	Instances []*model.Instance `json:"instancedata"`
 	IsAdmin   bool              `json:"is_admin"`
+	Total     int64             `json:"total"`
 }
 
 func (a *InstanceAdmin) getHyperGroup(imageType string, zoneID int64) (hyperGroup string, err error) {
@@ -872,7 +873,7 @@ func (v *InstanceView) UpdateTable(c *macaron.Context, store session.Store) {
 		order = "-created_at"
 	}
 	query := c.QueryTrim("q")
-	_, instances, err := instanceAdmin.List(c.Req.Context(), offset, limit, order, query)
+	total, instances, err := instanceAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
@@ -888,6 +889,7 @@ func (v *InstanceView) UpdateTable(c *macaron.Context, store session.Store) {
 	jsonData = &InstancesData{
 		Instances: instances,
 		IsAdmin:   memberShip.CheckPermission(model.Admin),
+		Total:     total,
 	}
 
 	c.JSON(200, jsonData)
