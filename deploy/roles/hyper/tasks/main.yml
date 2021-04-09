@@ -320,4 +320,5 @@
 
 - name: Bridge the external network
   script: bridge_ext.sh 
+  when: virt_type != 'zvm'
   tags: [bridge_ext]

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -x
 
 # Check root
 if [[ `whoami` != "root" ]]; then
@@ -21,6 +21,8 @@ if [ $? -eq 0 ]; then
     yum -y install centos-release-scl
     yum -y install devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-binutils
     source /opt/rh/devtoolset-9/enable
+else
+    yum install -y cmake
 fi
 
 # Get release tag from input
