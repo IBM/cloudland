@@ -25,10 +25,6 @@ Example: (description)
             "disk_over_ratio": 1,
             "dns_server": "<ip of the dns server>",
             "domain_name": "<name of the domain>"
-            "network_external_vlan": "<vlan id for external routing, default 5000>",
-            "network_internal_vlan": "<vlan id for internal routing, default 5010>>",
-            "domain_name": "<name of the domain>"
-            "proxy_mode": "<use arp proxy mode or not, default no>"
         },
         {
             "id": 1,
@@ -42,10 +38,11 @@ Example: (description)
             "dns_server": "<ip of the dns server>",
             "domain_name": "<name of the domain>",
             "zlayer2_iface": "the network interface used for KVM on Z to configure fdb",
-            "network_external_vlan": "<the bridge for externl network>",
-            "network_internal_vlan": "<the bridge for internal network>",
+            "network_external_vlan": "<vlan id for external routing, default 5000>",
+            "network_internal_vlan": "<vlan id for internal routing, default 5010>>",
             "multicast_group": "<vxlan multicast address>",
-            "portmap_remote_ip": "<ip for portmap>"
+            "portmap_remote_ip": "<ip for portmap>",
+            "proxy_mode": "<use arp proxy mode or not, default no>"
         },
         {
             "id": 2,
@@ -58,10 +55,11 @@ Example: (description)
             "disk_over_ratio": 1,
             "dns_server": "<ip of the dns server>",
             "domain_name": "<name of the domain>",
-            "network_external_vlan": "<the bridge for externl network>",
-            "network_internal_vlan": "<the bridge for internal network>",
+            "network_external_vlan": "<vlan id for external routing, default 5000>",
+            "network_internal_vlan": "<vlan id for internal routing, default 5010>>",
             "multicast_group": "<vxlan multicast address>",
-            "portmap_remote_ip": "<ip for portmap>"
+            "portmap_remote_ip": "<ip for portmap>",
+            "proxy_mode": "<use arp proxy mode or not, default no>"
         }
     ]
 }
