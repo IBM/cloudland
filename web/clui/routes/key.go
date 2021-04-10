@@ -387,43 +387,42 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 		keyView.SolvePrintedPublicKeyError(c, store, puberr)
 		keyView.SearchDbFingerPrint(c, store, fingerPrint, publicKey, name)
 		keyView.SolveListKeyError(c, store)
-		_, err := keyAdmin.Create(c.Req.Context(), name, publicKey)
+		_, err := keyAdmin.Create(c.Req.Context(), name, publicKey, fingerPrint)
 		if err != nil {
-		    if c.Req.Header.Get("X-Json-Format") == "yes" {
-		        c.JSON(500, map[string]interface{}{
-			        "ErrorMsg": "Not authorized for this operation",
-		        })
-		        return
-	        }else {
-	        	c.Data["ErrorMsg"] = err.Error()
-			    c.HTML(http.StatusInternalServerError, err.Error())
-			    return
-		    
-	        }
+			if c.Req.Header.Get("X-Json-Format") == "yes" {
+				c.JSON(500, map[string]interface{}{
+					"ErrorMsg": "Not authorized for this operation",
+				})
+				return
+			} else {
+				c.Data["ErrorMsg"] = err.Error()
+				c.HTML(http.StatusInternalServerError, err.Error())
+				return
+
+			}
 		}
 	} else {
 		publicKey, fingerPrint, privateKey, err := keyTemp.Create()
 		if err != nil {
-			
-			
+
 			log.Println("failed")
 			c.Data["ErrorMsg"] = err.Error()
 			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
-		_, err := keyAdmin.Create(c.Req.Context(), name, publicKey)
+		_, err = keyAdmin.Create(c.Req.Context(), name, publicKey, fingerPrint)
 		if err != nil {
-		    if c.Req.Header.Get("X-Json-Format") == "yes" {
-		        c.JSON(500, map[string]interface{}{
-			        "ErrorMsg": "Not authorized for this operation",
-		        })
-		        return
-	        }else {
-	        	c.Data["ErrorMsg"] = err.Error()
-			    c.HTML(http.StatusInternalServerError, err.Error())
-			    return
-		    
-	        }
+			if c.Req.Header.Get("X-Json-Format") == "yes" {
+				c.JSON(500, map[string]interface{}{
+					"ErrorMsg": "Not authorized for this operation",
+				})
+				return
+			} else {
+				c.Data["ErrorMsg"] = err.Error()
+				c.HTML(http.StatusInternalServerError, err.Error())
+				return
+
+			}
 		}
 		if c.QueryTrim("from_instance") != "" {
 			fmt.Println("from_instance:" + c.QueryTrim("from_instance"))
