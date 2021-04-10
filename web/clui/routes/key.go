@@ -248,22 +248,7 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store) {
 	pubKeyBytes := []byte(publicKey)
 	pub, _, _, _, _ := ssh.ParseAuthorizedKey(pubKeyBytes)
 	fingerPrint := ssh.FingerprintLegacyMD5(pub)
-	key, err := keyAdmin.Create(c.Req.Context(), name, publicKey, fingerPrint)
-	if err != nil {
-		log.Println("Failed to create key, %v", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
-		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(500, "500")
-		return
-	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, key)
-		return
-	}
+	log.Println("Name=" + name + "  fingerPrint=" + fingerPrint)
 	if c.QueryTrim("from_instance") != "" {
 		_, keys, err := keyAdmin.List(c.Req.Context(), 0, -1, "", "")
 		if err != nil {
@@ -387,6 +372,7 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 		keyView.SolvePrintedPublicKeyError(c, store, puberr)
 		keyView.SearchDbFingerPrint(c, store, fingerPrint, publicKey, name)
 		keyView.SolveListKeyError(c, store)
+
 		_, err := keyAdmin.Create(c.Req.Context(), name, publicKey, fingerPrint)
 		if err != nil {
 			if c.Req.Header.Get("X-Json-Format") == "yes" {
@@ -401,6 +387,7 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 
 			}
 		}
+
 	} else {
 		publicKey, fingerPrint, privateKey, err := keyTemp.Create()
 		if err != nil {
@@ -410,6 +397,7 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
+
 		_, err = keyAdmin.Create(c.Req.Context(), name, publicKey, fingerPrint)
 		if err != nil {
 			if c.Req.Header.Get("X-Json-Format") == "yes" {
@@ -424,6 +412,7 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 
 			}
 		}
+
 		if c.QueryTrim("from_instance") != "" {
 			fmt.Println("from_instance:" + c.QueryTrim("from_instance"))
 			c.JSON(200, map[string]interface{}{
