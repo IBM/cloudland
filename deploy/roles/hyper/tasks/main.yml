@@ -1,16 +1,18 @@
-# - name: install packages
-#   yum: 
-#     name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'git', 'python-pip', 'NetworkManager', 'net-tools', 'iptables-services', 'dnsmasq-utils', 'conntrack-tools']
-#     state: present
-#   when: ansible_distribution_major_version == '7'
-#   tags: [be_pkg]
+- name: install packages
+  yum: 
+    name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'bc', 'git', 'python-pip', 'NetworkManager', 'net-tools', 'iptables-services', 'dnsmasq-utils', 'conntrack-tools']
+    state: present
+  when: ansible_distribution_major_version == '7'
+  ignore_errors: yes
+  tags: [be_pkg]
 
-# - name: install packages
-#   yum: 
-#     name: ['@Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'git', 'python3-pip', 'NetworkManager', 'net-tools', 'iptables-services', 'dnsmasq-utils', 'conntrack-tools']
-#     state: present
-#   when: ansible_distribution_major_version == '8'
-#   tags: [be_pkg]
+- name: install packages
+  yum: 
+    name: ['@Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'bc', 'git', 'python3-pip', 'NetworkManager', 'net-tools', 'iptables-services', 'dnsmasq-utils', 'conntrack-tools']
+    state: present
+  when: ansible_distribution_major_version == '8'
+  ignore_errors: yes
+  tags: [be_pkg]
 
 - name: install common packages
   yum:
@@ -124,7 +126,7 @@
   tags: [be_conf, scripts]
 
 - name: register network_device
-  script: get_netdev.sh "hostvars[inventory_hostname]['ansible_env'].SSH_CONNECTION.split(' ')[2]"
+  script: get_netdev.sh "{{ hostvars[inventory_hostname]['ansible_env'].SSH_CONNECTION.split(' ')[2] }}"
   register: netdev
 
 - name: create cloudrc local file for kvm on Z
