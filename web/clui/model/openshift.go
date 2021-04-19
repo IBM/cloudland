@@ -14,6 +14,7 @@ type Openshift struct {
 	Model
 	ClusterName           string `gorm:"type:varchar(128)"`
 	BaseDomain            string `gorm:"type:varchar(256)"`
+	LoadBalancer          string `gorm:"type:varchar(128)"`
 	Version               string `gorm:"type:varchar(32)"`
 	Status                string `gorm:"type:varchar(32)"`
 	Haflag                string
