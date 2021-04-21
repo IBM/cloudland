@@ -1,4 +1,4 @@
-- name: deploy compute node
+- name: deploy compute nodes
   hosts: "{{ hostname }}"
   become_user: root
   roles:

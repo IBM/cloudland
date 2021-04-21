@@ -276,8 +276,7 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 		for i := 0; i < int(nworkers-openshift.WorkerNum); i++ {
 			maxIndex++
 			hostname := fmt.Sprintf("worker-%d.%s.%s", maxIndex, openshift.ClusterName, openshift.BaseDomain)
-			ipaddr := fmt.Sprintf("192.168.91.%d", maxIndex+20)
-			_, err = openshiftAdmin.Launch(ctx, id, hostname, ipaddr)
+			_, err = openshiftAdmin.Launch(ctx, id, hostname, openshift.LoadBalancer)
 			if err != nil {
 				log.Println("Failed to launch a worker", err)
 				return
@@ -403,9 +402,15 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, cookie, ha
 		return
 	}
 	lbImg := image.ID
-	_, err = instanceAdmin.Create(ctx, 1, lbname, userdata, int64(lbImg), lflavor, subnet.ID, openshift.ID, zoneID, lbIP, "", nil, keyIDs, sgIDs, -1)
+	instance, err := instanceAdmin.Create(ctx, 1, lbname, userdata, int64(lbImg), lflavor, subnet.ID, openshift.ID, zoneID, lbIP, "", nil, keyIDs, sgIDs, -1)
 	if err != nil {
 		log.Println("Failed to create oc first instance", err)
+		return
+	}
+	openshift.LoadBalancer = instance.Interfaces[0].Address.Address
+	err = db.Save(openshift).Error
+	if err != nil {
+		log.Println("Failed to update openshift cluster")
 		return
 	}
 	return

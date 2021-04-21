@@ -1,0 +1,8 @@
+- name: restart compute node
+  hosts: hyper
+  become_user: root
+  tasks:
+    - name: rebooting nodes
+      reboot:
+        reboot_timeout: 1200
+      tags: [reboot]
