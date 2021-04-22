@@ -16,6 +16,7 @@ import (
 	macaron "gopkg.in/macaron.v1"
 	"log"
 	"net/http"
+	"os/exec"
 	"strconv"
 	"strings"
 )
@@ -69,11 +70,12 @@ func (a *RegistryAdmin) Create(ctx context.Context, label, virtType, ocpVersion,
 		cli_bak = "file://" + cli
 	}
 
-	control := "inter=0"
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_registry_image.sh '%d' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, virtType)
 
-	log.Println("command:" + command)
-	err = hyperExecute(ctx, control, command)
+	log.Println("Create registry image command :" + command)
+	cmd := exec.Command("/bin/bash", "-c", command)
+	_, err = cmd.Output()
+
 	if err != nil {
 		log.Println("Create registry image command execution failed", err)
 		return
@@ -192,9 +194,12 @@ func (a *RegistryAdmin) Update(ctx context.Context, id int64, label, virtType, o
 		cli_bak = cli
 	}
 
-	control := "inter=0"
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_registry_image.sh '%d' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, virtType)
-	err = hyperExecute(ctx, control, command)
+
+	log.Println("Create registry image command :" + command)
+	cmd := exec.Command("/bin/bash", "-c", command)
+	_, err = cmd.Output()
+
 	if err != nil {
 		log.Println("Update registry image command execution failed", err)
 		return
