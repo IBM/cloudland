@@ -6,18 +6,21 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"context"
 
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // Flavor flavor
+//
 // swagger:model flavor
 type Flavor struct {
 
 	// o s f l v e x t d a t a ephemeral
+	// Example: 0
 	OSFLVEXTDATAEphemeral int64 `json:"OS-FLV-EXT-DATA:ephemeral,omitempty"`
 
 	// description
@@ -25,9 +28,11 @@ type Flavor struct {
 	Description string `json:"description,omitempty"`
 
 	// disk
+	// Example: 100
 	Disk int32 `json:"disk,omitempty"`
 
 	// id
+	// Example: d32019d3-bc6e-4319-9c1d-6722fc136a22
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	ID string `json:"id,omitempty"`
 
@@ -35,22 +40,28 @@ type Flavor struct {
 	Links Links `json:"links,omitempty"`
 
 	// name
+	// Example: net1
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	Name string `json:"name,omitempty"`
 
 	// os flavor access is public
+	// Example: false
 	OsFlavorAccessIsPublic bool `json:"os-flavor-access:is_public,omitempty"`
 
 	// ram
+	// Example: 100
 	RAM int32 `json:"ram,omitempty"`
 
 	// rxtx factor
+	// Example: 2
 	RxtxFactor float32 `json:"rxtx_factor,omitempty"`
 
 	// swap
+	// Example: 100
 	Swap int32 `json:"swap,omitempty"`
 
 	// vcpus
+	// Example: 2
 	Vcpus int32 `json:"vcpus,omitempty"`
 }
 
@@ -81,12 +92,11 @@ func (m *Flavor) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Flavor) validateDescription(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Description) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("description", "body", string(m.Description), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("description", "body", m.Description, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -94,12 +104,11 @@ func (m *Flavor) validateDescription(formats strfmt.Registry) error {
 }
 
 func (m *Flavor) validateID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ID) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("id", "body", string(m.ID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("id", "body", m.ID, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -107,7 +116,6 @@ func (m *Flavor) validateID(formats strfmt.Registry) error {
 }
 
 func (m *Flavor) validateLinks(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Links) { // not required
 		return nil
 	}
@@ -123,12 +131,37 @@ func (m *Flavor) validateLinks(formats strfmt.Registry) error {
 }
 
 func (m *Flavor) validateName(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Name) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("name", "body", string(m.Name), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("name", "body", m.Name, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this flavor based on the context it is used
+func (m *Flavor) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateLinks(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Flavor) contextValidateLinks(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Links.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("links")
+		}
 		return err
 	}
 

@@ -6,14 +6,16 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"context"
 
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // CreateSubnetOKBody create subnet o k body
+//
 // swagger:model createSubnetOKBody
 type CreateSubnetOKBody struct {
 
@@ -44,6 +46,34 @@ func (m *CreateSubnetOKBody) validateSubnet(formats strfmt.Registry) error {
 
 	if m.Subnet != nil {
 		if err := m.Subnet.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("subnet")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this create subnet o k body based on the context it is used
+func (m *CreateSubnetOKBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateSubnet(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *CreateSubnetOKBody) contextValidateSubnet(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Subnet != nil {
+		if err := m.Subnet.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("subnet")
 			}

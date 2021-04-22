@@ -6,21 +6,23 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // VersionsValuesItems versions values items
+//
 // swagger:model versionsValuesItems
 type VersionsValuesItems struct {
 
 	// id
+	// Example: v3.10
 	// Enum: [v3.10]
 	ID string `json:"id,omitempty"`
 
@@ -31,11 +33,13 @@ type VersionsValuesItems struct {
 	MediaTypes []*VersionsValuesItemsMediaTypesItems `json:"media-types"`
 
 	// status
+	// Example: stable
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	// Enum: [stable]
 	Status string `json:"status,omitempty"`
 
 	// updated
+	// Example: 2015-11-06T14:32:17.893797Z
 	// Format: date-time
 	Updated strfmt.DateTime `json:"updated,omitempty"`
 }
@@ -84,20 +88,19 @@ func init() {
 
 const (
 
-	// VersionsValuesItemsIDV310 captures enum value "v3.10"
-	VersionsValuesItemsIDV310 string = "v3.10"
+	// VersionsValuesItemsIDV3Dot10 captures enum value "v3.10"
+	VersionsValuesItemsIDV3Dot10 string = "v3.10"
 )
 
 // prop value enum
 func (m *VersionsValuesItems) validateIDEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, versionsValuesItemsTypeIDPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, versionsValuesItemsTypeIDPropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *VersionsValuesItems) validateID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ID) { // not required
 		return nil
 	}
@@ -111,7 +114,6 @@ func (m *VersionsValuesItems) validateID(formats strfmt.Registry) error {
 }
 
 func (m *VersionsValuesItems) validateLinks(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Links) { // not required
 		return nil
 	}
@@ -127,7 +129,6 @@ func (m *VersionsValuesItems) validateLinks(formats strfmt.Registry) error {
 }
 
 func (m *VersionsValuesItems) validateMediaTypes(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.MediaTypes) { // not required
 		return nil
 	}
@@ -171,19 +172,18 @@ const (
 
 // prop value enum
 func (m *VersionsValuesItems) validateStatusEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, versionsValuesItemsTypeStatusPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, versionsValuesItemsTypeStatusPropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *VersionsValuesItems) validateStatus(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Status) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("status", "body", string(m.Status), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("status", "body", m.Status, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -196,13 +196,60 @@ func (m *VersionsValuesItems) validateStatus(formats strfmt.Registry) error {
 }
 
 func (m *VersionsValuesItems) validateUpdated(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Updated) { // not required
 		return nil
 	}
 
 	if err := validate.FormatOf("updated", "body", "date-time", m.Updated.String(), formats); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this versions values items based on the context it is used
+func (m *VersionsValuesItems) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateLinks(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateMediaTypes(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *VersionsValuesItems) contextValidateLinks(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Links.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("links")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *VersionsValuesItems) contextValidateMediaTypes(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.MediaTypes); i++ {
+
+		if m.MediaTypes[i] != nil {
+			if err := m.MediaTypes[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("media-types" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
 	}
 
 	return nil

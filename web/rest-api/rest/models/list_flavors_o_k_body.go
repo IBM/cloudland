@@ -6,14 +6,16 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"context"
 
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // ListFlavorsOKBody list flavors o k body
+//
 // swagger:model listFlavorsOKBody
 type ListFlavorsOKBody struct {
 
@@ -43,6 +45,32 @@ func (m *ListFlavorsOKBody) validateFlavors(formats strfmt.Registry) error {
 	}
 
 	if err := m.Flavors.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("flavors")
+		}
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this list flavors o k body based on the context it is used
+func (m *ListFlavorsOKBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateFlavors(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ListFlavorsOKBody) contextValidateFlavors(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Flavors.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("flavors")
 		}

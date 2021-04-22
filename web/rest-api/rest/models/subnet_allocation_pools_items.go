@@ -6,22 +6,26 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"context"
 
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // SubnetAllocationPoolsItems subnet allocation pools items
+//
 // swagger:model subnetAllocationPoolsItems
 type SubnetAllocationPoolsItems struct {
 
 	// end
+	// Example: 10.0.0.5
 	// Format: ipv4
 	End strfmt.IPv4 `json:"end,omitempty"`
 
 	// start
+	// Example: 10.0.0.2
 	// Format: ipv4
 	Start strfmt.IPv4 `json:"start,omitempty"`
 }
@@ -45,7 +49,6 @@ func (m *SubnetAllocationPoolsItems) Validate(formats strfmt.Registry) error {
 }
 
 func (m *SubnetAllocationPoolsItems) validateEnd(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.End) { // not required
 		return nil
 	}
@@ -58,7 +61,6 @@ func (m *SubnetAllocationPoolsItems) validateEnd(formats strfmt.Registry) error 
 }
 
 func (m *SubnetAllocationPoolsItems) validateStart(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Start) { // not required
 		return nil
 	}
@@ -67,6 +69,11 @@ func (m *SubnetAllocationPoolsItems) validateStart(formats strfmt.Registry) erro
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this subnet allocation pools items based on context it is used
+func (m *SubnetAllocationPoolsItems) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

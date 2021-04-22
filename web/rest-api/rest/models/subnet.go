@@ -6,17 +6,18 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // Subnet subnet
+//
 // swagger:model subnet
 type Subnet struct {
 
@@ -24,9 +25,11 @@ type Subnet struct {
 	AllocationPools []*SubnetAllocationPoolsItems `json:"allocation_pools"`
 
 	// cidr
+	// Example: 10.0.0.1/24
 	Cidr string `json:"cidr,omitempty"`
 
 	// created at
+	// Example: 2016-03-08T20:19:41
 	// Format: date-time
 	CreatedAt strfmt.DateTime `json:"created_at,omitempty"`
 
@@ -38,12 +41,15 @@ type Subnet struct {
 	DNSNameservers []string `json:"dns_nameservers"`
 
 	// dns publish fixed ip
+	// Example: true
 	DNSPublishFixedIP bool `json:"dns_publish_fixed_ip,omitempty"`
 
 	// enable dhcp
+	// Example: true
 	EnableDhcp bool `json:"enable_dhcp,omitempty"`
 
 	// gateway ip
+	// Example: 10.0.0.1
 	// Format: ipv4
 	GatewayIP strfmt.IPv4 `json:"gateway_ip,omitempty"`
 
@@ -51,10 +57,12 @@ type Subnet struct {
 	HostRoutes []*SubnetHostRoutesItems `json:"host_routes"`
 
 	// id
+	// Example: d32019d3-bc6e-4319-9c1d-6722fc136a22
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	ID string `json:"id,omitempty"`
 
 	// ip version
+	// Example: 6
 	// Enum: [4 6]
 	IPVersion int64 `json:"ip_version,omitempty"`
 
@@ -67,35 +75,43 @@ type Subnet struct {
 	IPV6RaMode string `json:"ipv6_ra_mode,omitempty"`
 
 	// name
+	// Example: subnet1
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	Name string `json:"name,omitempty"`
 
 	// network id
+	// Example: d32019d3-bc6e-4319-9c1d-6722fc136a22
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	NetworkID string `json:"network_id,omitempty"`
 
 	// project id
+	// Example: 4fd44f30292945e481c7b8a0c8908869
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	ProjectID string `json:"project_id,omitempty"`
 
 	// revision number
+	// Example: 0
 	RevisionNumber int64 `json:"revision_number,omitempty"`
 
 	// segment id
 	SegmentID string `json:"segment_id,omitempty"`
 
 	// service types
+	// Example: []
 	ServiceTypes []string `json:"service_types"`
 
 	// subnetpool id
+	// Example: d32019d3-bc6e-4319-9c1d-6722fc136a22
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	SubnetpoolID string `json:"subnetpool_id,omitempty"`
 
 	// tenant id
+	// Example: 4fd44f30292945e481c7b8a0c8908869
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	TenantID string `json:"tenant_id,omitempty"`
 
 	// updated at
+	// Example: 2016-03-08T20:19:41
 	// Format: date-time
 	UpdatedAt strfmt.DateTime `json:"updated_at,omitempty"`
 }
@@ -175,7 +191,6 @@ func (m *Subnet) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Subnet) validateAllocationPools(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.AllocationPools) { // not required
 		return nil
 	}
@@ -200,7 +215,6 @@ func (m *Subnet) validateAllocationPools(formats strfmt.Registry) error {
 }
 
 func (m *Subnet) validateCreatedAt(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.CreatedAt) { // not required
 		return nil
 	}
@@ -213,12 +227,11 @@ func (m *Subnet) validateCreatedAt(formats strfmt.Registry) error {
 }
 
 func (m *Subnet) validateDescription(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Description) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("description", "body", string(m.Description), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("description", "body", m.Description, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -226,14 +239,13 @@ func (m *Subnet) validateDescription(formats strfmt.Registry) error {
 }
 
 func (m *Subnet) validateDNSNameservers(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.DNSNameservers) { // not required
 		return nil
 	}
 
 	for i := 0; i < len(m.DNSNameservers); i++ {
 
-		if err := validate.Pattern("dns_nameservers"+"."+strconv.Itoa(i), "body", string(m.DNSNameservers[i]), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+		if err := validate.Pattern("dns_nameservers"+"."+strconv.Itoa(i), "body", m.DNSNameservers[i], `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 			return err
 		}
 
@@ -243,7 +255,6 @@ func (m *Subnet) validateDNSNameservers(formats strfmt.Registry) error {
 }
 
 func (m *Subnet) validateGatewayIP(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.GatewayIP) { // not required
 		return nil
 	}
@@ -256,7 +267,6 @@ func (m *Subnet) validateGatewayIP(formats strfmt.Registry) error {
 }
 
 func (m *Subnet) validateHostRoutes(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.HostRoutes) { // not required
 		return nil
 	}
@@ -281,12 +291,11 @@ func (m *Subnet) validateHostRoutes(formats strfmt.Registry) error {
 }
 
 func (m *Subnet) validateID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ID) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("id", "body", string(m.ID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("id", "body", m.ID, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -307,14 +316,13 @@ func init() {
 
 // prop value enum
 func (m *Subnet) validateIPVersionEnum(path, location string, value int64) error {
-	if err := validate.Enum(path, location, value, subnetTypeIPVersionPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, subnetTypeIPVersionPropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *Subnet) validateIPVersion(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.IPVersion) { // not required
 		return nil
 	}
@@ -341,14 +349,14 @@ func init() {
 
 const (
 
-	// SubnetIPV6AddressModeSLAAC captures enum value "slaac"
-	SubnetIPV6AddressModeSLAAC string = "slaac"
+	// SubnetIPV6AddressModeSlaac captures enum value "slaac"
+	SubnetIPV6AddressModeSlaac string = "slaac"
 
-	// SubnetIPV6AddressModeDhcpv6Stateful captures enum value "dhcpv6-stateful"
-	SubnetIPV6AddressModeDhcpv6Stateful string = "dhcpv6-stateful"
+	// SubnetIPV6AddressModeDhcpv6DashStateful captures enum value "dhcpv6-stateful"
+	SubnetIPV6AddressModeDhcpv6DashStateful string = "dhcpv6-stateful"
 
-	// SubnetIPV6AddressModeDhcpv6Stateless captures enum value "dhcpv6-stateless"
-	SubnetIPV6AddressModeDhcpv6Stateless string = "dhcpv6-stateless"
+	// SubnetIPV6AddressModeDhcpv6DashStateless captures enum value "dhcpv6-stateless"
+	SubnetIPV6AddressModeDhcpv6DashStateless string = "dhcpv6-stateless"
 
 	// SubnetIPV6AddressModeNull captures enum value "null"
 	SubnetIPV6AddressModeNull string = "null"
@@ -356,14 +364,13 @@ const (
 
 // prop value enum
 func (m *Subnet) validateIPV6AddressModeEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, subnetTypeIPV6AddressModePropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, subnetTypeIPV6AddressModePropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *Subnet) validateIPV6AddressMode(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.IPV6AddressMode) { // not required
 		return nil
 	}
@@ -390,14 +397,14 @@ func init() {
 
 const (
 
-	// SubnetIPV6RaModeSLAAC captures enum value "slaac"
-	SubnetIPV6RaModeSLAAC string = "slaac"
+	// SubnetIPV6RaModeSlaac captures enum value "slaac"
+	SubnetIPV6RaModeSlaac string = "slaac"
 
-	// SubnetIPV6RaModeDhcpv6Stateful captures enum value "dhcpv6-stateful"
-	SubnetIPV6RaModeDhcpv6Stateful string = "dhcpv6-stateful"
+	// SubnetIPV6RaModeDhcpv6DashStateful captures enum value "dhcpv6-stateful"
+	SubnetIPV6RaModeDhcpv6DashStateful string = "dhcpv6-stateful"
 
-	// SubnetIPV6RaModeDhcpv6Stateless captures enum value "dhcpv6-stateless"
-	SubnetIPV6RaModeDhcpv6Stateless string = "dhcpv6-stateless"
+	// SubnetIPV6RaModeDhcpv6DashStateless captures enum value "dhcpv6-stateless"
+	SubnetIPV6RaModeDhcpv6DashStateless string = "dhcpv6-stateless"
 
 	// SubnetIPV6RaModeNull captures enum value "null"
 	SubnetIPV6RaModeNull string = "null"
@@ -405,14 +412,13 @@ const (
 
 // prop value enum
 func (m *Subnet) validateIPV6RaModeEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, subnetTypeIPV6RaModePropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, subnetTypeIPV6RaModePropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *Subnet) validateIPV6RaMode(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.IPV6RaMode) { // not required
 		return nil
 	}
@@ -426,12 +432,11 @@ func (m *Subnet) validateIPV6RaMode(formats strfmt.Registry) error {
 }
 
 func (m *Subnet) validateName(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Name) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("name", "body", string(m.Name), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("name", "body", m.Name, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -439,12 +444,11 @@ func (m *Subnet) validateName(formats strfmt.Registry) error {
 }
 
 func (m *Subnet) validateNetworkID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.NetworkID) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("network_id", "body", string(m.NetworkID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("network_id", "body", m.NetworkID, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -452,12 +456,11 @@ func (m *Subnet) validateNetworkID(formats strfmt.Registry) error {
 }
 
 func (m *Subnet) validateProjectID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ProjectID) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("project_id", "body", string(m.ProjectID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("project_id", "body", m.ProjectID, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -465,12 +468,11 @@ func (m *Subnet) validateProjectID(formats strfmt.Registry) error {
 }
 
 func (m *Subnet) validateSubnetpoolID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.SubnetpoolID) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("subnetpool_id", "body", string(m.SubnetpoolID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("subnetpool_id", "body", m.SubnetpoolID, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -478,12 +480,11 @@ func (m *Subnet) validateSubnetpoolID(formats strfmt.Registry) error {
 }
 
 func (m *Subnet) validateTenantID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.TenantID) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("tenant_id", "body", string(m.TenantID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("tenant_id", "body", m.TenantID, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -491,13 +492,66 @@ func (m *Subnet) validateTenantID(formats strfmt.Registry) error {
 }
 
 func (m *Subnet) validateUpdatedAt(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.UpdatedAt) { // not required
 		return nil
 	}
 
 	if err := validate.FormatOf("updated_at", "body", "date-time", m.UpdatedAt.String(), formats); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this subnet based on the context it is used
+func (m *Subnet) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateAllocationPools(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateHostRoutes(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Subnet) contextValidateAllocationPools(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.AllocationPools); i++ {
+
+		if m.AllocationPools[i] != nil {
+			if err := m.AllocationPools[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("allocation_pools" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *Subnet) contextValidateHostRoutes(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.HostRoutes); i++ {
+
+		if m.HostRoutes[i] != nil {
+			if err := m.HostRoutes[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("host_routes" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
 	}
 
 	return nil

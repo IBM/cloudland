@@ -6,17 +6,18 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // TokenCatalogItems token catalog items
+//
 // swagger:model tokenCatalogItems
 type TokenCatalogItems struct {
 
@@ -24,14 +25,17 @@ type TokenCatalogItems struct {
 	Endpoints []*TokenCatalogItemsEndpointsItems `json:"endpoints"`
 
 	// id
+	// Example: db9895a3f6b840d98581dbee86f49069
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	ID string `json:"id,omitempty"`
 
 	// name
+	// Example: member
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	Name string `json:"name,omitempty"`
 
 	// type
+	// Example: volumev3
 	// Enum: [volumev3]
 	Type string `json:"type,omitempty"`
 }
@@ -63,7 +67,6 @@ func (m *TokenCatalogItems) Validate(formats strfmt.Registry) error {
 }
 
 func (m *TokenCatalogItems) validateEndpoints(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Endpoints) { // not required
 		return nil
 	}
@@ -88,12 +91,11 @@ func (m *TokenCatalogItems) validateEndpoints(formats strfmt.Registry) error {
 }
 
 func (m *TokenCatalogItems) validateID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ID) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("id", "body", string(m.ID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("id", "body", m.ID, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -101,12 +103,11 @@ func (m *TokenCatalogItems) validateID(formats strfmt.Registry) error {
 }
 
 func (m *TokenCatalogItems) validateName(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Name) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("name", "body", string(m.Name), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("name", "body", m.Name, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -133,14 +134,13 @@ const (
 
 // prop value enum
 func (m *TokenCatalogItems) validateTypeEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, tokenCatalogItemsTypeTypePropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, tokenCatalogItemsTypeTypePropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *TokenCatalogItems) validateType(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Type) { // not required
 		return nil
 	}
@@ -148,6 +148,38 @@ func (m *TokenCatalogItems) validateType(formats strfmt.Registry) error {
 	// value enum
 	if err := m.validateTypeEnum("type", "body", m.Type); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this token catalog items based on the context it is used
+func (m *TokenCatalogItems) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateEndpoints(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *TokenCatalogItems) contextValidateEndpoints(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Endpoints); i++ {
+
+		if m.Endpoints[i] != nil {
+			if err := m.Endpoints[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("endpoints" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
 	}
 
 	return nil

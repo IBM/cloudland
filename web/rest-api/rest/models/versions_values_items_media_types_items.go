@@ -6,24 +6,27 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // VersionsValuesItemsMediaTypesItems versions values items media types items
+//
 // swagger:model versionsValuesItemsMediaTypesItems
 type VersionsValuesItemsMediaTypesItems struct {
 
 	// base
+	// Example: application/json
 	// Enum: [application/json]
 	Base string `json:"base,omitempty"`
 
 	// type
+	// Example: application/vnd.openstack.identity-v3+json
 	// Enum: [application/json]
 	Type string `json:"type,omitempty"`
 }
@@ -66,14 +69,13 @@ const (
 
 // prop value enum
 func (m *VersionsValuesItemsMediaTypesItems) validateBaseEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, versionsValuesItemsMediaTypesItemsTypeBasePropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, versionsValuesItemsMediaTypesItemsTypeBasePropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *VersionsValuesItemsMediaTypesItems) validateBase(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Base) { // not required
 		return nil
 	}
@@ -106,14 +108,13 @@ const (
 
 // prop value enum
 func (m *VersionsValuesItemsMediaTypesItems) validateTypeEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, versionsValuesItemsMediaTypesItemsTypeTypePropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, versionsValuesItemsMediaTypesItemsTypeTypePropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *VersionsValuesItemsMediaTypesItems) validateType(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Type) { // not required
 		return nil
 	}
@@ -123,6 +124,11 @@ func (m *VersionsValuesItemsMediaTypesItems) validateType(formats strfmt.Registr
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this versions values items media types items based on context it is used
+func (m *VersionsValuesItemsMediaTypesItems) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

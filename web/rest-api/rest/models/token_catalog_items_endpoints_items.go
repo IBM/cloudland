@@ -6,37 +6,43 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // TokenCatalogItemsEndpointsItems token catalog items endpoints items
+//
 // swagger:model tokenCatalogItemsEndpointsItems
 type TokenCatalogItemsEndpointsItems struct {
 
 	// id
+	// Example: Regdb9895a3f6b840d98581dbee86f49069ionOne
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	ID string `json:"id,omitempty"`
 
 	// interface
+	// Example: public
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	// Enum: [public private]
 	Interface string `json:"interface,omitempty"`
 
 	// region
+	// Example: RegionOne
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	Region string `json:"region,omitempty"`
 
 	// region id
+	// Example: RegionOne
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	RegionID string `json:"region_id,omitempty"`
 
 	// url
+	// Example: http://192.168.10.16/volume/v3/3b6825911eaa44059c525888dc32713b
 	// Pattern: ^http(s)?:\/\/([^\/?#]*)([^?#]*)(\?([^#]*))?(#(.*))?$
 	URL string `json:"url,omitempty"`
 }
@@ -72,12 +78,11 @@ func (m *TokenCatalogItemsEndpointsItems) Validate(formats strfmt.Registry) erro
 }
 
 func (m *TokenCatalogItemsEndpointsItems) validateID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ID) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("id", "body", string(m.ID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("id", "body", m.ID, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -107,19 +112,18 @@ const (
 
 // prop value enum
 func (m *TokenCatalogItemsEndpointsItems) validateInterfaceEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, tokenCatalogItemsEndpointsItemsTypeInterfacePropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, tokenCatalogItemsEndpointsItemsTypeInterfacePropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *TokenCatalogItemsEndpointsItems) validateInterface(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Interface) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("interface", "body", string(m.Interface), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("interface", "body", m.Interface, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -132,12 +136,11 @@ func (m *TokenCatalogItemsEndpointsItems) validateInterface(formats strfmt.Regis
 }
 
 func (m *TokenCatalogItemsEndpointsItems) validateRegion(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Region) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("region", "body", string(m.Region), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("region", "body", m.Region, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -145,12 +148,11 @@ func (m *TokenCatalogItemsEndpointsItems) validateRegion(formats strfmt.Registry
 }
 
 func (m *TokenCatalogItemsEndpointsItems) validateRegionID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.RegionID) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("region_id", "body", string(m.RegionID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("region_id", "body", m.RegionID, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -158,15 +160,19 @@ func (m *TokenCatalogItemsEndpointsItems) validateRegionID(formats strfmt.Regist
 }
 
 func (m *TokenCatalogItemsEndpointsItems) validateURL(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.URL) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("url", "body", string(m.URL), `^http(s)?:\/\/([^\/?#]*)([^?#]*)(\?([^#]*))?(#(.*))?$`); err != nil {
+	if err := validate.Pattern("url", "body", m.URL, `^http(s)?:\/\/([^\/?#]*)([^?#]*)(\?([^#]*))?(#(.*))?$`); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this token catalog items endpoints items based on context it is used
+func (m *TokenCatalogItemsEndpointsItems) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

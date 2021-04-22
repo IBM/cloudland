@@ -6,13 +6,15 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"context"
 
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // CreateFlavorParamsBody create flavor params body
+//
 // swagger:model createFlavorParamsBody
 type CreateFlavorParamsBody struct {
 
@@ -35,13 +37,40 @@ func (m *CreateFlavorParamsBody) Validate(formats strfmt.Registry) error {
 }
 
 func (m *CreateFlavorParamsBody) validateFlavor(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Flavor) { // not required
 		return nil
 	}
 
 	if m.Flavor != nil {
 		if err := m.Flavor.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("flavor")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this create flavor params body based on the context it is used
+func (m *CreateFlavorParamsBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateFlavor(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *CreateFlavorParamsBody) contextValidateFlavor(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Flavor != nil {
+		if err := m.Flavor.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("flavor")
 			}

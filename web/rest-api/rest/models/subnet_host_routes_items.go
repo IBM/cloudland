@@ -6,22 +6,26 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"context"
 
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // SubnetHostRoutesItems subnet host routes items
+//
 // swagger:model subnetHostRoutesItems
 type SubnetHostRoutesItems struct {
 
 	// destination
+	// Example: 10.0.0.2
 	// Format: ipv4
 	Destination strfmt.IPv4 `json:"destination,omitempty"`
 
 	// nexthop
+	// Example: 10.0.0.2
 	// Format: ipv4
 	Nexthop strfmt.IPv4 `json:"nexthop,omitempty"`
 }
@@ -45,7 +49,6 @@ func (m *SubnetHostRoutesItems) Validate(formats strfmt.Registry) error {
 }
 
 func (m *SubnetHostRoutesItems) validateDestination(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Destination) { // not required
 		return nil
 	}
@@ -58,7 +61,6 @@ func (m *SubnetHostRoutesItems) validateDestination(formats strfmt.Registry) err
 }
 
 func (m *SubnetHostRoutesItems) validateNexthop(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Nexthop) { // not required
 		return nil
 	}
@@ -67,6 +69,11 @@ func (m *SubnetHostRoutesItems) validateNexthop(formats strfmt.Registry) error {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this subnet host routes items based on context it is used
+func (m *SubnetHostRoutesItems) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

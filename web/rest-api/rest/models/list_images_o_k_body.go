@@ -6,18 +6,21 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"context"
 
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // ListImagesOKBody list images o k body
+//
 // swagger:model listImagesOKBody
 type ListImagesOKBody struct {
 
 	// fist
+	// Example: /v2/images
 	Fist string `json:"fist,omitempty"`
 
 	// images
@@ -25,6 +28,7 @@ type ListImagesOKBody struct {
 	Images Images `json:"images"`
 
 	// scheme
+	// Example: /v2/schemas/images
 	Scheme string `json:"scheme,omitempty"`
 }
 
@@ -49,6 +53,32 @@ func (m *ListImagesOKBody) validateImages(formats strfmt.Registry) error {
 	}
 
 	if err := m.Images.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("images")
+		}
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this list images o k body based on the context it is used
+func (m *ListImagesOKBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateImages(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ListImagesOKBody) contextValidateImages(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Images.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("images")
 		}

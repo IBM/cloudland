@@ -6,17 +6,18 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // Token token
+//
 // swagger:model token
 type Token struct {
 
@@ -24,13 +25,16 @@ type Token struct {
 	Catalog []*TokenCatalogItems `json:"catalog"`
 
 	// expires at
+	// Example: 2015-11-06T14:32:17.893797Z
 	// Format: date-time
 	ExpiresAt strfmt.DateTime `json:"expires_at,omitempty"`
 
 	// is domain
+	// Example: false
 	IsDomain bool `json:"is_domain,omitempty"`
 
 	// issued at
+	// Example: 2015-11-06T14:32:17.893797Z
 	// Format: date-time
 	IssuedAt strfmt.DateTime `json:"issued_at,omitempty"`
 
@@ -86,7 +90,6 @@ func (m *Token) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Token) validateCatalog(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Catalog) { // not required
 		return nil
 	}
@@ -111,7 +114,6 @@ func (m *Token) validateCatalog(formats strfmt.Registry) error {
 }
 
 func (m *Token) validateExpiresAt(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ExpiresAt) { // not required
 		return nil
 	}
@@ -124,7 +126,6 @@ func (m *Token) validateExpiresAt(formats strfmt.Registry) error {
 }
 
 func (m *Token) validateIssuedAt(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.IssuedAt) { // not required
 		return nil
 	}
@@ -149,14 +150,13 @@ func init() {
 }
 
 func (m *Token) validateMethodsItemsEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, tokenMethodsItemsEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, tokenMethodsItemsEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *Token) validateMethods(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Methods) { // not required
 		return nil
 	}
@@ -174,7 +174,6 @@ func (m *Token) validateMethods(formats strfmt.Registry) error {
 }
 
 func (m *Token) validateProject(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Project) { // not required
 		return nil
 	}
@@ -192,7 +191,6 @@ func (m *Token) validateProject(formats strfmt.Registry) error {
 }
 
 func (m *Token) validateRoles(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Roles) { // not required
 		return nil
 	}
@@ -217,13 +215,102 @@ func (m *Token) validateRoles(formats strfmt.Registry) error {
 }
 
 func (m *Token) validateUser(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.User) { // not required
 		return nil
 	}
 
 	if m.User != nil {
 		if err := m.User.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("user")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this token based on the context it is used
+func (m *Token) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateCatalog(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateProject(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateRoles(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateUser(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Token) contextValidateCatalog(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Catalog); i++ {
+
+		if m.Catalog[i] != nil {
+			if err := m.Catalog[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("catalog" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *Token) contextValidateProject(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Project != nil {
+		if err := m.Project.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("project")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Token) contextValidateRoles(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Roles); i++ {
+
+		if m.Roles[i] != nil {
+			if err := m.Roles[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("roles" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *Token) contextValidateUser(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.User != nil {
+		if err := m.User.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("user")
 			}

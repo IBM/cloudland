@@ -6,14 +6,16 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"context"
 
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // PostIdentityV3AuthTokensCreatedBody post identity v3 auth tokens created body
+//
 // swagger:model postIdentityV3AuthTokensCreatedBody
 type PostIdentityV3AuthTokensCreatedBody struct {
 
@@ -44,6 +46,34 @@ func (m *PostIdentityV3AuthTokensCreatedBody) validateToken(formats strfmt.Regis
 
 	if m.Token != nil {
 		if err := m.Token.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("token")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this post identity v3 auth tokens created body based on the context it is used
+func (m *PostIdentityV3AuthTokensCreatedBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateToken(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *PostIdentityV3AuthTokensCreatedBody) contextValidateToken(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Token != nil {
+		if err := m.Token.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("token")
 			}

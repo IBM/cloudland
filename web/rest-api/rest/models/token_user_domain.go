@@ -6,22 +6,26 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"context"
 
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // TokenUserDomain token user domain
+//
 // swagger:model tokenUserDomain
 type TokenUserDomain struct {
 
 	// id
+	// Example: default
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	ID string `json:"id,omitempty"`
 
 	// name
+	// Example: default
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	Name string `json:"name,omitempty"`
 }
@@ -45,12 +49,11 @@ func (m *TokenUserDomain) Validate(formats strfmt.Registry) error {
 }
 
 func (m *TokenUserDomain) validateID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ID) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("id", "body", string(m.ID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("id", "body", m.ID, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -58,15 +61,19 @@ func (m *TokenUserDomain) validateID(formats strfmt.Registry) error {
 }
 
 func (m *TokenUserDomain) validateName(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Name) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("name", "body", string(m.Name), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("name", "body", m.Name, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this token user domain based on context it is used
+func (m *TokenUserDomain) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

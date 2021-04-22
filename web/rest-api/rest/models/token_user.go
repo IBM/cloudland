@@ -6,14 +6,16 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"context"
 
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // TokenUser token user
+//
 // swagger:model tokenUser
 type TokenUser struct {
 
@@ -21,14 +23,17 @@ type TokenUser struct {
 	Domain *TokenUserDomain `json:"domain,omitempty"`
 
 	// id
+	// Example: default
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	ID string `json:"id,omitempty"`
 
 	// name
+	// Example: default
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	Name string `json:"name,omitempty"`
 
 	// password expires at
+	// Example: 2015-11-06T14:32:17.893797Z
 	// Format: date-time
 	PasswordExpiresAt strfmt.DateTime `json:"password_expires_at,omitempty"`
 }
@@ -60,7 +65,6 @@ func (m *TokenUser) Validate(formats strfmt.Registry) error {
 }
 
 func (m *TokenUser) validateDomain(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Domain) { // not required
 		return nil
 	}
@@ -78,12 +82,11 @@ func (m *TokenUser) validateDomain(formats strfmt.Registry) error {
 }
 
 func (m *TokenUser) validateID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ID) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("id", "body", string(m.ID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("id", "body", m.ID, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -91,12 +94,11 @@ func (m *TokenUser) validateID(formats strfmt.Registry) error {
 }
 
 func (m *TokenUser) validateName(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Name) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("name", "body", string(m.Name), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("name", "body", m.Name, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -104,13 +106,40 @@ func (m *TokenUser) validateName(formats strfmt.Registry) error {
 }
 
 func (m *TokenUser) validatePasswordExpiresAt(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.PasswordExpiresAt) { // not required
 		return nil
 	}
 
 	if err := validate.FormatOf("password_expires_at", "body", "date-time", m.PasswordExpiresAt.String(), formats); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this token user based on the context it is used
+func (m *TokenUser) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateDomain(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *TokenUser) contextValidateDomain(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Domain != nil {
+		if err := m.Domain.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("domain")
+			}
+			return err
+		}
 	}
 
 	return nil

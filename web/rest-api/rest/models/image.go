@@ -6,77 +6,96 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // Image image
+//
 // swagger:model image
 type Image struct {
 
 	// checksum
+	// Example: afab0f79bac770d61d24b4d0560b5f70
 	Checksum string `json:"checksum,omitempty"`
 
 	// container format
+	// Example: bare
 	// Enum: [bare]
 	ContainerFormat string `json:"container_format,omitempty"`
 
 	// created at
+	// Example: 2016-03-08T20:19:41
 	// Format: date-time
 	CreatedAt strfmt.DateTime `json:"created_at,omitempty"`
 
 	// disk format
+	// Example: raw
 	// Enum: [qcow2 raw iso]
 	DiskFormat string `json:"disk_format,omitempty"`
 
 	// file
+	// Example: /v2/images/2b61ed2b-f800-4da0-99ff-396b742b8646/file
 	File string `json:"file,omitempty"`
 
 	// id
+	// Example: d32019d3-bc6e-4319-9c1d-6722fc136a22
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	ID string `json:"id,omitempty"`
 
 	// min disk
+	// Example: 10
 	MinDisk int32 `json:"min_disk,omitempty"`
 
 	// min ram
+	// Example: 512
 	MinRAM int32 `json:"min_ram,omitempty"`
 
 	// name
+	// Example: ubuntu-1
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	// Enum: [stable]
 	Name string `json:"name,omitempty"`
 
 	// os hash algo
+	// Example: sha512
 	OsHashAlgo string `json:"os_hash_algo,omitempty"`
 
 	// os hash value
+	// Example: ea3e20140df1cc65f53d4c5b9ee3b38d0d6868f61bbe2230417b0f98cef0e0c7c37f0ebc5c6456fa47f013de48b452617d56c15fdba25e100379bd0e81ee15ec
 	OsHashValue string `json:"os_hash_value,omitempty"`
 
 	// os hidden
+	// Example: false
 	OsHidden bool `json:"os_hidden,omitempty"`
 
 	// owner
+	// Example: 5ef70662f8b34079a6eddb8da9d75fe8
 	Owner string `json:"owner,omitempty"`
 
 	// protected
+	// Example: false
 	Protected bool `json:"protected,omitempty"`
 
 	// schema
+	// Example: /v2/schemas/image
 	Schema string `json:"schema,omitempty"`
 
 	// self
+	// Example: /v2/images/2b61ed2b-f800-4da0-99ff-396b742b8646
 	Self string `json:"self,omitempty"`
 
 	// size
+	// Example: 476704768
 	Size int64 `json:"size,omitempty"`
 
 	// status
+	// Example: active
 	// Enum: [queued saving active killed deleted pending_delete deactivated uploading importing]
 	Status string `json:"status,omitempty"`
 
@@ -84,13 +103,16 @@ type Image struct {
 	Tags []string `json:"tags"`
 
 	// updated at
+	// Example: 2016-03-08T20:19:41
 	// Format: date-time
 	UpdatedAt strfmt.DateTime `json:"updated_at,omitempty"`
 
 	// virtual size
+	// Example: 100
 	VirtualSize int64 `json:"virtual_size,omitempty"`
 
 	// visibility
+	// Example: public
 	// Enum: [public community shared private]
 	Visibility string `json:"visibility,omitempty"`
 }
@@ -157,14 +179,13 @@ const (
 
 // prop value enum
 func (m *Image) validateContainerFormatEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, imageTypeContainerFormatPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, imageTypeContainerFormatPropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *Image) validateContainerFormat(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ContainerFormat) { // not required
 		return nil
 	}
@@ -178,7 +199,6 @@ func (m *Image) validateContainerFormat(formats strfmt.Registry) error {
 }
 
 func (m *Image) validateCreatedAt(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.CreatedAt) { // not required
 		return nil
 	}
@@ -216,14 +236,13 @@ const (
 
 // prop value enum
 func (m *Image) validateDiskFormatEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, imageTypeDiskFormatPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, imageTypeDiskFormatPropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *Image) validateDiskFormat(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.DiskFormat) { // not required
 		return nil
 	}
@@ -237,12 +256,11 @@ func (m *Image) validateDiskFormat(formats strfmt.Registry) error {
 }
 
 func (m *Image) validateID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ID) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("id", "body", string(m.ID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("id", "body", m.ID, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -269,19 +287,18 @@ const (
 
 // prop value enum
 func (m *Image) validateNameEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, imageTypeNamePropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, imageTypeNamePropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *Image) validateName(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Name) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("name", "body", string(m.Name), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("name", "body", m.Name, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -337,14 +354,13 @@ const (
 
 // prop value enum
 func (m *Image) validateStatusEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, imageTypeStatusPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, imageTypeStatusPropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *Image) validateStatus(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Status) { // not required
 		return nil
 	}
@@ -358,7 +374,6 @@ func (m *Image) validateStatus(formats strfmt.Registry) error {
 }
 
 func (m *Image) validateUpdatedAt(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.UpdatedAt) { // not required
 		return nil
 	}
@@ -399,14 +414,13 @@ const (
 
 // prop value enum
 func (m *Image) validateVisibilityEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, imageTypeVisibilityPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, imageTypeVisibilityPropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *Image) validateVisibility(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Visibility) { // not required
 		return nil
 	}
@@ -416,6 +430,11 @@ func (m *Image) validateVisibility(formats strfmt.Registry) error {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this image based on context it is used
+func (m *Image) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

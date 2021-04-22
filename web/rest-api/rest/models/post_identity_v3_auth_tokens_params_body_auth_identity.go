@@ -6,17 +6,18 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // PostIdentityV3AuthTokensParamsBodyAuthIdentity post identity v3 auth tokens params body auth identity
+//
 // swagger:model postIdentityV3AuthTokensParamsBodyAuthIdentity
 type PostIdentityV3AuthTokensParamsBodyAuthIdentity struct {
 
@@ -58,14 +59,13 @@ func init() {
 }
 
 func (m *PostIdentityV3AuthTokensParamsBodyAuthIdentity) validateMethodsItemsEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, postIdentityV3AuthTokensParamsBodyAuthIdentityMethodsItemsEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, postIdentityV3AuthTokensParamsBodyAuthIdentityMethodsItemsEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *PostIdentityV3AuthTokensParamsBodyAuthIdentity) validateMethods(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Methods) { // not required
 		return nil
 	}
@@ -83,13 +83,40 @@ func (m *PostIdentityV3AuthTokensParamsBodyAuthIdentity) validateMethods(formats
 }
 
 func (m *PostIdentityV3AuthTokensParamsBodyAuthIdentity) validatePassword(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Password) { // not required
 		return nil
 	}
 
 	if m.Password != nil {
 		if err := m.Password.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("password")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this post identity v3 auth tokens params body auth identity based on the context it is used
+func (m *PostIdentityV3AuthTokensParamsBodyAuthIdentity) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidatePassword(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *PostIdentityV3AuthTokensParamsBodyAuthIdentity) contextValidatePassword(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Password != nil {
+		if err := m.Password.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("password")
 			}

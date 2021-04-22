@@ -6,13 +6,15 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"context"
 
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // CreateNetworkOKBody create network o k body
+//
 // swagger:model createNetworkOKBody
 type CreateNetworkOKBody struct {
 
@@ -35,13 +37,40 @@ func (m *CreateNetworkOKBody) Validate(formats strfmt.Registry) error {
 }
 
 func (m *CreateNetworkOKBody) validateNetwork(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Network) { // not required
 		return nil
 	}
 
 	if m.Network != nil {
 		if err := m.Network.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("network")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this create network o k body based on the context it is used
+func (m *CreateNetworkOKBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateNetwork(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *CreateNetworkOKBody) contextValidateNetwork(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Network != nil {
+		if err := m.Network.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("network")
 			}

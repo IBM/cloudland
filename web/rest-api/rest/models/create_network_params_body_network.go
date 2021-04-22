@@ -6,23 +6,26 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // CreateNetworkParamsBodyNetwork create network params body network
+//
 // swagger:model createNetworkParamsBodyNetwork
 type CreateNetworkParamsBodyNetwork struct {
 
 	// admin state up
+	// Example: true
 	AdminStateUp bool `json:"admin_state_up,omitempty"`
 
 	// name
+	// Example: net1
 	Name string `json:"name,omitempty"`
 
 	// provider network type
@@ -30,13 +33,16 @@ type CreateNetworkParamsBodyNetwork struct {
 	ProviderNetworkType string `json:"provider:network_type,omitempty"`
 
 	// provider physical network
+	// Example: public
 	// Enum: [public private]
 	ProviderPhysicalNetwork string `json:"provider:physical_network,omitempty"`
 
 	// provider segmentation id
+	// Example: 16169
 	ProviderSegmentationID string `json:"provider:segmentation_id,omitempty"`
 
 	// router external
+	// Example: false
 	RouterExternal bool `json:"router:external,omitempty"`
 }
 
@@ -81,14 +87,13 @@ const (
 
 // prop value enum
 func (m *CreateNetworkParamsBodyNetwork) validateProviderNetworkTypeEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, createNetworkParamsBodyNetworkTypeProviderNetworkTypePropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, createNetworkParamsBodyNetworkTypeProviderNetworkTypePropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *CreateNetworkParamsBodyNetwork) validateProviderNetworkType(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ProviderNetworkType) { // not required
 		return nil
 	}
@@ -124,14 +129,13 @@ const (
 
 // prop value enum
 func (m *CreateNetworkParamsBodyNetwork) validateProviderPhysicalNetworkEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, createNetworkParamsBodyNetworkTypeProviderPhysicalNetworkPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, createNetworkParamsBodyNetworkTypeProviderPhysicalNetworkPropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *CreateNetworkParamsBodyNetwork) validateProviderPhysicalNetwork(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ProviderPhysicalNetwork) { // not required
 		return nil
 	}
@@ -141,6 +145,11 @@ func (m *CreateNetworkParamsBodyNetwork) validateProviderPhysicalNetwork(formats
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this create network params body network based on context it is used
+func (m *CreateNetworkParamsBodyNetwork) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

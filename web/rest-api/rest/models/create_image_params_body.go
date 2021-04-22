@@ -6,46 +6,55 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // CreateImageParamsBody create image params body
+//
 // swagger:model createImageParamsBody
 type CreateImageParamsBody struct {
 
 	// container format
+	// Example: bare
 	// Enum: [bare]
 	ContainerFormat string `json:"container_format,omitempty"`
 
 	// disk format
+	// Example: raw
 	// Enum: [qcow2 raw iso]
 	DiskFormat string `json:"disk_format,omitempty"`
 
 	// id
+	// Example: d32019d3-bc6e-4319-9c1d-6722fc136a22
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	ID string `json:"id,omitempty"`
 
 	// min disk
+	// Example: 10
 	MinDisk int32 `json:"min_disk,omitempty"`
 
 	// min ram
+	// Example: 512
 	MinRAM int32 `json:"min_ram,omitempty"`
 
 	// name
+	// Example: ubuntu-1
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	// Enum: [stable]
 	Name string `json:"name,omitempty"`
 
 	// protected
+	// Example: false
 	Protected bool `json:"protected,omitempty"`
 
 	// visibility
+	// Example: public
 	// Enum: [public community shared private]
 	Visibility string `json:"visibility,omitempty"`
 }
@@ -100,14 +109,13 @@ const (
 
 // prop value enum
 func (m *CreateImageParamsBody) validateContainerFormatEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, createImageParamsBodyTypeContainerFormatPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, createImageParamsBodyTypeContainerFormatPropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *CreateImageParamsBody) validateContainerFormat(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ContainerFormat) { // not required
 		return nil
 	}
@@ -146,14 +154,13 @@ const (
 
 // prop value enum
 func (m *CreateImageParamsBody) validateDiskFormatEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, createImageParamsBodyTypeDiskFormatPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, createImageParamsBodyTypeDiskFormatPropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *CreateImageParamsBody) validateDiskFormat(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.DiskFormat) { // not required
 		return nil
 	}
@@ -167,12 +174,11 @@ func (m *CreateImageParamsBody) validateDiskFormat(formats strfmt.Registry) erro
 }
 
 func (m *CreateImageParamsBody) validateID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ID) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("id", "body", string(m.ID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("id", "body", m.ID, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -199,19 +205,18 @@ const (
 
 // prop value enum
 func (m *CreateImageParamsBody) validateNameEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, createImageParamsBodyTypeNamePropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, createImageParamsBodyTypeNamePropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *CreateImageParamsBody) validateName(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Name) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("name", "body", string(m.Name), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("name", "body", m.Name, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -252,14 +257,13 @@ const (
 
 // prop value enum
 func (m *CreateImageParamsBody) validateVisibilityEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, createImageParamsBodyTypeVisibilityPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, createImageParamsBodyTypeVisibilityPropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *CreateImageParamsBody) validateVisibility(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Visibility) { // not required
 		return nil
 	}
@@ -269,6 +273,11 @@ func (m *CreateImageParamsBody) validateVisibility(formats strfmt.Registry) erro
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this create image params body based on context it is used
+func (m *CreateImageParamsBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

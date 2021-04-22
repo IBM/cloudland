@@ -6,34 +6,40 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // CreateSubnetParamsBodySubnet create subnet params body subnet
+//
 // swagger:model createSubnetParamsBodySubnet
 type CreateSubnetParamsBodySubnet struct {
 
 	// cidr
+	// Example: 10.0.0.1/24
 	Cidr string `json:"cidr,omitempty"`
 
 	// gateway ip
+	// Example: 192.168.1.1
 	GatewayIP string `json:"gateway_ip,omitempty"`
 
 	// ip version
+	// Example: 6
 	// Enum: [4 6]
 	IPVersion int64 `json:"ip_version,omitempty"`
 
 	// name
+	// Example: net1
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	Name string `json:"name,omitempty"`
 
 	// network id
+	// Example: 1841f2adad3a4b4aa6485fb4e3a3fda1
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	NetworkID string `json:"network_id,omitempty"`
 }
@@ -74,14 +80,13 @@ func init() {
 
 // prop value enum
 func (m *CreateSubnetParamsBodySubnet) validateIPVersionEnum(path, location string, value int64) error {
-	if err := validate.Enum(path, location, value, createSubnetParamsBodySubnetTypeIPVersionPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, createSubnetParamsBodySubnetTypeIPVersionPropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *CreateSubnetParamsBodySubnet) validateIPVersion(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.IPVersion) { // not required
 		return nil
 	}
@@ -95,12 +100,11 @@ func (m *CreateSubnetParamsBodySubnet) validateIPVersion(formats strfmt.Registry
 }
 
 func (m *CreateSubnetParamsBodySubnet) validateName(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Name) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("name", "body", string(m.Name), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("name", "body", m.Name, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -108,15 +112,19 @@ func (m *CreateSubnetParamsBodySubnet) validateName(formats strfmt.Registry) err
 }
 
 func (m *CreateSubnetParamsBodySubnet) validateNetworkID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.NetworkID) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("network_id", "body", string(m.NetworkID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("network_id", "body", m.NetworkID, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this create subnet params body subnet based on context it is used
+func (m *CreateSubnetParamsBodySubnet) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

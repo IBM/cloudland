@@ -6,39 +6,46 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // Member member
+//
 // swagger:model member
 type Member struct {
 
 	// created at
+	// Example: 2016-03-08T20:19:41
 	// Format: date-time
 	CreatedAt strfmt.DateTime `json:"created_at,omitempty"`
 
 	// image id
+	// Example: d32019d3-bc6e-4319-9c1d-6722fc136a22
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	ImageID string `json:"image_id,omitempty"`
 
 	// member id
+	// Example: d32019d3-bc6e-4319-9c1d-6722fc136a22
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	MemberID string `json:"member_id,omitempty"`
 
 	// schema
+	// Example: /v2/schemas/image
 	Schema string `json:"schema,omitempty"`
 
 	// status
+	// Example: active
 	// Enum: [queued saving active killed deleted pending_delete deactivated uploading importing]
 	Status string `json:"status,omitempty"`
 
 	// updated at
+	// Example: 2016-03-08T20:19:41
 	// Format: date-time
 	UpdatedAt strfmt.DateTime `json:"updated_at,omitempty"`
 }
@@ -74,7 +81,6 @@ func (m *Member) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Member) validateCreatedAt(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.CreatedAt) { // not required
 		return nil
 	}
@@ -87,12 +93,11 @@ func (m *Member) validateCreatedAt(formats strfmt.Registry) error {
 }
 
 func (m *Member) validateImageID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ImageID) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("image_id", "body", string(m.ImageID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("image_id", "body", m.ImageID, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -100,12 +105,11 @@ func (m *Member) validateImageID(formats strfmt.Registry) error {
 }
 
 func (m *Member) validateMemberID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.MemberID) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("member_id", "body", string(m.MemberID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("member_id", "body", m.MemberID, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -156,14 +160,13 @@ const (
 
 // prop value enum
 func (m *Member) validateStatusEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, memberTypeStatusPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, memberTypeStatusPropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *Member) validateStatus(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Status) { // not required
 		return nil
 	}
@@ -177,7 +180,6 @@ func (m *Member) validateStatus(formats strfmt.Registry) error {
 }
 
 func (m *Member) validateUpdatedAt(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.UpdatedAt) { // not required
 		return nil
 	}
@@ -186,6 +188,11 @@ func (m *Member) validateUpdatedAt(formats strfmt.Registry) error {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this member based on context it is used
+func (m *Member) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

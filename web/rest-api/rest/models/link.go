@@ -6,25 +6,28 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // Link link
+//
 // swagger:model link
 type Link struct {
 
 	// href
+	// Example: http://openstack.example.com/v2/6f70656e737461636b20342065766572/flavors/1
 	// Required: true
 	// Pattern: ^http(s)?:\/\/([^\/?#]*)([^?#]*)(\?([^#]*))?(#(.*))?$
 	Href *string `json:"href"`
 
 	// rel
+	// Example: self
 	// Required: true
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	// Enum: [self bookmark]
@@ -55,7 +58,7 @@ func (m *Link) validateHref(formats strfmt.Registry) error {
 		return err
 	}
 
-	if err := validate.Pattern("href", "body", string(*m.Href), `^http(s)?:\/\/([^\/?#]*)([^?#]*)(\?([^#]*))?(#(.*))?$`); err != nil {
+	if err := validate.Pattern("href", "body", *m.Href, `^http(s)?:\/\/([^\/?#]*)([^?#]*)(\?([^#]*))?(#(.*))?$`); err != nil {
 		return err
 	}
 
@@ -85,7 +88,7 @@ const (
 
 // prop value enum
 func (m *Link) validateRelEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, linkTypeRelPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, linkTypeRelPropEnum, true); err != nil {
 		return err
 	}
 	return nil
@@ -97,7 +100,7 @@ func (m *Link) validateRel(formats strfmt.Registry) error {
 		return err
 	}
 
-	if err := validate.Pattern("rel", "body", string(*m.Rel), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("rel", "body", *m.Rel, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -106,6 +109,11 @@ func (m *Link) validateRel(formats strfmt.Registry) error {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this link based on context it is used
+func (m *Link) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

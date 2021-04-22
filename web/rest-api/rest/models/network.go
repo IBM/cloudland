@@ -6,21 +6,23 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // Network network
+//
 // swagger:model network
 type Network struct {
 
 	// admin state up
+	// Example: true
 	AdminStateUp bool `json:"admin_state_up,omitempty"`
 
 	// availability zone hints
@@ -30,6 +32,7 @@ type Network struct {
 	AvailabilityZones []string `json:"availability_zones"`
 
 	// created at
+	// Example: 2016-03-08T20:19:41
 	// Format: date-time
 	CreatedAt strfmt.DateTime `json:"created_at,omitempty"`
 
@@ -38,9 +41,11 @@ type Network struct {
 	Description string `json:"description,omitempty"`
 
 	// dns domain
+	// Example: my-domain.org.
 	DNSDomain string `json:"dns_domain,omitempty"`
 
 	// id
+	// Example: d32019d3-bc6e-4319-9c1d-6722fc136a22
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	ID string `json:"id,omitempty"`
 
@@ -51,47 +56,60 @@ type Network struct {
 	IPV6AddressScope string `json:"ipv6_address_scope,omitempty"`
 
 	// is default
+	// Example: false
 	IsDefault bool `json:"is_default,omitempty"`
 
 	// l2 adjacency
+	// Example: false
 	L2Adjacency bool `json:"l2_adjacency,omitempty"`
 
 	// mtu
+	// Example: 1500
 	Mtu int64 `json:"mtu,omitempty"`
 
 	// name
+	// Example: net1
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	// Enum: [stable]
 	Name string `json:"name,omitempty"`
 
 	// port security enabled
+	// Example: true
 	PortSecurityEnabled bool `json:"port_security_enabled,omitempty"`
 
 	// project id
+	// Example: 4fd44f30292945e481c7b8a0c8908869
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	ProjectID string `json:"project_id,omitempty"`
 
 	// provider network type
+	// Example: vxlan
 	// Enum: [vlan vxlan gre flat]
 	ProviderNetworkType string `json:"provider:network_type,omitempty"`
 
 	// provider segmentation id
+	// Example: 190190
 	ProviderSegmentationID string `json:"provider:segmentation_id,omitempty"`
 
 	// qos policy id
+	// Example: 6a8454ade84346f59e8d40665f878b2e
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	QosPolicyID string `json:"qos_policy_id,omitempty"`
 
 	// revision number
+	// Example: 1
 	RevisionNumber int64 `json:"revision_number,omitempty"`
 
 	// router external
+	// Example: false
 	RouterExternal bool `json:"router:external,omitempty"`
 
 	// shared
+	// Example: false
 	Shared bool `json:"shared,omitempty"`
 
 	// status
+	// Example: ACTIVE
 	// Enum: [ACTIVE DISABLE INACTIVE]
 	Status string `json:"status,omitempty"`
 
@@ -99,14 +117,17 @@ type Network struct {
 	Subnets []string `json:"subnets"`
 
 	// tenant id
+	// Example: 4fd44f30292945e481c7b8a0c8908869
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	TenantID string `json:"tenant_id,omitempty"`
 
 	// updated at
+	// Example: 2016-03-08T20:19:41
 	// Format: date-time
 	UpdatedAt strfmt.DateTime `json:"updated_at,omitempty"`
 
 	// vlan transparent
+	// Example: false
 	VlanTransparent bool `json:"vlan_transparent,omitempty"`
 }
 
@@ -165,7 +186,6 @@ func (m *Network) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Network) validateCreatedAt(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.CreatedAt) { // not required
 		return nil
 	}
@@ -178,12 +198,11 @@ func (m *Network) validateCreatedAt(formats strfmt.Registry) error {
 }
 
 func (m *Network) validateDescription(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Description) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("description", "body", string(m.Description), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("description", "body", m.Description, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -191,12 +210,11 @@ func (m *Network) validateDescription(formats strfmt.Registry) error {
 }
 
 func (m *Network) validateID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ID) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("id", "body", string(m.ID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("id", "body", m.ID, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -223,19 +241,18 @@ const (
 
 // prop value enum
 func (m *Network) validateNameEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, networkTypeNamePropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, networkTypeNamePropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *Network) validateName(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Name) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("name", "body", string(m.Name), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("name", "body", m.Name, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -248,12 +265,11 @@ func (m *Network) validateName(formats strfmt.Registry) error {
 }
 
 func (m *Network) validateProjectID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ProjectID) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("project_id", "body", string(m.ProjectID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("project_id", "body", m.ProjectID, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -289,14 +305,13 @@ const (
 
 // prop value enum
 func (m *Network) validateProviderNetworkTypeEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, networkTypeProviderNetworkTypePropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, networkTypeProviderNetworkTypePropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *Network) validateProviderNetworkType(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ProviderNetworkType) { // not required
 		return nil
 	}
@@ -310,12 +325,11 @@ func (m *Network) validateProviderNetworkType(formats strfmt.Registry) error {
 }
 
 func (m *Network) validateQosPolicyID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.QosPolicyID) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("qos_policy_id", "body", string(m.QosPolicyID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("qos_policy_id", "body", m.QosPolicyID, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -348,14 +362,13 @@ const (
 
 // prop value enum
 func (m *Network) validateStatusEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, networkTypeStatusPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, networkTypeStatusPropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *Network) validateStatus(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Status) { // not required
 		return nil
 	}
@@ -369,14 +382,13 @@ func (m *Network) validateStatus(formats strfmt.Registry) error {
 }
 
 func (m *Network) validateSubnets(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Subnets) { // not required
 		return nil
 	}
 
 	for i := 0; i < len(m.Subnets); i++ {
 
-		if err := validate.Pattern("subnets"+"."+strconv.Itoa(i), "body", string(m.Subnets[i]), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+		if err := validate.Pattern("subnets"+"."+strconv.Itoa(i), "body", m.Subnets[i], `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 			return err
 		}
 
@@ -386,12 +398,11 @@ func (m *Network) validateSubnets(formats strfmt.Registry) error {
 }
 
 func (m *Network) validateTenantID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.TenantID) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("tenant_id", "body", string(m.TenantID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("tenant_id", "body", m.TenantID, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -399,7 +410,6 @@ func (m *Network) validateTenantID(formats strfmt.Registry) error {
 }
 
 func (m *Network) validateUpdatedAt(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.UpdatedAt) { // not required
 		return nil
 	}
@@ -408,6 +418,11 @@ func (m *Network) validateUpdatedAt(formats strfmt.Registry) error {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this network based on context it is used
+func (m *Network) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

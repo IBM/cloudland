@@ -6,18 +6,21 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"context"
 
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // CreateImageMemberParamsBody create image member params body
+//
 // swagger:model createImageMemberParamsBody
 type CreateImageMemberParamsBody struct {
 
 	// member
+	// Example: 8989447062e04a818baf9e073fd04fa7
 	// Required: true
 	Member *string `json:"member"`
 }
@@ -42,6 +45,11 @@ func (m *CreateImageMemberParamsBody) validateMember(formats strfmt.Registry) er
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this create image member params body based on context it is used
+func (m *CreateImageMemberParamsBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

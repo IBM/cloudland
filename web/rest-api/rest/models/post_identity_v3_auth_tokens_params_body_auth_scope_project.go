@@ -6,14 +6,16 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"context"
 
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // PostIdentityV3AuthTokensParamsBodyAuthScopeProject post identity v3 auth tokens params body auth scope project
+//
 // swagger:model postIdentityV3AuthTokensParamsBodyAuthScopeProject
 type PostIdentityV3AuthTokensParamsBodyAuthScopeProject struct {
 
@@ -21,6 +23,7 @@ type PostIdentityV3AuthTokensParamsBodyAuthScopeProject struct {
 	Domain *PostIdentityV3AuthTokensParamsBodyAuthScopeProjectDomain `json:"domain,omitempty"`
 
 	// name
+	// Example: demo
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	Name string `json:"name,omitempty"`
 }
@@ -44,7 +47,6 @@ func (m *PostIdentityV3AuthTokensParamsBodyAuthScopeProject) Validate(formats st
 }
 
 func (m *PostIdentityV3AuthTokensParamsBodyAuthScopeProject) validateDomain(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Domain) { // not required
 		return nil
 	}
@@ -62,13 +64,40 @@ func (m *PostIdentityV3AuthTokensParamsBodyAuthScopeProject) validateDomain(form
 }
 
 func (m *PostIdentityV3AuthTokensParamsBodyAuthScopeProject) validateName(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Name) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("name", "body", string(m.Name), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("name", "body", m.Name, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this post identity v3 auth tokens params body auth scope project based on the context it is used
+func (m *PostIdentityV3AuthTokensParamsBodyAuthScopeProject) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateDomain(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *PostIdentityV3AuthTokensParamsBodyAuthScopeProject) contextValidateDomain(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Domain != nil {
+		if err := m.Domain.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("domain")
+			}
+			return err
+		}
 	}
 
 	return nil

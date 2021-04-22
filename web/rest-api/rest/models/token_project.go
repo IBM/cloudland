@@ -6,14 +6,16 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"context"
 
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // TokenProject token project
+//
 // swagger:model tokenProject
 type TokenProject struct {
 
@@ -21,10 +23,12 @@ type TokenProject struct {
 	Domain *TokenProjectDomain `json:"domain,omitempty"`
 
 	// id
+	// Example: 1841f2adad3a4b4aa6485fb4e3a3fda1
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	ID string `json:"id,omitempty"`
 
 	// name
+	// Example: member
 	// Pattern: ^[A-Za-z][-A-Za-z0-9_]*$
 	Name string `json:"name,omitempty"`
 }
@@ -52,7 +56,6 @@ func (m *TokenProject) Validate(formats strfmt.Registry) error {
 }
 
 func (m *TokenProject) validateDomain(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Domain) { // not required
 		return nil
 	}
@@ -70,12 +73,11 @@ func (m *TokenProject) validateDomain(formats strfmt.Registry) error {
 }
 
 func (m *TokenProject) validateID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ID) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("id", "body", string(m.ID), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("id", "body", m.ID, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
 	}
 
@@ -83,13 +85,40 @@ func (m *TokenProject) validateID(formats strfmt.Registry) error {
 }
 
 func (m *TokenProject) validateName(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Name) { // not required
 		return nil
 	}
 
-	if err := validate.Pattern("name", "body", string(m.Name), `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
+	if err := validate.Pattern("name", "body", m.Name, `^[A-Za-z][-A-Za-z0-9_]*$`); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this token project based on the context it is used
+func (m *TokenProject) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateDomain(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *TokenProject) contextValidateDomain(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Domain != nil {
+		if err := m.Domain.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("domain")
+			}
+			return err
+		}
 	}
 
 	return nil

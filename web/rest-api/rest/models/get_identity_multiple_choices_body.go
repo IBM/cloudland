@@ -6,14 +6,16 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"context"
 
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // GetIdentityMultipleChoicesBody get identity multiple choices body
+//
 // swagger:model getIdentityMultipleChoicesBody
 type GetIdentityMultipleChoicesBody struct {
 
@@ -44,6 +46,34 @@ func (m *GetIdentityMultipleChoicesBody) validateVersions(formats strfmt.Registr
 
 	if m.Versions != nil {
 		if err := m.Versions.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("versions")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this get identity multiple choices body based on the context it is used
+func (m *GetIdentityMultipleChoicesBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateVersions(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *GetIdentityMultipleChoicesBody) contextValidateVersions(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Versions != nil {
+		if err := m.Versions.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("versions")
 			}
