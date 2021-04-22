@@ -70,7 +70,7 @@ func (a *RegistryAdmin) Create(ctx context.Context, label, virtType, ocpVersion,
 		cli_bak = "file://" + cli
 	}
 
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_registry_image.sh '%d' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, virtType)
+	command := fmt.Sprintf("/opt/cloudland/scripts/frontend/create_registry_image.sh '%d' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, virtType)
 
 	log.Println("Create registry image command :" + command)
 	cmd := exec.Command("/bin/bash", "-c", command)
@@ -194,7 +194,7 @@ func (a *RegistryAdmin) Update(ctx context.Context, id int64, label, virtType, o
 		cli_bak = cli
 	}
 
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_registry_image.sh '%d' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, virtType)
+	command := fmt.Sprintf("/opt/cloudland/scripts/frontend/create_registry_image.sh '%d' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, virtType)
 
 	log.Println("Create registry image command :" + command)
 	cmd := exec.Command("/bin/bash", "-c", command)
