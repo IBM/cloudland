@@ -131,10 +131,11 @@
 
 - name: create cloudrc local file for kvm on Z
   vars:
-    network_device: "{{ netdev.stdout }}"
-    zlayer2_interface: "{{ netdev.stdout }}"
+    network_device: "{{ netdev.stdout_lines[0] }}"
+    zlayer2_interface: "{{ netdev.stdout_lines[0] }}"
     layer3_device: br5000
     vnc_device: br5000
+    vxlan_device: br5000
   template:
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
@@ -147,7 +148,8 @@
 
 - name: create cloudrc local file for kvm
   vars:
-    network_device: "{{ netdev.stdout }}"
+    network_device: "{{ netdev.stdout_lines[0] }}"
+    vxlan_device: br5000
     layer3_device: br5000
     vnc_device: br5000
   template:
