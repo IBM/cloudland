@@ -58,7 +58,7 @@ func (a *ImageAdmin) Create(ctx context.Context, osVersion, diskType, virtType, 
 			return
 		}
 	} else {
-		command := "/opt/cloudland/scripts/kvm/create_image.sh " + strconv.Itoa(int(image.ID)) + " " + url + " " + virtType
+		command := "/opt/cloudland/scripts/frontend/create_image.sh " + strconv.Itoa(int(image.ID)) + " " + url + " " + virtType
 		cmd := exec.Command("/bin/bash", "-c", command)
 		err = cmd.Run()
 		if err != nil {
