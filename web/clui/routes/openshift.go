@@ -276,7 +276,8 @@ func (a *OpenshiftAdmin) Update(ctx context.Context, id, flavorID int64, nworker
 		for i := 0; i < int(nworkers-openshift.WorkerNum); i++ {
 			maxIndex++
 			hostname := fmt.Sprintf("worker-%d.%s.%s", maxIndex, openshift.ClusterName, openshift.BaseDomain)
-			_, err = openshiftAdmin.Launch(ctx, id, hostname, openshift.LoadBalancer)
+			lb :=strings.Split(openshift.LoadBalancer, `/`)
+			_, err = openshiftAdmin.Launch(ctx, id, hostname, lb[0])
 			if err != nil {
 				log.Println("Failed to launch a worker", err)
 				return
