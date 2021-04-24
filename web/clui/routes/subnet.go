@@ -118,7 +118,7 @@ func generateIPAddresses(subnet *model.Subnet, start net.IP, end net.IP, preSize
 	return nil
 }
 
-func (a *SubnetAdmin) Update(ctx context.Context, id int64, name, gateway, start, end, routes string) (subnet *model.Subnet, err error) {
+func (a *SubnetAdmin) Update(ctx context.Context, id int64, name, gateway, start, end, dns, routes string) (subnet *model.Subnet, err error) {
 	db := DB()
 	subnet = &model.Subnet{Model: model.Model{ID: id}}
 	err = db.Take(subnet).Error
@@ -160,6 +160,9 @@ func (a *SubnetAdmin) Update(ctx context.Context, id int64, name, gateway, start
 			subnet.End = end
 		}
 	}
+ 	if dns != "" {
+                subnet.NameServer = dns
+        }
 	subnet.Routes = routes
 	err = db.Save(subnet).Error
 	if err != nil {
@@ -782,14 +785,15 @@ func (v *SubnetView) Patch(c *macaron.Context, store session.Store) {
 	gateway := c.QueryTrim("gateway")
 	start := c.QueryTrim("start")
 	end := c.QueryTrim("end")
+	dns := c.QueryTrim("dns")
 	routes := c.QueryTrim("routes")
-	routeJson, err := v.checkRoutes(network, netmask, gateway, start, end, "", routes, id)
+	routeJson, err := v.checkRoutes(network, netmask, gateway, start, end, dns, routes, id)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	subnet, err := subnetAdmin.Update(c.Req.Context(), id, name, gateway, start, end, routeJson)
+	subnet, err := subnetAdmin.Update(c.Req.Context(), id, name, gateway, start, end, dns, routeJson)
 	if err != nil {
 		log.Println("Create subnet failed", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
