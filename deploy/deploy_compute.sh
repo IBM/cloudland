@@ -19,13 +19,15 @@ cland_root_dir=/opt/cloudland
 
 # check configuration file
 conf=$cland_root_dir/deploy/conf.json
-if [ ! -e $conf ]; then
-    echo "No configuration file $cland_root_dir/deploy/conf.json" 
-    echo "Create the configuration file according to $cland_root_dir/deploy/conf.json.sample. "
-    echo "Re-run the deployment when the configuration file is ready."
-    exit -1
+if [ -n $auto ]; then
+    cp ~/deploy/conf.json $conf
 fi
-
+if [ ! -e $conf ]; then
+        echo "No configuration file $cland_root_dir/deploy/conf.json"
+        echo "Create the configuration file according to $cland_root_dir/deploy/conf.json.sample. "
+        echo "Re-run the deployment when the configuration file is ready."
+        exit -1
+fi
 compute=$(jq -r .compute < $conf)
 length=$(echo $compute | jq length)
 if [ $end -ge $length ]; then
