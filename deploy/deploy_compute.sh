@@ -6,14 +6,14 @@ if [ $user != "cland" ]; then
     exit -1
 fi
 
-if [ $# -ne 2 -o $2 -lt $1 ]; then
+if [ $# -lt 2 -o $2 -lt $1 ]; then
     echo "deploy_compute.sh <begin> <end>"
     exit -1
 fi
 
 begin=$1
 end=$2
-
+auto=$3
 # set cland root dir
 cland_root_dir=/opt/cloudland
 
@@ -88,16 +88,21 @@ do
 done
 
 echo "Deployment on compute nodes finished successfully. You must restart all compute nodes and check the network connectivity"
-while true; do
-    read -p "Restart all compute nodes now (Y/N)? " restart
-    if [ "$restart" = "Y" -o "$restart" = "y" ]; then
-        echo "Restarting all compute nodes ..."
-        ansible-playbook -b reboot.yml --tags reboot
-        break
-    elif [ "$restart" = "N" -o "$restart" = "n" ]; then
-        echo "Warning: you choose not to restart the compute nodes now. Please restart them before using cloudland"
-        break
-    else 
-        echo "You must input Y or N"
-    fi
-done
+if [ -z $auto ]; then
+    while true; do
+      read -p "Restart all compute nodes now (Y/N)? " restart
+      if [ "$restart" = "Y" -o "$restart" = "y" ]; then
+          echo "Restarting all compute nodes ..."
+          ansible-playbook -b reboot.yml --tags reboot
+          break
+      elif [ "$restart" = "N" -o "$restart" = "n" ]; then
+          echo "Warning: you choose not to restart the compute nodes now. Please restart them before using cloudland"
+          break
+     else
+         echo "You must input Y or N"
+     fi
+    done
+else
+    echo "Warning: you choose not to restart the compute nodes now. Please restart them before using cloudland"
+fi
+
