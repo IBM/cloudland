@@ -1,0 +1,26 @@
+{
+    "controller": {
+        "hostname": "clandbuild",
+        "ip": "148.100.78.58"
+    },
+    "compute": [
+        {
+            "id": 0,
+            "hostname": "clandbuild",
+            "ip": "148.100.78.58",
+            "virt_type": "kvm-s390x",
+            "zone_name": "zone0",
+            "cpu_over_ratio": 10,
+            "mem_over_ratio": 1,
+            "disk_over_ratio": 1,
+            "dns_server": "8.8.8.8",
+            "domain_name": "linuxone.build.com",
+	    "zlayer2_iface": "enc1000",
+            "network_device": "enc1000",
+            "vnc_device": "enc1000",
+            "network_external_vlan": "5000",
+            "network_internal_vlan": "5010"
+        }      
+        
+    ]
+}
