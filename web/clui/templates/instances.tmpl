@@ -48,6 +48,18 @@
                     offset = queryURL.split("=")[1];
                     searchURL = "/UpdateTable?offset="+offset;
                 }
+                
+                var all_ins_num=0;
+                $.ajax({
+                        type: "GET",
+                        url: "/UpdateTable?limit=100000000",
+                        async:false,
+                        success: function (data) {
+                            all_ins_num = data.instancedata.length;
+                            console.log("all_ins_num=="+all_ins_num);
+                        }
+                })
+
 		$.ajax({
 			type: "GET",
 			url: searchURL,
@@ -57,7 +69,8 @@
                                 var page3 = '</a></a>';
                                 var page_content =  "";
                                 var instants_num = data.instancedata.length;
-                                var temp_num = 32/inst_num;                                
+                                console.log("instants_num=="+instants_num);
+                                var temp_num = all_ins_num/16;                                
                                 var count = Math.floor(temp_num);
                                 var temp_num2;
                                 var temp_num3;
