@@ -1,5 +1,6 @@
 #!/bin/bash
 
+auto=$1
 user=`whoami`
 if [ $user != "cland" ]; then
     echo "Use user 'cland' to deploy CloudLand."
@@ -44,6 +45,9 @@ echo "Deploying CloudLand ..."
 
 # check configuration file
 conf=$cland_root_dir/deploy/conf.json
+if [ -n $auto ]; then
+    cp ~/deploy/conf.json $conf
+fi
 if [ ! -e $conf ]; then
     echo "No configuration file $cland_root_dir/deploy/conf.json" 
     echo "Create the configuration file according to $cland_root_dir/deploy/conf.json.sample. "
@@ -80,13 +84,20 @@ db_passwd="passw0rd"
 new_conf="yes"
 
 if [ ! -e "/opt/cloudland/web/clui/conf/config.toml" ]; then
-    #read -s -p "Set the 'admin' login password: " admin_passwd
-    admin_passwd="passw0rd"
-    echo
-    #read -s -p "Set the database login password: " db_passwd
-    db_passwd="passw0rd"
-    echo
-else
+		if [ $# -lt 1 ]; then
+            read -s -p "Set the 'admin' login password: " admin_passwd
+            admin_passwd="passw0rd"
+            echo
+            read -s -p "Set the database login password: " db_passwd
+            db_passwd="passw0rd"
+            echo
+       else
+            admin_passwd="passw0rd"
+            echo
+            db_passwd="passw0rd"
+            echo
+      fi
+else 
     new_conf="no"
     db_passwd=$(grep 'user=postgres' /opt/cloudland/web/clui/conf/config.toml | awk '{print $6}' | awk -F '=' '{print $2}')
 fi
@@ -102,8 +113,9 @@ length=$(echo $compute | jq length)
 let end=length-1
 if [ $end -lt 0 ]; then
     ansible-playbook service.yml --tags start_cloudland
-else
+elif [$# -lt 1]; then
     ./deploy_compute.sh 0 $end
+  else
+    ./deploy_compute.sh 0 $end $auto
 fi
-
 echo "Done."
