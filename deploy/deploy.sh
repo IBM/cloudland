@@ -45,6 +45,9 @@ echo "Deploying CloudLand ..."
 
 # check configuration file
 conf=$cland_root_dir/deploy/conf.json
+if [ -n $auto ]; then
+    cp ~/deploy/conf.json $conf
+fi
 if [ ! -e $conf ]; then
     echo "No configuration file $cland_root_dir/deploy/conf.json" 
     echo "Create the configuration file according to $cland_root_dir/deploy/conf.json.sample. "
