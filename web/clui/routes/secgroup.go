@@ -250,28 +250,28 @@ func (v *SecgroupView) Delete(c *macaron.Context, store session.Store) (err erro
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is Empty"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	secgroupID, err := strconv.Atoi(id)
 	if err != nil {
 		log.Println("Invalid security group ID, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "security_groups", int64(secgroupID))
 	if !permit {
 		log.Println("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	err = secgroupAdmin.Delete(int64(secgroupID))
 	if err != nil {
-		log.Println("Failed to delete security group, %v", err)
+		log.Printf("Failed to delete security group, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.JSON(200, map[string]interface{}{
@@ -279,7 +279,6 @@ func (v *SecgroupView) Delete(c *macaron.Context, store session.Store) (err erro
 	})
 	return
 }
-
 func (v *SecgroupView) New(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
