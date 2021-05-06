@@ -153,9 +153,9 @@ To scale up/down more/less workers, click the cluster ID and input worker number
 1. configuration in ocID-lb need to be updated after scale up/down
    * update **/etc/dnsmasq.openshift.addnhosts** to make sure the ip of worker-N.${cluster_name}.${base_domain} is correct.
    * update **/etc/haproxy/haproxy.cfg** to make sure the corresponding port (80,443) of worker-x.${cluster_name}.${base_domain} is correct.
-2. restart haproxy and dnsmaq to take effect
-   * **systemctl restart haproxy**
-   * **systenctl restart dnsmasq**
+2. restart dnsmaq and haproxy to take effect
+   * **systemctl restart dnsmasq**
+   * **systenctl restart haproxy**
 3. to approve csr certification by manual when scalling up
    * **oc get csr** to review the status of csr certification
    * **oc adm certificate approve xxxx** to approve csr certification. **xxxx** means csr NAME
