@@ -162,7 +162,7 @@ To scale up/down more/less workers, click the cluster ID and input worker number
 4. delete worker node by manual when scalling down
    * **oc delete nodes worker-N.${cluster_name}.${base_domain}** 
 
-## Create a Glusterfs cluster
+# Create a Glusterfs cluster
 
 To create a Glusterfs cluster, simply specify name, flavor and key. Optionally you can associate it with an existing OpenShift cluster and input a number larger than 3 for works. If an OpenShift cluster is associated, the vms will be deployed into its same subnet so the openshift workers can access it directly.
 
