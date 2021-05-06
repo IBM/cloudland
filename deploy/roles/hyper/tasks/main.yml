@@ -208,7 +208,7 @@
     state: restarted
   with_items:
     - 'scid'
-  tags: [be_srv, sci]
+  tags: [be_srv, sci, start_sci]
 
 - name: start cloudlet services
   systemd: 

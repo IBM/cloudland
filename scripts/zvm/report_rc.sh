@@ -50,7 +50,7 @@ function calc_resource()
     old_resource_list=$(cat old_resource_list 2>/dev/null)
     resource_list="'$cpu' '$cpu_total' '$memory_available' '$memory_total' '$disk_available' '$disk_total' '$state'"
     [ "$resource_list" = "$old_resource_list" ] && return
-    echo "|:-COMMAND-:| hyper_status.sh '$SCI_CLIENT_ID' '$HOSTNAME' '$cpu' '$cpu_total' '$memory_available' '$memory_total' '$disk_available' '$disk_total' '$state' '$VIRT_TYPE' '$ZONE_NAME'"
+    echo "|:-COMMAND-:| hyper_status.sh '$SCI_CLIENT_ID' '$HOSTNAME' '$cpu' '$cpu_total' '$memory_available' '$memory_total' '$disk_available' '$disk_total' '$state' '$VIRT_TYPE' '$ZONE_NAME' '$vtep_ip'"
     echo "'$cpu' '$cpu_total' '$memory_available' '$memory_total' '$disk_available' '$disk_total' '$state'" >/opt/cloudland/run/old_resource_list
 }
 

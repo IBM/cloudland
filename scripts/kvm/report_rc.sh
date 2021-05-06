@@ -17,7 +17,7 @@ network=0
 total_network=0
 load=$(w | head -1 | cut -d',' -f5 | cut -d'.' -f1 | xargs)
 total_load=0
-vtep_ip=$(ifconfig $vxlan_interface | grep 'inet ' | awk '{print $2}')
+#vtep_ip=$(ifconfig $vxlan_interface | grep 'inet ' | awk '{print $2}')
 
 function probe_arp()
 {
@@ -95,10 +95,14 @@ function calc_resource()
     done
     used_disk=$(sudo du -s $image_dir | awk '{print $1}')
     for disk in $(ls $image_dir/* 2>/dev/null); do
-        vdisk=$(qemu-img info $disk | grep 'virtual size:' | cut -d' ' -f4 | tr -d '(')
+        if [[ "$disk" = "/opt/cloudland/cache/instance/old_inst_list" ]]; then
+            continue
+        fi
+        vdisk=$(qemu-img info --force-share $disk | grep 'virtual size:' | cut -d' ' -f3 | tr -d '(')
         [ -z "$vdisk" ] && continue
         let virtual_disk=$virtual_disk+$vdisk
     done
+    let virtual_disk=virtual_disk*1024*1024*1024
     total_used_disk=$(sudo du -s $mount_point | awk '{print $1}')
     total_disk=$(echo "($total_disk-$total_used_disk+$used_disk)*$disk_over_ratio" | bc)
     total_disk=${total_disk%.*}
