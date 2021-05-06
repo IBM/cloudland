@@ -1,6 +1,32 @@
 #!/bin/bash
 
-auto=$1
+if [[ $# -ne 0 && $# -ne 4 ]]; then 
+    echo "Usage: $0 or $0 <admin_password> <database_password> <url_of_conf.json> <if_reboot_kvm_compute>"
+    echo "Example: $0, or $0 123456 123456 'file:///tmp/conf.json' [yes|no]"
+    exit -1
+fi
+
+auto=0
+admin_passwd="passw0rd"
+db_passwd="passw0rd"
+reboot_kvm_compute=0
+
+cland_root_dir=/opt/cloudland
+conf=$cland_root_dir/deploy/conf.json
+
+if [[ $# -eq 4 ]]; then
+    curl -s -o "$conf" "$3"
+    if [[ $? -ne 0 ]]; then
+        echo "Check the url of the conf.json"
+        exit -1
+    fi
+
+    auto=1
+    admin_passwd="$1"
+    db_passwd="$2"
+    reboot_kvm_compute=1
+fi
+
 user=`whoami`
 if [ $user != "cland" ]; then
     echo "Use user 'cland' to deploy CloudLand."
@@ -31,9 +57,6 @@ do
     fi
 done
 
-# set cland root dir
-cland_root_dir=/opt/cloudland
-
 # link backend (default to kvm)
 cd $cland_root_dir/scripts
 rm -f backend 
@@ -44,10 +67,6 @@ cd $cland_root_dir
 echo "Deploying CloudLand ..."
 
 # check configuration file
-conf=$cland_root_dir/deploy/conf.json
-if [ -n $auto ]; then
-    cp ~/deploy/conf.json $conf
-fi
 if [ ! -e $conf ]; then
     echo "No configuration file $cland_root_dir/deploy/conf.json" 
     echo "Create the configuration file according to $cland_root_dir/deploy/conf.json.sample. "
@@ -79,26 +98,17 @@ $hname ansible_host=$ip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key
 [hyper]
 EOF
 
-admin_passwd="passw0rd"
-db_passwd="passw0rd"
 new_conf="yes"
-
 if [ ! -e "/opt/cloudland/web/clui/conf/config.toml" ]; then
-		if [ $# -lt 1 ]; then
-            read -s -p "Set the 'admin' login password: " admin_passwd
-            admin_passwd="passw0rd"
-            echo
-            read -s -p "Set the database login password: " db_passwd
-            db_passwd="passw0rd"
-            echo
-       else
-            admin_passwd="passw0rd"
-            echo
-            db_passwd="passw0rd"
-            echo
-      fi
+    if [[ $auto -eq 0 ]]; then
+        read -s -p "Set the 'admin' login password: " admin_passwd
+        echo
+        read -s -p "Set the database login password: " db_passwd
+        echo
+    fi
 else 
     new_conf="no"
+    admin_passwd=$(grep 'password = ' /opt/cloudland/web/clui/conf/config.toml | awk '{print $3}' | tr -d '"')
     db_passwd=$(grep 'user=postgres' /opt/cloudland/web/clui/conf/config.toml | awk '{print $6}' | awk -F '=' '{print $2}')
 fi
 
@@ -113,9 +123,7 @@ length=$(echo $compute | jq length)
 let end=length-1
 if [ $end -lt 0 ]; then
     ansible-playbook service.yml --tags start_cloudland
-elif [$# -lt 1]; then
-    ./deploy_compute.sh 0 $end
-  else
-    ./deploy_compute.sh 0 $end $auto
+else
+    ./deploy_compute.sh 0 $end $reboot_kvm_compute
 fi
 echo "Done."

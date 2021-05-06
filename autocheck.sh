@@ -1,7 +1,6 @@
 checkpr(){
   VERSION=$1
   RELEASE=$2
-  AUTO=$3
   cd /opt
   sudo chown -R cland:cland cloudland/
   echo "PENDING" > ./cloudland/web/clui/public/test_status
@@ -32,7 +31,7 @@ checkpr(){
   sudo ./build_rpm.sh $VERSION $RELEASE
   echo "Deploy cloudland"
   cd /opt/cloudland/deploy/
-  ./deploy.sh $AUTO
+  ./deploy.sh passw0rd passw0rd file:////home/cland/deploy/conf.json no
   if [ $? -ne 0 ]
   then
     sudo echo "FAILED" > ../web/clui/public/test_status
@@ -95,7 +94,7 @@ pend(){
 # check status
 if [ ! -n "$1" ]||[ "$1" == "pull_request" ]
 then
-  checkpr $2 $3 $4
+  checkpr $2 $3
 elif [ "$1" == "test" ]
 then
   checktest $2

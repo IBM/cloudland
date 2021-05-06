@@ -100,7 +100,9 @@ fi
 
 mkdir -p $image_cache/ocp/$ocp_version/$virt_type
 kernel=ocp/$ocp_version/$virt_type/rhcos-installer-kernel
-if [ ! -f "$image_cache/$kernel" ]; then
+remote_kernel_size=$(curl -sI "$image_repo/$kernel" | grep Content-Length | awk '{print $2}')
+echo "remote_kernel_size:$remote_kernel_size"
+if [ ! -f "$image_cache/$kernel" ] || [ `ls -l $image_cache/$kernel | awk '{print $5}'` != $remote_kernel_size ]; then
     wget -q $image_repo/$kernel -O $image_cache/$kernel
     if [ ! -f "$image_cache/$kernel" ]; then
         echo "$vm_ID: no kernel file!"
@@ -110,7 +112,9 @@ if [ ! -f "$image_cache/$kernel" ]; then
     fi
 fi
 ramdisk=ocp/$ocp_version/$virt_type/rhcos-installer-initramfs.img
-if [ ! -f "$image_cache/$ramdisk" ]; then
+remote_ramdisk_size=$(curl -sI "$image_repo/$ramdisk" | grep Content-Length | awk '{print $2}')
+echo "remote_ramdisk_size:$remote_ramdisk_size"
+if [ ! -f "$image_cache/$ramdisk" ] || [ `ls -l $image_cache/$ramdisk | awk '{print $5}'` != $remote_ramdisk_size ]; then
     wget -q $image_repo/$ramdisk -O $image_cache/$ramdisk
     if [ ! -f "$image_cache/$ramdisk" ]; then
         echo "$vm_ID: no ramdisk file!"
