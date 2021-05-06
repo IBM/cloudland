@@ -147,7 +147,7 @@ There are 3 ways to access the DNS records of the APPs in this cluster
 **Note**: 
 1. the installation procedure uses your access cookie, so do not logout cloudland web console before the installation completes.
 
-### Scale up/down more/less workers
+### Scale up/down workers
 
 To scale up/down more/less workers, click the cluster ID and input worker number in edit page and submit   
 1. configuration in ocID-lb need to be updated after scale up/down
