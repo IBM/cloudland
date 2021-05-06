@@ -24,38 +24,146 @@ To create a gateway, you can specify a name or choose what kind of network the g
 After you create a gateway, you can choose a instance from the drop down menu and create a floating ip to it. 
 
 # Create an OpenShift cluster
-It is simple to create an OpenShift cluster, you need to input cluster name, base domain which determine the domain names of your access endpoint and APPs, therefore, the combination of `${cluster_name}.${base_domain}` must be a valid domain name. Also, you must have a key, and have a redhat account registered to get a pull secret (https://cloud.redhat.com/openshift/install/metal/user-provisioned) before proceeding with the create button. The combination of `${cluster_name}.${base_domain}` must be a valid domain name.     
-   
-During the cluster creation, the status indicates the stage where the installation goes. You can observe the instances created in instances tab.  With time, the instances named ocID-lb, bootstrap, master-N, workers-N will show up in series. The instance ocID-lb acts as load balancer and domain name server for the cluster, you can login it via its floating IP with the key specified before and see the log file /tmp/ocd.log.
 
-Once the cluster status is marked as complete, you can get the credentials from ocID-lb:/opt/\${cluster_name}/auth. The web console is https://console-openshift-console.apps.\${cluster_name}.\${base_domain}. 
+## Prerequisite Of Openshift Cluster Platform Registry
 
-There are 3 ways to access the DNS records of the APPs in this cluster   
-1. Ideally, if you are the owner of `${base_domain}`, then in your DNS provider's website, you can create     
-* An 'A' record with `dns.${cluster_name}.${base_domain}` pointing to the public floating IP of instance ocID-lb
-* An 'NS' record with `${cluster_name}.${base_domain}` referring to `dns.${cluster_name}.${base_domain}`   
-2. For temporary usage or testing purpose, you can modify file /etc/hosts in your working machine with these records for example:   
-``` 
-$floating_ip     console-openshift-console.apps.${cluster_name}.${base_domain}
-$floating_ip     oauth-openshift.apps.${cluster_name}.${base_domain}
-$floating_ip     prometheus-k8s-openshift-monitoring.apps.${cluster_name}.${base_domain}
-$floating_ip     grafana-openshift-monitoring.apps.${cluster_name}.${base_domain}
-$floating_ip     alertmanager-main-openshift-monitoring.apps.${cluster_name}.${base_domain}
-$floating_ip     downloads-openshift-console.apps.${cluster_name}.${base_domain}
-$floating_ip     default-route-openshift-image-registry.apps.${cluster_name}.${base_domain}
-```
-If you have more apps created, then create more records accordingly and similarly.   
-   
-3. Alternatively, you can modify /etc/resolv.conf in your working machine with 
-```
-nameserver $floating_ip
-``` 
-The ocID-lb is able to resolve the domain names both inside and outside of the cluster.   
+   - Generate pull secret according to https://cloud.redhat.com/openshift/install/pull-secret
 
-**Note**: the installation procedure uses your access cookie, so do not logout cloudland web console before the installation completes.
-To scale up/down more/less workers, click the cluster ID and input worker number in edit page and submit
+## Fill in the registry information in Registry tab
+	- Label: the registry name
+	- Virtualization Type:
+		- KVM on Z
+		- KVM on x86_64
+		- z/VM
+	- Openshift Version: version 4.6 and higher are supported
+	- Registry Content: 
+		  pullSecret: '{"auths": ...}'
+		  sshKey: 'ssh-ed25519 AAAA...'
+		  <optional, it is required for private registry>
+	      additionalTrustBundle: | 
+                  -----BEGIN CERTIFICATE-----
+                    <MY_TRUSTED_CA_CERT>
+                  -----END CERTIFICATE----- 
+		  <optional, it is required for private registry>              
+ 		  imageContentSources:
+		  - mirrors:
+		    - ...
+                  source: ... 
+          - mirrors:
+		    - ...
+                  source: ...
+	- RHCOS initramfs: Location of the initramfs file. For example:
+		Local: 
+		file:///<local_path>/rhcos-<version>-live-initramfs-<architecture>
+		Remote (Need a http server): 
+		http://<HTTP_server>/<path>/rhcos-<version>-live-initramfs-<architecture> 
+	- RHCOS kernel: Localtion of the kernel file. For example
+		Local: 
+		file:///<local_path>/rhcos-<version>-live-kernel-<architecture>	     
+        Remote (Need a http server): 
+		http://<HTTP_server>/<path>/rhcos-<version>-live-kernel-<architecture>
+	- RHCOS image: Location of the rootfs file location. For example
+		Local: 
+		file:///<local_path>/rhcos-<version>-live-rootfs-<architecture>	
+		Remote (Need a http server): 
+		http://<HTTP_server>/<path>/rhcos-<version>-live-rootfs-<architecture>
+	- OCP installer: Location of the openshift-install. For example
+        Local: 
+		file:///<local_path>/openshift-install-linux.tar.gz
+  		Remote (Need a http server): 
+		http://<HTTP_server>/<path>/openshift-install-linux.tar.gz
+	- OCP client: Location for the openshift-client. For example
+		Local: 
+		file:///<local_path>/openshift-client-linux.tar.gz
+        Remote (Need a http server): 
+		http://<HTTP_server>/<path>/openshift-client-linux.tar.gz
+
+* CloudLand uses curl to download the files.
+* Download the RHCOS images from RedHat offical website and save it to local or a http server before creating the registry.
+    
+## Click the **Create** button to generate the registry
+
+- Go to the directory (/opt/cloudland/cache/image/ocp/[**version**]/[**virtType**]) to check if the files are downloaded successfully or not.
+
+## Delete or update the registry information in Registry Tab.
+
+## Config your own yum repo for private registry(Optional)
+
+- Prepare your own yum repo file with the filename format of **ocd_lb_yum_${virt_type}.repo** and upload to **/opt/cloudland/web/clui/public/misc/openshift** in the Controller Server.
+
+## Create a Openshift Cluster
+	
+* Go to **Openshift** tab and click **Create** button:
+	- Cluster Name
+	- Base Domain: determine the domain names of your access endpoint and APPs
+		the combination of `${cluster_name}.${base_domain}` must be a valid domain name.
+	- Zone: zone to install the Openshift cluster
+	- Infrastructure Type:
+		KVM on Z
+		KVM on x86_64
+		z/VM
+	- LoadBalancer_IP: <Optional>.
+	- High Available: <Optional> The Default Setting is no.
+	- Number of Workers: The Default Setting is 2
+	- Registry: Select or Create if it's necessary
+	- LB_Flavor: Select or Create if it's necessary
+	- Master_Flavor: Select or Create if it's necessary
+	- Worker_Flavor: Select or Create if it's necessary
+	- Subnet: <Optional> The Default Setting is Public. Choose or Create if it's necessary
+	- Key: key to login Load balancer. Choose or Create if it's necessary.
+
+* Check the instances from the **Instances** tab.  
+  * The instances named **ocID-lb, bootstrap, master-N, workers-N**  
+  * The instance ocID-lb is the Load Balancer and domain name server for the cluster, you can login it via its floating IP with the key specified before and see the log file /tmp/ocd.log.
+
+## Login Openshift in Web Console
+
+Once the cluster status is marked as complete, you can get the credentials from lb:/opt/\${cluster_name}/auth. 
+
+The web console is https://console-openshift-console.apps.\${cluster_name}.\${base_domain}.
+
+There are 3 ways to access the DNS records of the APPs in this cluster
+1. Ideally, if you are the owner of `${base_domain}`, then in your DNS provider's website, you can create: 
+   * An 'A' record with `dns.${cluster_name}.${base_domain}` pointing to the public floating IP of instance ocID-lb
+   * An 'NS' record with `${cluster_name}.${base_domain}` referring to `dns.${cluster_name}.${base_domain}`
+2. For temporary usage or testing purpose, you can modify file /etc/hosts in your working machine with these records for example:
+	```
+	$floating_ip     console-openshift-console.apps.${cluster_name}.${base_domain}
+	$floating_ip     oauth-openshift.apps.${cluster_name}.${base_domain}
+	$floating_ip     prometheus-k8s-openshift-monitoring.apps.${cluster_name}.${base_domain}
+	$floating_ip     grafana-openshift-monitoring.apps.${cluster_name}.${base_domain}
+	$floating_ip     alertmanager-main-openshift-monitoring.apps.${cluster_name}.${base_domain}
+	$floating_ip     downloads-openshift-console.apps.${cluster_name}.${base_domain}
+	$floating_ip     default-route-openshift-image-registry.apps.${cluster_name}.${base_domain}
+	```
+	If you have more apps created, then create more records accordingly and similarly.
+
+3. Alternatively, you can modify /etc/resolv.conf in your working machine with
+	```
+	nameserver $floating_ip
+	```
+	The ocID-lb is able to resolve the domain names both inside and outside of the cluster.
+
+**Note**: 
+1. the installation procedure uses your access cookie, so do not logout cloudland web console before the installation completes.
+
+### Scale up/down workers
+
+To scale up/down more/less workers, click the cluster ID and input worker number in edit page and submit   
+1. configuration in ocID-lb need to be updated after scale up/down
+   * update **/etc/dnsmasq.openshift.addnhosts** to make sure the ip of worker-N.${cluster_name}.${base_domain} is correct.
+   * update **/etc/haproxy/haproxy.cfg** to make sure the corresponding port (80,443) of worker-x.${cluster_name}.${base_domain} is correct.
+2. restart haproxy and dnsmaq to take effect
+   * **systemctl restart haproxy**
+   * **systenctl restart dnsmasq**
+3. to approve csr certification by manual when scalling up
+   * **oc get csr** to review the status of csr certification
+   * **oc adm certificate approve xxxx** to approve csr certification. **xxxx** means csr NAME
+4. delete worker node by manual when scalling down
+   * **oc delete nodes worker-N.${cluster_name}.${base_domain}** 
 
 # Create a Glusterfs cluster
+
 To create a Glusterfs cluster, simply specify name, flavor and key. Optionally you can associate it with an existing OpenShift cluster and input a number larger than 3 for works. If an OpenShift cluster is associated, the vms will be deployed into its same subnet so the openshift workers can access it directly.
 
 To create a dynamic storage class, run
