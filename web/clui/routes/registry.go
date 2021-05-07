@@ -13,6 +13,7 @@ import (
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/go-macaron/session"
+	"github.com/spf13/viper"
 	macaron "gopkg.in/macaron.v1"
 	"log"
 	"net/http"
@@ -70,7 +71,9 @@ func (a *RegistryAdmin) Create(ctx context.Context, label, virtType, ocpVersion,
 		cli_bak = "file://" + cli
 	}
 
-	command := fmt.Sprintf("/opt/cloudland/scripts/frontend/create_registry_image.sh '%d' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, virtType)
+	accessAddr := viper.GetString("console.host")
+
+	command := fmt.Sprintf("/opt/cloudland/scripts/frontend/create_registry_image.sh '%d' '%s' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, virtType, accessAddr)
 
 	log.Println("Create registry image command :" + command)
 	cmd := exec.Command("/bin/bash", "-c", command)
