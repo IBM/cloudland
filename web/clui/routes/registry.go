@@ -172,32 +172,34 @@ func (a *RegistryAdmin) Update(ctx context.Context, id int64, label, virtType, o
 
 	initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak := "", "", "", "", ""
 	if strings.Contains(initramfs, "http") {
-		initramfs_bak = "file://" + initramfs
-	} else {
 		initramfs_bak = initramfs
+	} else {
+		initramfs_bak = "file://" + initramfs
 	}
 	if strings.Contains(kernel, "http") {
-		kernel_bak = "file://" + kernel
-	} else {
 		kernel_bak = kernel
+	} else {
+		kernel_bak = "file://" + kernel
 	}
 	if strings.Contains(image, "http") {
-		image_bak = "file://" + image
-	} else {
 		image_bak = image
+	} else {
+		image_bak = "file://" + image
 	}
 	if strings.Contains(installer, "http") {
-		installer_bak = "file://" + installer
-	} else {
 		installer_bak = installer
+	} else {
+		installer_bak = "file://" + installer
 	}
 	if strings.Contains(cli, "http") {
-		cli_bak = "file://" + cli
-	} else {
 		cli_bak = cli
+	} else {
+		cli_bak = "file://" + cli
 	}
 
-	command := fmt.Sprintf("/opt/cloudland/scripts/frontend/create_registry_image.sh '%d' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, virtType)
+	accessAddr := viper.GetString("console.host")
+
+	command := fmt.Sprintf("/opt/cloudland/scripts/frontend/create_registry_image.sh '%d' '%s' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, virtType, accessAddr)
 
 	log.Println("Create registry image command :" + command)
 	cmd := exec.Command("/bin/bash", "-c", command)
