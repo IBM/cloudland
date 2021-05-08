@@ -17,6 +17,17 @@ A default security group named username is created when user is created. You can
 # Launch an instance
 With all the above, it is straightforward to create an instance via web ui. if you are admin, you can create instance on public or private subnets directly, otherwise you can only create instance on your own internal subnets. To access the instance on internal subnets, you must create a gateway, and then create a floating ip to access it. You can also edit or view the instance by clicking instance ID. To get VNC password, you need to refresh the edit page.
 
+**Note**:
+1. fill in the yum repository configuration  in **User Data** item while creating instance and following the format of user data in cloud-init.
+example:
+#cloud-config
+yum_repos:
+    <repo-name>:
+       baseurl: <repo url>
+       name: <repo name>
+       enabled: <true/false>
+       # any repository configuration options (see man yum.conf)
+
 # Create a gateway
 To create a gateway, you can specify a name or choose what kind of network the gateway wants to route, it can be public, private or both, if you don't know what it is, leave it blank.
 
@@ -153,9 +164,9 @@ To scale up/down more/less workers, click the cluster ID and input worker number
 1. configuration in ocID-lb need to be updated after scale up/down
    * update **/etc/dnsmasq.openshift.addnhosts** to make sure the ip of worker-N.${cluster_name}.${base_domain} is correct.
    * update **/etc/haproxy/haproxy.cfg** to make sure the corresponding port (80,443) of worker-x.${cluster_name}.${base_domain} is correct.
-2. restart haproxy and dnsmaq to take effect
-   * **systemctl restart haproxy**
-   * **systenctl restart dnsmasq**
+2. restart dnsmaq and haproxy to take effect
+   * **systemctl restart dnsmasq**
+   * **systenctl restart haproxy**
 3. to approve csr certification by manual when scalling up
    * **oc get csr** to review the status of csr certification
    * **oc adm certificate approve xxxx** to approve csr certification. **xxxx** means csr NAME
