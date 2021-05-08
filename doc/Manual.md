@@ -20,7 +20,7 @@ With all the above, it is straightforward to create an instance via web ui. if y
 **Note**:
 1. fill in the yum repository configuration  in **User Data** item while creating instance and following the format of user data in cloud-init.
 example:
-
+#cloud-config
 yum_repos:
     <repo-name>:
        baseurl: <repo url>
