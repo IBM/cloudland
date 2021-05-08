@@ -17,6 +17,17 @@ A default security group named username is created when user is created. You can
 # Launch an instance
 With all the above, it is straightforward to create an instance via web ui. if you are admin, you can create instance on public or private subnets directly, otherwise you can only create instance on your own internal subnets. To access the instance on internal subnets, you must create a gateway, and then create a floating ip to access it. You can also edit or view the instance by clicking instance ID. To get VNC password, you need to refresh the edit page.
 
+**Note**:
+1. fill in the yum repository configuration  in **User Data** item while creating instance and following the format of user data in cloud-init.
+example:
+
+yum_repos:
+    <repo-name>:
+       baseurl: <repo url>
+       name: <repo name>
+       enabled: <true/false>
+       # any repository configuration options (see man yum.conf)
+
 # Create a gateway
 To create a gateway, you can specify a name or choose what kind of network the gateway wants to route, it can be public, private or both, if you don't know what it is, leave it blank.
 
