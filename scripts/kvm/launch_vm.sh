@@ -17,8 +17,10 @@ ephemeral_size=$8
 vm_stat=error
 vm_vnc=""
 
-metadata=$(base64 -d)
-./build_meta.sh "$vm_ID" "$vm_name" <<< $metadata >/dev/null 2>&1
+md=$(cat)
+metadata=$(echo $md | base64 -d)
+
+./build_meta.sh "$vm_ID" "$vm_name" <<< $md >/dev/null 2>&1
 vm_img=$volume_dir/$vm_ID.disk
 is_vol="true"
 if [ ! -f "$vm_img" ]; then
