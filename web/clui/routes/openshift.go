@@ -397,7 +397,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, cookie, ha
 	log.Println("invoking ocd.sh")
 	userdata = fmt.Sprintf("%s\n./ocd.sh '%d' '%s' '%s' '%s' '%s' '%s' '%d' '%s' '%s' '%s' '%s'<<EOF\n%s\nEOF", userdata, openshift.ID, cluster, domain, endpoint, cookie, haflag, nworkers, version, infraType, extIP, hostrec, encParts)
 	image := &model.Image{}
-	err = db.Where("open_shift_lb = ?", true).Take(image).Error
+	err = db.Where("open_shift_lb = ? and virt_type = ?", true, infraType).Take(image).Error
 	if err != nil {
 		log.Println("No valid LB image exists", err)
 		return
