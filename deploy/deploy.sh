@@ -9,7 +9,7 @@ fi
 auto=0
 admin_passwd="passw0rd"
 db_passwd="passw0rd"
-reboot_kvm_compute=0
+reboot_kvm_compute="yes"
 
 cland_root_dir=/opt/cloudland
 conf=$cland_root_dir/deploy/conf.json
@@ -24,7 +24,7 @@ if [[ $# -eq 4 ]]; then
     auto=1
     admin_passwd="$1"
     db_passwd="$2"
-    reboot_kvm_compute=1
+    reboot_kvm_compute="no"
 fi
 
 user=`whoami`
