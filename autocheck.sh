@@ -31,7 +31,7 @@ checkpr(){
   sudo ./build_rpm.sh $VERSION $RELEASE
   echo "Deploy cloudland"
   cd /opt/cloudland/deploy/
-  ./deploy.sh
+  ./deploy.sh passw0rd passw0rd file:////home/cland/deploy/conf.json no
   if [ $? -ne 0 ]
   then
     sudo echo "FAILED" > ../web/clui/public/test_status

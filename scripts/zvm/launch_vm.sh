@@ -49,9 +49,9 @@ if [ ! -n "$imageExists" ]; then
     fi 
 
     if [ $os_version = "rhcos4" ]; then
-        rc=`curl -s $zvm_service/images -X POST -d '{"image": {"url": "'"$image_repo/$img_name"'", "image_meta": {"os_version": "'"$os_version"'", "disk_type": "'"$disk_type"'"}, "image_name": "'"$img_name"'"}}' | jq .rc`        
+        rc=`curl -s $zvm_service/images -X POST -d '{"image": {"url": "file://'"$image_cache/$img_name"'", "image_meta": {"os_version": "'"$os_version"'", "disk_type": "'"$disk_type"'"}, "image_name": "'"$img_name"'"}}' | jq .rc`
     else
-        rc=`curl -s $zvm_service/images -X POST -d '{"image": {"url": "'"$image_repo/$img_name"'", "image_meta": {"os_version": "'"$os_version"'"}, "image_name": "'"$img_name"'"}}' | jq .rc`
+        rc=`curl -s $zvm_service/images -X POST -d '{"image": {"url": "file://'"$image_cache/$img_name"'", "image_meta": {"os_version": "'"$os_version"'"}, "image_name": "'"$img_name"'"}}' | jq .rc`
     fi
 
     rm -f $image_cache/$img_name

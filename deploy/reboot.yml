@@ -1,5 +1,5 @@
 - name: restart compute node
-  hosts: hyper
+  hosts: "{{ hostname }}"
   become_user: root
   tasks:
     - name: rebooting nodes

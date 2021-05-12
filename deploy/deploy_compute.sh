@@ -6,26 +6,34 @@ if [ $user != "cland" ]; then
     exit -1
 fi
 
-if [ $# -ne 2 -o $2 -lt $1 ]; then
-    echo "deploy_compute.sh <begin> <end>"
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 <begin_compute_id> <end_compute_id> <if_reboot_kvm_compute>"
+    echo "Example: $0 0 1 [yes|no]"
+    exit -1
+fi
+
+if [ $2 -lt $1 ]; then
+    echo "Usage: $0 <begin_compute_id> <end_compute_id> <if_reboot_kvm_compute>"
+    echo "Requires: begin_compute_id <= end_compute_id"
     exit -1
 fi
 
 begin=$1
 end=$2
+reboot_kvm_compute=$3
 
 # set cland root dir
 cland_root_dir=/opt/cloudland
 
 # check configuration file
 conf=$cland_root_dir/deploy/conf.json
+
 if [ ! -e $conf ]; then
-    echo "No configuration file $cland_root_dir/deploy/conf.json" 
+    echo "No configuration file $cland_root_dir/deploy/conf.json"
     echo "Create the configuration file according to $cland_root_dir/deploy/conf.json.sample. "
     echo "Re-run the deployment when the configuration file is ready."
     exit -1
 fi
-
 compute=$(jq -r .compute < $conf)
 length=$(echo $compute | jq length)
 if [ $end -ge $length ]; then
@@ -76,7 +84,7 @@ ansible-playbook service.yml --tags hosts,selinux,gen_host_list,start_cloudland
 sleep 1s
 
 # restart compute nodes' cloudlet after cloudland
-ansible-playbook service.yml --tags start_cloudlet
+#ansible-playbook service.yml --tags start_sci,start_cloudlet
 
 # deploy compute
 controller=$(jq -r .controller < $conf)
@@ -84,20 +92,9 @@ hname=$(echo $controller | jq -r .hostname)
 for ((i=$begin;i<=$end;i++));
 do
     node=$(echo $compute | jq '.['$i']')
+    virt_type=$(echo $node | jq -r .virt_type)
     ansible-playbook compute.yml -e "$node" -e "controller=$hname" --tags hyper
-done
-
-echo "Deployment on compute nodes finished successfully. You must restart all compute nodes and check the network connectivity"
-while true; do
-    read -p "Restart all compute nodes now (Y/N)? " restart
-    if [ "$restart" = "Y" -o "$restart" = "y" ]; then
-        echo "Restarting all compute nodes ..."
-        ansible-playbook -b reboot.yml --tags reboot
-        break
-    elif [ "$restart" = "N" -o "$restart" = "n" ]; then
-        echo "Warning: you choose not to restart the compute nodes now. Please restart them before using cloudland"
-        break
-    else 
-        echo "You must input Y or N"
+    if [[ $virt_type != "zvm" && $reboot_kvm_compute = "yes" ]]; then
+        ansible-playbook -b -e "$node" reboot.yml --tags reboot
     fi
 done

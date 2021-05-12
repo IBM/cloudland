@@ -13,7 +13,6 @@ mkdir -p $latest_dir
 vm_meta=$(cat)
 userdata=$(echo $vm_meta | base64 -d | jq -r .userdata)
 if [ -n "$userdata" ]; then
-   #echo "$userdata" > $latest_dir/user_data
    echo $vm_meta | base64 -d | jq -r .userdata > $latest_dir/user_data
 fi
 
