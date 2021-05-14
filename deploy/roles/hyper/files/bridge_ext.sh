@@ -20,7 +20,7 @@ prefix=$(grep "^PREFIX" $ether_cfg)
 echo "BRIDGE=br5000" >> $ether_cfg
 
 cat >$bridge_cfg <<EOF
-STP=yes
+STP=no
 TYPE=Bridge
 PROXY_METHOD=none
 BROWSER_ONLY=no
