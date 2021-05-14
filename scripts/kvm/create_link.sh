@@ -13,7 +13,7 @@ cat /proc/net/dev | grep -q "\<$vm_br\>:"
 if [ $? -eq 0 ]; then
     [ "$vlan" = "$external_vlan" -o "$vlan" = "$internal_vlan" ] && exit 0
 else
-    nmcli connection add con-name $vm_br type bridge ifname $vm_br stp no ipv4.method static ipv4.addresses 169.254.169.254/32
+    nmcli connection add con-name $vm_br type bridge ifname $vm_br ipv4.method static ipv4.addresses 169.254.169.254/32
     nmcli connection up $vm_br
     apply_bridge -I $vm_br
 fi
