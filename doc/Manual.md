@@ -91,12 +91,7 @@ After you create a gateway, you can choose a instance from the drop down menu an
 
 * CloudLand uses curl to download the files.
 * Download the RHCOS images from RedHat offical website and save it to local or a http server before creating the registry.
-    
-## Click the **Create** button to generate the registry
-
-- Go to the directory (/opt/cloudland/cache/image/ocp/[**version**]/[**virtType**]) to check if the files are downloaded successfully or not.
-
-## Delete or update the registry information in Registry Tab.
+* Go to the directory (/opt/cloudland/cache/image/ocp/${version}/${virt_type}) to check if the files downloaded successfully or not.
 
 ## Config your own yum repo for private registry(Optional)
 
@@ -158,7 +153,7 @@ There are 3 ways to access the DNS records of the APPs in this cluster
 **Note**: 
 1. the installation procedure uses your access cookie, so do not logout cloudland web console before the installation completes.
 
-### Scale up/down workers
+## Scale up/down workers
 
 To scale up/down more/less workers, click the cluster ID and input worker number in edit page and submit   
 1. configuration in ocID-lb need to be updated after scale up/down
