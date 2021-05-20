@@ -353,7 +353,7 @@ func (v *RegistryView) Patch(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	permit, err := memberShip.CheckUser(int64(registryID))
+	permit, err := memberShip.CheckOwner(model.Writer, "registries", int64(registryID))
 	if !permit {
 		log.Println("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
@@ -404,7 +404,7 @@ func (v *RegistryView) Edit(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	permit, err := memberShip.CheckUser(int64(registryID))
+	permit, err := memberShip.CheckOwner(model.Writer, "registries", int64(registryID))
 	if !permit {
 		log.Println("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
