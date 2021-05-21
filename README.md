@@ -32,6 +32,8 @@ Support two ways to install cloudland
 
 - Launch Virtual Machine
 - Create Openshift Cluster
+- Security Groups
+
 
 For more usage, refer to [User Manual](https://github.com/IBM/cloudland/blob/master/doc/Manual.md)
 
