@@ -39,5 +39,15 @@ do
    echo "br-ex1 fbd sync done for $instance"
 done
 
+sql_exec "select * from vxlan_rules" | while read line; do
+    vni=$(echo $line | cut -d'|' -f3)
+    inner_ip=$(echo $line | cut -d'|' -f4)
+    inner_mac=$(echo $line | cut -d'|' -f5)
+    outer_ip=$(echo $line | cut -d'|' -f6)
+    if [ "$outer_ip" != "$vtep_ip" ]; then
+        bridge fdb add $inner_mac dev v-$vni dst $outer_ip self permanent
+        ip neighbor add ${inner_ip%%/*} lladdr $inner_mac dev v-$vni nud permanent
+    fi
+done
 
 exit 0

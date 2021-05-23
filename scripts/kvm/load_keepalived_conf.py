@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """
 forked and modified 
 https://github.com/khosrow/lvsm/blob/master/lvsm/modules/kaparser.py

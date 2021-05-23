@@ -45,7 +45,8 @@ random_seed=`cat /dev/urandom | head -c 512 | base64 -w 0`
 ) > $latest_dir/meta_data.json
 
 dns=$(jq -r .dns <<< $vm_meta)
-[ -z "$dns" ] && dns=$dns_server
+local_ip=$(jq -r .vlans[0].ip_address <<< $vm_meta)
+[ -z "$dns" -o "$dns" = "$local_ip" ] && dns=$dns_server
 net_json=$(jq 'del(.userdata) | del(.vlans) | del(.keys) | del(.security) | del(.zvm) | del(.ocp) | del(.virt_type) | del(.dns)' <<< $vm_meta | jq --arg dns $dns '.services[0].type = "dns" | .services[0].address |= .+$dns')
 echo "$net_json" > $latest_dir/network_data.json
 

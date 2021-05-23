@@ -1,6 +1,6 @@
 - name: install packages
   yum: 
-    name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'bc', 'git', 'python-pip', 'NetworkManager', 'net-tools', 'iptables-services', 'dnsmasq-utils', 'conntrack-tools']
+    name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'bc', 'git', 'python3-pip', 'NetworkManager', 'net-tools', 'iptables-services', 'dnsmasq-utils', 'conntrack-tools']
     state: present
   when: ansible_distribution_major_version == '7'
   ignore_errors: yes
@@ -31,6 +31,7 @@
 
 - pip:
     name: pyparsing
+    executable: pip3
   when: virt_type != "zvm"
   ignore_errors: yes
   tags: [be_pkg]

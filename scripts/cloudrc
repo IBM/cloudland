@@ -126,6 +126,11 @@ function action_target()
 
 function sql_exec()
 {
+    if [ ! -f $vxlan_db ]; then
+        mkdir /opt/cloudland/db
+        touch $vxlan_db
+        sqlite3 $vxlan_db "CREATE TABLE vxlan_rules (id INTEGER PRIMARY KEY AUTOINCREMENT, instance varchar(32), vni INTEGER, inner_ip varchar(32), inner_mac varchar(48), outer_ip varchar(32))"
+    fi
     sqlite3 $vxlan_db "$*"
 }
 
