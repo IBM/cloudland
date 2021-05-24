@@ -21,7 +21,7 @@
 								</div>
                                 <div class="required inline field">
                                     <label for="virtType">{{.i18n.Tr "Virtualization Type"}}</label>
-                                    <select name="virtType" id="virtType" class="ui selection dropdown" disabled >
+                                    <select name="virttype" id="virttype" class="ui selection dropdown" disabled >
                                          <option value="kvm-x86_64"  {{ if eq .Registry.VirtType "kvm-x86_64" }} selected="selected"  {{end}}>{{.i18n.Tr "KVM on x86_64"}}</option>
                                          <option value="kvm-s390x"  {{ if eq .Registry.VirtType "kvm-s390x" }} selected="selected" {{end}}>{{.i18n.Tr "KVM on Z"}}</option>
                                          <option value="zvm"  {{ if eq .Registry.VirtType "zvm" }} selected="selected" {{end}}>{{.i18n.Tr "z/VM"}}</option>
