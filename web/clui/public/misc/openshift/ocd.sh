@@ -287,7 +287,9 @@ sshKey: '$ssh_key'
 $parts
 EOF
     sed -i "/^$/d" install-config.yaml
-    sed -i "s/architecture.*$/architecture: s390x/" install-config.yaml
+    if [ "$virt_type" = "kvm-s390x" || "$virt_type" = "zvm"]; then
+        sed -i "s/architecture.*$/architecture: s390x/" install-config.yaml
+    fi 
     echo "start to backup"
     mkdir /opt/backup
     cp install-config.yaml /opt/backup
