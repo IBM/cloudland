@@ -3,7 +3,7 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 7 ] && die "$0 <ID> <version> <initramfs> <kernel> <image> <installer> <cli>  <virt_type>"
+[ $# -lt 9 ] && die "$0 <ID> <version> <initramfs> <kernel> <image> <installer> <cli>  <virt_type> <access_addr>"
 
 ID=$1
 version=$2
