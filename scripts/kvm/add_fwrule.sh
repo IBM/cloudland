@@ -10,6 +10,11 @@ while [ $i -lt $len ]; do
     rule=$(jq -r .[$i] <<< $rules)
     instance=$(jq -r .instance <<< $rule)
     vni=$(jq -r .vni <<< $rule)
+    cat /proc/net/dev | grep -q "\<v-$vni\>:"
+    if [ $? -ne 0 ]; then
+        let i=$i+1
+        continue
+    fi
     inner_ip=$(jq -r .inner_ip <<< $rule)
     inner_mac=$(jq -r .inner_mac <<< $rule)
     outer_ip=$(jq -r .outer_ip <<< $rule)
