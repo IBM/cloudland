@@ -16,6 +16,10 @@ prefix=${device%%-*}
 if [ "$prefix" == "ext" ]; then
     ./create_link.sh $external_vlan
     bridge=br$external_vlan
+    if [ -n "$zlayer2_interface" ]; then
+        mac=$(ip netns exec $router ip link show $peerdev | grep ether | awk '{print $2}')
+        /usr/sbin/bridge fdb add $mac dev $zlayer2_interface
+    fi
 elif [ "$prefix" == "int" ]; then
     ./create_link.sh $internal_vlan
     bridge=br$internal_vlan
