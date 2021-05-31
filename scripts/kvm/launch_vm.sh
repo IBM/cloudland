@@ -23,11 +23,13 @@ metadata=$(echo $md | base64 -d)
 ./build_meta.sh "$vm_ID" "$vm_name" <<< $md >/dev/null 2>&1
 vm_img=$volume_dir/$vm_ID.disk
 is_vol="true"
+remote_vm_size=$(curl -sI "$image_cache/$img_name" | grep Content-Length | awk '{print $2}')
+echo "remote_vm_size:$remote_vm_size"
 if [ ! -f "$vm_img" ]; then
     vm_img=$image_dir/$vm_ID.disk
     vm_meta=$cache_dir/meta/$vm_ID.iso
     is_vol="false"
-    if [ ! -f "$image_cache/$img_name" ]; then
+    if [ ! -f "$image_cache/$img_name" ] || [ `ls -l $image_cache/$img_name | awk '{print $5}'` != $remote_vm_size ]; then
         wget -q $image_repo/$img_name -O $image_cache/$img_name
     fi
     if [ ! -f "$image_cache/$img_name" ]; then
