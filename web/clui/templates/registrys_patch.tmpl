@@ -30,6 +30,7 @@
 								<div class="required inline field">
 									<label for="ocpversion">{{.i18n.Tr "OcpVersion"}}</label>
                                                                                 <select name="ocpversion" id="ocpversion" class="ui selection dropdown" disabled >
+                                         <option value="4.7"  {{ if eq .Registry.OcpVersion "4.7" }} selected="selected" {{end}}>4.7</option>
                                          <option value="4.6"  {{ if eq .Registry.OcpVersion "4.6" }} selected="selected" {{end}}>4.6</option>
                                          <option value="4.5"  {{ if eq .Registry.OcpVersion "4.5" }} selected="selected" {{end}}>4.5</option>
                                          <option value="4.4"  {{ if eq .Registry.OcpVersion "4.4" }} selected="selected" {{end}}>4.4</option>
