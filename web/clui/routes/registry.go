@@ -133,42 +133,21 @@ func (a *RegistryAdmin) List(offset, limit int64, order, query string) (total in
 func (a *RegistryAdmin) Update(ctx context.Context, id int64, label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli string) (registry *model.Registry, err error) {
 	db := DB()
 	registry = &model.Registry{Model: model.Model{ID: id}}
-
+	err = db.Set("gorm:auto_preload", true).Take(registry).Error
+	if err != nil {
+		log.Println("Failed to query registry", err)
+		return
+	}
 	if registry.Label != label {
 		registry.Label = label
-	}
-
-	if registry.VirtType != virtType {
-		registry.VirtType = virtType
-	}
-
-	if registry.OcpVersion != ocpVersion {
-		registry.OcpVersion = ocpVersion
 	}
 
 	if registry.RegistryContent != registryContent {
 		registry.RegistryContent = registryContent
 	}
 
-	if registry.Initramfs != initramfs {
-		registry.Initramfs = initramfs
-	}
-
-	if registry.Kernel != kernel {
-		registry.Kernel = kernel
-	}
-
-	if registry.Image != image {
-		registry.Image = image
-	}
-
-	if registry.Installer != installer {
-		registry.Installer = installer
-	}
-
-	if registry.Cli != cli {
-		registry.Cli = cli
-	}
+	ocpVersion = registry.OcpVersion
+	virtType = registry.VirtType
 
 	initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak := "", "", "", "", ""
 	if strings.Contains(initramfs, "http") {
@@ -176,39 +155,96 @@ func (a *RegistryAdmin) Update(ctx context.Context, id int64, label, virtType, o
 	} else {
 		initramfs_bak = "file://" + initramfs
 	}
+	if registry.Initramfs != initramfs {
+		command_initramfs := fmt.Sprintf("/opt/cloudland/scripts/frontend/update_registry_image_initramfs.sh '%d' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs_bak, virtType)
+
+		log.Println("Update registry initramfs command :" + command_initramfs)
+		cmd_initramfs := exec.Command("/bin/bash", "-c", command_initramfs)
+		_, err = cmd_initramfs.Output()
+
+		if err != nil {
+			log.Println("Update registry initramfs command execution failed", err)
+			return
+		}
+		registry.Initramfs = initramfs
+	}
+
 	if strings.Contains(kernel, "http") {
 		kernel_bak = kernel
 	} else {
 		kernel_bak = "file://" + kernel
 	}
+	if registry.Kernel != kernel {
+		command_kernel := fmt.Sprintf("/opt/cloudland/scripts/frontend/update_registry_image_kernel.sh '%d' '%s' '%s' '%s'", registry.ID, ocpVersion, kernel_bak, virtType)
+
+		log.Println("Update registry kernel command :" + command_kernel)
+		cmd_kernel := exec.Command("/bin/bash", "-c", command_kernel)
+		_, err = cmd_kernel.Output()
+
+		if err != nil {
+			log.Println("Update registry kernel command execution failed", err)
+			return
+		}
+		registry.Kernel = kernel
+	}
+
 	if strings.Contains(image, "http") {
 		image_bak = image
 	} else {
 		image_bak = "file://" + image
 	}
+	if registry.Image != image {
+		command_image := fmt.Sprintf("/opt/cloudland/scripts/frontend/update_registry_image_image.sh '%d' '%s' '%s' '%s'", registry.ID, ocpVersion, image_bak, virtType)
+
+		log.Println("Update registry image command :" + command_image)
+		cmd_image := exec.Command("/bin/bash", "-c", command_image)
+		_, err = cmd_image.Output()
+
+		if err != nil {
+			log.Println("Update registry image command execution failed", err)
+			return
+		}
+		registry.Image = image
+	}
+
 	if strings.Contains(installer, "http") {
 		installer_bak = installer
 	} else {
 		installer_bak = "file://" + installer
 	}
+	if registry.Installer != installer {
+		command_installer := fmt.Sprintf("/opt/cloudland/scripts/frontend/update_registry_image_installer.sh '%d' '%s' '%s' '%s'", registry.ID, ocpVersion, installer_bak, virtType)
+
+		log.Println("Update registry installer command :" + command_installer)
+		cmd_installer := exec.Command("/bin/bash", "-c", command_installer)
+		_, err = cmd_installer.Output()
+
+		if err != nil {
+			log.Println("Update registry installer command execution failed", err)
+			return
+		}
+		registry.Installer = installer
+	}
+
 	if strings.Contains(cli, "http") {
 		cli_bak = cli
 	} else {
 		cli_bak = "file://" + cli
 	}
+	if registry.Cli != cli {
+		command_cli := fmt.Sprintf("/opt/cloudland/scripts/frontend/update_registry_image_installer.sh '%d' '%s' '%s' '%s'", registry.ID, ocpVersion, cli_bak, virtType)
 
-	accessAddr := viper.GetString("console.host")
+		log.Println("Update registry cli command :" + command_cli)
+		cmd_cli := exec.Command("/bin/bash", "-c", command_cli)
+		_, err = cmd_cli.Output()
 
-	command := fmt.Sprintf("/opt/cloudland/scripts/frontend/create_registry_image.sh '%d' '%s' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", registry.ID, ocpVersion, initramfs_bak, kernel_bak, image_bak, installer_bak, cli_bak, virtType, accessAddr)
-
-	log.Println("Create registry image command :" + command)
-	cmd := exec.Command("/bin/bash", "-c", command)
-	_, err = cmd.Output()
-
-	if err != nil {
-		log.Println("Update registry image command execution failed", err)
-		return
+		if err != nil {
+			log.Println("Update registry cli command execution failed", err)
+			return
+		}
+		registry.Cli = cli
 	}
+	//accessAddr := viper.GetString("console.host")
 
 	if err = db.Save(registry).Error; err != nil {
 		log.Println("Failed to save registry", err)
