@@ -79,8 +79,7 @@ while [ $i -lt $nvlan ]; do
     jq .security <<< $metadata | ./attach_nic.sh $ID $vlan $ip $mac
     let i=$i+1
 done
-#brctl addbr brfake
-nmcli con add type bridge ifname brfake
+ip link add brfake type bridge
 virsh attach-interface $vm_ID bridge brfake --model virtio --mac 52:54:11:22:33:44 --config
 virsh start $vm_ID
 [ $? -eq 0 ] && state=running && ./replace_vnc_passwd.sh $ID
