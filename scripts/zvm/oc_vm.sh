@@ -59,8 +59,13 @@ if [ $rc -ne 0 ]; then
 fi
 
 # add disk: 
-rc=$(curl -s $zvm_service/guests/$vm_ID/disks -X POST -d '{"disk_info":{"disk_list":[{"size":"'"$disk_size"'G", "is_boot_disk":"True"}]}}' | jq .rc)
-if [ $rc -ne 0 ]; then
+# note: frontend sends disk size counting in G now
+#rc=$(curl -s $zvm_service/guests/$vm_ID/disks -X POST -d '{"disk_info":{"disk_list":[{"size":"'"$disk_size"'G", "is_boot_disk":"True"}]}}' | jq .rc)
+result=$(curl -w %{http_code} -s $zvm_service/guests/$vm_ID/disks -X POST -d '{"disk_info":{"disk_list":[{"size":"'"$disk_size"'G", "is_boot_disk":"True"}]}}')
+httpRc=${result: -3}
+zvmResult=${result%???}
+rc=$(echo $zvmResult | jq .rc)
+if [ $httpRc -eq 500 -o $rc -ne 0 ]; then
     # remove user ?
     echo "$vm_ID: Add disk failed!"
     echo "|:-COMMAND-:| launch_vm.sh '$ID' '$vm_stat' '$SCI_CLIENT_ID' '$vm_ID: Add disk failed!'"
