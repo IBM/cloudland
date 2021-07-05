@@ -31,7 +31,6 @@ type FdbRule struct {
 }
 
 func sendFdbRules(ctx context.Context, devIfaces []*model.Interface, hyperNode int32, fdbScript string) (err error) {
-	log.Println("launchVM sendFdbRules")
 	db := dbs.DB()
 	allSubnets := []int64{}
 	localRules := []*FdbRule{}
@@ -100,8 +99,6 @@ func sendFdbRules(ctx context.Context, devIfaces []*model.Interface, hyperNode i
 
 func LaunchVM(ctx context.Context, job *model.Job, args []string) (status string, err error) {
 	//|:-COMMAND-:| launch_vm.sh '127' 'running' '3' 'reason'
-	log.Println("LaunchVM starting")
-	log.Printf("LaunchVM args %s", args)
 	db := dbs.DB()
 	argn := len(args)
 	if argn < 4 {
@@ -146,7 +143,6 @@ func LaunchVM(ctx context.Context, job *model.Job, args []string) (status string
 		reason = args[4]
 	}
 	instance.Hyper = int32(hyperID)
-	log.Printf("launchVM instance.Hyper:%d", instance.Hyper)
 	err = db.Model(&instance).Updates(map[string]interface{}{
 		"status": serverStatus,
 		"hyper":  int32(hyperID),
@@ -160,7 +156,6 @@ func LaunchVM(ctx context.Context, job *model.Job, args []string) (status string
 		log.Println("Failed to update interface", err)
 		return
 	}
-	log.Println("launchvm sendFdbRules invoking")
 	err = sendFdbRules(ctx, instance.Interfaces, instance.Hyper, "/opt/cloudland/scripts/backend/add_fwrule.sh")
 	if err != nil {
 		log.Println("Failed to send fdb rules", err)
