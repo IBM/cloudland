@@ -28,13 +28,16 @@ import (
 )
 
 var (
-	instanceAdmin = &InstanceAdmin{}
-	instanceView  = &InstanceView{}
+	instanceAdmin   = &InstanceAdmin{}
+	instanceView    = &InstanceView{}
+	apiInstanceView = &APIInstanceView{}
 )
 
 type InstanceAdmin struct{}
 
 type InstanceView struct{}
+
+type APIInstanceView struct{}
 
 type NetworkRoute struct {
 	Network string `json:"network"`
@@ -103,6 +106,7 @@ type InstanceData struct {
 type InstancesData struct {
 	Instances []*model.Instance `json:"instancedata"`
 	IsAdmin   bool              `json:"is_admin"`
+	Total     int64             `json:"total"`
 }
 
 func (a *InstanceAdmin) getHyperGroup(imageType string, zoneID int64) (hyperGroup string, err error) {
@@ -869,7 +873,7 @@ func (v *InstanceView) UpdateTable(c *macaron.Context, store session.Store) {
 		order = "-created_at"
 	}
 	query := c.QueryTrim("q")
-	_, instances, err := instanceAdmin.List(c.Req.Context(), offset, limit, order, query)
+	total, instances, err := instanceAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
@@ -885,6 +889,7 @@ func (v *InstanceView) UpdateTable(c *macaron.Context, store session.Store) {
 	jsonData = &InstancesData{
 		Instances: instances,
 		IsAdmin:   memberShip.CheckPermission(model.Admin),
+		Total:     total,
 	}
 
 	c.JSON(200, jsonData)
@@ -1369,4 +1374,44 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	c.Redirect(redirectTo)
+}
+
+func (v *APIInstanceView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+
+		return
+	}
+	offset := c.QueryInt64("offset")
+	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 16
+	}
+	order := c.QueryTrim("order")
+	if order == "" {
+		order = "-created_at"
+	}
+	query := c.QueryTrim("q")
+	total, instances, err := instanceAdmin.List(c.Req.Context(), offset, limit, order, query)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"error": "Query instances error:" + err.Error(),
+		})
+		return
+	}
+	pages := GetPages(total, limit)
+
+	c.JSON(200, map[string]interface{}{
+		"instances": instances,
+		"total":     total,
+		"pages":     pages,
+		"query":     query,
+	})
+	return
+
 }

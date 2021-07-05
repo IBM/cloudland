@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/IBM/cloudland/web/clui/model"
+	"github.com/go-macaron/binding"
 	"github.com/go-macaron/i18n"
 	"github.com/go-macaron/session"
 	_ "github.com/go-macaron/session/postgres"
@@ -90,6 +91,7 @@ func New() (m *macaron.Macaron) {
 	m.Get("/dashboard/getdata", dashboard.GetData)
 	m.Get("/login", userView.LoginGet)
 	m.Post("/login", userView.LoginPost)
+	m.Post("/api/login", binding.Bind(APIUserView{}), apiUserView.LoginPost)
 	m.Get("/hypers", hyperView.List)
 	m.Get("/users", userView.List)
 	m.Get("/users/:id", userView.Edit)
@@ -105,6 +107,7 @@ func New() (m *macaron.Macaron) {
 	m.Get("/orgs/new", orgView.New)
 	m.Post("/orgs/new", orgView.Create)
 	m.Get("/instances", instanceView.List)
+	m.Get("/api/instances", apiInstanceView.List)
 	m.Get("/UpdateTable", instanceView.UpdateTable)
 	m.Get("/instances/new", instanceView.New)
 	m.Post("/instances/new", instanceView.Create)
@@ -223,8 +226,62 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 		}
 		c.Data["Organization"] = store.Get("org").(string)
 		c.Data["Members"] = store.Get("members").([]*model.Member)
-	} else if link != "" && link != "/" && !strings.HasPrefix(link, "/login") && !strings.HasPrefix(link, "/consoleresolver") {
-		UrlBefore = link
-		c.Redirect("login?redirect_to=")
+	} else if link != "" && link != "/" && !strings.HasPrefix(link, "/login") && !strings.HasPrefix(link, "/consoleresolver") && strings.HasPrefix(link, "/api") {
+
+		if strings.HasPrefix(link, "/api") {
+			if !strings.HasPrefix(link, "/api/login") {
+				//parse token
+				token := c.Req.Header.Get("X-Auth-Token")
+				claims, err := ParseToken(token)
+				if err != nil {
+					log.Println(err.Error())
+					c.JSON(401, map[string]interface{}{
+						"ErrorMsg": "token unauthorized",
+					})
+					return
+				} else {
+					uid := claims.UID
+					oid := claims.OID
+					username := claims.StandardClaims.Audience
+					organization := username
+					org, err := orgAdmin.Get(organization)
+					role := claims.Role
+					members := []*model.Member{}
+					err = DB().Where("user_name = ?", username).Find(&members).Error
+					if err != nil {
+						log.Println("Failed to query organizations, ", err)
+						c.JSON(403, map[string]interface{}{
+							"ErrorMsg": "Failed to query organizations",
+						})
+						return
+					}
+					//set store
+					store.Set("login", username)
+					store.Set("uid", uid)
+					store.Set("oid", oid)
+					store.Set("role", role)
+					store.Set("act", token)
+					store.Set("org", organization)
+					store.Set("defsg", org.DefaultSG)
+					store.Set("members", members)
+					//set membership to request context
+					memberShip := &MemberShip{
+						OrgID:    store.Get("oid").(int64),
+						UserID:   store.Get("uid").(int64),
+						UserName: store.Get("login").(string),
+						OrgName:  store.Get("org").(string),
+						Role:     store.Get("role").(model.Role),
+					}
+					c.Req.Request = c.Req.WithContext(memberShip.SetContext(c.Req.Context()))
+
+				}
+
+			}
+
+		} else {
+			UrlBefore = link
+			c.Redirect("login?redirect_to=")
+		}
+
 	}
 }
