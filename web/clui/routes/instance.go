@@ -257,8 +257,6 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		instance.Interfaces = ifaces
 		rcNeeded := fmt.Sprintf("cpu=%d memory=%d disk=%d network=%d", flavor.Cpu, flavor.Memory*1024, (flavor.Disk+flavor.Swap+flavor.Ephemeral)*1024*1024, 0)
 		control := "select=" + hyperGroup + " " + rcNeeded
-		log.Printf("second hyperID %d", hyperID)
-		log.Printf("rcNeeded %s", rcNeeded)
 		if i == 0 && hyperID >= 0 {
 			control = fmt.Sprintf("inter=%d %s", hyperID, rcNeeded)
 		}
@@ -475,8 +473,6 @@ func hyperExecute(ctx context.Context, control, command string) (err error) {
 		Control: control,
 		Command: command,
 	}
-	log.Printf("hyperExecute Control %s", control)
-	log.Printf("hyperExecute Command %s", command)
 	_, err = sciClient.Execute(ctx, sciReq)
 	if err != nil {
 		log.Println("SCI client execution failed, %v", err)
