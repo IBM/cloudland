@@ -41,6 +41,7 @@ type UserView struct{}
 type APIUserView struct {
 	Username string
 	Password string
+	Confirm  string
 }
 
 func (a *UserAdmin) Create(ctx context.Context, username, password string) (user *model.User, err error) {
@@ -636,3 +637,136 @@ func (v *UserView) Create(c *macaron.Context, store session.Store) {
 	}
 	c.Redirect(redirectTo)
 }
+
+func (v *APIUserView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	offset := c.QueryInt64("offset")
+	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 16
+	}
+	order := c.QueryTrim("order")
+	if order == "" {
+		order = "-created_at"
+	}
+	query := c.QueryTrim("q")
+	total, users, err := userAdmin.List(c.Req.Context(), offset, limit, order, query)
+	if err != nil {
+		log.Println("Failed to list user(s)", err)
+			c.JSON(500, map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+	}
+	pages := GetPages(total, limit)
+	c.Data["Users"] = users
+	c.Data["Total"] = total
+	c.Data["Pages"] = pages
+	c.Data["Query"] = query
+
+		c.JSON(200, map[string]interface{}{
+			"users": users,
+			"total": total,
+			"pages": pages,
+			"query": query,
+		})
+		return
+	
+}
+
+func (v *APIUserView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	id := c.Params("id")
+	if id == "" {
+		log.Println("User id is empty, %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "User id is empty.",
+		})
+		return
+	}
+	userID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Failed to get user id, %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to get user id.",
+		})
+		return
+	}
+	err = userAdmin.Delete(int64(userID))
+	if err != nil {
+		log.Println("Failed to delete user, %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to delete user.",
+		})
+		return
+	}
+	c.JSON(200, map[string]interface{}{
+		"Msg": "Success.",
+	})
+	return
+}
+
+func (v *APIUserView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+
+	username := c.QueryTrim("username")
+	password := c.QueryTrim("password")
+	confirm := c.QueryTrim("confirm")
+
+	if confirm != password {
+		log.Println("Passwords do not match")
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Passwords do not match",
+		})		
+		return
+	}
+	user, err := userAdmin.Create(c.Req.Context(), username, password)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to create user."+err.Error(),
+		})			
+		return
+	}
+	_, err = orgAdmin.Create(c.Req.Context(), username, username)
+	if err != nil {
+		log.Println("Failed to create organization, %v", err)
+		
+			c.JSON(500, map[string]interface{}{
+				"error": "Failed to create organization."+err.Error(),
+			})
+			return
+		
+		
+	}
+	
+		c.JSON(200, user)
+		return
+	
+	
+}
+
+

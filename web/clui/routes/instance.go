@@ -1381,7 +1381,7 @@ func (v *APIInstanceView) List(c *macaron.Context, store session.Store) {
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
 		log.Println("Not authorized for this operation")
-		c.JSON(500, map[string]interface{}{
+		c.JSON(403, map[string]interface{}{
 			"ErrorMsg": "Not authorized for this operation",
 		})
 
