@@ -695,7 +695,7 @@ func (v *APIUserView) Delete(c *macaron.Context, store session.Store) (err error
 	id := c.Params("id")
 	if id == "" {
 		log.Println("User id is empty, %v", err)
-		c.JSON(500, map[string]interface{}{
+		c.JSON(400, map[string]interface{}{
 			"ErrorMsg": "User id is empty.",
 		})
 		return
@@ -703,7 +703,7 @@ func (v *APIUserView) Delete(c *macaron.Context, store session.Store) (err error
 	userID, err := strconv.Atoi(id)
 	if err != nil {
 		log.Println("Failed to get user id, %v", err)
-		c.JSON(500, map[string]interface{}{
+		c.JSON(400, map[string]interface{}{
 			"ErrorMsg": "Failed to get user id.",
 		})
 		return
@@ -739,7 +739,7 @@ func (v *APIUserView) Create(c *macaron.Context, store session.Store) {
 
 	if confirm != password {
 		log.Println("Passwords do not match")
-		c.JSON(500, map[string]interface{}{
+		c.JSON(400, map[string]interface{}{
 			"ErrorMsg": "Passwords do not match",
 		})		
 		return
@@ -755,18 +755,52 @@ func (v *APIUserView) Create(c *macaron.Context, store session.Store) {
 	if err != nil {
 		log.Println("Failed to create organization, %v", err)
 		
-			c.JSON(500, map[string]interface{}{
-				"error": "Failed to create organization."+err.Error(),
-			})
-			return
-		
-		
-	}
-	
-		c.JSON(200, user)
+		c.JSON(500, map[string]interface{}{
+		    "ErrorMsg": "Failed to create organization."+err.Error(),
+		})
 		return
-	
-	
+	}
+	c.JSON(200, user)
+	return
+}
+
+func (v *APIUserView) Patch(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.Params("id")
+	if id == "" {
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "User id is empty.",
+		})	
+		return
+	}
+	userID, err := strconv.Atoi(id)
+	if err != nil {
+
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "User id is empty.",
+		})		
+		return
+	}
+	permit, err := memberShip.CheckUser(int64(userID))
+	if !permit {
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		
+		return
+	}
+	password := c.QueryTrim("password")
+	members := c.QueryStrings("members")
+	user, err := userAdmin.Update(c.Req.Context(), int64(userID), password, members)
+	if err != nil {
+		log.Println("Failed to update password, %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to update password."+err.Error(),
+		})
+		return
+		
+	} 
+	c.JSON(200, user)
 }
 
 
