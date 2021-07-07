@@ -105,6 +105,7 @@ func New() (m *macaron.Macaron) {
 	m.Post("/users/new", userView.Create)
 	m.Post("/api/users/new", binding.Bind(APIUserView{}), apiUserView.Create)
 	m.Get("/orgs", orgView.List)
+	m.Get("/api/orgs", apiOrgView.List)
 	m.Get("/orgs/:id", orgView.Edit)
 	m.Post("/orgs/:id", orgView.Patch)
 	m.Delete("/orgs/:id", orgView.Delete)
