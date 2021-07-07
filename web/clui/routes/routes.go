@@ -97,6 +97,7 @@ func New() (m *macaron.Macaron) {
 	m.Get("/api/users", apiUserView.List)
 	m.Get("/users/:id", userView.Edit)
 	m.Post("/users/:id", userView.Patch)
+	m.Post("/api/users/:id", binding.Bind(APIUserView{}), apiUserView.Patch)
 	m.Get("/users/:id/chorg", userView.Change)
 	m.Delete("/users/:id", userView.Delete)
 	m.Delete("/api/users/:id", apiUserView.Delete)
