@@ -25,10 +25,23 @@ import (
 var (
 	imageAdmin = &ImageAdmin{}
 	imageView  = &ImageView{}
+	apiImageView  = &APIImageView{}
 )
 
 type ImageAdmin struct{}
 type ImageView struct{}
+type APIImageView struct{
+    Name               string
+	Url                string 
+	Format             string 
+	ArchitectureType   int64
+	Instance           int64
+	OsVersion          string
+	DiskType           string
+	VirtType           string
+	UserName           string
+	IsOcpLB            string
+}
 
 func FileExist(filename string) bool {
 	_, err := os.Lstat(filename)
@@ -295,3 +308,128 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	}
 	c.Redirect(redirectTo)
 }
+
+func (v *APIImageView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	offset := c.QueryInt64("offset")
+	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 16
+	}
+	order := c.QueryTrim("order")
+	if order == "" {
+		order = "-created_at"
+	}
+	query := c.QueryTrim("q")
+	total, images, err := imageAdmin.List(offset, limit, order, query)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to list image."+err.Error(),
+		})
+		return
+	}
+	pages := GetPages(total, limit)
+
+	c.JSON(200, map[string]interface{}{
+		"images": images,
+		"total":  total,
+		"pages":  pages,
+		"query":  query,
+	})
+	return
+
+}
+
+func (v *APIImageView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.Params("id")
+	if id == "" {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Image id is empty.",
+		})
+		return
+	}
+	imageID, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get image id.",
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "images", int64(imageID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	err = imageAdmin.Delete(c.Req.Context(), int64(imageID))
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to delete image."+err.Error(),
+		})
+		return
+	}
+	c.JSON(200, map[string]interface{}{
+		"Msg": "Success.",
+	})
+	return
+}
+
+func (v *APIImageView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	
+	name := c.QueryTrim("name")
+	url := c.QueryTrim("url")
+	format := c.QueryTrim("format")
+	architectureType := c.QueryInt64("architecture")
+	architecture := ""
+	instance := c.QueryInt64("instance")
+	osVersion := c.QueryTrim("osVersion")
+	diskType := c.QueryTrim("diskType")
+	virtType := c.QueryTrim("virtType")
+	userName := c.QueryTrim("userName")
+	isOcpLB := c.QueryTrim("ocpLB")
+	isLB := false
+	if isOcpLB == "" || isOcpLB == "no" {
+		isLB = false
+	} else if isOcpLB == "yes" {
+		isLB = true
+	}
+
+	if architectureType == 0 {
+		architecture = "x86_64"
+	} else {
+		architecture = "s390x"
+	}
+
+	image, err := imageAdmin.Create(c.Req.Context(), osVersion, diskType, virtType, userName, name, url, format, architecture, instance, isLB)
+	if err != nil {
+		log.Println("Failed to create image.", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to create image."+err.Error(),
+		})			
+		return
+	}
+	
+	c.JSON(200, image)	
+	
+}
+
