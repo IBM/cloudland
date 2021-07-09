@@ -22,10 +22,19 @@ import (
 var (
 	flavorAdmin = &FlavorAdmin{}
 	flavorView  = &FlavorView{}
+	apiFlavorView  = &APIFlavorView{}
 )
 
 type FlavorAdmin struct{}
 type FlavorView struct{}
+type APIFlavorView struct{
+    Name        string
+    Cpu         string
+    Memory      int
+    Dist        int
+    Swap        int
+    Ephemeral   int
+}
 
 func (a *FlavorAdmin) Create(name string, cpu, memory, disk, swap, ephemeral int32) (flavor *model.Flavor, err error) {
 	db := DB()
@@ -211,4 +220,122 @@ func (v *FlavorView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	c.Redirect(redirectTo)
+}
+
+func (v *APIFlavorView) List(c *macaron.Context, store session.Store) {
+	offset := c.QueryInt64("offset")
+	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 16
+	}
+	order := c.Query("order")
+	if order == "" {
+		order = "-created_at"
+	}
+	query := c.QueryTrim("q")
+	total, flavors, err := flavorAdmin.List(offset, limit, order, query)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to list flavors."+err.Error(),
+		})
+		return
+	}
+	pages := GetPages(total, limit)
+
+	c.JSON(200, map[string]interface{}{
+		"flavors": flavors,
+		"total":   total,
+		"pages":   pages,
+		"query":   query,
+	})
+}
+
+func (v *APIFlavorView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+
+	id := c.Params("id")
+	if id == "" {
+		log.Println("ID is empty, %v", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Flavor id is empty.",
+		})
+		return
+	}
+	flavorID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Invalid flavor ID, %v", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get flavor id.",
+		})
+		return
+	}	
+	
+	err = flavorAdmin.Delete(flavorID)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to delete flavor."+err.Error(),
+		})
+		return
+	}
+	c.JSON(200, map[string]interface{}{
+		"Msg": "Success.",
+	})
+	return
+}
+
+func (v *APIFlavorView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	name := c.Query("name")
+	cores := c.Query("cpu")
+	cpu, err := strconv.Atoi(cores)
+	if err != nil {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get numbe of cpu.",
+		})
+		return
+	}
+	memory := c.QueryInt("memory")
+	if memory <= 0 {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get memory size.",
+		})
+		return
+	}
+
+	disk := c.QueryInt("disk")
+	if disk <= 0 {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get  disk size.",
+		})
+		return
+	}
+	swap := c.QueryInt("swap")
+	ephemeral := c.QueryInt("ephemeral")
+	flavor, err := flavorAdmin.Create(name, int32(cpu), int32(memory), int32(disk), int32(swap), int32(ephemeral))
+	if err != nil {
+		log.Println("Create flavor failed", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to create flavor."+err.Error(),
+		})
+		return
+	}
+	 
+	c.JSON(200, flavor)
+	
 }

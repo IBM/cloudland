@@ -40,6 +40,9 @@ type OrgView struct{}
 type APIOrgView struct {
 	Orgname string
 	Owner   string
+	Members string
+	Names   string
+	Roles   string
 }
 
 func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.Organization, err error) {
