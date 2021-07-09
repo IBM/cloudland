@@ -29,12 +29,18 @@ import (
 var (
 	orgView  = &OrgView{}
 	orgAdmin = &OrgAdmin{}
+	apiOrgView = &APIOrgView{}
 )
 
 type OrgAdmin struct {
 }
 
 type OrgView struct{}
+
+type APIOrgView struct {
+	Orgname string
+	Owner   string
+}
 
 func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.Organization, err error) {
 	memberShip := GetMemberShip(ctx)
@@ -472,4 +478,204 @@ func (v *OrgView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	c.Redirect(redirectTo)
+}
+
+func (v *APIOrgView) List(c *macaron.Context, store session.Store) {
+	offset := c.QueryInt64("offset")
+	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 16
+	}
+	order := c.QueryTrim("order")
+	query := c.QueryTrim("q")
+	total, orgs, err := orgAdmin.List(c.Req.Context(), offset, limit, order, query)
+	if err != nil {
+		log.Println("Failed to list organizations, %v", err)
+		c.JSON(500, map[string]interface{}{
+            "ErrorMsg": "Failed to list organizations."+err.Error(),
+		})
+		return
+		
+	}
+	pages := GetPages(total, limit)
+
+	c.JSON(200, map[string]interface{}{
+        "orgs":  orgs,
+		"total": total,
+		"pages": pages,
+		"query": query,
+	})
+		
+	c.HTML(200, "orgs")
+}
+
+func (v *APIOrgView) Edit(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	db := DB()
+	id := c.Params("id")
+	if id == "" {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Org id is empty.",
+		})
+		return
+	}
+	orgID, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get org id.",
+		})
+		return
+	}
+	if memberShip.Role != model.Admin && (memberShip.Role < model.Owner || memberShip.OrgID != int64(orgID)) {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	org := &model.Organization{Model: model.Model{ID: int64(orgID)}}
+	if err = db.Preload("Members").Take(org).Error; err != nil {
+		log.Println("Organization query failed", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Organization query failed."+err.Error(),
+		})
+		return
+	}
+	org.OwnerUser = &model.User{Model: model.Model{ID: org.Owner}}
+	if err = db.Take(org.OwnerUser).Error; err != nil {
+		log.Println("Owner user query failed", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Owner user query failed."+err.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, org)
+}
+
+func (v *APIOrgView) Patch(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.Params("id")
+	if id == "" {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Org id is empty.",
+		})
+		return
+	}
+	orgID, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get org id.",
+		})
+		return
+	}
+	if memberShip.Role != model.Admin && (memberShip.Role < model.Owner || memberShip.OrgID != int64(orgID)) {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	members := c.QueryTrim("members")
+	memberList := strings.Split(members, " ")
+	userList := c.QueryStrings("names")
+	roles := c.QueryStrings("roles")
+	var roleList []model.Role
+	for _, r := range roles {
+		role, err := strconv.Atoi(r)
+		if err != nil {
+			log.Println("Failed to convert role", err)
+			c.JSON(500, map[string]interface{}{
+			    "ErrorMsg": "Failed to convert role."+err.Error(),
+		    })
+			return
+		}
+		if memberShip.Role < model.Role(role) {
+			log.Println("Not authorized for this operation")
+			c.JSON(403, map[string]interface{}{
+			    "ErrorMsg": "Not authorized for this operation",
+		    })
+			return
+		}
+		roleList = append(roleList, model.Role(role))
+	}
+	org, err := orgAdmin.Update(c.Req.Context(), int64(orgID), memberList, userList, roleList)
+	if err != nil {
+		log.Println("Failed to update organization, %v", err)
+		
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to update organization."+err.Error(),
+		})
+		return
+
+	} 
+		
+	c.JSON(200, org)
+	
+}
+
+func (v *APIOrgView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	id := c.Params("id")
+	if id == "" {
+		log.Println("ID is empty, %v", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Org id is empty.",
+		})
+		return
+	}
+	orgID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Invalid organization ID, %v", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get org id.",
+		})
+		return
+	}
+	err = orgAdmin.Delete(c.Req.Context(), int64(orgID))
+	if err != nil {
+		log.Println("Failed to delete organization, %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to delete organization."+err.Error(),
+		})
+		return
+	}
+	c.JSON(200, map[string]interface{}{
+		"Msg": "Success.",
+	})
+	return
+}
+
+func (v *APIOrgView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+
+	name := c.QueryTrim("orgname")
+	owner := c.QueryTrim("owner")
+	organization, err := orgAdmin.Create(c.Req.Context(), name, owner)
+	if err != nil {
+		log.Println("Failed to create organization, %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to create organization."+err.Error(),
+		})
+		return
+		
+	} 
+	c.JSON(200, organization)
+		
 }

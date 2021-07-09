@@ -803,4 +803,41 @@ func (v *APIUserView) Patch(c *macaron.Context, store session.Store) {
 	c.JSON(200, user)
 }
 
+func (v *APIUserView) Edit(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.Params("id")
+	if id == "" {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "User id is empty.",
+		})
+		return
+	}
+	userID, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get user id.",
+		})
+		return
+	}
+	permit, err := memberShip.CheckUser(int64(userID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	db := DB()
+	user := &model.User{Model: model.Model{ID: int64(userID)}}
+	err = db.Set("gorm:auto_preload", true).Take(user).Error
+	if err != nil {
+		log.Println("Failed to query user", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to query user."+err.Error(),
+		})
+		return
+	}
+	c.JSON(200, user)
+}
+
 
