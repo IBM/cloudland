@@ -28,11 +28,16 @@ var (
 	keyAdmin = &KeyAdmin{}
 	keyView  = &KeyView{}
 	keyTemp  = &KeyTemp{}
+	apiKeyView  = &APIKeyView{}
 )
 
 type KeyAdmin struct{}
 type KeyView struct{}
 type KeyTemp struct{}
+type APIKeyView struct{
+    Name               string
+	Pubkey             string 
+}
 
 func (point *KeyTemp) Create() (publicKey, fingerPrint, privateKey string, err error) {
 	// generate key
@@ -60,7 +65,7 @@ func (point *KeyTemp) CreateFingerPrint(publicKey string) (fingerPrint string, e
 	pubKeyBytes := []byte(publicKey)
 	pub, _, _, _, puberr := ssh.ParseAuthorizedKey(pubKeyBytes)
 	if puberr != nil {
-		log.Println("Public key is wrong")
+		log.Println("Public key is wrong.")
 		err = puberr
 		return
 	}
@@ -411,4 +416,144 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 			c.HTML(200, "new_key")
 		}
 	}
+}
+
+func (v *APIKeyView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	offset := c.QueryInt64("offset")
+	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 16
+	}
+	order := c.QueryTrim("order")
+	if order == "" {
+		order = "-created_at"
+	}
+	query := c.QueryTrim("q")
+	total, keys, err := keyAdmin.List(c.Req.Context(), offset, limit, order, query)
+	if err != nil {
+		log.Println("Failed to list keys, %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to list keys."+err.Error(),
+		})
+		return
+
+	}
+	pages := GetPages(total, limit)
+	c.JSON(200, map[string]interface{}{
+		"keys":  keys,
+		"total": total,
+		"pages": pages,
+		"query": query,
+	})
+
+}
+
+func (v *APIKeyView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	name := c.QueryTrim("name")
+	if c.QueryTrim("pubkey") != "" {
+		publicKey := c.QueryTrim("pubkey")
+		fingerPrint, err := keyTemp.CreateFingerPrint(publicKey)
+        if(err != nil){
+		    c.JSON(400, map[string]interface{}{
+			    "ErrorMsg": "Public key is wrong."+err.Error(),
+		    })
+		    return        	
+        }
+        
+	    db := DB()
+	    var keydb []model.Key
+	    x := db.Where(&model.Key{FingerPrint: fingerPrint}).Find(&keydb)
+	    length := len(*(x.Value.(*[]model.Key)))
+	    if length != 0 {
+			c.JSON(200, map[string]interface{}{
+				"ErrorMsg": "This public key has been used.",
+			})
+			return	    	
+	    }
+	    key, err := keyAdmin.Create(c.Req.Context(), name, publicKey, fingerPrint)
+	    if err != nil {
+		    log.Println("Failed, %v", err)
+			c.JSON(500, map[string]interface{}{
+				"ErrorMsg": "Failed to insert public key to DB."+err.Error(),
+			})
+			return
+	    } 
+		c.JSON(200, map[string]interface{}{
+			"keyName":    name,
+			"publicKey":  publicKey,
+		})
+		return
+	    	   
+	} else {
+		publicKey, fingerPrint, privateKey, err := keyTemp.Create()
+		if err != nil {
+		    c.JSON(500, map[string]interface{}{
+			    "ErrorMsg": "Failed to create public key and private key."+err.Error(),
+		    })
+			return
+		}
+		c.JSON(200, map[string]interface{}{
+			"keyName":    name,
+			"publicKey":  publicKey,
+			"privateKey": privateKey,
+		})
+		return
+	}
+}
+
+func (v *APIKeyView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.Params("id")
+	if id == "" {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Key id is empty.",
+		})
+		return
+	}
+	keyID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Invalid key id, %v", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get key id.",
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "keys", int64(keyID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	err = keyAdmin.Delete(int64(keyID))
+	if err != nil {
+		log.Println("Failed to delete key, %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to delete key."+err.Error(),
+		})
+		return
+	}
+	c.JSON(200, map[string]interface{}{
+		"Msg": "Success.",
+	})
+	return
 }

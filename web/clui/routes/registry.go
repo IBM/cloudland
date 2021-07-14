@@ -25,10 +25,24 @@ import (
 var (
 	registryAdmin = &RegistryAdmin{}
 	registryView  = &RegistryView{}
+	apiRegistryView  = &APIRegistryView{}
 )
 
 type RegistryAdmin struct{}
 type RegistryView struct{}
+type APIRegistryView struct{
+
+	Label            string
+	VirtType         string
+	Ocpversion       string
+	Registrycontent  string
+	Initramfs        string
+	Kernel           string
+	Image            string
+	Installer        string
+	Cli              string
+
+}
 
 func (a *RegistryAdmin) Create(ctx context.Context, label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli string) (registry *model.Registry, err error) {
 	db := DB()
@@ -459,3 +473,183 @@ func (v *RegistryView) Edit(c *macaron.Context, store session.Store) {
 	c.Data["Registry"] = registry
 	c.HTML(200, "registrys_patch")
 }
+
+func (v *APIRegistryView) List(c *macaron.Context, store session.Store) {
+	offset := c.QueryInt64("offset")
+	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 16
+	}
+	order := c.Query("order")
+	if order == "" {
+		order = "-created_at"
+	}
+	query := c.QueryTrim("q")
+	total, registrys, err := registryAdmin.List(offset, limit, order, query)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to list registrys."+err.Error(),
+		})
+		return
+
+	}
+	pages := GetPages(total, limit)
+
+	c.JSON(200, map[string]interface{}{
+		"registrys": registrys,
+		"total":     total,
+		"pages":     pages,
+		"query":     query,
+	})
+	return
+	
+}
+
+func (v *APIRegistryView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	id := c.ParamsInt64("id")
+	if id <= 0 {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get registry id.",
+		})
+		return
+	}
+	err = registryAdmin.Delete(id)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to delete registry."+err.Error(),
+		})
+		return
+	}
+	c.JSON(200, map[string]interface{}{
+		"Msg": "Success.",
+	})
+	return
+}
+
+func (v *APIRegistryView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	label := c.Query("label")
+	virtType := c.QueryTrim("virtType")
+	ocpVersion := c.Query("ocpversion")
+	registryContent := c.Query("registrycontent")
+	initramfs := c.Query("initramfs")
+	kernel := c.Query("kernel")
+	image := c.Query("image")
+	installer := c.Query("installer")
+	cli := c.Query("cli")
+
+	registry, err := registryAdmin.Create(c.Req.Context(), label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli)
+	if err != nil {
+		log.Println("Create registry failed", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to create registry."+err.Error(),
+		})
+		return
+	} 
+	c.JSON(200, registry)
+	return
+}
+
+func (v *APIRegistryView) Edit(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.Params("id")
+	if id == "" {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Registry id is empty.",
+		})
+		return
+	}
+	registryID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Failed to get input id, %v", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get registry id.",
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "registries", int64(registryID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	db := DB()
+	registry := &model.Registry{Model: model.Model{ID: int64(registryID)}}
+	err = db.Set("gorm:auto_preload", true).Take(registry).Error
+	if err != nil {
+		log.Println("Failed to query registry", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Registry query failed."+err.Error(),
+		})
+		return
+	}
+	c.JSON(200, registry)
+}
+
+func (v *APIRegistryView) Patch(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.Params("id")
+	if id == "" {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Registry id is empty.",
+		})
+		return
+	}
+	registryID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Failed to get input id, %v", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get registry id.",
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "registries", int64(registryID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+
+	label := c.Query("label")
+	virtType := c.QueryTrim("virtType")
+	ocpVersion := c.Query("ocpversion")
+	registryContent := c.Query("registrycontent")
+	initramfs := c.Query("initramfs")
+	kernel := c.Query("kernel")
+	image := c.Query("image")
+	installer := c.Query("installer")
+	cli := c.Query("cli")
+	registry, err := registryAdmin.Update(c.Req.Context(), int64(registryID), label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli)
+	if err != nil {
+		log.Println("Failed to update registry, %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to update registry."+err.Error(),
+		})
+		return
+
+	} 
+	c.JSON(200, registry)
+		
+}
+
