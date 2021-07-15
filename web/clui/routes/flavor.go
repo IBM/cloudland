@@ -20,20 +20,20 @@ import (
 )
 
 var (
-	flavorAdmin = &FlavorAdmin{}
-	flavorView  = &FlavorView{}
-	apiFlavorView  = &APIFlavorView{}
+	flavorAdmin   = &FlavorAdmin{}
+	flavorView    = &FlavorView{}
+	apiFlavorView = &APIFlavorView{}
 )
 
 type FlavorAdmin struct{}
 type FlavorView struct{}
-type APIFlavorView struct{
-    Name        string
-    Cpu         string
-    Memory      int
-    Dist        int
-    Swap        int
-    Ephemeral   int
+type APIFlavorView struct {
+	Name      string
+	Cpu       string
+	Memory    int
+	Dist      int
+	Swap      int
+	Ephemeral int
 }
 
 func (a *FlavorAdmin) Create(name string, cpu, memory, disk, swap, ephemeral int32) (flavor *model.Flavor, err error) {
@@ -236,7 +236,7 @@ func (v *APIFlavorView) List(c *macaron.Context, store session.Store) {
 	total, flavors, err := flavorAdmin.List(offset, limit, order, query)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to list flavors."+err.Error(),
+			"ErrorMsg": "Failed to list flavors." + err.Error(),
 		})
 		return
 	}
@@ -269,19 +269,19 @@ func (v *APIFlavorView) Delete(c *macaron.Context, store session.Store) (err err
 		})
 		return
 	}
-	flavorID, err := strconv.Atoi(id)
+	flavorID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		log.Println("Invalid flavor ID, %v", err)
 		c.JSON(400, map[string]interface{}{
 			"ErrorMsg": "Failed to get flavor id.",
 		})
 		return
-	}	
-	
+	}
+
 	err = flavorAdmin.Delete(flavorID)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to delete flavor."+err.Error(),
+			"ErrorMsg": "Failed to delete flavor." + err.Error(),
 		})
 		return
 	}
@@ -331,11 +331,11 @@ func (v *APIFlavorView) Create(c *macaron.Context, store session.Store) {
 	if err != nil {
 		log.Println("Create flavor failed", err)
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to create flavor."+err.Error(),
+			"ErrorMsg": "Failed to create flavor." + err.Error(),
 		})
 		return
 	}
-	 
+
 	c.JSON(200, flavor)
-	
+
 }

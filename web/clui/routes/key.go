@@ -25,18 +25,18 @@ import (
 )
 
 var (
-	keyAdmin = &KeyAdmin{}
-	keyView  = &KeyView{}
-	keyTemp  = &KeyTemp{}
-	apiKeyView  = &APIKeyView{}
+	keyAdmin   = &KeyAdmin{}
+	keyView    = &KeyView{}
+	keyTemp    = &KeyTemp{}
+	apiKeyView = &APIKeyView{}
 )
 
 type KeyAdmin struct{}
 type KeyView struct{}
 type KeyTemp struct{}
-type APIKeyView struct{
-    Name               string
-	Pubkey             string 
+type APIKeyView struct {
+	Name   string
+	Pubkey string
 }
 
 func (point *KeyTemp) Create() (publicKey, fingerPrint, privateKey string, err error) {
@@ -442,7 +442,7 @@ func (v *APIKeyView) List(c *macaron.Context, store session.Store) {
 	if err != nil {
 		log.Println("Failed to list keys, %v", err)
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to list keys."+err.Error(),
+			"ErrorMsg": "Failed to list keys." + err.Error(),
 		})
 		return
 
@@ -471,43 +471,43 @@ func (v *APIKeyView) Create(c *macaron.Context, store session.Store) {
 	if c.QueryTrim("pubkey") != "" {
 		publicKey := c.QueryTrim("pubkey")
 		fingerPrint, err := keyTemp.CreateFingerPrint(publicKey)
-        if(err != nil){
-		    c.JSON(400, map[string]interface{}{
-			    "ErrorMsg": "Public key is wrong."+err.Error(),
-		    })
-		    return        	
-        }
-        
-	    db := DB()
-	    var keydb []model.Key
-	    x := db.Where(&model.Key{FingerPrint: fingerPrint}).Find(&keydb)
-	    length := len(*(x.Value.(*[]model.Key)))
-	    if length != 0 {
+		if err != nil {
+			c.JSON(400, map[string]interface{}{
+				"ErrorMsg": "Public key is wrong." + err.Error(),
+			})
+			return
+		}
+
+		db := DB()
+		var keydb []model.Key
+		x := db.Where(&model.Key{FingerPrint: fingerPrint}).Find(&keydb)
+		length := len(*(x.Value.(*[]model.Key)))
+		if length != 0 {
 			c.JSON(200, map[string]interface{}{
 				"ErrorMsg": "This public key has been used.",
 			})
-			return	    	
-	    }
-	    key, err := keyAdmin.Create(c.Req.Context(), name, publicKey, fingerPrint)
-	    if err != nil {
-		    log.Println("Failed, %v", err)
+			return
+		}
+		key, err := keyAdmin.Create(c.Req.Context(), name, publicKey, fingerPrint)
+		if err != nil {
+			log.Println("Failed, %v", err)
 			c.JSON(500, map[string]interface{}{
-				"ErrorMsg": "Failed to insert public key to DB."+err.Error(),
+				"ErrorMsg": "Failed to insert public key to DB." + err.Error(),
 			})
 			return
-	    } 
+		}
 		c.JSON(200, map[string]interface{}{
-			"keyName":    name,
-			"publicKey":  publicKey,
+			"keyName":   key.Name,
+			"publicKey": key.PublicKey,
 		})
 		return
-	    	   
+
 	} else {
-		publicKey, fingerPrint, privateKey, err := keyTemp.Create()
+		publicKey, _, privateKey, err := keyTemp.Create()
 		if err != nil {
-		    c.JSON(500, map[string]interface{}{
-			    "ErrorMsg": "Failed to create public key and private key."+err.Error(),
-		    })
+			c.JSON(500, map[string]interface{}{
+				"ErrorMsg": "Failed to create public key and private key." + err.Error(),
+			})
 			return
 		}
 		c.JSON(200, map[string]interface{}{
@@ -548,7 +548,7 @@ func (v *APIKeyView) Delete(c *macaron.Context, store session.Store) (err error)
 	if err != nil {
 		log.Println("Failed to delete key, %v", err)
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to delete key."+err.Error(),
+			"ErrorMsg": "Failed to delete key." + err.Error(),
 		})
 		return
 	}

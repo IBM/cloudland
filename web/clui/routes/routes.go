@@ -22,6 +22,7 @@ import (
 
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/go-macaron/binding"
+	"github.com/go-macaron/cors"
 	"github.com/go-macaron/i18n"
 	"github.com/go-macaron/session"
 	_ "github.com/go-macaron/session/postgres"
@@ -65,6 +66,7 @@ func Run() (err error) {
 
 func New() (m *macaron.Macaron) {
 	m = macaron.Classic()
+	m.Use(cors.CORS())
 	m.Use(i18n.I18n(i18n.Options{
 		Langs:       []string{"en-US", "zh-CN"},
 		Names:       []string{"English", "简体中文"},
@@ -85,8 +87,7 @@ func New() (m *macaron.Macaron) {
 			},
 		},
 	))
-	
-	m.Use(context.Contexter())
+
 	m.Use(LinkHandler)
 	m.Get("/", Index)
 	m.Get("/dashboard", dashboard.Show)
@@ -311,22 +312,5 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 		}
 
 	}
-	
-    type Context struct {
-	    *macaron.Context
-    }
 
-    func Contexter() macaron.Handler {
-	    return func(c *macaron.Context) {
-			    c.Header().Add("Access-Control-Allow-Origin","*")
-			    c.Header().Add("Access-Control-Allow-Methods", "POST,GET,OPTIONS,DELETE")
-			    c.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-			    c.Header().Add("Access-Control-Allow-Credentials", "true")
-		}
-		ctx := &Context{
-			Context: c,
-		}
-		c.Map(ctx)
-	}
-}	
 }
