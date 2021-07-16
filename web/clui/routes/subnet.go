@@ -29,14 +29,31 @@ import (
 )
 
 var (
-	subnetAdmin = &SubnetAdmin{}
-	subnetView  = &SubnetView{}
-	vniMax      = 16777215
-	vniMin      = 4096
+	subnetAdmin   = &SubnetAdmin{}
+	subnetView    = &SubnetView{}
+	vniMax        = 16777215
+	vniMin        = 4096
+	apiSubnetView = &APISubnetView{}
 )
 
 type SubnetAdmin struct{}
 type SubnetView struct{}
+type APISubnetView struct {
+	name      string `json:"name"`
+	network   string `json:"network"`
+	netmask   string `json:"netmask"`
+	zones     string `json:"zones"`
+	gateway   string `json:"gateway"`
+	start     string `json:"start"`
+	end       string `json:"end"`
+	dns       string `json:"dns"`
+	domain    string `json:"domain"`
+	dhcp      string `json:"dhcp"`
+	vSwitch   string `json:"vSwitch"`
+	vlan      int64  `json:"vlan"`
+	routeType string `json:"routeType"`
+	routes    string `json:"routes"`
+}
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -160,9 +177,9 @@ func (a *SubnetAdmin) Update(ctx context.Context, id int64, name, gateway, start
 			subnet.End = end
 		}
 	}
- 	if dns != "" {
-                subnet.NameServer = dns
-        }
+	if dns != "" {
+		subnet.NameServer = dns
+	}
 	subnet.Routes = routes
 	err = db.Save(subnet).Error
 	if err != nil {
@@ -488,6 +505,96 @@ func (a *SubnetAdmin) Delete(ctx context.Context, id int64) (err error) {
 	return
 }
 
+func (apiV *APISubnetView) Query(c *macaron.Context, store session.Store) {
+	id := c.ParamsInt64("id")
+	if id <= 0 {
+		log.Println("Patch submet: Id <= 0")
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Patch submet: Id <= 0",
+		})
+		return
+	}
+	memberShip := GetMemberShip(c.Req.Context())
+	permit, err := memberShip.CheckOwner(model.Reader, "subnets", id)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+
+	db := DB()
+	subnet := &model.Subnet{Model: model.Model{ID: id}}
+	err = db.Take(subnet).Error
+	if err != nil {
+		log.Println("Failed to query subnet")
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to query subnet",
+		})
+		return
+	}
+
+	permit := memberShip.CheckPermission(model.Admin)
+	if permit {
+		subnet.OwnerInfo = &model.Organization{Model: model.Model{ID: subnet.Owner}}
+		if err = db.Take(subnet.OwnerInfo).Error; err != nil {
+			log.Println("Failed to query owner info", err)
+			c.JSON(500, map[string]interface{}{
+				"ErrorMsg": "Failed to query owner info",
+			})
+			return
+		}
+	}
+
+	c.JSON(200, subnet)
+}
+
+func (apiV *APISubnetView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	db := DB()
+	where := ""
+	wm := memberShip.GetWhere()
+	if wm != "" {
+		where = fmt.Sprintf("type = 'public' or %s", wm)
+	}
+	subnets = []*model.Subnet{}
+	db = dbs.Sortby(db.Offset(0).Limit(limit), "created_at")
+	err := db.Preload("Netlink").Preload("Zones").Where(where).Find(&subnets).Error
+	if err != nil {
+		log.Println("Failed to load subnets", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to load subnets",
+		})
+		return
+	}
+
+	permit := memberShip.CheckPermission(model.Admin)
+	if permit {
+		db = db.Offset(0).Limit(-1)
+		for _, subnet := range subnets {
+			subnet.OwnerInfo = &model.Organization{Model: model.Model{ID: subnet.Owner}}
+			if err = db.Take(subnet.OwnerInfo).Error; err != nil {
+				log.Println("Failed to query owner info", err)
+				c.JSON(500, map[string]interface{}{
+					"ErrorMsg": "Failed to query owner info",
+				})
+				return
+			}
+		}
+	}
+
+	c.JSON(200, subnets)
+}
+
 func (a *SubnetAdmin) List(ctx context.Context, offset, limit int64, order, query, sql string) (total int64, subnets []*model.Subnet, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
@@ -577,6 +684,35 @@ func (v *SubnetView) List(c *macaron.Context, store session.Store) {
 		return
 	}
 	c.HTML(200, "subnets")
+}
+
+func (apiV *APISubnetView) Delete(c *macaron.Context, store session.Store) {
+	id := c.ParamsInt64("id")
+	if id <= 0 {
+		log.Println("Patch submet: Id <= 0")
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Patch submet: Id <= 0",
+		})
+		return
+	}
+	memberShip := GetMemberShip(c.Req.Context())
+	permit, err := memberShip.CheckOwner(model.Writer, "subnets", id)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	err = subnetAdmin.Delete(c.Req.Context(), id)
+	if err != nil {
+		log.Println("Failed to delete subnet ", id, err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to delete subnet " + id,
+		})
+		return
+	}
+	c.JSON(200)
 }
 
 func (v *SubnetView) Delete(c *macaron.Context, store session.Store) (err error) {
@@ -756,6 +892,59 @@ func (v *SubnetView) checkRoutes(network, netmask, gateway, start, end, dns, rou
 	return
 }
 
+func (apiV *APISubnetView) Patch(c *macaron.Context, store session.Store) {
+	id := c.ParamsInt64("id")
+	if id <= 0 {
+		log.Println("Patch submet: Id <= 0")
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Patch submet: Id <= 0",
+		})
+		return
+	}
+	memberShip := GetMemberShip(c.Req.Context())
+	permit, err := memberShip.CheckOwner(model.Writer, "subnets", id)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+
+	var v APISubnetView
+	err := json.NewDecoder(c.Req.Body).Decode(&v)
+	if err != nil {
+		log.Println("Failed to parse subnet parameters")
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to parse subnet parameters",
+		})
+		return
+	}
+	if v.dhcp != "no" {
+		v.dhcp = "yes"
+	}
+
+	routeJson, err := subnetView.checkRoutes(v.network, v.netmask, v.gateway, v.start, v.end, v.dns, v.routes, id)
+	if err != nil {
+		log.Println("Failed to check route:  %v", err.Error())
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": err.Error(),
+		})
+		return
+	}
+
+	subnet, err := subnetAdmin.Update(c.Req.Context(), id, v.name, v.gateway, v.start, v.end, v.dns, routeJson)
+	if err != nil {
+		log.Println("Failed to update subnet: %v", err.Error())
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to update subnet",
+		})
+		return
+	}
+
+	c.JSON(200, subnet)
+}
+
 func (v *SubnetView) Patch(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
@@ -810,6 +999,52 @@ func (v *SubnetView) Patch(c *macaron.Context, store session.Store) {
 		return
 	}
 	c.Redirect(redirectTo)
+}
+
+func (apiV *APISubnetView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+
+	var v APISubnetView
+	err := json.NewDecoder(c.Req.Body).Decode(&v)
+	if err != nil {
+		log.Println("Failed to parse subnet parameters")
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to parse subnet parameters",
+		})
+		return
+	}
+	if v.dhcp != "no" {
+		v.dhcp = "yes"
+	}
+	log.Println(v)
+
+	routeJson, err := subnetView.checkRoutes(v.network, v.netmask, v.gateway, v.start, v.end, v.dns, v.routes, 0)
+	if err != nil {
+		log.Println("Failed to check route:  %v", err.Error())
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": err.Error(),
+		})
+		return
+	}
+
+	subnet, err := subnetAdmin.Create(c.Req.Context(), v.name, v.vlan, v.network, v.netmask, v.zones, v.gateway, v.start, v.end, v.routeType, v.dns, v.domain, v.dhcp, v.vSwitch, routeJson, memberShip.OrgID)
+	if err != nil {
+		log.Println("Failed to create subnet: %v", err.Error())
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to create subnet",
+		})
+		return
+	}
+
+	c.JSON(202, subnet)
 }
 
 func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
