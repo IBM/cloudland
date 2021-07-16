@@ -544,7 +544,7 @@ func (v *APISecruleView) Delete(c *macaron.Context, store session.Store) (err er
 	memberShip := GetMemberShip(c.Req.Context())
 	sgid := c.Params("sgid")
 	if sgid == "" {
-		log.Println("Security group ID is empty")
+		log.Println("Security group id is empty")
 		c.JSON(400, map[string]interface{}{
 			"ErrorMsg": "Security group id is empty.",
 		})
@@ -554,7 +554,7 @@ func (v *APISecruleView) Delete(c *macaron.Context, store session.Store) (err er
 	if err != nil {
 		log.Println("Invalid security group ID", err)
 		c.JSON(400, map[string]interface{}{
-			"ErrorMsg": "Security group id is empty.",
+			"ErrorMsg": "Failed to get security group id.",
 		})
 		return
 	}
@@ -570,7 +570,7 @@ func (v *APISecruleView) Delete(c *macaron.Context, store session.Store) (err er
 	if err != nil {
 		log.Println("Invalid security rule ID, %v", err)
 		c.JSON(400, map[string]interface{}{
-			"ErrorMsg": "Invalid security rule ID.",
+			"ErrorMsg": "Failed to get security rule id.",
 		})
 		return
 	}

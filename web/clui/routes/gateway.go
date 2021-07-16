@@ -25,6 +25,7 @@ import (
 var (
 	gatewayAdmin = &GatewayAdmin{}
 	gatewayView  = &GatewayView{}
+	apiGatewayView  = &APIGatewayView{}
 )
 
 type StaticRoute struct {
@@ -41,6 +42,13 @@ type SubnetIface struct {
 
 type GatewayAdmin struct{}
 type GatewayView struct{}
+type APIGatewayView struct{
+	Name    string
+	Zone    int64
+	public  string
+	private string
+	subnets string
+}
 
 func createGatewayIface(ctx context.Context, rtype string, gateway *model.Gateway, owner, zoneID int64) (iface *model.Interface, subnet *model.Subnet, err error) {
 	db := DB()
@@ -670,3 +678,263 @@ func (v *GatewayView) Create(c *macaron.Context, store session.Store) {
 	}
 	c.Redirect(redirectTo)
 }
+
+func (v *APIGatewayView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation.",
+		})
+		return
+	}
+	offset := c.QueryInt64("offset")
+	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 16
+	}
+	order := c.QueryTrim("order")
+	if order == "" {
+		order = "-created_at"
+	}
+	query := c.QueryTrim("q")
+	total, gateways, err := gatewayAdmin.List(c.Req.Context(), offset, limit, order, query)
+	if err != nil {
+		log.Println("Failed to list gateways, %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to list gateways."+err.Error(),
+		})
+
+		return
+	}
+	pages := GetPages(total, limit)
+
+	c.JSON(200, map[string]interface{}{
+		"gateways": gateways,
+		"total":    total,
+		"pages":    pages,
+		"query":    query,
+	})
+	
+	return
+}
+
+func (v *APIGatewayView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.Params("id")
+	if id == "" {
+		log.Println("Id is empty")
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Gateway id is empty.",
+		})
+		return
+	}
+	gatewayID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Invalid gateway id, %v", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get gateway id .",
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "gateways", int64(gatewayID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	err = gatewayAdmin.Delete(c.Req.Context(), int64(gatewayID))
+	if err != nil {
+		log.Println("Failed to delete gateway, %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to delete gateway."+err.Error(),
+		})
+		return
+	}
+	c.JSON(200, map[string]interface{}{
+		"Msg": "Success.",
+	})
+	return
+}
+
+func (v *APIGatewayView) Edit(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	db := dbs.DB()
+	id := c.Params("id")
+	if id == "" {
+		log.Println("Id is empty")
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Gateway id is empty.",
+		})
+		return
+	}	
+	gatewayID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Invalid gateway id, %v", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get gateway id .",
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "gateways", int64(gatewayID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	gateway := &model.Gateway{Model: model.Model{ID: int64(gatewayID)}}
+	if err = db.Set("gorm:auto_preload", true).Find(gateway).Error; err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to get gateway."+err.Error(),
+		})
+		return
+	}
+	subnets := []*model.Subnet{}
+	where := "type = 'internal'"
+	for _, gsub := range gateway.Subnets {
+		where = fmt.Sprintf("%s and id != %d", where, gsub.ID)
+	}
+	if err := db.Where(where).Where(memberShip.GetWhere()).Find(&subnets).Error; err != nil {
+		log.Println("DB failed to query subnets, %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to query subnets."+err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(200, gateway)
+
+}
+
+func (v *APIGatewayView) Patch(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.Params("id")
+	if id == "" {
+		log.Println("Id is empty")
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Gateway id is empty.",
+		})
+		return
+	}		
+	gatewayID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Invalid gateway id, %v", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get gateway id .",
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "gateways", int64(gatewayID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	name := c.QueryTrim("name")
+	pubSubnet := c.QueryTrim("public")
+	priSubnet := c.QueryTrim("private")
+	subnets := c.QueryStrings("subnets")
+	pubID, err := strconv.Atoi(pubSubnet)
+	if err != nil {
+		log.Println("Invalid public subnet id, %v", err)
+		pubID = 0
+	}
+	priID, err := strconv.Atoi(priSubnet)
+	if err != nil {
+		log.Println("Invalid private subnet id, %v", err)
+		priID = 0
+	}
+	var subnetIDs []int64
+	for _, s := range subnets {
+		sID, err := strconv.Atoi(s)
+		if err != nil {
+			log.Println("Invalid secondary subnet ID, %v", err)
+			continue
+		}
+		permit, err = memberShip.CheckOwner(model.Writer, "subnets", int64(sID))
+		if !permit {
+			log.Println("Not authorized for this operation")
+		    c.JSON(403, map[string]interface{}{
+			    "ErrorMsg": "Not authorized for this operation",
+		    })
+			return
+		}
+		subnetIDs = append(subnetIDs, int64(sID))
+	}
+	gateway, err := gatewayAdmin.Update(c.Req.Context(), int64(gatewayID), name, int64(pubID), int64(priID), subnetIDs)
+	if err != nil {
+		log.Println("Failed to update gateway", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to update gateway."+err.Error(),
+		})
+			
+		return
+	} 
+	c.JSON(200, gateway)
+	return
+}
+
+
+func (v *APIGatewayView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+
+	name := c.QueryTrim("name")
+	zoneID := c.QueryInt64("zone")
+	pubSubnet := c.QueryTrim("public")
+	priSubnet := c.QueryTrim("private")
+	subnets := c.QueryTrim("subnets")
+	pubID, err := strconv.Atoi(pubSubnet)
+	if err != nil {
+		log.Println("Invalid public subnet id, %v", err)
+		pubID = 0
+	}
+	priID, err := strconv.Atoi(priSubnet)
+	if err != nil {
+		log.Println("Invalid private subnet id, %v", err)
+		priID = 0
+	}
+	s := strings.Split(subnets, ",")
+	var subnetIDs []int64
+	for i := 0; i < len(s); i++ {
+		sID, err := strconv.Atoi(s[i])
+		if err != nil {
+			log.Println("Invalid secondary subnet ID, %v", err)
+			continue
+		}
+		permit, err = memberShip.CheckOwner(model.Writer, "subnets", int64(sID))
+		if !permit {
+			log.Println("Not authorized for this operation")
+		    c.JSON(403, map[string]interface{}{
+			    "ErrorMsg": "Not authorized for this operation",
+		    })
+			return
+		}
+		subnetIDs = append(subnetIDs, int64(sID))
+	}
+	gateway, err := gatewayAdmin.Create(c.Req.Context(), name, "", int64(pubID), int64(priID), subnetIDs, memberShip.OrgID, zoneID)
+	if err != nil {
+		log.Println("Failed to create gateway, %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to create gateway."+err.Error(),
+		})
+		return
+	} 
+	c.JSON(200, gateway)
+	return
+}
+
