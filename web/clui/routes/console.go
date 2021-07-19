@@ -27,10 +27,12 @@ import (
 var (
 	consoleAdmin = &ConsoleAdmin{}
 	consoleView  = &ConsoleView{}
+	apiConsoleView  = &APIConsoleView{}
 )
 
 type ConsoleAdmin struct{}
 type ConsoleView struct{}
+type APIConsoleView struct{}
 
 type ConsoleInfo struct {
 	Type      string `json:"type"`
@@ -192,6 +194,94 @@ func (a *ConsoleView) ConsoleResolve(c *macaron.Context, store session.Store) {
 		log.Println("VNC query failed", err)
 		code := http.StatusInternalServerError
 		c.Error(code, http.StatusText(code))
+		return
+	}
+
+	accessPass := vnc.Passwd
+	address := fmt.Sprintf("%s:%d", vnc.LocalAddress, vnc.LocalPort)
+	consoleInfo := &ConsoleInfo{
+		Type:      "vnc",
+		Address:   address,
+		Insecure:  true,
+		TLSTunnel: false,
+		Password:  accessPass,
+	}
+
+	c.JSON(200, consoleInfo)
+	return
+}
+
+func (a *APIConsoleView) ConsoleURL(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.Params("id")
+	if id == "" {
+		log.Println("Instance is empty")
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Instance id is empty.",
+		})
+		return
+	}	
+	instanceID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Invalid instance id, %v", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get instance id .",
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Reader, "instances", int64(instanceID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	tokenString, err := MakeToken(instanceID, RandomStr(), memberShip)
+	if err != nil {
+		log.Println("failed to make token", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "failed to make token."+err.Error(),
+		})
+		return
+	}
+	endpoint := viper.GetString("api.endpoint")
+	accessAddr := viper.GetString("console.host")
+	accessPort := viper.GetInt("console.port")
+	consoleURL := fmt.Sprintf("%s/novnc/vnc.html?host=%s&port=%d&autoconnect=true&encrypt=true&path=websockify?token=%s", endpoint, accessAddr, accessPort, tokenString)
+	c.Resp.Header().Set("Location", consoleURL)
+	c.JSON(301, nil)
+	return
+}
+
+func (a *APIConsoleView) ConsoleResolve(c *macaron.Context, store session.Store) {
+	token := c.Params("token")
+	log.Println("Get JWT token", token)
+	instanceID, memberShip, err := ResolveToken(token)
+	if err != nil {
+		log.Println("Unable to resolve token", err)
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Unable to resolve token."+err.Error(),
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instanceID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+
+	db := DB()
+	vnc := &model.Vnc{InstanceID: int64(instanceID)}
+	err = db.Where(vnc).Take(vnc).Error
+	if err != nil {
+		log.Println("VNC query failed", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "VNC query failed."+err.Error(),
+		})
 		return
 	}
 

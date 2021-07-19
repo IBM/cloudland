@@ -37,7 +37,20 @@ type InstanceAdmin struct{}
 
 type InstanceView struct{}
 
-type APIInstanceView struct{}
+type APIInstanceView struct{
+
+    hostname := c.QueryTrim("hostname")
+	cnt := c.QueryTrim("count")
+	c.QueryInt("hyper")
+	zoneID := c.QueryInt64("zone")
+	cluster := c.QueryInt64("cluster")
+	image := c.QueryInt64("image")
+	c.QueryInt64("flavor")
+	primary := c.QueryTrim("primary")
+	primaryIP := c.QueryTrim("primaryip")
+	primaryMac := c.QueryTrim("primarymac")
+
+}
 
 type NetworkRoute struct {
 	Network string `json:"network"`
@@ -1400,7 +1413,7 @@ func (v *APIInstanceView) List(c *macaron.Context, store session.Store) {
 	total, instances, err := instanceAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
-			"error": "Query instances error:" + err.Error(),
+			"ErrorMsg": "Failed to query instances." + err.Error(),
 		})
 		return
 	}
@@ -1414,4 +1427,393 @@ func (v *APIInstanceView) List(c *macaron.Context, store session.Store) {
 	})
 	return
 
+}
+
+func (v *APIInstanceView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation.",
+		})
+		return
+	}
+	hostname := c.QueryTrim("hostname")
+	cnt := c.QueryTrim("count")
+	count, err := strconv.Atoi(cnt)
+	if err != nil {
+		log.Println("Invalid instance count", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get count."+err.Error(),
+		})
+		return
+	}
+	hyperID := c.QueryInt("hyper")
+	if hyperID >= 0 {
+		permit := memberShip.CheckPermission(model.Admin)
+		if !permit {
+			log.Println("Need Admin permissions")
+		    c.JSON(403, map[string]interface{}{
+			    "ErrorMsg": "Not authorized for this operation.",
+		    })
+			return
+		}
+	}
+	hyper := &model.Hyper{Hostid: int32(hyperID)}
+	err = DB().Take(hyper).Error
+	if err != nil {
+		log.Println("Invalid hypervisor", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Invalid hypervisor."+err.Error(),
+		})
+		return
+	}
+	zoneID := c.QueryInt64("zone")
+	cluster := c.QueryInt64("cluster")
+	if cluster < 0 {
+		log.Println("Invalid cluster ID", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Invalid cluster ID."+err.Error(),
+		})
+		return
+	} else if cluster > 0 {
+		permit, err = memberShip.CheckAdmin(model.Writer, "openshifts", cluster)
+		if !permit {
+			log.Println("Not authorized to access openshift cluster")
+		    c.JSON(400, map[string]interface{}{
+			    "ErrorMsg": "Not authorized to access openshift cluster.",
+		    })
+			return
+		}
+	}
+	image := c.QueryInt64("image")
+	if image <= 0 && cluster <= 0 {
+		log.Println("No valid image ID or cluster ID", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "No valid image ID or cluster ID.",
+		})
+		return
+	}
+	flavor := c.QueryInt64("flavor")
+	if flavor <= 0 {
+		log.Println("Invalid flavor ID", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Invalid flavor ID.",
+		})
+		return
+	}
+	primary := c.QueryTrim("primary")
+	primaryID, err := strconv.Atoi(primary)
+	if err != nil {
+		log.Println("Invalid primary subnet ID, %v", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Invalid primary subnet ID."+err.Error(),
+		})
+		return
+	}
+	primaryIP := c.QueryTrim("primaryip")
+	ipAddr := strings.Split(primaryIP, "/")[0]
+	primaryMac := c.QueryTrim("primarymac")
+	macAddr, err := v.checkNetparam(int64(primaryID), ipAddr, primaryMac)
+	if err != nil {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Invalid primary mac address."+err.Error(),
+		})
+		return
+	}
+	subnets := c.QueryTrim("subnets")
+	s := strings.Split(subnets, ",")
+	var subnetIDs []int64
+	for i := 0; i < len(s); i++ {
+		sID, err := strconv.Atoi(s[i])
+		if err != nil {
+			log.Println("Invalid secondary subnet ID, %v", err)
+			continue
+		}
+		permit, err = memberShip.CheckAdmin(model.Writer, "subnets", int64(sID))
+		if !permit {
+			log.Println("Not authorized to access subnet")
+		    c.JSON(403, map[string]interface{}{
+			    "ErrorMsg": "Not authorized to access subnet."+err.Error(),
+		    })
+			return
+		}
+		subnetIDs = append(subnetIDs, int64(sID))
+	}
+	keys := c.QueryTrim("keys")
+	k := strings.Split(keys, ",")
+	var keyIDs []int64
+	for i := 0; i < len(k); i++ {
+		kID, err := strconv.Atoi(k[i])
+		if err != nil {
+			log.Println("Invalid key ID, %v", err)
+			continue
+		}
+		permit, err = memberShip.CheckOwner(model.Writer, "keys", int64(kID))
+		if !permit {
+			log.Println("Not authorized to access key")
+		    c.JSON(403, map[string]interface{}{
+			    "ErrorMsg": "Not authorized to access key."+err.Error(),
+		    })
+			return
+		}
+		keyIDs = append(keyIDs, int64(kID))
+	}
+	secgroups := c.QueryTrim("secgroups")
+	var sgIDs []int64
+	if secgroups != "" {
+		sg := strings.Split(secgroups, ",")
+		for i := 0; i < len(sg); i++ {
+			sgID, err := strconv.Atoi(sg[i])
+			if err != nil {
+				log.Println("Invalid security group ID", err)
+				continue
+			}
+			permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
+			if !permit {
+				log.Println("Not authorized to access security group")
+		        c.JSON(403, map[string]interface{}{
+			        "ErrorMsg": "Not authorized to access security group."+err.Error(),
+		        })
+				return
+			}
+			sgIDs = append(sgIDs, int64(sgID))
+		}
+	} else {
+		sgID := store.Get("defsg").(int64)
+		permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
+		if !permit {
+			log.Println("Not authorized to access security group")
+		    c.JSON(403, map[string]interface{}{
+			    "ErrorMsg": "Not authorized to access security group."+err.Error(),
+		    })
+			return
+		}
+		sgIDs = append(sgIDs, sgID)
+	}
+	userdata := c.QueryTrim("userdata")
+	instances, err := instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, image, flavor, int64(primaryID), cluster, zoneID, ipAddr, macAddr, subnetIDs, keyIDs, sgIDs, hyperID)
+	if err != nil {
+		log.Println("Create instance failed", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failes to create instance."+err.Error(),
+		})
+		return
+	} 
+	c.JSON(200, instances)
+	return
+	
+}
+
+func (v *APIInstanceView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.Params("id")
+	if id == "" {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Instance id is empty.",
+		})
+		return
+	}
+	instanceID, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get instance id.",
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instanceID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	err = instanceAdmin.Delete(c.Req.Context(), int64(instanceID))
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to delete instance."+err.Error(),
+		})
+		return
+	}
+	c.JSON(200, map[string]interface{}{
+		"Msg": "Success.",
+	})
+	return
+}
+
+func (v *APIInstanceView) Edit(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	db := DB()
+	id := c.Params("id")
+	if id == "" {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Instance id is empty.",
+		})
+		return
+	}
+	instanceID, err := strconv.Atoi(id)
+
+	if err != nil {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get instance id .",
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instanceID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	instance := &model.Instance{Model: model.Model{ID: int64(instanceID)}}
+	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
+		log.Println("Instance query failed", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to query instance."+err.Error(),
+		})		
+		return
+	}
+	if err = db.Where("instance_id = ?", instanceID).Find(&instance.FloatingIps).Error; err != nil {
+		log.Println("Failed to query floating ip(s), %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to query floating ip(s)."+err.Error(),
+		})		
+		return
+	}
+	_, subnets, err := subnetAdmin.List(c.Req.Context(), 0, -1, "", "", "")
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to query subnets."+err.Error(),
+		})	
+		return
+	}
+	for _, iface := range instance.Interfaces {
+		for i, subnet := range subnets {
+			if iface == nil || iface.Address == nil {
+				continue
+			}
+			if subnet.ID == iface.Address.SubnetID {
+				subnets = append(subnets[:i], subnets[i+1:]...)
+				break
+			}
+		}
+	}
+	_, flavors, err := flavorAdmin.List(0, -1, "", "")
+	if err := db.Find(&flavors).Error; err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to query flavor."+err.Error(),
+		})
+		return
+	}
+
+	flag := c.QueryTrim("flag")
+	if flag == "ChangeStatus" {
+		if c.QueryTrim("action") != "" {
+			instanceID64, err := strconv.ParseInt(id, 10, 64)
+			if err != nil {
+				log.Println("Change String to int64 failed", err)
+				c.JSON(500, map[string]interface{}{
+			        "ErrorMsg": "Failed to get instance id."+err.Error(),
+		        })
+				return
+			}
+			_, vmError := instanceAdmin.ChangeInstanceStatus(c.Req.Context(), instanceID64, c.QueryTrim("action"))
+			if vmError != nil {
+				log.Println("Launch vm command execution failed", err)
+				c.JSON(500, map[string]interface{}{
+			        "ErrorMsg": "Failed to launch vm command execution."+err.Error(),
+		        })
+				return
+			}
+			c.JSON(200, map[string]interface{}{
+		        "Msg": "Success.",
+	        })
+		}
+	}
+	
+	c.JSON(200, map[string]interface{}{
+		"instance":   instance,
+		"subnets":    subnets,
+		"flavors":    flavors,
+	})
+}
+
+func (v *APIInstanceView) Patch(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.ParamsInt64("id")	
+	permit, err := memberShip.CheckOwner(model.Writer, "instances", id)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	flavor := c.QueryInt64("flavor")
+	hostname := c.QueryTrim("hostname")
+	hyperID := c.QueryInt("hyper")
+	action := c.QueryTrim("action")
+	ifaces := c.QueryStrings("ifaces")
+	instance := &model.Instance{Model: model.Model{ID: id}}
+	err = DB().Take(instance).Error
+	if err != nil {
+		log.Println("Invalid instance", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Invalid instance."+err.Error(),
+		})
+		return
+	}
+	if hyperID != int(instance.Hyper) {
+		permit, err = memberShip.CheckAdmin(model.Admin, "instances", id)
+		if !permit {
+			log.Println("Not authorized to migrate VM")
+			c.JSON(403, map[string]interface{}{
+			    "ErrorMsg": "Not authorized to migrate VM.",
+		    })
+			return
+		}
+	}
+	hyper := &model.Hyper{Hostid: int32(hyperID)}
+	err = DB().Take(hyper).Error
+	if err != nil {
+		log.Println("Invalid hypervisor", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Invalid hypervisor.",
+		})
+		return
+	}
+	var subnetIDs []int64
+	for _, s := range ifaces {
+		sID, err := strconv.Atoi(s)
+		if err != nil {
+			log.Println("Invalid secondary subnet ID, %v", err)
+			continue
+		}
+		permit, err = memberShip.CheckOwner(model.Writer, "subnets", int64(sID))
+		if !permit {
+			log.Println("Not authorized for this operation")
+			c.JSON(403, map[string]interface{}{
+			    "ErrorMsg": "Not authorized for this operation",
+		    })
+			return
+		}
+		subnetIDs = append(subnetIDs, int64(sID))
+	}
+	var sgIDs []int64
+	sgIDs = append(sgIDs, store.Get("defsg").(int64))
+	instance, err = instanceAdmin.Update(c.Req.Context(), id, flavor, hostname, action, subnetIDs, sgIDs, hyperID)
+	if err != nil {
+		log.Println("Create instance failed, %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to update instance"+err.Error(),
+		})
+		return
+	} 
+	c.JSON(200, instance)
+	return
+	
 }
