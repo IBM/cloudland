@@ -39,16 +39,20 @@ type InstanceView struct{}
 
 type APIInstanceView struct{
 
-    hostname := c.QueryTrim("hostname")
-	cnt := c.QueryTrim("count")
-	c.QueryInt("hyper")
-	zoneID := c.QueryInt64("zone")
-	cluster := c.QueryInt64("cluster")
-	image := c.QueryInt64("image")
-	c.QueryInt64("flavor")
-	primary := c.QueryTrim("primary")
-	primaryIP := c.QueryTrim("primaryip")
-	primaryMac := c.QueryTrim("primarymac")
+    Hostname        string
+	Count           string
+	Hyper           int
+	Zone            int64
+	Cluster         int64
+	Image           int64
+	Flavor          int64
+	Primary         string
+	Primaryip       string
+	Primarymac      string
+	Subnets         string
+    Keys            string
+    Secgroups       string
+    Userdata        string
 
 }
 
