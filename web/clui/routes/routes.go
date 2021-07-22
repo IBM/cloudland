@@ -300,14 +300,15 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 					})
 					return
 				} else {
-					uid := claims.UID
+					//uid := claims.UID
 					oid := claims.OID
 					username := claims.StandardClaims.Audience
 					organization := username
 					org, err := orgAdmin.Get(organization)
 					role := claims.Role
 					members := []*model.Member{}
-					err = DB().Where("user_name = ?", username).Find(&members).Error
+					user := &model.User{}
+					err = DB().Where("user_name = ?", username).Find(&members, user).Error
 					if err != nil {
 						log.Println("Failed to query organizations, ", err)
 						c.JSON(403, map[string]interface{}{
@@ -315,10 +316,11 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 						})
 						return
 					}
+
 					//set store
 					store.Set("login", username)
-					store.Set("uid", uid)
-					store.Set("oid", oid)
+					store.Set("uid", user.ID)
+					store.Set("oid", org.ID)
 					store.Set("role", role)
 					store.Set("act", token)
 					store.Set("org", organization)

@@ -176,6 +176,13 @@ func (a *UserAdmin) List(ctx context.Context, offset, limit int64, order, query 
 	return
 }
 
+func (a *UserAdmin) Get(name string) (org *model.User, err error) {
+	org = &model.User{}
+	db := DB()
+	err = db.Take(org, &model.User{Username: name}).Error
+	return
+}
+
 func (a *UserAdmin) Validate(ctx context.Context, username, password string) (user *model.User, err error) {
 	db := DB()
 	hasUser := true
@@ -661,10 +668,10 @@ func (v *APIUserView) List(c *macaron.Context, store session.Store) {
 	total, users, err := userAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		log.Println("Failed to list user(s)", err)
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
+		c.JSON(500, map[string]interface{}{
+			"error": err.Error(),
+		})
+		return
 	}
 	pages := GetPages(total, limit)
 	c.Data["Users"] = users
@@ -672,14 +679,14 @@ func (v *APIUserView) List(c *macaron.Context, store session.Store) {
 	c.Data["Pages"] = pages
 	c.Data["Query"] = query
 
-		c.JSON(200, map[string]interface{}{
-			"users": users,
-			"total": total,
-			"pages": pages,
-			"query": query,
-		})
-		return
-	
+	c.JSON(200, map[string]interface{}{
+		"users": users,
+		"total": total,
+		"pages": pages,
+		"query": query,
+	})
+	return
+
 }
 
 func (v *APIUserView) Delete(c *macaron.Context, store session.Store) (err error) {
@@ -741,22 +748,22 @@ func (v *APIUserView) Create(c *macaron.Context, store session.Store) {
 		log.Println("Passwords do not match")
 		c.JSON(400, map[string]interface{}{
 			"ErrorMsg": "Passwords do not match",
-		})		
+		})
 		return
 	}
 	user, err := userAdmin.Create(c.Req.Context(), username, password)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to create user."+err.Error(),
-		})			
+			"ErrorMsg": "Failed to create user." + err.Error(),
+		})
 		return
 	}
 	_, err = orgAdmin.Create(c.Req.Context(), username, username)
 	if err != nil {
 		log.Println("Failed to create organization, %v", err)
-		
+
 		c.JSON(500, map[string]interface{}{
-		    "ErrorMsg": "Failed to create organization."+err.Error(),
+			"ErrorMsg": "Failed to create organization." + err.Error(),
 		})
 		return
 	}
@@ -770,7 +777,7 @@ func (v *APIUserView) Patch(c *macaron.Context, store session.Store) {
 	if id == "" {
 		c.JSON(403, map[string]interface{}{
 			"ErrorMsg": "User id is empty.",
-		})	
+		})
 		return
 	}
 	userID, err := strconv.Atoi(id)
@@ -778,7 +785,7 @@ func (v *APIUserView) Patch(c *macaron.Context, store session.Store) {
 
 		c.JSON(400, map[string]interface{}{
 			"ErrorMsg": "User id is empty.",
-		})		
+		})
 		return
 	}
 	permit, err := memberShip.CheckUser(int64(userID))
@@ -786,7 +793,7 @@ func (v *APIUserView) Patch(c *macaron.Context, store session.Store) {
 		c.JSON(403, map[string]interface{}{
 			"ErrorMsg": "Not authorized for this operation",
 		})
-		
+
 		return
 	}
 	password := c.QueryTrim("password")
@@ -795,11 +802,11 @@ func (v *APIUserView) Patch(c *macaron.Context, store session.Store) {
 	if err != nil {
 		log.Println("Failed to update password, %v", err)
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to update password."+err.Error(),
+			"ErrorMsg": "Failed to update password." + err.Error(),
 		})
 		return
-		
-	} 
+
+	}
 	c.JSON(200, user)
 }
 
@@ -833,11 +840,9 @@ func (v *APIUserView) Edit(c *macaron.Context, store session.Store) {
 	if err != nil {
 		log.Println("Failed to query user", err)
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to query user."+err.Error(),
+			"ErrorMsg": "Failed to query user." + err.Error(),
 		})
 		return
 	}
 	c.JSON(200, user)
 }
-
-
