@@ -301,18 +301,26 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 					return
 				} else {
 					//uid := claims.UID
-					oid := claims.OID
+					//oid := claims.OID
 					username := claims.StandardClaims.Audience
 					organization := username
 					org, err := orgAdmin.Get(organization)
 					role := claims.Role
 					members := []*model.Member{}
-					user := &model.User{}
-					err = DB().Where("user_name = ?", username).Find(&members, user).Error
+					err = DB().Where("user_name = ?", username).Find(&members).Error
 					if err != nil {
 						log.Println("Failed to query organizations, ", err)
 						c.JSON(403, map[string]interface{}{
 							"ErrorMsg": "Failed to query organizations",
+						})
+						return
+					}
+
+					user, err := userAdmin.Get(username)
+					if err != nil {
+						log.Println("Failed to query user, ", err)
+						c.JSON(403, map[string]interface{}{
+							"ErrorMsg": "Failed to query user",
 						})
 						return
 					}
@@ -335,6 +343,10 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 						Role:     store.Get("role").(model.Role),
 					}
 					c.Req.Request = c.Req.WithContext(memberShip.SetContext(c.Req.Context()))
+
+					if memberShip.Role == model.Admin || username == "admin" {
+						memberShip.Role = model.Admin
+					}
 
 				}
 

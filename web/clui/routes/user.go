@@ -141,6 +141,8 @@ func (a *UserAdmin) List(ctx context.Context, offset, limit int64, order, query 
 	if query != "" {
 		query = fmt.Sprintf("username like '%%%s%%'", query)
 	}
+	log.Println("memberShip.Role==================", memberShip.Role)
+	log.Println("model.Admin==================", model.Admin)
 	if memberShip.Role != model.Admin {
 		org := &model.Organization{Model: model.Model{ID: memberShip.OrgID}}
 		if err = db.Set("gorm:auto_preload", true).Take(org).Error; err != nil {
