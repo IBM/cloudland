@@ -1821,3 +1821,42 @@ func (v *APIInstanceView) Patch(c *macaron.Context, store session.Store) {
 	return
 	
 }
+
+func (v *APIInstanceView) checkNetparam(subnetID int64, IP, mac string) (macAddr string, err error) {
+	subnet := &model.Subnet{Model: model.Model{ID: subnetID}}
+	err = DB().Take(subnet).Error
+	if err != nil {
+		log.Println("DB failed to query subnet ", err)
+		return
+	}
+	inNet := &net.IPNet{
+		IP:   net.ParseIP(subnet.Network),
+		Mask: net.IPMask(net.ParseIP(subnet.Netmask).To4()),
+	}
+	if IP != "" && !inNet.Contains(net.ParseIP(IP)) {
+		log.Println("Primary IP not belonging to subnet")
+		err = fmt.Errorf("Primary IP not belonging to subnet")
+		return
+	}
+	if mac != "" {
+		macl := strings.Split(mac, ":")
+		if len(macl) != 6 {
+			log.Println("Invalid mac address format")
+			err = fmt.Errorf("Invalid mac address format")
+			return
+		}
+		macAddr = strings.ToLower(mac)
+		var tmp [6]int
+		_, err = fmt.Sscanf(macAddr, "%02x:%02x:%02x:%02x:%02x:%02x", &tmp[0], &tmp[1], &tmp[2], &tmp[3], &tmp[4], &tmp[5])
+		if err != nil {
+			log.Println("Failed to parse mac address")
+			return
+		}
+		if tmp[0]%2 == 1 {
+			log.Println("Not a valid unicast mac address")
+			err = fmt.Errorf("Not a valid unicast mac address")
+			return
+		}
+	}
+	return
+}
