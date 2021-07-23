@@ -22,10 +22,17 @@ import (
 var (
 	volumeAdmin = &VolumeAdmin{}
 	volumeView  = &VolumeView{}
+	apiVolumeView  = &APIVolumeView{}
 )
 
 type VolumeAdmin struct{}
 type VolumeView struct{}
+type APIVolumeView struct{
+
+	Name       string
+	Size       string
+	Instance   string
+}
 
 func (a *VolumeAdmin) Create(ctx context.Context, name string, size int) (volume *model.Volume, err error) {
 	memberShip := GetMemberShip(ctx)
@@ -377,4 +384,215 @@ func (v *VolumeView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	c.Redirect(redirectTo)
+}
+
+func (v *APIVolumeView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation.",
+		})
+		return
+	}
+	offset := c.QueryInt64("offset")
+	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 16
+	}
+	order := c.QueryTrim("order")
+	if order == "" {
+		order = "-created_at"
+	}
+	query := c.QueryTrim("q")
+	total, volumes, err := volumeAdmin.List(c.Req.Context(), offset, limit, order, query)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to list volumes."+err.Error(),
+		})
+
+		return
+	}
+	pages := GetPages(total, limit)
+
+	c.JSON(200, map[string]interface{}{
+		"volumes": volumes,
+		"total":   total,
+		"pages":   pages,
+		"query":   query,
+	})
+	return
+
+}
+
+func (v *APIVolumeView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.Params("id")
+	if id == "" {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Volume id is empty.",
+		})
+		return
+	}
+	volumeID, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get volume id .",
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "volumes", int64(volumeID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	err = volumeAdmin.Delete(c.Req.Context(), int64(volumeID))
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to delete volume."+err.Error(),
+		})
+		return
+	}
+	c.JSON(200, map[string]interface{}{
+		"Msg": "Success.",
+	})
+	return
+}
+
+func (v *APIVolumeView) Edit(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	db := DB()
+	id := c.Params(":id")
+	if id == "" {
+		log.Println("Id is empty")
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Volume id is empty.",
+		})
+		return
+	}	
+	volID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Invalid gateway id, %v", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get volume id .",
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "volumes", int64(volID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	volume := &model.Volume{Model: model.Model{ID: int64(volID)}}
+	if err := db.Preload("Instance").Take(volume).Error; err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to query volume."+err.Error(),
+		})
+		return
+	}
+	_, instances, err := instanceAdmin.List(c.Req.Context(), 0, -1, "", "")
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to query instances."+err.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, map[string]interface{}{
+		"volume":       volume,
+		"instances":    instances,	
+	})	
+}
+
+func (v *APIVolumeView) Patch(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.Params(":id")
+	if id == "" {
+		log.Println("Id is empty")
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Volume id is empty.",
+		})
+		return
+	}		
+	name := c.QueryTrim("name")
+	instance := c.QueryTrim("instance")
+	volID, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get volume id .",
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "volumes", int64(volID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	instID, err := strconv.Atoi(instance)
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	permit, err = memberShip.CheckOwner(model.Writer, "instances", int64(instID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	volume, err := volumeAdmin.Update(c.Req.Context(), int64(volID), name, int64(instID))
+	if err != nil {
+		log.Println("Failed to update volume", err)
+			c.JSON(500, map[string]interface{}{
+				"ErrorMsg": "Failed to update volume"+err.Error(),
+			})
+		return
+	} 
+	c.JSON(200, volume)
+	return
+	
+}
+
+func (v *APIVolumeView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	name := c.QueryTrim("name")
+	size := c.QueryTrim("size")
+	vsize, err := strconv.Atoi(size)
+	if err != nil {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get size."+err.Error(),
+		})
+		return
+	}
+	volume, err := volumeAdmin.Create(c.Req.Context(), name, vsize)
+	if err != nil {
+		log.Println("Create volume failed", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to create volume."+err.Error(),
+		})
+
+		return
+	} 
+	c.JSON(200, volume)
+	return
+	
 }
