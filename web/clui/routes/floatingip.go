@@ -25,6 +25,7 @@ import (
 var (
 	floatingipAdmin = &FloatingIpAdmin{}
 	floatingipView  = &FloatingIpView{}
+	apiFloatingipView  = &APIFloatingIpView{}
 )
 
 type FloatingIps struct {
@@ -35,6 +36,15 @@ type FloatingIps struct {
 
 type FloatingIpAdmin struct{}
 type FloatingIpView struct{}
+type APIFloatingIpView struct{
+
+	Instance    int64
+	Ftype       string
+	Publicip    string
+	Privateip   string
+	FloatingIP  string
+
+}
 
 func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, types []string, publicIp, privateIp string) (floatingips []*model.FloatingIp, err error) {
 	memberShip := GetMemberShip(ctx)
@@ -428,4 +438,160 @@ func DeallocateFloatingIp(ctx context.Context, floatingipID int64) (err error) {
 		return
 	}
 	return
+}
+
+func (v *APIFloatingIpView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation.",
+		})
+		return
+	}
+	offset := c.QueryInt64("offset")
+	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 16
+	}
+	order := c.Query("order")
+	if order == "" {
+		order = "-created_at"
+	}
+	query := c.QueryTrim("q")
+	total, floatingips, err := floatingipAdmin.List(c.Req.Context(), offset, limit, order, query)
+	if err != nil {
+		log.Println("Failed to list floating ip(s), %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to list floating ip."+err.Error(),
+		})
+
+		return
+	}
+	pages := GetPages(total, limit)
+
+	c.JSON(200, map[string]interface{}{
+		"floatingips": floatingips,
+		"total":       total,
+		"pages":       pages,
+		"query":       query,
+	})
+	return
+}
+
+func (v *APIFloatingIpView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.Params("id")
+	if id == "" {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Floating id is empty.",
+		})
+		return
+	}
+	floatingipID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Invalid floating ip ID, %v", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get floating id.",
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "floating_ips", int64(floatingipID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation.",
+		})
+		return
+	}
+	err = floatingipAdmin.Delete(c.Req.Context(), int64(floatingipID))
+	if err != nil {
+		log.Println("Failed to delete floating ip, %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to delete floating ip",
+		})
+		return
+	}
+	c.JSON(200, map[string]interface{}{
+		"Msg": "Success.",
+	})
+	return
+}
+
+func (v *APIFloatingIpView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	instID := c.QueryInt64("instance")
+	ftype := c.QueryTrim("ftype")
+	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	if ftype == "" {
+		ftype = "public,private"
+	}
+	publicIp := c.QueryTrim("publicip")
+	privateIp := c.QueryTrim("privateip")
+	types := strings.Split(ftype, ",")
+	floatingips, err := floatingipAdmin.Create(c.Req.Context(), int64(instID), 0, types, publicIp, privateIp)
+	if err != nil {
+		log.Println("Failed to create floating ip", err)
+		c.JSON(500, map[string]interface{}{
+				"ErrorMsg": "Failed to create floating ip."+err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(200, floatingips)
+	return
+}
+
+func (v *APIFloatingIpView) Assign(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	instID := c.QueryInt64("instance")
+	floatingIP := c.QueryTrim("floatingIP")
+	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	types := []string{"public", "private"}
+	fipsData := &FloatingIps{Instance: instID}
+	floatingips, err := floatingipAdmin.Create(c.Req.Context(), int64(instID), 0, types, floatingIP, "")
+	if err != nil {
+		log.Println("Failed to create floating ip", err)
+		fipsData.PublicIp = ""
+	} else {
+		for _, fip := range floatingips {
+			if fip.Type == "public" {
+				fipsData.PublicIp = fip.FipAddress
+			} else if fip.Type == "private" {
+				fipsData.PrivateIp = fip.FipAddress
+			}
+		}
+	}
+	c.JSON(200, fipsData)
 }

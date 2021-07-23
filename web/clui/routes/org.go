@@ -27,8 +27,8 @@ import (
 )
 
 var (
-	orgView  = &OrgView{}
-	orgAdmin = &OrgAdmin{}
+	orgView    = &OrgView{}
+	orgAdmin   = &OrgAdmin{}
 	apiOrgView = &APIOrgView{}
 )
 
@@ -495,21 +495,20 @@ func (v *APIOrgView) List(c *macaron.Context, store session.Store) {
 	if err != nil {
 		log.Println("Failed to list organizations, %v", err)
 		c.JSON(500, map[string]interface{}{
-            "ErrorMsg": "Failed to list organizations."+err.Error(),
+			"ErrorMsg": "Failed to list organizations." + err.Error(),
 		})
 		return
-		
+
 	}
 	pages := GetPages(total, limit)
 
 	c.JSON(200, map[string]interface{}{
-        "orgs":  orgs,
+		"orgs":  orgs,
 		"total": total,
 		"pages": pages,
 		"query": query,
 	})
-		
-	c.HTML(200, "orgs")
+
 }
 
 func (v *APIOrgView) Edit(c *macaron.Context, store session.Store) {
@@ -540,7 +539,7 @@ func (v *APIOrgView) Edit(c *macaron.Context, store session.Store) {
 	if err = db.Preload("Members").Take(org).Error; err != nil {
 		log.Println("Organization query failed", err)
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Organization query failed."+err.Error(),
+			"ErrorMsg": "Organization query failed." + err.Error(),
 		})
 		return
 	}
@@ -548,7 +547,7 @@ func (v *APIOrgView) Edit(c *macaron.Context, store session.Store) {
 	if err = db.Take(org.OwnerUser).Error; err != nil {
 		log.Println("Owner user query failed", err)
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Owner user query failed."+err.Error(),
+			"ErrorMsg": "Owner user query failed." + err.Error(),
 		})
 		return
 	}
@@ -589,15 +588,15 @@ func (v *APIOrgView) Patch(c *macaron.Context, store session.Store) {
 		if err != nil {
 			log.Println("Failed to convert role", err)
 			c.JSON(500, map[string]interface{}{
-			    "ErrorMsg": "Failed to convert role."+err.Error(),
-		    })
+				"ErrorMsg": "Failed to convert role." + err.Error(),
+			})
 			return
 		}
 		if memberShip.Role < model.Role(role) {
 			log.Println("Not authorized for this operation")
 			c.JSON(403, map[string]interface{}{
-			    "ErrorMsg": "Not authorized for this operation",
-		    })
+				"ErrorMsg": "Not authorized for this operation",
+			})
 			return
 		}
 		roleList = append(roleList, model.Role(role))
@@ -605,16 +604,16 @@ func (v *APIOrgView) Patch(c *macaron.Context, store session.Store) {
 	org, err := orgAdmin.Update(c.Req.Context(), int64(orgID), memberList, userList, roleList)
 	if err != nil {
 		log.Println("Failed to update organization, %v", err)
-		
+
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to update organization."+err.Error(),
+			"ErrorMsg": "Failed to update organization." + err.Error(),
 		})
 		return
 
-	} 
-		
+	}
+
 	c.JSON(200, org)
-	
+
 }
 
 func (v *APIOrgView) Delete(c *macaron.Context, store session.Store) (err error) {
@@ -647,7 +646,7 @@ func (v *APIOrgView) Delete(c *macaron.Context, store session.Store) (err error)
 	if err != nil {
 		log.Println("Failed to delete organization, %v", err)
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to delete organization."+err.Error(),
+			"ErrorMsg": "Failed to delete organization." + err.Error(),
 		})
 		return
 	}
@@ -674,11 +673,11 @@ func (v *APIOrgView) Create(c *macaron.Context, store session.Store) {
 	if err != nil {
 		log.Println("Failed to create organization, %v", err)
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to create organization."+err.Error(),
+			"ErrorMsg": "Failed to create organization." + err.Error(),
 		})
 		return
-		
-	} 
+
+	}
 	c.JSON(200, organization)
-		
+
 }

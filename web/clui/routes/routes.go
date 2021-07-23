@@ -124,15 +124,24 @@ func New() (m *macaron.Macaron) {
 	m.Get("/UpdateTable", instanceView.UpdateTable)
 	m.Get("/instances/new", instanceView.New)
 	m.Post("/instances/new", instanceView.Create)
+	m.Post("/api/instances/new", binding.Bind(APIInstanceView{}), apiInstanceView.Create)
 	m.Delete("/instances/:id", instanceView.Delete)
+	m.Delete("/api/instances/:id", apiInstanceView.Delete)
 	m.Get("/openshifts", openshiftView.List)
+	m.Get("/api/openshifts", apiOpenshiftView.List)
 	m.Get("/openshifts/new", openshiftView.New)
 	m.Post("/openshifts/new", openshiftView.Create)
+	m.Post("/api/openshifts/new", binding.Bind(APIOpenshiftView{}), apiOpenshiftView.Create)
 	m.Delete("/openshifts/:id", openshiftView.Delete)
+	m.Delete("/api/openshifts/:id", apiOpenshiftView.Delete)
 	m.Get("/openshifts/:id", openshiftView.Edit)
+	m.Get("/api/openshifts/:id", apiOpenshiftView.Edit)
 	m.Post("/openshifts/:id", openshiftView.Patch)
+	m.Post("/api/openshifts/:id", binding.Bind(APIOpenshiftView{}), apiOpenshiftView.Patch)
 	m.Post("/openshifts/:id/launch", openshiftView.Launch)
+	m.Post("/api/openshifts/:id/launch", binding.Bind(APIOpenshiftView{}), apiOpenshiftView.Launch)
 	m.Post("/openshifts/:id/state", openshiftView.State)
+	m.Post("/api/openshifts/:id/state", binding.Bind(APIOpenshiftView{}), apiOpenshiftView.State)
 	m.Get("/glusterfs", glusterfsView.List)
 	m.Get("/glusterfs/new", glusterfsView.New)
 	m.Post("/glusterfs/new", glusterfsView.Create)
@@ -140,9 +149,13 @@ func New() (m *macaron.Macaron) {
 	m.Get("/glusterfs/:id", glusterfsView.Edit)
 	m.Post("/glusterfs/:id", glusterfsView.Patch)
 	m.Get("/instances/:id", instanceView.Edit)
+	m.Get("/api/instances/:id", apiInstanceView.Edit)
 	m.Post("/instances/:id", instanceView.Patch)
+	m.Post("/api/instances/:id", binding.Bind(APIInstanceView{}), apiInstanceView.Patch)
 	m.Post("/instances/:id/console", consoleView.ConsoleURL)
+	m.Post("/api/instances/:id/console", apiConsoleView.ConsoleURL)
 	m.Get("/consoleresolver/token/:token", consoleView.ConsoleResolve)
+	m.Get("/api/consoleresolver/token/:token", apiConsoleView.ConsoleResolve)
 	m.Get("/interfaces/:id", interfaceView.Edit)
 	m.Post("/interfaces/:id", interfaceView.Patch)
 	m.Post("/interfaces/new", interfaceView.Create)
@@ -199,32 +212,51 @@ func New() (m *macaron.Macaron) {
 	m.Delete("/api/keys/:id", apiKeyView.Delete)
 	m.Delete("/api/keys/:id", apiKeyView.Delete)
 	m.Get("/floatingips", floatingipView.List)
+	m.Get("/api/floatingips", apiFloatingipView.List)
 	m.Get("/floatingips/new", floatingipView.New)
 	m.Post("/floatingips/new", floatingipView.Create)
+	m.Post("/api/floatingips/new", binding.Bind(APIFloatingIpView{}), apiFloatingipView.Create)
 	m.Post("/floatingips/assign", floatingipView.Assign)
-	m.Delete("/floatingips/:id", floatingipView.Delete)
+	m.Post("/floatingips/assign", binding.Bind(APIFloatingIpView{}), apiFloatingipView.Assign)
+	m.Delete("/api/floatingips/:id", floatingipView.Delete)
+	m.Delete("/api/floatingips/:id", apiFloatingipView.Delete)
 	m.Get("/portmaps", portmapView.List)
 	m.Get("/portmaps/new", portmapView.New)
 	m.Post("/portmaps/new", portmapView.Create)
 	m.Delete("/portmaps/:id", portmapView.Delete)
 	m.Get("/gateways", gatewayView.List)
+	m.Get("/api/gateways", apiGatewayView.List)
 	m.Get("/gateways/new", gatewayView.New)
 	m.Post("/gateways/new", gatewayView.Create)
+	m.Post("/api/gateways/new", binding.Bind(APIGatewayView{}), apiGatewayView.Create)
 	m.Delete("/gateways/:id", gatewayView.Delete)
+	m.Delete("/api/gateways/:id", apiGatewayView.Delete)
 	m.Get("/gateways/:id", gatewayView.Edit)
+	m.Get("/api/gateways/:id", apiGatewayView.Edit)
 	m.Post("/gateways/:id", gatewayView.Patch)
+	m.Post("/api/gateways/:id", binding.Bind(APIGatewayView{}), apiGatewayView.Patch)
 	m.Get("/secgroups", secgroupView.List)
+	m.Get("/api/secgroups", apiSecgroupView.List)
 	m.Get("/secgroups/new", secgroupView.New)
 	m.Post("/secgroups/new", secgroupView.Create)
+	m.Post("/secgroups/new", binding.Bind(APISecgroupView{}), apiSecgroupView.Create)
 	m.Delete("/secgroups/:id", secgroupView.Delete)
+	m.Delete("/api/secgroups/:id", apiSecgroupView.Delete)
 	m.Get("/secgroups/:id", secgroupView.Edit)
+	m.Get("/api/secgroups/:id", apiSecgroupView.Edit)
 	m.Post("/secgroups/:id", secgroupView.Patch)
+	m.Post("/api/secgroups/:id", binding.Bind(APISecgroupView{}), apiSecgroupView.Patch)
 	m.Get("/secgroups/:sgid/secrules", secruleView.List)
+	m.Get("/api/secgroups/:sgid/secrules", apiSecruleView.List)
 	m.Get("/secgroups/:sgid/secrules/new", secruleView.New)
 	m.Post("/secgroups/:sgid/secrules/new", secruleView.Create)
+	m.Post("/api/secgroups/:sgid/secrules/new", binding.Bind(APISecruleView{}), apiSecruleView.Create)
 	m.Delete("/secgroups/:sgid/secrules/:id", secruleView.Delete)
+	m.Delete("/api/secgroups/:sgid/secrules/:id", apiSecruleView.Delete)
 	m.Get("/secgroups/:sgid/secrules/:id", secruleView.Edit)
+	m.Get("/api/secgroups/:sgid/secrules/:id", apiSecruleView.Edit)
 	m.Post("/secgroups/:sgid/secrules/:id", secruleView.Patch)
+	m.Post("/api/secgroups/:sgid/secrules/:id", binding.Bind(APISecruleView{}), apiSecruleView.Patch)
 	m.Get("/error", func(c *macaron.Context) {
 		c.Data["ErrorMsg"] = c.QueryTrim("ErrorMsg")
 		c.HTML(500, "error")
@@ -273,8 +305,8 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 					})
 					return
 				} else {
-					uid := claims.UID
-					oid := claims.OID
+					//uid := claims.UID
+					//oid := claims.OID
 					username := claims.StandardClaims.Audience
 					organization := username
 					org, err := orgAdmin.Get(organization)
@@ -288,10 +320,20 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 						})
 						return
 					}
+
+					user, err := userAdmin.Get(username)
+					if err != nil {
+						log.Println("Failed to query user, ", err)
+						c.JSON(403, map[string]interface{}{
+							"ErrorMsg": "Failed to query user",
+						})
+						return
+					}
+
 					//set store
 					store.Set("login", username)
-					store.Set("uid", uid)
-					store.Set("oid", oid)
+					store.Set("uid", user.ID)
+					store.Set("oid", org.ID)
 					store.Set("role", role)
 					store.Set("act", token)
 					store.Set("org", organization)
@@ -306,6 +348,10 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 						Role:     store.Get("role").(model.Role),
 					}
 					c.Req.Request = c.Req.WithContext(memberShip.SetContext(c.Req.Context()))
+
+					if memberShip.Role == model.Admin || username == "admin" {
+						memberShip.Role = model.Admin
+					}
 
 				}
 

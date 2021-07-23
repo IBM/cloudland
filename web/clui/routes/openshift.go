@@ -27,10 +27,32 @@ import (
 var (
 	openshiftAdmin = &OpenshiftAdmin{}
 	openshiftView  = &OpenshiftView{}
+	apiOpenshiftView  = &APIOpenshiftView{}
 )
 
 type OpenshiftAdmin struct{}
 type OpenshiftView struct{}
+type APIOpenshiftView struct{
+
+	Clustername  string
+	Basedomain   string
+	Haflag       string
+	Hostrec      string
+	Nworkers	 int
+	Registry     int64
+	Extip        string
+	Lflavor      int64 
+	Mflavor      int64
+	Wflavor      int64
+	Subnet       int64
+	Key          int64
+	Zone         int64
+	Infrtype	 string
+	Hostname     string
+	Ipaddr       string
+	Status string
+	
+}
 
 func (a *OpenshiftAdmin) createSecgroup(ctx context.Context, name, cidr string, owner int64) (secgroup *model.SecurityGroup, err error) {
 	db := DB()
@@ -778,4 +800,236 @@ func (v *OpenshiftView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	c.Redirect(redirectTo)
+}
+
+func (v *APIOpenshiftView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	offset := c.QueryInt64("offset")
+	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 16
+	}
+	order := c.Query("order")
+	if order == "" {
+		order = "-created_at"
+	}
+	query := c.QueryTrim("q")
+	total, openshifts, err := openshiftAdmin.List(c.Req.Context(), offset, limit, order, query)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Faiiled to query openshifts."+err.Error(),
+		})
+			
+		return
+	}
+	pages := GetPages(total, limit)
+
+	c.JSON(200, map[string]interface{}{
+		"openshifts": openshifts,
+		"total":      total,
+		"pages":      pages,
+		"query":      query,
+	})
+	return
+
+}
+
+func (v *APIOpenshiftView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.ParamsInt64("id")
+	permit, err := memberShip.CheckOwner(model.Owner, "openshifts", id)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	err = openshiftAdmin.Delete(c.Req.Context(), id)
+	if err != nil {
+		log.Println("Failed to Delete Openshift~")
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "There are instances in this cluster,Failed to delete.",
+		})		
+		return
+	}
+	c.JSON(200, map[string]interface{}{
+		"Msg": "Success.",
+	})
+	return
+}
+
+func (v *APIOpenshiftView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Owner)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	log.Println("starting to redirect to openshift")
+	name := c.QueryTrim("clustername")
+	domain := c.QueryTrim("basedomain")
+	haflag := c.QueryTrim("haflag")
+	if haflag == "" {
+		haflag = "no"
+	}
+	//secret := c.QueryTrim("secret")
+	hostrec := c.QueryTrim("hostrec")
+	nworkers := c.QueryInt("nworkers")
+	if nworkers < 2 {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Number of worker must be at least 2.",
+		})		
+		return
+	}
+	registry := c.QueryInt64("registry")
+	//version := c.QueryTrim("version")
+	extIP := c.QueryTrim("extip")
+	lflavor := c.QueryInt64("lflavor")
+	mflavor := c.QueryInt64("mflavor")
+	wflavor := c.QueryInt64("wflavor")
+	subnet := c.QueryInt64("subnet")
+	key := c.QueryInt64("key")
+	zone := c.QueryInt64("zone")
+	infrtype := c.QueryTrim("infrtype")
+	//sback := c.QueryTrim("sback")
+	//atbundle := c.QueryTrim("atbundle")
+	//icsources := c.QueryTrim("icsources")
+	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
+	permit, err := memberShip.CheckOwner(model.Writer, "subnets", int64(subnet))
+	log.Println("openshift create in viewCreate")
+	openshift, err := openshiftAdmin.Create(c.Req.Context(), name, domain, cookie, haflag, extIP, int32(nworkers), lflavor, mflavor, wflavor, key, zone, subnet, registry, hostrec, infrtype)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to create openshift cluster."+err.Error(),
+		})
+
+		return
+	} 
+	c.JSON(200, openshift)
+	return	
+}
+
+func (v *APIOpenshiftView) Edit(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.ParamsInt64("id")
+	permit, err := memberShip.CheckOwner(model.Owner, "openshifts", id)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	db := DB()
+	openshift := &model.Openshift{Model: model.Model{ID: id}}
+	err = db.Take(openshift).Error
+	if err != nil {
+		log.Println("Failed ro query openshift", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed ro query openshif."+err.Error(),
+		})
+		return
+	}
+	_, flavors, err := flavorAdmin.List(0, -1, "", "")
+	if err := db.Find(&flavors).Error; err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed ro query flavors."+err.Error(),
+		})
+		return
+	}
+	c.JSON(200, openshift)
+	return
+}
+
+func (v *APIOpenshiftView) Patch(c *macaron.Context, store session.Store) {
+	ctx := c.Req.Context()
+	memberShip := GetMemberShip(ctx)
+	id := c.ParamsInt64("id")
+	permit, err := memberShip.CheckOwner(model.Owner, "openshifts", id)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	flavor := c.QueryInt64("flavor")
+	nworkers := c.QueryInt("nworkers")
+	if nworkers < 2 {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Number of worker must be at least 2",
+		})
+		return
+	}
+	openshift, err := openshiftAdmin.Update(ctx, id, flavor, int32(nworkers))
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to update openshift."+err.Error(),
+		})
+
+		return
+	} 
+	
+	c.JSON(200, openshift)
+	return
+	
+}
+
+func (v *APIOpenshiftView) Launch(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.ParamsInt64("id")
+	permit, err := memberShip.CheckOwner(model.Owner, "openshifts", id)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	hostname := c.QueryTrim("hostname")
+	ipaddr := c.QueryTrim("ipaddr")
+	log.Println("------------------------------------------------------")
+	log.Println("ipaddr===" + ipaddr)
+	instance, err := openshiftAdmin.Launch(c.Req.Context(), id, hostname, ipaddr)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to lauch openshift."+err.Error(),
+		})
+	}
+	c.JSON(200, instance)
+}
+
+func (v *APIOpenshiftView) State(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.ParamsInt64("id")
+	permit, err := memberShip.CheckOwner(model.Owner, "openshifts", id)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	status := c.QueryTrim("status")
+	err = openshiftAdmin.State(c.Req.Context(), id, status)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to change openshift status."+err.Error(),
+		})
+	}
+	c.JSON(200, map[string]interface{}{
+		"Msg": "Success.",
+	})
 }

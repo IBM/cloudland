@@ -24,10 +24,21 @@ import (
 var (
 	secruleAdmin = &SecruleAdmin{}
 	secruleView  = &SecruleView{}
+	apiSecruleView  = &APISecruleView{}
 )
 
 type SecruleAdmin struct{}
 type SecruleView struct{}
+type APISecruleView struct{
+
+	Remoteip      string
+	Sgid          string
+	Direction     string
+	Protocol      string
+	Portmin       string
+	Portmax       string
+	
+}
 
 func (a *SecruleAdmin) ApplySecgroup(ctx context.Context, secgroup *model.SecurityGroup, ruleID int64) (err error) {
 	db := DB()
@@ -472,5 +483,237 @@ func (v *SecruleView) Patch(c *macaron.Context, store session.Store) {
 		return
 	}
 	c.Redirect(redirectTo)
+
+}
+
+func (v *APISecruleView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	offset := c.QueryInt64("offset")
+	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 16
+	}
+	order := c.QueryTrim("order")
+	if order == "" {
+		order = "-created_at"
+	}
+	sgid := c.Params("sgid")
+	if sgid == "" {
+		log.Println("Security group ID is empty")
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Security group ID is empty.",
+		})
+		return
+	}
+	secgroupID, err := strconv.Atoi(sgid)
+	if err != nil {
+		log.Println("Invalid security group ID", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Invalid security group ID.",
+		})
+		return
+	}
+	total, secrules, err := secruleAdmin.List(c.Req.Context(), offset, limit, order, int64(secgroupID))
+	if err != nil {
+		log.Println("Failed to list security rule(s)", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to list security rules."+err.Error(),
+		})
+
+		return
+	}
+	pages := GetPages(total, limit)
+
+	c.JSON(200, map[string]interface{}{
+		"secrules": secrules,
+		"total":    total,
+		"pages":    pages,
+	})
+	return
+}
+
+func (v *APISecruleView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
+	sgid := c.Params("sgid")
+	if sgid == "" {
+		log.Println("Security group id is empty")
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Security group id is empty.",
+		})
+		return
+	}
+	secgroupID, err := strconv.Atoi(sgid)
+	if err != nil {
+		log.Println("Invalid security group ID", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get security group id.",
+		})
+		return
+	}
+	id := c.Params("id")
+	if id == "" {
+		log.Println("Security rule id is empty, %v", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Security rule id is empty.",
+		})
+		return
+	}
+	secruleID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Invalid security rule ID, %v", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get security rule id.",
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "security_groups", int64(secgroupID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	permit, err = memberShip.CheckOwner(model.Writer, "security_rules", int64(secruleID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	err = secruleAdmin.Delete(c.Req.Context(), int64(secgroupID), int64(secruleID))
+	if err != nil {
+		log.Println("Failed to delete security rule, %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to delete security rule."+err.Error(),
+		})
+		return
+	}
+	c.JSON(200, map[string]interface{}{
+		"Msg": "Success.",
+	})
+	return
+}
+
+func (v *APISecruleView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	remoteIp := c.QueryTrim("remoteip")
+	sgid := c.Params("sgid")
+	if sgid == "" {
+		log.Println("Security group ID is empty")
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Security group id is empty.",
+		})
+		return
+	}
+	secgroupID, err := strconv.Atoi(sgid)
+	if err != nil {
+		log.Println("Invalid security group ID", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get security group id.",
+		})
+		return
+	}
+	direction := c.QueryTrim("direction")
+	protocol := c.QueryTrim("protocol")
+	min := c.QueryTrim("portmin")
+	max := c.QueryTrim("portmax")
+	portMin, err := strconv.Atoi(min)
+	portMax, err := strconv.Atoi(max)
+	secrule, err := secruleAdmin.Create(c.Req.Context(), int64(secgroupID), memberShip.OrgID, remoteIp, direction, protocol, portMin, portMax)
+	if err != nil {
+		log.Println("Failed to create security rule, %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to create security rule."+err.Error(),
+		})
+		return
+	} 
+	c.JSON(200, secrule)
+	return
+	
+}
+
+func (v *APISecruleView) Edit(c *macaron.Context, store session.Store) {
+	db := DB()
+	id := c.Params("id")
+	if id == "" {
+		log.Println("Security rule ID is empty")
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Security rule id is empty.",
+		})
+		return
+	}	
+	secruleID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Invalid security rule ID.")
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get security rule id.",
+		})
+		return
+	}
+	secrule := &model.SecurityRule{Model: model.Model{ID: int64(secruleID)}}
+	err = db.Take(secrule).Error
+	if err != nil {
+		log.Println("Failed to query security rule.", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to query security rule."+err.Error(),
+		})		
+		return
+	}
+	c.JSON(200, secrule)
+
+}
+
+func (v *APISecruleView) Patch(c *macaron.Context, store session.Store) {
+	id := c.Params("id")
+	if id == "" {
+		log.Println("Security rule ID is empty")
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Security rule id is empty.",
+		})
+		return
+	}	
+	secruleID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Invalid secure rule ID, %v", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get security rule id.",
+		})
+		return
+	}
+	remoteIp := c.QueryTrim("remoteip")
+	direction := c.QueryTrim("direction")
+	protocol := c.QueryTrim("protocol")
+	min := c.QueryTrim("portmin")
+	max := c.QueryTrim("portmax")
+	portMin, err := strconv.Atoi(min)
+	portMax, err := strconv.Atoi(max)
+	secrule, err := secruleAdmin.Update(c.Req.Context(), int64(secruleID), remoteIp, direction, protocol, portMin, portMax)
+	if err != nil {
+		log.Println("Update Security Rules failed, %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to update security rule."+err.Error(),
+		})
+		return
+	} 
+	c.JSON(200, secrule)
+	return
 
 }

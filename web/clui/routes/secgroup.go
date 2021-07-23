@@ -22,10 +22,15 @@ import (
 var (
 	secgroupAdmin = &SecgroupAdmin{}
 	secgroupView  = &SecgroupView{}
+	apiSecgroupView  = &APISecgroupView{}
 )
 
 type SecgroupAdmin struct{}
 type SecgroupView struct{}
+type APISecgroupView struct{
+	Name         string
+	IsdefStr     string
+}
 
 func (a *SecgroupAdmin) Switch(ctx context.Context, newSg *model.SecurityGroup, store session.Store) (err error) {
 	memberShip := GetMemberShip(ctx)
@@ -419,3 +424,218 @@ func (v *SecgroupView) Create(c *macaron.Context, store session.Store) {
 	}
 	c.Redirect(redirectTo)
 }
+
+func (v *APISecgroupView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	offset := c.QueryInt64("offset")
+	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 16
+	}
+	order := c.QueryTrim("order")
+	if order == "" {
+		order = "-created_at"
+	}
+	query := c.QueryTrim("q")
+	total, secgroups, err := secgroupAdmin.List(c.Req.Context(), offset, limit, order, query)
+	if err != nil {
+		log.Println("Failed to list security group(s), %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to list security groups."+err.Error(),
+		})
+		return
+	}
+	pages := GetPages(total, limit)
+
+	c.JSON(200, map[string]interface{}{
+		"secgroups": secgroups,
+		"total":     total,
+		 "pages":     pages,
+		 "query":     query,
+	})
+	return
+
+}
+
+func (v *APISecgroupView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.Params("id")
+	if id == "" {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Security group id is empty.",
+		})
+		return
+	}
+	secgroupID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Invalid security group ID, %v", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get security group id.",
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "security_groups", int64(secgroupID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	err = secgroupAdmin.Delete(int64(secgroupID))
+	if err != nil {
+		log.Printf("Failed to delete security group, %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to delete security group."+err.Error(),
+		})
+		return
+	}
+	c.JSON(200, map[string]interface{}{
+		"Msg": "Success.",
+	})
+	return
+}
+
+func (v *APISecgroupView) Edit(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	db := DB()
+	id := c.Params(":id")
+    if id == "" {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Security group id is empty.",
+		})
+		return
+	}	
+	
+	sgID, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get security group id.",
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	secgroup := &model.SecurityGroup{Model: model.Model{ID: int64(sgID)}}
+	err = db.Take(secgroup).Error
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to get security group."+err.Error(),
+		})
+		return
+	}
+	c.JSON(200, secgroup)
+}
+
+func (v *APISecgroupView) Patch(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.Params(":id")
+    if id == "" {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Security group id is empty.",
+		})
+		return
+	}	
+	name := c.QueryTrim("name")
+	sgID, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get security group id.",
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	isdefStr := c.QueryTrim("isdefault")
+	isDef := false
+	if isdefStr == "" || isdefStr == "no" {
+		isDef = false
+	} else if isdefStr == "yes" {
+		isDef = true
+	}
+	secgroup, err := secgroupAdmin.Update(c.Req.Context(), int64(sgID), name, isDef)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to update security group."+err.Error(),
+		})
+
+		return
+	}
+	if isDef {
+		err = secgroupAdmin.Switch(c.Req.Context(), secgroup, store)
+		if err != nil {
+			log.Println("Failed to switch security group", err)
+			c.JSON(500, map[string]interface{}{
+				"ErrorMsg": "Failed to switch security group."+err.Error(),
+			})
+			return
+		}
+	}
+	
+	c.JSON(200, secgroup)	
+
+	return
+}
+
+func (v *APISecgroupView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	name := c.QueryTrim("name")
+	isdefStr := c.QueryTrim("isdefault")
+	isDef := false
+	if isdefStr == "" || isdefStr == "no" {
+		isDef = false
+	} else if isdefStr == "yes" {
+		isDef = true
+	}
+
+	secgroup, err := secgroupAdmin.Create(c.Req.Context(), name, isDef, memberShip.OrgID)
+	if err != nil {
+		log.Println("Failed to create security group, %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to create security group."+err.Error(),
+		})
+		return
+	}
+	if isDef {
+		err = secgroupAdmin.Switch(c.Req.Context(), secgroup, store)
+		if err != nil {
+			log.Println("Failed to switch security group", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to switch security group."+err.Error(),
+		})
+			return
+		}
+	}
+		
+	c.JSON(200, secgroup)
+		
+}
+
