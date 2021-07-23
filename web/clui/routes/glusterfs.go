@@ -23,10 +23,22 @@ import (
 var (
 	glusterfsAdmin = &GlusterfsAdmin{}
 	glusterfsView  = &GlusterfsView{}
+	apiGlusterfsView  = &APIGlusterfsView{}
 )
 
 type GlusterfsAdmin struct{}
 type GlusterfsView struct{}
+type APIGlusterfsView struct{
+
+    Name        string
+    Nworkers    int
+    Flavor      int64
+    Key         int64
+    Cluster     int64
+    Zone        int64
+	Heketikey   int64
+
+}
 
 func (a *GlusterfsAdmin) createSecgroup(ctx context.Context, name, cidr string, owner int64) (secgroup *model.SecurityGroup, err error) {
 	db := DB()
@@ -593,4 +605,222 @@ func (v *GlusterfsView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	c.Redirect(redirectTo)
+}
+
+func (v *APIGlusterfsView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation.",
+		})
+		return
+	}
+	offset := c.QueryInt64("offset")
+	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 16
+	}
+	order := c.Query("order")
+	if order == "" {
+		order = "-created_at"
+	}
+	query := c.QueryTrim("q")
+	total, glusterfses, err := glusterfsAdmin.List(c.Req.Context(), offset, limit, order, query)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to query glusterfses"+err.Error(),
+		})
+
+		return
+	}
+	pages := GetPages(total, limit)
+
+	c.JSON(200, map[string]interface{}{
+		"glusterfses": glusterfses,
+		"total":       total,
+		"pages":       pages,
+		"query":       query,
+	})
+	return
+	
+}
+
+func (v *APIGlusterfsView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.ParamsInt64("id")
+	permit, err := memberShip.CheckOwner(model.Owner, "glusterfs", id)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	err = glusterfsAdmin.Delete(c.Req.Context(), id)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to delete glusterfs."+err.Error(),
+		})
+		return
+	}
+	c.JSON(200, map[string]interface{}{
+		"Msg": "Success.",
+	})
+	return
+}
+
+func (v *APIGlusterfsView) Edit(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.ParamsInt64("id")
+	permit, err := memberShip.CheckOwner(model.Owner, "glusterfs", id)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	db := DB()
+	glusterfs := &model.Glusterfs{Model: model.Model{ID: id}}
+	err = db.Take(glusterfs).Error
+	if err != nil {
+		log.Println("Failed ro query glusterfs", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to query glusterfs."+err.Error(),
+		})
+	}
+	flavors := []*model.Flavor{}
+	if err := db.Where("ephemeral > 0").Where("ephemeral > 0").Find(&flavors).Error; err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to query flavor."+err.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, map[string]interface{}{
+		"glusterfs":     glusterfs,
+		"flavors":       flavors,
+	})	
+}
+
+func (v *APIGlusterfsView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Owner)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation.",
+		})
+		return
+	}
+	name := c.QueryTrim("name")
+	if name == "" {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Name can not be empty string.",
+		})		
+		return
+	}
+	nworkers := c.QueryInt("nworkers")
+	if nworkers < 3 {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Number of workers must be at least 3.",
+		})		
+		return
+	}
+	flavor := c.QueryInt64("flavor")
+	if flavor <= 0 {
+		log.Println("Invalid flavor ID")
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Invalid flavor ID.",
+		})			
+		return
+	}
+	key := c.QueryInt64("key")
+	if key <= 0 {
+		log.Println("Invalid key ID")
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Invalid key ID.",
+		})			
+		return
+	}	
+	permit, err := memberShip.CheckOwner(model.Writer, "keys", key)
+	if !permit {
+		log.Println("Not authorized to access key")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized to access key.",
+		})		
+		return
+	}
+	cluster := c.QueryInt64("cluster")
+	if cluster < 0 {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Openshift cluster must be >= 0.",
+		})			
+		return
+	}
+	zoneID := c.QueryInt64("zone")
+	if zoneID < 0 {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Zone must be >= 0.",
+		})			
+		return
+	}
+	permit, err = memberShip.CheckOwner(model.Writer, "openshifts", cluster)
+	if !permit {
+		log.Println("Not authorized to access openshift cluser")
+		c.Data["ErrorMsg"] = "Not authorized to access openshift cluser"
+		c.HTML(http.StatusBadRequest, "error")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized to access openshift cluser .",
+		})		
+		return
+	}
+	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
+	glusterfs, err := glusterfsAdmin.Create(c.Req.Context(), name, cookie, int32(nworkers), cluster, flavor, key, zoneID)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to create glusterfs."+err.Error(),
+		})
+		return
+	} 
+	c.JSON(200, glusterfs)
+	return
+	
+}
+
+func (v *APIGlusterfsView) Patch(c *macaron.Context, store session.Store) {
+	ctx := c.Req.Context()
+	memberShip := GetMemberShip(ctx)
+	id := c.ParamsInt64("id")
+	permit, err := memberShip.CheckOwner(model.Owner, "glusterfs", id)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	flavor := c.QueryInt64("flavor")
+	heketikey := c.QueryInt64("heketikey")
+	nworkers := c.QueryInt("nworkers")
+	if nworkers < 3 {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Number of workers must be at least 3",
+		})		
+		return
+	}
+	glusterfs, err := glusterfsAdmin.Update(ctx, id, heketikey, flavor, int32(nworkers))
+	if err != nil {
+		log.Println("Failed to create glusterfs", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to create glusterfs"+err.Error(),
+		})
+
+		return
+	} 
+	c.JSON(200, glusterfs)
+	return
+
 }
