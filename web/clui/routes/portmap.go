@@ -24,12 +24,19 @@ import (
 var (
 	portmapAdmin = &PortmapAdmin{}
 	portmapView  = &PortmapView{}
+	apiPortmapView  = &APIPortmapView{}
 	remoteMin    = 18000
 	remoteMax    = 20000
 )
 
 type PortmapAdmin struct{}
 type PortmapView struct{}
+type APIPortmapView struct{
+
+	Instance      string
+	Port          string
+
+}
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -282,3 +289,131 @@ func (v *PortmapView) Create(c *macaron.Context, store session.Store) {
 	}
 	c.Redirect(redirectTo)
 }
+
+func (v *APIPortmapView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation.",
+		})
+		return
+	}
+	offset := c.QueryInt64("offset")
+	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 16
+	}
+	order := c.QueryTrim("order")
+	if order == "" {
+		order = "-created_at"
+	}
+	query := c.QueryTrim("q")
+	total, portmaps, err := portmapAdmin.List(c.Req.Context(), offset, limit, order, query)
+	if err != nil {
+		log.Println("Failed to list portmap(s), %v", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to list portmap(s)."+err.Error(),
+		})
+		return
+	}
+	
+	pages := GetPages(total, limit)
+	
+	c.JSON(200, map[string]interface{}{
+		"portmaps": portmaps,
+		"total":    total,
+		"pages":    pages,
+		"query":    query,
+	})	
+}
+
+func (v *APIPortmapView) Delete(c *macaron.Context, store session.Store) (err error) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.Params("id")
+	if id == "" {
+		log.Println("Id is empty")
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Portmap id is empty.",
+		})
+		return
+	}
+	portmapID, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Invalid portmap ID", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get portmap id .",
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "portmaps", int64(portmapID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	err = portmapAdmin.Delete(c.Req.Context(), int64(portmapID))
+	if err != nil {
+		log.Println("Failed to delete portmap", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to delete portmap."+err.Error(),
+		})
+		return
+	}
+	c.JSON(200, map[string]interface{}{
+		"Msg": "Success.",
+	})
+	return
+}
+
+func (v *APIPortmapView) Create(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	instance := c.QueryTrim("instance")
+	port := c.QueryTrim("port")
+	instID, err := strconv.Atoi(instance)
+	if err != nil {
+		log.Println("Invalid instance ID", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get instance ID."+err.Error(),
+		})
+		return
+	}
+	permit, err = memberShip.CheckOwner(model.Writer, "instances", int64(instID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized to access instance.",
+		})
+		return
+	}
+	portNo, err := strconv.Atoi(port)
+	if err != nil {
+		log.Println("Invalid port number", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get port number."+err.Error(),
+		})
+		return
+	}
+	portmap, err = portmapAdmin.Create(c.Req.Context(), int64(instID), portNo)
+	if err != nil {
+		log.Println("Failed to create port map", err)
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to create port map."+err.Error(),
+		})
+	}
+	c.JSON(200, portmap)
+	return
+	
+}
+
