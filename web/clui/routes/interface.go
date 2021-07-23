@@ -27,11 +27,26 @@ import (
 var (
 	interfaceAdmin = &InterfaceAdmin{}
 	interfaceView  = &InterfaceView{}
+	apiInterfaceView  = &APIInterfaceView{}
 )
 
 type InterfaceAdmin struct{}
 
 type InterfaceView struct{}
+
+type APIInterfaceView struct{
+
+	Subnet     int64
+	Instance   int64
+	Zone       int64
+	Address    string
+	Mac        string
+	Ifname     string
+	Secgroups  string	
+	Name       string
+	Pairs      string
+	
+}
 
 func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name, pairs string, sgIDs []int64) (iface *model.Interface, err error) {
 	db := DB()
@@ -613,5 +628,229 @@ func DeleteInterface(ctx context.Context, iface *model.Interface) (err error) {
 		log.Println("Failed to delete interface", err)
 		return
 	}
+	return
+}
+
+func (v *APIInterfaceView) Edit(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	db := DB()
+	id := c.Params("id")
+	if id == "" {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Interface id is empty.",
+		})
+		return
+	}
+	ifaceID, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get interface id .",
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "interfaces", int64(ifaceID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	iface := &model.Interface{Model: model.Model{ID: int64(ifaceID)}}
+	if err = db.Set("gorm:auto_preload", true).Take(iface).Error; err != nil {
+		log.Println("Image query failed", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to query image."+err.Error(),
+		})		
+		return
+	}
+	_, secgroups, err := secgroupAdmin.List(c.Req.Context(), 0, -1, "", "")
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to query interface."+err.Error(),
+		})	
+		return
+	}
+
+	c.JSON(200, map[string]interface{}{
+		"interface":    iface,
+		"secgroups":    secgroups,
+	})	
+}
+
+func (v *APIInterfaceView) Create(c *macaron.Context, store session.Store) {
+	ctx := c.Req.Context()
+	memberShip := GetMemberShip(ctx)
+	subnetID := c.QueryInt64("subnet")
+	permit, err := memberShip.CheckOwner(model.Writer, "subnets", int64(subnetID))
+	if !permit {
+		log.Println("Not authorized to access subnet")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized to access subnet.",
+		})
+		return
+	}
+	instID := c.QueryInt64("instance")
+	zoneID := c.QueryInt64("zone")
+	if instID > 0 {
+		permit, err = memberShip.CheckOwner(model.Writer, "instances", int64(instID))
+		if !permit {
+			log.Println("Not authorized to access instance")
+		    c.JSON(403, map[string]interface{}{
+			    "ErrorMsg": "Not authorized to access instance.",
+		    })
+			return
+		}
+	}
+	address := c.QueryTrim("address")
+	mac := c.QueryTrim("mac")
+	ifname := c.QueryTrim("ifname")
+	secgroups := c.QueryTrim("secgroups")
+	var sgIDs []int64
+	if secgroups != "" {
+		sg := strings.Split(secgroups, ",")
+		for i := 0; i < len(sg); i++ {
+			sgID, err := strconv.Atoi(sg[i])
+			if err != nil {
+				log.Println("Invalid security group ID", err)
+				continue
+			}
+			permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
+			if !permit {
+				log.Println("Not authorized to access security group")
+		        c.JSON(403, map[string]interface{}{
+			        "ErrorMsg": "Not authorized to access security group.",
+		        })
+				return
+			}
+			sgIDs = append(sgIDs, int64(sgID))
+		}
+	} else {
+		sgID := store.Get("defsg").(int64)
+		permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
+		if !permit {
+			log.Println("Not authorized to access security group")
+		    c.JSON(403, map[string]interface{}{
+			    "ErrorMsg": "Not authorized to access security group.",
+		    })
+			return
+		}
+		sgIDs = append(sgIDs, sgID)
+	}
+	secGroups := []*model.SecurityGroup{}
+	if err = DB().Where(sgIDs).Find(&secGroups).Error; err != nil {
+		log.Println("Security group query failed", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to query security group."+err.Error(),
+		})		
+		return
+	}
+	iface, err := CreateInterface(ctx, subnetID, instID, memberShip.OrgID, zoneID, -1, address, mac, ifname, "instance", secGroups)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to create interface."+err.Error(),
+		})
+	}
+	c.JSON(200, iface)
+}
+
+func (v *APIInterfaceView) Delete(c *macaron.Context, store session.Store) {
+	ctx := c.Req.Context()
+	memberShip := GetMemberShip(ctx)
+	id := c.ParamsInt64("id")
+	permit, err := memberShip.CheckOwner(model.Writer, "interfaces", id)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	iface := &model.Interface{Model: model.Model{ID: id}}
+	err = DB().Take(iface).Error
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to query interface."+err.Error(),
+		})		
+		return
+	}
+	err = DeleteInterface(ctx, iface)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to delete interface."+err.Error(),
+		})
+		return
+	}
+	c.JSON(200, map[string]interface{}{
+		"Msg": "Success.",
+	})
+}
+
+func (v *APIInterfaceView) Patch(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	id := c.Params("id")
+	if id == "" {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Interface id is empty.",
+		})
+		return
+	}
+	ifaceID, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(400, map[string]interface{}{
+			"ErrorMsg": "Failed to get interface id .",
+		})
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "interfaces", int64(ifaceID))
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation",
+		})
+		return
+	}
+	name := c.QueryTrim("name")
+	secgroups := c.QueryStrings("secgroups")
+	pairs := c.QueryTrim("pairs")
+	var sgIDs []int64
+	if len(secgroups) > 0 {
+		for _, s := range secgroups {
+			sID, err := strconv.Atoi(s)
+			if err != nil {
+				log.Println("Invalid security group ID", err)
+				continue
+			}
+			permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sID))
+			if !permit {
+				log.Println("Not authorized to access security groups.")
+		        c.JSON(403, map[string]interface{}{
+			        "ErrorMsg": "Not authorized to access security groups.",
+		        })
+				return
+			}
+			sgIDs = append(sgIDs, int64(sID))
+		}
+	} else {
+		sID := store.Get("defsg").(int64)
+		permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sID))
+		if !permit {
+			log.Println("Not authorized to access security groups.")
+		    c.JSON(403, map[string]interface{}{
+			    "ErrorMsg": "Not authorized to access security groups.",
+		    })
+			return
+		}
+		sgIDs = append(sgIDs, sID)
+	}
+	iface, err := interfaceAdmin.Update(c.Req.Context(), int64(ifaceID), name, pairs, sgIDs)
+	if err != nil {
+		log.Println("Failed to update interface", err)
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to update interface."+err.Error(),
+		})
+		return
+	}
+	c.JSON(200, iface)
 	return
 }
