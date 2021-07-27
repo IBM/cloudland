@@ -369,7 +369,7 @@ func (v *APIPortmapView) Delete(c *macaron.Context, store session.Store) (err er
 	return
 }
 
-func (v *APIPortmapView) Create(c *macaron.Context, store session.Store) {
+func (v *APIPortmapView) Create(c *macaron.Context, store session.Store, apiPortmapView APIPortmapView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -379,8 +379,8 @@ func (v *APIPortmapView) Create(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	instance := c.QueryTrim("instance")
-	port := c.QueryTrim("port")
+	instance := apiPortmapView.Instance
+	port := apiPortmapView.Port
 	instID, err := strconv.Atoi(instance)
 	if err != nil {
 		log.Println("Invalid instance ID", err)

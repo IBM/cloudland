@@ -468,7 +468,7 @@ func (v *APIKeyView) Create(c *macaron.Context, store session.Store, apiKeyView 
 		return
 	}
 	name := apiKeyView.Name
-	pubkey : = apiKeyView.Pubkey
+	pubkey := apiKeyView.Pubkey
 	if pubkey != "" {
 		publicKey := pubkey
 		fingerPrint, err := keyTemp.CreateFingerPrint(publicKey)

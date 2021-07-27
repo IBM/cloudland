@@ -45,9 +45,9 @@ type GatewayView struct{}
 type APIGatewayView struct{
 	Name    string
 	Zone    int64
-	public  string
-	private string
-	subnets string
+	Public  string
+	Private string
+	Subnets string
 }
 
 func createGatewayIface(ctx context.Context, rtype string, gateway *model.Gateway, owner, zoneID int64) (iface *model.Interface, subnet *model.Subnet, err error) {
@@ -811,7 +811,7 @@ func (v *APIGatewayView) Edit(c *macaron.Context, store session.Store) {
 
 }
 
-func (v *APIGatewayView) Patch(c *macaron.Context, store session.Store) {
+func (v *APIGatewayView) Patch(c *macaron.Context, store session.Store, apiGatewayView APIGatewayView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
@@ -837,10 +837,10 @@ func (v *APIGatewayView) Patch(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	name := c.QueryTrim("name")
-	pubSubnet := c.QueryTrim("public")
-	priSubnet := c.QueryTrim("private")
-	subnets := c.QueryStrings("subnets")
+	name := c.QueryTrim("name") apiGatewayView.Name
+	pubSubnet := apiGatewayView.Public
+	priSubnet := apiGatewayView.Private
+	subnets := apiGatewayView.Subnets
 	pubID, err := strconv.Atoi(pubSubnet)
 	if err != nil {
 		log.Println("Invalid public subnet id, %v", err)
@@ -882,7 +882,7 @@ func (v *APIGatewayView) Patch(c *macaron.Context, store session.Store) {
 }
 
 
-func (v *APIGatewayView) Create(c *macaron.Context, store session.Store) {
+func (v *APIGatewayView) Create(c *macaron.Context, store session.Store, apiGatewayView APIGatewayView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -893,11 +893,11 @@ func (v *APIGatewayView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 
-	name := c.QueryTrim("name")
-	zoneID := c.QueryInt64("zone")
-	pubSubnet := c.QueryTrim("public")
-	priSubnet := c.QueryTrim("private")
-	subnets := c.QueryTrim("subnets")
+	name := apiGatewayView.Name
+	zoneID := apiGatewayView.Zone
+	pubSubnet := apiGatewayView.Public
+	priSubnet := apiGatewayView.Private
+	subnets := apiGatewayView.Subnets
 	pubID, err := strconv.Atoi(pubSubnet)
 	if err != nil {
 		log.Println("Invalid public subnet id, %v", err)
