@@ -54,7 +54,7 @@ type APIInstanceView struct{
     Secgroups       string
     Userdata        string
     Action          string
-    Ifaces           string
+    Ifaces          []string
 }
 
 type NetworkRoute struct {
@@ -1517,7 +1517,7 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store, apiIns
 		})
 		return
 	}
-	apiInstanceView.Primaryip
+	primaryIP := apiInstanceView.Primaryip
 	ipAddr := strings.Split(primaryIP, "/")[0]
 	primaryMac := apiInstanceView.Primarymac
 	macAddr, err := v.checkNetparam(int64(primaryID), ipAddr, primaryMac)

@@ -42,7 +42,7 @@ type APIUserView struct {
 	Username string
 	Password string
 	Confirm  string
-	Members  string
+	Members  []string
 }
 
 func (a *UserAdmin) Create(ctx context.Context, username, password string) (user *model.User, err error) {
