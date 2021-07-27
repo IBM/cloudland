@@ -96,6 +96,7 @@ func New() (m *macaron.Macaron) {
 	m.Post("/login", userView.LoginPost)
 	m.Post("/api/login", binding.Bind(APIUserView{}), apiUserView.LoginPost)
 	m.Get("/hypers", hyperView.List)
+	m.Get("/api/hypers", apiHyperView.List)
 	m.Get("/users", userView.List)
 	m.Get("/api/users", apiUserView.List)
 	m.Get("/users/:id", userView.Edit)

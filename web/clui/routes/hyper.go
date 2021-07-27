@@ -21,10 +21,12 @@ import (
 var (
 	hyperAdmin = &HyperAdmin{}
 	hyperView  = &HyperView{}
+	apiHyperView  = &APIHyperView{}
 )
 
 type HyperAdmin struct{}
 type HyperView struct{}
+type APIHyperView struct{}
 
 func (a *HyperAdmin) List(offset, limit int64, order, query string) (total int64, hypers []*model.Hyper, err error) {
 	db := DB()
@@ -102,4 +104,44 @@ func (v *HyperView) List(c *macaron.Context, store session.Store) {
 		return
 	}
 	c.HTML(200, "hypers")
+}
+
+func (v *APIHyperView) List(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation.",
+		})
+		return
+	}
+	offset := c.QueryInt64("offset")
+	limit := c.QueryInt64("limit")
+	if limit == 0 {
+		limit = 16
+	}
+	order := c.Query("order")
+	if order == "" {
+		order = "hostid"
+	}
+	query := c.QueryTrim("q")
+	total, hypers, err := hyperAdmin.List(offset, limit, order, query)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to list hypers."+err.Error(),
+		})
+
+		return
+	}
+	pages := GetPages(total, limit)
+
+	c.JSON(200, map[string]interface{}{
+		"hypers": hypers,
+		"total":  total,
+		"pages":  pages,
+		"query":  query,
+	})
+	return
+
 }
