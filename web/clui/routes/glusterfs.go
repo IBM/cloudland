@@ -705,7 +705,7 @@ func (v *APIGlusterfsView) Edit(c *macaron.Context, store session.Store) {
 	})	
 }
 
-func (v *APIGlusterfsView) Create(c *macaron.Context, store session.Store) {
+func (v *APIGlusterfsView) Create(c *macaron.Context, store session.Store, apiGlusterfsView APIGlusterfsView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Owner)
 	if !permit {
@@ -715,21 +715,21 @@ func (v *APIGlusterfsView) Create(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	name := c.QueryTrim("name")
+	name := apiGlusterfsView.Name
 	if name == "" {
 		c.JSON(400, map[string]interface{}{
 			"ErrorMsg": "Name can not be empty string.",
 		})		
 		return
 	}
-	nworkers := c.QueryInt("nworkers")
+	nworkers := apiGlusterfsView.Nworkers
 	if nworkers < 3 {
 		c.JSON(400, map[string]interface{}{
 			"ErrorMsg": "Number of workers must be at least 3.",
 		})		
 		return
 	}
-	flavor := c.QueryInt64("flavor")
+	flavor := apiGlusterfsView.Flavor
 	if flavor <= 0 {
 		log.Println("Invalid flavor ID")
 		c.JSON(400, map[string]interface{}{
@@ -737,7 +737,7 @@ func (v *APIGlusterfsView) Create(c *macaron.Context, store session.Store) {
 		})			
 		return
 	}
-	key := c.QueryInt64("key")
+	key := apiGlusterfsView.Key
 	if key <= 0 {
 		log.Println("Invalid key ID")
 		c.JSON(400, map[string]interface{}{
@@ -753,14 +753,14 @@ func (v *APIGlusterfsView) Create(c *macaron.Context, store session.Store) {
 		})		
 		return
 	}
-	cluster := c.QueryInt64("cluster")
+	cluster := apiGlusterfsView.Cluster
 	if cluster < 0 {
 		c.JSON(400, map[string]interface{}{
 			"ErrorMsg": "Openshift cluster must be >= 0.",
 		})			
 		return
 	}
-	zoneID := c.QueryInt64("zone")
+	zoneID := apiGlusterfsView.Zone
 	if zoneID < 0 {
 		c.JSON(400, map[string]interface{}{
 			"ErrorMsg": "Zone must be >= 0.",
@@ -790,7 +790,7 @@ func (v *APIGlusterfsView) Create(c *macaron.Context, store session.Store) {
 	
 }
 
-func (v *APIGlusterfsView) Patch(c *macaron.Context, store session.Store) {
+func (v *APIGlusterfsView) Patch(c *macaron.Context, store session.Store, apiGlusterfsView APIGlusterfsView) {
 	ctx := c.Req.Context()
 	memberShip := GetMemberShip(ctx)
 	id := c.ParamsInt64("id")
@@ -802,9 +802,9 @@ func (v *APIGlusterfsView) Patch(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	flavor := c.QueryInt64("flavor")
-	heketikey := c.QueryInt64("heketikey")
-	nworkers := c.QueryInt("nworkers")
+	flavor := apiGlusterfsView.Flavor
+	heketikey := apiGlusterfsView.Heketikey
+	nworkers := apiGlusterfsView.Nworkers
 	if nworkers < 3 {
 		c.JSON(400, map[string]interface{}{
 			"ErrorMsg": "Number of workers must be at least 3",

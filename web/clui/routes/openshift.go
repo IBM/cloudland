@@ -50,7 +50,8 @@ type APIOpenshiftView struct{
 	Infrtype	 string
 	Hostname     string
 	Ipaddr       string
-	Status string
+	Status       string
+	Flavor       int64
 	
 }
 
@@ -867,7 +868,7 @@ func (v *APIOpenshiftView) Delete(c *macaron.Context, store session.Store) (err 
 	return
 }
 
-func (v *APIOpenshiftView) Create(c *macaron.Context, store session.Store) {
+func (v *APIOpenshiftView) Create(c *macaron.Context, store session.Store, apiOpenshiftView APIOpenshiftView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Owner)
 	if !permit {
@@ -878,31 +879,31 @@ func (v *APIOpenshiftView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	log.Println("starting to redirect to openshift")
-	name := c.QueryTrim("clustername")
-	domain := c.QueryTrim("basedomain")
-	haflag := c.QueryTrim("haflag")
+	name := apiOpenshiftView.Clustername
+	domain := apiOpenshiftView.Basedomain
+	haflag := apiOpenshiftView.Haflag
 	if haflag == "" {
 		haflag = "no"
 	}
 	//secret := c.QueryTrim("secret")
-	hostrec := c.QueryTrim("hostrec")
-	nworkers := c.QueryInt("nworkers")
+	hostrec := apiOpenshiftView.Hostrec
+	nworkers := apiOpenshiftView.Nworkers
 	if nworkers < 2 {
 		c.JSON(400, map[string]interface{}{
 			"ErrorMsg": "Number of worker must be at least 2.",
 		})		
 		return
 	}
-	registry := c.QueryInt64("registry")
+	registry := apiOpenshiftView.Registry
 	//version := c.QueryTrim("version")
-	extIP := c.QueryTrim("extip")
-	lflavor := c.QueryInt64("lflavor")
-	mflavor := c.QueryInt64("mflavor")
-	wflavor := c.QueryInt64("wflavor")
-	subnet := c.QueryInt64("subnet")
-	key := c.QueryInt64("key")
-	zone := c.QueryInt64("zone")
-	infrtype := c.QueryTrim("infrtype")
+	extIP := apiOpenshiftView.Extip
+	lflavor := apiOpenshiftView.Lflavor
+	mflavor := apiOpenshiftView.Mflavor
+	wflavor := apiOpenshiftView.Wflavor
+	subnet := apiOpenshiftView.Subnet
+	key := apiOpenshiftView.Key
+	zone := apiOpenshiftView.Zone
+	infrtype := apiOpenshiftView.Infrtype
 	//sback := c.QueryTrim("sback")
 	//atbundle := c.QueryTrim("atbundle")
 	//icsources := c.QueryTrim("icsources")
@@ -953,7 +954,7 @@ func (v *APIOpenshiftView) Edit(c *macaron.Context, store session.Store) {
 	return
 }
 
-func (v *APIOpenshiftView) Patch(c *macaron.Context, store session.Store) {
+func (v *APIOpenshiftView) Patch(c *macaron.Context, store session.Store, apiOpenshiftView APIOpenshiftView) {
 	ctx := c.Req.Context()
 	memberShip := GetMemberShip(ctx)
 	id := c.ParamsInt64("id")
@@ -965,8 +966,8 @@ func (v *APIOpenshiftView) Patch(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	flavor := c.QueryInt64("flavor")
-	nworkers := c.QueryInt("nworkers")
+	flavor := apiOpenshiftView.Flavor
+	nworkers := apiOpenshiftView.Nworkers
 	if nworkers < 2 {
 		c.JSON(400, map[string]interface{}{
 			"ErrorMsg": "Number of worker must be at least 2",
@@ -987,7 +988,7 @@ func (v *APIOpenshiftView) Patch(c *macaron.Context, store session.Store) {
 	
 }
 
-func (v *APIOpenshiftView) Launch(c *macaron.Context, store session.Store) {
+func (v *APIOpenshiftView) Launch(c *macaron.Context, store session.Store, apiOpenshiftView APIOpenshiftView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.ParamsInt64("id")
 	permit, err := memberShip.CheckOwner(model.Owner, "openshifts", id)
@@ -998,8 +999,8 @@ func (v *APIOpenshiftView) Launch(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	hostname := c.QueryTrim("hostname")
-	ipaddr := c.QueryTrim("ipaddr")
+	hostname := apiOpenshiftView.Hostname
+	ipaddr := apiOpenshiftView.Ipaddr
 	log.Println("------------------------------------------------------")
 	log.Println("ipaddr===" + ipaddr)
 	instance, err := openshiftAdmin.Launch(c.Req.Context(), id, hostname, ipaddr)
@@ -1011,7 +1012,7 @@ func (v *APIOpenshiftView) Launch(c *macaron.Context, store session.Store) {
 	c.JSON(200, instance)
 }
 
-func (v *APIOpenshiftView) State(c *macaron.Context, store session.Store) {
+func (v *APIOpenshiftView) State(c *macaron.Context, store session.Store, apiOpenshiftView APIOpenshiftView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.ParamsInt64("id")
 	permit, err := memberShip.CheckOwner(model.Owner, "openshifts", id)
@@ -1022,7 +1023,7 @@ func (v *APIOpenshiftView) State(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	status := c.QueryTrim("status")
+	status := apiOpenshiftView.Status
 	err = openshiftAdmin.State(c.Req.Context(), id, status)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{

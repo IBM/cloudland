@@ -42,7 +42,7 @@ type APIInterfaceView struct{
 	Address    string
 	Mac        string
 	Ifname     string
-	Secgroups  string	
+	Secgroups  []string	
 	Name       string
 	Pairs      string
 	
@@ -678,10 +678,10 @@ func (v *APIInterfaceView) Edit(c *macaron.Context, store session.Store) {
 	})	
 }
 
-func (v *APIInterfaceView) Create(c *macaron.Context, store session.Store) {
+func (v *APIInterfaceView) Create(c *macaron.Context, store session.Store, apiInterfaceView APIInterfaceView) {
 	ctx := c.Req.Context()
 	memberShip := GetMemberShip(ctx)
-	subnetID := c.QueryInt64("subnet")
+	subnetID := apiInterfaceView.Subnet
 	permit, err := memberShip.CheckOwner(model.Writer, "subnets", int64(subnetID))
 	if !permit {
 		log.Println("Not authorized to access subnet")
@@ -690,8 +690,8 @@ func (v *APIInterfaceView) Create(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	instID := c.QueryInt64("instance")
-	zoneID := c.QueryInt64("zone")
+	instID := apiInterfaceView.Instance
+	zoneID := apiInterfaceView.Zone
 	if instID > 0 {
 		permit, err = memberShip.CheckOwner(model.Writer, "instances", int64(instID))
 		if !permit {
@@ -702,10 +702,10 @@ func (v *APIInterfaceView) Create(c *macaron.Context, store session.Store) {
 			return
 		}
 	}
-	address := c.QueryTrim("address")
-	mac := c.QueryTrim("mac")
-	ifname := c.QueryTrim("ifname")
-	secgroups := c.QueryTrim("secgroups")
+	address := apiInterfaceView.Address
+	mac := apiInterfaceView.Mac
+	ifname := apiInterfaceView.Ifname
+	secgroups := apiInterfaceView.Secgroups
 	var sgIDs []int64
 	if secgroups != "" {
 		sg := strings.Split(secgroups, ",")
@@ -786,7 +786,7 @@ func (v *APIInterfaceView) Delete(c *macaron.Context, store session.Store) {
 	})
 }
 
-func (v *APIInterfaceView) Patch(c *macaron.Context, store session.Store) {
+func (v *APIInterfaceView) Patch(c *macaron.Context, store session.Store, apiInterfaceView APIInterfaceView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
@@ -810,9 +810,9 @@ func (v *APIInterfaceView) Patch(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	name := c.QueryTrim("name")
-	secgroups := c.QueryStrings("secgroups")
-	pairs := c.QueryTrim("pairs")
+	name := apiInterfaceView.Name
+	secgroups := apiInterfaceView.Secgroups
+	pairs := apiInterfaceView.Pairs
 	var sgIDs []int64
 	if len(secgroups) > 0 {
 		for _, s := range secgroups {
