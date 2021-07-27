@@ -405,7 +405,7 @@ func (v *APIPortmapView) Create(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	portmap, err = portmapAdmin.Create(c.Req.Context(), int64(instID), portNo)
+	portmap, err := portmapAdmin.Create(c.Req.Context(), int64(instID), portNo)
 	if err != nil {
 		log.Println("Failed to create port map", err)
 		c.JSON(400, map[string]interface{}{
