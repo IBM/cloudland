@@ -982,7 +982,7 @@ func (v *APISubnetView) checkRoutes(network, netmask, gateway, start, end, dns, 
 	return
 }
 
-func (apiV *APISubnetView) Patch(c *macaron.Context, store session.Store) {
+func (v *APISubnetView) Patch(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
