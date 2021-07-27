@@ -904,6 +904,84 @@ func (v *SubnetView) checkRoutes(network, netmask, gateway, start, end, dns, rou
 	return
 }
 
+func (v *APISubnetView) checkRoutes(network, netmask, gateway, start, end, dns, routes string, id int64) (routeJson string, err error) {
+	if id > 0 {
+		db := DB()
+		subnet := &model.Subnet{Model: model.Model{ID: id}}
+		err = db.Take(subnet).Error
+		if err != nil {
+			log.Println("DB failed to query subnet ", err)
+			return
+		}
+		network = subnet.Network
+		netmask = subnet.Netmask
+	}
+	inNet := &net.IPNet{
+		IP:   net.ParseIP(network),
+		Mask: net.IPMask(net.ParseIP(netmask).To4()),
+	}
+	if gateway != "" && !inNet.Contains(net.ParseIP(gateway)) {
+		log.Println("Gateway not belonging to network/netmask")
+		err = fmt.Errorf("Gateway not belonging to network/netmask")
+		return
+	}
+	if start != "" && !inNet.Contains(net.ParseIP(start)) {
+		log.Println("Start not belonging to network/netmask")
+		err = fmt.Errorf("Start not belonging to network/netmask")
+		return
+	}
+	if end != "" && !inNet.Contains(net.ParseIP(end)) {
+		log.Println("End not belonging to network/netmask")
+		err = fmt.Errorf("End not belonging to network/netmask")
+		return
+	}
+	if dns != "" && net.ParseIP(dns) == nil {
+		log.Println("Name server is not an valid IP address")
+		err = fmt.Errorf("Name server is not an valid IP address")
+		return
+	}
+	sRoutes := []*StaticRoute{}
+	if routes != "" {
+		routeList := strings.Split(routes, " ")
+		for _, route := range routeList {
+			pair := strings.Split(route, ":")
+			if len(pair) != 2 {
+				log.Println("No valid pair delimiter")
+				err = fmt.Errorf("No valid pair delimiter")
+				return
+			}
+			ipmask := pair[0]
+			if !strings.Contains(ipmask, "/") {
+				log.Println("IPmask has no slash")
+				err = fmt.Errorf("IPmask has no slash")
+				return
+			}
+			_, _, err = net.ParseCIDR(ipmask)
+			if err != nil {
+				log.Println("Failed to parse cidr")
+				err = fmt.Errorf("Failed to parse cidr")
+				return
+			}
+			nexthop := pair[1]
+			if !inNet.Contains(net.ParseIP(nexthop)) {
+				log.Println("Nexthop not belonging to network/netmask")
+				err = fmt.Errorf("Nexthop not belonging to network/netmask")
+				return
+			}
+			netrt := &StaticRoute{
+				Destination: ipmask,
+				Nexthop:     nexthop,
+			}
+			sRoutes = append(sRoutes, netrt)
+		}
+	}
+	jsonData, err := json.Marshal(sRoutes)
+	if err == nil {
+		routeJson = string(jsonData)
+	}
+	return
+}
+
 func (apiV *APISubnetView) Patch(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
