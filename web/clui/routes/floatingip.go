@@ -519,7 +519,7 @@ func (v *APIFloatingIpView) Delete(c *macaron.Context, store session.Store) (err
 	return
 }
 
-func (v *APIFloatingIpView) Create(c *macaron.Context, store session.Store) {
+func (v *APIFloatingIpView) Create(c *macaron.Context, store session.Store, apiFloatingipView APIFloatingIpView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -529,8 +529,8 @@ func (v *APIFloatingIpView) Create(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	instID := c.QueryInt64("instance")
-	ftype := c.QueryTrim("ftype")
+	instID := apiFloatingipView.Instance
+	ftype := apiFloatingipView.Ftype
 	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instID))
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -542,8 +542,8 @@ func (v *APIFloatingIpView) Create(c *macaron.Context, store session.Store) {
 	if ftype == "" {
 		ftype = "public,private"
 	}
-	publicIp := c.QueryTrim("publicip")
-	privateIp := c.QueryTrim("privateip")
+	publicIp := apiFloatingipView.Publicip
+	privateIp := apiFloatingipView.Privateip
 	types := strings.Split(ftype, ",")
 	floatingips, err := floatingipAdmin.Create(c.Req.Context(), int64(instID), 0, types, publicIp, privateIp)
 	if err != nil {
@@ -558,7 +558,7 @@ func (v *APIFloatingIpView) Create(c *macaron.Context, store session.Store) {
 	return
 }
 
-func (v *APIFloatingIpView) Assign(c *macaron.Context, store session.Store) {
+func (v *APIFloatingIpView) Assign(c *macaron.Context, store session.Store, apiFloatingipView APIFloatingIpView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -568,8 +568,8 @@ func (v *APIFloatingIpView) Assign(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	instID := c.QueryInt64("instance")
-	floatingIP := c.QueryTrim("floatingIP")
+	instID := apiFloatingipView.Instance
+	floatingIP := apiFloatingipView.FloatingIP
 	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instID))
 	if !permit {
 		log.Println("Not authorized for this operation")

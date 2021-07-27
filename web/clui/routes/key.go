@@ -457,7 +457,7 @@ func (v *APIKeyView) List(c *macaron.Context, store session.Store) {
 
 }
 
-func (v *APIKeyView) Create(c *macaron.Context, store session.Store) {
+func (v *APIKeyView) Create(c *macaron.Context, store session.Store, apiKeyView APIKeyView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -467,9 +467,10 @@ func (v *APIKeyView) Create(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	name := c.QueryTrim("name")
-	if c.QueryTrim("pubkey") != "" {
-		publicKey := c.QueryTrim("pubkey")
+	name := apiKeyView.Name
+	pubkey : = apiKeyView.Pubkey
+	if pubkey != "" {
+		publicKey := pubkey
 		fingerPrint, err := keyTemp.CreateFingerPrint(publicKey)
 		if err != nil {
 			c.JSON(400, map[string]interface{}{

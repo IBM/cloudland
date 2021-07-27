@@ -53,6 +53,7 @@ type APISubnetView struct {
 	Vlan      int64  `json:"vlan"`
 	RouteType string `json:"routeType"`
 	Routes    string `json:"routes"`
+	Rtype     string `json:"rtype"`
 }
 
 func init() {
@@ -982,7 +983,7 @@ func (v *APISubnetView) checkRoutes(network, netmask, gateway, start, end, dns, 
 	return
 }
 
-func (v *APISubnetView) Patch(c *macaron.Context, store session.Store) {
+func (v *APISubnetView) Patch(c *macaron.Context, store session.Store, apiSubnetView APISubnetView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -1007,14 +1008,14 @@ func (v *APISubnetView) Patch(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	name := c.QueryTrim("name")
-	network := c.QueryTrim("network")
-	netmask := c.QueryTrim("netmask")
-	gateway := c.QueryTrim("gateway")
-	start := c.QueryTrim("start")
-	end := c.QueryTrim("end")
-	dns := c.QueryTrim("dns")
-	routes := c.QueryTrim("routes")
+	name := apiSubnetView.Name
+	network := apiSubnetView.Network
+	netmask := apiSubnetView.Netmask
+	gateway := apiSubnetView.Gateway
+	start := apiSubnetView.Start
+	end := apiSubnetView.End
+	dns := apiSubnetView.Dns
+	routes := apiSubnetView.Routes
 	routeJson, err := v.checkRoutes(network, netmask, gateway, start, end, dns, routes, id)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
@@ -1146,7 +1147,7 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 }
 
 
-func (v *APISubnetView) Create(c *macaron.Context, store session.Store) {
+func (v *APISubnetView) Create(c *macaron.Context, store session.Store, apiSubnetView APISubnetView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -1156,20 +1157,20 @@ func (v *APISubnetView) Create(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	name := c.QueryTrim("name")
-	vlan := c.QueryTrim("vlan")
-	rtype := c.QueryTrim("rtype")
-	network := c.QueryTrim("network")
-	netmask := c.QueryTrim("netmask")
-	zones := c.QueryTrim("zones")
-	gateway := c.QueryTrim("gateway")
-	routes := c.QueryTrim("routes")
-	start := c.QueryTrim("start")
-	end := c.QueryTrim("end")
-	dns := c.QueryTrim("dns")
-	domain := c.QueryTrim("domain")
-	dhcp := c.QueryTrim("dhcp")
-	vSwitch := c.QueryTrim("vSwitch")
+	name := apiSubnetView.Name
+	vlan := apiSubnetView.Vlan
+	rtype := apiSubnetView.Rtype
+	network := apiSubnetView.Network
+	netmask := apiSubnetView.Netmask
+	zones := apiSubnetView.Zones
+	gateway := apiSubnetView.Gateway
+	routes := apiSubnetView.Routes
+	start := apiSubnetView.Start
+	end := apiSubnetView.End
+	dns := apiSubnetView.Dns
+	domain := apiSubnetView.Domain
+	dhcp := apiSubnetView.Dhcp
+	vSwitch := apiSubnetView.VSwitch
 	if dhcp != "no" {
 		dhcp = "yes"
 	}
