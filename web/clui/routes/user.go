@@ -42,6 +42,7 @@ type APIUserView struct {
 	Username string
 	Password string
 	Confirm  string
+	Members  string
 }
 
 func (a *UserAdmin) Create(ctx context.Context, username, password string) (user *model.User, err error) {
@@ -731,7 +732,7 @@ func (v *APIUserView) Delete(c *macaron.Context, store session.Store) (err error
 	return
 }
 
-func (v *APIUserView) Create(c *macaron.Context, store session.Store) {
+func (v *APIUserView) Create(c *macaron.Context, store session.Store, apiUserView APIUserView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
@@ -742,9 +743,9 @@ func (v *APIUserView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 
-	username := c.QueryTrim("username")
-	password := c.QueryTrim("password")
-	confirm := c.QueryTrim("confirm")
+	username := apiUserView.Username
+	password := apiUserView.Password
+	confirm := apiUserView.Confirm
 
 	if confirm != password {
 		log.Println("Passwords do not match")
@@ -773,7 +774,7 @@ func (v *APIUserView) Create(c *macaron.Context, store session.Store) {
 	return
 }
 
-func (v *APIUserView) Patch(c *macaron.Context, store session.Store) {
+func (v *APIUserView) Patch(c *macaron.Context, store session.Store, apiUserView APIUserView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
@@ -798,8 +799,8 @@ func (v *APIUserView) Patch(c *macaron.Context, store session.Store) {
 
 		return
 	}
-	password := c.QueryTrim("password")
-	members := c.QueryStrings("members")
+	password := apiUserView.Password
+	members := apiUserView.Members
 	user, err := userAdmin.Update(c.Req.Context(), int64(userID), password, members)
 	if err != nil {
 		log.Println("Failed to update password, %v", err)

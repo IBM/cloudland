@@ -605,7 +605,7 @@ func (v *APIRegistryView) Edit(c *macaron.Context, store session.Store) {
 	c.JSON(200, registry)
 }
 
-func (v *APIRegistryView) Patch(c *macaron.Context, store session.Store) {
+func (v *APIRegistryView) Patch(c *macaron.Context, store session.Store, apiRegistryView APIRegistryView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
@@ -631,15 +631,15 @@ func (v *APIRegistryView) Patch(c *macaron.Context, store session.Store) {
 		return
 	}
 
-	label := c.Query("label")
-	virtType := c.QueryTrim("virtType")
-	ocpVersion := c.Query("ocpversion")
-	registryContent := c.Query("registrycontent")
-	initramfs := c.Query("initramfs")
-	kernel := c.Query("kernel")
-	image := c.Query("image")
-	installer := c.Query("installer")
-	cli := c.Query("cli")
+	label := apiRegistryView.Label
+	virtType := apiRegistryView.VirtType
+	ocpVersion := apiRegistryView.Ocpversion
+	registryContent := apiRegistryView.Registrycontent
+	initramfs := apiRegistryView.Initramfs
+	kernel := apiRegistryView.Kernel
+	image := apiRegistryView.Image
+	installer := apiRegistryView.Installer
+	cli := apiRegistryView.Cli
 	registry, err := registryAdmin.Update(c.Req.Context(), int64(registryID), label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli)
 	if err != nil {
 		log.Println("Failed to update registry, %v", err)

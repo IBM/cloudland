@@ -555,7 +555,7 @@ func (v *APIOrgView) Edit(c *macaron.Context, store session.Store) {
 	c.JSON(200, org)
 }
 
-func (v *APIOrgView) Patch(c *macaron.Context, store session.Store) {
+func (v *APIOrgView) Patch(c *macaron.Context, store session.Store, apiOrgView APIOrgView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
@@ -578,10 +578,10 @@ func (v *APIOrgView) Patch(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	members := c.QueryTrim("members")
+	members := apiOrgView.Members
 	memberList := strings.Split(members, " ")
-	userList := c.QueryStrings("names")
-	roles := c.QueryStrings("roles")
+	userList := apiOrgView.Names
+	roles := apiOrgView.Roles
 	var roleList []model.Role
 	for _, r := range roles {
 		role, err := strconv.Atoi(r)
@@ -656,7 +656,7 @@ func (v *APIOrgView) Delete(c *macaron.Context, store session.Store) (err error)
 	return
 }
 
-func (v *APIOrgView) Create(c *macaron.Context, store session.Store) {
+func (v *APIOrgView) Create(c *macaron.Context, store session.Store, apiOrgView APIOrgView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
@@ -667,8 +667,8 @@ func (v *APIOrgView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 
-	name := c.QueryTrim("orgname")
-	owner := c.QueryTrim("owner")
+	name := apiOrgView.Orgname
+	owner := apiOrgView.Owner
 	organization, err := orgAdmin.Create(c.Req.Context(), name, owner)
 	if err != nil {
 		log.Println("Failed to create organization, %v", err)

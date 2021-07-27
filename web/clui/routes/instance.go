@@ -53,7 +53,8 @@ type APIInstanceView struct{
     Keys            string
     Secgroups       string
     Userdata        string
-
+    Action          string
+    Ifaces           string
 }
 
 type NetworkRoute struct {
@@ -1433,7 +1434,7 @@ func (v *APIInstanceView) List(c *macaron.Context, store session.Store) {
 
 }
 
-func (v *APIInstanceView) Create(c *macaron.Context, store session.Store) {
+func (v *APIInstanceView) Create(c *macaron.Context, store session.Store, apiInstanceView APIInstanceView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -1443,8 +1444,8 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	hostname := c.QueryTrim("hostname")
-	cnt := c.QueryTrim("count")
+	hostname := apiInstanceView.Hostname
+	cnt := apiInstanceView.Count
 	count, err := strconv.Atoi(cnt)
 	if err != nil {
 		log.Println("Invalid instance count", err)
@@ -1453,7 +1454,7 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	hyperID := c.QueryInt("hyper")
+	hyperID := apiInstanceView.Hyper
 	if hyperID >= 0 {
 		permit := memberShip.CheckPermission(model.Admin)
 		if !permit {
@@ -1473,8 +1474,8 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	zoneID := c.QueryInt64("zone")
-	cluster := c.QueryInt64("cluster")
+	zoneID := apiInstanceView.Zone
+	cluster := apiInstanceView.Cluster
 	if cluster < 0 {
 		log.Println("Invalid cluster ID", err)
 		c.JSON(400, map[string]interface{}{
@@ -1491,7 +1492,7 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store) {
 			return
 		}
 	}
-	image := c.QueryInt64("image")
+	image := apiInstanceView.Image
 	if image <= 0 && cluster <= 0 {
 		log.Println("No valid image ID or cluster ID", err)
 		c.JSON(400, map[string]interface{}{
@@ -1499,7 +1500,7 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	flavor := c.QueryInt64("flavor")
+	flavor := apiInstanceView.Flavor
 	if flavor <= 0 {
 		log.Println("Invalid flavor ID", err)
 		c.JSON(400, map[string]interface{}{
@@ -1507,7 +1508,7 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	primary := c.QueryTrim("primary")
+	primary := apiInstanceView.Primary
 	primaryID, err := strconv.Atoi(primary)
 	if err != nil {
 		log.Println("Invalid primary subnet ID, %v", err)
@@ -1516,9 +1517,9 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	primaryIP := c.QueryTrim("primaryip")
+	apiInstanceView.Primaryip
 	ipAddr := strings.Split(primaryIP, "/")[0]
-	primaryMac := c.QueryTrim("primarymac")
+	primaryMac := apiInstanceView.Primarymac
 	macAddr, err := v.checkNetparam(int64(primaryID), ipAddr, primaryMac)
 	if err != nil {
 		c.JSON(400, map[string]interface{}{
@@ -1526,7 +1527,7 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	subnets := c.QueryTrim("subnets")
+	subnets := apiInstanceView.Subnets
 	s := strings.Split(subnets, ",")
 	var subnetIDs []int64
 	for i := 0; i < len(s); i++ {
@@ -1545,7 +1546,7 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store) {
 		}
 		subnetIDs = append(subnetIDs, int64(sID))
 	}
-	keys := c.QueryTrim("keys")
+	keys := apiInstanceView.Keys
 	k := strings.Split(keys, ",")
 	var keyIDs []int64
 	for i := 0; i < len(k); i++ {
@@ -1564,7 +1565,7 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store) {
 		}
 		keyIDs = append(keyIDs, int64(kID))
 	}
-	secgroups := c.QueryTrim("secgroups")
+	secgroups := apiInstanceView.Secgroups
 	var sgIDs []int64
 	if secgroups != "" {
 		sg := strings.Split(secgroups, ",")
@@ -1596,7 +1597,7 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store) {
 		}
 		sgIDs = append(sgIDs, sgID)
 	}
-	userdata := c.QueryTrim("userdata")
+	userdata := apiInstanceView.Userdata
 	instances, err := instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, image, flavor, int64(primaryID), cluster, zoneID, ipAddr, macAddr, subnetIDs, keyIDs, sgIDs, hyperID)
 	if err != nil {
 		log.Println("Create instance failed", err)
@@ -1746,7 +1747,7 @@ func (v *APIInstanceView) Edit(c *macaron.Context, store session.Store) {
 	})
 }
 
-func (v *APIInstanceView) Patch(c *macaron.Context, store session.Store) {
+func (v *APIInstanceView) Patch(c *macaron.Context, store session.Store, apiInstanceView APIInstanceView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.ParamsInt64("id")	
 	permit, err := memberShip.CheckOwner(model.Writer, "instances", id)
@@ -1757,11 +1758,11 @@ func (v *APIInstanceView) Patch(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	flavor := c.QueryInt64("flavor")
-	hostname := c.QueryTrim("hostname")
-	hyperID := c.QueryInt("hyper")
-	action := c.QueryTrim("action")
-	ifaces := c.QueryStrings("ifaces")
+	flavor := apiInstanceView.Flavor
+	hostname := apiInstanceView.Hostname
+	hyperID := apiInstanceView.Hyper
+	action := apiInstanceView.Action
+	ifaces := apiInstanceView.Ifaces
 	instance := &model.Instance{Model: model.Model{ID: id}}
 	err = DB().Take(instance).Error
 	if err != nil {
