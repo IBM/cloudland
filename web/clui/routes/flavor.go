@@ -31,7 +31,7 @@ type APIFlavorView struct {
 	Name      string
 	Cpu       string
 	Memory    int
-	Dist      int
+	Disk      int
 	Swap      int
 	Ephemeral int
 }
@@ -291,7 +291,7 @@ func (v *APIFlavorView) Delete(c *macaron.Context, store session.Store) (err err
 	return
 }
 
-func (v *APIFlavorView) Create(c *macaron.Context, store session.Store) {
+func (v *APIFlavorView) Create(c *macaron.Context, store session.Store, apiFlavorView APIFlavorView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
@@ -301,8 +301,8 @@ func (v *APIFlavorView) Create(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	name := c.Query("name")
-	cores := c.Query("cpu")
+	name := apiFlavorView.Name
+	cores := apiFlavorView.Cpu
 	cpu, err := strconv.Atoi(cores)
 	if err != nil {
 		c.JSON(400, map[string]interface{}{
@@ -310,7 +310,7 @@ func (v *APIFlavorView) Create(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	memory := c.QueryInt("memory")
+	memory := apiFlavorView.Memory
 	if memory <= 0 {
 		c.JSON(400, map[string]interface{}{
 			"ErrorMsg": "Failed to get memory size.",
@@ -318,15 +318,15 @@ func (v *APIFlavorView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 
-	disk := c.QueryInt("disk")
+	disk := apiFlavorView.Disk
 	if disk <= 0 {
 		c.JSON(400, map[string]interface{}{
 			"ErrorMsg": "Failed to get  disk size.",
 		})
 		return
 	}
-	swap := c.QueryInt("swap")
-	ephemeral := c.QueryInt("ephemeral")
+	swap := apiFlavorView.Swap
+	ephemeral := apiFlavorView.Ephemeral
 	flavor, err := flavorAdmin.Create(name, int32(cpu), int32(memory), int32(disk), int32(swap), int32(ephemeral))
 	if err != nil {
 		log.Println("Create flavor failed", err)

@@ -40,7 +40,7 @@ type APIImageView struct{
 	DiskType           string
 	VirtType           string
 	UserName           string
-	IsOcpLB            string
+	OcpLB            string
 }
 
 func FileExist(filename string) bool {
@@ -385,7 +385,7 @@ func (v *APIImageView) Delete(c *macaron.Context, store session.Store) (err erro
 	return
 }
 
-func (v *APIImageView) Create(c *macaron.Context, store session.Store) {
+func (v *APIImageView) Create(c *macaron.Context, store session.Store, apiImageView APIImageView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -396,17 +396,17 @@ func (v *APIImageView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	
-	name := c.QueryTrim("name")
-	url := c.QueryTrim("url")
-	format := c.QueryTrim("format")
-	architectureType := c.QueryInt64("architecture")
+	name := apiImageView.Name
+	url := apiImageView.Url
+	format := apiImageView.Format
+	architectureType := apiImageView.ArchitectureType
 	architecture := ""
-	instance := c.QueryInt64("instance")
-	osVersion := c.QueryTrim("osVersion")
-	diskType := c.QueryTrim("diskType")
-	virtType := c.QueryTrim("virtType")
-	userName := c.QueryTrim("userName")
-	isOcpLB := c.QueryTrim("ocpLB")
+	instance := apiImageView.Instance
+	osVersion := apiImageView.OsVersion
+	diskType := apiImageView.DiskType
+	virtType := apiImageView.VirtType
+	userName := apiImageView.UserName
+	isOcpLB := apiImageView.OcpLB
 	isLB := false
 	if isOcpLB == "" || isOcpLB == "no" {
 		isLB = false

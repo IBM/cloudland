@@ -511,7 +511,7 @@ func (v *APIVolumeView) Edit(c *macaron.Context, store session.Store) {
 	})	
 }
 
-func (v *APIVolumeView) Patch(c *macaron.Context, store session.Store) {
+func (v *APIVolumeView) Patch(c *macaron.Context, store session.Store, apiVolumeView APIVolumeView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params(":id")
 	if id == "" {
@@ -521,8 +521,8 @@ func (v *APIVolumeView) Patch(c *macaron.Context, store session.Store) {
 		})
 		return
 	}		
-	name := c.QueryTrim("name")
-	instance := c.QueryTrim("instance")
+	name := apiVolumeView.Name
+	instance := apiVolumeView.Instance
 	volID, err := strconv.Atoi(id)
 	if err != nil {
 		c.JSON(400, map[string]interface{}{
@@ -564,7 +564,7 @@ func (v *APIVolumeView) Patch(c *macaron.Context, store session.Store) {
 	
 }
 
-func (v *APIVolumeView) Create(c *macaron.Context, store session.Store) {
+func (v *APIVolumeView) Create(c *macaron.Context, store session.Store, apiVolumeView APIVolumeView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -574,8 +574,8 @@ func (v *APIVolumeView) Create(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	name := c.QueryTrim("name")
-	size := c.QueryTrim("size")
+	name := apiVolumeView.Name
+	size := apiVolumeView.Size
 	vsize, err := strconv.Atoi(size)
 	if err != nil {
 		c.JSON(400, map[string]interface{}{
