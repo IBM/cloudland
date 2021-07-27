@@ -705,9 +705,9 @@ func (v *APIInterfaceView) Create(c *macaron.Context, store session.Store, apiIn
 	address := apiInterfaceView.Address
 	mac := apiInterfaceView.Mac
 	ifname := apiInterfaceView.Ifname
-	secgroups := apiInterfaceView.Secgroups
+	secgroups := apiInterfaceView.Secgroups[0]
 	var sgIDs []int64
-	if secgroups[0] != "" {
+	if secgroups != "" {
 		sg := strings.Split(secgroups, ",")
 		for i := 0; i < len(sg); i++ {
 			sgID, err := strconv.Atoi(sg[i])
