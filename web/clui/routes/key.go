@@ -484,7 +484,7 @@ func (v *APIKeyView) Create(c *macaron.Context, store session.Store, apiKeyView 
 		x := db.Where(&model.Key{FingerPrint: fingerPrint}).Find(&keydb)
 		length := len(*(x.Value.(*[]model.Key)))
 		if length != 0 {
-			c.JSON(200, map[string]interface{}{
+			c.JSON(400, map[string]interface{}{
 				"ErrorMsg": "This public key has been used.",
 			})
 			return

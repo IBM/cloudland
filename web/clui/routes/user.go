@@ -367,11 +367,13 @@ func (v *APIUserView) LoginPost(c *macaron.Context, store session.Store, apiUser
 	store.Set("org", organization)
 	store.Set("defsg", org.DefaultSG)
 	store.Set("members", members)
+	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
 	c.JSON(200, map[string]interface{}{
 		"user":  username,
 		"uid":   uid,
 		"oid":   oid,
 		"token": token,
+		"cookie": cookie,
 	})
 	return
 
