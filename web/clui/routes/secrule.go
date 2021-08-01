@@ -604,7 +604,7 @@ func (v *APISecruleView) Delete(c *macaron.Context, store session.Store) (err er
 	return
 }
 
-func (v *APISecruleView) Create(c *macaron.Context, store session.Store) {
+func (v *APISecruleView) Create(c *macaron.Context, store session.Store, apiSecruleView APISecruleView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -614,8 +614,8 @@ func (v *APISecruleView) Create(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	remoteIp := c.QueryTrim("remoteip")
-	sgid := c.Params("sgid")
+	remoteIp := apiSecruleView.Remoteip
+	sgid := apiSecruleView.Sgid
 	if sgid == "" {
 		log.Println("Security group ID is empty")
 		c.JSON(400, map[string]interface{}{
@@ -631,10 +631,10 @@ func (v *APISecruleView) Create(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	direction := c.QueryTrim("direction")
-	protocol := c.QueryTrim("protocol")
-	min := c.QueryTrim("portmin")
-	max := c.QueryTrim("portmax")
+	direction := apiSecruleView.Direction
+	protocol := apiSecruleView.Protocol
+	min := apiSecruleView.Portmin
+	max := apiSecruleView.Portmax
 	portMin, err := strconv.Atoi(min)
 	portMax, err := strconv.Atoi(max)
 	secrule, err := secruleAdmin.Create(c.Req.Context(), int64(secgroupID), memberShip.OrgID, remoteIp, direction, protocol, portMin, portMax)
@@ -681,7 +681,7 @@ func (v *APISecruleView) Edit(c *macaron.Context, store session.Store) {
 
 }
 
-func (v *APISecruleView) Patch(c *macaron.Context, store session.Store) {
+func (v *APISecruleView) Patch(c *macaron.Context, store session.Store, apiSecruleView APISecruleView) {
 	id := c.Params("id")
 	if id == "" {
 		log.Println("Security rule ID is empty")
@@ -698,11 +698,11 @@ func (v *APISecruleView) Patch(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	remoteIp := c.QueryTrim("remoteip")
-	direction := c.QueryTrim("direction")
-	protocol := c.QueryTrim("protocol")
-	min := c.QueryTrim("portmin")
-	max := c.QueryTrim("portmax")
+	remoteIp := apiSecruleView.Remoteip
+	direction := apiSecruleView.Direction
+	protocol := apiSecruleView.Protocol
+	min := apiSecruleView.Portmin
+	max := apiSecruleView.Portmax
 	portMin, err := strconv.Atoi(min)
 	portMax, err := strconv.Atoi(max)
 	secrule, err := secruleAdmin.Update(c.Req.Context(), int64(secruleID), remoteIp, direction, protocol, portMin, portMax)
