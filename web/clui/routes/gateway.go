@@ -26,6 +26,7 @@ var (
 	gatewayAdmin = &GatewayAdmin{}
 	gatewayView  = &GatewayView{}
 	apiGatewayView  = &APIGatewayView{}
+	apiGatewayPatch  = &APIGatewayPatch{}
 )
 
 type StaticRoute struct {
@@ -48,6 +49,13 @@ type APIGatewayView struct{
 	Public  string
 	Private string
 	Subnets string
+}
+type APIGatewayPatch struct{
+	Name    string
+	Zone    int64
+	Public  string
+	Private string
+	Subnets []string
 }
 
 func createGatewayIface(ctx context.Context, rtype string, gateway *model.Gateway, owner, zoneID int64) (iface *model.Interface, subnet *model.Subnet, err error) {
@@ -811,7 +819,7 @@ func (v *APIGatewayView) Edit(c *macaron.Context, store session.Store) {
 
 }
 
-func (v *APIGatewayView) Patch(c *macaron.Context, store session.Store, apiGatewayView APIGatewayView) {
+func (v *APIGatewayPatch) Patch(c *macaron.Context, store session.Store, apiGatewayPatch APIGatewayPatch) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
@@ -837,10 +845,10 @@ func (v *APIGatewayView) Patch(c *macaron.Context, store session.Store, apiGatew
 		})
 		return
 	}
-	name := apiGatewayView.Name
-	pubSubnet := apiGatewayView.Public
-	priSubnet := apiGatewayView.Private
-	subnets := apiGatewayView.Subnets
+	name := apiGatewayPatch.Name
+	pubSubnet := apiGatewayPatch.Public
+	priSubnet := apiGatewayPatch.Private
+	subnets := apiGatewayPatch.Subnets
 	pubID, err := strconv.Atoi(pubSubnet)
 	if err != nil {
 		log.Println("Invalid public subnet id, %v", err)

@@ -252,7 +252,7 @@ func New() (m *macaron.Macaron) {
 	m.Get("/gateways/:id", gatewayView.Edit)
 	m.Get("/api/gateways/:id", apiGatewayView.Edit)
 	m.Post("/gateways/:id", gatewayView.Patch)
-	m.Post("/api/gateways/:id", binding.Bind(APIGatewayView{}), apiGatewayView.Patch)
+	m.Post("/api/gateways/:id", binding.Bind(APIGatewayPatch{}), apiGatewayPatch.Patch)
 	m.Get("/secgroups", secgroupView.List)
 	m.Get("/api/secgroups", apiSecgroupView.List)
 	m.Get("/secgroups/new", secgroupView.New)
