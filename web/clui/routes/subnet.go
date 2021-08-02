@@ -50,7 +50,7 @@ type APISubnetView struct {
 	Domain    string `json:"domain"`
 	Dhcp      string `json:"dhcp"`
 	VSwitch   string `json:"vSwitch"`
-	Vlan      int64  `json:"vlan"`
+	Vlan      string  `json:"vlan"`
 	RouteType string `json:"routeType"`
 	Routes    string `json:"routes"`
 	Rtype     string `json:"rtype"`

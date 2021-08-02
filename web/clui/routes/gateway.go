@@ -47,7 +47,7 @@ type APIGatewayView struct{
 	Zone    int64
 	Public  string
 	Private string
-	Subnets string
+	Subnets []string
 }
 
 func createGatewayIface(ctx context.Context, rtype string, gateway *model.Gateway, owner, zoneID int64) (iface *model.Interface, subnet *model.Subnet, err error) {
