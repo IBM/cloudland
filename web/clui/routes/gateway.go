@@ -837,7 +837,7 @@ func (v *APIGatewayView) Patch(c *macaron.Context, store session.Store, apiGatew
 		})
 		return
 	}
-	name := c.QueryTrim("name") apiGatewayView.Name
+	name := apiGatewayView.Name
 	pubSubnet := apiGatewayView.Public
 	priSubnet := apiGatewayView.Private
 	subnets := apiGatewayView.Subnets
