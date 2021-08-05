@@ -1,0 +1,45 @@
+.ant-row ant-form-item keys {
+  margin-right: 100px;
+  margin-left: 192px;
+}
+.ant-col ant-col-6 ant-col-offset-4 ant-form-item-label {
+  margin-right: 8px;
+}
+.ant-btn-group > .ant-btn:first-child:not(:last-child),
+.ant-btn-group > span:first-child:not(:last-child) > .ant-btn {
+  display: none !important;
+}
+.ant-btn-group .ant-btn + .ant-btn,
+.ant-btn + .ant-btn-group,
+.ant-btn-group span + .ant-btn,
+.ant-btn-group .ant-btn + span,
+.ant-btn-group > span + span,
+.ant-btn-group + .ant-btn,
+.ant-btn-group + .ant-btn-group {
+  margin-left: -1px;
+  /* border-radius: 4px; */
+  height: 24px;
+  border-radius: 4px;
+}
+.ant-table-row-cell-break-word {
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+/* .ant-table-tbody > tr > td {
+  padding: 8px 8px !important;
+  word-break: break-word !important;
+} */
+
+.ant-table-fixed {
+  table-layout: auto;
+}
+
+.ant-table-tbody > tr > td {
+  word-wrap: break-word;
+  word-break: break-all;
+}
+/* td > tr > .ant-table-tbody {
+  word-wrap: break-word;
+  word-break: break-all;
+} */

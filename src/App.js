@@ -1,24 +1,31 @@
-import logo from './logo.svg';
-import './App.css';
-
+import Frame from "./components/Frame/Frame";
+import { Switch, Route, Redirect } from "react-router-dom";
+import "antd/dist/antd.css";
+import "./App.css";
+import { mainRoutes } from "./routes";
+import { isLogined } from "./utils/auth";
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+  return isLogined() ? (
+    <Frame>
+      <Switch>
+        {mainRoutes.map((route) => {
+          return (
+            <Route
+              key={route.path}
+              path={route.path}
+              exact={route.exact}
+              render={(routeProps) => {
+                return <route.component {...routeProps} />;
+              }}
+            />
+          );
+        })}
+        <Redirect to={mainRoutes[0].path} from="/" />
+        <Redirect to="/404" />
+      </Switch>
+    </Frame>
+  ) : (
+    <Redirect to="/login" />
   );
 }
 
