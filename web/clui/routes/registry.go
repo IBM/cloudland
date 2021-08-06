@@ -478,7 +478,7 @@ func (v *APIRegistryView) List(c *macaron.Context, store session.Store) {
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
 	if limit == 0 {
-		limit = 16
+		limit = 9999999
 	}
 	order := c.Query("order")
 	if order == "" {
