@@ -37,24 +37,23 @@ type InstanceAdmin struct{}
 
 type InstanceView struct{}
 
-type APIInstanceView struct{
-
-    Hostname        string
-	Count           string
-	Hyper           int
-	Zone            int64
-	Cluster         int64
-	Image           int64
-	Flavor          int64
-	Primary         string
-	Primaryip       string
-	Primarymac      string
-	Subnets         string
-    Keys            string
-    Secgroups       string
-    Userdata        string
-    Action          string
-    Ifaces          []string
+type APIInstanceView struct {
+	Hostname   string
+	Count      int
+	Hyper      int
+	Zone       int64
+	Cluster    int64
+	Image      int64
+	Flavor     int64
+	Primary    int
+	Primaryip  string
+	Primarymac string
+	Subnets    string
+	Keys       string
+	Secgroups  string
+	Userdata   string
+	Action     string
+	Ifaces     []string
 }
 
 type NetworkRoute struct {
@@ -1445,12 +1444,11 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store, apiIns
 		return
 	}
 	hostname := apiInstanceView.Hostname
-	cnt := apiInstanceView.Count
-	count, err := strconv.Atoi(cnt)
-	if err != nil {
-		log.Println("Invalid instance count", err)
+	count := apiInstanceView.Count
+	if count <= 0 {
+		log.Println("Invalid instance count ", count)
 		c.JSON(400, map[string]interface{}{
-			"ErrorMsg": "Failed to get count."+err.Error(),
+			"ErrorMsg": "Invalid instance count " + strconv.Itoa(count),
 		})
 		return
 	}
@@ -1459,18 +1457,18 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store, apiIns
 		permit := memberShip.CheckPermission(model.Admin)
 		if !permit {
 			log.Println("Need Admin permissions")
-		    c.JSON(403, map[string]interface{}{
-			    "ErrorMsg": "Not authorized for this operation.",
-		    })
+			c.JSON(403, map[string]interface{}{
+				"ErrorMsg": "Not authorized for this operation.",
+			})
 			return
 		}
 	}
 	hyper := &model.Hyper{Hostid: int32(hyperID)}
-	err = DB().Take(hyper).Error
+	err := DB().Take(hyper).Error
 	if err != nil {
 		log.Println("Invalid hypervisor", err)
 		c.JSON(400, map[string]interface{}{
-			"ErrorMsg": "Invalid hypervisor."+err.Error(),
+			"ErrorMsg": "Invalid hypervisor." + err.Error(),
 		})
 		return
 	}
@@ -1479,16 +1477,16 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store, apiIns
 	if cluster < 0 {
 		log.Println("Invalid cluster ID", err)
 		c.JSON(400, map[string]interface{}{
-			"ErrorMsg": "Invalid cluster ID."+err.Error(),
+			"ErrorMsg": "Invalid cluster ID." + err.Error(),
 		})
 		return
 	} else if cluster > 0 {
 		permit, err = memberShip.CheckAdmin(model.Writer, "openshifts", cluster)
 		if !permit {
 			log.Println("Not authorized to access openshift cluster")
-		    c.JSON(400, map[string]interface{}{
-			    "ErrorMsg": "Not authorized to access openshift cluster.",
-		    })
+			c.JSON(400, map[string]interface{}{
+				"ErrorMsg": "Not authorized to access openshift cluster.",
+			})
 			return
 		}
 	}
@@ -1508,22 +1506,22 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store, apiIns
 		})
 		return
 	}
-	primary := apiInstanceView.Primary
-	primaryID, err := strconv.Atoi(primary)
-	if err != nil {
-		log.Println("Invalid primary subnet ID, %v", err)
-		c.JSON(400, map[string]interface{}{
-			"ErrorMsg": "Invalid primary subnet ID."+err.Error(),
-		})
-		return
-	}
+	primaryID := apiInstanceView.Primary
+	// primaryID, err := strconv.Atoi(primary)
+	// if err != nil {
+	// 	log.Println("Invalid primary subnet ID, %v", err)
+	// 	c.JSON(400, map[string]interface{}{
+	// 		"ErrorMsg": "Invalid primary subnet ID." + err.Error(),
+	// 	})
+	// 	return
+	// }
 	primaryIP := apiInstanceView.Primaryip
 	ipAddr := strings.Split(primaryIP, "/")[0]
 	primaryMac := apiInstanceView.Primarymac
 	macAddr, err := v.checkNetparam(int64(primaryID), ipAddr, primaryMac)
 	if err != nil {
 		c.JSON(400, map[string]interface{}{
-			"ErrorMsg": "Invalid primary mac address."+err.Error(),
+			"ErrorMsg": "Invalid primary mac address." + err.Error(),
 		})
 		return
 	}
@@ -1539,9 +1537,9 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store, apiIns
 		permit, err = memberShip.CheckAdmin(model.Writer, "subnets", int64(sID))
 		if !permit {
 			log.Println("Not authorized to access subnet")
-		    c.JSON(403, map[string]interface{}{
-			    "ErrorMsg": "Not authorized to access subnet."+err.Error(),
-		    })
+			c.JSON(403, map[string]interface{}{
+				"ErrorMsg": "Not authorized to access subnet." + err.Error(),
+			})
 			return
 		}
 		subnetIDs = append(subnetIDs, int64(sID))
@@ -1558,9 +1556,9 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store, apiIns
 		permit, err = memberShip.CheckOwner(model.Writer, "keys", int64(kID))
 		if !permit {
 			log.Println("Not authorized to access key")
-		    c.JSON(403, map[string]interface{}{
-			    "ErrorMsg": "Not authorized to access key."+err.Error(),
-		    })
+			c.JSON(403, map[string]interface{}{
+				"ErrorMsg": "Not authorized to access key." + err.Error(),
+			})
 			return
 		}
 		keyIDs = append(keyIDs, int64(kID))
@@ -1578,9 +1576,9 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store, apiIns
 			permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
 			if !permit {
 				log.Println("Not authorized to access security group")
-		        c.JSON(403, map[string]interface{}{
-			        "ErrorMsg": "Not authorized to access security group."+err.Error(),
-		        })
+				c.JSON(403, map[string]interface{}{
+					"ErrorMsg": "Not authorized to access security group." + err.Error(),
+				})
 				return
 			}
 			sgIDs = append(sgIDs, int64(sgID))
@@ -1590,9 +1588,9 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store, apiIns
 		permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
 		if !permit {
 			log.Println("Not authorized to access security group")
-		    c.JSON(403, map[string]interface{}{
-			    "ErrorMsg": "Not authorized to access security group."+err.Error(),
-		    })
+			c.JSON(403, map[string]interface{}{
+				"ErrorMsg": "Not authorized to access security group." + err.Error(),
+			})
 			return
 		}
 		sgIDs = append(sgIDs, sgID)
@@ -1602,13 +1600,13 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store, apiIns
 	if err != nil {
 		log.Println("Create instance failed", err)
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failes to create instance."+err.Error(),
+			"ErrorMsg": "Failes to create instance." + err.Error(),
 		})
 		return
-	} 
+	}
 	c.JSON(200, instances)
 	return
-	
+
 }
 
 func (v *APIInstanceView) Delete(c *macaron.Context, store session.Store) (err error) {
@@ -1638,7 +1636,7 @@ func (v *APIInstanceView) Delete(c *macaron.Context, store session.Store) (err e
 	err = instanceAdmin.Delete(c.Req.Context(), int64(instanceID))
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to delete instance."+err.Error(),
+			"ErrorMsg": "Failed to delete instance." + err.Error(),
 		})
 		return
 	}
@@ -1678,22 +1676,22 @@ func (v *APIInstanceView) Edit(c *macaron.Context, store session.Store) {
 	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
 		log.Println("Instance query failed", err)
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to query instance."+err.Error(),
-		})		
+			"ErrorMsg": "Failed to query instance." + err.Error(),
+		})
 		return
 	}
 	if err = db.Where("instance_id = ?", instanceID).Find(&instance.FloatingIps).Error; err != nil {
 		log.Println("Failed to query floating ip(s), %v", err)
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to query floating ip(s)."+err.Error(),
-		})		
+			"ErrorMsg": "Failed to query floating ip(s)." + err.Error(),
+		})
 		return
 	}
 	_, subnets, err := subnetAdmin.List(c.Req.Context(), 0, -1, "", "", "")
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to query subnets."+err.Error(),
-		})	
+			"ErrorMsg": "Failed to query subnets." + err.Error(),
+		})
 		return
 	}
 	for _, iface := range instance.Interfaces {
@@ -1710,7 +1708,7 @@ func (v *APIInstanceView) Edit(c *macaron.Context, store session.Store) {
 	_, flavors, err := flavorAdmin.List(0, -1, "", "")
 	if err := db.Find(&flavors).Error; err != nil {
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to query flavor."+err.Error(),
+			"ErrorMsg": "Failed to query flavor." + err.Error(),
 		})
 		return
 	}
@@ -1722,34 +1720,34 @@ func (v *APIInstanceView) Edit(c *macaron.Context, store session.Store) {
 			if err != nil {
 				log.Println("Change String to int64 failed", err)
 				c.JSON(500, map[string]interface{}{
-			        "ErrorMsg": "Failed to get instance id."+err.Error(),
-		        })
+					"ErrorMsg": "Failed to get instance id." + err.Error(),
+				})
 				return
 			}
 			_, vmError := instanceAdmin.ChangeInstanceStatus(c.Req.Context(), instanceID64, c.QueryTrim("action"))
 			if vmError != nil {
 				log.Println("Launch vm command execution failed", err)
 				c.JSON(500, map[string]interface{}{
-			        "ErrorMsg": "Failed to launch vm command execution."+err.Error(),
-		        })
+					"ErrorMsg": "Failed to launch vm command execution." + err.Error(),
+				})
 				return
 			}
 			c.JSON(200, map[string]interface{}{
-		        "Msg": "Success.",
-	        })
+				"Msg": "Success.",
+			})
 		}
 	}
-	
+
 	c.JSON(200, map[string]interface{}{
-		"instance":   instance,
-		"subnets":    subnets,
-		"flavors":    flavors,
+		"instance": instance,
+		// "subnets":    subnets,
+		// "flavors":    flavors,
 	})
 }
 
 func (v *APIInstanceView) Patch(c *macaron.Context, store session.Store, apiInstanceView APIInstanceView) {
 	memberShip := GetMemberShip(c.Req.Context())
-	id := c.ParamsInt64("id")	
+	id := c.ParamsInt64("id")
 	permit, err := memberShip.CheckOwner(model.Writer, "instances", id)
 	if !permit {
 		log.Println("Not authorized for this operation")
@@ -1768,7 +1766,7 @@ func (v *APIInstanceView) Patch(c *macaron.Context, store session.Store, apiInst
 	if err != nil {
 		log.Println("Invalid instance", err)
 		c.JSON(400, map[string]interface{}{
-			"ErrorMsg": "Invalid instance."+err.Error(),
+			"ErrorMsg": "Invalid instance." + err.Error(),
 		})
 		return
 	}
@@ -1777,8 +1775,8 @@ func (v *APIInstanceView) Patch(c *macaron.Context, store session.Store, apiInst
 		if !permit {
 			log.Println("Not authorized to migrate VM")
 			c.JSON(403, map[string]interface{}{
-			    "ErrorMsg": "Not authorized to migrate VM.",
-		    })
+				"ErrorMsg": "Not authorized to migrate VM.",
+			})
 			return
 		}
 	}
@@ -1802,8 +1800,8 @@ func (v *APIInstanceView) Patch(c *macaron.Context, store session.Store, apiInst
 		if !permit {
 			log.Println("Not authorized for this operation")
 			c.JSON(403, map[string]interface{}{
-			    "ErrorMsg": "Not authorized for this operation",
-		    })
+				"ErrorMsg": "Not authorized for this operation",
+			})
 			return
 		}
 		subnetIDs = append(subnetIDs, int64(sID))
@@ -1814,13 +1812,13 @@ func (v *APIInstanceView) Patch(c *macaron.Context, store session.Store, apiInst
 	if err != nil {
 		log.Println("Create instance failed, %v", err)
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to update instance"+err.Error(),
+			"ErrorMsg": "Failed to update instance" + err.Error(),
 		})
 		return
-	} 
+	}
 	c.JSON(200, instance)
 	return
-	
+
 }
 
 func (v *APIInstanceView) checkNetparam(subnetID int64, IP, mac string) (macAddr string, err error) {

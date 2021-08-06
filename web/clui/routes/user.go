@@ -332,7 +332,8 @@ func (v *UserView) LoginPost(c *macaron.Context, store session.Store) {
 func (v *APIUserView) LoginPost(c *macaron.Context, store session.Store, apiUserView APIUserView) {
 	username := apiUserView.Username
 	password := apiUserView.Password
-
+	log.Println("username: ", username)
+	log.Println("password: ", password)
 	user, err := userAdmin.Validate(c.Req.Context(), username, password)
 	if err != nil {
 		c.JSON(401, map[string]interface{}{
@@ -369,10 +370,10 @@ func (v *APIUserView) LoginPost(c *macaron.Context, store session.Store, apiUser
 	store.Set("members", members)
 	cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
 	c.JSON(200, map[string]interface{}{
-		"user":  username,
-		"uid":   uid,
-		"oid":   oid,
-		"token": token,
+		"user":   username,
+		"uid":    uid,
+		"oid":    oid,
+		"token":  token,
 		"cookie": cookie,
 	})
 	return
