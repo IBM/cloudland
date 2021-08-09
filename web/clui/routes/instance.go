@@ -1245,6 +1245,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	hyperID := c.QueryInt("hyper")
+	log.Println("======hyperID======%d", hyperID)
 	if hyperID >= 0 {
 		permit := memberShip.CheckPermission(model.Admin)
 		if !permit {
@@ -1263,6 +1264,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	zoneID := c.QueryInt64("zone")
+	log.Println("======zoneID======%d", zoneID)
 	cluster := c.QueryInt64("cluster")
 	if cluster < 0 {
 		log.Println("Invalid cluster ID", err)
@@ -1455,6 +1457,7 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store, apiIns
 		return
 	}
 	hyperID := apiInstanceView.Hyper
+	log.Println("======api hyperID======%d", hyperID)
 	if hyperID >= 0 {
 		permit := memberShip.CheckPermission(model.Admin)
 		if !permit {
@@ -1475,6 +1478,7 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store, apiIns
 		return
 	}
 	zoneID := apiInstanceView.Zone
+	log.Println("======api zoneID======%d", zoneID)	
 	cluster := apiInstanceView.Cluster
 	if cluster < 0 {
 		log.Println("Invalid cluster ID", err)
