@@ -1377,6 +1377,20 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		sgIDs = append(sgIDs, sgID)
 	}
 	userdata := c.QueryTrim("userdata")
+	log.Println("======count======%d", count)
+	log.Println("======hostname======%d", hostname)
+	log.Println("======userdata======%d", userdata)
+	log.Println("======image======%d", image)
+	log.Println("======flavor======%d", flavor)
+	log.Println("======primaryID======%d", primaryID)
+	log.Println("======cluster======%d", cluster)
+	log.Println("======zoneID======%d", zoneID)
+	log.Println("======ipAddr======%d", ipAddr)
+	log.Println("======macAddr======%d", macAddr)
+	log.Println("======subnetIDs======%d", subnetIDs)
+	log.Println("======keyIDs======%d", keyIDs)
+	log.Println("======sgIDs======%d", sgIDs)
+	log.Println("======hyperID======%d", hyperID)
 	instances, err := instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, image, flavor, int64(primaryID), cluster, zoneID, ipAddr, macAddr, subnetIDs, keyIDs, sgIDs, hyperID)
 	if err != nil {
 		log.Println("Create instance failed", err)
@@ -1600,6 +1614,21 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store, apiIns
 		sgIDs = append(sgIDs, sgID)
 	}
 	userdata := apiInstanceView.Userdata
+	
+	log.Println("======api count======%d", count)
+	log.Println("======api hostname======%d", hostname)
+	log.Println("======api userdata======%d", userdata)
+	log.Println("======api image======%d", image)
+	log.Println("======api flavor======%d", flavor)
+	log.Println("======api primaryID======%d", primaryID)
+	log.Println("======api cluster======%d", cluster)
+	log.Println("======api zoneID======%d", zoneID)
+	log.Println("======api ipAddr======%d", ipAddr)
+	log.Println("======api macAddr======%d", macAddr)
+	log.Println("======api subnetIDs======%d", subnetIDs)
+	log.Println("======api keyIDs======%d", keyIDs)
+	log.Println("======api sgIDs======%d", sgIDs)
+	log.Println("======api hyperID======%d", hyperID)	
 	instances, err := instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, image, flavor, int64(primaryID), cluster, zoneID, ipAddr, macAddr, subnetIDs, keyIDs, sgIDs, hyperID)
 	if err != nil {
 		log.Println("Create instance failed", err)
