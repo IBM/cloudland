@@ -6,14 +6,11 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import request from "../utils/request";
-export function regListApi(offset, limit) {
+export function regListApi(paramsObj) {
   return request({
     url: "/api/registrys",
     method: "get",
-    params: {
-      offset,
-      limit,
-    },
+    params: paramsObj ? paramsObj : {},
   });
 }
 
