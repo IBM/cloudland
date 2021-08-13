@@ -1,0 +1,22 @@
+/*
+
+Copyright <holder> All Rights Reserved
+
+SPDX-License-Identifier: Apache-2.0
+
+*/
+.ant-card-head {
+  background-color: #001529;
+  color: white;
+}
+.ant-tooltip-open {
+  width: 350px;
+  color: white;
+}
+.registryContent {
+  overflow: hidden;
+  textoverflow: ellipsis;
+  display: -webkit-box;
+  webkitboxorient: vertical;
+  webkitlineclamp: 3;
+}
