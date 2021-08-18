@@ -919,7 +919,7 @@ func (v *APIGatewayView) Create(c *macaron.Context, store session.Store, apiGate
 	//s := strings.Split(subnets, ",")
 	var subnetIDs []int64
 	for i := 0; i < len(subnets); i++ {
-		sID, err := strconv.Atoi(s[i])
+		sID, err := strconv.Atoi(subnets[i])
 		if err != nil {
 			log.Println("Invalid secondary subnet ID, %v", err)
 			continue
