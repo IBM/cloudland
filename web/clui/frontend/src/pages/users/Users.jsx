@@ -6,8 +6,8 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
-import { Card, Table, Button, Popconfirm } from "antd";
-import { userListApi } from "../../api/users";
+import { Card, Table, Button, Popconfirm, message } from "antd";
+import { userListApi, delUserInfor } from "../../api/users";
 const columns = [
   {
     title: "ID",
