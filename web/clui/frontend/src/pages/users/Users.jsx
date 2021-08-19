@@ -96,7 +96,7 @@ class Users extends Component {
     const _this = this;
     const offset = (page - 1) * pageSize;
     const limit = pageSize;
-    flavorsListApi(offset, limit)
+    userListApi(offset, limit)
       .then((res) => {
         console.log("loadData", res);
         _this.setState({
@@ -122,7 +122,7 @@ class Users extends Component {
     const offset = (page - 1) * num;
     const limit = num;
     console.log("user-toSelectchange~limit:", offset, limit);
-    usersListApi(offset, limit)
+    userListApi(offset, limit)
       .then((res) => {
         console.log("loadData", res);
         _this.setState({
