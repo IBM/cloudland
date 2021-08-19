@@ -100,7 +100,7 @@ class Users extends Component {
       .then((res) => {
         console.log("loadData", res);
         _this.setState({
-          flavors: res.users,
+          users: res.users,
           isLoaded: true,
           total: res.total,
           pageSize: limit,
@@ -126,7 +126,7 @@ class Users extends Component {
       .then((res) => {
         console.log("loadData", res);
         _this.setState({
-          flavors: res.users,
+          users: res.users,
           isLoaded: true,
           total: res.total,
           pageSize: limit,
@@ -163,7 +163,7 @@ class Users extends Component {
           rowKey="ID"
           columns={this.columns}
           bordered
-          dataSource={this.state.flavors}
+          dataSource={this.state.users}
           pagination={{
             //pagination
             total: this.state.total, //total count
