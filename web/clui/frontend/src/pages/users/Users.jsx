@@ -34,13 +34,16 @@ const columns = [
             Edit
           </Button>
           <Popconfirm
-            title="确定删除此项?"
+            title="Do you want to delete?"
             onCancel={() => {
-              console.log("用户取消删除");
+              console.log("Cancel delete.");
             }}
             onConfirm={() => {
-              console.log("用户确认删除");
-              //此处调用api接口进行相关操作
+              console.log("Confirm delete.");
+              delUserInfor(record.ID).then((res) => {
+                message.success(res.Msg);
+                //this.loadData(this.state.current, this.state.pageSize);
+              });
             }}
           >
             <Button style={{ margin: "0 1rem" }} type="danger" size="small">
