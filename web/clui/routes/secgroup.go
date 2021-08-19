@@ -29,7 +29,7 @@ type SecgroupAdmin struct{}
 type SecgroupView struct{}
 type APISecgroupView struct{
 	Name         string
-	IsdefStr     string
+	Isdefault    string
 }
 
 func (a *SecgroupAdmin) Switch(ctx context.Context, newSg *model.SecurityGroup, store session.Store) (err error) {
@@ -541,7 +541,7 @@ func (v *APISecgroupView) Edit(c *macaron.Context, store session.Store) {
 	c.JSON(200, secgroup)
 }
 
-func (v *APISecgroupView) Patch(c *macaron.Context, store session.Store) {
+func (v *APISecgroupView) Patch(c *macaron.Context, store session.Store, apiSecgroupView APISecgroupView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params(":id")
     if id == "" {
@@ -550,7 +550,7 @@ func (v *APISecgroupView) Patch(c *macaron.Context, store session.Store) {
 		})
 		return
 	}	
-	name := c.QueryTrim("name")
+	name := apiSecgroupView.Name
 	sgID, err := strconv.Atoi(id)
 	if err != nil {
 		c.JSON(400, map[string]interface{}{
@@ -566,7 +566,8 @@ func (v *APISecgroupView) Patch(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	isdefStr := c.QueryTrim("isdefault")
+	
+	isdefStr := apiSecgroupView.IsdefStr	
 	isDef := false
 	if isdefStr == "" || isdefStr == "no" {
 		isDef = false
@@ -597,7 +598,7 @@ func (v *APISecgroupView) Patch(c *macaron.Context, store session.Store) {
 	return
 }
 
-func (v *APISecgroupView) Create(c *macaron.Context, store session.Store) {
+func (v *APISecgroupView) Create(c *macaron.Context, store session.Store, apiSecgroupView APISecgroupView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -607,8 +608,8 @@ func (v *APISecgroupView) Create(c *macaron.Context, store session.Store) {
 		})
 		return
 	}
-	name := c.QueryTrim("name")
-	isdefStr := c.QueryTrim("isdefault")
+	name := apiSecgroupView.Name
+	isdefStr := apiSecgroupView.IsdefStr
 	isDef := false
 	if isdefStr == "" || isdefStr == "no" {
 		isDef = false
