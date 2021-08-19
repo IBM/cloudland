@@ -80,6 +80,10 @@ class Users extends Component {
         });
       });
   }
+  createUser = () => {
+    this.props.history.push("/users/new");
+  };
+
   render() {
     return (
       <Card
@@ -88,7 +92,7 @@ class Users extends Component {
           <Button
             type="primary"
             size="small"
-            // onClick={() => this.props.history.push("`/users/${userid}`")}
+            onClick={this.createUser}
           >
             Create
           </Button>

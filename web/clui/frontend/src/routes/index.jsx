@@ -26,6 +26,7 @@ import Secgroups from "../pages/secgroups/Secgroups";
 import Secrules from "../pages/secgroups/secrules/Secrules";
 import Subnets from "../pages/subnets/Subnets";
 import Users from "../pages/users/Users";
+import CreateUser from "../pages/users/CreateUser";
 import Hypers from "../pages/hypers/Hypers";
 export const InitRoutes = [
   {
@@ -52,6 +53,13 @@ export const mainRoutes = [
     title: "Users",
     icon: "user",
     isShow: true,
+    item: "auth",
+  },
+  {
+    path: "/users/new",
+    component: CreateUser,
+    exact: true,
+    isShow: false,
     item: "auth",
   },
   {
