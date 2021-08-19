@@ -567,7 +567,7 @@ func (v *APISecgroupView) Patch(c *macaron.Context, store session.Store, apiSecg
 		return
 	}
 	
-	isdefStr := apiSecgroupView.IsdefStr	
+	isdefStr := apiSecgroupView.Isdefault	
 	isDef := false
 	if isdefStr == "" || isdefStr == "no" {
 		isDef = false
@@ -609,7 +609,7 @@ func (v *APISecgroupView) Create(c *macaron.Context, store session.Store, apiSec
 		return
 	}
 	name := apiSecgroupView.Name
-	isdefStr := apiSecgroupView.IsdefStr
+	isdefStr := apiSecgroupView.Isdefault
 	isDef := false
 	if isdefStr == "" || isdefStr == "no" {
 		isDef = false
