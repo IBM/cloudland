@@ -718,7 +718,7 @@ func (v *APISubnetView) Delete(c *macaron.Context, store session.Store) (err err
 	err = subnetAdmin.Delete(c.Req.Context(), int64(subnetID))
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to delete subnet."+err.Error(),
+			"ErrorMsg": "Failed to delete subnet.",
 		})
 		return
 	}
