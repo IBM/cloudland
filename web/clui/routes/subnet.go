@@ -691,7 +691,7 @@ func (v *SubnetView) List(c *macaron.Context, store session.Store) {
 	c.HTML(200, "subnets")
 }
 
-func (v *APISubnetView) Delete(c *macaron.Context, store session.Store) (err error) {
+func (v *APISubnetView) Delete(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
