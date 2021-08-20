@@ -505,7 +505,7 @@ func (v *APIRegistryView) List(c *macaron.Context, store session.Store) {
 	
 }
 
-func (v *APIRegistryView) Delete(c *macaron.Context, store session.Store) (err error) {
+func (v *APIRegistryView) Delete(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {

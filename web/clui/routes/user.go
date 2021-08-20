@@ -695,7 +695,7 @@ func (v *APIUserView) List(c *macaron.Context, store session.Store) {
 
 }
 
-func (v *APIUserView) Delete(c *macaron.Context, store session.Store) (err error) {
+func (v *APIUserView) Delete(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {

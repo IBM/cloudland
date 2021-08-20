@@ -250,7 +250,7 @@ func (v *APIFlavorView) List(c *macaron.Context, store session.Store) {
 	})
 }
 
-func (v *APIFlavorView) Delete(c *macaron.Context, store session.Store) (err error) {
+func (v *APIFlavorView) Delete(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {

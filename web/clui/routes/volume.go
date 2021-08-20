@@ -426,7 +426,7 @@ func (v *APIVolumeView) List(c *macaron.Context, store session.Store) {
 
 }
 
-func (v *APIVolumeView) Delete(c *macaron.Context, store session.Store) (err error) {
+func (v *APIVolumeView) Delete(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {

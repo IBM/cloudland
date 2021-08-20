@@ -520,7 +520,7 @@ func (v *APIKeyView) Create(c *macaron.Context, store session.Store, apiKeyView 
 	}
 }
 
-func (v *APIKeyView) Delete(c *macaron.Context, store session.Store) (err error) {
+func (v *APIKeyView) Delete(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {

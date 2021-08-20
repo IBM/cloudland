@@ -616,7 +616,7 @@ func (v *APIOrgView) Patch(c *macaron.Context, store session.Store, apiOrgView A
 
 }
 
-func (v *APIOrgView) Delete(c *macaron.Context, store session.Store) (err error) {
+func (v *APIOrgView) Delete(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
