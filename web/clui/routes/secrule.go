@@ -540,7 +540,7 @@ func (v *APISecruleView) List(c *macaron.Context, store session.Store) {
 	return
 }
 
-func (v *APISecruleView) Delete(c *macaron.Context, store session.Store) (err error) {
+func (v *APISecruleView) Delete(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	sgid := c.Params("sgid")
 	if sgid == "" {

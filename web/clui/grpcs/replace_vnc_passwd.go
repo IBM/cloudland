@@ -20,7 +20,7 @@ func ReplaceVncPasswd(ctx context.Context, job *model.Job, args []string) (statu
 	argn := len(args)
 	if argn < 5 {
 		err = fmt.Errorf("Wrong params")
-		log.Println("Invalid args", err)
+		// log.Println("Invalid args", err)
 		return
 	}
 	instID, err := strconv.Atoi(args[1])

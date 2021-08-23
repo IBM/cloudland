@@ -348,7 +348,7 @@ func (v *APIImageView) List(c *macaron.Context, store session.Store) {
 
 }
 
-func (v *APIImageView) Delete(c *macaron.Context, store session.Store) (err error) {
+func (v *APIImageView) Delete(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {

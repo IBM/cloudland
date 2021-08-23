@@ -250,7 +250,7 @@ func (v *APIFlavorView) List(c *macaron.Context, store session.Store) {
 	})
 }
 
-func (v *APIFlavorView) Delete(c *macaron.Context, store session.Store) (err error) {
+func (v *APIFlavorView) Delete(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
@@ -263,7 +263,7 @@ func (v *APIFlavorView) Delete(c *macaron.Context, store session.Store) (err err
 
 	id := c.Params("id")
 	if id == "" {
-		log.Println("ID is empty, %v", err)
+		log.Println("ID is empty")
 		c.JSON(400, map[string]interface{}{
 			"ErrorMsg": "Flavor id is empty.",
 		})

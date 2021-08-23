@@ -843,7 +843,7 @@ func (v *APIOpenshiftView) List(c *macaron.Context, store session.Store) {
 
 }
 
-func (v *APIOpenshiftView) Delete(c *macaron.Context, store session.Store) (err error) {
+func (v *APIOpenshiftView) Delete(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.ParamsInt64("id")
 	permit, err := memberShip.CheckOwner(model.Owner, "openshifts", id)

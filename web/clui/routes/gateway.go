@@ -728,7 +728,7 @@ func (v *APIGatewayView) List(c *macaron.Context, store session.Store) {
 	return
 }
 
-func (v *APIGatewayView) Delete(c *macaron.Context, store session.Store) (err error) {
+func (v *APIGatewayView) Delete(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {

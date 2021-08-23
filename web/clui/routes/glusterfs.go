@@ -647,7 +647,7 @@ func (v *APIGlusterfsView) List(c *macaron.Context, store session.Store) {
 	
 }
 
-func (v *APIGlusterfsView) Delete(c *macaron.Context, store session.Store) (err error) {
+func (v *APIGlusterfsView) Delete(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.ParamsInt64("id")
 	permit, err := memberShip.CheckOwner(model.Owner, "glusterfs", id)

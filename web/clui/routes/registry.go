@@ -23,25 +23,23 @@ import (
 )
 
 var (
-	registryAdmin = &RegistryAdmin{}
-	registryView  = &RegistryView{}
-	apiRegistryView  = &APIRegistryView{}
+	registryAdmin   = &RegistryAdmin{}
+	registryView    = &RegistryView{}
+	apiRegistryView = &APIRegistryView{}
 )
 
 type RegistryAdmin struct{}
 type RegistryView struct{}
-type APIRegistryView struct{
-
-	Label            string
-	VirtType         string
-	Ocpversion       string
-	Registrycontent  string
-	Initramfs        string
-	Kernel           string
-	Image            string
-	Installer        string
-	Cli              string
-
+type APIRegistryView struct {
+	Label           string
+	VirtType        string
+	Ocpversion      string
+	Registrycontent string
+	Initramfs       string
+	Kernel          string
+	Image           string
+	Installer       string
+	Cli             string
 }
 
 func (a *RegistryAdmin) Create(ctx context.Context, label, virtType, ocpVersion, registryContent, initramfs, kernel, image, installer, cli string) (registry *model.Registry, err error) {
@@ -488,7 +486,7 @@ func (v *APIRegistryView) List(c *macaron.Context, store session.Store) {
 	total, registrys, err := registryAdmin.List(offset, limit, order, query)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to list registrys."+err.Error(),
+			"ErrorMsg": "Failed to list registrys." + err.Error(),
 		})
 		return
 
@@ -502,10 +500,10 @@ func (v *APIRegistryView) List(c *macaron.Context, store session.Store) {
 		"query":     query,
 	})
 	return
-	
+
 }
 
-func (v *APIRegistryView) Delete(c *macaron.Context, store session.Store) (err error) {
+func (v *APIRegistryView) Delete(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
@@ -522,10 +520,10 @@ func (v *APIRegistryView) Delete(c *macaron.Context, store session.Store) (err e
 		})
 		return
 	}
-	err = registryAdmin.Delete(id)
+	err := registryAdmin.Delete(id)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to delete registry."+err.Error(),
+			"ErrorMsg": "Failed to delete registry." + err.Error(),
 		})
 		return
 	}
@@ -559,10 +557,10 @@ func (v *APIRegistryView) Create(c *macaron.Context, store session.Store, apiReg
 	if err != nil {
 		log.Println("Create registry failed", err)
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to create registry."+err.Error(),
+			"ErrorMsg": "Failed to create registry." + err.Error(),
 		})
 		return
-	} 
+	}
 	c.JSON(200, registry)
 	return
 }
@@ -598,7 +596,7 @@ func (v *APIRegistryView) Edit(c *macaron.Context, store session.Store) {
 	if err != nil {
 		log.Println("Failed to query registry", err)
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Registry query failed."+err.Error(),
+			"ErrorMsg": "Registry query failed." + err.Error(),
 		})
 		return
 	}
@@ -644,12 +642,11 @@ func (v *APIRegistryView) Patch(c *macaron.Context, store session.Store, apiRegi
 	if err != nil {
 		log.Println("Failed to update registry, %v", err)
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to update registry."+err.Error(),
+			"ErrorMsg": "Failed to update registry." + err.Error(),
 		})
 		return
 
-	} 
+	}
 	c.JSON(200, registry)
-		
-}
 
+}
