@@ -332,6 +332,7 @@ func (v *UserView) LoginPost(c *macaron.Context, store session.Store) {
 func (v *APIUserView) LoginPost(c *macaron.Context, store session.Store, apiUserView APIUserView) {
 	username := apiUserView.Username
 	password := apiUserView.Password
+
 	log.Println("username: ", username)
 	log.Println("password: ", password)
 	user, err := userAdmin.Validate(c.Req.Context(), username, password)
@@ -344,6 +345,10 @@ func (v *APIUserView) LoginPost(c *macaron.Context, store session.Store, apiUser
 	organization := username
 	uid := user.ID
 	oid, role, token, _, _, err := userAdmin.AccessToken(uid, username, organization)
+	isAdmin := false
+	if role >= model.Admin || username = "admin" {
+		isAdmin = true
+	}
 	if err != nil {
 		log.Println("Failed to get token", err)
 		c.JSON(403, map[string]interface{}{
@@ -375,6 +380,7 @@ func (v *APIUserView) LoginPost(c *macaron.Context, store session.Store, apiUser
 		"oid":    oid,
 		"token":  token,
 		"cookie": cookie,
+		"isAdmin": isAdmin
 	})
 	return
 
