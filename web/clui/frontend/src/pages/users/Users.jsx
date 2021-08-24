@@ -45,7 +45,13 @@ class Users extends Component {
       render: (txt, record, index) => {
         return (
           <div>
-            <Button type="primary" size="small">
+            <Button 
+               type="primary" 
+               size="small"
+               onClick={() => {
+                this.props.history.push("/users/new/" + record.ID);
+              }}
+            >
               Edit
             </Button>
             <Popconfirm

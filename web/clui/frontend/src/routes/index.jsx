@@ -27,6 +27,7 @@ import Secrules from "../pages/secgroups/secrules/Secrules";
 import Subnets from "../pages/subnets/Subnets";
 import Users from "../pages/users/Users";
 import CreateUser from "../pages/users/CreateUser";
+import ModifyUser from "../pages/users/ModifyUser";
 import Hypers from "../pages/hypers/Hypers";
 export const InitRoutes = [
   {
@@ -58,6 +59,13 @@ export const mainRoutes = [
   {
     path: "/users/new",
     component: CreateUser,
+    exact: true,
+    isShow: false,
+    item: "auth",
+  },
+  {
+    path: "/users/new/:id?",
+    component: ModifyUser,
     exact: true,
     isShow: false,
     item: "auth",
