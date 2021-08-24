@@ -62,17 +62,7 @@ class ModifyUser extends Component {
       }
     });
   };
-  //check if Registry content starts with "pullSecret"
-  regContentValidate = (rule, value, callback) => {
-    console.log("regContentValidate:", value);
-    if (value.indexOf("pullSecret") === -1) {
-      callback("Registry Content should be started with 'pullSecret'");
 
-      //调用api 接口
-    } else {
-      callback();
-    }
-  };
   render() {
     return (
       <Card
@@ -93,13 +83,13 @@ class ModifyUser extends Component {
             name="password"
             labelCol={{ ...layoutForm.labelCol }}
           >
-            {this.props.form.getFieldDecorator("label", {
+            {this.props.form.getFieldDecorator("password", {
               rules: [
                 {
                   required: true,
                 },
               ],
-              initialValue: this.state.currentData.Label,
+              initialValue: this.state.currentData.Password,
             })(<Input />)}
           </Form.Item>
           <Form.Item
@@ -113,9 +103,9 @@ class ModifyUser extends Component {
                   required: true,
                 },
               ],
+              initialValue: this.state.currentData.Members,
             })(
               <Select
-                value={this.state.currentData.Members}
                 multiple={true}
               >
                 {
