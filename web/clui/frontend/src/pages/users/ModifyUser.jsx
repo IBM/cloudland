@@ -121,7 +121,7 @@ class ModifyUser extends Component {
                 {
 	              this.state.currentData.Members.map((item,i)=>{
 		            return(
-			         <Option key={i} value={item.OrgName}>{item.OrgName}</Option>
+			         <Select.Option key={i} value={item.OrgName}>{item.OrgName}</Select.Option>
 		            )
 	              }
 	              )
