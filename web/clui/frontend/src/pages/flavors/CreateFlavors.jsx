@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import { Form, Card, Input, Button, message, InputNumber } from "antd";
-import { createFlavorApi } from "../../api/flavors";
+import { createFlavorApi } from "../../service/flavors";
 const layoutButton = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },
@@ -15,7 +15,6 @@ const layoutButton = {
 const layoutForm = {
   labelCol: { span: 6 },
   wrapperCol: { span: 10 },
-  LayoutType: "horizontal",
 };
 class CreateFlavors extends Component {
   constructor(props) {
@@ -28,24 +27,18 @@ class CreateFlavors extends Component {
       disk: 1,
       swap: 0,
       ephemeral: 0,
-
-      flavors: {
-        Name: "",
-        Cpu: 1,
-        Memory: 1,
-        Disk: 1,
-        Swap: 0,
-        Ephemeral: 0,
-      },
     };
     console.log("CreateFlavors~~", props);
   }
-  flavorsChange = (e) => {
-    console.log("valueChange-e", e);
-    this.setState({
-      [e.target.name]: e.target.value,
-    });
-    console.log("flavorsChange", this.state);
+  // flavorsChange = (e) => {
+  //   console.log("valueChange-e", e);
+  //   this.setState({
+  //     [e.target.name]: e.target.value,
+  //   });
+  //   console.log("flavorsChange", this.state);
+  // };
+  listFlavors = () => {
+    this.props.history.push("/flavors");
   };
   handleSubmit = (event) => {
     console.log("handleSubmit-state:", this.state);
@@ -91,14 +84,14 @@ class CreateFlavors extends Component {
       <Card
         title={"Create New Flavor"}
         extra={
-          <Button type="primary" onClick={this.listImages}>
+          <Button type="primary" size="small" onClick={this.listFlavors}>
             Return
           </Button>
         }
       >
         <Form
+          layout="horizontal"
           onSubmit={(e) => this.handleSubmit(e)}
-          //   layout={{ ...layoutForm.LayoutType }}
           wrapperCol={{ ...layoutForm.wrapperCol }}
         >
           <Form.Item

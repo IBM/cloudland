@@ -7,14 +7,16 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import { Card, Button, Popconfirm, message } from "antd";
-import { imagesListApi, delImgInfor } from "../../service/images";
+import { secrulesListApi, delSecruleInfor } from "../../service/secrules";
 import DataTable from "../../components/DataTable/DataTable";
 
-class Images extends Component {
+class Secrules extends Component {
   constructor(props) {
     super(props);
+    console.log("Secrule.props:", this.props);
     this.state = {
-      images: [],
+      secrules: [],
+      sgID: "",
       isLoaded: false,
       total: 0,
       pageSize: 10,
@@ -28,47 +30,39 @@ class Images extends Component {
       title: "ID",
       dataIndex: "ID",
       key: "ID",
+      width: 80,
       align: "center",
-      width: 70,
+      // render: (href) => <a>{href}</a>,
     },
     {
-      title: "Name",
-      dataIndex: "Name",
+      title: "SecurityGroup",
+      dataIndex: "Secgroup",
       align: "center",
+      // render: (href) => <a>{href}</a>,
     },
     {
-      title: "Format",
-      dataIndex: "Format",
-      align: "center",
-    },
-    {
-      title: "Status",
-      dataIndex: "Status",
+      title: "RemoteIp",
+      dataIndex: "RemoteIp",
       align: "center",
     },
     {
-      title: "Created At",
-      dataIndex: "CreatedAt",
+      title: "Direction",
+      dataIndex: "Direction",
       align: "center",
     },
     {
-      title: "OS Version",
-      dataIndex: "OsVersion",
+      title: "Protocol",
+      dataIndex: "Protocol",
       align: "center",
     },
     {
-      title: "Hypervisor Type",
-      dataIndex: "VirtType",
+      title: "PortMin|Type",
+      dataIndex: "PortMin",
       align: "center",
     },
     {
-      title: "Default Username",
-      dataIndex: "UserName",
-      align: "center",
-    },
-    {
-      title: "Architecture",
-      dataIndex: "Architecture",
+      title: "PortMax|Type",
+      dataIndex: "PortMax",
       align: "center",
     },
     {
@@ -77,31 +71,51 @@ class Images extends Component {
       render: (txt, record, index) => {
         return (
           <div>
+            <Button
+              style={{
+                marginTop: "10px",
+              }}
+              type="primary"
+              size="small"
+              onClick={() => {
+                console.log("onClick:", record);
+                console.log("onClick-Secgroup:", record.Secgroup);
+                // this.setState({
+                //   sgID: record.Secgroup,
+                // });
+                console.log("onClick-state.sgID:", this.state.sgID);
+                this.props.history.push(
+                  `/secgroups/${record.Secgroup}/secrules/new/` + record.ID
+                  // `/secgroups/${this.state.sgID}/secrules/new/` + record.ID
+                );
+              }}
+            >
+              Edit
+            </Button>
             <Popconfirm
               title="Are you sure to delete?"
               onCancel={() => {
-                console.log("canceled");
+                console.log("cancelled");
               }}
               onConfirm={() => {
                 console.log("onClick-delete:", record);
-                //this.props.history.push("/registrys/new/" + record.ID);
-                delImgInfor(record.ID).then((res) => {
-                  //const _this = this;
+                console.log("onClick-delete-record.Secgroup:", record.Secgroup);
+
+                delSecruleInfor(record.Secgroup, record.ID).then((res) => {
                   message.success(res.Msg);
                   this.loadData(this.state.current, this.state.pageSize);
-
-                  console.log("用户~~", res);
-                  console.log("用户~~state", this.state);
+                  console.log("用户~~", this.state);
                 });
               }}
             >
               <Button
-                style={{ margin: "0 1rem" }}
+                style={{
+                  margin: "5px",
+                  marginRight: "0px",
+                  marginTop: "10px",
+                }}
                 type="danger"
                 size="small"
-                onClick={() => {
-                  console.log("用户", record.ID);
-                }}
               >
                 Delete
               </Button>
@@ -111,17 +125,18 @@ class Images extends Component {
       },
     },
   ];
+  //组件初始化的时候执行
   componentWillMount() {
     const _this = this;
-    const limit = this.state.pageSize;
-    imagesListApi(this.state.offset, limit)
+    console.log("componentWillMount:", this);
+    secrulesListApi(this.props.match.params.id)
       .then((res) => {
-        console.log("imagesListApi-total:", res.total);
         _this.setState({
-          images: res.images,
+          secrules: res.secrules,
           isLoaded: true,
           total: res.total,
         });
+        console.log(res);
       })
       .catch((error) => {
         _this.setState({
@@ -130,20 +145,26 @@ class Images extends Component {
         });
       });
   }
-  createImages = () => {
-    this.props.history.push("/images/new");
+  createSecrules = () => {
+    console.log("createSecrules:", this.props);
+    this.props.history.push(
+      `/secgroups/${this.props.match.params.id}/secrules/new`
+    );
+  };
+  listSecgroups = () => {
+    this.props.history.push("/secgroups");
   };
   loadData = (page, pageSize) => {
-    console.log("image-loadData~~", page, pageSize);
+    console.log("loadData~~", page, pageSize);
     const _this = this;
     const offset = (page - 1) * pageSize;
     const limit = pageSize;
-    imagesListApi(offset, limit)
+    const sgID = this.props.match.params.id;
+    secrulesListApi(sgID, { offset, limit })
       .then((res) => {
         console.log("loadData", res);
-
         _this.setState({
-          images: res.images,
+          secrules: res.secrules,
           isLoaded: true,
           total: res.total,
           pageSize: limit,
@@ -163,16 +184,17 @@ class Images extends Component {
     const _this = this;
     const offset = (page - 1) * num;
     const limit = num;
-    console.log("image-toSelectchange~limit:", offset, limit);
-    imagesListApi(offset, limit)
+    const sgID = this.props.match.params.id;
+
+    // console.log("toSelectchange~limit:", sgID, offset, limit);
+    secrulesListApi(sgID, { offset, limit })
       .then((res) => {
-        console.log("loadData", res);
+        console.log("loadData-toSelectchange", res);
         _this.setState({
-          images: res.images,
+          secrules: res.secrules,
           isLoaded: true,
           total: res.total,
           pageSize: limit,
-          current: page,
         });
       })
       .catch((error) => {
@@ -184,6 +206,7 @@ class Images extends Component {
   };
   onPaginationChange = (e) => {
     console.log("onPaginationChange", e);
+    console.log("onPaginationChange-pageSize", this.state.pageSize);
     this.loadData(e, this.state.pageSize);
   };
   onShowSizeChange = (current, pageSize) => {
@@ -194,17 +217,39 @@ class Images extends Component {
   render() {
     return (
       <Card
-        title={"Image Manage Panel" + "(Total: " + this.state.total + ")"}
+        title={
+          "Security Group Rules Manage Panel" +
+          "(Total: " +
+          this.state.total +
+          ")"
+        }
         extra={
-          <Button type="primary" size="small" onClick={this.createImages}>
-            Create
-          </Button>
+          <div>
+            <Button
+              // style={{ margin: "0 1rem" }}
+              type="primary"
+              size="small"
+              onClick={this.createSecrules}
+            >
+              Create
+            </Button>
+            <Button
+              style={{
+                marginLeft: "10px",
+              }}
+              type="primary"
+              size="small"
+              onClick={this.listSecgroups}
+            >
+              Return
+            </Button>
+          </div>
         }
       >
         <DataTable
           rowKey="ID"
           columns={this.columns}
-          dataSource={this.state.images}
+          dataSource={this.state.secrules}
           bordered
           total={this.state.total}
           pageSize={this.state.pageSize}
@@ -218,4 +263,4 @@ class Images extends Component {
     );
   }
 }
-export default Images;
+export default Secrules;

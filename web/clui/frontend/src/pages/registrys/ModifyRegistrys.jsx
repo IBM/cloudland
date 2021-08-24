@@ -11,7 +11,7 @@ import {
   createRegApi,
   getRegInforById,
   editRegInfor,
-} from "../../api/registrys";
+} from "../../service/registrys";
 import "./registrys.css";
 const layoutButton = {
   labelCol: { span: 8 },
@@ -20,7 +20,6 @@ const layoutButton = {
 const layoutForm = {
   labelCol: { span: 6 },
   wrapperCol: { span: 10 },
-  LayoutType: "horizontal",
 };
 class ModifyRegistrys extends Component {
   constructor(props) {
@@ -92,13 +91,13 @@ class ModifyRegistrys extends Component {
       <Card
         title={this.state.isShowEdit ? "Edit Registry" : "Create Registry"}
         extra={
-          <Button type="primary" onClick={this.listRegistrys}>
+          <Button type="primary" size="small" onClick={this.listRegistrys}>
             Return
           </Button>
         }
       >
         <Form
-          layout={{ ...layoutForm.LayoutType }}
+          layout="horizontal"
           wrapperCol={{ ...layoutForm.wrapperCol }}
           onSubmit={(e) => this.handleSubmit(e)}
         >

@@ -12,30 +12,11 @@ SPDX-License-Identifier: Apache-2.0
 .ant-col ant-col-6 ant-col-offset-4 ant-form-item-label {
   margin-right: 8px;
 }
+
 .actionStyle {
   margin-top: 5px;
 }
-/* .ant-btn-group > .ant-btn:first-child:not(:last-child),
-.ant-btn-group > span:first-child:not(:last-child) > .ant-btn {
-  /* display: none !important; */
-/* } */
 
-/* .ant-btn-group .ant-btn + .ant-btn,
-.ant-btn + .ant-btn-group,
-.ant-btn-group span + .ant-btn,
-.ant-btn-group .ant-btn + span,
-.ant-btn-group > span + span,
-.ant-btn-group + .ant-btn,
-.ant-btn-group + .ant-btn-group {
-  /* margin-left: 0px !important; */
-/* border-radius: 4px; */
-/* height: 24px; */
-/* border-radius: 4px; */
-/* margin: 5px !important; */
-/* border: none; */
-
-/* margin-right: 0px; */
-/* } */
 .ant-btn .anticon {
   transform: rotate(90deg);
 }
@@ -45,11 +26,6 @@ SPDX-License-Identifier: Apache-2.0
   padding: 5px !important;
 }
 
-/* .ant-table-tbody > tr > td {
-  padding: 8px 8px !important;
-  word-break: break-word !important;
-} */
-
 .ant-table-fixed {
   table-layout: auto;
 }
@@ -58,7 +34,3 @@ SPDX-License-Identifier: Apache-2.0
   word-wrap: break-word;
   word-break: break-all;
 }
-/* td > tr > .ant-table-tbody {
-  word-wrap: break-word;
-  word-break: break-all;
-} */

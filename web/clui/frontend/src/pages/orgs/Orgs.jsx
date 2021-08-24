@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import { Card, Table, Button, Popconfirm } from "antd";
-import { orgsListApi } from "../../api/orgs";
+import { orgsListApi } from "../../service/orgs";
 const columns = [
   {
     title: "ID",
@@ -34,12 +34,12 @@ const columns = [
             Edit
           </Button>
           <Popconfirm
-            title="确定删除此项?"
+            title="Are you sure to delete?"
             onCancel={() => {
-              console.log("用户取消删除");
+              console.log("cancelled");
             }}
             onConfirm={() => {
-              console.log("用户确认删除");
+              console.log("confirmed");
               //此处调用api接口进行相关操作
             }}
           >
@@ -68,6 +68,7 @@ class Orgs extends Component {
         _this.setState({
           orgs: res.orgs,
           isLoaded: true,
+          total: res.total,
         });
       })
       .catch((error) => {
@@ -80,7 +81,9 @@ class Orgs extends Component {
   render() {
     return (
       <Card
-        title="Organization Manage Panel"
+        title={
+          "Organization Manage Panel" + "(Total: " + this.state.total + ")"
+        }
         extra={
           <Button
             type="primary"

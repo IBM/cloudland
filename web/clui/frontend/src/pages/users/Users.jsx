@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import { Card, Table, Button, Popconfirm } from "antd";
-import { userListApi } from "../../api/users";
+import { userListApi } from "../../service/users";
 const columns = [
   {
     title: "ID",
@@ -34,12 +34,12 @@ const columns = [
             Edit
           </Button>
           <Popconfirm
-            title="确定删除此项?"
+            title="Are you sure to delete?"
             onCancel={() => {
-              console.log("用户取消删除");
+              console.log("Canceled");
             }}
             onConfirm={() => {
-              console.log("用户确认删除");
+              console.log("confirmed");
               //此处调用api接口进行相关操作
             }}
           >
@@ -59,10 +59,11 @@ class Users extends Component {
     this.state = {
       users: [],
       isLoaded: false,
+      total: 0,
     };
   }
   //组件初始化的时候执行
-  componentDidMount() {
+  componentWillMount() {
     const _this = this;
     console.log("componentDidMount:", this);
     userListApi()
@@ -70,6 +71,7 @@ class Users extends Component {
         _this.setState({
           users: res.users,
           isLoaded: true,
+          total: res.total,
         });
         console.log(res);
       })
@@ -83,7 +85,7 @@ class Users extends Component {
   render() {
     return (
       <Card
-        title="Users"
+        title={"Users" + "(Total: " + this.state.total + ")"}
         extra={
           <Button
             type="primary"

@@ -8,7 +8,7 @@ SPDX-License-Identifier: Apache-2.0
 import React from "react";
 import ReactDOM from "react-dom";
 import {
-  HashRouter as Router,
+  BrowserRouter as Router,
   Switch,
   Route,
   Redirect,

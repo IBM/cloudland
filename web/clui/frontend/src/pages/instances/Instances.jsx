@@ -11,28 +11,23 @@ import {
   Table,
   Button,
   Popconfirm,
-  Pagination,
   Row,
   Col,
   Menu,
   Dropdown,
   message,
-  Modal,
+  Tooltip,
 } from "antd";
 import {
   insListApi,
   delInsInfor,
   getInsInforById,
   editInsInfor,
-} from "../../api/instances";
-import { hypersListApi } from "../../api/hypers";
-import InstModal from "../../components/InstModal/InstModal";
+} from "../../service/instances";
+import DataTable from "../../components/DataTable/DataTable";
+
+import InstModal from "./InstModal";
 import "./instances.css";
-import { flavorsListApi } from "../../api/flavors";
-const layout = {
-  labelCol: { span: 8 },
-  wrapperCol: { span: 16 },
-};
 
 class Instances extends Component {
   constructor(props) {
@@ -50,6 +45,8 @@ class Instances extends Component {
       visible: false,
       everyData: {},
       menuKey: "",
+      flag: "",
+      action: "",
     };
   }
 
@@ -60,66 +57,70 @@ class Instances extends Component {
       width: 60,
       align: "center",
       dataIndex: "ID",
-
-      //render: (txt, record, index) => index + 1,
     },
     {
       title: "HostName",
       dataIndex: "Hostname",
-      // width: 110,
       align: "center",
     },
     {
       title: "Flavor",
       dataIndex: "Flavor.Name",
-      // width: 110,
       align: "center",
     },
     {
       title: "Image",
       dataIndex: "Image.Name",
-      // width: 90,
       align: "center",
     },
     {
       title: "IP Address",
-      dataIndex: "Interfaces[0].Address.Address",
-      // width: 150,
+      dataIndex: "Interfaces",
+      key: Math.random(),
       align: "center",
+      render: (Interfaces) => (
+        <span>
+          {Interfaces.map((iface) => {
+            return iface.Address.Address + " ";
+          })}
+        </span>
+      ),
     },
     {
       title: "Console",
       dataIndex: "",
-      // width: 90,
       align: "center",
     },
     {
       title: "Status",
-      dataIndex: "Status",
-      // width: 90,
+      // dataIndex: "Status",
       align: "center",
+      width: "60px",
+      render: (record) => {
+        return (
+          <Tooltip title={record.Reason}>
+            <span style={{ color: "#1890ff" }}>{record.Status}</span>
+          </Tooltip>
+        );
+      },
     },
     {
       title: "Hyper",
       dataIndex: "Hyper",
-      // width: 80,
       align: "center",
     },
     {
       title: "Owner",
-      dataIndex: "Interfaces[0].Secgroups[0].Name",
-      // width: 80,
+      dataIndex: "OwnerInfo.name",
       align: "center",
     },
     {
       title: "Zone",
       dataIndex: "Zone.Name",
-      // width: 80,
       align: "center",
     },
     {
       title: "Action",
-      // width: "180",
       align: "center",
       render: (txt, record, index) => {
         return (
@@ -135,15 +136,13 @@ class Instances extends Component {
               Edit
             </Dropdown.Button>
             <Popconfirm
-              title="确定删除此项?"
+              title="Are you sure to delete?"
               onCancel={() => {
-                console.log("用户取消删除");
+                console.log("cancelled");
               }}
               onConfirm={() => {
                 console.log("onClick-delete:", record);
-                //this.props.history.push("/registrys/new/" + record.ID);
                 delInsInfor(record.ID).then((res) => {
-                  //const _this = this;
                   message.success(res.Msg);
                   this.loadData(this.state.current, this.state.pageSize);
 
@@ -180,30 +179,60 @@ class Instances extends Component {
       <Menu.Item key="stopVm">Stop VM</Menu.Item>
     </Menu>
   );
-  // showModal = ({ key }) => {
-  //   console.log("showModal-this", key);
-  //   this.setState({
-  //     visible: !this.state.visible,
-  //   });
+
   handleModal = (id, { key }) => {
-    // this.stopPropagation(e);
     console.log("handleModal-key", key);
     this.handleChange(id);
     console.log("handleModal", id);
     if (
       key === "changeHostname" ||
       key === "migrateIns" ||
-      key === "resizeIns" ||
-      key === "changeStatus"
+      key === "resizeIns"
     ) {
       this.setState({
         visible: !this.state.visible,
       });
+    } else if (key === "changeStatus") {
+      this.setState({
+        visible: !this.state.visible,
+        flag: "ChangeStatus",
+      });
     } else if (key === "startVm") {
-      message.success("Start VM successfully");
+      this.setState(
+        {
+          flag: "ChangeStatus",
+          action: "start",
+        },
+        () => {
+          insListApi({ flag: this.state.flag, action: this.state.action })
+            .then((res) => {
+              console.log("startVm", res);
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+          message.success("Start VM successfully");
+        }
+      );
     } else {
-      message.success("Stop VM successfully");
+      this.setState(
+        {
+          flag: "ChangeStatus",
+          action: "shutdown",
+        },
+        () => {
+          insListApi({ flag: this.state.flag, action: this.state.action })
+            .then((res) => {
+              console.log("stopVm", res);
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+          message.success("Stop VM successfully");
+        }
+      );
     }
+
     if (key) {
       switch (key) {
         case "changeHostname":
@@ -268,7 +297,6 @@ class Instances extends Component {
         _this.setState({
           instances: res.instances,
           isLoaded: true,
-
           total: res.total,
         });
       })
@@ -327,6 +355,15 @@ class Instances extends Component {
         });
       });
   };
+  onPaginationChange = (e) => {
+    console.log("onPaginationChange", e);
+    this.loadData(e, this.state.pageSize);
+  };
+  onShowSizeChange = (current, pageSize) => {
+    console.log("onShowSizeChange:", current, pageSize);
+    //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
+    this.toSelectchange(current, pageSize);
+  };
 
   createInstance = () => {
     this.props.history.push("/instances/new");
@@ -350,7 +387,7 @@ class Instances extends Component {
         label: "Hostname",
         name: "hostname",
         field: "Change Hostname",
-        placeholder: "请输入文章名称",
+        placeholder: "Please input Hostname",
         width: "90%",
         initialValue: data.Hostname,
         id: data.ID,
@@ -375,11 +412,11 @@ class Instances extends Component {
         id: data.ID,
       },
       {
-        type: "INPUT",
+        type: "SELECT",
         label: "Action",
         name: "action",
         field: "Change Status",
-        placeholder: "请输入文章名称",
+        placeholder: "Please Select Status",
         width: "90%",
         // disabled:true,
         initialValue: data.Status,
@@ -461,7 +498,7 @@ class Instances extends Component {
   };
 
   render() {
-    const { selectedRowKeys, data, everyData } = this.state;
+    const { data, everyData } = this.state;
     console.log(data, "data");
     return (
       <div>
@@ -483,35 +520,19 @@ class Instances extends Component {
             >
               <Row>
                 <Col span={24}>
-                  <Table
+                  <DataTable
                     rowKey="ID"
                     columns={this.columns}
-                    wrapperCol={{ ...layout.wrapperCol, offset: 8 }}
-                    bordered
-                    tableLayout="auto"
                     dataSource={this.state.instances}
-                    // onChange={this.handleTableChange}
-                    pagination={{
-                      //pagination
-                      total: this.state.total, //total count
-                      defaultPageSize: this.state.pageSize, //default pageSize
-                      showSizeChanger: true, //是否显示可以设置几条一页的选项
-                      onShowSizeChange: (current, pageSize) => {
-                        console.log("onShowSizeChange:", current, pageSize);
-                        //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
-                        this.toSelectchange(current, pageSize);
-                      },
-
-                      onChange: (current) => {
-                        this.loadData(current, this.state.pageSize);
-                      },
-                      showTotal: () => {
-                        return "Total " + this.state.total + " items";
-                      },
-                      pageSizeOptions: this.state.pageSizeOptions,
-                    }}
-                    scroll={{ x: 400 }}
-                  ></Table>
+                    bordered
+                    total={this.state.total}
+                    pageSize={this.state.pageSize}
+                    // scroll={{ y: 600, x: 600 }}
+                    onPaginationChange={this.onPaginationChange}
+                    onShowSizeChange={this.onShowSizeChange}
+                    pageSizeOptions={this.state.pageSizeOptions}
+                    loading={!this.state.isLoaded}
+                  />
                   <InstModal
                     onRef={this.onModalRef}
                     visible={this.state.visible}

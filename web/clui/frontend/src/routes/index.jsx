@@ -9,6 +9,7 @@ import Dashboard from "../pages/dashboard/Dashboard";
 import Flavors from "../pages/flavors/Flavors";
 import CreateFlavors from "../pages/flavors/CreateFlavors";
 import Floatingips from "../pages/floatingips/Floatingips";
+import CreateFloatingips from "../pages/floatingips/CreateFloatingips";
 import Gateways from "../pages/gateways/Gateways";
 import Images from "../pages/images/Images";
 import CreateImages from "../pages/images/CreateImages";
@@ -17,16 +18,22 @@ import ModifyInstances from "../pages/instances/ModifyInstances";
 import Keys from "../pages/keys/Keys";
 import Login from "../pages/login/Login";
 import Openshifts from "../pages/openshifts/Openshifts";
+import ModifyOpenshifts from "../pages/openshifts/ModifyOpenshifts";
+
 import Orgs from "../pages/orgs/Orgs";
 
 import PageNotFound from "../pages/PageNotFound";
 import Registrys from "../pages/registrys/Registrys";
 import ModifyRegistrys from "../pages/registrys/ModifyRegistrys";
 import Secgroups from "../pages/secgroups/Secgroups";
-import Secrules from "../pages/secgroups/secrules/Secrules";
+import Secrules from "../pages/secrules/Secrules";
+import ModifySecrules from "../pages/secrules/ModifySecrules";
 import Subnets from "../pages/subnets/Subnets";
 import Users from "../pages/users/Users";
 import Hypers from "../pages/hypers/Hypers";
+import ModifySubnets from "../pages/subnets/ModifySubnets";
+import ModifyGateways from "../pages/gateways/ModifyGateways";
+import ModifySecgroups from "../pages/secgroups/ModifySecgroups";
 export const InitRoutes = [
   {
     path: "/login",
@@ -38,6 +45,7 @@ export const InitRoutes = [
     component: PageNotFound,
   },
 ];
+
 export const mainRoutes = [
   {
     path: "/dashboard",
@@ -49,7 +57,7 @@ export const mainRoutes = [
     path: "/users",
     component: Users,
     exact: true,
-    title: "Users",
+    title: "User",
     icon: "user",
     isShow: true,
     item: "auth",
@@ -57,7 +65,7 @@ export const mainRoutes = [
   {
     path: "/orgs",
     component: Orgs,
-    title: "Organizations",
+    title: "Organization",
     icon: "team",
     exact: true,
     isShow: true,
@@ -66,15 +74,15 @@ export const mainRoutes = [
   {
     path: "/keys",
     component: Keys,
+    title: "Key",
     exact: true,
     isShow: true,
     item: "auth",
-    title: "Keys",
   },
   {
     path: "/instances",
     component: Instances,
-    title: "Instances",
+    title: "Instance",
     exact: true,
     isShow: true,
     item: "compute",
@@ -82,14 +90,13 @@ export const mainRoutes = [
   {
     path: "/instances/new/:id?",
     component: ModifyInstances,
-    exact: true,
     isShow: false,
     item: "compute",
   },
   {
     path: "/flavors",
     component: Flavors,
-    title: "Flavors",
+    title: "Flavor",
     exact: true,
     isShow: true,
     item: "compute",
@@ -97,14 +104,13 @@ export const mainRoutes = [
   {
     path: "/flavors/new",
     component: CreateFlavors,
-    exact: true,
     isShow: false,
     item: "compute",
   },
   {
     path: "/images",
     component: Images,
-    title: "Images",
+    title: "Image",
     exact: true,
     isShow: true,
     item: "compute",
@@ -112,22 +118,27 @@ export const mainRoutes = [
   {
     path: "/images/new",
     component: CreateImages,
-    exact: true,
     isShow: false,
     item: "compute",
   },
   {
     path: "/openshifts",
     component: Openshifts,
-    title: "Openshifts",
+    title: "Openshift",
     exact: true,
     isShow: true,
     item: "platform",
   },
   {
+    path: "/openshifts/new/:id?",
+    component: ModifyOpenshifts,
+    isShow: false,
+    item: "platform",
+  },
+  {
     path: "/registrys",
     component: Registrys,
-    title: "Registrys",
+    title: "Registry",
     exact: true,
     isShow: true,
     item: "platform",
@@ -135,7 +146,6 @@ export const mainRoutes = [
   {
     path: "/registrys/new/:id?",
     component: ModifyRegistrys,
-    exact: true,
     isShow: false,
     item: "platform",
   },
@@ -143,48 +153,80 @@ export const mainRoutes = [
   {
     path: "/subnets",
     component: Subnets,
-    title: "Subnets",
+    title: "Subnet",
     exact: true,
     isShow: true,
+    item: "network",
+  },
+  {
+    path: "/subnets/new/:id?",
+    component: ModifySubnets,
+    isShow: false,
     item: "network",
   },
   {
     path: "/floatingips",
     component: Floatingips,
-    title: "FloatingIps",
+    title: "FloatingIp",
     exact: true,
     isShow: true,
+    item: "network",
+  },
+  {
+    path: "/floatingips/new/:id?",
+    component: CreateFloatingips,
+    isShow: false,
     item: "network",
   },
   {
     path: "/gateways",
     component: Gateways,
-    title: "Gateways",
+    title: "Gateway",
     exact: true,
     isShow: true,
     item: "network",
   },
   {
+    path: "/gateways/new/:id?",
+    component: ModifyGateways,
+    isShow: false,
+    item: "network",
+  },
+  {
     path: "/secgroups",
-    title: "SecurityGroups",
+    title: "SecurityGroup",
     component: Secgroups,
     exact: true,
     isShow: true,
     item: "network",
   },
   {
+    path: "/secgroups/new/:id?",
+    component: ModifySecgroups,
+    isShow: false,
+    item: "network",
+  },
+
+  {
     path: "/secgroups/:id/secrules",
     component: Secrules,
-    //exact: true,
+    exact: true,
+    isShow: false,
+    item: "network",
+  },
+  {
+    path: "/secgroups/:id/secrules/new/:id?",
+    component: ModifySecrules,
     isShow: false,
     item: "network",
   },
   {
     path: "/hypers",
     component: Hypers,
-    title: "Hypers",
+    title: "Hyper",
     exact: true,
     isShow: true,
     item: "admin",
   },
 ];
+// export default (InitRoutes, mainRoutes);

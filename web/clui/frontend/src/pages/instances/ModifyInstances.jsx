@@ -21,13 +21,13 @@ import {
   createInsApi,
   getInsInforById,
   editInsInfor,
-} from "../../api/instances";
-import { hypersListApi } from "../../api/hypers";
-import { imagesListApi } from "../../api/images";
-import { flavorsListApi } from "../../api/flavors";
-import { secgroupsListApi } from "../../api/secgroups";
-import { subnetsListApi } from "../../api/subnets";
-import { keysListApi } from "../../api/keys";
+} from "../../service/instances";
+import { hypersListApi } from "../../service/hypers";
+import { imagesListApi } from "../../service/images";
+import { flavorsListApi } from "../../service/flavors";
+import { secgroupsListApi } from "../../service/secgroups";
+import { subnetsListApi } from "../../service/subnets";
+import { keysListApi } from "../../service/keys";
 import "./instances.css";
 const layoutButton = {
   labelCol: { span: 8 },
@@ -36,7 +36,6 @@ const layoutButton = {
 const layoutForm = {
   labelCol: { span: 6 },
   wrapperCol: { span: 10 },
-  LayoutType: "horizontal",
 };
 const { Option } = Select;
 const children = [];
@@ -146,17 +145,6 @@ class ModifyInstances extends Component {
               console.log("handleSubmit-error:", err);
             });
         }
-        // console.log("values!!", values);
-        // values.secgroups = `${values.secgroups}`;
-        // values.keys = `${values.keys}`;
-        // createInsApi(values)
-        //   .then((res) => {
-        //     console.log("handleSubmit-res-createInsApi:", res);
-        //     this.props.history.push("/instances");
-        //   })
-        //   .catch((err) => {
-        //     console.log("handleSubmit-error:", err);
-        //   });
       } else {
         message.error(" input wrong information");
       }
@@ -263,16 +251,16 @@ class ModifyInstances extends Component {
       <Card
         title={this.state.isShowEdit ? "Edit Instance" : "Create Instance"}
         extra={
-          <Button type="primary" onClick={this.listInstances}>
+          <Button type="primary" size="small" onClick={this.listInstances}>
             Return
           </Button>
         }
       >
         <Form
+          layout="horizontal"
           onSubmit={(e) => {
             this.handleSubmit(e);
           }}
-          //   layout={{ ...layoutForm.LayoutType }}
           wrapperCol={{ ...layoutForm.wrapperCol }}
         >
           <Form.Item
@@ -292,7 +280,7 @@ class ModifyInstances extends Component {
                 ref={(c) => {
                   this.hostname = c;
                 }}
-                disabled={this.state.isShowEdit && !this.state.isChangeHostname}
+                disabled={this.state.isShowEdit}
                 // onChange={(e) => this.setState({ hostname: e.target.value })}
               />
             )}
@@ -301,7 +289,6 @@ class ModifyInstances extends Component {
             label="Hyper"
             name="hyper"
             labelCol={{ ...layoutForm.labelCol }}
-            hidden={this.state.isChangeHostname}
           >
             {this.props.form.getFieldDecorator("hyper", {
               rules: [],
@@ -333,7 +320,7 @@ class ModifyInstances extends Component {
             label="Zone"
             name="zone"
             labelCol={{ ...layoutForm.labelCol }}
-            hidden={this.state.isShowEdit || this.state.isChangeHostname}
+            hidden={this.state.isShowEdit}
           >
             {this.props.form.getFieldDecorator("zone", {
               rules: [],
@@ -355,7 +342,7 @@ class ModifyInstances extends Component {
             label="Created At"
             name="createdAt"
             labelCol={{ ...layoutForm.labelCol }}
-            hidden={!this.state.isShowEdit || this.state.isChangeHostname}
+            hidden={!this.state.isShowEdit}
           >
             {this.props.form.getFieldDecorator("createdAt", {
               rules: [],
@@ -366,7 +353,7 @@ class ModifyInstances extends Component {
             label="Updated At"
             name="updatedAt"
             labelCol={{ ...layoutForm.labelCol }}
-            hidden={!this.state.isShowEdit || this.state.isChangeHostname}
+            hidden={!this.state.isShowEdit}
           >
             {this.props.form.getFieldDecorator("updatedAt", {
               rules: [],
@@ -379,7 +366,7 @@ class ModifyInstances extends Component {
             name="count"
             labelCol={{ ...layoutForm.labelCol }}
             // wrapperCol={{ ...layoutButton.wrapperCol }}
-            hidden={this.state.isShowEdit || this.state.isChangeHostname}
+            hidden={this.state.isShowEdit}
           >
             {this.props.form.getFieldDecorator("count", {
               rules: [
@@ -394,7 +381,7 @@ class ModifyInstances extends Component {
             })(
               <InputNumber
                 min={1}
-                name="count"
+                // defaultValue={3}
                 // onChange={(e) => this.setState({ count: e.target.value })}
               />
             )}
@@ -406,7 +393,11 @@ class ModifyInstances extends Component {
             hidden={this.state.isShowEdit}
           >
             {this.props.form.getFieldDecorator("image", {
-              rules: [],
+              rules: [
+                {
+                  required: !this.state.isShowEdit,
+                },
+              ],
             })(
               <Select
                 disabled={this.state.isShowEdit}
@@ -427,7 +418,6 @@ class ModifyInstances extends Component {
             name="flavor"
             label="Flavor"
             labelCol={{ ...layoutForm.labelCol }}
-            hidden={this.state.isChangeHostname}
           >
             {this.props.form.getFieldDecorator("flavor", {
               rules: [
@@ -458,10 +448,14 @@ class ModifyInstances extends Component {
             name="primary"
             label="Primary Interface"
             labelCol={{ ...layoutForm.labelCol }}
-            hidden={this.state.isShowEdit || this.state.isChangeHostname}
+            hidden={this.state.isShowEdit}
           >
             {this.props.form.getFieldDecorator("primary", {
-              rules: [],
+              rules: [
+                {
+                  required: !this.state.isShowEdit,
+                },
+              ],
             })(
               <Select disabled={this.state.isShowEdit}>
                 {this.state.subnets.map((val) => {
@@ -485,7 +479,7 @@ class ModifyInstances extends Component {
             name="primaryID"
             label="Primary IP"
             labelCol={{ ...layoutForm.labelCol }}
-            hidden={this.state.isShowEdit || this.state.isChangeHostname}
+            hidden={this.state.isShowEdit}
           >
             {this.props.form.getFieldDecorator("primaryID", {
               rules: [],
@@ -500,7 +494,7 @@ class ModifyInstances extends Component {
             name="primaryMac"
             label="Primary Mac"
             labelCol={{ ...layoutForm.labelCol }}
-            hidden={this.state.isShowEdit || this.state.isChangeHostname}
+            hidden={this.state.isShowEdit}
           >
             {this.props.form.getFieldDecorator("primaryMac", {
               rules: [],
@@ -515,7 +509,7 @@ class ModifyInstances extends Component {
             name="secondary"
             label="Secondary Interface"
             labelCol={{ ...layoutForm.labelCol }}
-            hidden={this.state.isShowEdit || this.state.isChangeHostname}
+            hidden={this.state.isShowEdit}
           >
             {this.props.form.getFieldDecorator("secondary", {
               rules: [],
@@ -569,7 +563,7 @@ class ModifyInstances extends Component {
             label="Interfaces"
             name="interfaces"
             labelCol={{ ...layoutForm.labelCol }}
-            hidden={!this.state.isShowEdit || this.state.isChangeHostname}
+            hidden={!this.state.isShowEdit}
           >
             {this.props.form.getFieldDecorator("interfaces", {
               rules: [],
@@ -594,7 +588,7 @@ class ModifyInstances extends Component {
           <Form.Item
             label="Keys"
             labelCol={{ ...layoutForm.labelCol }}
-            hidden={this.state.isShowEdit || this.state.isChangeHostname}
+            hidden={this.state.isShowEdit}
           >
             <Row gutter={8}>
               <Col span={19}>
@@ -624,7 +618,7 @@ class ModifyInstances extends Component {
             name="userdata"
             label="User Data"
             labelCol={{ ...layoutForm.labelCol }}
-            hidden={this.state.isShowEdit || this.state.isChangeHostname}
+            hidden={this.state.isShowEdit}
           >
             {this.props.form.getFieldDecorator("userdata", {
               rules: [],
@@ -642,7 +636,7 @@ class ModifyInstances extends Component {
             wrapperCol={{ ...layoutButton.wrapperCol, offset: 8 }}
             labelCol={{ span: 6 }}
           >
-            {this.state.isShowEdit || this.state.isChangeHostname ? (
+            {this.state.isShowEdit ? (
               <Button type="primary" htmlType="submit">
                 Update Instance
               </Button>
