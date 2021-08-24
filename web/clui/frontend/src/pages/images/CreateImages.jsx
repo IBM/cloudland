@@ -7,8 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import { Form, Card, Input, Select, Button, message } from "antd";
-import { insListApi } from "../../api/instances";
-import { createImgApi } from "../../api/images";
+import { insListApi } from "../../service/instances";
+import { createImgApi } from "../../service/images";
 const layoutButton = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },
@@ -16,7 +16,6 @@ const layoutButton = {
 const layoutForm = {
   labelCol: { span: 6 },
   wrapperCol: { span: 10 },
-  LayoutType: "horizontal",
 };
 class CreateImages extends Component {
   constructor(props) {
@@ -30,7 +29,7 @@ class CreateImages extends Component {
   listImages = () => {
     this.props.history.push("/images");
   };
-  componentDidMount() {
+  componentWillMount() {
     insListApi()
       .then((res) => {
         const _this = this;
@@ -77,14 +76,14 @@ class CreateImages extends Component {
       <Card
         title={"Create New Image"}
         extra={
-          <Button type="primary" onClick={this.listImages}>
+          <Button type="primary" size="small" onClick={this.listImages}>
             Return
           </Button>
         }
       >
         <Form
           onSubmit={(e) => this.handleSubmit(e)}
-          //   layout={{ ...layoutForm.LayoutType }}
+          layout="horizontal"
           wrapperCol={{ ...layoutForm.wrapperCol }}
         >
           <Form.Item

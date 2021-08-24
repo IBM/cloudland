@@ -9,10 +9,6 @@ SPDX-License-Identifier: Apache-2.0
   background-color: #001529;
   color: white;
 }
-.ant-tooltip-open {
-  width: 350px;
-  color: white;
-}
 .registryContent {
   overflow: hidden;
   textoverflow: ellipsis;

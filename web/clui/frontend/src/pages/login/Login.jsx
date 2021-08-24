@@ -10,7 +10,7 @@ import { Card, Form, Icon, Input, Button, Checkbox, message } from "antd";
 import logoLoginImg from "../../assets/img/cland.png";
 import "./Login.css";
 import { setToken } from "../../utils/auth";
-import { loginApi } from "../../api/auth";
+import { loginApi } from "../../service/auth";
 class Login extends Component {
   handleSubmit = (e) => {
     e.preventDefault();
@@ -27,11 +27,11 @@ class Login extends Component {
             if (res.token) {
               console.log("res:", res);
               setToken(res.token);
-              message.info("登陆成功");
+              message.info("Login Successfully");
               this.props.history.push("/");
             } else {
               //message.info(res.ErrorMsg);
-              message.error("登录失败");
+              message.error("Failure to Login");
             }
             console.log(res);
           })

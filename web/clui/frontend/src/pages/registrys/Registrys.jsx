@@ -6,11 +6,9 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
-import { Card, Table, Button, Popconfirm, message } from "antd";
-import { regListApi, delRegInfor } from "../../api/registrys";
-// import { Pagination } from "../../components/Pagination";
-// import "./registrys.css";
-//const columns = [];
+import { Card, Button, Popconfirm, message } from "antd";
+import { regListApi, delRegInfor } from "../../service/registrys";
+import DataTable from "../../components/DataTable/DataTable";
 
 class Registrys extends Component {
   constructor(props) {
@@ -83,6 +81,9 @@ class Registrys extends Component {
         return (
           <div>
             <Button
+              style={{
+                marginTop: "10px",
+              }}
               type="primary"
               size="small"
               //onClick={() => console.log("onClick:", record)}
@@ -94,9 +95,9 @@ class Registrys extends Component {
               Edit
             </Button>
             <Popconfirm
-              title="确定删除此项?"
+              title="Are you sure to delete?"
               onCancel={() => {
-                console.log("用户取消删除");
+                console.log("cancelled");
               }}
               onConfirm={() => {
                 console.log("onClick-delete:", record);
@@ -111,7 +112,11 @@ class Registrys extends Component {
               }}
             >
               <Button
-                style={{ margin: "0 1rem" }}
+                style={{
+                  margin: "5px",
+                  marginRight: "0px",
+                  marginTop: "10px",
+                }}
                 type="danger"
                 size="small"
                 onClick={() => {
@@ -200,44 +205,39 @@ class Registrys extends Component {
         });
       });
   };
+  onPaginationChange = (e) => {
+    console.log("onPaginationChange", e);
+    this.loadData(e, this.state.pageSize);
+  };
+  onShowSizeChange = (current, pageSize) => {
+    console.log("onShowSizeChange:", current, pageSize);
+    //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
+    this.toSelectchange(current, pageSize);
+  };
 
   render() {
     return (
       <Card
-        title="Registry Manage Panel"
+        title={"Registry Manage Panel" + "(Total: " + this.state.total + ")"}
         extra={
-          <Button type="primary" onClick={this.createRegistrys}>
+          <Button type="primary" size="small" onClick={this.createRegistrys}>
             Create
           </Button>
         }
       >
-        <Table
+        <DataTable
           rowKey="ID"
           columns={this.columns}
           dataSource={this.state.registrys}
           bordered
-          pagination={{
-            //pagination
-            total: this.state.total, //total count
-            defaultPageSize: this.state.pageSize, //default pageSize
-            showSizeChanger: true, //是否显示可以设置几条一页的选项
-            onShowSizeChange: (current, pageSize) => {
-              console.log("onShowSizeChange:", current, pageSize);
-              //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
-              this.toSelectchange(current, pageSize);
-            },
-
-            onChange: (current) => {
-              this.loadData(current, this.state.pageSize);
-            },
-            showTotal: () => {
-              return "Total " + this.state.total + " items";
-            },
-            pageSizeOptions: this.state.pageSizeOptions,
-          }}
+          total={this.state.total}
+          pageSize={this.state.pageSize}
           scroll={{ y: 600 }}
+          onPaginationChange={this.onPaginationChange}
+          onShowSizeChange={this.onShowSizeChange}
+          pageSizeOptions={this.state.pageSizeOptions}
           loading={!this.state.isLoaded}
-        ></Table>
+        />
       </Card>
     );
   }

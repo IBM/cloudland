@@ -14,6 +14,7 @@ export function setToken(token) {
 }
 export function isLogined() {
   if (sessionStorage.getItem("token")) {
+    console.log("sessionStorage.getItem", sessionStorage.getItem("token"));
     return true;
   }
   return false;

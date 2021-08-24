@@ -6,9 +6,9 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
+
 import { Card, Table, Button, Popconfirm, message } from "antd";
 import { userListApi, delUserInfor } from "../../api/users";
-
 class Users extends Component {
   constructor(props) {
     super(props);
@@ -45,10 +45,10 @@ class Users extends Component {
       render: (txt, record, index) => {
         return (
           <div>
-            <Button 
-               type="primary" 
-               size="small"
-               onClick={() => {
+            <Button
+              type="primary"
+              size="small"
+              onClick={() => {
                 this.props.history.push("/users/new/" + record.ID);
               }}
             >
@@ -154,13 +154,9 @@ class Users extends Component {
   render() {
     return (
       <Card
-        title="Users"
+        title={"Users" + "(Total: " + this.state.total + ")"}
         extra={
-          <Button
-            type="primary"
-            size="small"
-            onClick={this.createUser}
-          >
+          <Button type="primary" size="small" onClick={this.createUser}>
             Create
           </Button>
         }

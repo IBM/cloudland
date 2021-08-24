@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import { Card, Table, Button, Popconfirm } from "antd";
-import { keysListApi } from "../../api/keys";
+import { keysListApi } from "../../service/keys";
 const columns = [
   {
     title: "ID",
@@ -35,12 +35,12 @@ const columns = [
       return (
         <div>
           <Popconfirm
-            title="确定删除此项?"
+            title="Are you sure to delete?"
             onCancel={() => {
-              console.log("用户取消删除");
+              console.log("cancelled");
             }}
             onConfirm={() => {
-              console.log("用户确认删除");
+              console.log("confirmed");
               //此处调用api接口进行相关操作
             }}
           >
@@ -59,9 +59,10 @@ class Keys extends Component {
     this.state = {
       keys: [],
       isLoaded: false,
+      total: 0,
     };
   }
-  componentDidMount() {
+  componentWillMount() {
     const _this = this;
     keysListApi()
       .then((res) => {
@@ -69,6 +70,7 @@ class Keys extends Component {
         _this.setState({
           keys: res.keys,
           isLoaded: true,
+          total: res.total,
         });
       })
       .catch((error) => {
@@ -84,7 +86,7 @@ class Keys extends Component {
   render() {
     return (
       <Card
-        title="Key Manage Panel"
+        title={"Key Manage Panel" + "(Total: " + this.state.total + ")"}
         extra={
           <Button type="primary" size="small" onClick={this.demo}>
             Create

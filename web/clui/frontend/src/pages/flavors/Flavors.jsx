@@ -7,7 +7,9 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import { Card, Table, Button, Popconfirm, message } from "antd";
-import { flavorsListApi, delFlavorInfor } from "../../api/flavors";
+import { flavorsListApi, delFlavorInfor } from "../../service/flavors";
+import { createDispatchHook } from "react-redux";
+import DataTable from "../../components/DataTable/DataTable";
 
 class Flavors extends Component {
   constructor(props) {
@@ -67,9 +69,9 @@ class Flavors extends Component {
         return (
           <div>
             <Popconfirm
-              title="确定删除此项?"
+              title="Are you sure to delete?"
               onCancel={() => {
-                console.log("用户取消删除");
+                console.log("deleted");
               }}
               onConfirm={() => {
                 console.log("onClick-delete:", record);
@@ -159,45 +161,107 @@ class Flavors extends Component {
         });
       });
   };
+  onPaginationChange = (e) => {
+    console.log("onPaginationChange", e);
+    this.loadData(e, this.state.pageSize);
+  };
+  onShowSizeChange = (current, pageSize) => {
+    console.log("onShowSizeChange:", current, pageSize);
+    //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
+    this.toSelectchange(current, pageSize);
+  };
   createFlavors = () => {
     this.props.history.push("/flavors/new");
+  };
+  flavorsFormList = (data) => {
+    console.log("flavors-FormList", data);
+    const flavorsFormList = [
+      {
+        type: "INPUT",
+        label: "Name",
+        name: "name",
+        // field: "Change Hostname",
+        placeholder: "please input flavor name",
+        width: "90%",
+        // initialValue: data.Hostname,
+        // id: data.ID,
+      },
+      {
+        type: "INPUT",
+        label: "CPU",
+        name: "cpu",
+        // field: "Change Hostname",
+        placeholder: "please input flavor cpu",
+        width: "90%",
+        // initialValue: data.Hostname,
+        // id: data.ID,
+      },
+      {
+        type: "INPUT",
+        label: "Memory(M)",
+        name: "memory",
+        // field: "Change Hostname",
+        placeholder: "please input flavor memory",
+        width: "90%",
+        // initialValue: data.Hostname,
+        // id: data.ID,
+      },
+      {
+        type: "INPUT",
+        label: "Disk(G)",
+        name: "disk",
+        // field: "Change Hostname",
+        placeholder: "please input flavor disk",
+        width: "90%",
+        // initialValue: data.Hostname,
+        // id: data.ID,
+      },
+      {
+        type: "INPUT",
+        label: "Swap(G)",
+        name: "swap",
+        // field: "Change Hostname",
+        placeholder: "please input flavor swap",
+        width: "90%",
+        // initialValue: data.Hostname,
+        // id: data.ID,
+      },
+      {
+        type: "INPUT",
+        label: "Ephemeral(G)",
+        name: "ephemeral",
+        // field: "Change Hostname",
+        placeholder: "please input flavor ephemeral",
+        width: "90%",
+        // initialValue: data.Hostname,
+        // id: data.ID,
+      },
+    ];
+    return flavorsFormList;
   };
   render() {
     return (
       <Card
-        title="Flavor Manage Panel"
+        title={"Flavor Manage Panel " + "(Total: " + this.state.total + ")"}
         extra={
-          <Button type="primary" onClick={this.createFlavors}>
+          <Button type="primary" size="small" onClick={this.createFlavors}>
             Create
           </Button>
         }
       >
-        <Table
+        <DataTable
           rowKey="ID"
           columns={this.columns}
-          bordered
           dataSource={this.state.flavors}
-          pagination={{
-            //pagination
-            total: this.state.total, //total count
-            defaultPageSize: this.state.pageSize, //default pageSize
-            showSizeChanger: true, //是否显示可以设置几条一页的选项
-            onShowSizeChange: (current, pageSize) => {
-              console.log("onShowSizeChange:", current, pageSize);
-              //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
-              this.toSelectchange(current, pageSize);
-            },
-
-            onChange: (current) => {
-              this.loadData(current, this.state.pageSize);
-            },
-            showTotal: () => {
-              return "Total " + this.state.total + " items";
-            },
-            pageSizeOptions: this.state.pageSizeOptions,
-          }}
+          bordered
+          total={this.state.total}
+          pageSize={this.state.pageSize}
+          scroll={{ y: 600 }}
+          onPaginationChange={this.onPaginationChange}
+          onShowSizeChange={this.onShowSizeChange}
+          pageSizeOptions={this.state.pageSizeOptions}
           loading={!this.state.isLoaded}
-        ></Table>
+        />
       </Card>
     );
   }
