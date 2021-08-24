@@ -48,7 +48,7 @@ type APIGatewayView struct{
 	Zone    int64
 	Public  string
 	Private string
-	Subnets string
+	Subnets []string
 }
 type APIGatewayPatch struct{
 	Name    string
@@ -728,7 +728,7 @@ func (v *APIGatewayView) List(c *macaron.Context, store session.Store) {
 	return
 }
 
-func (v *APIGatewayView) Delete(c *macaron.Context, store session.Store) (err error) {
+func (v *APIGatewayView) Delete(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {
@@ -916,10 +916,10 @@ func (v *APIGatewayView) Create(c *macaron.Context, store session.Store, apiGate
 		log.Println("Invalid private subnet id, %v", err)
 		priID = 0
 	}
-	s := strings.Split(subnets, ",")
+	//s := strings.Split(subnets, ",")
 	var subnetIDs []int64
-	for i := 0; i < len(s); i++ {
-		sID, err := strconv.Atoi(s[i])
+	for i := 0; i < len(subnets); i++ {
+		sID, err := strconv.Atoi(subnets[i])
 		if err != nil {
 			log.Println("Invalid secondary subnet ID, %v", err)
 			continue

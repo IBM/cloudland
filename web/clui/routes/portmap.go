@@ -329,7 +329,7 @@ func (v *APIPortmapView) List(c *macaron.Context, store session.Store) {
 	})	
 }
 
-func (v *APIPortmapView) Delete(c *macaron.Context, store session.Store) (err error) {
+func (v *APIPortmapView) Delete(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {

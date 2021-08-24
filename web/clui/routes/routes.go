@@ -108,7 +108,7 @@ func New() (m *macaron.Macaron) {
 	m.Delete("/api/users/:id", apiUserView.Delete)
 	m.Get("/users/new", userView.New)
 	m.Post("/users/new", userView.Create)
-	m.Post("/api/users/new", binding.Bind(APIOrgView{}), apiUserView.Create)
+	m.Post("/api/users/new", binding.Bind(APIUserView{}), apiUserView.Create)
 	m.Get("/orgs", orgView.List)
 	m.Get("/api/orgs", apiOrgView.List)
 	m.Get("/orgs/:id", orgView.Edit)
@@ -290,7 +290,9 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 		" ", "%20",
 		"?", "%3F").Replace(
 		strings.TrimSuffix(c.Req.URL.Path, "/"))
-	log.Println(link)
+	if link != "/UpdateTable" {
+		log.Println(link)
+	}
 	c.Data["Link"] = link
 	if login, ok := store.Get("login").(string); ok {
 		// log.Println("$$$$$$$$$$$$$$$$$$", c.Locale.Language())

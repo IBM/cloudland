@@ -616,7 +616,7 @@ func (v *APIOrgView) Patch(c *macaron.Context, store session.Store, apiOrgView A
 
 }
 
-func (v *APIOrgView) Delete(c *macaron.Context, store session.Store) (err error) {
+func (v *APIOrgView) Delete(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
@@ -628,7 +628,7 @@ func (v *APIOrgView) Delete(c *macaron.Context, store session.Store) (err error)
 	}
 	id := c.Params("id")
 	if id == "" {
-		log.Println("ID is empty, %v", err)
+		log.Println("ID is empty")
 		c.JSON(400, map[string]interface{}{
 			"ErrorMsg": "Org id is empty.",
 		})

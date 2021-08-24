@@ -442,7 +442,7 @@ func (a *SubnetAdmin) Delete(ctx context.Context, id int64) (err error) {
 		return
 	}
 	if subnet.Router > 0 {
-		err = fmt.Errorf("Subnet belongs to a gateway")
+		err = fmt.Errorf("Subnet belongs to a gateway.")
 		log.Println("Subnet belongs to a gateway", err)
 		return
 	}
@@ -691,7 +691,7 @@ func (v *SubnetView) List(c *macaron.Context, store session.Store) {
 	c.HTML(200, "subnets")
 }
 
-func (v *APISubnetView) Delete(c *macaron.Context, store session.Store) (err error) {
+func (v *APISubnetView) Delete(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	id := c.Params("id")
 	if id == "" {

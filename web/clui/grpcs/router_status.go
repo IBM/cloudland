@@ -40,14 +40,14 @@ func RouterStatus(ctx context.Context, job *model.Job, args []string) (status st
 	for i := 0; i < len(statusList); i++ {
 		ID, err := strconv.Atoi(statusList[i])
 		if err != nil {
-			log.Println("Invalid instance ID", err)
+			// log.Println("Invalid instance ID", err)
 			continue
 		}
 		gateway := &model.Gateway{Model: model.Model{ID: int64(ID)}}
 		err = db.Take(gateway).Error
 		if (err != nil && gorm.IsRecordNotFoundError(err)) ||
 			(err == nil && gateway.Hyper > 0 && gateway.Hyper != int32(hyperID) && gateway.Peer > 0 && gateway.Peer != int32(hyperID)) {
-			log.Println("Invalid router", err)
+			// log.Println("Invalid router", err)
 		}
 		if err == nil {
 			if gateway.Hyper == -1 {
