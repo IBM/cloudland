@@ -7,10 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import { Form, Card, Input, Select, Button, message } from "antd";
-import {
-  getUserInforById,
-  editUserInfor,
-} from "../../api/users";
+import { getUserInforById, editUserInfor } from "../../service/users";
 import "./users.css";
 const layoutButton = {
   labelCol: { span: 8 },
@@ -19,7 +16,6 @@ const layoutButton = {
 const layoutForm = {
   labelCol: { span: 6 },
   wrapperCol: { span: 10 },
-  LayoutType: "horizontal",
 };
 class ModifyUser extends Component {
   constructor(props) {
@@ -28,16 +24,21 @@ class ModifyUser extends Component {
     this.state = {
       isShowEdit: false,
       currentData: [],
+      members: [],
     };
-
-    getUserInforById(props.match.params.id).then((res) => {
-      console.log("getUserInforById:", res);
-      this.setState({
-        currentData: res,
-        isShowEdit: true,
+    let that = this;
+    if (props.match.params.id) {
+      getUserInforById(props.match.params.id).then((res) => {
+        console.log("getUserInforById-res:", res);
+        that.setState({
+          currentData: res,
+          members: res.Members.filter((item) => {
+            return item.OrgName;
+          }),
+          isShowEdit: true,
+        });
       });
-    });
-    
+    }
   }
 
   listUsers = () => {
@@ -50,13 +51,12 @@ class ModifyUser extends Component {
       if (!err) {
         console.log("handleSubmit-value:", values);
         console.log("提交");
-          //const _this = this;
+        //const _this = this;
         editUserInfor(this.props.match.params.id, values).then((res) => {
-            console.log("editUserInfor:", res);
-        
-            this.props.history.push("/users");
-          });
-        
+          console.log("editUserInfor:", res);
+
+          this.props.history.push("/users");
+        });
       } else {
         message.error(" input wrong information");
       }
@@ -74,7 +74,7 @@ class ModifyUser extends Component {
         }
       >
         <Form
-          layout={{ ...layoutForm.LayoutType }}
+          layout="horizontal"
           wrapperCol={{ ...layoutForm.wrapperCol }}
           onSubmit={(e) => this.handleSubmit(e)}
         >
@@ -89,7 +89,7 @@ class ModifyUser extends Component {
                   required: true,
                 },
               ],
-              initialValue: this.state.currentData.Password,
+              initialValue: this.state.currentData.password,
             })(<Input />)}
           </Form.Item>
           <Form.Item
@@ -103,22 +103,25 @@ class ModifyUser extends Component {
                   required: true,
                 },
               ],
-              initialValue: this.state.currentData.Members,
+              initialValue: this.state.members.map((item) => {
+                return item.OrgName;
+              }),
             })(
               <Select
-                multiple={true}
+                mode="tags"
+                style={{ width: "100%" }}
+                placeholder="Please select"
               >
-                {
-	              this.state.currentData.Members.map((item,i)=>{
-		            return(
-			         <Select.Option key={i} value={item.OrgName}>{item.OrgName}</Select.Option>
-		            )
-	              }
-	              )
-                }
-                
+                {this.state.members.map((item, i) => {
+                  console.log("item.OrgName----", item.OrgName);
+
+                  return (
+                    <Select.Option key={i} value={item.OrgName}>
+                      {item.OrgName}
+                    </Select.Option>
+                  );
+                })}
               </Select>
-              
             )}
           </Form.Item>
 
@@ -127,7 +130,7 @@ class ModifyUser extends Component {
             labelCol={{ span: 6 }}
           >
             {
-	          <Button type="primary" htmlType="submit">
+              <Button type="primary" htmlType="submit">
                 Update Registry
               </Button>
             }
