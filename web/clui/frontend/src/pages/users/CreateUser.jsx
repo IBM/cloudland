@@ -9,7 +9,7 @@ import React, { Component } from "react";
 import { Form, Card, Input, Button, message } from "antd";
 import {
   createUserApi,
-} from "../../api/users";
+} from "../../service/users";
 import "./users.css";
 const layoutButton = {
   labelCol: { span: 8 },

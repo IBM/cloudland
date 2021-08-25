@@ -8,7 +8,7 @@ SPDX-License-Identifier: Apache-2.0
 import React, { Component } from "react";
 
 import { Card, Table, Button, Popconfirm, message } from "antd";
-import { userListApi, delUserInfor } from "../../api/users";
+import { userListApi, delUserInfor } from "../../service/users";
 class Users extends Component {
   constructor(props) {
     super(props);
