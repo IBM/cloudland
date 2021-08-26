@@ -103,7 +103,7 @@ class ModifyOrg extends Component {
                   required: true,
                 },
               ],
-              initialValue: this.state.currentData.owerUser.Username,
+              initialValue: this.state.currentData.OwerUser.username,
             })(<Input />)}
           </Form.Item>
           <Form.Item

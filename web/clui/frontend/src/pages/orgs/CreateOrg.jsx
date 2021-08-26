@@ -81,8 +81,8 @@ class CreateOrg extends Component {
             })(<Input />)}
           </Form.Item>
           <Form.Item
-            name="Owner"
-            label="owner"
+            name="owner"
+            label="Owner"
             labelCol={{ ...layoutForm.labelCol }}
           >
             {this.props.form.getFieldDecorator("owner", {
