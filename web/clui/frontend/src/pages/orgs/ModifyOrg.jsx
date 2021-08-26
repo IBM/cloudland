@@ -23,6 +23,7 @@ class ModifyOrg extends Component {
     this.state = {
       isShowEdit: false,
       currentData: [],
+      owerUser: [],
       member: [],
 
     };
@@ -32,6 +33,7 @@ class ModifyOrg extends Component {
         console.log("getOrgInforById-res:", res);
         that.setState({
           currentData: res,
+          owerUser: res.OwnerUser,
           members: res.Members.filter((item) => {
             return item.Username;
           }),          
@@ -101,7 +103,7 @@ class ModifyOrg extends Component {
                   required: true,
                 },
               ],
-              initialValue: this.state.currentData.OwnerUser.Username,
+              initialValue: this.state.currentData.owerUser.Username,
             })(<Input />)}
           </Form.Item>
           <Form.Item

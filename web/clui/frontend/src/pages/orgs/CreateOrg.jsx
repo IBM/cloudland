@@ -81,20 +81,13 @@ class CreateOrg extends Component {
             })(<Input />)}
           </Form.Item>
           <Form.Item
-            name="password"
-            label="Password"
+            name="Owner"
+            label="owner"
             labelCol={{ ...layoutForm.labelCol }}
           >
-            {this.props.form.getFieldDecorator("password", {
-              rules: [
-                {
-                  required: true,
-                },
-              ],
-              initialValue: this.state.currentData.Password,
-            })(<Input
-                  type="password"
-               />
+            {this.props.form.getFieldDecorator("owner", {
+              
+            })(<Input />
             )}
           </Form.Item>
           <Form.Item
