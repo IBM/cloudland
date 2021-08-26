@@ -1547,7 +1547,7 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store, apiIns
 	keyIDs := apiInstanceView.Keys
 
 	for i := 0; i < len(keyIDs); i++ {
-		kID, err := keyIDs[i]
+		kID := keyIDs[i]
 		if err != nil {
 			log.Println("Invalid key ID, %v", err)
 			continue
