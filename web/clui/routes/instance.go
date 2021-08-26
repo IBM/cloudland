@@ -1544,10 +1544,11 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store, apiIns
 		}
 		subnetIDs = append(subnetIDs, int64(sID))
 	}
-	keyIDs := apiInstanceView.Keys
-
-	for i := 0; i < len(keyIDs); i++ {
-        kID, err := strconv.Atoi(keyIDs[i])		
+	
+	keys := apiInstanceView.Keys
+    var keyIDs []int64
+	for i := 0; i < len(keys); i++ {
+        kID, err := strconv.Atoi(keys[i])		
 		if err != nil {
 			log.Println("Invalid key ID, %v", err)
 			continue
@@ -1560,6 +1561,7 @@ func (v *APIInstanceView) Create(c *macaron.Context, store session.Store, apiIns
 			})
 			return
 		}
+		keyIDs = append(keyIDs, int64(kID))
 	}
 	secgroups := apiInstanceView.Secgroups
 	var sgIDs []int64
