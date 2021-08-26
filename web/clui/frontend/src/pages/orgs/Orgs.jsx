@@ -142,7 +142,7 @@ class Orgs extends Component {
     const _this = this;
     const offset = (page - 1) * pageSize;
     const limit = pageSize;
-    orgListApi(offset, limit)
+    orgsListApi(offset, limit)
       .then((res) => {
         console.log("loadData", res);
         _this.setState({
@@ -167,7 +167,7 @@ class Orgs extends Component {
     const _this = this;
     const offset = (page - 1) * num;
     const limit = num;
-    orgListApi(offset, limit)
+    orgsListApi(offset, limit)
       .then((res) => {
         console.log("loadData", res);
         _this.setState({
