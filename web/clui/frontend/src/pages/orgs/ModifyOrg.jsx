@@ -87,7 +87,7 @@ class ModifyOrg extends Component {
                   required: true,
                 },
               ],
-              initialValue: this.state.currentData.members.Username,
+              initialValue: this.state.currentData.Name,
             })(<Input />)}
           </Form.Item>
           <Form.Item
@@ -135,4 +135,4 @@ class ModifyOrg extends Component {
     );
   }
 }
-export default Form.create({ name: "modifyUser" })(ModifyUser);
+export default Form.create({ name: "modifyOrg" })(ModifyOrg);
