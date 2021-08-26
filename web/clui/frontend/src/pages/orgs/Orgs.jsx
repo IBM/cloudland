@@ -55,7 +55,6 @@ const columns = [
 class Orgs extends Component {
   constructor(props) {
     super(props);
-    console.log("Users.props:", this.props);
     this.state = {
       orgs: [],
       isLoaded: false,
@@ -140,15 +139,14 @@ class Orgs extends Component {
   }
 
   loadData = (page, pageSize) => {
-    console.log("user-loadData~~", page, pageSize);
     const _this = this;
     const offset = (page - 1) * pageSize;
     const limit = pageSize;
-    userListApi(offset, limit)
+    orgListApi(offset, limit)
       .then((res) => {
         console.log("loadData", res);
         _this.setState({
-          users: res.users,
+          orgs: res.orgs,
           isLoaded: true,
           total: res.total,
           pageSize: limit,
@@ -169,12 +167,11 @@ class Orgs extends Component {
     const _this = this;
     const offset = (page - 1) * num;
     const limit = num;
-    console.log("user-toSelectchange~limit:", offset, limit);
-    userListApi(offset, limit)
+    orgListApi(offset, limit)
       .then((res) => {
         console.log("loadData", res);
         _this.setState({
-          users: res.users,
+          orgs: res.orgs,
           isLoaded: true,
           total: res.total,
           pageSize: limit,

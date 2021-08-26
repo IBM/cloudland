@@ -110,4 +110,4 @@ class CreateOrg extends Component {
     );
   }
 }
-export default Form.create({ name: "CreateOrg" })(CreateORg);
+export default Form.create({ name: "CreateOrg" })(CreateOrg);
