@@ -21,6 +21,8 @@ import Openshifts from "../pages/openshifts/Openshifts";
 import ModifyOpenshifts from "../pages/openshifts/ModifyOpenshifts";
 
 import Orgs from "../pages/orgs/Orgs";
+import CreateOrg from "../pages/orgs/CreateOrg";
+import ModifyOrg from "../pages/users/ModifyOrg";
 
 import PageNotFound from "../pages/PageNotFound";
 import Registrys from "../pages/registrys/Registrys";
@@ -85,6 +87,20 @@ export const mainRoutes = [
     icon: "team",
     exact: true,
     isShow: true,
+    item: "auth",
+  },
+  {
+    path: "/orgs/new",
+    component: CreateOrg,
+    exact: true,
+    isShow: false,
+    item: "auth",
+  },
+  {
+    path: "/orgs/new/:id?",
+    component: ModifyOrg,
+    exact: true,
+    isShow: false,
     item: "auth",
   },
   {

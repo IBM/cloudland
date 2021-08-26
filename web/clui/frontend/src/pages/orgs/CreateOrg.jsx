@@ -8,9 +8,9 @@ SPDX-License-Identifier: Apache-2.0
 import React, { Component } from "react";
 import { Form, Card, Input, Button, message } from "antd";
 import {
-  createUserApi,
-} from "../../service/users";
-import "./users.css";
+  createOrgApi,
+} from "../../service/orgs";
+import "./orgs.css";
 const layoutButton = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },
@@ -20,17 +20,16 @@ const layoutForm = {
   wrapperCol: { span: 10 },
   LayoutType: "horizontal",
 };
-class CreateUser extends Component {
+class CreateOrg extends Component {
   constructor(props) {
     super(props);
-    console.log("CreateUser~~", props);
     this.state = {
       currentData: [],
     };
   }
 
-  listUsers = () => {
-    this.props.history.push("/users");
+  listOrgs = () => {
+    this.props.history.push("/orgs");
   };
   handleSubmit = (e) => {
     console.log("handleSubmit:", e);
@@ -38,12 +37,10 @@ class CreateUser extends Component {
     this.props.form.validateFieldsAndScroll((err, values) => {
       if (!err) {
         console.log("handleSubmit-value:", values);
-        console.log("提交");
 
-        createUserApi(values)
+        createOrgApi(values)
           .then((res) => {
-            console.log("handleSubmit-res-createUserApi:", res);
-            this.props.history.push("/users");
+            this.props.history.push("/orgs");
           })
           .catch((err) => {
             console.log("handleSubmit-error:", err);
@@ -58,9 +55,9 @@ class CreateUser extends Component {
   render() {
     return (
       <Card
-        title={"Create User"}
+        title={"Create Organization"}
         extra={
-          <Button type="primary" onClick={this.listUsers}>
+          <Button type="primary" onClick={this.listOrgs}>
             Return
           </Button>
         }
@@ -71,17 +68,16 @@ class CreateUser extends Component {
           onSubmit={(e) => this.handleSubmit(e)}
         >
           <Form.Item
-            label="User Name"
-            name="username"
+            label="Organization Name"
+            name="orgname"
             labelCol={{ ...layoutForm.labelCol }}
           >
-            {this.props.form.getFieldDecorator("username", {
+            {this.props.form.getFieldDecorator("orgname", {
               rules: [
                 {
                   required: true,
                 },
               ],
-              initialValue: this.state.currentData.Username,
             })(<Input />)}
           </Form.Item>
           <Form.Item
@@ -102,28 +98,11 @@ class CreateUser extends Component {
             )}
           </Form.Item>
           <Form.Item
-            name="confirm"
-            label="Confirm"
-            labelCol={{ ...layoutForm.labelCol }}
-          >
-            {this.props.form.getFieldDecorator("confirm", {
-              rules: [
-                {
-                  required: true,
-                },
-              ],
-              initialValue: this.state.currentData.Confirm,
-            })(<Input
-                  type="password"
-               />
-            )}
-          </Form.Item>
-          <Form.Item
             wrapperCol={{ ...layoutButton.wrapperCol, offset: 8 }}
             labelCol={{ span: 6 }}
           >
           <Button type="primary" htmlType="submit">
-            Create User
+            Create  Organization
           </Button>
           </Form.Item>
         </Form>
@@ -131,4 +110,4 @@ class CreateUser extends Component {
     );
   }
 }
-export default Form.create({ name: "CreateUser" })(CreateUser);
+export default Form.create({ name: "CreateOrg" })(CreateORg);

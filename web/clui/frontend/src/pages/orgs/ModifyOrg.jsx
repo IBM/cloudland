@@ -7,8 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import { Form, Card, Input, Select, Button, message } from "antd";
-import { getUserInforById, editUserInfor } from "../../service/users";
-import "./users.css";
+import { getOrgInforById, editOrgInfor } from "../../service/orgs";
+import "./orgs.css";
 const layoutButton = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },
@@ -17,32 +17,32 @@ const layoutForm = {
   labelCol: { span: 6 },
   wrapperCol: { span: 10 },
 };
-class ModifyUser extends Component {
+class ModifyOrg extends Component {
   constructor(props) {
     super(props);
-    console.log("ModifyUser~~", props);
     this.state = {
       isShowEdit: false,
       currentData: [],
-      members: [],
+      member: [],
+
     };
     let that = this;
     if (props.match.params.id) {
-      getUserInforById(props.match.params.id).then((res) => {
-        console.log("getUserInforById-res:", res);
+      getOrgInforById(props.match.params.id).then((res) => {
+        console.log("getOrgInforById-res:", res);
         that.setState({
           currentData: res,
           members: res.Members.filter((item) => {
-            return item.OrgName;
-          }),
+            return item.Username;
+          }),          
           isShowEdit: true,
         });
       });
     }
   }
 
-  listUsers = () => {
-    this.props.history.push("/users");
+  listOrgs = () => {
+    this.props.history.push("/orgs");
   };
   handleSubmit = (e) => {
     console.log("handleSubmit:", e);
@@ -50,12 +50,10 @@ class ModifyUser extends Component {
     this.props.form.validateFieldsAndScroll((err, values) => {
       if (!err) {
         console.log("handleSubmit-value:", values);
-        console.log("提交");
         //const _this = this;
-        editUserInfor(this.props.match.params.id, values).then((res) => {
-          console.log("editUserInfor:", res);
+        editOrgInfor(this.props.match.params.id, values).then((res) => {
 
-          this.props.history.push("/users");
+          this.props.history.push("/orgs");
         });
       } else {
         message.error(" input wrong information");
@@ -66,9 +64,9 @@ class ModifyUser extends Component {
   render() {
     return (
       <Card
-        title={"Edit User"}
+        title={"Edit Organization"}
         extra={
-          <Button type="primary" onClick={this.listUsers}>
+          <Button type="primary" onClick={this.listOrgs}>
             Return
           </Button>
         }
@@ -79,21 +77,35 @@ class ModifyUser extends Component {
           onSubmit={(e) => this.handleSubmit(e)}
         >
           <Form.Item
-            label="Password"
-            name="password"
+            label="Organization Name"
+            name="orgname"
             labelCol={{ ...layoutForm.labelCol }}
           >
-            {this.props.form.getFieldDecorator("password", {
+            {this.props.form.getFieldDecorator("orgname", {
               rules: [
                 {
                   required: true,
                 },
               ],
-              initialValue: this.state.currentData.password,
+              initialValue: this.state.currentData.members.Username,
             })(<Input />)}
           </Form.Item>
           <Form.Item
-            label="Organizations"
+            label="Owner"
+            name="owner"
+            labelCol={{ ...layoutForm.labelCol }}
+          >
+            {this.props.form.getFieldDecorator("owner", {
+              rules: [
+                {
+                  required: true,
+                },
+              ],
+              initialValue: this.state.currentData.OwnerUser.Username,
+            })(<Input />)}
+          </Form.Item>
+          <Form.Item
+            label="Members"
             name="members"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -106,32 +118,15 @@ class ModifyUser extends Component {
               initialValue: this.state.members.map((item) => {
                 return item.OrgName;
               }),
-            })(
-              <Select
-                mode="tags"
-                style={{ width: "100%" }}
-                placeholder="Please select"
-              >
-                {this.state.members.map((item, i) => {
-                  console.log("item.OrgName----", item.OrgName);
-
-                  return (
-                    <Select.Option key={i} value={item.OrgName}>
-                      {item.OrgName}
-                    </Select.Option>
-                  );
-                })}
-              </Select>
-            )}
+            })(<Input />)}
           </Form.Item>
-
           <Form.Item
             wrapperCol={{ ...layoutButton.wrapperCol, offset: 8 }}
             labelCol={{ span: 6 }}
           >
             {
               <Button type="primary" htmlType="submit">
-                Update User
+                Update Registry
               </Button>
             }
           </Form.Item>
