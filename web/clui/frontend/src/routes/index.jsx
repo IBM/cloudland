@@ -22,7 +22,7 @@ import ModifyOpenshifts from "../pages/openshifts/ModifyOpenshifts";
 
 import Orgs from "../pages/orgs/Orgs";
 import CreateOrg from "../pages/orgs/CreateOrg";
-import ModifyOrg from "../pages/users/ModifyOrg";
+import ModifyOrg from "../pages/orgs/ModifyOrg";
 
 import PageNotFound from "../pages/PageNotFound";
 import Registrys from "../pages/registrys/Registrys";
