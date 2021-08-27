@@ -505,7 +505,11 @@ class Instances extends Component {
                     enterButton
                   />
                   <Button
-                    style={{ float: "right" }}
+                    style={{
+                      float: "right",
+                      "padding-left": "10px",
+                      "padding-right": "10px",
+                    }}
                     type="primary"
                     onClick={this.createInstance}
                   >

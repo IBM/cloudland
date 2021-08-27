@@ -7,7 +7,6 @@ import moment from "moment";
 import { Card, Table, Button, Popconfirm, message } from "antd";
 import { userListApi, delUserInfor } from "../../service/users";
 import DataFilter from "../../components/Filter/DataFilter";
-
 class Users extends Component {
   constructor(props) {
     super(props);
