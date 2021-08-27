@@ -1464,7 +1464,7 @@ func (v *APIInstanceView) New(c *macaron.Context, store session.Store) {
 	_, subnets, err := subnetAdmin.List(ctx, 0, -1, "", "", sql)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to get subnets."+err.Error,
+			"ErrorMsg": "Failed to get subnets."+err.Error(),
 		})
 		return
 	}
@@ -1484,7 +1484,7 @@ func (v *APIInstanceView) New(c *macaron.Context, store session.Store) {
 	_, openshifts, err := openshiftAdmin.List(ctx, 0, -1, "", "")
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to get openshifts."+err.Error,
+			"ErrorMsg": "Failed to get openshifts."+err.Error(),
 		})
 		return
 	}
