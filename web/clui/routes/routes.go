@@ -124,6 +124,7 @@ func New() (m *macaron.Macaron) {
 	m.Get("/api/instances", apiInstanceView.List)
 	m.Get("/UpdateTable", instanceView.UpdateTable)
 	m.Get("/instances/new", instanceView.New)
+	m.Get("/api/instances/new", apiInstanceView.New)
 	m.Post("/instances/new", instanceView.Create)
 	m.Post("/api/instances/new", binding.Bind(APIInstanceView{}), apiInstanceView.Create)
 	m.Delete("/instances/:id", instanceView.Delete)

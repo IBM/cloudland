@@ -1433,6 +1433,100 @@ func (v *APIInstanceView) List(c *macaron.Context, store session.Store) {
 
 }
 
+
+func (v *APIInstanceView) New(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.JSON(403, map[string]interface{}{
+			"ErrorMsg": "Not authorized for this operation.",
+		})
+		return
+	}
+	db := DB()
+	images := []*model.Image{}
+	if err := db.Find(&images).Error; err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to get images."+err.Error,
+		})
+		return
+	}
+	flavors := []*model.Flavor{}
+	if err := db.Find(&flavors).Error; err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to get flavors."+err.Error,
+		})
+		return
+	}
+	ctx := c.Req.Context()
+	sql := fmt.Sprintf("type = 'public' or owner = %d", memberShip.OrgID)
+	_, subnets, err := subnetAdmin.List(ctx, 0, -1, "", "", sql)
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to get subnets."+err.Error,
+		})
+		return
+	}
+	_, secgroups, err := secgroupAdmin.List(ctx, 0, -1, "", "")
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
+		return
+	}
+	_, keys, err := keyAdmin.List(ctx, 0, -1, "", "")
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to get keys."+err.Error,
+		})
+		return
+	}
+	_, openshifts, err := openshiftAdmin.List(ctx, 0, -1, "", "")
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to get openshifts."+err.Error,
+		})
+		return
+	}
+	hypers := []*model.Hyper{}
+	err = db.Where("hostid >= 0").Find(&hypers).Error
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to get hypers."+err.Error,
+		})
+		return
+	}
+	zones := []*model.Zone{}
+	err = db.Find(&zones).Error
+	if err != nil {
+		c.JSON(500, map[string]interface{}{
+			"ErrorMsg": "Failed to get zones."+err.Error,
+		})
+		return
+	}
+	c.Data["HostName"] = c.QueryTrim("hostname")
+	c.Data["Images"] = images
+	c.Data["Flavors"] = flavors
+	c.Data["Subnets"] = subnets
+	c.Data["Openshifts"] = openshifts
+	c.Data["Secgroups"] = secgroups
+	c.Data["Keys"] = keys
+	c.Data["Hypers"] = hypers
+	c.Data["Zones"] = zones
+	c.HTML(200, "instances_new")
+	c.JSON(200, map[string]interface{}{
+		"HostName":   c.QueryTrim("hostname"),
+		"Images":     images,
+		"Flavors":    flavors,
+	    "Subnets":    subnets
+	    "Openshifts": openshifts
+	    "Secgroups":  secgroups
+	    "Keys":       keys
+	    "Hypers":     hypers
+	    "Zones":      zones		
+	})	
+}
+
 func (v *APIInstanceView) Create(c *macaron.Context, store session.Store, apiInstanceView APIInstanceView) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
