@@ -13,3 +13,29 @@ export function userListApi() {
     method: "get",
   });
 }
+export function createUserApi(objReg) {
+  return request({
+    url: "/api/users/new",
+    method: "post",
+    data: objReg,
+  });
+}
+export function getUserInforById(userid) {
+  return request({
+    url: `/api/users/${userid}`,
+    method: "get",
+  });
+}
+export function delUserInfor(userid) {
+  return request({
+    url: `/api/users/${userid}`,
+    method: "delete",
+  });
+}
+export function editUserInfor(userid, obj) {
+  return request({
+    url: `/api/users/${userid}`,
+    method: "post",
+    data: obj,
+  });
+}
