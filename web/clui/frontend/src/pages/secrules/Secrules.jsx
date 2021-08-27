@@ -9,6 +9,9 @@ import React, { Component } from "react";
 import { Card, Button, Popconfirm, message } from "antd";
 import { secrulesListApi, delSecruleInfor } from "../../service/secrules";
 import DataTable from "../../components/DataTable/DataTable";
+import DataFilter from "../../components/Filter/DataFilter";
+
+import "./secrules.css";
 
 class Secrules extends Component {
   constructor(props) {
@@ -126,7 +129,7 @@ class Secrules extends Component {
     },
   ];
   //组件初始化的时候执行
-  componentWillMount() {
+  componentDidMount() {
     const _this = this;
     console.log("componentWillMount:", this);
     secrulesListApi(this.props.match.params.id)
@@ -224,25 +227,33 @@ class Secrules extends Component {
           ")"
         }
         extra={
-          <div>
-            <Button
-              // style={{ margin: "0 1rem" }}
-              type="primary"
-              size="small"
-              onClick={this.createSecrules}
-            >
-              Create
-            </Button>
-            <Button
-              style={{
-                marginLeft: "10px",
-              }}
-              type="primary"
-              size="small"
-              onClick={this.listSecgroups}
-            >
-              Return
-            </Button>
+          <div className="searchButton">
+            <DataFilter
+              placeholder="Search..."
+              onSearch={(value) => console.log(value)}
+              enterButton
+            />
+            <div className="secruleButton">
+              <Button
+                style={{ "padding-left": "10px", "padding-right": "10px" }}
+                type="primary"
+                onClick={this.createSecrules}
+              >
+                Create
+              </Button>
+              <Button
+                style={{
+                  marginLeft: "10px",
+                  "padding-left": "10px",
+                  "padding-right": "10px",
+                }}
+                type="primary"
+                // size="small"
+                onClick={this.listSecgroups}
+              >
+                Return
+              </Button>
+            </div>
           </div>
         }
       >

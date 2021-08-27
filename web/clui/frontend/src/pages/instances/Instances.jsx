@@ -8,7 +8,6 @@ SPDX-License-Identifier: Apache-2.0
 import React, { Component } from "react";
 import {
   Card,
-  Table,
   Button,
   Popconfirm,
   Row,
@@ -25,9 +24,10 @@ import {
   editInsInfor,
 } from "../../service/instances";
 import DataTable from "../../components/DataTable/DataTable";
-
+import { connect } from "react-redux";
 import InstModal from "./InstModal";
 import "./instances.css";
+import DataFilter from "../../components/Filter/DataFilter";
 
 class Instances extends Component {
   constructor(props) {
@@ -93,7 +93,6 @@ class Instances extends Component {
     },
     {
       title: "Status",
-      // dataIndex: "Status",
       align: "center",
       width: "60px",
       render: (record) => {
@@ -108,11 +107,13 @@ class Instances extends Component {
       title: "Hyper",
       dataIndex: "Hyper",
       align: "center",
+      className: this.props.loginInfo.isAdmin ? "" : "columnHidden",
     },
     {
       title: "Owner",
       dataIndex: "OwnerInfo.name",
       align: "center",
+      className: this.props.loginInfo.isAdmin ? "" : "columnHidden",
     },
     {
       title: "Zone",
@@ -267,7 +268,6 @@ class Instances extends Component {
       }
     }
   };
-
   handleChange = (id) => {
     getInsInforById(id).then((res) => {
       console.log("handleChange-getInsInforById-res:", res);
@@ -289,7 +289,7 @@ class Instances extends Component {
       key: Math.random(),
     });
   };
-  componentWillMount() {
+  componentDidMount() {
     const _this = this;
     insListApi()
       .then((res) => {
@@ -368,16 +368,7 @@ class Instances extends Component {
   createInstance = () => {
     this.props.history.push("/instances/new");
   };
-  onRef = (selectedRowKeys, selectedRows, selectedIds) => {
-    this.setState({
-      selectedRowKeys,
-      selectedRows,
-      selectedIds,
-    });
-  };
-  onModalRef = (ref) => {
-    this.modalRef = ref;
-  };
+
   modalFormList = (data) => {
     console.log("instance-modalFormList", data);
     console.log("key-modalFormList", this.state.menuKey);
@@ -432,7 +423,6 @@ class Instances extends Component {
       const hyper = this.state.everyData && this.state.everyData.Hyper;
       const action = this.state.everyData && this.state.everyData.Status;
       const flavor = this.state.everyData && this.state.everyData.FlavorID;
-      // const ifaces = this.state.everyData.Interfaces[0].Address.SubnetID;
       let ifaces = [];
 
       this.state.everyData &&
@@ -491,12 +481,11 @@ class Instances extends Component {
         });
     }
 
-    this.modalRef.props.form.resetFields();
+    this.props.form.resetFields();
     this.setState({
       visible: false,
     });
   };
-
   render() {
     const { data, everyData } = this.state;
     console.log(data, "data");
@@ -509,19 +498,27 @@ class Instances extends Component {
                 "Instance Manage Panel" + "(Total: " + this.state.total + ")"
               }
               extra={
-                <Button
-                  type="primary"
-                  size="small"
-                  onClick={this.createInstance}
-                >
-                  Create
-                </Button>
+                <>
+                  <DataFilter
+                    placeholder="Search..."
+                    onSearch={(value) => console.log(value)}
+                    enterButton
+                  />
+                  <Button
+                    style={{ float: "right" }}
+                    type="primary"
+                    onClick={this.createInstance}
+                  >
+                    Create
+                  </Button>
+                </>
               }
             >
               <Row>
                 <Col span={24}>
                   <DataTable
                     rowKey="ID"
+                    // columns={loginInfo.isAdmin ? this.columns : this.columns2}
                     columns={this.columns}
                     dataSource={this.state.instances}
                     bordered
@@ -534,7 +531,6 @@ class Instances extends Component {
                     loading={!this.state.isLoaded}
                   />
                   <InstModal
-                    onRef={this.onModalRef}
                     visible={this.state.visible}
                     modalFormList={this.modalFormList(everyData)}
                     title={this.state.title}
@@ -544,7 +540,7 @@ class Instances extends Component {
                         visible: false,
                         everyData: {},
                       });
-                      this.modalRef.props.form.resetFields();
+                      this.props.form.resetFields();
                     }}
                   />
                 </Col>
@@ -556,4 +552,11 @@ class Instances extends Component {
     );
   }
 }
-export default Instances;
+const mapStateToProps = (state, ownProps) => {
+  console.log("mapStateToProps-instance:", state);
+  // var loginInfo = JSON.parse(state.loginInfo);
+  // console.log("mapStateToProps-isadmin:", JSON.parse(state.loginInfo));
+
+  return state;
+};
+export default connect(mapStateToProps)(Instances);

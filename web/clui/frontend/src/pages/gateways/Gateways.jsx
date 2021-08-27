@@ -6,9 +6,12 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
-import { Card, Table, Button, Popconfirm, message } from "antd";
+import { Card, Button, Popconfirm, message } from "antd";
+import { connect } from "react-redux";
 import { gwListApi, delGWInfor } from "../../service/gateways";
 import DataTable from "../../components/DataTable/DataTable";
+import "./gateways.css";
+import DataFilter from "../../components/Filter/DataFilter";
 
 class Gateways extends Component {
   constructor(props) {
@@ -71,13 +74,20 @@ class Gateways extends Component {
     },
     {
       title: "Hyper",
-      dataIndex: "Hyper + Peer",
       align: "center",
+      className: this.props.loginInfo.isAdmin ? "" : "columnHidden",
+
+      render: (record) => (
+        <span>
+          {record.Hyper},{record.Peer}
+        </span>
+      ),
     },
     {
       title: "Owner",
-      dataIndex: "WorkerNum",
+      dataIndex: "OwnerInfo.name",
       align: "center",
+      className: this.props.loginInfo.isAdmin ? "" : "columnHidden",
     },
     {
       title: "Zone",
@@ -139,7 +149,7 @@ class Gateways extends Component {
     },
   ];
   //组件初始化的时候执行
-  componentWillMount() {
+  componentDidMount() {
     const _this = this;
     //const hyper =''
     console.log("componentWillMount:", this.state);
@@ -226,9 +236,20 @@ class Gateways extends Component {
       <Card
         title={"Gateway Manage Panel" + "(Total: " + this.state.total + ")"}
         extra={
-          <Button type="primary" size="small" onClick={this.createGateways}>
-            Create
-          </Button>
+          <>
+            <DataFilter
+              placeholder="Search..."
+              onSearch={(value) => console.log(value)}
+              enterButton
+            />
+            <Button
+              style={{ float: "right" }}
+              type="primary"
+              onClick={this.createGateways}
+            >
+              Create
+            </Button>
+          </>
         }
       >
         <DataTable
@@ -248,4 +269,12 @@ class Gateways extends Component {
     );
   }
 }
-export default Gateways;
+
+const mapStateToProps = (state, ownProps) => {
+  console.log("mapStateToProps-gw:", state);
+  // var loginInfo = JSON.parse(state.loginInfo);
+  // console.log("mapStateToProps-isadmin:", JSON.parse(state.loginInfo));
+
+  return state;
+};
+export default connect(mapStateToProps)(Gateways);

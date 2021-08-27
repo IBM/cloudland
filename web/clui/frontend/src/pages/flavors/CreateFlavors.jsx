@@ -84,7 +84,11 @@ class CreateFlavors extends Component {
       <Card
         title={"Create New Flavor"}
         extra={
-          <Button type="primary" size="small" onClick={this.listFlavors}>
+          <Button
+            style={{ float: "right" }}
+            type="primary"
+            onClick={this.listFlavors}
+          >
             Return
           </Button>
         }

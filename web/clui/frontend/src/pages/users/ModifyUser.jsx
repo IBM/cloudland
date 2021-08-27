@@ -6,9 +6,10 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
+import moment from "moment";
 import { Form, Card, Input, Select, Button, message } from "antd";
 import { getUserInforById, editUserInfor } from "../../service/users";
-import "./users.css";
+// import "./users.css";
 const layoutButton = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },

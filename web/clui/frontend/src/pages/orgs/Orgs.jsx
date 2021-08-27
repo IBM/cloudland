@@ -6,8 +6,11 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
+import moment from "moment";
 import { Card, Table, Button, Popconfirm } from "antd";
 import { orgsListApi } from "../../service/orgs";
+import DataFilter from "../../components/Filter/DataFilter";
+
 const columns = [
   {
     title: "ID",
@@ -20,13 +23,20 @@ const columns = [
   {
     title: "Name",
     dataIndex: "name",
+    align: "center",
   },
   {
     title: "Created At",
     dataIndex: "CreatedAt",
+    align: "center",
+    render: (record) => (
+      // console.log("createAt", record);
+      <span>{moment(record).format("YYYY-MM-DD HH:mm:ss")}</span>
+    ),
   },
   {
     title: "Action",
+    align: "center",
     render: (txt, record, index) => {
       return (
         <div>
@@ -85,13 +95,24 @@ class Orgs extends Component {
           "Organization Manage Panel" + "(Total: " + this.state.total + ")"
         }
         extra={
-          <Button
-            type="primary"
-            size="small"
-            //onClick={() => this.props.history.push("`/orgs/${orgsid}`")}
-          >
-            Create
-          </Button>
+          <>
+            <DataFilter
+              placeholder="Search..."
+              onSearch={(value) => console.log(value)}
+              enterButton
+            />
+            <Button
+              style={{
+                float: "right",
+                "padding-left": "10px",
+                "padding-right": "10px",
+              }}
+              type="primary"
+              //onClick={() => this.props.history.push("`/orgs/${orgsid}`")}
+            >
+              Create
+            </Button>
+          </>
         }
       >
         <Table

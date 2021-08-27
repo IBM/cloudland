@@ -10,6 +10,7 @@ import { Card, Button, Popconfirm, message } from "antd";
 import { Link } from "react-router-dom";
 import { secgroupsListApi, delSecgroupInfor } from "../../service/secgroups";
 import DataTable from "../../components/DataTable/DataTable";
+import DataFilter from "../../components/Filter/DataFilter";
 
 class Secgroups extends Component {
   constructor(props) {
@@ -53,6 +54,7 @@ class Secgroups extends Component {
       title: "IsDefault",
       dataIndex: "IsDefault",
       align: "center",
+      render: (record) => <span>{record ? "true" : "false"}</span>,
     },
     {
       title: "Owner",
@@ -113,7 +115,7 @@ class Secgroups extends Component {
   ];
 
   //组件初始化的时候执行
-  componentWillMount() {
+  componentDidMount() {
     const _this = this;
     console.log("componentDidMount:", this);
     secgroupsListApi()
@@ -199,9 +201,24 @@ class Secgroups extends Component {
           "Security Group Manage Panel" + "(Total: " + this.state.total + ")"
         }
         extra={
-          <Button type="primary" size="small" onClick={this.createSecgroups}>
-            Create
-          </Button>
+          <>
+            <DataFilter
+              placeholder="Search..."
+              onSearch={(value) => console.log(value)}
+              enterButton
+            />
+            <Button
+              style={{
+                float: "right",
+                "padding-left": "10px",
+                "padding-right": "10px",
+              }}
+              type="primary"
+              onClick={this.createSecgroups}
+            >
+              Create
+            </Button>
+          </>
         }
       >
         <DataTable

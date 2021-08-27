@@ -100,7 +100,11 @@ class CreateFloatingips extends Component {
       <Card
         title={"Create New FloatingIp "}
         extra={
-          <Button type="primary" size="small" onClick={this.listFloatingIps}>
+          <Button
+            style={{ float: "right" }}
+            type="primary"
+            onClick={this.listFloatingIps}
+          >
             Return
           </Button>
         }

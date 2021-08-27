@@ -6,9 +6,10 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
-import { Card, Table, Button, Popconfirm, message } from "antd";
+import { Card, Button, Popconfirm, message } from "antd";
 import { subnetsListApi, delSubInfor } from "../../service/subnets";
 import DataTable from "../../components/DataTable/DataTable";
+import DataFilter from "../../components/Filter/DataFilter";
 
 class Subnets extends Component {
   constructor(props) {
@@ -134,7 +135,7 @@ class Subnets extends Component {
       },
     },
   ];
-  componentWillMount() {
+  componentDidMount() {
     const _this = this;
     subnetsListApi()
       .then((res) => {
@@ -219,9 +220,20 @@ class Subnets extends Component {
       <Card
         title={"Subnet Manage Panel" + "(Total: " + this.state.total + ")"}
         extra={
-          <Button type="primary" size="small" onClick={this.createSubnets}>
-            Create
-          </Button>
+          <>
+            <DataFilter
+              placeholder="Search..."
+              onSearch={(value) => console.log(value)}
+              enterButton
+            />
+            <Button
+              style={{ float: "right" }}
+              type="primary"
+              onClick={this.createSubnets}
+            >
+              Create
+            </Button>
+          </>
         }
       >
         <DataTable
