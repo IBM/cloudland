@@ -1518,12 +1518,12 @@ func (v *APIInstanceView) New(c *macaron.Context, store session.Store) {
 		"HostName":   c.QueryTrim("hostname"),
 		"Images":     images,
 		"Flavors":    flavors,
-	    "Subnets":    subnets
-	    "Openshifts": openshifts
-	    "Secgroups":  secgroups
-	    "Keys":       keys
-	    "Hypers":     hypers
-	    "Zones":      zones		
+	    "Subnets":    subnets,
+	    "Openshifts": openshifts,
+	    "Secgroups":  secgroups,
+	    "Keys":       keys,
+	    "Hypers":     hypers,
+	    "Zones":      zones,		
 	})	
 }
 
