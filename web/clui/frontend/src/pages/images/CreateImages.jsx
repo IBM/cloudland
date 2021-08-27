@@ -9,6 +9,7 @@ import React, { Component } from "react";
 import { Form, Card, Input, Select, Button, message } from "antd";
 import { insListApi } from "../../service/instances";
 import { createImgApi } from "../../service/images";
+
 const layoutButton = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },
@@ -29,7 +30,7 @@ class CreateImages extends Component {
   listImages = () => {
     this.props.history.push("/images");
   };
-  componentWillMount() {
+  componentDidMount() {
     insListApi()
       .then((res) => {
         const _this = this;
@@ -76,7 +77,11 @@ class CreateImages extends Component {
       <Card
         title={"Create New Image"}
         extra={
-          <Button type="primary" size="small" onClick={this.listImages}>
+          <Button
+            style={{ float: "right" }}
+            type="primary"
+            onClick={this.listImages}
+          >
             Return
           </Button>
         }

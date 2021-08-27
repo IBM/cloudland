@@ -1,0 +1,15 @@
+import { getAll } from "../../utils/auth";
+const LoginReducer = (state = getAll(), action) => {
+  switch (action.type) {
+    case "LOGIN_INFO":
+      console.log("all--", getAll());
+      return {
+        loginInfo: state.loginInfo,
+      };
+
+    default:
+      return state;
+  }
+};
+
+export default LoginReducer;

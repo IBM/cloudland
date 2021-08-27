@@ -32,7 +32,6 @@ import Secrules from "../pages/secrules/Secrules";
 import ModifySecrules from "../pages/secrules/ModifySecrules";
 import Subnets from "../pages/subnets/Subnets";
 import Users from "../pages/users/Users";
-import CreateUser from "../pages/users/CreateUser";
 import ModifyUser from "../pages/users/ModifyUser";
 import Hypers from "../pages/hypers/Hypers";
 import ModifySubnets from "../pages/subnets/ModifySubnets";
@@ -66,13 +65,13 @@ export const mainRoutes = [
     isShow: true,
     item: "auth",
   },
-  {
-    path: "/users/new",
-    component: CreateUser,
-    exact: true,
-    isShow: false,
-    item: "auth",
-  },
+  // {
+  //   path: "/users/new",
+  //   component: CreateUser,
+  //   exact: true,
+  //   isShow: false,
+  //   item: "auth",
+  // },
   {
     path: "/users/new/:id?",
     component: ModifyUser,
@@ -255,7 +254,7 @@ export const mainRoutes = [
   {
     path: "/hypers",
     component: Hypers,
-    title: "Hyper",
+    title: "Hypervisors",
     exact: true,
     isShow: true,
     item: "admin",

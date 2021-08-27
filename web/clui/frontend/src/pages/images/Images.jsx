@@ -6,9 +6,11 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
-import { Card, Button, Popconfirm, message } from "antd";
+import moment from "moment";
+import { Card, Button, Popconfirm, message, Input } from "antd";
 import { imagesListApi, delImgInfor } from "../../service/images";
 import DataTable from "../../components/DataTable/DataTable";
+import DataFilter from "../../components/Filter/DataFilter";
 
 class Images extends Component {
   constructor(props) {
@@ -50,6 +52,10 @@ class Images extends Component {
       title: "Created At",
       dataIndex: "CreatedAt",
       align: "center",
+      width: 100,
+      render: (record) => (
+        <span>{moment(record).format("YYYY-MM-DD HH:mm:ss")}</span>
+      ),
     },
     {
       title: "OS Version",
@@ -111,7 +117,7 @@ class Images extends Component {
       },
     },
   ];
-  componentWillMount() {
+  componentDidMount() {
     const _this = this;
     const limit = this.state.pageSize;
     imagesListApi(this.state.offset, limit)
@@ -196,9 +202,21 @@ class Images extends Component {
       <Card
         title={"Image Manage Panel" + "(Total: " + this.state.total + ")"}
         extra={
-          <Button type="primary" size="small" onClick={this.createImages}>
-            Create
-          </Button>
+          <>
+            <DataFilter
+              placeholder="Search..."
+              onSearch={(value) => console.log(value)}
+              enterButton
+            />
+
+            <Button
+              style={{ float: "right" }}
+              type="primary"
+              onClick={this.createImages}
+            >
+              Create
+            </Button>
+          </>
         }
       >
         <DataTable

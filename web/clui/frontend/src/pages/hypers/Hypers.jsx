@@ -91,7 +91,7 @@ class Hypers extends Component {
       },
     },
   ];
-  componentWillMount() {
+  componentDidMount() {
     const _this = this;
     hypersListApi()
       .then((res) => {

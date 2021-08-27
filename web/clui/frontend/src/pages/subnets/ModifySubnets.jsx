@@ -5,6 +5,7 @@ import {
   editSubInfor,
   getSubInforById,
 } from "../../service/subnets";
+import { hypersListApi } from "../../service/hypers";
 const layoutButton = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },
@@ -19,6 +20,7 @@ class ModifySubnets extends Component {
     this.state = {
       isShowEdit: false,
       currentData: [],
+      zones: [],
       dns: "",
       dhcp: "yes",
       domain: "",
@@ -37,8 +39,46 @@ class ModifySubnets extends Component {
       });
     }
   }
+  componentDidMount() {
+    const _this = this;
+    hypersListApi()
+      .then((res) => {
+        _this.setState({
+          hypers: res.hypers,
+          isLoaded: true,
+        });
+        this.state.hypers.forEach((val) => {
+          let zoneList = {
+            Name: val.Zone.Name,
+            ID: val.Zone.ID,
+          };
+          this.state.zones.push(zoneList);
+        });
+        this.filterZones();
+      })
+      .catch((error) => {
+        _this.setState({
+          isLoaded: false,
+          error: error,
+        });
+      });
+  }
   listSubnets = () => {
     this.props.history.push("/subnets");
+  };
+  filterZones = () => {
+    var initZone = [];
+    var newZone = [];
+    this.state.zones.map((item) => {
+      if (initZone.indexOf(item["Name"]) === -1) {
+        initZone.push(item["Name"]);
+        newZone.push(item);
+      }
+      return newZone;
+    });
+    this.setState({
+      zones: newZone,
+    });
   };
   handleSubmit = (e) => {
     console.log("handleSubmit:", e);
@@ -89,7 +129,11 @@ class ModifySubnets extends Component {
       <Card
         title={"Create New Subnet"}
         extra={
-          <Button type="primary" size="small" onClick={this.listSubnets}>
+          <Button
+            style={{ float: "right" }}
+            type="primary"
+            onClick={this.listSubnets}
+          >
             Return
           </Button>
         }
@@ -153,9 +197,13 @@ class ModifySubnets extends Component {
               rules: [],
             })(
               <Select>
-                <Select.Option key="zone" value="1543">
-                  zone0
-                </Select.Option>
+                {this.state.zones.map((item, index) => {
+                  return (
+                    <Select.Option key={index} value={item.ID}>
+                      {item.Name}
+                    </Select.Option>
+                  );
+                })}
               </Select>
             )}
           </Form.Item>

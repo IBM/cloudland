@@ -13,3 +13,10 @@ export function keysListApi() {
     method: "get",
   });
 }
+export function createKeyApi(objKey) {
+  return request({
+    url: "/api/keys/new",
+    method: "post",
+    data: objKey,
+  });
+}

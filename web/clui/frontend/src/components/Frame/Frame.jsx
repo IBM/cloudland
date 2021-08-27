@@ -74,11 +74,8 @@ class Frame extends Component {
             </Dropdown>
           </Header>
           <Layout>
-            <Col
-              span={4}
-              // className="ant-col-xs-4 ant-col-sm-2 ant-col-md-4 ant-col-lg-4 ant-col-xl-4"
-            >
-              <Sider width={200} style={{ background: "#fff" }}>
+            <Col span={4}>
+              <Sider width={210} style={{ background: "#fff" }}>
                 <Menu
                   mode="inline"
                   defaultSelectedKeys={["1"]}
@@ -189,10 +186,7 @@ class Frame extends Component {
                 </Menu>
               </Sider>
             </Col>
-            <Col
-              span={20}
-              // className="ant-col-xs-20 ant-col-sm-22 ant-col-md-20 ant-col-lg-20 ant-col-xl-20"
-            >
+            <Col span={20}>
               <Layout style={{ padding: "16px 16px 16px" }}>
                 <Content
                   style={{

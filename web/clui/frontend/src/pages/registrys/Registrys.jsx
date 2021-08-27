@@ -9,7 +9,7 @@ import React, { Component } from "react";
 import { Card, Button, Popconfirm, message } from "antd";
 import { regListApi, delRegInfor } from "../../service/registrys";
 import DataTable from "../../components/DataTable/DataTable";
-
+import DataFilter from "../../components/Filter/DataFilter";
 class Registrys extends Component {
   constructor(props) {
     super(props);
@@ -38,8 +38,8 @@ class Registrys extends Component {
       title: "Label",
       dataIndex: "Label",
       align: "center",
+      width: 200,
       className: "registry_label",
-      // width: 100,
     },
     {
       title: "Ocp Version",
@@ -53,7 +53,7 @@ class Registrys extends Component {
       dataIndex: "RegistryContent",
       align: "center",
       className: "registry_Content",
-      // width: 300,
+      width: "45%",
       render: (text) => {
         if (text.length > 100) {
           return (
@@ -65,7 +65,7 @@ class Registrys extends Component {
                 display: "-webkit-box",
                 WebkitBoxOrient: "vertical",
                 WebkitLineClamp: "3",
-                maxWidth: 350,
+                // maxWidth: 350,
               }}
             >
               {text}
@@ -77,6 +77,7 @@ class Registrys extends Component {
     {
       title: "Action",
       align: "center",
+      // width: 160,
       render: (txt, record, index) => {
         return (
           <div>
@@ -133,7 +134,7 @@ class Registrys extends Component {
       },
     },
   ];
-  componentWillMount() {
+  componentDidMount() {
     const _this = this;
     const limit = this.state.pageSize;
     regListApi(this.state.offset, limit)
@@ -220,9 +221,24 @@ class Registrys extends Component {
       <Card
         title={"Registry Manage Panel" + "(Total: " + this.state.total + ")"}
         extra={
-          <Button type="primary" size="small" onClick={this.createRegistrys}>
-            Create
-          </Button>
+          <>
+            <DataFilter
+              placeholder="Search..."
+              onSearch={(value) => console.log(value)}
+              enterButton
+            />
+            <Button
+              style={{
+                float: "right",
+                "padding-left": "10px",
+                "padding-right": "10px",
+              }}
+              type="primary"
+              onClick={this.createRegistrys}
+            >
+              Create
+            </Button>
+          </>
         }
       >
         <DataTable

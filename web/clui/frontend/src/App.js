@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 */
 import Frame from "./components/Frame/Frame";
 import { Switch, Route, Redirect } from "react-router-dom";
+import { connect } from "react-redux";
 import "antd/dist/antd.css";
 import "./App.css";
 import { mainRoutes } from "./routes";
@@ -37,3 +38,4 @@ function App() {
 }
 
 export default App;
+// export default App;

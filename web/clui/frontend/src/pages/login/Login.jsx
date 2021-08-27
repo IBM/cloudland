@@ -9,7 +9,7 @@ import React, { Component } from "react";
 import { Card, Form, Icon, Input, Button, Checkbox, message } from "antd";
 import logoLoginImg from "../../assets/img/cland.png";
 import "./Login.css";
-import { setToken } from "../../utils/auth";
+import { setAll, setToken } from "../../utils/auth";
 import { loginApi } from "../../service/auth";
 class Login extends Component {
   handleSubmit = (e) => {
@@ -25,7 +25,8 @@ class Login extends Component {
         })
           .then((res) => {
             if (res.token) {
-              console.log("res:", res);
+              console.log("login-res:", res);
+              setAll(JSON.stringify(res));
               setToken(res.token);
               message.info("Login Successfully");
               this.props.history.push("/");
@@ -37,6 +38,7 @@ class Login extends Component {
           })
 
           .catch((err) => {
+            // message.error(err.ErrorMsg);
             console.log(err);
           });
       }

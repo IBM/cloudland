@@ -6,12 +6,13 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
-import { Card, Table, Button, Popconfirm, message } from "antd";
+import { Card, Button, Popconfirm, message } from "antd";
 import {
   floatingipsListApi,
   delFloatingipInfor,
 } from "../../service/floatingips";
 import DataTable from "../../components/DataTable/DataTable";
+import DataFilter from "../../components/Filter/DataFilter";
 
 class Floatingips extends Component {
   constructor(props) {
@@ -99,7 +100,7 @@ class Floatingips extends Component {
     this.props.history.push("/floatingips/new");
   };
   //组件初始化的时候执行
-  componentWillMount() {
+  componentDidMount() {
     const _this = this;
     console.log("componentDidMount:", this);
     floatingipsListApi()
@@ -181,9 +182,20 @@ class Floatingips extends Component {
       <Card
         title={"Floating IP Manage Panel" + "(Total: " + this.state.total + ")"}
         extra={
-          <Button type="primary" size="small" onClick={this.createFloatingips}>
-            Create
-          </Button>
+          <>
+            <DataFilter
+              placeholder="Search..."
+              onSearch={(value) => console.log(value)}
+              enterButton
+            />
+            <Button
+              style={{ float: "right" }}
+              type="primary"
+              onClick={this.createFloatingips}
+            >
+              Create
+            </Button>
+          </>
         }
       >
         <DataTable

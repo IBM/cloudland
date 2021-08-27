@@ -8,7 +8,6 @@ SPDX-License-Identifier: Apache-2.0
 import React, { Component } from "react";
 import { Input, Select, Form, Modal } from "antd";
 import { hypersListApi } from "../../service/hypers";
-import Utils from "./Instances";
 import { flavorsListApi } from "../../service/flavors";
 const layoutForm = {
   labelCol: { span: 8 },
@@ -26,8 +25,7 @@ class InstModal extends Component {
       isLoaded: false,
     };
   }
-  componentWillMount() {
-    this.props.onRef(this);
+  componentDidMount() {
     const _this = this;
     flavorsListApi()
       .then((res) => {
@@ -71,13 +69,11 @@ class InstModal extends Component {
       p.props.submit(values);
     });
   };
-
   handleCancel = () => {
     const { close } = this.props;
 
     close();
   };
-
   getOptionList(data) {
     console.log("getOptionList", data);
     if (!data) {
@@ -239,14 +235,7 @@ class InstModal extends Component {
           onCancel={this.handleCancel}
           maskClosable={false}
         >
-          <Form
-            onSubmit={(e) => {
-              console.log("modal-e", e);
-              // this.handleModalSubmit(e);
-            }}
-            //   layout={{ ...layoutForm.LayoutType }}
-            wrapperCol={{ ...layoutForm.wrapperCol }}
-          >
+          <Form wrapperCol={{ ...layoutForm.wrapperCol }}>
             {p.initFormList()}
           </Form>
         </Modal>

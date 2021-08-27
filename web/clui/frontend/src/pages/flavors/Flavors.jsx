@@ -6,10 +6,10 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
-import { Card, Table, Button, Popconfirm, message } from "antd";
+import { Card, Button, Popconfirm, message } from "antd";
 import { flavorsListApi, delFlavorInfor } from "../../service/flavors";
-import { createDispatchHook } from "react-redux";
 import DataTable from "../../components/DataTable/DataTable";
+import DataFilter from "../../components/Filter/DataFilter";
 
 class Flavors extends Component {
   constructor(props) {
@@ -95,7 +95,7 @@ class Flavors extends Component {
       },
     },
   ];
-  componentWillMount() {
+  componentDidMount() {
     const _this = this;
     flavorsListApi()
       .then((res) => {
@@ -244,9 +244,20 @@ class Flavors extends Component {
       <Card
         title={"Flavor Manage Panel " + "(Total: " + this.state.total + ")"}
         extra={
-          <Button type="primary" size="small" onClick={this.createFlavors}>
-            Create
-          </Button>
+          <>
+            <DataFilter
+              placeholder="Search..."
+              onSearch={(value) => console.log(value)}
+              enterButton
+            />
+            <Button
+              style={{ float: "right" }}
+              type="primary"
+              onClick={this.createFlavors}
+            >
+              Create
+            </Button>
+          </>
         }
       >
         <DataTable

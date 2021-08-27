@@ -1,22 +1,12 @@
 import React, { Component } from "react";
-import {
-  Form,
-  Card,
-  Input,
-  Select,
-  Button,
-  message,
-  Row,
-  Col,
-  InputNumber,
-} from "antd";
+import { Form, Card, Input, Select, Button, message, InputNumber } from "antd";
 import {
   editOcpInfor,
   createOcpApi,
   getOcpInforById,
 } from "../../service/openshifts";
 import { regListApi } from "../../service/registrys";
-
+import { hypersListApi } from "../../service/hypers";
 import { flavorsListApi } from "../../service/flavors";
 import { subnetsListApi } from "../../service/subnets";
 import { keysListApi } from "../../service/keys";
@@ -42,6 +32,7 @@ class ModifyOpenshifts extends Component {
       flavors: [],
       keys: [],
       subnets: [],
+      zones: [],
     };
     let that = this;
     if (props.match.params.id) {
@@ -51,12 +42,11 @@ class ModifyOpenshifts extends Component {
           currentData: res,
           isShowEdit: true,
         });
-
-        console.log("getOcpInforById~state:", this.state);
+        console.log("getOcpInforById-currentData", this.state);
       });
     }
   }
-  componentWillMount() {
+  componentDidMount() {
     const _this = this;
     regListApi()
       .then((res) => {
@@ -99,6 +89,27 @@ class ModifyOpenshifts extends Component {
           error: error,
         });
       });
+    hypersListApi()
+      .then((res) => {
+        _this.setState({
+          hypers: res.hypers,
+          isLoaded: true,
+        });
+        this.state.hypers.forEach((val) => {
+          let zoneList = {
+            Name: val.Zone.Name,
+            ID: val.Zone.ID,
+          };
+          this.state.zones.push(zoneList);
+        });
+        this.filterZones();
+      })
+      .catch((error) => {
+        _this.setState({
+          isLoaded: false,
+          error: error,
+        });
+      });
 
     keysListApi()
       .then((res) => {
@@ -117,6 +128,23 @@ class ModifyOpenshifts extends Component {
   }
   listOpenshifts = () => {
     this.props.history.push("/openshifts");
+  };
+  filterZones = () => {
+    var initZone = [];
+    var newZone = [];
+    this.state.zones.map((item) => {
+      if (initZone.indexOf(item["Name"]) === -1) {
+        initZone.push(item["Name"]);
+        newZone.push(item);
+        console.log("zonearr", initZone);
+      }
+      return newZone;
+    });
+    this.setState({
+      zones: newZone,
+    });
+
+    console.log("test111", this.state.zones);
   };
   handleSubmit = (e) => {
     console.log("handleSubmit:", e);
@@ -160,7 +188,15 @@ class ModifyOpenshifts extends Component {
             : "Create New Openshift Cluster"
         }
         extra={
-          <Button type="primary" size="small" onClick={this.listOpenshifts}>
+          <Button
+            style={{
+              float: "right",
+              "padding-left": "10px",
+              "padding-right": "10px",
+            }}
+            type="primary"
+            onClick={this.listOpenshifts}
+          >
             Return
           </Button>
         }
@@ -244,9 +280,13 @@ class ModifyOpenshifts extends Component {
               ],
             })(
               <Select placeholder="None">
-                <Select.Option key={1} value={1543}>
-                  zone0
-                </Select.Option>
+                {this.state.zones.map((item, index) => {
+                  return (
+                    <Select.Option key={index} value={item.ID}>
+                      {item.Name}
+                    </Select.Option>
+                  );
+                })}
               </Select>
             )}
           </Form.Item>
