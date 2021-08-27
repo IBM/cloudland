@@ -6,9 +6,10 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
-import { Card, Table, Button, Popconfirm } from "antd";
+import { Card, Button, Popconfirm } from "antd";
 import { ocpListApi } from "../../service/openshifts";
 import DataTable from "../../components/DataTable/DataTable";
+import DataFilter from "../../components/Filter/DataFilter";
 class Openshifts extends Component {
   constructor(props) {
     super(props);
@@ -119,7 +120,7 @@ class Openshifts extends Component {
     },
   ];
   //组件初始化的时候执行
-  componentWillMount() {
+  componentDidMount() {
     const _this = this;
     console.log("componentDidMount:", this);
     ocpListApi()
@@ -204,9 +205,24 @@ class Openshifts extends Component {
       <Card
         title={"Openshift Manage Panel" + "(Total: " + this.state.total + ")"}
         extra={
-          <Button type="primary" size="small" onClick={this.createOpenshift}>
-            Create
-          </Button>
+          <>
+            <DataFilter
+              placeholder="Search..."
+              onSearch={(value) => console.log(value)}
+              enterButton
+            />
+            <Button
+              style={{
+                float: "right",
+                "padding-left": "10px",
+                "padding-right": "10px",
+              }}
+              type="primary"
+              onClick={this.createOpenshift}
+            >
+              Create
+            </Button>
+          </>
         }
       >
         <DataTable

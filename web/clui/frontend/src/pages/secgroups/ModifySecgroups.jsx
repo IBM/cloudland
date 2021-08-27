@@ -80,7 +80,15 @@ class ModifySecgroups extends Component {
             : "Create New Security Group "
         }
         extra={
-          <Button type="primary" size="small" onClick={this.listSecgroups}>
+          <Button
+            style={{
+              float: "right",
+              "padding-left": "10px",
+              "padding-right": "10px",
+            }}
+            type="primary"
+            onClick={this.listSecgroups}
+          >
             Return
           </Button>
         }

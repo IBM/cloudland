@@ -6,52 +6,11 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
-import { Card, Table, Button, Popconfirm, message } from "antd";
+import moment from "moment";
+import { Card, Table, Button, Popconfirm } from "antd";
 import { orgsListApi, delOrgInfor } from "../../service/orgs";
-const columns = [
-  {
-    title: "ID",
-    dataIndex: "ID",
-    key: "ID",
-    width: 80,
-    align: "center",
-    //render: (txt, record, index) => index + 1,
-  },
-  {
-    title: "Name",
-    dataIndex: "name",
-  },
-  {
-    title: "Created At",
-    dataIndex: "CreatedAt",
-  },
-  {
-    title: "Action",
-    render: (txt, record, index) => {
-      return (
-        <div>
-          <Button type="primary" size="small">
-            Edit
-          </Button>
-          <Popconfirm
-            title="Are you sure to delete?"
-            onCancel={() => {
-              console.log("cancelled");
-            }}
-            onConfirm={() => {
-              console.log("confirmed");
-              //此处调用api接口进行相关操作
-            }}
-          >
-            <Button style={{ margin: "0 1rem" }} type="danger" size="small">
-              Delete
-            </Button>
-          </Popconfirm>
-        </div>
-      );
-    },
-  },
-];
+import DataFilter from "../../components/Filter/DataFilter";
+
 class Orgs extends Component {
   constructor(props) {
     super(props);
@@ -197,7 +156,15 @@ class Orgs extends Component {
           "Organization Manage Panel" + "(Total: " + this.state.total + ")"
         }
         extra={
-          <Button type="primary" size="small" onClick={this.createOrg}>
+          <Button
+            style={{
+              float: "right",
+              "padding-left": "10px",
+              "padding-right": "10px",
+            }}
+            type="primary"
+            onClick={this.createOrg}
+          >
             Create
           </Button>
         }

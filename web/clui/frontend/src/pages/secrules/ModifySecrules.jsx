@@ -92,7 +92,15 @@ class ModifySecrules extends Component {
             : "Create New Security Rule "
         }
         extra={
-          <Button type="primary" size="small" onClick={this.listSecrules}>
+          <Button
+            style={{
+              float: "right",
+              "padding-left": "10px",
+              "padding-right": "10px",
+            }}
+            type="primary"
+            onClick={this.listSecrules}
+          >
             Return
           </Button>
         }

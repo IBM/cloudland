@@ -6,7 +6,7 @@ import {
   editGWInfor,
   getGWInforById,
 } from "../../service/gateways";
-
+import { hypersListApi } from "../../service/hypers";
 const layoutButton = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },
@@ -26,6 +26,7 @@ class ModifyGateways extends Component {
       subnetsValue: [],
       isShowEdit: false,
       currentData: [],
+      zones: [],
     };
     if (props.match.params.id) {
       getGWInforById(props.match.params.id).then((res) => {
@@ -39,7 +40,7 @@ class ModifyGateways extends Component {
     }
   }
 
-  componentWillMount() {
+  componentDidMount() {
     const _this = this;
 
     subnetsListApi()
@@ -56,8 +57,45 @@ class ModifyGateways extends Component {
           error: error,
         });
       });
+    hypersListApi()
+      .then((res) => {
+        _this.setState({
+          hypers: res.hypers,
+          isLoaded: true,
+        });
+        this.state.hypers.forEach((val) => {
+          let zoneList = {
+            Name: val.Zone.Name,
+            ID: val.Zone.ID,
+          };
+          this.state.zones.push(zoneList);
+        });
+        this.filterZones();
+      })
+      .catch((error) => {
+        _this.setState({
+          isLoaded: false,
+          error: error,
+        });
+      });
   }
+  filterZones = () => {
+    var initZone = [];
+    var newZone = [];
+    this.state.zones.map((item) => {
+      if (initZone.indexOf(item["Name"]) === -1) {
+        initZone.push(item["Name"]);
+        newZone.push(item);
+        console.log("zonearr", initZone);
+      }
+      return newZone;
+    });
+    this.setState({
+      zones: newZone,
+    });
 
+    console.log("test111", this.state.zones);
+  };
   handleSubmit = (event) => {
     console.log("handleSubmit:", event);
     event.preventDefault();
@@ -112,7 +150,11 @@ class ModifyGateways extends Component {
       <Card
         title={this.state.isShowEdit ? "Edit Gateway" : "Create New Gateway "}
         extra={
-          <Button type="primary" size="small" onClick={this.listGateways}>
+          <Button
+            style={{ float: "right" }}
+            type="primary"
+            onClick={this.listGateways}
+          >
             Return
           </Button>
         }
@@ -158,9 +200,13 @@ class ModifyGateways extends Component {
               ],
             })(
               <Select>
-                <Select.Option key="zone" value="1543">
-                  zone0
-                </Select.Option>
+                {this.state.zones.map((item, index) => {
+                  return (
+                    <Select.Option key={index} value={item.ID}>
+                      {item.Name}
+                    </Select.Option>
+                  );
+                })}
               </Select>
             )}
           </Form.Item>

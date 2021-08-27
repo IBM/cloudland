@@ -6,8 +6,10 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
+import moment from "moment";
 import { Card, Table, Button, Popconfirm } from "antd";
 import { keysListApi } from "../../service/keys";
+import DataFilter from "../../components/Filter/DataFilter";
 const columns = [
   {
     title: "ID",
@@ -20,17 +22,24 @@ const columns = [
   {
     title: "Name",
     dataIndex: "Name",
+    align: "center",
   },
   {
     title: "Owner",
     dataIndex: "OwnerInfo.name",
+    align: "center",
   },
   {
     title: "Created At",
     dataIndex: "CreatedAt",
+    align: "center",
+    render: (record) => (
+      <span>{moment(record).format("YYYY-MM-DD HH:mm:ss")}</span>
+    ),
   },
   {
     title: "Action",
+    align: "center",
     render: (txt, record, index) => {
       return (
         <div>
@@ -62,7 +71,7 @@ class Keys extends Component {
       total: 0,
     };
   }
-  componentWillMount() {
+  componentDidMount() {
     const _this = this;
     keysListApi()
       .then((res) => {
@@ -88,9 +97,24 @@ class Keys extends Component {
       <Card
         title={"Key Manage Panel" + "(Total: " + this.state.total + ")"}
         extra={
-          <Button type="primary" size="small" onClick={this.demo}>
-            Create
-          </Button>
+          <>
+            <DataFilter
+              placeholder="Search..."
+              onSearch={(value) => console.log(value)}
+              enterButton
+            />
+            <Button
+              style={{
+                float: "right",
+                "padding-left": "10px",
+                "padding-right": "10px",
+              }}
+              type="primary"
+              onClick={this.demo}
+            >
+              Create
+            </Button>
+          </>
         }
       >
         <Table

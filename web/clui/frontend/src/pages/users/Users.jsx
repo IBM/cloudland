@@ -1,14 +1,12 @@
 /*
-
 Copyright <holder> All Rights Reserved
-
 SPDX-License-Identifier: Apache-2.0
-
 */
 import React, { Component } from "react";
-
+import moment from "moment";
 import { Card, Table, Button, Popconfirm, message } from "antd";
 import { userListApi, delUserInfor } from "../../service/users";
+import DataFilter from "../../components/Filter/DataFilter";
 class Users extends Component {
   constructor(props) {
     super(props);
@@ -35,13 +33,19 @@ class Users extends Component {
     {
       title: "Name",
       dataIndex: "username",
+      align: "center",
     },
     {
       title: "Created At",
       dataIndex: "CreatedAt",
+      align: "center",
+      render: (record) => (
+        <span>{moment(record).format("YYYY-MM-DD HH:mm:ss")}</span>
+      ),
     },
     {
       title: "Action",
+      align: "center",
       render: (txt, record, index) => {
         return (
           <div>
@@ -156,9 +160,24 @@ class Users extends Component {
       <Card
         title={"Users" + "(Total: " + this.state.total + ")"}
         extra={
-          <Button type="primary" size="small" onClick={this.createUser}>
-            Create
-          </Button>
+          <>
+            <DataFilter
+              placeholder="Search..."
+              onSearch={(value) => console.log(value)}
+              enterButton
+            />
+            <Button
+              style={{
+                float: "right",
+                "padding-left": "10px",
+                "padding-right": "10px",
+              }}
+              type="primary"
+              onClick={this.createUser}
+            >
+              Create
+            </Button>
+          </>
         }
       >
         <Table

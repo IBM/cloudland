@@ -91,7 +91,15 @@ class ModifyRegistrys extends Component {
       <Card
         title={this.state.isShowEdit ? "Edit Registry" : "Create Registry"}
         extra={
-          <Button type="primary" size="small" onClick={this.listRegistrys}>
+          <Button
+            style={{
+              float: "right",
+              "padding-left": "10px",
+              "padding-right": "10px",
+            }}
+            type="primary"
+            onClick={this.listRegistrys}
+          >
             Return
           </Button>
         }

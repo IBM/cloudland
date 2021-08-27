@@ -34,3 +34,14 @@ SPDX-License-Identifier: Apache-2.0
   word-wrap: break-word;
   word-break: break-all;
 }
+.columnHidden {
+  display: none;
+}
+
+.ant-input-group-wrapper {
+  width: 70% !important;
+}
+
+.ant-card-extra {
+  width: 68%;
+}

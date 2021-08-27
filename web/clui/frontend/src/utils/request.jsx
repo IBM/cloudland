@@ -21,6 +21,7 @@ const instance = axios.create({
 instance.interceptors.request.use(
   (config) => {
     console.log("getToken():", getToken());
+
     if (getToken()) {
       config.headers.common["X-Auth-Token"] = getToken();
     } else {
@@ -55,7 +56,7 @@ instance.interceptors.response.use(
       }
     }
     console.log("axios-error", error.response);
-    return Promise.reject(error.response.data);
+    return Promise.reject(error);
     // console.log("axios-error", error.response);
     // return Promise.reject(error);
   }

@@ -16,12 +16,15 @@ import {
   Row,
   Col,
   InputNumber,
+  Avatar,
 } from "antd";
+import CreateKeyModal from "./CreateKeyModal";
 import {
   createInsApi,
   getInsInforById,
   editInsInfor,
 } from "../../service/instances";
+import { createKeyApi } from "../../service/keys";
 import { hypersListApi } from "../../service/hypers";
 import { imagesListApi } from "../../service/images";
 import { flavorsListApi } from "../../service/flavors";
@@ -29,6 +32,7 @@ import { secgroupsListApi } from "../../service/secgroups";
 import { subnetsListApi } from "../../service/subnets";
 import { keysListApi } from "../../service/keys";
 import "./instances.css";
+const { Meta } = Card;
 const layoutButton = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },
@@ -37,27 +41,21 @@ const layoutForm = {
   labelCol: { span: 6 },
   wrapperCol: { span: 10 },
 };
-const { Option } = Select;
-const children = [];
-
-for (let i = 10; i < 36; i++) {
-  children.push(<Option key={i.toString(36) + i}>{i.toString(36) + i}</Option>);
-}
 
 class ModifyInstances extends Component {
   constructor(props) {
     super(props);
     //const { getFieldDecorator } = this.props.form;
-    console.log("ModifyInstances~~", this);
+    console.log("ModifyInstances~~", this.props);
     this.state = {
       value: "",
+      visible: false,
       isShowEdit: false,
       defaultHyper: -1,
       currentData: [],
-      instZone: {},
       instFlavor: {},
-      instInterface: {},
-      instSubnet: {},
+      instInterface: [],
+      instSubnet: [],
       images: [],
       hypers: [],
       zones: [],
@@ -65,75 +63,55 @@ class ModifyInstances extends Component {
       keys: [],
       secgroups: [],
       subnets: [],
-      zone: {
-        ID: "",
-        Name: "",
-      },
     };
     let that = this;
     if (props.match.params.id) {
       getInsInforById(props.match.params.id).then((res) => {
         console.log("getInsInforById-res:", res);
-        let test = res.instance.FlavorID + "-" + res.instance.Flavor.Name;
         that.setState({
           currentData: res.instance,
           isShowEdit: true,
-          instZone: res.instance.Zone,
-          instFlavor: res.instance.Flavor,
-          instInterface: res.instance.Interfaces[0].Address,
-          instSubnet: res.instance.Interfaces[0].Address.Subnet,
-          test: test,
-        });
 
+          instFlavor: res.instance.Flavor,
+          instInterface: res.instance.Interfaces.map((iface) => {
+            return iface.Address;
+          }),
+          instSubnet: res.instance.Interfaces.map((iface) => {
+            return iface.Address.Subnet;
+          }),
+        });
+        console.log("getInsInforById~instInterface:", this.state.instInterface);
         console.log("getInsInforById~state:", this.state);
       });
     }
-    console.log("state:", that.state);
+    console.log("state-instance:", that.state);
   }
   listInstances = () => {
     this.props.history.push("/instances");
   };
-  handleChange = (value) => {
-    console.log(`selected ${value}`);
-  };
-  hyperChanged = (obj) => {
-    console.log(`-----------selected`, obj);
-    let zone = this.state.hypers[obj.key].Zone;
-    this.setState({
-      zone: zone,
-    });
-  };
   handleSubmit = (e) => {
     console.log("handleSubmit:", e);
-    let tempOwner = {};
     e.preventDefault();
     this.props.form.validateFieldsAndScroll((err, values) => {
       if (!err) {
         console.log("handleSubmit-value:", values);
         console.log("提交");
         if (this.props.match.params.id) {
+          let tempFlavorArr = values.flavor.split("-");
+          let tempFlavor = parseInt(tempFlavorArr[0]);
+          values.flavor = tempFlavor;
+          console.log("tempFlavorArr", tempFlavorArr);
+          console.log("tempFlavor", tempFlavor);
+          console.log("values.flavor", values.flavor);
           console.log("instance-edit", this.props.match.params.id, values);
           editInsInfor(this.props.match.params.id, values).then((res) => {
             console.log("instance-editInsInfor:", res);
             this.props.history.push("/instances");
           });
         } else {
-          tempOwner = this.state.secgroups.map((item) => {
-            if (item.Name === window.localStorage.token) {
-              console.log("item-secgroups", item);
-              return item.ID;
-            }
-          });
-          console.log("tempOwner", tempOwner);
           values.hyper =
             values.hyper === undefined ? this.state.defaultHyper : values.hyper;
 
-          values.secgroups =
-            values.secgroups === undefined
-              ? `${tempOwner}`
-              : `${values.secgroups}`;
-
-          values.keys = `${values.keys}`;
           console.log("submit-value", values);
           createInsApi(values)
             .then((res) => {
@@ -153,9 +131,49 @@ class ModifyInstances extends Component {
   valueChange = (e) => {
     console.log("valueChange-e", e);
   };
-  componentWillMount() {
+  filterZones = () => {
+    var initZone = [];
+    var newZone = [];
+    this.state.zones.map((item) => {
+      if (initZone.indexOf(item["Name"]) === -1) {
+        initZone.push(item["Name"]);
+        newZone.push(item);
+        console.log("zonearr", initZone);
+      }
+      return newZone;
+    });
+    this.setState({
+      zones: newZone,
+    });
+
+    console.log("test111", this.state.zones);
+  };
+  showKeyModal = () => {
+    this.setState({ visible: true });
+    console.log("create key");
+  };
+  hideKeyModal = () => {
+    this.setState({ visible: false });
+  };
+  createKey = (values) => {
+    // const p = this;
+    // const { form } = this.props;
+    console.log("createKey-form", values);
+    createKeyApi(values)
+      .then((res) => {
+        console.log("createKey-createKeyApi:", res);
+        this.setState({
+          visible: false,
+        });
+        this.props.form.resetFields();
+      })
+      .catch((err) => {
+        console.log("createKey-error:", err);
+      });
+  };
+
+  componentDidMount() {
     const _this = this;
-    //let hyperArr = [];
     imagesListApi()
       .then((res) => {
         _this.setState({
@@ -174,18 +192,20 @@ class ModifyInstances extends Component {
       .then((res) => {
         _this.setState({
           hypers: res.hypers,
-          //   isLoaded: true,
+          isLoaded: true,
         });
-
-        this.state.hypers.map((val) => {
-          console.log("hyperSelect-val:", val);
+        this.state.hypers.forEach((val) => {
+          let zoneList = {
+            Name: val.Zone.Name,
+            ID: val.Zone.ID,
+          };
+          this.state.zones.push(zoneList);
         });
-        console.log("hyperSelect-res:", res);
-        console.log("hyperSelect-state.hypers:", this.state.hypers);
+        this.filterZones();
       })
       .catch((error) => {
         _this.setState({
-          //   isLoaded: false,
+          isLoaded: false,
           error: error,
         });
       });
@@ -209,6 +229,8 @@ class ModifyInstances extends Component {
           subnets: res.subnets,
           isLoaded: true,
         });
+
+        console.log("instance-subnets", this.state.subnets);
       })
       .catch((error) => {
         _this.setState({
@@ -245,13 +267,16 @@ class ModifyInstances extends Component {
         });
       });
   }
-
   render() {
     return (
       <Card
         title={this.state.isShowEdit ? "Edit Instance" : "Create Instance"}
         extra={
-          <Button type="primary" size="small" onClick={this.listInstances}>
+          <Button
+            style={{ float: "right" }}
+            type="primary"
+            onClick={this.listInstances}
+          >
             Return
           </Button>
         }
@@ -326,18 +351,17 @@ class ModifyInstances extends Component {
               rules: [],
               initialValue: this.state.currentData.Hyper,
             })(
-              <Select
-                disabled={this.state.isShowEdit}
-                // labelInValue
-                // onChange={(e) => this.setState({ zoned: e.key })}
-              >
-                <Select.Option key={1} value={1543}>
-                  zone0
-                </Select.Option>
+              <Select disabled={this.state.isShowEdit}>
+                {this.state.zones.map((item, index) => {
+                  return (
+                    <Select.Option key={index} value={item.ID}>
+                      {item.Name}
+                    </Select.Option>
+                  );
+                })}
               </Select>
             )}
           </Form.Item>
-
           <Form.Item
             label="Created At"
             name="createdAt"
@@ -360,12 +384,10 @@ class ModifyInstances extends Component {
               initialValue: this.state.currentData.UpdatedAt,
             })(<Input disabled={this.state.isShowEdit} name="updatedAt" />)}
           </Form.Item>
-
           <Form.Item
             label="Count"
             name="count"
             labelCol={{ ...layoutForm.labelCol }}
-            // wrapperCol={{ ...layoutButton.wrapperCol }}
             hidden={this.state.isShowEdit}
           >
             {this.props.form.getFieldDecorator("count", {
@@ -378,13 +400,7 @@ class ModifyInstances extends Component {
                 // },
               ],
               initialValue: 1,
-            })(
-              <InputNumber
-                min={1}
-                // defaultValue={3}
-                // onChange={(e) => this.setState({ count: e.target.value })}
-              />
-            )}
+            })(<InputNumber min={1} />)}
           </Form.Item>
           <Form.Item
             name="image"
@@ -399,11 +415,7 @@ class ModifyInstances extends Component {
                 },
               ],
             })(
-              <Select
-                disabled={this.state.isShowEdit}
-                // labelInValue
-                // onChange={(e) => this.setState({ image: e.key })}
-              >
+              <Select disabled={this.state.isShowEdit}>
                 {this.state.images.map((val) => {
                   return (
                     <Select.Option key={val.ID} value={val.ID}>
@@ -426,7 +438,6 @@ class ModifyInstances extends Component {
                 },
               ],
               initialValue:
-                // this.state.test,
                 this.state.currentData.length === 0
                   ? ""
                   : this.state.currentData.FlavorID +
@@ -459,18 +470,12 @@ class ModifyInstances extends Component {
             })(
               <Select disabled={this.state.isShowEdit}>
                 {this.state.subnets.map((val) => {
-                  if (
-                    val.Name === "public" ||
-                    val.Name === "private" ||
-                    val.Name === window.localStorage.token
-                  ) {
-                    return (
-                      <Select.Option key={val.ID} value={val.ID}>
-                        {val.Name}-{val.Network}
-                        {val.Gateway.substring(val.Gateway.indexOf("/"))}
-                      </Select.Option>
-                    );
-                  }
+                  return (
+                    <Select.Option key={val.ID} value={val.ID}>
+                      {val.Name}-{val.Network}
+                      {val.Gateway.substring(val.Gateway.indexOf("/"))}
+                    </Select.Option>
+                  );
                 })}
               </Select>
             )}
@@ -516,18 +521,12 @@ class ModifyInstances extends Component {
             })(
               <Select disabled={this.state.isShowEdit}>
                 {this.state.subnets.map((val, index) => {
-                  if (
-                    val.Name === "public" ||
-                    val.Name === "private" ||
-                    val.Name === window.localStorage.token
-                  ) {
-                    return (
-                      <Select.Option key={index} value={val.ID}>
-                        {val.Name}-{val.Network}
-                        {val.Gateway.substring(val.Gateway.indexOf("/"))}
-                      </Select.Option>
-                    );
-                  }
+                  return (
+                    <Select.Option key={index} value={val.ID}>
+                      {val.Name}-{val.Network}
+                      {val.Gateway.substring(val.Gateway.indexOf("/"))}
+                    </Select.Option>
+                  );
                 })}
               </Select>
             )}
@@ -542,16 +541,10 @@ class ModifyInstances extends Component {
               rules: [],
               // initialValue: window.localStorage.token,
             })(
-              <Select
-                disabled={this.state.isShowEdit}
-                optionFilterProp="children"
-                filterOption={(input, option) =>
-                  console.log("filter", input, option)
-                }
-              >
+              <Select disabled={this.state.isShowEdit}>
                 {this.state.secgroups.map((val, index) => {
                   return (
-                    <Select.Option key={index} value={val.ID}>
+                    <Select.Option key={index} value={`${val.ID}`}>
                       {val.ID}-{val.Name}
                     </Select.Option>
                   );
@@ -570,36 +563,55 @@ class ModifyInstances extends Component {
               initialValue:
                 this.state.currentData.length === 0
                   ? ""
-                  : this.state.instSubnet.Name +
+                  : this.state.instSubnet.map((iSubnet) => {
+                      return iSubnet.Name;
+                    }) +
                     "-" +
-                    this.state.instInterface.Address,
+                    this.state.instInterface.map((ifaces) => {
+                      return ifaces.Address;
+                    }),
             })(
               <Select
                 mode="tags"
                 style={{ width: "100%" }}
                 placeholder="Please select"
-                onChange={this.handleChange}
               >
-                {children}
+                {this.state.instInterface.map((ifaces) => {
+                  console.log("select-instInterface", ifaces);
+                  return (
+                    <Select.Option key={ifaces.ID} value={`${ifaces.SubnetID}`}>
+                      {this.state.instSubnet.map((isubnet) => {
+                        return isubnet.Name;
+                      })}
+                      -{ifaces.Address}
+                    </Select.Option>
+                  );
+                })}
               </Select>
             )}
           </Form.Item>
-
           <Form.Item
             label="Keys"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
           >
             <Row gutter={8}>
-              <Col span={19}>
+              <Col span={17}>
                 <Form.Item name="keys">
                   {this.props.form.getFieldDecorator("keys", {
                     rules: [],
+                    // initialValue: this.state.keys,
                   })(
-                    <Select disabled={this.state.isShowEdit}>
+                    <Select
+                      mode="tags"
+                      style={{ width: "100%" }}
+                      placeholder="Key"
+                      disabled={this.state.isShowEdit}
+                    >
                       {this.state.keys.map((val, index) => {
+                        console.log("keysss", val.ID);
                         return (
-                          <Select.Option key={index} value={val.ID}>
+                          <Select.Option key={index} value={`${val.ID}`}>
                             {val.ID} - {val.Name}
                           </Select.Option>
                         );
@@ -609,11 +621,12 @@ class ModifyInstances extends Component {
                 </Form.Item>
               </Col>
               <Col span={5}>
-                <Button type="primary">Create Key</Button>
+                <Button type="primary" onClick={this.showKeyModal}>
+                  Create Key
+                </Button>
               </Col>
             </Row>
           </Form.Item>
-
           <Form.Item
             name="userdata"
             label="User Data"
@@ -627,11 +640,9 @@ class ModifyInstances extends Component {
               <Input.TextArea
                 autoSize={{ minRows: 3, maxRows: 6 }}
                 name="userdata"
-                // onChange={(e) => this.setState({ userdata: e.target.value })}
               />
             )}
           </Form.Item>
-
           <Form.Item
             wrapperCol={{ ...layoutButton.wrapperCol, offset: 8 }}
             labelCol={{ span: 6 }}
@@ -647,6 +658,17 @@ class ModifyInstances extends Component {
             )}
           </Form.Item>
         </Form>
+        <CreateKeyModal
+          title="Create New Key"
+          visible={this.state.visible}
+          submit={this.createKey.bind(this)}
+          close={() => {
+            this.setState({
+              visible: false,
+            });
+            this.props.form.resetFields();
+          }}
+        ></CreateKeyModal>
       </Card>
     );
   }
