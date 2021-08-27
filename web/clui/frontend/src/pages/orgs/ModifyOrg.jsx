@@ -24,7 +24,7 @@ class ModifyOrg extends Component {
       isShowEdit: false,
       currentData: [],
       owerUser: [],
-      member: [],
+      members: [],
 
     };
     let that = this;
@@ -35,7 +35,7 @@ class ModifyOrg extends Component {
           currentData: res,
           owerUser: res.OwnerUser,
           members: res.Members.filter((item) => {
-            return item.Username;
+            return item.UserName;
           }),          
           isShowEdit: true,
         });
@@ -106,22 +106,28 @@ class ModifyOrg extends Component {
               initialValue: this.state.owerUser.username,
             })(<Input />)}
           </Form.Item>
-          <Form.Item
-            label="Members"
-            name="members"
-            labelCol={{ ...layoutForm.labelCol }}
-          >
-            {this.props.form.getFieldDecorator("members", {
-              rules: [
-                {
-                  required: true,
-                },
-              ],
-              initialValue: this.state.members.map((item) => {
-                return item.OrgName;
-              }),
-            })(<Input />)}
-          </Form.Item>
+          <h3>Member List</h3>
+          {
+	        this.state.members.map((item,index) => {
+		      return (
+                <Form.Item
+                  label=""
+                  name="members"
+                  labelCol={{ ...layoutForm.labelCol }}
+                >
+                {this.props.form.getFieldDecorator("owner", {
+                  rules: [
+                    {
+                      required: true,
+                    },
+                  ],
+                  initialValue: item.UserName,
+                })(<Input />)}
+                </Form.Item>			
+		      )
+	        }
+	        )
+          }
           <Form.Item
             wrapperCol={{ ...layoutButton.wrapperCol, offset: 8 }}
             labelCol={{ span: 6 }}
