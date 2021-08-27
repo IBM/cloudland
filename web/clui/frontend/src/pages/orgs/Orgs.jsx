@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import moment from "moment";
-import { Card, Table, Button, Popconfirm } from "antd";
+import { Card, Table, Button, Popconfirm, message } from "antd";
 import { orgsListApi, delOrgInfor } from "../../service/orgs";
 import DataFilter from "../../components/Filter/DataFilter";
 
@@ -40,6 +40,9 @@ class Orgs extends Component {
     {
       title: "Created At",
       dataIndex: "CreatedAt",
+      render: (record) => (
+        <span>{moment(record).format("YYYY-MM-DD HH:mm:ss")}</span>
+      ),
     },
     {
       title: "Action",
@@ -156,17 +159,24 @@ class Orgs extends Component {
           "Organization Manage Panel" + "(Total: " + this.state.total + ")"
         }
         extra={
-          <Button
-            style={{
-              float: "right",
-              "padding-left": "10px",
-              "padding-right": "10px",
-            }}
-            type="primary"
-            onClick={this.createOrg}
-          >
-            Create
-          </Button>
+          <>
+            <DataFilter
+              placeholder="Search..."
+              onSearch={(value) => console.log(value)}
+              enterButton
+            />
+            <Button
+              style={{
+                float: "right",
+                "padding-left": "10px",
+                "padding-right": "10px",
+              }}
+              type="primary"
+              onClick={this.createOrg}
+            >
+              Create
+            </Button>
+          </>
         }
       >
         <Table
