@@ -1448,14 +1448,14 @@ func (v *APIInstanceView) New(c *macaron.Context, store session.Store) {
 	images := []*model.Image{}
 	if err := db.Find(&images).Error; err != nil {
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to get images."+err.Error,
+			"ErrorMsg": "Failed to get images."+err.Error(),
 		})
 		return
 	}
 	flavors := []*model.Flavor{}
 	if err := db.Find(&flavors).Error; err != nil {
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to get flavors."+err.Error,
+			"ErrorMsg": "Failed to get flavors."+err.Error(),
 		})
 		return
 	}
@@ -1477,7 +1477,7 @@ func (v *APIInstanceView) New(c *macaron.Context, store session.Store) {
 	_, keys, err := keyAdmin.List(ctx, 0, -1, "", "")
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to get keys."+err.Error,
+			"ErrorMsg": "Failed to get keys."+err.Error(),
 		})
 		return
 	}
@@ -1492,7 +1492,7 @@ func (v *APIInstanceView) New(c *macaron.Context, store session.Store) {
 	err = db.Where("hostid >= 0").Find(&hypers).Error
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to get hypers."+err.Error,
+			"ErrorMsg": "Failed to get hypers."+err.Error(),
 		})
 		return
 	}
@@ -1500,20 +1500,11 @@ func (v *APIInstanceView) New(c *macaron.Context, store session.Store) {
 	err = db.Find(&zones).Error
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
-			"ErrorMsg": "Failed to get zones."+err.Error,
+			"ErrorMsg": "Failed to get zones."+err.Error(),
 		})
 		return
 	}
-	c.Data["HostName"] = c.QueryTrim("hostname")
-	c.Data["Images"] = images
-	c.Data["Flavors"] = flavors
-	c.Data["Subnets"] = subnets
-	c.Data["Openshifts"] = openshifts
-	c.Data["Secgroups"] = secgroups
-	c.Data["Keys"] = keys
-	c.Data["Hypers"] = hypers
-	c.Data["Zones"] = zones
-	c.HTML(200, "instances_new")
+
 	c.JSON(200, map[string]interface{}{
 		"HostName":   c.QueryTrim("hostname"),
 		"Images":     images,
