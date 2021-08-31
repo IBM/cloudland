@@ -135,7 +135,7 @@ class ModifyOrg extends Component {
                       required: true,
                     },
                   ],
-                  initialValue: item.Role,
+                  initialValue: String.value(item.Role),
                 })(
                   <Select>
                     <Select.Option value="0">None</Select.Option>
