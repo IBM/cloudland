@@ -35,7 +35,7 @@ class ModifyOrg extends Component {
           currentData: res,
           owerUser: res.OwnerUser,
           members: res.Members.filter((item) => {
-            return item.UserName;
+            return {UserName:item.UserName, Role:item.Role};
           }),          
           isShowEdit: true,
         });
@@ -109,13 +109,13 @@ class ModifyOrg extends Component {
           <h3>Member List</h3>
           {
 	        this.state.members.map((item,index) => {
-		      return (
+		      return ([
                 <Form.Item
                   label=""
-                  name="members"
+                  name="names"
                   labelCol={{ ...layoutForm.labelCol }}
                 >
-                {this.props.form.getFieldDecorator("owner", {
+                {this.props.form.getFieldDecorator("names", {
                   rules: [
                     {
                       required: true,
@@ -123,10 +123,35 @@ class ModifyOrg extends Component {
                   ],
                   initialValue: item.UserName,
                 })(<Input />)}
-                </Form.Item>			
-		      )
+                </Form.Item>,
+                <Form.Item
+                  label=""
+                  name="roles"
+                  labelCol={{ ...layoutForm.labelCol }}
+                >
+                {this.props.form.getFieldDecorator("roles", {
+                  rules: [
+                    {
+                      required: true,
+                    },
+                  ],
+                  initialValue: item.Role,
+                })(
+                  <Select>
+                    <Select.Option value="0">None</Select.Option>
+                    <Select.Option value="1">Reader</Select.Option>
+                    <Select.Option value="2">Writer</Select.Option>
+                    <Select.Option value="3">Owner</Select.Option>
+                    <Select.Option value="4">Admin</Select.Option>
+                  </Select>	
+	            )}
+                </Form.Item>                            		
+		      ])
+
+
 	        }
 	        )
+
           }
           <Form.Item
             wrapperCol={{ ...layoutButton.wrapperCol, offset: 8 }}
