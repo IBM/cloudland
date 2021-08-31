@@ -35,7 +35,7 @@ class ModifyOrg extends Component {
           currentData: res,
           owerUser: res.OwnerUser,
           members: res.Members.filter((item) => {
-            return {UserName:item.UserName, Role:String.value(item.Role)};
+            return {UserName:item.UserName, Role:item.Role};
           }),          
           isShowEdit: true,
         });
@@ -135,7 +135,7 @@ class ModifyOrg extends Component {
                       required: true,
                     },
                   ],
-                  initialValue: item.Role,
+                  initialValue: item.Role.toString(),
                 })(
                   <Select>
                     <Select.Option value="0">None</Select.Option>
