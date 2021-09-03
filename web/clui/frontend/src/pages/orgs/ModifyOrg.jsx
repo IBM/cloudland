@@ -24,7 +24,7 @@ class ModifyOrg extends Component {
       isShowEdit: false,
       currentData: [],
       owerUser: [],
-      member: [],
+      members: [],
 
     };
     let that = this;
@@ -35,7 +35,7 @@ class ModifyOrg extends Component {
           currentData: res,
           owerUser: res.OwnerUser,
           members: res.Members.filter((item) => {
-            return item.Username;
+            return {UserName:item.UserName, Role:item.Role};
           }),          
           isShowEdit: true,
         });
@@ -89,7 +89,7 @@ class ModifyOrg extends Component {
                   required: true,
                 },
               ],
-              initialValue: this.state.currentData.Name,
+              initialValue: this.state.currentData.name,
             })(<Input />)}
           </Form.Item>
           <Form.Item
@@ -106,22 +106,53 @@ class ModifyOrg extends Component {
               initialValue: this.state.owerUser.username,
             })(<Input />)}
           </Form.Item>
-          <Form.Item
-            label="Members"
-            name="members"
-            labelCol={{ ...layoutForm.labelCol }}
-          >
-            {this.props.form.getFieldDecorator("members", {
-              rules: [
-                {
-                  required: true,
-                },
-              ],
-              initialValue: this.state.members.map((item) => {
-                return item.OrgName;
-              }),
-            })(<Input />)}
-          </Form.Item>
+          <h3>Member List</h3>
+          {
+	        this.state.members.map((item,index) => {
+		      return ([
+                <Form.Item
+                  label=""
+                  name="names"
+                  labelCol={{ ...layoutForm.labelCol }}
+                >
+                {this.props.form.getFieldDecorator("names", {
+                  rules: [
+                    {
+                      required: true,
+                    },
+                  ],
+                  initialValue: item.UserName,
+                })(<Input />)}
+                </Form.Item>,
+                <Form.Item
+                  label=""
+                  name="roles"
+                  labelCol={{ ...layoutForm.labelCol }}
+                >
+                {this.props.form.getFieldDecorator("roles", {
+                  rules: [
+                    {
+                      required: true,
+                    },
+                  ],
+                  initialValue: item.Role.toString(),
+                })(
+                  <Select>
+                    <Select.Option value="0">None</Select.Option>
+                    <Select.Option value="1">Reader</Select.Option>
+                    <Select.Option value="2">Writer</Select.Option>
+                    <Select.Option value="3">Owner</Select.Option>
+                    <Select.Option value="4">Admin</Select.Option>
+                  </Select>	
+	            )}
+                </Form.Item>                            		
+		      ])
+
+
+	        }
+	        )
+
+          }
           <Form.Item
             wrapperCol={{ ...layoutButton.wrapperCol, offset: 8 }}
             labelCol={{ span: 6 }}
