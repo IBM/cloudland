@@ -22,13 +22,9 @@ import { InitRoutes } from "./routes";
 import reportWebVitals from "./reportWebVitals";
 import App from "./App";
 import rootReducers from "./redux";
-const store = createStore(
-  rootReducers,
-  compose(
-    applyMiddleware(...[thunk]) // 需要使用的中间件数组
-    // window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
-  )
-);
+import configureStore from "./store/configureStore";
+
+const store = configureStore();
 
 ReactDOM.render(
   <Provider store={store}>

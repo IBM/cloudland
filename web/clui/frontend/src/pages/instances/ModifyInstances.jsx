@@ -32,7 +32,7 @@ import { secgroupsListApi } from "../../service/secgroups";
 import { subnetsListApi } from "../../service/subnets";
 import { keysListApi } from "../../service/keys";
 import "./instances.css";
-const { Meta } = Card;
+import { connect } from "react-redux";
 const layoutButton = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },
@@ -46,7 +46,7 @@ class ModifyInstances extends Component {
   constructor(props) {
     super(props);
     //const { getFieldDecorator } = this.props.form;
-    console.log("ModifyInstances~~", this.props);
+    console.log("ModifyInstances111~~", this.props);
     this.state = {
       value: "",
       visible: false,
@@ -314,6 +314,7 @@ class ModifyInstances extends Component {
             label="Hyper"
             name="hyper"
             labelCol={{ ...layoutForm.labelCol }}
+            hidden={!this.props.loginInfo.isAdmin}
           >
             {this.props.form.getFieldDecorator("hyper", {
               rules: [],
@@ -673,4 +674,13 @@ class ModifyInstances extends Component {
     );
   }
 }
-export default Form.create({ name: "modifyInstances" })(ModifyInstances);
+const mapStateToProps = (state, ownProps) => {
+  console.log("mapStateToProps-modifyinstance:", state);
+  // var loginInfo = JSON.parse(state.loginInfo);
+  // console.log("mapStateToProps-isadmin:", JSON.parse(state.loginInfo));
+
+  return state;
+};
+export default connect(mapStateToProps)(
+  Form.create({ name: "modifyInstances" })(ModifyInstances)
+);

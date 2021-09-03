@@ -6,10 +6,15 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
-import { Card, Button, Popconfirm, message } from "antd";
+import { Card, Button, Popconfirm, message, Input } from "antd";
 import { regListApi, delRegInfor } from "../../service/registrys";
 import DataTable from "../../components/DataTable/DataTable";
-import DataFilter from "../../components/Filter/DataFilter";
+// import DataFilter from "../../components/Filter/DataFilter";
+import { compose } from "redux";
+import { withRouter } from "react-router";
+import { connect } from "react-redux";
+import { filterRegList, fetchRegList } from "../../redux/actions/RegAction";
+const { Search } = Input;
 class Registrys extends Component {
   constructor(props) {
     super(props);
@@ -135,23 +140,12 @@ class Registrys extends Component {
     },
   ];
   componentDidMount() {
-    const _this = this;
-    const limit = this.state.pageSize;
-    regListApi(this.state.offset, limit)
-      .then((res) => {
-        console.log("regListApi-total:", res.total);
-        _this.setState({
-          registrys: res.registrys,
-          isLoaded: true,
-          total: res.total,
-        });
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
+    console.log("组件加载完成===================================");
+    const { regList } = this.props.reg;
+    const { handleFetchRegList } = this.props;
+    if (!regList || regList.length === 0) {
+      handleFetchRegList();
+    }
   }
 
   createRegistrys = () => {
@@ -216,15 +210,22 @@ class Registrys extends Component {
     this.toSelectchange(current, pageSize);
   };
 
+  filter = (event) => {
+    this.props.handleFilterRegList(event.target.value);
+  };
+
   render() {
+    console.log("registry-props", this.props);
+    const { filteredList, isLoading } = this.props.reg;
+
     return (
       <Card
-        title={"Registry Manage Panel" + "(Total: " + this.state.total + ")"}
+        title={"Registry Manage Panel" + "(Total: " + filteredList.length + ")"}
         extra={
-          <>
-            <DataFilter
+          <div>
+            <Search
               placeholder="Search..."
-              onSearch={(value) => console.log(value)}
+              onChange={this.filter}
               enterButton
             />
             <Button
@@ -238,24 +239,41 @@ class Registrys extends Component {
             >
               Create
             </Button>
-          </>
+          </div>
         }
       >
         <DataTable
           rowKey="ID"
           columns={this.columns}
-          dataSource={this.state.registrys}
+          dataSource={filteredList}
           bordered
-          total={this.state.total}
+          total={filteredList.length}
           pageSize={this.state.pageSize}
           scroll={{ y: 600 }}
           onPaginationChange={this.onPaginationChange}
           onShowSizeChange={this.onShowSizeChange}
           pageSizeOptions={this.state.pageSizeOptions}
-          loading={!this.state.isLoaded}
+          // loading={!this.state.isLoaded}
+          loading={isLoading}
         />
       </Card>
     );
   }
 }
-export default Registrys;
+const mapStateToProps = ({ reg }) => {
+  console.log("mapStateToProps-state", reg);
+  return {
+    reg,
+  };
+};
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    handleFetchRegList: () => dispatch(fetchRegList()),
+    handleFilterRegList: (keyword) => dispatch(filterRegList(keyword)),
+  };
+};
+export default compose(
+  withRouter,
+  connect(mapStateToProps, mapDispatchToProps)
+)(Registrys);
