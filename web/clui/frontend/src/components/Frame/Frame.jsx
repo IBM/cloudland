@@ -75,7 +75,7 @@ class Frame extends Component {
           </Header>
           <Layout>
             <Col span={4}>
-              <Sider width={210} style={{ background: "#fff" }}>
+              <Sider width={200} style={{ background: "#fff" }}>
                 <Menu
                   mode="inline"
                   defaultSelectedKeys={["1"]}

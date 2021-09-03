@@ -481,7 +481,6 @@ class Instances extends Component {
         });
     }
 
-    this.props.form.resetFields();
     this.setState({
       visible: false,
     });
@@ -544,7 +543,6 @@ class Instances extends Component {
                         visible: false,
                         everyData: {},
                       });
-                      this.props.form.resetFields();
                     }}
                   />
                 </Col>
