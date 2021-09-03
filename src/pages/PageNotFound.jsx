@@ -1,3 +1,10 @@
+/*
+
+Copyright <holder> All Rights Reserved
+
+SPDX-License-Identifier: Apache-2.0
+
+*/
 import React, { Component } from "react";
 
 class PageNotFound extends Component {

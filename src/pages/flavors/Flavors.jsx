@@ -1,73 +1,100 @@
+/*
+
+Copyright <holder> All Rights Reserved
+
+SPDX-License-Identifier: Apache-2.0
+
+*/
 import React, { Component } from "react";
-import { Card, Table, Button, Popconfirm } from "antd";
-import { flavorsListApi } from "../../api/flavors";
-const columns = [
-  {
-    title: "ID",
-    dataIndex: "ID",
-    key: "ID",
-    width: 80,
-    align: "center",
-  },
-  {
-    title: "Name",
-    dataIndex: "Name",
-  },
-  {
-    title: "CPU",
-    dataIndex: "Cpu",
-  },
-  {
-    title: "Memory",
-    dataIndex: "Memory",
-  },
-  {
-    title: "Disk",
-    dataIndex: "Disk",
-  },
-  {
-    title: "Swap",
-    dataIndex: "Swap",
-  },
-  {
-    title: "Ephemeral",
-    dataIndex: "Ephemeral",
-  },
-  {
-    title: "Action",
-    render: (txt, record, index) => {
-      return (
-        <div>
-          <Button type="primary" size="small">
-            Edit
-          </Button>
-          <Popconfirm
-            title="确定删除此项?"
-            onCancel={() => {
-              console.log("用户取消删除");
-            }}
-            onConfirm={() => {
-              console.log("用户确认删除");
-              //此处调用api接口进行相关操作
-            }}
-          >
-            <Button style={{ margin: "0 1rem" }} type="danger" size="small">
-              Delete
-            </Button>
-          </Popconfirm>
-        </div>
-      );
-    },
-  },
-];
+import { Card, Button, Popconfirm, message } from "antd";
+import { flavorsListApi, delFlavorInfor } from "../../service/flavors";
+import DataTable from "../../components/DataTable/DataTable";
+import DataFilter from "../../components/Filter/DataFilter";
+
 class Flavors extends Component {
   constructor(props) {
     super(props);
     this.state = {
       flavors: [],
       isLoaded: false,
+      total: 0,
+      pageSize: 10,
+      offset: 0,
+      pageSizeOptions: ["5", "10", "15", "20"],
+      current: 1,
     };
   }
+  columns = [
+    {
+      title: "ID",
+      dataIndex: "ID",
+      key: "ID",
+      width: 80,
+      align: "center",
+    },
+    {
+      title: "Name",
+      dataIndex: "Name",
+      align: "center",
+    },
+    {
+      title: "CPU",
+      dataIndex: "Cpu",
+      align: "center",
+    },
+    {
+      title: "Memory",
+      dataIndex: "Memory",
+      align: "center",
+    },
+    {
+      title: "Disk",
+      dataIndex: "Disk",
+      align: "center",
+    },
+    {
+      title: "Swap",
+      dataIndex: "Swap",
+      align: "center",
+    },
+    {
+      title: "Ephemeral",
+      dataIndex: "Ephemeral",
+      align: "center",
+    },
+    {
+      title: "Action",
+      align: "center",
+      render: (txt, record, index) => {
+        return (
+          <div>
+            <Popconfirm
+              title="Are you sure to delete?"
+              onCancel={() => {
+                console.log("deleted");
+              }}
+              onConfirm={() => {
+                console.log("onClick-delete:", record);
+                //this.props.history.push("/registrys/new/" + record.ID);
+                delFlavorInfor(record.ID).then((res) => {
+                  //const _this = this;
+                  message.success(res.Msg);
+                  this.loadData(this.state.current, this.state.pageSize);
+
+                  console.log("用户~~", res);
+                  console.log("用户~~state", this.state);
+                });
+              }}
+            >
+              <Button style={{ margin: "0 1rem" }} type="danger" size="small">
+                Delete
+              </Button>
+            </Popconfirm>
+          </div>
+        );
+      },
+    },
+  ];
   componentDidMount() {
     const _this = this;
     flavorsListApi()
@@ -75,6 +102,7 @@ class Flavors extends Component {
         _this.setState({
           flavors: res.flavors,
           isLoaded: true,
+          total: res.total,
         });
         console.log("flavors:", res);
       })
@@ -85,17 +113,166 @@ class Flavors extends Component {
         });
       });
   }
+  loadData = (page, pageSize) => {
+    console.log("flavor-loadData~~", page, pageSize);
+    const _this = this;
+    const offset = (page - 1) * pageSize;
+    const limit = pageSize;
+    flavorsListApi(offset, limit)
+      .then((res) => {
+        console.log("loadData", res);
+        _this.setState({
+          flavors: res.flavors,
+          isLoaded: true,
+          total: res.total,
+          pageSize: limit,
+          current: page,
+        });
+        console.log("loadData-page-", page, _this.state);
+      })
+      .catch((error) => {
+        _this.setState({
+          isLoaded: false,
+          error: error,
+        });
+      });
+  };
+  toSelectchange = (page, num) => {
+    console.log("toSelectchange", page, num);
+    const _this = this;
+    const offset = (page - 1) * num;
+    const limit = num;
+    console.log("flavor-toSelectchange~limit:", offset, limit);
+    flavorsListApi(offset, limit)
+      .then((res) => {
+        console.log("loadData", res);
+        _this.setState({
+          flavors: res.flavors,
+          isLoaded: true,
+          total: res.total,
+          pageSize: limit,
+          current: page,
+        });
+      })
+      .catch((error) => {
+        _this.setState({
+          isLoaded: false,
+          error: error,
+        });
+      });
+  };
+  onPaginationChange = (e) => {
+    console.log("onPaginationChange", e);
+    this.loadData(e, this.state.pageSize);
+  };
+  onShowSizeChange = (current, pageSize) => {
+    console.log("onShowSizeChange:", current, pageSize);
+    //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
+    this.toSelectchange(current, pageSize);
+  };
+  createFlavors = () => {
+    this.props.history.push("/flavors/new");
+  };
+  flavorsFormList = (data) => {
+    console.log("flavors-FormList", data);
+    const flavorsFormList = [
+      {
+        type: "INPUT",
+        label: "Name",
+        name: "name",
+        // field: "Change Hostname",
+        placeholder: "please input flavor name",
+        width: "90%",
+        // initialValue: data.Hostname,
+        // id: data.ID,
+      },
+      {
+        type: "INPUT",
+        label: "CPU",
+        name: "cpu",
+        // field: "Change Hostname",
+        placeholder: "please input flavor cpu",
+        width: "90%",
+        // initialValue: data.Hostname,
+        // id: data.ID,
+      },
+      {
+        type: "INPUT",
+        label: "Memory(M)",
+        name: "memory",
+        // field: "Change Hostname",
+        placeholder: "please input flavor memory",
+        width: "90%",
+        // initialValue: data.Hostname,
+        // id: data.ID,
+      },
+      {
+        type: "INPUT",
+        label: "Disk(G)",
+        name: "disk",
+        // field: "Change Hostname",
+        placeholder: "please input flavor disk",
+        width: "90%",
+        // initialValue: data.Hostname,
+        // id: data.ID,
+      },
+      {
+        type: "INPUT",
+        label: "Swap(G)",
+        name: "swap",
+        // field: "Change Hostname",
+        placeholder: "please input flavor swap",
+        width: "90%",
+        // initialValue: data.Hostname,
+        // id: data.ID,
+      },
+      {
+        type: "INPUT",
+        label: "Ephemeral(G)",
+        name: "ephemeral",
+        // field: "Change Hostname",
+        placeholder: "please input flavor ephemeral",
+        width: "90%",
+        // initialValue: data.Hostname,
+        // id: data.ID,
+      },
+    ];
+    return flavorsFormList;
+  };
   render() {
     return (
       <Card
-        title="Flavor Manage Panel"
-        extra={<Button type="primary">Create</Button>}
+        title={"Flavor Manage Panel " + "(Total: " + this.state.total + ")"}
+        extra={
+          <>
+            <DataFilter
+              placeholder="Search..."
+              onSearch={(value) => console.log(value)}
+              enterButton
+            />
+            <Button
+              style={{ float: "right" }}
+              type="primary"
+              onClick={this.createFlavors}
+            >
+              Create
+            </Button>
+          </>
+        }
       >
-        <Table
+        <DataTable
           rowKey="ID"
-          columns={columns}
+          columns={this.columns}
           dataSource={this.state.flavors}
-        ></Table>
+          bordered
+          total={this.state.total}
+          pageSize={this.state.pageSize}
+          scroll={{ y: 600 }}
+          onPaginationChange={this.onPaginationChange}
+          onShowSizeChange={this.onShowSizeChange}
+          pageSizeOptions={this.state.pageSizeOptions}
+          loading={!this.state.isLoaded}
+        />
       </Card>
     );
   }

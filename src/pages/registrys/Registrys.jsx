@@ -1,9 +1,20 @@
-import React, { Component } from "react";
-import { Card, Table, Button, Popconfirm, message } from "antd";
-import { regListApi, delRegInfor } from "../../api/registrys";
-// import "./registrys.css";
-//const columns = [];
+/*
 
+Copyright <holder> All Rights Reserved
+
+SPDX-License-Identifier: Apache-2.0
+
+*/
+import React, { Component } from "react";
+import { Card, Button, Popconfirm, message, Input } from "antd";
+import { regListApi, delRegInfor } from "../../service/registrys";
+import DataTable from "../../components/DataTable/DataTable";
+// import DataFilter from "../../components/Filter/DataFilter";
+import { compose } from "redux";
+import { withRouter } from "react-router";
+import { connect } from "react-redux";
+import { filterRegList, fetchRegList } from "../../redux/actions/RegAction";
+const { Search } = Input;
 class Registrys extends Component {
   constructor(props) {
     super(props);
@@ -13,32 +24,41 @@ class Registrys extends Component {
       registrys: [],
       isLoaded: false,
       total: 0,
-      pageSize: 5,
+      pageSize: 10,
       offset: 0,
       pageSizeOptions: ["5", "10", "15", "20"],
+      current: 1,
     };
   }
   columns = [
     {
       title: "ID",
       dataIndex: "ID",
+      align: "center",
       key: "ID",
       className: "registry_id",
+      width: 80,
     },
     {
       title: "Label",
       dataIndex: "Label",
+      align: "center",
+      width: 200,
       className: "registry_label",
     },
     {
       title: "Ocp Version",
       dataIndex: "OcpVersion",
+      align: "center",
       className: "registry_ocpVersion",
+      width: 80,
     },
     {
       title: "Registry Content",
       dataIndex: "RegistryContent",
+      align: "center",
       className: "registry_Content",
+      width: "45%",
       render: (text) => {
         if (text.length > 100) {
           return (
@@ -50,7 +70,7 @@ class Registrys extends Component {
                 display: "-webkit-box",
                 WebkitBoxOrient: "vertical",
                 WebkitLineClamp: "3",
-                maxWidth: 350,
+                // maxWidth: 350,
               }}
             >
               {text}
@@ -61,10 +81,15 @@ class Registrys extends Component {
     },
     {
       title: "Action",
+      align: "center",
+      // width: 160,
       render: (txt, record, index) => {
         return (
           <div>
             <Button
+              style={{
+                marginTop: "10px",
+              }}
               type="primary"
               size="small"
               //onClick={() => console.log("onClick:", record)}
@@ -76,9 +101,9 @@ class Registrys extends Component {
               Edit
             </Button>
             <Popconfirm
-              title="确定删除此项?"
+              title="Are you sure to delete?"
               onCancel={() => {
-                console.log("用户取消删除");
+                console.log("cancelled");
               }}
               onConfirm={() => {
                 console.log("onClick-delete:", record);
@@ -86,47 +111,41 @@ class Registrys extends Component {
                 delRegInfor(record.ID).then((res) => {
                   //const _this = this;
                   message.success(res.Msg);
-                  this.loadData();
+                  this.loadData(this.state.current, this.state.pageSize);
 
                   console.log("用户~~", res);
                 });
               }}
             >
               <Button
-                style={{ margin: "0 1rem" }}
+                style={{
+                  margin: "5px",
+                  marginRight: "0px",
+                  marginTop: "10px",
+                }}
                 type="danger"
                 size="small"
                 onClick={() => {
-                  console.log("用户", record.id);
+                  console.log("record", record);
+                  console.log("text", txt);
+                  console.log("index", index);
                 }}
               >
                 Delete
               </Button>
             </Popconfirm>
-            </div>
+          </div>
         );
       },
     },
   ];
   componentDidMount() {
-    const _this = this;
-    const limit = this.state.pageSize;
-    regListApi(this.state.offset, limit);
-    regListApi()
-      .then((res) => {
-        console.log("regListApi-total:", res.total);
-        _this.setState({
-          registrys: res.registrys,
-          isLoaded: true,
-          total: res.total,
-        });
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
+    console.log("组件加载完成===================================");
+    const { regList } = this.props.reg;
+    const { handleFetchRegList } = this.props;
+    if (!regList || regList.length === 0) {
+      handleFetchRegList();
+    }
   }
 
   createRegistrys = () => {
@@ -146,6 +165,7 @@ class Registrys extends Component {
           isLoaded: true,
           total: res.total,
           pageSize: limit,
+          current: page,
         });
         console.log("loadData-page-", page, _this.state);
       })
@@ -180,45 +200,80 @@ class Registrys extends Component {
         });
       });
   };
+  onPaginationChange = (e) => {
+    console.log("onPaginationChange", e);
+    this.loadData(e, this.state.pageSize);
+  };
+  onShowSizeChange = (current, pageSize) => {
+    console.log("onShowSizeChange:", current, pageSize);
+    //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
+    this.toSelectchange(current, pageSize);
+  };
+
+  filter = (event) => {
+    this.props.handleFilterRegList(event.target.value);
+  };
 
   render() {
+    console.log("registry-props", this.props);
+    const { filteredList, isLoading } = this.props.reg;
+
     return (
       <Card
-        title="Registry Manage Panel"
+        title={"Registry Manage Panel" + "(Total: " + filteredList.length + ")"}
         extra={
-          <Button type="primary" onClick={this.createRegistrys}>
-            Create
-          </Button>
+          <div>
+            <Search
+              placeholder="Search..."
+              onChange={this.filter}
+              enterButton
+            />
+            <Button
+              style={{
+                float: "right",
+                "padding-left": "10px",
+                "padding-right": "10px",
+              }}
+              type="primary"
+              onClick={this.createRegistrys}
+            >
+              Create
+            </Button>
+          </div>
         }
       >
-        <Table
+        <DataTable
           rowKey="ID"
           columns={this.columns}
-          dataSource={this.state.registrys}
-          pagination={{
-            //pagination
-            total: this.state.total, //total count
-            defaultPageSize: 5, //default pageSize
-            showSizeChanger: true, //是否显示可以设置几条一页的选项
-            onShowSizeChange: (current, pageSize) => {
-              console.log("onShowSizeChange:", current, pageSize);
-              //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
-              this.toSelectchange(current, pageSize);
-            },
-
-            onChange: (current) => {
-              this.loadData(current, this.state.pageSize);
-            },
-            showTotal: () => {
-              return "Total " + this.state.total + " items";
-            },
-            pageSizeOptions: this.state.pageSizeOptions,
-          }}
+          dataSource={filteredList}
+          bordered
+          total={filteredList.length}
+          pageSize={this.state.pageSize}
           scroll={{ y: 600 }}
-          loading={!this.state.isLoaded}
-        ></Table>
+          onPaginationChange={this.onPaginationChange}
+          onShowSizeChange={this.onShowSizeChange}
+          pageSizeOptions={this.state.pageSizeOptions}
+          // loading={!this.state.isLoaded}
+          loading={isLoading}
+        />
       </Card>
     );
   }
 }
-export default Registrys;
+const mapStateToProps = ({ reg }) => {
+  console.log("mapStateToProps-state", reg);
+  return {
+    reg,
+  };
+};
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    handleFetchRegList: () => dispatch(fetchRegList()),
+    handleFilterRegList: (keyword) => dispatch(filterRegList(keyword)),
+  };
+};
+export default compose(
+  withRouter,
+  connect(mapStateToProps, mapDispatchToProps)
+)(Registrys);

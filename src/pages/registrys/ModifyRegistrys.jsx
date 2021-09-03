@@ -1,10 +1,17 @@
+/*
+
+Copyright <holder> All Rights Reserved
+
+SPDX-License-Identifier: Apache-2.0
+
+*/
 import React, { Component } from "react";
 import { Form, Card, Input, Select, Button, message } from "antd";
 import {
   createRegApi,
   getRegInforById,
   editRegInfor,
-} from "../../api/registrys";
+} from "../../service/registrys";
 import "./registrys.css";
 const layoutButton = {
   labelCol: { span: 8 },
@@ -13,7 +20,6 @@ const layoutButton = {
 const layoutForm = {
   labelCol: { span: 6 },
   wrapperCol: { span: 10 },
-  LayoutType: "horizontal",
 };
 class ModifyRegistrys extends Component {
   constructor(props) {
@@ -85,13 +91,21 @@ class ModifyRegistrys extends Component {
       <Card
         title={this.state.isShowEdit ? "Edit Registry" : "Create Registry"}
         extra={
-          <Button type="primary" onClick={this.listRegistrys}>
+          <Button
+            style={{
+              float: "right",
+              "padding-left": "10px",
+              "padding-right": "10px",
+            }}
+            type="primary"
+            onClick={this.listRegistrys}
+          >
             Return
           </Button>
         }
       >
         <Form
-          layout={{ ...layoutForm.LayoutType }}
+          layout="horizontal"
           wrapperCol={{ ...layoutForm.wrapperCol }}
           onSubmit={(e) => this.handleSubmit(e)}
         >

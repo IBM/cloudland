@@ -1,3 +1,11 @@
+/*
+
+Copyright <holder> All Rights Reserved
+
+SPDX-License-Identifier: Apache-2.0
+
+*/
+import { message } from "antd";
 import axios from "axios";
 import { getToken } from "./auth";
 
@@ -11,27 +19,46 @@ const instance = axios.create({
 });
 //全局请求拦截，发送请求之前执行
 instance.interceptors.request.use(
-  function (config) {
+  (config) => {
     console.log("getToken():", getToken());
+
     if (getToken()) {
       config.headers.common["X-Auth-Token"] = getToken();
     } else {
       delete config.headers.common["x-auth-token"];
+      // router.push({
+      //   name: "login",
+      // });
     }
 
     return config;
   },
-  function (error) {
+  (error) => {
     return Promise.reject(error);
   }
 );
 //请求返回之后执行
 instance.interceptors.response.use(
-  function (response) {
+  (response) => {
+    console.log("axios-response", response);
     return response.data;
   },
-  function (error) {
+  (error) => {
+    if (error.response) {
+      switch (error.response.status) {
+        case 401:
+          console.log("Need Login");
+          window.location = "/login";
+          break;
+        default:
+          message.error(error.response.data.ErrorMsg, 5);
+          break;
+      }
+    }
+    console.log("axios-error", error.response);
     return Promise.reject(error);
+    // console.log("axios-error", error.response);
+    // return Promise.reject(error);
   }
 );
 export default instance;

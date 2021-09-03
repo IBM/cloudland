@@ -1,6 +1,15 @@
+/*
+
+Copyright <holder> All Rights Reserved
+
+SPDX-License-Identifier: Apache-2.0
+
+*/
 import React, { Component } from "react";
+import moment from "moment";
 import { Card, Table, Button, Popconfirm } from "antd";
-import { keysListApi } from "../../api/keys";
+import { keysListApi } from "../../service/keys";
+import DataFilter from "../../components/Filter/DataFilter";
 const columns = [
   {
     title: "ID",
@@ -13,27 +22,34 @@ const columns = [
   {
     title: "Name",
     dataIndex: "Name",
+    align: "center",
   },
   {
     title: "Owner",
     dataIndex: "OwnerInfo.name",
+    align: "center",
   },
   {
     title: "Created At",
     dataIndex: "CreatedAt",
+    align: "center",
+    render: (record) => (
+      <span>{moment(record).format("YYYY-MM-DD HH:mm:ss")}</span>
+    ),
   },
   {
     title: "Action",
+    align: "center",
     render: (txt, record, index) => {
       return (
         <div>
           <Popconfirm
-            title="确定删除此项?"
+            title="Are you sure to delete?"
             onCancel={() => {
-              console.log("用户取消删除");
+              console.log("cancelled");
             }}
             onConfirm={() => {
-              console.log("用户确认删除");
+              console.log("confirmed");
               //此处调用api接口进行相关操作
             }}
           >
@@ -52,6 +68,7 @@ class Keys extends Component {
     this.state = {
       keys: [],
       isLoaded: false,
+      total: 0,
     };
   }
   componentDidMount() {
@@ -62,6 +79,7 @@ class Keys extends Component {
         _this.setState({
           keys: res.keys,
           isLoaded: true,
+          total: res.total,
         });
       })
       .catch((error) => {
@@ -77,11 +95,26 @@ class Keys extends Component {
   render() {
     return (
       <Card
-        title="Key Manage Panel"
+        title={"Key Manage Panel" + "(Total: " + this.state.total + ")"}
         extra={
-          <Button type="primary" size="small" onClick={this.demo}>
-            Create
-          </Button>
+          <>
+            <DataFilter
+              placeholder="Search..."
+              onSearch={(value) => console.log(value)}
+              enterButton
+            />
+            <Button
+              style={{
+                float: "right",
+                "padding-left": "10px",
+                "padding-right": "10px",
+              }}
+              type="primary"
+              onClick={this.demo}
+            >
+              Create
+            </Button>
+          </>
         }
       >
         <Table

@@ -1,70 +1,18 @@
-import React, { Component } from "react";
-import { Card, Table, Button, Popconfirm } from "antd";
-import { gatewaysListApi } from "../../api/gateways";
+/*
 
-const columns = [
-  {
-    title: "ID",
-    dataIndex: "ID",
-    key: "ID",
-    width: 80,
-    align: "center",
-  },
-  {
-    title: "Name",
-    dataIndex: "Name",
-  },
-  {
-    title: "Interfaces",
-    dataIndex: "Interfaces[0].Address.Address",
-  },
-  {
-    title: "Subnets",
-    dataIndex: "Subnets",
-  },
-  {
-    title: "Status",
-    dataIndex: "Status",
-  },
-  {
-    title: "Hyper",
-    dataIndex: "Hyper + Peer",
-  },
-  {
-    title: "Owner",
-    dataIndex: "WorkerNum",
-  },
-  {
-    title: "Zone",
-    dataIndex: "Zone.Name",
-  },
-  {
-    title: "Action",
-    render: (txt, record, index) => {
-      return (
-        <div>
-          <Button type="primary" size="small">
-            Edit
-          </Button>
-          <Popconfirm
-            title="确定删除此项?"
-            onCancel={() => {
-              console.log("用户取消删除");
-            }}
-            onConfirm={() => {
-              console.log("用户确认删除");
-              //此处调用api接口进行相关操作
-            }}
-          >
-            <Button style={{ margin: "0 1rem" }} type="danger" size="small">
-              Delete
-            </Button>
-          </Popconfirm>
-        </div>
-      );
-    },
-  },
-];
+Copyright <holder> All Rights Reserved
+
+SPDX-License-Identifier: Apache-2.0
+
+*/
+import React, { Component } from "react";
+import { Card, Button, Popconfirm, message } from "antd";
+import { connect } from "react-redux";
+import { gwListApi, delGWInfor } from "../../service/gateways";
+import DataTable from "../../components/DataTable/DataTable";
+import "./gateways.css";
+import DataFilter from "../../components/Filter/DataFilter";
+
 class Gateways extends Component {
   constructor(props) {
     super(props);
@@ -72,21 +20,148 @@ class Gateways extends Component {
     this.state = {
       gateways: [],
       isLoaded: false,
+      interfaces: "",
+      total: 0,
+      pageSize: 10,
+      offset: 0,
+      pageSizeOptions: ["5", "10", "15", "20"],
+      current: 1,
     };
   }
+  columns = [
+    {
+      title: "ID",
+      dataIndex: "ID",
+      key: "ID",
+      width: 80,
+      align: "center",
+    },
+    {
+      title: "Name",
+      dataIndex: "Name",
+      align: "center",
+    },
+    {
+      title: "Interfaces",
+      dataIndex: "Interfaces",
+      width: 140,
+      align: "center",
+      render: (Interfaces) => (
+        <span>
+          {Interfaces.map((iface) => {
+            return iface.Address.Address + " ";
+          })}
+        </span>
+      ),
+    },
+    {
+      title: "Subnets",
+      dataIndex: "Subnets",
+      width: 130,
+      align: "center",
+      render: (Subnets) => (
+        <span>
+          {Subnets.map((subnet) => {
+            return subnet.Gateway + " ";
+          })}
+        </span>
+      ),
+    },
+    {
+      title: "Status",
+      dataIndex: "Status",
+      align: "center",
+    },
+    {
+      title: "Hyper",
+      align: "center",
+      className: this.props.loginInfo.isAdmin ? "" : "columnHidden",
+
+      render: (record) => (
+        <span>
+          {record.Hyper},{record.Peer}
+        </span>
+      ),
+    },
+    {
+      title: "Owner",
+      dataIndex: "OwnerInfo.name",
+      align: "center",
+      className: this.props.loginInfo.isAdmin ? "" : "columnHidden",
+    },
+    {
+      title: "Zone",
+      dataIndex: "Zone.Name",
+      align: "center",
+    },
+    {
+      title: "Action",
+      align: "center",
+      render: (txt, record, index) => {
+        return (
+          <div>
+            <Button
+              style={{
+                marginTop: "10px",
+              }}
+              type="primary"
+              size="small"
+              onClick={() => {
+                console.log("onClick:", record);
+                this.props.history.push("/gateways/new/" + record.ID);
+              }}
+            >
+              Edit
+            </Button>
+            <Popconfirm
+              title="Are you sure to delete?"
+              onCancel={() => {
+                console.log("cancelled");
+              }}
+              onConfirm={() => {
+                console.log("onClick-delete:", record);
+                //this.props.history.push("/registrys/new/" + record.ID);
+                delGWInfor(record.ID).then((res) => {
+                  //const _this = this;
+                  message.success(res.Msg);
+                  this.loadData(this.state.current, this.state.pageSize);
+
+                  console.log("用户~~", res);
+                  console.log("用户~~state", this.state);
+                });
+              }}
+            >
+              <Button
+                style={{
+                  margin: "5px",
+                  marginRight: "0px",
+                  marginTop: "10px",
+                }}
+                type="danger"
+                size="small"
+              >
+                Delete
+              </Button>
+            </Popconfirm>
+          </div>
+        );
+      },
+    },
+  ];
   //组件初始化的时候执行
   componentDidMount() {
     const _this = this;
     //const hyper =''
-    console.log("componentDidMount:", this);
-    gatewaysListApi()
+    console.log("componentWillMount:", this.state);
+    gwListApi()
       .then((res) => {
         _this.setState({
           gateways: res.gateways,
           isLoaded: true,
+          total: res.total,
         });
         //hyper = this.state.gateways.Interfaces[0].Hyper + Interfaces[2].Hyper
-        console.log(res);
+        console.log("gwListApi", res);
       })
       .catch((error) => {
         _this.setState({
@@ -95,24 +170,111 @@ class Gateways extends Component {
         });
       });
   }
+  loadData = (page, pageSize) => {
+    console.log("gw-loadData~~", page, pageSize);
+    const _this = this;
+    const offset = (page - 1) * pageSize;
+    const limit = pageSize;
+    gwListApi(offset, limit)
+      .then((res) => {
+        console.log("loadData", res);
+        _this.setState({
+          gateways: res.gateways,
+          isLoaded: true,
+          total: res.total,
+          pageSize: limit,
+          current: page,
+        });
+        console.log("loadData-page-", page, _this.state);
+      })
+      .catch((error) => {
+        _this.setState({
+          isLoaded: false,
+          error: error,
+        });
+      });
+  };
+  toSelectchange = (page, num) => {
+    console.log("toSelectchange", page, num);
+    const _this = this;
+    const offset = (page - 1) * num;
+    const limit = num;
+    console.log("gw-toSelectchange~limit:", offset, limit);
+    gwListApi(offset, limit)
+      .then((res) => {
+        console.log("loadData", res);
+        _this.setState({
+          gateways: res.gateways,
+          isLoaded: true,
+          total: res.total,
+          pageSize: limit,
+          current: page,
+        });
+      })
+      .catch((error) => {
+        _this.setState({
+          isLoaded: false,
+          error: error,
+        });
+      });
+  };
+  onPaginationChange = (e) => {
+    console.log("onPaginationChange", e);
+    this.loadData(e, this.state.pageSize);
+  };
+  onShowSizeChange = (current, pageSize) => {
+    console.log("onShowSizeChange:", current, pageSize);
+    //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
+    this.toSelectchange(current, pageSize);
+  };
+  createGateways = () => {
+    this.props.history.push("/gateways/new");
+  };
+
   render() {
     return (
       <Card
-        title="Gateway Manage Panel"
+        title={"Gateway Manage Panel" + "(Total: " + this.state.total + ")"}
         extra={
-          <Button type="primary" size="small">
-            Create
-          </Button>
+          <>
+            <DataFilter
+              placeholder="Search..."
+              onSearch={(value) => console.log(value)}
+              enterButton
+            />
+            <Button
+              style={{ float: "right" }}
+              type="primary"
+              onClick={this.createGateways}
+            >
+              Create
+            </Button>
+          </>
         }
       >
-        <Table
+        <DataTable
           rowKey="ID"
-          columns={columns}
-          bordered
+          columns={this.columns}
           dataSource={this.state.gateways}
-        ></Table>
+          bordered
+          total={this.state.total}
+          pageSize={this.state.pageSize}
+          scroll={{ y: 600 }}
+          onPaginationChange={this.onPaginationChange}
+          onShowSizeChange={this.onShowSizeChange}
+          pageSizeOptions={this.state.pageSizeOptions}
+          loading={!this.state.isLoaded}
+        />
       </Card>
     );
   }
 }
-export default Gateways;
+
+const mapStateToProps = (state, ownProps) => {
+  console.log("mapStateToProps-gw:", state);
+  // var loginInfo = JSON.parse(state.loginInfo);
+  // console.log("mapStateToProps-isadmin:", JSON.parse(state.loginInfo));
+
+  return state;
+};
+export default connect(mapStateToProps)(Gateways);

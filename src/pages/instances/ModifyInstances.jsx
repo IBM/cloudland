@@ -1,12 +1,38 @@
+/*
+
+Copyright <holder> All Rights Reserved
+
+SPDX-License-Identifier: Apache-2.0
+
+*/
 import React, { Component } from "react";
-import { Form, Card, Input, Select, Button, message, Row, Col } from "antd";
-import { createInstances, getInsInforById } from "../../api/instances";
-import { hypersListApi } from "../../api/hypers";
-import { imagesListApi } from "../../api/images";
-import { flavorsListApi } from "../../api/flavors";
-import { secgroupsListApi } from "../../api/secgroups";
-import { keysListApi } from "../../api/keys";
+import {
+  Form,
+  Card,
+  Input,
+  Select,
+  Button,
+  message,
+  Row,
+  Col,
+  InputNumber,
+  Avatar,
+} from "antd";
+import CreateKeyModal from "./CreateKeyModal";
+import {
+  createInsApi,
+  getInsInforById,
+  editInsInfor,
+} from "../../service/instances";
+import { createKeyApi } from "../../service/keys";
+import { hypersListApi } from "../../service/hypers";
+import { imagesListApi } from "../../service/images";
+import { flavorsListApi } from "../../service/flavors";
+import { secgroupsListApi } from "../../service/secgroups";
+import { subnetsListApi } from "../../service/subnets";
+import { keysListApi } from "../../service/keys";
 import "./instances.css";
+import { connect } from "react-redux";
 const layoutButton = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },
@@ -14,62 +40,140 @@ const layoutButton = {
 const layoutForm = {
   labelCol: { span: 6 },
   wrapperCol: { span: 10 },
-  LayoutType: "horizontal",
 };
-const { Option } = Select;
-const children = [];
-for (let i = 10; i < 36; i++) {
-  children.push(<Option key={i.toString(36) + i}>{i.toString(36) + i}</Option>);
-}
+
 class ModifyInstances extends Component {
   constructor(props) {
     super(props);
     //const { getFieldDecorator } = this.props.form;
-    console.log("ModifyInstances~~", props);
+    console.log("ModifyInstances111~~", this.props);
     this.state = {
+      value: "",
+      visible: false,
       isShowEdit: false,
+      defaultHyper: -1,
       currentData: [],
-      instZone: {},
       instFlavor: {},
-      instInterface: {},
-      instSubnet: {},
+      instInterface: [],
+      instSubnet: [],
       images: [],
       hypers: [],
       zones: [],
       flavors: [],
       keys: [],
       secgroups: [],
-      test: "",
+      subnets: [],
     };
     let that = this;
     if (props.match.params.id) {
       getInsInforById(props.match.params.id).then((res) => {
         console.log("getInsInforById-res:", res);
-        let test = res.instance.FlavorID + "-" + res.instance.Flavor.Name;
         that.setState({
           currentData: res.instance,
           isShowEdit: true,
-          instZone: res.instance.Zone,
-          instFlavor: res.instance.Flavor,
-          instInterface: res.instance.Interfaces[0].Address,
-          instSubnet: res.instance.Interfaces[0].Address.Subnet,
-          test: test,
-        });
 
-        // console.log("getInsInforById~state:", that.state.currentData.Zone.Name);
+          instFlavor: res.instance.Flavor,
+          instInterface: res.instance.Interfaces.map((iface) => {
+            return iface.Address;
+          }),
+          instSubnet: res.instance.Interfaces.map((iface) => {
+            return iface.Address.Subnet;
+          }),
+        });
+        console.log("getInsInforById~instInterface:", this.state.instInterface);
+        console.log("getInsInforById~state:", this.state);
       });
     }
-    console.log("state:", that.state);
+    console.log("state-instance:", that.state);
   }
   listInstances = () => {
     this.props.history.push("/instances");
   };
-  handleChange = (value) => {
-    console.log(`selected ${value}`);
+  handleSubmit = (e) => {
+    console.log("handleSubmit:", e);
+    e.preventDefault();
+    this.props.form.validateFieldsAndScroll((err, values) => {
+      if (!err) {
+        console.log("handleSubmit-value:", values);
+        console.log("提交");
+        if (this.props.match.params.id) {
+          let tempFlavorArr = values.flavor.split("-");
+          let tempFlavor = parseInt(tempFlavorArr[0]);
+          values.flavor = tempFlavor;
+          console.log("tempFlavorArr", tempFlavorArr);
+          console.log("tempFlavor", tempFlavor);
+          console.log("values.flavor", values.flavor);
+          console.log("instance-edit", this.props.match.params.id, values);
+          editInsInfor(this.props.match.params.id, values).then((res) => {
+            console.log("instance-editInsInfor:", res);
+            this.props.history.push("/instances");
+          });
+        } else {
+          values.hyper =
+            values.hyper === undefined ? this.state.defaultHyper : values.hyper;
+
+          console.log("submit-value", values);
+          createInsApi(values)
+            .then((res) => {
+              console.log("handleSubmit-res-createInsApi:", res);
+              this.props.history.push("/instances");
+              // Utils.loadData(this.state.current, this.state.pageSize)
+            })
+            .catch((err) => {
+              console.log("handleSubmit-error:", err);
+            });
+        }
+      } else {
+        message.error(" input wrong information");
+      }
+    });
   };
+  valueChange = (e) => {
+    console.log("valueChange-e", e);
+  };
+  filterZones = () => {
+    var initZone = [];
+    var newZone = [];
+    this.state.zones.map((item) => {
+      if (initZone.indexOf(item["Name"]) === -1) {
+        initZone.push(item["Name"]);
+        newZone.push(item);
+        console.log("zonearr", initZone);
+      }
+      return newZone;
+    });
+    this.setState({
+      zones: newZone,
+    });
+
+    console.log("test111", this.state.zones);
+  };
+  showKeyModal = () => {
+    this.setState({ visible: true });
+    console.log("create key");
+  };
+  hideKeyModal = () => {
+    this.setState({ visible: false });
+  };
+  createKey = (values) => {
+    // const p = this;
+    // const { form } = this.props;
+    console.log("createKey-form", values);
+    createKeyApi(values)
+      .then((res) => {
+        console.log("createKey-createKeyApi:", res);
+        this.setState({
+          visible: false,
+        });
+        this.props.form.resetFields();
+      })
+      .catch((err) => {
+        console.log("createKey-error:", err);
+      });
+  };
+
   componentDidMount() {
     const _this = this;
-    //let hyperArr = [];
     imagesListApi()
       .then((res) => {
         _this.setState({
@@ -88,18 +192,20 @@ class ModifyInstances extends Component {
       .then((res) => {
         _this.setState({
           hypers: res.hypers,
-          //   isLoaded: true,
+          isLoaded: true,
         });
-
-        this.state.hypers.map((val) => {
-          console.log("hyperSelect-val:", val);
+        this.state.hypers.forEach((val) => {
+          let zoneList = {
+            Name: val.Zone.Name,
+            ID: val.Zone.ID,
+          };
+          this.state.zones.push(zoneList);
         });
-        console.log("hyperSelect-res:", res);
-        console.log("hyperSelect-state.hypers:", this.state.hypers);
+        this.filterZones();
       })
       .catch((error) => {
         _this.setState({
-          //   isLoaded: false,
+          isLoaded: false,
           error: error,
         });
       });
@@ -117,13 +223,28 @@ class ModifyInstances extends Component {
           error: error,
         });
       });
+    subnetsListApi()
+      .then((res) => {
+        _this.setState({
+          subnets: res.subnets,
+          isLoaded: true,
+        });
+
+        console.log("instance-subnets", this.state.subnets);
+      })
+      .catch((error) => {
+        _this.setState({
+          isLoaded: false,
+          error: error,
+        });
+      });
     secgroupsListApi()
       .then((res) => {
         _this.setState({
           secgroups: res.secgroups,
           isLoaded: true,
         });
-        console.log("secgroupsListApi", res);
+        console.log("secgroup", res.secgroups);
       })
       .catch((error) => {
         _this.setState({
@@ -146,53 +267,96 @@ class ModifyInstances extends Component {
         });
       });
   }
-
   render() {
     return (
       <Card
         title={this.state.isShowEdit ? "Edit Instance" : "Create Instance"}
         extra={
-          <Button type="primary" onClick={this.listInstances}>
+          <Button
+            style={{ float: "right" }}
+            type="primary"
+            onClick={this.listInstances}
+          >
             Return
           </Button>
         }
       >
         <Form
-          onSubmit={(e) => this.handleSubmit(e)}
-          //   layout={{ ...layoutForm.LayoutType }}
+          layout="horizontal"
+          onSubmit={(e) => {
+            this.handleSubmit(e);
+          }}
           wrapperCol={{ ...layoutForm.wrapperCol }}
         >
           <Form.Item
             label="Hostname (or prefix)"
-            name="Hostname"
+            name="hostname"
             labelCol={{ ...layoutForm.labelCol }}
           >
-            {this.props.form.getFieldDecorator("Hostname", {
+            {this.props.form.getFieldDecorator("hostname", {
               rules: [
                 {
                   required: true,
                 },
               ],
               initialValue: this.state.currentData.Hostname,
-            })(<Input disabled={this.state.isShowEdit} />)}
+            })(
+              <Input
+                ref={(c) => {
+                  this.hostname = c;
+                }}
+                disabled={this.state.isShowEdit}
+                // onChange={(e) => this.setState({ hostname: e.target.value })}
+              />
+            )}
           </Form.Item>
           <Form.Item
             label="Hyper"
-            name="Hyper"
+            name="hyper"
             labelCol={{ ...layoutForm.labelCol }}
+            hidden={!this.props.loginInfo.isAdmin}
           >
-            {this.props.form.getFieldDecorator("Hyper", {
+            {this.props.form.getFieldDecorator("hyper", {
               rules: [],
               initialValue: this.state.currentData.Hyper,
             })(
               <Select
+                ref={(c) => {
+                  this.hyper = c;
+                }}
+                // labelInValue
                 disabled={this.state.isShowEdit}
-                // onChange={this.hyperSelect}
+                // onChange={this.hyperChanged}
+                // name="hyper"
+                // onChange={this.valueChange}
+                // allowClear="true"
+                //placeholder="Auto"
               >
-                {this.state.hypers.map((val) => {
+                {this.state.hypers.map((item, index) => {
                   return (
-                    <Select.Option key={val.Hostid} value={val.Hostname}>
-                      {val.Hostname}
+                    <Select.Option key={item.ID} value={index}>
+                      {item.Hostname}
+                    </Select.Option>
+                  );
+                })}
+              </Select>
+            )}
+          </Form.Item>
+          <Form.Item
+            label="Zone"
+            name="zone"
+            labelCol={{ ...layoutForm.labelCol }}
+            hidden={this.state.isShowEdit}
+          >
+            {this.props.form.getFieldDecorator("zone", {
+              rules: [],
+              initialValue: this.state.currentData.Hyper,
+            })(
+              <Select disabled={this.state.isShowEdit}>
+                {this.state.zones.map((item, index) => {
+                  return (
+                    <Select.Option key={index} value={item.ID}>
+                      {item.Name}
                     </Select.Option>
                   );
                 })}
@@ -201,47 +365,25 @@ class ModifyInstances extends Component {
           </Form.Item>
           <Form.Item
             label="Created At"
-            name="CreatedAt"
+            name="createdAt"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={!this.state.isShowEdit}
           >
-            {this.props.form.getFieldDecorator("CreatedAt", {
+            {this.props.form.getFieldDecorator("createdAt", {
               rules: [],
               initialValue: this.state.currentData.CreatedAt,
-            })(<Input disabled={this.state.isShowEdit} />)}
+            })(<Input disabled={this.state.isShowEdit} name="createdAt" />)}
           </Form.Item>
           <Form.Item
             label="Updated At"
-            name="UpdatedAt"
+            name="updatedAt"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={!this.state.isShowEdit}
           >
-            {this.props.form.getFieldDecorator("UpdatedAt", {
+            {this.props.form.getFieldDecorator("updatedAt", {
               rules: [],
               initialValue: this.state.currentData.UpdatedAt,
-            })(<Input disabled={this.state.isShowEdit} />)}
-          </Form.Item>
-          <Form.Item
-            label="Zone"
-            name="Zone"
-            labelCol={{ ...layoutForm.labelCol }}
-            hidden={this.state.isShowEdit}
-          >
-            {this.props.form.getFieldDecorator("Zone", {
-              rules: [],
-              initialValue: this.state.instZone.Name,
-            })(
-              <Select disabled={this.state.isShowEdit}>
-                {this.state.hypers.map((val) => {
-                  // if()
-                  return (
-                    <Select.Option key={val.ID} value={val.Zone.Name}>
-                      {val.Zone.Name}
-                    </Select.Option>
-                  );
-                })}
-              </Select>
-            )}
+            })(<Input disabled={this.state.isShowEdit} name="updatedAt" />)}
           </Form.Item>
           <Form.Item
             label="Count"
@@ -254,28 +396,30 @@ class ModifyInstances extends Component {
                 {
                   required: true,
                 },
+                // {
+                //   validator: checkCount,
+                // },
               ],
-              //   initialValue: this.state.currentData.Hostname,
-            })(<Input />)}
+              initialValue: 1,
+            })(<InputNumber min={1} />)}
           </Form.Item>
           <Form.Item
-            name="Image"
+            name="image"
             label="Image"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
           >
-            {this.props.form.getFieldDecorator("Image", {
+            {this.props.form.getFieldDecorator("image", {
               rules: [
                 {
-                  required: true,
+                  required: !this.state.isShowEdit,
                 },
               ],
-              //   initialValue: this.state.currentData.Image.N,
             })(
               <Select disabled={this.state.isShowEdit}>
                 {this.state.images.map((val) => {
                   return (
-                    <Select.Option key={val.ID} value={val.Name}>
+                    <Select.Option key={val.ID} value={val.ID}>
                       {val.Name}
                     </Select.Option>
                   );
@@ -284,11 +428,11 @@ class ModifyInstances extends Component {
             )}
           </Form.Item>
           <Form.Item
-            name="Flavor"
+            name="flavor"
             label="Flavor"
             labelCol={{ ...layoutForm.labelCol }}
           >
-            {this.props.form.getFieldDecorator("Flavor", {
+            {this.props.form.getFieldDecorator("flavor", {
               rules: [
                 {
                   required: true,
@@ -301,10 +445,10 @@ class ModifyInstances extends Component {
                     "-" +
                     this.state.instFlavor.Name,
             })(
-              <Select disabled={this.state.isShowEdit}>
+              <Select>
                 {this.state.flavors.map((val) => {
                   return (
-                    <Select.Option key={val.ID} value={val.Name}>
+                    <Select.Option key={val.ID} value={val.ID}>
                       {val.Name}
                     </Select.Option>
                   );
@@ -313,102 +457,163 @@ class ModifyInstances extends Component {
             )}
           </Form.Item>
           <Form.Item
-            name="Primary Interface"
+            name="primary"
             label="Primary Interface"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
           >
-            {this.props.form.getFieldDecorator("Primary Interface", {
+            {this.props.form.getFieldDecorator("primary", {
               rules: [
                 {
-                  required: true,
+                  required: !this.state.isShowEdit,
                 },
               ],
-              //   initialValue: this.state.currentData.RegistryContent,
             })(
               <Select disabled={this.state.isShowEdit}>
-                <Select.Option value="4.3">4.3</Select.Option>
-                <Select.Option value="4.4">4.4</Select.Option>
-              </Select>
-            )}
-          </Form.Item>
-          <Form.Item
-            name="Primary IP"
-            label="Primary IP"
-            labelCol={{ ...layoutForm.labelCol }}
-            hidden={this.state.isShowEdit}
-          >
-            {this.props.form.getFieldDecorator("Primary IP", {
-              rules: [],
-              //   initialValue: this.state.currentData.Initramfs,
-            })(<Input />)}
-          </Form.Item>
-          <Form.Item
-            name="Primary Mac"
-            label="Primary Mac"
-            labelCol={{ ...layoutForm.labelCol }}
-            hidden={this.state.isShowEdit}
-          >
-            {this.props.form.getFieldDecorator("Primary Mac", {
-              rules: [],
-              //   initialValue: this.state.currentData.Kernel,
-            })(<Input />)}
-          </Form.Item>
-          <Form.Item
-            name="Secondary Interface"
-            label="Secondary Interface"
-            labelCol={{ ...layoutForm.labelCol }}
-            hidden={this.state.isShowEdit}
-          >
-            {this.props.form.getFieldDecorator("Secondary Interface", {
-              rules: [],
-              //   initialValue: this.state.currentData.RegistryContent,
-            })(
-              <Select disabled={this.state.isShowEdit}>
-                <Select.Option value="4.3">4.3</Select.Option>
-                <Select.Option value="4.4">4.4</Select.Option>
-              </Select>
-            )}
-          </Form.Item>
-          <Form.Item
-            name="Security Groups"
-            label="Security Groups"
-            labelCol={{ ...layoutForm.labelCol }}
-            hidden={this.state.isShowEdit}
-          >
-            {this.props.form.getFieldDecorator("Security Groups", {
-              rules: [],
-              //   initialValue: this.state.currentData.RegistryContent,
-            })(
-              <Select disabled={this.state.isShowEdit}>
-                {this.state.secgroups.map((val) => {
+                {this.state.subnets.map((val) => {
                   return (
-                    <Select.Option key={val.ID} value={val.Name}>
-                      {val.Name}
+                    <Select.Option key={val.ID} value={val.ID}>
+                      {val.Name}-{val.Network}
+                      {val.Gateway.substring(val.Gateway.indexOf("/"))}
                     </Select.Option>
                   );
                 })}
               </Select>
             )}
           </Form.Item>
-
+          <Form.Item
+            name="primaryID"
+            label="Primary IP"
+            labelCol={{ ...layoutForm.labelCol }}
+            hidden={this.state.isShowEdit}
+          >
+            {this.props.form.getFieldDecorator("primaryID", {
+              rules: [],
+            })(
+              <Input
+                name="primaryid"
+                // onChange={(e) => this.setState({ primaryid: e.target.value })}
+              />
+            )}
+          </Form.Item>
+          <Form.Item
+            name="primaryMac"
+            label="Primary Mac"
+            labelCol={{ ...layoutForm.labelCol }}
+            hidden={this.state.isShowEdit}
+          >
+            {this.props.form.getFieldDecorator("primaryMac", {
+              rules: [],
+            })(
+              <Input
+                name="primaryMac"
+                // onChange={(e) => this.setState({ primaryMac: e.target.value })}
+              />
+            )}
+          </Form.Item>
+          <Form.Item
+            name="secondary"
+            label="Secondary Interface"
+            labelCol={{ ...layoutForm.labelCol }}
+            hidden={this.state.isShowEdit}
+          >
+            {this.props.form.getFieldDecorator("secondary", {
+              rules: [],
+            })(
+              <Select disabled={this.state.isShowEdit}>
+                {this.state.subnets.map((val, index) => {
+                  return (
+                    <Select.Option key={index} value={val.ID}>
+                      {val.Name}-{val.Network}
+                      {val.Gateway.substring(val.Gateway.indexOf("/"))}
+                    </Select.Option>
+                  );
+                })}
+              </Select>
+            )}
+          </Form.Item>
+          <Form.Item
+            name="secgroups"
+            label="Security Groups"
+            labelCol={{ ...layoutForm.labelCol }}
+            hidden={this.state.isShowEdit}
+          >
+            {this.props.form.getFieldDecorator("secgroups", {
+              rules: [],
+              // initialValue: window.localStorage.token,
+            })(
+              <Select disabled={this.state.isShowEdit}>
+                {this.state.secgroups.map((val, index) => {
+                  return (
+                    <Select.Option key={index} value={`${val.ID}`}>
+                      {val.ID}-{val.Name}
+                    </Select.Option>
+                  );
+                })}
+              </Select>
+            )}
+          </Form.Item>
+          <Form.Item
+            label="Interfaces"
+            name="interfaces"
+            labelCol={{ ...layoutForm.labelCol }}
+            hidden={!this.state.isShowEdit}
+          >
+            {this.props.form.getFieldDecorator("interfaces", {
+              rules: [],
+              initialValue:
+                this.state.currentData.length === 0
+                  ? ""
+                  : this.state.instSubnet.map((iSubnet) => {
+                      return iSubnet.Name;
+                    }) +
+                    "-" +
+                    this.state.instInterface.map((ifaces) => {
+                      return ifaces.Address;
+                    }),
+            })(
+              <Select
+                mode="tags"
+                style={{ width: "100%" }}
+                placeholder="Please select"
+              >
+                {this.state.instInterface.map((ifaces) => {
+                  console.log("select-instInterface", ifaces);
+                  return (
+                    <Select.Option key={ifaces.ID} value={`${ifaces.SubnetID}`}>
+                      {this.state.instSubnet.map((isubnet) => {
+                        return isubnet.Name;
+                      })}
+                      -{ifaces.Address}
+                    </Select.Option>
+                  );
+                })}
+              </Select>
+            )}
+          </Form.Item>
           <Form.Item
             label="Keys"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
           >
             <Row gutter={8}>
-              <Col span={18}>
+              <Col span={17}>
                 <Form.Item name="keys">
                   {this.props.form.getFieldDecorator("keys", {
                     rules: [],
-                    //   initialValue: this.state.currentData.RegistryContent,
+                    // initialValue: this.state.keys,
                   })(
-                    <Select disabled={this.state.isShowEdit}>
-                      {this.state.keys.map((val) => {
+                    <Select
+                      mode="tags"
+                      style={{ width: "100%" }}
+                      placeholder="Key"
+                      disabled={this.state.isShowEdit}
+                    >
+                      {this.state.keys.map((val, index) => {
+                        console.log("keysss", val.ID);
                         return (
-                          <Select.Option key={val.ID} value={val.Name}>
-                            {val.Name}
+                          <Select.Option key={index} value={`${val.ID}`}>
+                            {val.ID} - {val.Name}
                           </Select.Option>
                         );
                       })}
@@ -417,43 +622,35 @@ class ModifyInstances extends Component {
                 </Form.Item>
               </Col>
               <Col span={5}>
-                <Button type="primary">Create Key</Button>
+                <Button type="primary" onClick={this.showKeyModal}>
+                  Create Key
+                </Button>
               </Col>
             </Row>
           </Form.Item>
-
           <Form.Item
-            label="Interfaces"
-            name="Interfaces"
+            name="userdata"
+            label="User Data"
             labelCol={{ ...layoutForm.labelCol }}
+            hidden={this.state.isShowEdit}
           >
-            {this.props.form.getFieldDecorator("Interfaces", {
+            {this.props.form.getFieldDecorator("userdata", {
               rules: [],
-              initialValue:
-                this.state.currentData.length === 0
-                  ? ""
-                  : this.state.instSubnet.Name +
-                    "-" +
-                    this.state.instInterface.Address,
+              initialValue: this.state.currentData.Userdata,
             })(
-              <Select
-                mode="tags"
-                style={{ width: "100%" }}
-                placeholder="Tags Mode"
-                onChange={this.handleChange}
-              >
-                {children}
-              </Select>
+              <Input.TextArea
+                autoSize={{ minRows: 3, maxRows: 6 }}
+                name="userdata"
+              />
             )}
           </Form.Item>
-
           <Form.Item
             wrapperCol={{ ...layoutButton.wrapperCol, offset: 8 }}
             labelCol={{ span: 6 }}
           >
             {this.state.isShowEdit ? (
               <Button type="primary" htmlType="submit">
-                Update Instances
+                Update Instance
               </Button>
             ) : (
               <Button type="primary" htmlType="submit">
@@ -462,8 +659,28 @@ class ModifyInstances extends Component {
             )}
           </Form.Item>
         </Form>
+        <CreateKeyModal
+          title="Create New Key"
+          visible={this.state.visible}
+          submit={this.createKey.bind(this)}
+          close={() => {
+            this.setState({
+              visible: false,
+            });
+            this.props.form.resetFields();
+          }}
+        ></CreateKeyModal>
       </Card>
     );
   }
 }
-export default Form.create({ name: "modifyInstances" })(ModifyInstances);
+const mapStateToProps = (state, ownProps) => {
+  console.log("mapStateToProps-modifyinstance:", state);
+  // var loginInfo = JSON.parse(state.loginInfo);
+  // console.log("mapStateToProps-isadmin:", JSON.parse(state.loginInfo));
+
+  return state;
+};
+export default connect(mapStateToProps)(
+  Form.create({ name: "modifyInstances" })(ModifyInstances)
+);
