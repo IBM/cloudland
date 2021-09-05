@@ -20,9 +20,9 @@ import {
 } from "antd";
 import CreateKeyModal from "./CreateKeyModal";
 import {
-  createInsApi,
-  getInsInforById,
-  editInsInfor,
+  createInstApi,
+  getInstInforById,
+  editInstInfor,
 } from "../../service/instances";
 import { createKeyApi } from "../../service/keys";
 import { hypersListApi } from "../../service/hypers";
@@ -66,8 +66,8 @@ class ModifyInstances extends Component {
     };
     let that = this;
     if (props.match.params.id) {
-      getInsInforById(props.match.params.id).then((res) => {
-        console.log("getInsInforById-res:", res);
+      getInstInforById(props.match.params.id).then((res) => {
+        console.log("getInstInforById-res:", res);
         that.setState({
           currentData: res.instance,
           isShowEdit: true,
@@ -80,8 +80,11 @@ class ModifyInstances extends Component {
             return iface.Address.Subnet;
           }),
         });
-        console.log("getInsInforById~instInterface:", this.state.instInterface);
-        console.log("getInsInforById~state:", this.state);
+        console.log(
+          "getInstInforById~instInterface:",
+          this.state.instInterface
+        );
+        console.log("getInstInforById~state:", this.state);
       });
     }
     console.log("state-instance:", that.state);
@@ -104,8 +107,8 @@ class ModifyInstances extends Component {
           console.log("tempFlavor", tempFlavor);
           console.log("values.flavor", values.flavor);
           console.log("instance-edit", this.props.match.params.id, values);
-          editInsInfor(this.props.match.params.id, values).then((res) => {
-            console.log("instance-editInsInfor:", res);
+          editInstInfor(this.props.match.params.id, values).then((res) => {
+            console.log("instance-editInstInfor:", res);
             this.props.history.push("/instances");
           });
         } else {
@@ -113,9 +116,9 @@ class ModifyInstances extends Component {
             values.hyper === undefined ? this.state.defaultHyper : values.hyper;
 
           console.log("submit-value", values);
-          createInsApi(values)
+          createInstApi(values)
             .then((res) => {
-              console.log("handleSubmit-res-createInsApi:", res);
+              console.log("handleSubmit-res-createInstApi:", res);
               this.props.history.push("/instances");
               // Utils.loadData(this.state.current, this.state.pageSize)
             })

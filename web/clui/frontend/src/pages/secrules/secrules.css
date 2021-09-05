@@ -1,3 +1,15 @@
 .secruleButton {
   float: right;
 }
+.ant-card-head-title {
+  display: inline-block;
+  -ms-flex: 1;
+  flex: 1 1;
+  padding: 16px 0;
+  overflow: visible !important;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ant-input-group-wrapper {
+  margin-left: 10px;
+}

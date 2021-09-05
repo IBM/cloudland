@@ -16,19 +16,20 @@ import {
   Dropdown,
   message,
   Tooltip,
+  Input,
 } from "antd";
 import {
-  insListApi,
-  delInsInfor,
-  getInsInforById,
-  editInsInfor,
+  instListApi,
+  delInstInfor,
+  getInstInforById,
+  editInstInfor,
 } from "../../service/instances";
 import DataTable from "../../components/DataTable/DataTable";
+
 import { connect } from "react-redux";
 import InstModal from "./InstModal";
 import "./instances.css";
-import DataFilter from "../../components/Filter/DataFilter";
-
+const { Search } = Input;
 class Instances extends Component {
   constructor(props) {
     super(props);
@@ -36,6 +37,7 @@ class Instances extends Component {
       updateInstance: {},
       selectedRowKeys: [],
       instances: [],
+      filteredList: [],
       isLoaded: false,
       total: 0,
       pageSize: 10,
@@ -143,7 +145,7 @@ class Instances extends Component {
               }}
               onConfirm={() => {
                 console.log("onClick-delete:", record);
-                delInsInfor(record.ID).then((res) => {
+                delInstInfor(record.ID).then((res) => {
                   message.success(res.Msg);
                   this.loadData(this.state.current, this.state.pageSize);
 
@@ -205,7 +207,7 @@ class Instances extends Component {
           action: "start",
         },
         () => {
-          insListApi({ flag: this.state.flag, action: this.state.action })
+          instListApi({ flag: this.state.flag, action: this.state.action })
             .then((res) => {
               console.log("startVm", res);
             })
@@ -222,7 +224,7 @@ class Instances extends Component {
           action: "shutdown",
         },
         () => {
-          insListApi({ flag: this.state.flag, action: this.state.action })
+          instListApi({ flag: this.state.flag, action: this.state.action })
             .then((res) => {
               console.log("stopVm", res);
             })
@@ -269,8 +271,8 @@ class Instances extends Component {
     }
   };
   handleChange = (id) => {
-    getInsInforById(id).then((res) => {
-      console.log("handleChange-getInsInforById-res:", res);
+    getInstInforById(id).then((res) => {
+      console.log("handleChange-getInstInforById-res:", res);
       this.setState((sta) => (sta.everyData = res.instance));
       console.log("handleChange-state.everyData", this.state);
     });
@@ -291,11 +293,12 @@ class Instances extends Component {
   };
   componentDidMount() {
     const _this = this;
-    insListApi()
+    instListApi()
       .then((res) => {
         console.log("componentDidMount-instances:", res);
         _this.setState({
           instances: res.instances,
+          filteredList: res.instances,
           isLoaded: true,
           total: res.total,
         });
@@ -312,11 +315,12 @@ class Instances extends Component {
     const _this = this;
     const offset = (page - 1) * pageSize;
     const limit = pageSize;
-    insListApi(offset, limit)
+    instListApi(offset, limit)
       .then((res) => {
         console.log("loadData", res);
         _this.setState({
           instances: res.instances,
+          filteredList: res.instances,
           isLoaded: true,
           total: res.total,
           pageSize: limit,
@@ -337,11 +341,12 @@ class Instances extends Component {
     const offset = (page - 1) * num;
     const limit = num;
     console.log("instance-toSelectchange~limit:", offset, limit);
-    insListApi(offset, limit)
+    instListApi(offset, limit)
       .then((res) => {
         console.log("loadData", res);
         _this.setState({
           instances: res.instances,
+          filteredList: res.instances,
           isLoaded: true,
           total: res.total,
           pageSize: limit,
@@ -365,7 +370,7 @@ class Instances extends Component {
     this.toSelectchange(current, pageSize);
   };
 
-  createInstance = () => {
+  createInstances = () => {
     this.props.history.push("/instances/new");
   };
 
@@ -466,11 +471,11 @@ class Instances extends Component {
   handleUpdateList = (id, paramsObj) => {
     console.log("hangleUpdateList", paramsObj, id);
     if (id) {
-      editInsInfor(id, paramsObj)
+      editInstInfor(id, paramsObj)
         .then((res) => {
           // let _json = res.data;
           // if (_json.return_code === "0") {
-          console.log("handleUpdateList-editInsInfor:", res);
+          console.log("handleUpdateList-editInstInfor:", res);
           // } else {
           //   message.error(res.message);
           // }
@@ -485,36 +490,65 @@ class Instances extends Component {
       visible: false,
     });
   };
+  filter = (event) => {
+    console.log("event-filter", event.target.value);
+    this.getFilteredList(event.target.value);
+  };
+  getFilteredList = (word) => {
+    console.log("getFilteredListr-keyword-ocp", word);
+    var keyword = word.toLowerCase();
+    if (keyword) {
+      this.setState({
+        filteredList: this.state.instances.filter(
+          (item) =>
+            item.ID.toString().indexOf(keyword) > -1 ||
+            item.Hostname.toLowerCase().indexOf(keyword) > -1 ||
+            item.Status.toLowerCase().indexOf(keyword) > -1
+          // ||
+          // item.Zone.Name.toLowerCase().indexOf(keyword) > -1 ||
+          // item.Image.Name.toLowerCase().indexOf(keyword) > -1
+        ),
+      });
+
+      console.log("filteredList", this.state.filteredList);
+    } else {
+      this.setState({
+        filteredList: this.state.instances,
+      });
+    }
+  };
   render() {
-    const { data, everyData } = this.state;
-    console.log(data, "data");
+    const { everyData } = this.state;
     return (
       <div>
         <Row>
           <Col span={24}>
             <Card
               title={
-                "Instance Manage Panel" + "(Total: " + this.state.total + ")"
+                "Instance Manage Panel" +
+                "(Total: " +
+                this.state.filteredList.length +
+                ")"
               }
               extra={
-                <>
-                  <DataFilter
+                <div>
+                  <Search
                     placeholder="Search..."
-                    onSearch={(value) => console.log(value)}
+                    onChange={this.filter}
                     enterButton
                   />
                   <Button
                     style={{
                       float: "right",
-                      "padding-left": "10px",
-                      "padding-right": "10px",
+                      paddingLeft: "10px",
+                      paddingRight: "10px",
                     }}
                     type="primary"
-                    onClick={this.createInstance}
+                    onClick={this.createInstances}
                   >
                     Create
                   </Button>
-                </>
+                </div>
               }
             >
               <Row>
@@ -523,9 +557,9 @@ class Instances extends Component {
                     rowKey="ID"
                     // columns={loginInfo.isAdmin ? this.columns : this.columns2}
                     columns={this.columns}
-                    dataSource={this.state.instances}
+                    dataSource={this.state.filteredList}
                     bordered
-                    total={this.state.total}
+                    total={this.state.filteredList.length}
                     pageSize={this.state.pageSize}
                     // scroll={{ y: 600, x: 600 }}
                     onPaginationChange={this.onPaginationChange}
@@ -554,6 +588,7 @@ class Instances extends Component {
     );
   }
 }
+
 const mapStateToProps = (state, ownProps) => {
   console.log("mapStateToProps-instance:", state);
   // var loginInfo = JSON.parse(state.loginInfo);

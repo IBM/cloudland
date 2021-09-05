@@ -10,13 +10,14 @@ import moment from "moment";
 import { Card, Button, Popconfirm, message, Input } from "antd";
 import { imagesListApi, delImgInfor } from "../../service/images";
 import DataTable from "../../components/DataTable/DataTable";
-import DataFilter from "../../components/Filter/DataFilter";
 
+const { Search } = Input;
 class Images extends Component {
   constructor(props) {
     super(props);
     this.state = {
       images: [],
+      filteredList: [],
       isLoaded: false,
       total: 0,
       pageSize: 10,
@@ -125,6 +126,7 @@ class Images extends Component {
         console.log("imagesListApi-total:", res.total);
         _this.setState({
           images: res.images,
+          filteredList: res.images,
           isLoaded: true,
           total: res.total,
         });
@@ -150,6 +152,7 @@ class Images extends Component {
 
         _this.setState({
           images: res.images,
+          filteredList: res.images,
           isLoaded: true,
           total: res.total,
           pageSize: limit,
@@ -175,6 +178,7 @@ class Images extends Component {
         console.log("loadData", res);
         _this.setState({
           images: res.images,
+          filteredList: res.images,
           isLoaded: true,
           total: res.total,
           pageSize: limit,
@@ -197,34 +201,70 @@ class Images extends Component {
     //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
     this.toSelectchange(current, pageSize);
   };
+  filter = (event) => {
+    console.log("event-filter", event.target.value);
+    this.getFilteredList(event.target.value);
+  };
+  getFilteredList = (word) => {
+    console.log("getFilteredListr-keyword-ocp", word);
+    var keyword = word.toLowerCase();
+    if (keyword) {
+      this.setState({
+        filteredList: this.state.images.filter(
+          (item) =>
+            item.ID.toString().indexOf(keyword) > -1 ||
+            item.Name.toLowerCase().indexOf(keyword) > -1 ||
+            item.Format.toLowerCase().indexOf(keyword) > -1 ||
+            item.Status.toLowerCase().indexOf(keyword) > -1 ||
+            item.UserName.toLowerCase().indexOf(keyword) > -1 ||
+            item.VirtType.toLowerCase().indexOf(keyword) > -1 ||
+            item.Architecture.toLowerCase().indexOf(keyword) > -1
+        ),
+      });
+
+      console.log("filteredList", this.state.filteredList);
+    } else {
+      this.setState({
+        filteredList: this.state.images,
+      });
+    }
+  };
   render() {
     return (
       <Card
-        title={"Image Manage Panel" + "(Total: " + this.state.total + ")"}
+        title={
+          "Image Manage Panel" +
+          "(Total: " +
+          this.state.filteredList.length +
+          ")"
+        }
         extra={
-          <>
-            <DataFilter
+          <div>
+            <Search
               placeholder="Search..."
-              onSearch={(value) => console.log(value)}
+              onChange={this.filter}
               enterButton
             />
-
             <Button
-              style={{ float: "right" }}
+              style={{
+                float: "right",
+                paddingLeft: "10px",
+                paddingRight: "10px",
+              }}
               type="primary"
               onClick={this.createImages}
             >
               Create
             </Button>
-          </>
+          </div>
         }
       >
         <DataTable
           rowKey="ID"
           columns={this.columns}
-          dataSource={this.state.images}
+          dataSource={this.state.filteredList}
           bordered
-          total={this.state.total}
+          total={this.state.filteredList.length}
           pageSize={this.state.pageSize}
           scroll={{ y: 600 }}
           onPaginationChange={this.onPaginationChange}
@@ -236,4 +276,5 @@ class Images extends Component {
     );
   }
 }
+
 export default Images;

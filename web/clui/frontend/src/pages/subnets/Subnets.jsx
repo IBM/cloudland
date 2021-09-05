@@ -6,16 +6,18 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
-import { Card, Button, Popconfirm, message } from "antd";
+import { Card, Button, Popconfirm, message, Input } from "antd";
 import { subnetsListApi, delSubInfor } from "../../service/subnets";
-import DataTable from "../../components/DataTable/DataTable";
-import DataFilter from "../../components/Filter/DataFilter";
 
+import DataTable from "../../components/DataTable/DataTable";
+
+const { Search } = Input;
 class Subnets extends Component {
   constructor(props) {
     super(props);
     this.state = {
       subnets: [],
+      filteredList: [],
       isLoaded: false,
       total: 0,
       pageSize: 10,
@@ -142,6 +144,7 @@ class Subnets extends Component {
         console.log("componentDidMount-orgsListApi:", res);
         _this.setState({
           subnets: res.subnets,
+          filteredList: res.subnets,
           isLoaded: true,
           total: res.total,
         });
@@ -164,6 +167,7 @@ class Subnets extends Component {
 
         _this.setState({
           subnets: res.subnets,
+          filteredList: res.subnets,
           isLoaded: true,
           total: res.total,
           pageSize: limit,
@@ -190,6 +194,7 @@ class Subnets extends Component {
         console.log("loadData", res);
         _this.setState({
           subnets: res.subnets,
+          filteredList: res.subnets,
           isLoaded: true,
           total: res.total,
           pageSize: limit,
@@ -214,34 +219,68 @@ class Subnets extends Component {
   createSubnets = () => {
     this.props.history.push("/subnets/new");
   };
+  filter = (event) => {
+    console.log("event-filter", event.target.value);
+    this.getFilteredList(event.target.value);
+  };
+  getFilteredList = (word) => {
+    console.log("getFilteredListr-keyword", word);
+    var keyword = word.toLowerCase();
+    if (keyword) {
+      this.setState({
+        filteredList: this.state.subnets.filter(
+          (item) =>
+            item.ID.toString().indexOf(keyword) > -1 ||
+            item.Name.toLowerCase().indexOf(keyword) > -1 ||
+            item.Network.toLowerCase().indexOf(keyword) > -1 ||
+            item.Network.toLowerCase().indexOf(keyword) > -1 ||
+            item.Vlan.toString().indexOf(keyword) > -1
+        ),
+      });
 
+      console.log("filteredList", this.state.filteredList);
+    } else {
+      this.setState({
+        filteredList: this.state.subnets,
+      });
+    }
+  };
   render() {
     return (
       <Card
-        title={"Subnet Manage Panel" + "(Total: " + this.state.total + ")"}
+        title={
+          "Subnet Manage Panel" +
+          "(Total: " +
+          this.state.filteredList.length +
+          ")"
+        }
         extra={
-          <>
-            <DataFilter
+          <div>
+            <Search
               placeholder="Search..."
-              onSearch={(value) => console.log(value)}
+              onChange={this.filter}
               enterButton
             />
             <Button
-              style={{ float: "right" }}
+              style={{
+                float: "right",
+                paddingLeft: "10px",
+                paddingRight: "10px",
+              }}
               type="primary"
               onClick={this.createSubnets}
             >
               Create
             </Button>
-          </>
+          </div>
         }
       >
         <DataTable
           rowKey="ID"
           columns={this.columns}
-          dataSource={this.state.subnets}
+          dataSource={this.state.filteredList}
           bordered
-          total={this.state.total}
+          total={this.state.filteredList.length}
           pageSize={this.state.pageSize}
           scroll={{ y: 600 }}
           onPaginationChange={this.onPaginationChange}
@@ -253,4 +292,5 @@ class Subnets extends Component {
     );
   }
 }
+
 export default Subnets;

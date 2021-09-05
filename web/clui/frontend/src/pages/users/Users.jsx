@@ -4,15 +4,20 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import moment from "moment";
-import { Card, Table, Button, Popconfirm, message } from "antd";
+import { Card, Button, Popconfirm, message, Input } from "antd";
 import { userListApi, delUserInfor } from "../../service/users";
-import DataFilter from "../../components/Filter/DataFilter";
+
+import DataTable from "../../components/DataTable/DataTable";
+
+const { Search } = Input;
+
 class Users extends Component {
   constructor(props) {
     super(props);
     console.log("Users.props:", this.props);
     this.state = {
       users: [],
+      filteredList: [],
       isLoaded: false,
       total: 0,
       pageSize: 10,
@@ -88,6 +93,7 @@ class Users extends Component {
       .then((res) => {
         _this.setState({
           users: res.users,
+          filteredList: res.users,
           isLoaded: true,
           total: res.total,
         });
@@ -111,6 +117,7 @@ class Users extends Component {
         console.log("loadData", res);
         _this.setState({
           users: res.users,
+          filteredList: res.users,
           isLoaded: true,
           total: res.total,
           pageSize: limit,
@@ -137,6 +144,7 @@ class Users extends Component {
         console.log("loadData", res);
         _this.setState({
           users: res.users,
+          filteredList: res.users,
           isLoaded: true,
           total: res.total,
           pageSize: limit,
@@ -154,60 +162,71 @@ class Users extends Component {
   createUser = () => {
     this.props.history.push("/users/new");
   };
+  filter = (event) => {
+    console.log("event-filter", event.target.value);
+    this.getFilteredList(event.target.value);
+  };
+  getFilteredList = (word) => {
+    console.log("getFilteredListr-keyword", word);
+    var keyword = word.toLowerCase();
+    if (keyword) {
+      this.setState({
+        filteredList: this.state.users.filter(
+          (item) =>
+            item.ID.toString().indexOf(keyword) > -1 ||
+            item.username.toLowerCase().indexOf(keyword) > -1
+        ),
+      });
+
+      console.log("filteredList", this.state.filteredList);
+    } else {
+      this.setState({
+        filteredList: this.state.users,
+      });
+    }
+  };
 
   render() {
     return (
       <Card
-        title={"Users" + "(Total: " + this.state.total + ")"}
+        title={"Users" + "(Total: " + this.state.filteredList.length + ")"}
         extra={
-          <>
-            <DataFilter
+          <div>
+            <Search
               placeholder="Search..."
-              onSearch={(value) => console.log(value)}
+              onChange={this.filter}
               enterButton
             />
             <Button
               style={{
                 float: "right",
-                "padding-left": "10px",
-                "padding-right": "10px",
+                paddingLeft: "10px",
+                paddingRight: "10px",
               }}
               type="primary"
               onClick={this.createUser}
             >
               Create
             </Button>
-          </>
+          </div>
         }
       >
-        <Table
+        <DataTable
           rowKey="ID"
           columns={this.columns}
+          dataSource={this.state.filteredList}
           bordered
-          dataSource={this.state.users}
-          pagination={{
-            //pagination
-            total: this.state.total, //total count
-            defaultPageSize: this.state.pageSize, //default pageSize
-            showSizeChanger: true, //是否显示可以设置几条一页的选项
-            onShowSizeChange: (current, pageSize) => {
-              console.log("onShowSizeChange:", current, pageSize);
-              //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
-              this.toSelectchange(current, pageSize);
-            },
-
-            onChange: (current) => {
-              this.loadData(current, this.state.pageSize);
-            },
-            showTotal: () => {
-              return "Total " + this.state.total + " items";
-            },
-            pageSizeOptions: this.state.pageSizeOptions,
-          }}
+          total={this.state.filteredList.length}
+          pageSize={this.state.pageSize}
+          scroll={{ y: 600 }}
+          onPaginationChange={this.onPaginationChange}
+          onShowSizeChange={this.onShowSizeChange}
+          pageSizeOptions={this.state.pageSizeOptions}
           loading={!this.state.isLoaded}
-        ></Table>
+        />
       </Card>
     );
   }
 }
+
 export default Users;
