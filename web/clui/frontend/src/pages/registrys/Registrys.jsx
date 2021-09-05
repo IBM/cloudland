@@ -9,11 +9,7 @@ import React, { Component } from "react";
 import { Card, Button, Popconfirm, message, Input } from "antd";
 import { regListApi, delRegInfor } from "../../service/registrys";
 import DataTable from "../../components/DataTable/DataTable";
-// import DataFilter from "../../components/Filter/DataFilter";
-import { compose } from "redux";
-import { withRouter } from "react-router";
-import { connect } from "react-redux";
-import { filterRegList, fetchRegList } from "../../redux/actions/RegAction";
+
 const { Search } = Input;
 class Registrys extends Component {
   constructor(props) {
@@ -22,6 +18,7 @@ class Registrys extends Component {
 
     this.state = {
       registrys: [],
+      filteredList: [],
       isLoaded: false,
       total: 0,
       pageSize: 10,
@@ -106,6 +103,7 @@ class Registrys extends Component {
                 console.log("cancelled");
               }}
               onConfirm={() => {
+                // this.gotoDeleteReg(record.ID);
                 console.log("onClick-delete:", record);
                 //this.props.history.push("/registrys/new/" + record.ID);
                 delRegInfor(record.ID).then((res) => {
@@ -141,11 +139,29 @@ class Registrys extends Component {
   ];
   componentDidMount() {
     console.log("组件加载完成===================================");
-    const { regList } = this.props.reg;
-    const { handleFetchRegList } = this.props;
-    if (!regList || regList.length === 0) {
-      handleFetchRegList();
-    }
+    // const { regList } = this.props.reg;
+    // const { handleFetchRegList } = this.props;
+    // if (!regList || regList.length === 0) {
+    //   handleFetchRegList();
+    // }
+    const _this = this;
+    const limit = this.state.pageSize;
+    regListApi(this.state.offset, limit)
+      .then((res) => {
+        console.log("regListApi-total:", res.total);
+        _this.setState({
+          filteredList: res.registrys,
+          registrys: res.registrys,
+          isLoaded: true,
+          total: res.total,
+        });
+      })
+      .catch((error) => {
+        _this.setState({
+          isLoaded: false,
+          error: error,
+        });
+      });
   }
 
   createRegistrys = () => {
@@ -159,8 +175,8 @@ class Registrys extends Component {
     regListApi(offset, limit)
       .then((res) => {
         console.log("loadData", res);
-
         _this.setState({
+          filteredList: res.registrys,
           registrys: res.registrys,
           isLoaded: true,
           total: res.total,
@@ -188,6 +204,7 @@ class Registrys extends Component {
         console.log("loadData", res);
         _this.setState({
           registrys: res.registrys,
+          filteredList: res.registrys,
           isLoaded: true,
           total: res.total,
           pageSize: limit,
@@ -209,18 +226,46 @@ class Registrys extends Component {
     //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
     this.toSelectchange(current, pageSize);
   };
-
+  // gotoDeleteReg = (id) => {
+  //   this.props.handleDeleteReg(id);
+  // };
   filter = (event) => {
-    this.props.handleFilterRegList(event.target.value);
+    console.log("event-filter", event.target.value);
+    this.getFilteredList(event.target.value);
+  };
+  getFilteredList = (word) => {
+    console.log("getFilteredListr-keyword", word);
+    var keyword = word.toLowerCase();
+    if (keyword) {
+      this.setState({
+        filteredList: this.state.registrys.filter(
+          (item) =>
+            item.ID.toString().indexOf(keyword) > -1 ||
+            item.Label.toLowerCase().indexOf(keyword) > -1 ||
+            item.OcpVersion.toLowerCase().indexOf(keyword) > -1 ||
+            item.RegistryContent.toLowerCase().indexOf(keyword) > -1
+        ),
+      });
+
+      console.log("filteredList", this.state.filteredList);
+    } else {
+      this.setState({
+        filteredList: this.state.registrys,
+      });
+    }
   };
 
   render() {
     console.log("registry-props", this.props);
-    const { filteredList, isLoading } = this.props.reg;
 
     return (
       <Card
-        title={"Registry Manage Panel" + "(Total: " + filteredList.length + ")"}
+        title={
+          "Registry Manage Panel" +
+          "(Total: " +
+          this.state.filteredList.length +
+          ")"
+        }
         extra={
           <div>
             <Search
@@ -231,8 +276,8 @@ class Registrys extends Component {
             <Button
               style={{
                 float: "right",
-                "padding-left": "10px",
-                "padding-right": "10px",
+                paddingLeft: "10px",
+                paddingRight: "10px",
               }}
               type="primary"
               onClick={this.createRegistrys}
@@ -245,35 +290,19 @@ class Registrys extends Component {
         <DataTable
           rowKey="ID"
           columns={this.columns}
-          dataSource={filteredList}
+          dataSource={this.state.filteredList}
           bordered
-          total={filteredList.length}
+          total={this.state.filteredList.length}
           pageSize={this.state.pageSize}
           scroll={{ y: 600 }}
           onPaginationChange={this.onPaginationChange}
           onShowSizeChange={this.onShowSizeChange}
           pageSizeOptions={this.state.pageSizeOptions}
-          // loading={!this.state.isLoaded}
-          loading={isLoading}
+          loading={!this.state.isLoaded}
         />
       </Card>
     );
   }
 }
-const mapStateToProps = ({ reg }) => {
-  console.log("mapStateToProps-state", reg);
-  return {
-    reg,
-  };
-};
 
-const mapDispatchToProps = (dispatch) => {
-  return {
-    handleFetchRegList: () => dispatch(fetchRegList()),
-    handleFilterRegList: (keyword) => dispatch(filterRegList(keyword)),
-  };
-};
-export default compose(
-  withRouter,
-  connect(mapStateToProps, mapDispatchToProps)
-)(Registrys);
+export default Registrys;

@@ -6,12 +6,12 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
-import { Card, Button, Popconfirm, message } from "antd";
+import { Card, Button, Popconfirm, message, Input } from "antd";
 import { secrulesListApi, delSecruleInfor } from "../../service/secrules";
 import DataTable from "../../components/DataTable/DataTable";
-import DataFilter from "../../components/Filter/DataFilter";
 
 import "./secrules.css";
+const { Search } = Input;
 
 class Secrules extends Component {
   constructor(props) {
@@ -19,6 +19,7 @@ class Secrules extends Component {
     console.log("Secrule.props:", this.props);
     this.state = {
       secrules: [],
+      filteredList: [],
       sgID: "",
       isLoaded: false,
       total: 0,
@@ -136,6 +137,7 @@ class Secrules extends Component {
       .then((res) => {
         _this.setState({
           secrules: res.secrules,
+          filteredList: res.secrules,
           isLoaded: true,
           total: res.total,
         });
@@ -168,6 +170,7 @@ class Secrules extends Component {
         console.log("loadData", res);
         _this.setState({
           secrules: res.secrules,
+          filteredList: res.secrules,
           isLoaded: true,
           total: res.total,
           pageSize: limit,
@@ -195,6 +198,7 @@ class Secrules extends Component {
         console.log("loadData-toSelectchange", res);
         _this.setState({
           secrules: res.secrules,
+          filteredList: res.secrules,
           isLoaded: true,
           total: res.total,
           pageSize: limit,
@@ -217,52 +221,80 @@ class Secrules extends Component {
     //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
     this.toSelectchange(current, pageSize);
   };
+  filter = (event) => {
+    console.log("event-filter", event.target.value);
+    this.getFilteredList(event.target.value);
+  };
+  getFilteredList = (word) => {
+    console.log("getFilteredListr-keyword", word);
+    var keyword = word.toLowerCase();
+    if (keyword) {
+      this.setState({
+        filteredList: this.state.secrules.filter(
+          (item) =>
+            item.ID.toString().indexOf(keyword) > -1 ||
+            item.Protocol.toLowerCase().indexOf(keyword) > -1 ||
+            item.Direction.toLowerCase().indexOf(keyword) > -1 ||
+            item.RemoteIp.indexOf(keyword) > -1
+        ),
+      });
+
+      console.log("filteredList", this.state.filteredList);
+    } else {
+      this.setState({
+        filteredList: this.state.secrules,
+      });
+    }
+  };
   render() {
     return (
       <Card
         title={
           "Security Group Rules Manage Panel" +
           "(Total: " +
-          this.state.total +
+          this.state.filteredList.length +
           ")"
         }
         extra={
-          <div className="searchButton">
-            <DataFilter
+          <div>
+            <Search
               placeholder="Search..."
-              onSearch={(value) => console.log(value)}
+              onChange={this.filter}
               enterButton
             />
-            <div className="secruleButton">
-              <Button
-                style={{ "padding-left": "10px", "padding-right": "10px" }}
-                type="primary"
-                onClick={this.createSecrules}
-              >
-                Create
-              </Button>
-              <Button
-                style={{
-                  marginLeft: "10px",
-                  "padding-left": "10px",
-                  "padding-right": "10px",
-                }}
-                type="primary"
-                // size="small"
-                onClick={this.listSecgroups}
-              >
-                Return
-              </Button>
-            </div>
+            <Button
+              style={{
+                marginLeft: "50px",
+                paddingLeft: "10px",
+                paddingRight: "10px",
+              }}
+              type="primary"
+              onClick={this.createSecrules}
+            >
+              Create
+            </Button>
+            <Button
+              style={{
+                float: "right",
+                marginLeft: "10px",
+                paddingLeft: "10px",
+                paddingRight: "10px",
+              }}
+              type="primary"
+              // size="small"
+              onClick={this.listSecgroups}
+            >
+              Return
+            </Button>
           </div>
         }
       >
         <DataTable
           rowKey="ID"
           columns={this.columns}
-          dataSource={this.state.secrules}
+          dataSource={this.state.filteredList}
           bordered
-          total={this.state.total}
+          total={this.state.filteredList.length}
           pageSize={this.state.pageSize}
           scroll={{ y: 600 }}
           onPaginationChange={this.onPaginationChange}
@@ -274,4 +306,5 @@ class Secrules extends Component {
     );
   }
 }
+
 export default Secrules;

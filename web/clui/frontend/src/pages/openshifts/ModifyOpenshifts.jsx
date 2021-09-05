@@ -157,7 +157,7 @@ class ModifyOpenshifts extends Component {
           console.log("ocp-edit", this.props.match.params.id, values);
           editOcpInfor(this.props.match.params.id, values)
             .then((res) => {
-              console.log("ocp-editInsInfor:", res);
+              console.log("ocp-editInstInfor:", res);
               this.props.history.push("/openshifts");
             })
             .catch((err) => {

@@ -6,12 +6,12 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
-import { Card, Button, Popconfirm, message } from "antd";
-import { connect } from "react-redux";
+import { Card, Button, Popconfirm, message, Input } from "antd";
 import { gwListApi, delGWInfor } from "../../service/gateways";
 import DataTable from "../../components/DataTable/DataTable";
 import "./gateways.css";
-import DataFilter from "../../components/Filter/DataFilter";
+import { connect } from "react-redux";
+const { Search } = Input;
 
 class Gateways extends Component {
   constructor(props) {
@@ -19,6 +19,7 @@ class Gateways extends Component {
     console.log("gateways.props:", this.props);
     this.state = {
       gateways: [],
+      filteredList: [],
       isLoaded: false,
       interfaces: "",
       total: 0,
@@ -151,16 +152,15 @@ class Gateways extends Component {
   //组件初始化的时候执行
   componentDidMount() {
     const _this = this;
-    //const hyper =''
     console.log("componentWillMount:", this.state);
     gwListApi()
       .then((res) => {
         _this.setState({
           gateways: res.gateways,
+          filteredList: res.gateways,
           isLoaded: true,
           total: res.total,
         });
-        //hyper = this.state.gateways.Interfaces[0].Hyper + Interfaces[2].Hyper
         console.log("gwListApi", res);
       })
       .catch((error) => {
@@ -180,6 +180,7 @@ class Gateways extends Component {
         console.log("loadData", res);
         _this.setState({
           gateways: res.gateways,
+          filteredList: res.gateways,
           isLoaded: true,
           total: res.total,
           pageSize: limit,
@@ -205,6 +206,7 @@ class Gateways extends Component {
         console.log("loadData", res);
         _this.setState({
           gateways: res.gateways,
+          filteredList: res.gateways,
           isLoaded: true,
           total: res.total,
           pageSize: limit,
@@ -230,34 +232,67 @@ class Gateways extends Component {
   createGateways = () => {
     this.props.history.push("/gateways/new");
   };
+  filter = (event) => {
+    console.log("event-filter", event.target.value);
+    this.getFilteredList(event.target.value);
+  };
+  getFilteredList = (word) => {
+    console.log("getFilteredListr-keyword", word);
+    var keyword = word.toLowerCase();
+    if (keyword) {
+      this.setState({
+        filteredList: this.state.gateways.filter(
+          (item) =>
+            item.ID.toString().indexOf(keyword) > -1 ||
+            item.Name.toLowerCase().indexOf(keyword) > -1 ||
+            item.Status.toLowerCase().indexOf(keyword) > -1 ||
+            item.Hyper.toString().indexOf(keyword) > -1
+        ),
+      });
 
+      console.log("filteredList", this.state.filteredList);
+    } else {
+      this.setState({
+        filteredList: this.state.gateways,
+      });
+    }
+  };
   render() {
     return (
       <Card
-        title={"Gateway Manage Panel" + "(Total: " + this.state.total + ")"}
+        title={
+          "Gateway Manage Panel" +
+          "(Total: " +
+          this.state.filteredList.length +
+          ")"
+        }
         extra={
-          <>
-            <DataFilter
+          <div>
+            <Search
               placeholder="Search..."
-              onSearch={(value) => console.log(value)}
+              onChange={this.filter}
               enterButton
             />
             <Button
-              style={{ float: "right" }}
+              style={{
+                float: "right",
+                paddingLeft: "10px",
+                paddingRight: "10px",
+              }}
               type="primary"
               onClick={this.createGateways}
             >
               Create
             </Button>
-          </>
+          </div>
         }
       >
         <DataTable
           rowKey="ID"
           columns={this.columns}
-          dataSource={this.state.gateways}
+          dataSource={this.state.filteredList}
           bordered
-          total={this.state.total}
+          total={this.state.filteredList.length}
           pageSize={this.state.pageSize}
           scroll={{ y: 600 }}
           onPaginationChange={this.onPaginationChange}

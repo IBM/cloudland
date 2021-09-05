@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import { Form, Card, Input, Select, Button, message } from "antd";
-import { insListApi } from "../../service/instances";
+import { instListApi } from "../../service/instances";
 import { createImgApi } from "../../service/images";
 
 const layoutButton = {
@@ -31,7 +31,7 @@ class CreateImages extends Component {
     this.props.history.push("/images");
   };
   componentDidMount() {
-    insListApi()
+    instListApi()
       .then((res) => {
         const _this = this;
         console.log("componentDidMount-instances:", res);

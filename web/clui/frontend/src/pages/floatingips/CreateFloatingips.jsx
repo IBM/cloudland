@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import { Form, Card, Button, Select, Input, message } from "antd";
 import { createFloatingipApi } from "../../service/floatingips";
-import { insListApi } from "../../service/instances";
+import { instListApi } from "../../service/instances";
 
 const layoutButton = {
   labelCol: { span: 8 },
@@ -24,7 +24,7 @@ class CreateFloatingips extends Component {
   }
   componentWilMount() {
     console.log("componentDidMount:", this);
-    insListApi()
+    instListApi()
       .then((res) => {
         const _this = this;
         console.log("componentDidMount-instances:", res);

@@ -6,16 +6,17 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
-import { Card, Button, Popconfirm } from "antd";
+import { Card, Button, Popconfirm, Input } from "antd";
 import { ocpListApi } from "../../service/openshifts";
 import DataTable from "../../components/DataTable/DataTable";
-import DataFilter from "../../components/Filter/DataFilter";
+const { Search } = Input;
 class Openshifts extends Component {
   constructor(props) {
     super(props);
     console.log("Openshifts.props:", this.props);
     this.state = {
       openshifts: [],
+      filteredList: [],
       isLoaded: false,
       total: 0,
       pageSize: 10,
@@ -127,10 +128,11 @@ class Openshifts extends Component {
       .then((res) => {
         _this.setState({
           openshifts: res.openshifts,
+          filteredList: res.openshifts,
           isLoaded: true,
           total: res.total,
         });
-        console.log(res);
+        console.log("openshifts", res);
       })
       .catch((error) => {
         _this.setState({
@@ -152,7 +154,8 @@ class Openshifts extends Component {
         console.log("loadData", res);
 
         _this.setState({
-          openshifts: res,
+          openshifts: res.openshifts,
+          filteredList: res.openshifts,
           isLoaded: true,
           total: res.total,
           pageSize: limit,
@@ -178,7 +181,8 @@ class Openshifts extends Component {
       .then((res) => {
         console.log("loadData", res);
         _this.setState({
-          openshifts: res,
+          openshifts: res.openshifts,
+          filteredList: res.openshifts,
           isLoaded: true,
           total: res.total,
           pageSize: limit,
@@ -200,37 +204,71 @@ class Openshifts extends Component {
     //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
     this.toSelectchange(current, pageSize);
   };
+  filter = (event) => {
+    console.log("event-filter", event.target.value);
+    this.getFilteredList(event.target.value);
+  };
+  getFilteredList = (word) => {
+    console.log("getFilteredListr-keyword-ocp", word);
+    var keyword = word.toLowerCase();
+    if (keyword) {
+      this.setState({
+        filteredList: this.state.openshifts.filter(
+          (item) =>
+            item.ID.toString().indexOf(keyword) > -1 ||
+            item.BaseDomain.toLowerCase().indexOf(keyword) > -1 ||
+            item.ClusterName.toLowerCase().indexOf(keyword) > -1 ||
+            item.Flavor.toString().indexOf(keyword) > -1 ||
+            item.Haflag.toLowerCase().indexOf(keyword) > -1 ||
+            item.Status.toLowerCase().indexOf(keyword) > -1 ||
+            item.WorkerNum.toString().indexOf(keyword) > -1 ||
+            item.Version.toLowerCase().indexOf(keyword) > -1
+        ),
+      });
+
+      console.log("filteredList", this.state.filteredList);
+    } else {
+      this.setState({
+        filteredList: this.state.openshifts,
+      });
+    }
+  };
   render() {
     return (
       <Card
-        title={"Openshift Manage Panel" + "(Total: " + this.state.total + ")"}
+        title={
+          "Openshift Manage Panel" +
+          "(Total: " +
+          this.state.filteredList.length +
+          ")"
+        }
         extra={
-          <>
-            <DataFilter
+          <div>
+            <Search
               placeholder="Search..."
-              onSearch={(value) => console.log(value)}
+              onChange={this.filter}
               enterButton
             />
             <Button
               style={{
                 float: "right",
-                "padding-left": "10px",
-                "padding-right": "10px",
+                paddingLeft: "10px",
+                paddingLight: "10px",
               }}
               type="primary"
               onClick={this.createOpenshift}
             >
               Create
             </Button>
-          </>
+          </div>
         }
       >
         <DataTable
           rowKey="ID"
           columns={this.columns}
-          dataSource={this.state.openshifts}
+          dataSource={this.state.filteredList}
           bordered
-          total={this.state.total}
+          total={this.state.filteredList.length}
           pageSize={this.state.pageSize}
           // scroll={{ y: 600, x: 600 }}
           onPaginationChange={this.onPaginationChange}
@@ -242,4 +280,5 @@ class Openshifts extends Component {
     );
   }
 }
+
 export default Openshifts;
