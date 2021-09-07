@@ -7,9 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import { Form, Card, Input, Button, message } from "antd";
-import {
-  createOrgApi,
-} from "../../service/orgs";
+import { createOrgApi } from "../../service/orgs";
 import "./orgs.css";
 const layoutButton = {
   labelCol: { span: 8 },
@@ -45,7 +43,6 @@ class CreateOrg extends Component {
           .catch((err) => {
             console.log("handleSubmit-error:", err);
           });
-        
       } else {
         message.error(" input wrong information");
       }
@@ -57,7 +54,11 @@ class CreateOrg extends Component {
       <Card
         title={"Create Organization"}
         extra={
-          <Button type="primary" onClick={this.listOrgs}>
+          <Button
+            style={{ float: "right" }}
+            type="primary"
+            onClick={this.listOrgs}
+          >
             Return
           </Button>
         }
@@ -85,18 +86,15 @@ class CreateOrg extends Component {
             label="Owner"
             labelCol={{ ...layoutForm.labelCol }}
           >
-            {this.props.form.getFieldDecorator("owner", {
-              
-            })(<Input />
-            )}
+            {this.props.form.getFieldDecorator("owner", {})(<Input />)}
           </Form.Item>
           <Form.Item
             wrapperCol={{ ...layoutButton.wrapperCol, offset: 8 }}
             labelCol={{ span: 6 }}
           >
-          <Button type="primary" htmlType="submit">
-            Create  Organization
-          </Button>
+            <Button type="primary" htmlType="submit">
+              Create Organization
+            </Button>
           </Form.Item>
         </Form>
       </Card>

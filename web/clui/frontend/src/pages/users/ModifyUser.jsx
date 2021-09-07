@@ -69,7 +69,11 @@ class ModifyUser extends Component {
       <Card
         title={"Edit User"}
         extra={
-          <Button type="primary" onClick={this.listUsers}>
+          <Button
+            style={{ float: "right" }}
+            type="primary"
+            onClick={this.listUsers}
+          >
             Return
           </Button>
         }

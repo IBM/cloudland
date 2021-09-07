@@ -39,16 +39,19 @@ class Orgs extends Component {
     {
       title: "Name",
       dataIndex: "name",
+      align: "center",
     },
     {
       title: "Created At",
       dataIndex: "CreatedAt",
+      align: "center",
       render: (record) => (
         <span>{moment(record).format("YYYY-MM-DD HH:mm:ss")}</span>
       ),
     },
     {
       title: "Action",
+      align: "center",
       render: (txt, record, index) => {
         return (
           <div>
