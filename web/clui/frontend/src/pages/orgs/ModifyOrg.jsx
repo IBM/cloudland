@@ -144,7 +144,7 @@ class ModifyOrg extends Component {
                     <Select.Option value="3">Owner</Select.Option>
                     <Select.Option value="4">Admin</Select.Option>
                   </Select>	
-	            )}
+	            )} 
                 </Form.Item>                            		
 		      ])
 
