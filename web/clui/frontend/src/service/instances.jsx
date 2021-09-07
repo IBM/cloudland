@@ -21,10 +21,17 @@ export function createInstApi(objInst) {
     data: objInst,
   });
 }
-export function getInstInforById(instid) {
+export function getInstInforforAll() {
+  return request({
+    url: `/api/instances/new`,
+    method: "get",
+  });
+}
+export function getInstInforById(instid, paramsObj) {
   return request({
     url: `/api/instances/${instid}`,
     method: "get",
+    params: paramsObj ? paramsObj : {},
   });
 }
 export function editInstInfor(instid, obj) {

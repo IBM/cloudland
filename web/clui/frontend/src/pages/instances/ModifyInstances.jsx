@@ -23,6 +23,7 @@ import {
   createInstApi,
   getInstInforById,
   editInstInfor,
+  getInstInforforAll,
 } from "../../service/instances";
 import { createKeyApi } from "../../service/keys";
 import { hypersListApi } from "../../service/hypers";
@@ -177,91 +178,19 @@ class ModifyInstances extends Component {
 
   componentDidMount() {
     const _this = this;
-    imagesListApi()
+    getInstInforforAll()
       .then((res) => {
         _this.setState({
-          images: res.images,
+          hypers: res.Hypers,
+          images: res.Images,
+          flavors: res.Flavors,
+          subnets: res.Subnets,
+          secgroups: res.Secgroups,
+          keys: res.Keys,
+          zones: res.Zones,
           isLoaded: true,
         });
-        console.log("images:", res.images);
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
-    hypersListApi()
-      .then((res) => {
-        _this.setState({
-          hypers: res.hypers,
-          isLoaded: true,
-        });
-        this.state.hypers.forEach((val) => {
-          let zoneList = {
-            Name: val.Zone.Name,
-            ID: val.Zone.ID,
-          };
-          this.state.zones.push(zoneList);
-        });
-        this.filterZones();
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
-    flavorsListApi()
-      .then((res) => {
-        _this.setState({
-          flavors: res.flavors,
-          isLoaded: true,
-        });
-        console.log("flavors:", res);
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
-    subnetsListApi()
-      .then((res) => {
-        _this.setState({
-          subnets: res.subnets,
-          isLoaded: true,
-        });
-
-        console.log("instance-subnets", this.state.subnets);
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
-    secgroupsListApi()
-      .then((res) => {
-        _this.setState({
-          secgroups: res.secgroups,
-          isLoaded: true,
-        });
-        console.log("secgroup", res.secgroups);
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
-    keysListApi()
-      .then((res) => {
-        console.log("componentDidMount-keys:", res);
-        _this.setState({
-          keys: res.keys,
-          isLoaded: true,
-        });
+        console.log("getInstInforforAll-res:", res);
       })
       .catch((error) => {
         _this.setState({

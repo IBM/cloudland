@@ -76,7 +76,7 @@ class Gateways extends Component {
     {
       title: "Hyper",
       align: "center",
-      className: this.props.loginInfo.isAdmin ? "" : "columnHidden",
+      className: sessionStorage.loginInfo.isAdmin ? "" : "columnHidden",
 
       render: (record) => (
         <span>
@@ -88,7 +88,7 @@ class Gateways extends Component {
       title: "Owner",
       dataIndex: "OwnerInfo.name",
       align: "center",
-      className: this.props.loginInfo.isAdmin ? "" : "columnHidden",
+      className: sessionStorage.loginInfo.isAdmin ? "" : "columnHidden",
     },
     {
       title: "Zone",
@@ -298,18 +298,11 @@ class Gateways extends Component {
           onPaginationChange={this.onPaginationChange}
           onShowSizeChange={this.onShowSizeChange}
           pageSizeOptions={this.state.pageSizeOptions}
-          loading={!this.state.isLoaded}
+          loading={this.state.isLoaded}
         />
       </Card>
     );
   }
 }
 
-const mapStateToProps = (state, ownProps) => {
-  console.log("mapStateToProps-gw:", state);
-  // var loginInfo = JSON.parse(state.loginInfo);
-  // console.log("mapStateToProps-isadmin:", JSON.parse(state.loginInfo));
-
-  return state;
-};
-export default connect(mapStateToProps)(Gateways);
+export default Gateways;

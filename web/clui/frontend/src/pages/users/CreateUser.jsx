@@ -7,9 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import { Form, Card, Input, Button, message } from "antd";
-import {
-  createUserApi,
-} from "../../service/users";
+import { createUserApi } from "../../service/users";
 import "./users.css";
 const layoutButton = {
   labelCol: { span: 8 },
@@ -48,7 +46,6 @@ class CreateUser extends Component {
           .catch((err) => {
             console.log("handleSubmit-error:", err);
           });
-        
       } else {
         message.error(" input wrong information");
       }
@@ -60,7 +57,11 @@ class CreateUser extends Component {
       <Card
         title={"Create User"}
         extra={
-          <Button type="primary" onClick={this.listUsers}>
+          <Button
+            style={{ float: "right" }}
+            type="primary"
+            onClick={this.listUsers}
+          >
             Return
           </Button>
         }
@@ -96,10 +97,7 @@ class CreateUser extends Component {
                 },
               ],
               initialValue: this.state.currentData.Password,
-            })(<Input
-                  type="password"
-               />
-            )}
+            })(<Input type="password" />)}
           </Form.Item>
           <Form.Item
             name="confirm"
@@ -113,18 +111,15 @@ class CreateUser extends Component {
                 },
               ],
               initialValue: this.state.currentData.Confirm,
-            })(<Input
-                  type="password"
-               />
-            )}
+            })(<Input type="password" />)}
           </Form.Item>
           <Form.Item
             wrapperCol={{ ...layoutButton.wrapperCol, offset: 8 }}
             labelCol={{ span: 6 }}
           >
-          <Button type="primary" htmlType="submit">
-            Create User
-          </Button>
+            <Button type="primary" htmlType="submit">
+              Create User
+            </Button>
           </Form.Item>
         </Form>
       </Card>

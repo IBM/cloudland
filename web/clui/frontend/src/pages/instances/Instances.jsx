@@ -23,19 +23,21 @@ import {
   delInstInfor,
   getInstInforById,
   editInstInfor,
+  getInstInforforAll,
 } from "../../service/instances";
 import DataTable from "../../components/DataTable/DataTable";
 
-import { connect } from "react-redux";
 import InstModal from "./InstModal";
 import "./instances.css";
 const { Search } = Input;
 class Instances extends Component {
   constructor(props) {
     super(props);
+    console.log("instance-props", this.props);
+    console.log("getAll-instance", sessionStorage.loginInfo);
     this.state = {
       updateInstance: {},
-      selectedRowKeys: [],
+
       instances: [],
       filteredList: [],
       isLoaded: false,
@@ -49,6 +51,7 @@ class Instances extends Component {
       menuKey: "",
       flag: "",
       action: "",
+      zone: [],
     };
   }
 
@@ -109,13 +112,13 @@ class Instances extends Component {
       title: "Hyper",
       dataIndex: "Hyper",
       align: "center",
-      className: this.props.loginInfo.isAdmin ? "" : "columnHidden",
+      className: sessionStorage.loginInfo.isAdmin ? "" : "columnHidden",
     },
     {
       title: "Owner",
       dataIndex: "OwnerInfo.name",
       align: "center",
-      className: this.props.loginInfo.isAdmin ? "" : "columnHidden",
+      className: sessionStorage.loginInfo.isAdmin ? "" : "columnHidden",
     },
     {
       title: "Zone",
@@ -207,9 +210,13 @@ class Instances extends Component {
           action: "start",
         },
         () => {
-          instListApi({ flag: this.state.flag, action: this.state.action })
+          getInstInforById(id, {
+            flag: this.state.flag,
+            action: this.state.action,
+          })
             .then((res) => {
-              console.log("startVm", res);
+              message.success(res.Msg);
+              this.loadData(this.state.current, this.state.pageSize);
             })
             .catch((error) => {
               console.log(error);
@@ -224,9 +231,14 @@ class Instances extends Component {
           action: "shutdown",
         },
         () => {
-          instListApi({ flag: this.state.flag, action: this.state.action })
+          getInstInforById(id, {
+            flag: this.state.flag,
+            action: this.state.action,
+          })
             .then((res) => {
               console.log("stopVm", res);
+              message.success(res.Msg);
+              this.loadData(this.state.current, this.state.pageSize);
             })
             .catch((error) => {
               console.log(error);
@@ -310,6 +322,25 @@ class Instances extends Component {
         });
       });
   }
+  // componentDidUpdate() {
+  //   const _this = this;
+  //   instListApi()
+  //     .then((res) => {
+  //       console.log("componentDidUpdate-instances:", res);
+  //       _this.setState({
+  //         instances: res.instances,
+  //         filteredList: res.instances,
+  //         isLoaded: true,
+  //         total: res.total,
+  //       });
+  //     })
+  //     .catch((error) => {
+  //       _this.setState({
+  //         isLoaded: false,
+  //         error: error,
+  //       });
+  //     });
+  // }
   loadData = (page, pageSize) => {
     console.log("ins-loadData~~", page, pageSize);
     const _this = this;
@@ -508,6 +539,7 @@ class Instances extends Component {
           // item.Zone.Name.toLowerCase().indexOf(keyword) > -1 ||
           // item.Image.Name.toLowerCase().indexOf(keyword) > -1
         ),
+        total: this.state.filteredList.length,
       });
 
       console.log("filteredList", this.state.filteredList);
@@ -525,10 +557,7 @@ class Instances extends Component {
           <Col span={24}>
             <Card
               title={
-                "Instance Manage Panel" +
-                "(Total: " +
-                this.state.filteredList.length +
-                ")"
+                "Instance Manage Panel" + "(Total: " + this.state.total + ")"
               }
               extra={
                 <div>
@@ -555,11 +584,10 @@ class Instances extends Component {
                 <Col span={24}>
                   <DataTable
                     rowKey="ID"
-                    // columns={loginInfo.isAdmin ? this.columns : this.columns2}
                     columns={this.columns}
                     dataSource={this.state.filteredList}
                     bordered
-                    total={this.state.filteredList.length}
+                    total={this.state.total}
                     pageSize={this.state.pageSize}
                     // scroll={{ y: 600, x: 600 }}
                     onPaginationChange={this.onPaginationChange}
@@ -589,11 +617,18 @@ class Instances extends Component {
   }
 }
 
-const mapStateToProps = (state, ownProps) => {
-  console.log("mapStateToProps-instance:", state);
-  // var loginInfo = JSON.parse(state.loginInfo);
-  // console.log("mapStateToProps-isadmin:", JSON.parse(state.loginInfo));
+// const mapStateToProps = (state, ownProps) => {
+//   console.log("mapStateToProps-instance:", state);
+//   // var loginInfo = JSON.parse(state.loginInfo);
+//   // console.log("mapStateToProps-isadmin:", JSON.parse(state.loginInfo));
 
-  return state;
-};
-export default connect(mapStateToProps)(Instances);
+//   return state;
+// };
+// const mapStateToProps = ({ loginInfo }) => {
+//   console.log("mapStateToProps-instance:", loginInfo);
+//   // var loginInfo = JSON.parse(state.loginInfo);
+//   // console.log("mapStateToProps-isadmin:", JSON.parse(state.loginInfo));
+
+//   return loginInfo;
+// };
+export default Instances;

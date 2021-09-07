@@ -25,7 +25,6 @@ class ModifyOrg extends Component {
       currentData: [],
       owerUser: [],
       members: [],
-
     };
     let that = this;
     if (props.match.params.id) {
@@ -35,8 +34,8 @@ class ModifyOrg extends Component {
           currentData: res,
           owerUser: res.OwnerUser,
           members: res.Members.filter((item) => {
-            return {UserName:item.UserName, Role:item.Role};
-          }),          
+            return { UserName: item.UserName, Role: item.Role };
+          }),
           isShowEdit: true,
         });
       });
@@ -54,7 +53,6 @@ class ModifyOrg extends Component {
         console.log("handleSubmit-value:", values);
         //const _this = this;
         editOrgInfor(this.props.match.params.id, values).then((res) => {
-
           this.props.history.push("/orgs");
         });
       } else {
@@ -68,7 +66,11 @@ class ModifyOrg extends Component {
       <Card
         title={"Edit Organization"}
         extra={
-          <Button type="primary" onClick={this.listOrgs}>
+          <Button
+            style={{ float: "right" }}
+            type="primary"
+            onClick={this.listOrgs}
+          >
             Return
           </Button>
         }
@@ -106,15 +108,18 @@ class ModifyOrg extends Component {
               initialValue: this.state.owerUser.username,
             })(<Input />)}
           </Form.Item>
-          <h3>Member List</h3>
-          {
-	        this.state.members.map((item,index) => {
-		      return ([
-                <Form.Item
-                  label=""
-                  name="names"
-                  labelCol={{ ...layoutForm.labelCol }}
-                >
+          <Form.Item
+            label="Member List"
+            style={{ "font-size": "20px", "font-weight": "bold" }}
+          ></Form.Item>
+          {this.state.members.map((item, index) => {
+            return [
+              <Form.Item
+                label=""
+                name="names"
+                // labelCol={{ ...layoutForm.labelCol, offset: 6 }}
+                wrapperCol={{ ...layoutForm.wrapperCol, offset: 6 }}
+              >
                 {this.props.form.getFieldDecorator("names", {
                   rules: [
                     {
@@ -123,12 +128,12 @@ class ModifyOrg extends Component {
                   ],
                   initialValue: item.UserName,
                 })(<Input />)}
-                </Form.Item>,
-                <Form.Item
-                  label=""
-                  name="roles"
-                  labelCol={{ ...layoutForm.labelCol }}
-                >
+              </Form.Item>,
+              <Form.Item
+                label=""
+                name="roles"
+                wrapperCol={{ ...layoutForm.wrapperCol, offset: 6 }}
+              >
                 {this.props.form.getFieldDecorator("roles", {
                   rules: [
                     {
@@ -143,23 +148,19 @@ class ModifyOrg extends Component {
                     <Select.Option value="2">Writer</Select.Option>
                     <Select.Option value="3">Owner</Select.Option>
                     <Select.Option value="4">Admin</Select.Option>
-                  </Select>	
-	            )} 
-                </Form.Item>                            		
-		      ])
+                  </Select>
+                )}
+              </Form.Item>,
+            ];
+          })}
 
-
-	        }
-	        )
-
-          }
           <Form.Item
             wrapperCol={{ ...layoutButton.wrapperCol, offset: 8 }}
             labelCol={{ span: 6 }}
           >
             {
               <Button type="primary" htmlType="submit">
-                Update Registry
+                Update Organization
               </Button>
             }
           </Form.Item>
