@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import moment from "moment";
-import { Card, Button, Popconfirm, Input } from "antd";
+import { Card, Button, Popconfirm, message, Input } from "antd";
 import { keysListApi, delKeyInfor } from "../../service/keys";
 import DataTable from "../../components/DataTable/DataTable";
 
@@ -106,11 +106,11 @@ class Keys extends Component {
     const _this = this;
     const offset = (page - 1) * pageSize;
     const limit = pageSize;
-    userListApi(offset, limit)
+    keyListApi(offset, limit)
       .then((res) => {
         console.log("loadData", res);
         _this.setState({
-          users: res.keys,
+          keys: res.keys,
           filteredList: res.keys,
           isLoaded: true,
           total: res.total,
@@ -133,11 +133,11 @@ class Keys extends Component {
     const offset = (page - 1) * num;
     const limit = num;
     console.log("key-toSelectchange~limit:", offset, limit);
-    userListApi(offset, limit)
+    keyListApi(offset, limit)
       .then((res) => {
         console.log("loadData", res);
         _this.setState({
-          users: res.keys,
+          keys: res.keys,
           filteredList: res.keys,
           isLoaded: true,
           total: res.total,
