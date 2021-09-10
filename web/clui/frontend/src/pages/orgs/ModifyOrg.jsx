@@ -153,7 +153,6 @@ class ModifyOrg extends Component {
               </Form.Item>,
             ];
           })}
-
           <Form.Item
             wrapperCol={{ ...layoutButton.wrapperCol, offset: 8 }}
             labelCol={{ span: 6 }}

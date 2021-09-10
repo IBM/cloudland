@@ -5,6 +5,7 @@ Copyright <holder> All Rights Reserved
 SPDX-License-Identifier: Apache-2.0
 
 */
+import { withTranslation } from "react-i18next";
 import Dashboard from "../pages/dashboard/Dashboard";
 import Flavors from "../pages/flavors/Flavors";
 import CreateFlavors from "../pages/flavors/CreateFlavors";
@@ -48,7 +49,6 @@ export const InitRoutes = [
     component: PageNotFound,
   },
 ];
-
 export const mainRoutes = [
   {
     path: "/dashboard",

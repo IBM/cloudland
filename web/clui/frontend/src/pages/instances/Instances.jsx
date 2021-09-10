@@ -617,18 +617,4 @@ class Instances extends Component {
   }
 }
 
-// const mapStateToProps = (state, ownProps) => {
-//   console.log("mapStateToProps-instance:", state);
-//   // var loginInfo = JSON.parse(state.loginInfo);
-//   // console.log("mapStateToProps-isadmin:", JSON.parse(state.loginInfo));
-
-//   return state;
-// };
-// const mapStateToProps = ({ loginInfo }) => {
-//   console.log("mapStateToProps-instance:", loginInfo);
-//   // var loginInfo = JSON.parse(state.loginInfo);
-//   // console.log("mapStateToProps-isadmin:", JSON.parse(state.loginInfo));
-
-//   return loginInfo;
-// };
 export default Instances;

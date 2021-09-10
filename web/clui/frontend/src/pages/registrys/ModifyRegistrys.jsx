@@ -7,12 +7,14 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import { Form, Card, Input, Select, Button, message } from "antd";
+import { withTranslation } from "react-i18next";
 import {
   createRegApi,
   getRegInforById,
   editRegInfor,
 } from "../../service/registrys";
 import "./registrys.css";
+import { compose } from "redux";
 const layoutButton = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },
@@ -87,20 +89,23 @@ class ModifyRegistrys extends Component {
     }
   };
   render() {
+    const { t } = this.props;
     return (
       <Card
-        title={this.state.isShowEdit ? "Edit Registry" : "Create Registry"}
+        title={
+          this.state.isShowEdit ? t("Edit_Registry") : t("Create New Registry")
+        }
         extra={
           <Button
             style={{
               float: "right",
-              "padding-left": "10px",
-              "padding-right": "10px",
+              paddingLeft: "10px",
+              paddingRight: "10px",
             }}
             type="primary"
             onClick={this.listRegistrys}
           >
-            Return
+            {t("Return")}
           </Button>
         }
       >
@@ -110,7 +115,7 @@ class ModifyRegistrys extends Component {
           onSubmit={(e) => this.handleSubmit(e)}
         >
           <Form.Item
-            label="Label"
+            label={t("Label")}
             name="label"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -124,7 +129,7 @@ class ModifyRegistrys extends Component {
             })(<Input />)}
           </Form.Item>
           <Form.Item
-            label="Virtualization Type"
+            label={t("Virtualization Type")}
             name="virttype"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -146,7 +151,7 @@ class ModifyRegistrys extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="Ocp Version"
+            label={t("OcpVersion")}
             name="ocpversion"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -169,7 +174,7 @@ class ModifyRegistrys extends Component {
           </Form.Item>
           <Form.Item
             name="registrycontent"
-            label="Registry Content"
+            label={t("RegistryContent")}
             labelCol={{ ...layoutForm.labelCol }}
           >
             {this.props.form.getFieldDecorator("registrycontent", {
@@ -184,7 +189,6 @@ class ModifyRegistrys extends Component {
               initialValue: this.state.currentData.RegistryContent,
             })(
               <Input.TextArea
-                showCount="true"
                 autoSize={{ minRows: 3, maxRows: 6 }}
                 placeholder="pullSecret: ...&#10;additionalTrustBundle: | -----BEGIN CERTIFICATE----- ... -----END CERTIFICATE----- &#10;imageContentSources: ..."
               />
@@ -192,7 +196,7 @@ class ModifyRegistrys extends Component {
           </Form.Item>
           <Form.Item
             name="initramfs"
-            label="RHCOS initramfs"
+            label={t("RHCOS initramfs")}
             labelCol={{ ...layoutForm.labelCol }}
           >
             {this.props.form.getFieldDecorator("initramfs", {
@@ -206,7 +210,7 @@ class ModifyRegistrys extends Component {
           </Form.Item>
           <Form.Item
             name="kernel"
-            label="RHCOS kernel"
+            label={t("RHCOS kernel")}
             labelCol={{ ...layoutForm.labelCol }}
           >
             {this.props.form.getFieldDecorator("kernel", {
@@ -220,7 +224,7 @@ class ModifyRegistrys extends Component {
           </Form.Item>
           <Form.Item
             name="image"
-            label="RHCOS image"
+            label={t("RHCOS image")}
             labelCol={{ ...layoutForm.labelCol }}
           >
             {this.props.form.getFieldDecorator("image", {
@@ -234,7 +238,7 @@ class ModifyRegistrys extends Component {
           </Form.Item>
           <Form.Item
             name="installer"
-            label="OCP installer"
+            label={t("OCP installer")}
             labelCol={{ ...layoutForm.labelCol }}
           >
             {this.props.form.getFieldDecorator("installer", {
@@ -248,7 +252,7 @@ class ModifyRegistrys extends Component {
           </Form.Item>
           <Form.Item
             name="cli"
-            label="OCP client"
+            label={t("oc cli")}
             labelCol={{ ...layoutForm.labelCol }}
           >
             {this.props.form.getFieldDecorator("cli", {
@@ -266,11 +270,11 @@ class ModifyRegistrys extends Component {
           >
             {this.state.isShowEdit ? (
               <Button type="primary" htmlType="submit">
-                Update Registry
+                {t("Update Registry")}
               </Button>
             ) : (
               <Button type="primary" htmlType="submit">
-                Create Registry
+                {t("Create New Registry")}
               </Button>
             )}
           </Form.Item>
@@ -279,4 +283,7 @@ class ModifyRegistrys extends Component {
     );
   }
 }
-export default Form.create({ name: "modifyRegistrys" })(ModifyRegistrys);
+export default compose(
+  withTranslation(),
+  Form.create({ name: "modifyRegistrys" })
+)(ModifyRegistrys);

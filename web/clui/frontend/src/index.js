@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React from "react";
 import ReactDOM from "react-dom";
+import "./i18n";
 import {
   BrowserRouter as Router,
   Switch,
@@ -25,13 +26,7 @@ ReactDOM.render(
     <Switch>
       {InitRoutes.map((route) => {
         return <Route key={route.path} {...route} />;
-        // <Route
-        //   key={route.path}
-        //   path={route.path}
-        //   component={route.component}
-        // />
       })}
-
       <Route
         path="/"
         render={(routeProps) => (
@@ -41,7 +36,6 @@ ReactDOM.render(
         )}
       />
       <Redirect to="/" from="/" />
-
       <Redirect to="/404" />
     </Switch>
   </Router>,
