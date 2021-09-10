@@ -106,7 +106,7 @@ class Keys extends Component {
     const _this = this;
     const offset = (page - 1) * pageSize;
     const limit = pageSize;
-    keyListApi(offset, limit)
+    keysListApi(offset, limit)
       .then((res) => {
         console.log("loadData", res);
         _this.setState({
@@ -133,7 +133,7 @@ class Keys extends Component {
     const offset = (page - 1) * num;
     const limit = num;
     console.log("key-toSelectchange~limit:", offset, limit);
-    keyListApi(offset, limit)
+    keysListApi(offset, limit)
       .then((res) => {
         console.log("loadData", res);
         _this.setState({
