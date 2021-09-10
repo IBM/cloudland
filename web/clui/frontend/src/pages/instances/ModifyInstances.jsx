@@ -246,7 +246,7 @@ class ModifyInstances extends Component {
             label="Hyper"
             name="hyper"
             labelCol={{ ...layoutForm.labelCol }}
-            hidden={!this.props.loginInfo.isAdmin}
+            hidden={!sessionStorage.loginInfo.isAdmin}
           >
             {this.props.form.getFieldDecorator("hyper", {
               rules: [],
@@ -606,13 +606,5 @@ class ModifyInstances extends Component {
     );
   }
 }
-const mapStateToProps = (state, ownProps) => {
-  console.log("mapStateToProps-modifyinstance:", state);
-  // var loginInfo = JSON.parse(state.loginInfo);
-  // console.log("mapStateToProps-isadmin:", JSON.parse(state.loginInfo));
 
-  return state;
-};
-export default connect(mapStateToProps)(
-  Form.create({ name: "modifyInstances" })(ModifyInstances)
-);
+export default Form.create({ name: "modifyInstances" })(ModifyInstances);

@@ -31,6 +31,7 @@ class DataTable extends Component {
         }}
         scroll={this.props.scroll}
         loading={this.props.loading}
+        onHeaderRow={this.props.onHeaderRow}
       ></Table>
     );
   }

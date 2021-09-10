@@ -12,6 +12,8 @@ import "./frame.css";
 import { mainRoutes } from "../../routes";
 import logo from "../../assets/img/logo_header.png";
 import { withRouter } from "react-router-dom";
+import { compose } from "redux";
+import { withTranslation } from "react-i18next";
 const { SubMenu } = Menu;
 const { Header, Content, Sider } = Layout;
 const routeAuth = mainRoutes.filter((route) => {
@@ -39,6 +41,7 @@ class Frame extends Component {
     console.log("this", this);
   }
   render() {
+    const { t } = this.props;
     const popMenu = (
       <Menu
         onClick={(p) => {
@@ -51,7 +54,7 @@ class Frame extends Component {
         }}
       >
         <Menu.Item key="profile">Profile</Menu.Item>
-        <Menu.Item key="logOut">LogOut</Menu.Item>
+        <Menu.Item key="logOut">{t("Logout")}</Menu.Item>
       </Menu>
     );
     return (
@@ -87,7 +90,7 @@ class Frame extends Component {
                     title={
                       <span>
                         <Icon type="user" />
-                        Authorizations
+                        {t("Authorizations")}
                       </span>
                     }
                   >
@@ -107,7 +110,7 @@ class Frame extends Component {
                     title={
                       <span>
                         <Icon type="laptop" />
-                        Compute & Storage
+                        {t("Compute_Storage")}
                       </span>
                     }
                   >
@@ -127,7 +130,7 @@ class Frame extends Component {
                     title={
                       <span>
                         <Icon type="desktop" />
-                        Network & Security
+                        {t("Network_Security")}
                       </span>
                     }
                   >
@@ -148,7 +151,7 @@ class Frame extends Component {
                     title={
                       <span>
                         <Icon type="cloud-o" />
-                        Platform Service
+                        {t("Platform_Service")}
                       </span>
                     }
                   >
@@ -168,7 +171,7 @@ class Frame extends Component {
                     title={
                       <span>
                         <Icon type="bar-chart" />
-                        Administration
+                        {t("Administration")}
                       </span>
                     }
                   >
@@ -206,4 +209,4 @@ class Frame extends Component {
     );
   }
 }
-export default withRouter(Frame);
+export default compose(withRouter, withTranslation())(Frame);

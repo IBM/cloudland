@@ -6,6 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
+import { withTranslation } from "react-i18next";
 import { Card, Button, Popconfirm, message, Input } from "antd";
 import { regListApi, delRegInfor } from "../../service/registrys";
 import DataTable from "../../components/DataTable/DataTable";
@@ -81,6 +82,7 @@ class Registrys extends Component {
       align: "center",
       // width: 160,
       render: (txt, record, index) => {
+        const { t } = this.props;
         return (
           <div>
             <Button
@@ -95,10 +97,10 @@ class Registrys extends Component {
                 this.props.history.push("/registrys/new/" + record.ID);
               }}
             >
-              Edit
+              {t("Edit")}
             </Button>
             <Popconfirm
-              title="Are you sure to delete?"
+              title={t("suretodelete")}
               onCancel={() => {
                 console.log("cancelled");
               }}
@@ -129,7 +131,7 @@ class Registrys extends Component {
                   console.log("index", index);
                 }}
               >
-                Delete
+                {t("Delete")}
               </Button>
             </Popconfirm>
           </div>
@@ -254,14 +256,16 @@ class Registrys extends Component {
       });
     }
   };
-
+  row = (column) => {
+    console.log("row-column", column);
+  };
   render() {
     console.log("registry-props", this.props);
-
+    const { t } = this.props;
     return (
       <Card
         title={
-          "Registry Manage Panel" +
+          t("Registry_Manage_Panel") +
           "(Total: " +
           this.state.filteredList.length +
           ")"
@@ -269,7 +273,7 @@ class Registrys extends Component {
         extra={
           <div>
             <Search
-              placeholder="Search..."
+              placeholder={t("Registry_placeholder")}
               onChange={this.filter}
               enterButton
             />
@@ -282,7 +286,7 @@ class Registrys extends Component {
               type="primary"
               onClick={this.createRegistrys}
             >
-              Create
+              {t("Create")}
             </Button>
           </div>
         }
@@ -299,10 +303,11 @@ class Registrys extends Component {
           onShowSizeChange={this.onShowSizeChange}
           pageSizeOptions={this.state.pageSizeOptions}
           loading={!this.state.isLoaded}
+          onHeaderRow={this.row}
         />
       </Card>
     );
   }
 }
 
-export default Registrys;
+export default withTranslation()(Registrys);
