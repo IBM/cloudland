@@ -117,7 +117,7 @@ class InstModal extends Component {
         const { label } = item;
         const { rules } = item;
         const rulesType = rules || [
-          { required: true, message: `${label}必填` },
+          { required: true, message: `${label} required` },
         ];
         const initialValue = item.initialValue || undefined;
 

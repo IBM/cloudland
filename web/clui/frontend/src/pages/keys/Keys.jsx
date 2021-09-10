@@ -7,8 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import moment from "moment";
-import { Card, Button, Popconfirm, Input } from "antd";
-import { keysListApi } from "../../service/keys";
+import { Card, Button, Popconfirm, message, Input } from "antd";
+import { keysListApi, delKeyInfor } from "../../service/keys";
 import DataTable from "../../components/DataTable/DataTable";
 
 const { Search } = Input;
@@ -21,6 +21,10 @@ class Keys extends Component {
       filteredList: [],
       isLoaded: false,
       total: 0,
+      pageSize: 10,
+      offset: 0,
+      pageSizeOptions: ["5", "10", "15", "20"],
+      current: 1,
     };
   }
   columns = [
@@ -63,8 +67,10 @@ class Keys extends Component {
               }}
               onConfirm={() => {
                 console.log("confirmed");
-                //此处调用api接口进行相关操作
-              }}
+                delKeyInfor(record.ID).then((res) => {
+                  message.success(res.Msg);
+                  this.loadData(this.state.current, this.state.pageSize);
+                });              }}
             >
               <Button style={{ margin: "0 1rem" }} type="danger" size="small">
                 Delete
@@ -94,9 +100,63 @@ class Keys extends Component {
         });
       });
   }
-  demo = () => {
-    console.log("11");
+
+  loadData = (page, pageSize) => {
+    console.log("key-loadData~~", page, pageSize);
+    const _this = this;
+    const offset = (page - 1) * pageSize;
+    const limit = pageSize;
+    keysListApi(offset, limit)
+      .then((res) => {
+        console.log("loadData", res);
+        _this.setState({
+          keys: res.keys,
+          filteredList: res.keys,
+          isLoaded: true,
+          total: res.total,
+          pageSize: limit,
+          current: page,
+        });
+        console.log("loadData-page-", page, _this.state);
+      })
+      .catch((error) => {
+        _this.setState({
+          isLoaded: false,
+          error: error,
+        });
+      });
   };
+
+  toSelectchange = (page, num) => {
+    console.log("toSelectchange", page, num);
+    const _this = this;
+    const offset = (page - 1) * num;
+    const limit = num;
+    console.log("key-toSelectchange~limit:", offset, limit);
+    keysListApi(offset, limit)
+      .then((res) => {
+        console.log("loadData", res);
+        _this.setState({
+          keys: res.keys,
+          filteredList: res.keys,
+          isLoaded: true,
+          total: res.total,
+          pageSize: limit,
+          current: page,
+        });
+      })
+      .catch((error) => {
+        _this.setState({
+          isLoaded: false,
+          error: error,
+        });
+      });
+  };
+
+  createKey = () => {
+    this.props.history.push("/keys/new");
+  };
+
   filter = (event) => {
     console.log("event-filter", event.target.value);
     this.getFilteredList(event.target.value);
@@ -140,7 +200,7 @@ class Keys extends Component {
                 paddingLight: "10px",
               }}
               type="primary"
-              onClick={this.demo}
+              onClick={this.createKey}
             >
               Create
             </Button>
@@ -154,7 +214,7 @@ class Keys extends Component {
           bordered
           total={this.state.filteredList.length}
           pageSize={this.state.pageSize}
-          // scroll={{ y: 600, x: 600 }}
+          scroll={{ y: 600 }}
           onPaginationChange={this.onPaginationChange}
           onShowSizeChange={this.onShowSizeChange}
           pageSizeOptions={this.state.pageSizeOptions}

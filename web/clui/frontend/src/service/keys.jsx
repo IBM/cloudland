@@ -20,3 +20,9 @@ export function createKeyApi(objKey) {
     data: objKey,
   });
 }
+export function delKeyInfor(keyid) {
+  return request({
+    url: `/api/keys/${keyid}`,
+    method: "delete",
+  });
+}

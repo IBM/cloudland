@@ -17,6 +17,7 @@ import CreateImages from "../pages/images/CreateImages";
 import Instances from "../pages/instances/Instances";
 import ModifyInstances from "../pages/instances/ModifyInstances";
 import Keys from "../pages/keys/Keys";
+import CreateKey from "../pages/keys/CreateKey";
 import Login from "../pages/login/Login";
 import Openshifts from "../pages/openshifts/Openshifts";
 import ModifyOpenshifts from "../pages/openshifts/ModifyOpenshifts";
