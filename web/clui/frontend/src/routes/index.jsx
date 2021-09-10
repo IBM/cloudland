@@ -112,6 +112,13 @@ export const mainRoutes = [
     item: "auth",
   },
   {
+    path: "/keys/new",
+    component: CreateKey,
+    exact: true,
+    isShow: false,
+    item: "auth",
+  },
+  {
     path: "/instances",
     component: Instances,
     title: "Instance",
