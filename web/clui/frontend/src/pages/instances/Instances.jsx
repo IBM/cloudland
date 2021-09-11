@@ -322,25 +322,7 @@ class Instances extends Component {
         });
       });
   }
-  // componentDidUpdate() {
-  //   const _this = this;
-  //   instListApi()
-  //     .then((res) => {
-  //       console.log("componentDidUpdate-instances:", res);
-  //       _this.setState({
-  //         instances: res.instances,
-  //         filteredList: res.instances,
-  //         isLoaded: true,
-  //         total: res.total,
-  //       });
-  //     })
-  //     .catch((error) => {
-  //       _this.setState({
-  //         isLoaded: false,
-  //         error: error,
-  //       });
-  //     });
-  // }
+
   loadData = (page, pageSize) => {
     console.log("ins-loadData~~", page, pageSize);
     const _this = this;

@@ -1,9 +1,6 @@
 /*
-
 Copyright <holder> All Rights Reserved
-
 SPDX-License-Identifier: Apache-2.0
-
 */
 import Frame from "./components/Frame/Frame";
 import { Switch, Route, Redirect } from "react-router-dom";

@@ -10,6 +10,7 @@ import { withTranslation } from "react-i18next";
 import { Card, Button, Popconfirm, message, Input } from "antd";
 import { regListApi, delRegInfor } from "../../service/registrys";
 import DataTable from "../../components/DataTable/DataTable";
+import { T } from "antd/lib/upload/utils";
 
 const { Search } = Input;
 class Registrys extends Component {
@@ -30,7 +31,7 @@ class Registrys extends Component {
   }
   columns = [
     {
-      title: "ID",
+      title: this.props.t("ID"),
       dataIndex: "ID",
       align: "center",
       key: "ID",
@@ -38,21 +39,21 @@ class Registrys extends Component {
       width: 80,
     },
     {
-      title: "Label",
+      title: this.props.t("Label"),
       dataIndex: "Label",
       align: "center",
       width: 200,
       className: "registry_label",
     },
     {
-      title: "Ocp Version",
+      title: this.props.t("OcpVersion"),
       dataIndex: "OcpVersion",
       align: "center",
       className: "registry_ocpVersion",
       width: 80,
     },
     {
-      title: "Registry Content",
+      title: this.props.t("RegistryContent"),
       dataIndex: "RegistryContent",
       align: "center",
       className: "registry_Content",
@@ -78,7 +79,7 @@ class Registrys extends Component {
       },
     },
     {
-      title: "Action",
+      title: this.props.t("Action"),
       align: "center",
       // width: 160,
       render: (txt, record, index) => {
@@ -100,12 +101,11 @@ class Registrys extends Component {
               {t("Edit")}
             </Button>
             <Popconfirm
-              title={t("suretodelete")}
+              title={t("Areyousuretodelete")}
               onCancel={() => {
                 console.log("cancelled");
               }}
               onConfirm={() => {
-                // this.gotoDeleteReg(record.ID);
                 console.log("onClick-delete:", record);
                 //this.props.history.push("/registrys/new/" + record.ID);
                 delRegInfor(record.ID).then((res) => {
@@ -228,9 +228,6 @@ class Registrys extends Component {
     //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
     this.toSelectchange(current, pageSize);
   };
-  // gotoDeleteReg = (id) => {
-  //   this.props.handleDeleteReg(id);
-  // };
   filter = (event) => {
     console.log("event-filter", event.target.value);
     this.getFilteredList(event.target.value);
@@ -256,9 +253,9 @@ class Registrys extends Component {
       });
     }
   };
-  row = (column) => {
-    console.log("row-column", column);
-  };
+  // row = (column) => {
+  //   console.log("row-column", column);
+  // };
   render() {
     console.log("registry-props", this.props);
     const { t } = this.props;
@@ -303,7 +300,7 @@ class Registrys extends Component {
           onShowSizeChange={this.onShowSizeChange}
           pageSizeOptions={this.state.pageSizeOptions}
           loading={!this.state.isLoaded}
-          onHeaderRow={this.row}
+          // onHeaderRow={this.row}
         />
       </Card>
     );

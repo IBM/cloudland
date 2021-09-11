@@ -168,7 +168,7 @@
   "Update Gateway": "更新网关",
   "Update Instance": "更新实例",
   "Expires at": "过期于",
-  "Action": "动作",
+  "Action": "操作",
   "shutdown": "停止",
   "destroy": "宕机",
   "start": "启动",
@@ -273,5 +273,6 @@
   "Edit_Registry": "编辑仓库",
   "Return": "返回",
   "Virtualization Type": "虚拟化类型",
-  "suretodelete": "确认要删除?"
+  "Areyousuretodelete": "确认要删除?",
+  "Or": "或"
 }

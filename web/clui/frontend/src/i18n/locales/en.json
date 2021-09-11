@@ -273,5 +273,6 @@
   "Edit_Registry": "Edit Registry",
   "Return": "Return",
   "Virtualization Type": "Virtualization Type",
-  "suretodelete": "Are you sure to delete?"
+  "Areyousuretodelete": "Are you sure to delete?",
+  "Or": "Or"
 }
