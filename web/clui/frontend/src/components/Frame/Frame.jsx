@@ -16,6 +16,7 @@ import { compose } from "redux";
 import { withTranslation } from "react-i18next";
 const { SubMenu } = Menu;
 const { Header, Content, Sider } = Layout;
+
 const routeAuth = mainRoutes.filter((route) => {
   return route.isShow && route.item === "auth";
 });
@@ -31,6 +32,7 @@ const routeNetwork = mainRoutes.filter((route) => {
 const routeAdmin = mainRoutes.filter((route) => {
   return route.item === "admin" && route.isShow;
 });
+// console.log("routeAuth", routeAuth);
 
 // const imageUrl =
 // "https://unified-profile-api.us-south-k8s.intranet.ibm.com/v3/image/";

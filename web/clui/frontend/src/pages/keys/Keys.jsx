@@ -70,7 +70,8 @@ class Keys extends Component {
                 delKeyInfor(record.ID).then((res) => {
                   message.success(res.Msg);
                   this.loadData(this.state.current, this.state.pageSize);
-                });              }}
+                });
+              }}
             >
               <Button style={{ margin: "0 1rem" }} type="danger" size="small">
                 Delete
@@ -127,6 +128,15 @@ class Keys extends Component {
       });
   };
 
+  onPaginationChange = (e) => {
+    console.log("onPaginationChange", e);
+    this.loadData(e, this.state.pageSize);
+  };
+  onShowSizeChange = (current, pageSize) => {
+    console.log("onShowSizeChange:", current, pageSize);
+    //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
+    this.toSelectchange(current, pageSize);
+  };
   toSelectchange = (page, num) => {
     console.log("toSelectchange", page, num);
     const _this = this;
@@ -152,7 +162,6 @@ class Keys extends Component {
         });
       });
   };
-
   createKey = () => {
     this.props.history.push("/keys/new");
   };

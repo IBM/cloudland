@@ -1,9 +1,6 @@
 /*
-
 Copyright <holder> All Rights Reserved
-
 SPDX-License-Identifier: Apache-2.0
-
 */
 import { withTranslation } from "react-i18next";
 import Dashboard from "../pages/dashboard/Dashboard";
@@ -51,6 +48,15 @@ export const InitRoutes = [
   },
 ];
 export const mainRoutes = [
+  {
+    path: "/login",
+    component: Login,
+    //exact: true,
+  },
+  {
+    path: "/404",
+    component: PageNotFound,
+  },
   {
     path: "/dashboard",
     component: Dashboard,
@@ -268,4 +274,4 @@ export const mainRoutes = [
     item: "admin",
   },
 ];
-// export default (InitRoutes, mainRoutes);
+// export default mainRoutes;

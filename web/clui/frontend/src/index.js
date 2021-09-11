@@ -1,9 +1,6 @@
 /*
-
 Copyright <holder> All Rights Reserved
-
 SPDX-License-Identifier: Apache-2.0
-
 */
 import React from "react";
 import ReactDOM from "react-dom";
@@ -30,9 +27,12 @@ ReactDOM.render(
       <Route
         path="/"
         render={(routeProps) => (
-          <div className="main-page">
-            <App {...routeProps} />
-          </div>
+          console.log("routeProps~~", routeProps),
+          (
+            <div className="main-page">
+              <App {...routeProps} />
+            </div>
+          )
         )}
       />
       <Redirect to="/" from="/" />

@@ -124,7 +124,7 @@ class Login extends Component {
             >
               {t("Login")}
             </Button>
-            Or <a href="">{t("Register now")}</a>
+            {t("Or")} <a href="">{t("Register now")}</a>
           </Form.Item>
         </Form>
       </Card>
