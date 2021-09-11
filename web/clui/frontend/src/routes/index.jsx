@@ -49,15 +49,6 @@ export const InitRoutes = [
 ];
 export const mainRoutes = [
   {
-    path: "/login",
-    component: Login,
-    //exact: true,
-  },
-  {
-    path: "/404",
-    component: PageNotFound,
-  },
-  {
     path: "/dashboard",
     component: Dashboard,
     title: "Dashboard",
