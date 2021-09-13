@@ -95,6 +95,13 @@ class Instances extends Component {
       title: "Console",
       dataIndex: "",
       align: "center",
+      render: (record) => {
+        return (
+          <a href="http://www.baidu.com" target="_blank" rel="noopener noreferrer" >
+            VNC
+          </a>
+        );
+      },
     },
     {
       title: "Status",
