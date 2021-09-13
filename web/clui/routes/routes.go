@@ -162,6 +162,7 @@ func New() (m *macaron.Macaron) {
 	m.Post("/instances/:id/console", consoleView.ConsoleURL)
 	m.Get("/instances/:id/console", consoleView.ConsoleURL)
 	m.Post("/api/instances/:id/console", apiConsoleView.ConsoleURL)
+    m.Get("/api/instances/:id/console", apiConsoleView.ConsoleURL)	
 	m.Get("/consoleresolver/token/:token", consoleView.ConsoleResolve)
 	m.Get("/api/consoleresolver/token/:token", apiConsoleView.ConsoleResolve)
 	m.Get("/interfaces/:id", interfaceView.Edit)
