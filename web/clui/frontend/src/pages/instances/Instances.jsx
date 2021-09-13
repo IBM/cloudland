@@ -26,7 +26,7 @@ import {
   getInstInforforAll,
 } from "../../service/instances";
 import DataTable from "../../components/DataTable/DataTable";
-
+import { Link } from "react-router-dom";
 import InstModal from "./InstModal";
 import "./instances.css";
 const { Search } = Input;
@@ -93,15 +93,13 @@ class Instances extends Component {
     },
     {
       title: "Console",
-      dataIndex: "",
+      width: "60px",
       align: "center",
-      render: (record) => {
-        return (
-          <a href="http://www.baidu.com" target="_blank" rel="noopener noreferrer" >
-            VNC
-          </a>
-        );
-      },
+      render: (record) => (
+        <div onClick={() => {window.open('https://cloudland.pic.cdl.ibm.com/api/instances/'+record.ID+'/console')}}>
+          VNC
+        </div>
+      ),
     },
     {
       title: "Status",
