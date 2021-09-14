@@ -102,7 +102,7 @@ class Frame extends Component {
                           key={routeA.path}
                           onClick={(p) => this.props.history.push(p.key)}
                         >
-                          {routeA.title}
+                          {t(routeA.title)}
                         </Menu.Item>
                       );
                     })}
@@ -122,7 +122,7 @@ class Frame extends Component {
                           key={routeC.path}
                           onClick={(p) => this.props.history.push(p.key)}
                         >
-                          {routeC.title}
+                          {t(routeC.title)}
                         </Menu.Item>
                       );
                     })}
@@ -142,7 +142,7 @@ class Frame extends Component {
                           key={routeN.path}
                           onClick={(p) => this.props.history.push(p.key)}
                         >
-                          {routeN.title}
+                          {t(routeN.title)}
                         </Menu.Item>
                       );
                     })}
@@ -163,7 +163,7 @@ class Frame extends Component {
                           key={routeP.path}
                           onClick={(p) => this.props.history.push(p.key)}
                         >
-                          {routeP.title}
+                          {t(routeP.title)}
                         </Menu.Item>
                       );
                     })}
@@ -183,7 +183,7 @@ class Frame extends Component {
                           key={routeA.path}
                           onClick={(p) => this.props.history.push(p.key)}
                         >
-                          {routeA.title}
+                          {t(routeA.title)}
                         </Menu.Item>
                       );
                     })}
