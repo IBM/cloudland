@@ -8,6 +8,9 @@ SPDX-License-Identifier: Apache-2.0
 import React, { Component } from "react";
 import { Form, Card, Input, Button, message } from "antd";
 import { createUserApi } from "../../service/users";
+import { withTranslation } from "react-i18next";
+import { compose } from "redux";
+
 import "./users.css";
 const layoutButton = {
   labelCol: { span: 8 },
@@ -53,16 +56,17 @@ class CreateUser extends Component {
   };
 
   render() {
+    const { t } = this.props;
     return (
       <Card
-        title={"Create User"}
+        title={"Create_User"}
         extra={
           <Button
             style={{ float: "right" }}
             type="primary"
             onClick={this.listUsers}
           >
-            Return
+            {t("Return")}
           </Button>
         }
       >
@@ -72,7 +76,7 @@ class CreateUser extends Component {
           onSubmit={(e) => this.handleSubmit(e)}
         >
           <Form.Item
-            label="User Name"
+            label={t("Username")}
             name="username"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -87,7 +91,7 @@ class CreateUser extends Component {
           </Form.Item>
           <Form.Item
             name="password"
-            label="Password"
+            label={t("Password")}
             labelCol={{ ...layoutForm.labelCol }}
           >
             {this.props.form.getFieldDecorator("password", {
@@ -126,4 +130,8 @@ class CreateUser extends Component {
     );
   }
 }
-export default Form.create({ name: "CreateUser" })(CreateUser);
+
+export default compose(
+  withTranslation(),
+  Form.create({ name: "CreateUser" })
+)(CreateUser);

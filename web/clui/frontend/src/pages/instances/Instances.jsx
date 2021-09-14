@@ -23,10 +23,11 @@ import {
   delInstInfor,
   getInstInforById,
   editInstInfor,
-  getInstInforforAll,
 } from "../../service/instances";
 import DataTable from "../../components/DataTable/DataTable";
 import { Link } from "react-router-dom";
+import { withTranslation } from "react-i18next";
+import { compose } from "redux";
 import InstModal from "./InstModal";
 import "./instances.css";
 const { Search } = Input;
@@ -57,29 +58,29 @@ class Instances extends Component {
 
   columns = [
     {
-      title: "ID",
+      title: this.props.t("ID"),
       key: "ID",
       width: 60,
       align: "center",
       dataIndex: "ID",
     },
     {
-      title: "HostName",
+      title: this.props.t("Hostname"),
       dataIndex: "Hostname",
       align: "center",
     },
     {
-      title: "Flavor",
+      title: this.props.t("Flavors"),
       dataIndex: "Flavor.Name",
       align: "center",
     },
     {
-      title: "Image",
+      title: this.props.t("Images"),
       dataIndex: "Image.Name",
       align: "center",
     },
     {
-      title: "IP Address",
+      title: this.props.t("IP_Address"),
       dataIndex: "Interfaces",
       key: Math.random(),
       align: "center",
@@ -92,48 +93,59 @@ class Instances extends Component {
       ),
     },
     {
-      title: "Console",
+      title: this.props.t("Console"),
       width: "60px",
       align: "center",
       render: (record) => (
-        <div onClick={() => {window.open('https://cloudland.pic.cdl.ibm.com/api/instances/'+record.ID+'/console')}}>
+        <div
+          onClick={() => {
+            window.open(
+              "https://cloudland.pic.cdl.ibm.com/api/instances/" +
+                record.ID +
+                "/console"
+            );
+          }}
+        >
           VNC
         </div>
       ),
     },
     {
-      title: "Status",
+      title: this.props.t("Status"),
       align: "center",
       width: "60px",
       render: (record) => {
         return (
           <Tooltip title={record.Reason}>
-            <span style={{ color: "#1890ff" }}>{record.Status}</span>
+            <span style={{ color: "#1890ff" }}>
+              {this.props.t(`${record.Status}`)}
+            </span>
           </Tooltip>
         );
       },
     },
     {
-      title: "Hyper",
+      title: this.props.t("Hyper"),
       dataIndex: "Hyper",
       align: "center",
       className: sessionStorage.loginInfo.isAdmin ? "" : "columnHidden",
     },
     {
-      title: "Owner",
+      title: this.props.t("Owner"),
       dataIndex: "OwnerInfo.name",
       align: "center",
       className: sessionStorage.loginInfo.isAdmin ? "" : "columnHidden",
     },
     {
-      title: "Zone",
+      title: this.props.t("Zone"),
       dataIndex: "Zone.Name",
       align: "center",
     },
     {
-      title: "Action",
+      title: this.props.t("Action"),
       align: "center",
       render: (txt, record, index) => {
+        const { t } = this.props;
         return (
           <div className="actionStyle">
             <Dropdown.Button
@@ -144,10 +156,12 @@ class Instances extends Component {
               }}
               overlay={this.menu(record.ID)}
             >
-              Edit
+              {t("Edit")}
             </Dropdown.Button>
             <Popconfirm
-              title="Are you sure to delete?"
+              title={t("Doyouwanttodelete")}
+              okText={t("yes")}
+              cancelText={t("no")}
               onCancel={() => {
                 console.log("cancelled");
               }}
@@ -172,7 +186,7 @@ class Instances extends Component {
                 type="danger"
                 size="small"
               >
-                Delete
+                {t("Delete")}
               </Button>
             </Popconfirm>
           </div>
@@ -182,12 +196,14 @@ class Instances extends Component {
   ];
   menu = (r) => (
     <Menu onClick={this.handleModal.bind(this, r)}>
-      <Menu.Item key="changeHostname">Change Hostname</Menu.Item>
-      <Menu.Item key="migrateIns">Migrate Instance</Menu.Item>
-      <Menu.Item key="resizeIns">Resize Instance</Menu.Item>
-      <Menu.Item key="changeStatus">Change Status</Menu.Item>
-      <Menu.Item key="startVm">Start VM</Menu.Item>
-      <Menu.Item key="stopVm">Stop VM</Menu.Item>
+      <Menu.Item key="changeHostname">
+        {this.props.t("ChangeHostname")}
+      </Menu.Item>
+      <Menu.Item key="migrateIns">{this.props.t("MigrateInstance")}</Menu.Item>
+      <Menu.Item key="resizeIns">{this.props.t("ResizeInstance")}</Menu.Item>
+      <Menu.Item key="changeStatus">{this.props.t("ChangeStatus")}</Menu.Item>
+      <Menu.Item key="startVm">{this.props.t("StartVM")}</Menu.Item>
+      <Menu.Item key="stopVm">{this.props.t("StopVM")}</Menu.Item>
     </Menu>
   );
 
@@ -258,29 +274,29 @@ class Instances extends Component {
         case "changeHostname":
           return this.setState({
             menuKey: key,
-            title: "Change Hostname",
+            title: this.props.t("ChangeHostname"),
           });
         case "migrateIns":
           return this.setState({
             menuKey: key,
-            title: "Migrate Instance",
+            title: this.props.t("MigrateInstance"),
           });
         case "resizeIns":
           return this.setState({
             menuKey: key,
-            title: "Resize Instance",
+            title: this.props.t("ResizeInstance"),
           });
         case "changeStatus":
           return this.setState({
-            title: "Change Status",
+            title: this.props.t("ChangeStatus"),
           });
         case "startVm":
           return this.setState({
-            title: "Start VM",
+            title: this.props.t("StartVM"),
           });
         case "stopVm":
           return this.setState({
-            title: "Stop VM",
+            title: this.props.t("StopVM"),
           });
         default:
           return null;
@@ -398,9 +414,9 @@ class Instances extends Component {
     const modalFormList = [
       {
         type: "INPUT",
-        label: "Hostname",
+        label: this.props.t("Hostname"),
         name: "hostname",
-        field: "Change Hostname",
+        field: this.props.t("ChangeHostname"),
         placeholder: "Please input Hostname",
         width: "90%",
         initialValue: data.Hostname,
@@ -409,9 +425,9 @@ class Instances extends Component {
       {
         type: "SELECT",
         width: "200px",
-        label: "Hyper",
+        label: this.props.t("Hyper"),
         name: "hyper",
-        field: "Migrate Instance",
+        field: this.props.t("MigrateInstance"),
         // disabled:true,
         initialValue: data.Hyper,
         id: data.ID,
@@ -419,17 +435,17 @@ class Instances extends Component {
       {
         type: "SELECT",
         width: "200px",
-        label: "Flavor",
-        field: "Resize Instance",
+        label: this.props.t("Flavors"),
+        field: this.props.t("ResizeInstance"),
         name: "flavor",
         initialValue: data.FlavorID,
         id: data.ID,
       },
       {
         type: "SELECT",
-        label: "Action",
+        label: this.props.t("Action"),
         name: "action",
-        field: "Change Status",
+        field: this.props.t("ChangeStatus"),
         placeholder: "Please Select Status",
         width: "90%",
         // disabled:true,
@@ -538,18 +554,24 @@ class Instances extends Component {
   };
   render() {
     const { everyData } = this.state;
+    const { t } = this.props;
     return (
       <div>
         <Row>
           <Col span={24}>
             <Card
               title={
-                "Instance Manage Panel" + "(Total: " + this.state.total + ")"
+                t("Instance_Manage_Panel") +
+                "(" +
+                t("Total") +
+                ":" +
+                this.state.filteredList.length +
+                ")"
               }
               extra={
                 <div>
                   <Search
-                    placeholder="Search..."
+                    placeholder={t("Search_placeholder")}
                     onChange={this.filter}
                     enterButton
                   />
@@ -562,7 +584,7 @@ class Instances extends Component {
                     type="primary"
                     onClick={this.createInstances}
                   >
-                    Create
+                    {t("Create")}
                   </Button>
                 </div>
               }
@@ -604,4 +626,4 @@ class Instances extends Component {
   }
 }
 
-export default Instances;
+export default withTranslation()(Instances);

@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import { Card, Button, Popconfirm, message, Input } from "antd";
+import { withTranslation } from "react-i18next";
 import { flavorsListApi, delFlavorInfor } from "../../service/flavors";
 import DataTable from "../../components/DataTable/DataTable";
 
@@ -28,50 +29,53 @@ class Flavors extends Component {
   }
   columns = [
     {
-      title: "ID",
+      title: this.props.t("ID"),
       dataIndex: "ID",
       key: "ID",
       width: 80,
       align: "center",
     },
     {
-      title: "Name",
+      title: this.props.t("Name"),
       dataIndex: "Name",
       align: "center",
     },
     {
-      title: "CPU",
+      title: this.props.t("Cpu"),
       dataIndex: "Cpu",
       align: "center",
     },
     {
-      title: "Memory",
+      title: this.props.t("Memory"),
       dataIndex: "Memory",
       align: "center",
     },
     {
-      title: "Disk",
+      title: this.props.t("Disk"),
       dataIndex: "Disk",
       align: "center",
     },
     {
-      title: "Swap",
+      title: this.props.t("Swap"),
       dataIndex: "Swap",
       align: "center",
     },
     {
-      title: "Ephemeral",
+      title: this.props.t("Ephemeral"),
       dataIndex: "Ephemeral",
       align: "center",
     },
     {
-      title: "Action",
+      title: this.props.t("Action"),
       align: "center",
       render: (txt, record, index) => {
+        const { t } = this.props;
         return (
           <div>
             <Popconfirm
-              title="Are you sure to delete?"
+              title={t("Doyouwanttodelete")}
+              okText={t("yes")}
+              cancelText={t("no")}
               onCancel={() => {
                 console.log("deleted");
               }}
@@ -89,7 +93,7 @@ class Flavors extends Component {
               }}
             >
               <Button style={{ margin: "0 1rem" }} type="danger" size="small">
-                Delete
+                {t("Delete")}
               </Button>
             </Popconfirm>
           </div>
@@ -183,7 +187,7 @@ class Flavors extends Component {
     const flavorsFormList = [
       {
         type: "INPUT",
-        label: "Name",
+        label: this.props.t("Name"),
         name: "name",
         // field: "Change Hostname",
         placeholder: "please input flavor name",
@@ -193,7 +197,7 @@ class Flavors extends Component {
       },
       {
         type: "INPUT",
-        label: "CPU",
+        label: this.props.t("Cpu"),
         name: "cpu",
         // field: "Change Hostname",
         placeholder: "please input flavor cpu",
@@ -203,7 +207,7 @@ class Flavors extends Component {
       },
       {
         type: "INPUT",
-        label: "Memory(M)",
+        label: this.props.t("Memory") + "(M)",
         name: "memory",
         // field: "Change Hostname",
         placeholder: "please input flavor memory",
@@ -213,7 +217,7 @@ class Flavors extends Component {
       },
       {
         type: "INPUT",
-        label: "Disk(G)",
+        label: this.props.t("Disk") + "(G)",
         name: "disk",
         // field: "Change Hostname",
         placeholder: "please input flavor disk",
@@ -223,7 +227,7 @@ class Flavors extends Component {
       },
       {
         type: "INPUT",
-        label: "Swap(G)",
+        label: this.props.t("Swap") + "(G)",
         name: "swap",
         // field: "Change Hostname",
         placeholder: "please input flavor swap",
@@ -233,7 +237,7 @@ class Flavors extends Component {
       },
       {
         type: "INPUT",
-        label: "Ephemeral(G)",
+        label: this.props.t("Ephemeral") + "(G)",
         name: "ephemeral",
         // field: "Change Hostname",
         placeholder: "please input flavor ephemeral",
@@ -268,18 +272,21 @@ class Flavors extends Component {
     }
   };
   render() {
+    const { t } = this.props;
     return (
       <Card
         title={
-          "Flavor Manage Panel " +
-          "(Total: " +
+          t("Flavor_Manage_Panel") +
+          "(" +
+          t("Total") +
+          ":" +
           this.state.filteredList.length +
           ")"
         }
         extra={
           <div>
             <Search
-              placeholder="Search..."
+              placeholder={t("Search_placeholder")}
               onChange={this.filter}
               enterButton
             />
@@ -292,7 +299,7 @@ class Flavors extends Component {
               type="primary"
               onClick={this.createFlavors}
             >
-              Create
+              {t("Create")}
             </Button>
           </div>
         }
@@ -314,4 +321,4 @@ class Flavors extends Component {
     );
   }
 }
-export default Flavors;
+export default withTranslation()(Flavors);

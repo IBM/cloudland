@@ -6,9 +6,12 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
+import { withTranslation } from "react-i18next";
+import { compose } from "redux";
 import { Form, Card, Input, Button, message } from "antd";
 import { createKeyApi } from "../../service/keys";
 import "./keys.css";
+import { T } from "antd/lib/upload/utils";
 const layoutButton = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },
@@ -50,16 +53,17 @@ class CreateKey extends Component {
   };
 
   render() {
+    const { t } = this.props;
     return (
       <Card
-        title={"Create Key"}
+        title={t("Create_a_key")}
         extra={
           <Button
             style={{ float: "right" }}
             type="primary"
             onClick={this.listKeys}
           >
-            Return
+            {t("Return")}
           </Button>
         }
       >
@@ -69,7 +73,7 @@ class CreateKey extends Component {
           onSubmit={(e) => this.handleSubmit(e)}
         >
           <Form.Item
-            label="Key Name"
+            label={t("Key Name")}
             name="name"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -83,15 +87,17 @@ class CreateKey extends Component {
           </Form.Item>
           <Form.Item
             name="pubkey"
-            label="Public Key"
+            label={t("Public Key")}
             labelCol={{ ...layoutForm.labelCol }}
           >
-            {this.props.form.getFieldDecorator("pubkey", {})(
+            {this.props.form.getFieldDecorator(
+              "pubkey",
+              {}
+            )(
               <Input.TextArea
                 showCount="true"
                 autoSize={{ minRows: 3, maxRows: 6 }}
               />
-
             )}
           </Form.Item>
           <Form.Item
@@ -99,7 +105,7 @@ class CreateKey extends Component {
             labelCol={{ span: 6 }}
           >
             <Button type="primary" htmlType="submit">
-              Create Key
+              {t("Create New Key")}
             </Button>
           </Form.Item>
         </Form>
@@ -107,4 +113,8 @@ class CreateKey extends Component {
     );
   }
 }
-export default Form.create({ name: "CreateKey" })(CreateKey);
+
+export default compose(
+  withTranslation(),
+  Form.create({ name: "CreateKey" })
+)(CreateKey);

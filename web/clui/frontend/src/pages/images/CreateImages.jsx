@@ -7,6 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import { Form, Card, Input, Select, Button, message } from "antd";
+import { withTranslation } from "react-i18next";
+import { compose } from "redux";
 import { instListApi } from "../../service/instances";
 import { createImgApi } from "../../service/images";
 
@@ -73,16 +75,17 @@ class CreateImages extends Component {
     });
   };
   render() {
+    const { t } = this.props;
     return (
       <Card
-        title={"Create New Image"}
+        title={t("Create New Image")}
         extra={
           <Button
             style={{ float: "right" }}
             type="primary"
             onClick={this.listImages}
           >
-            Return
+            {t("Return")}
           </Button>
         }
       >
@@ -92,7 +95,7 @@ class CreateImages extends Component {
           wrapperCol={{ ...layoutForm.wrapperCol }}
         >
           <Form.Item
-            label="Name"
+            label={t("Name")}
             name="Name"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -105,7 +108,7 @@ class CreateImages extends Component {
             })(<Input />)}
           </Form.Item>
           <Form.Item
-            label="From Instance"
+            label={t("From Instance")}
             name="fromInstance"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -125,7 +128,7 @@ class CreateImages extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="Download URL"
+            label={t("Download Url")}
             name="Href"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -135,7 +138,7 @@ class CreateImages extends Component {
           </Form.Item>
 
           <Form.Item
-            label="Architecture"
+            label={t("Architecture")}
             name="Architecture"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -157,7 +160,7 @@ class CreateImages extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="OS Version"
+            label={t("OS Version")}
             name="OsVersion"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -170,7 +173,7 @@ class CreateImages extends Component {
             })(<Input />)}
           </Form.Item>
           <Form.Item
-            label="Disk Type"
+            label={t("Disk Type")}
             name="DiskType"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -180,7 +183,7 @@ class CreateImages extends Component {
           </Form.Item>
           <Form.Item
             name="VirtType"
-            label="Virtualization Type"
+            label={t("Virtualization Type")}
             labelCol={{ ...layoutForm.labelCol }}
           >
             {this.props.form.getFieldDecorator("VirtType", {
@@ -205,7 +208,7 @@ class CreateImages extends Component {
           </Form.Item>
           <Form.Item
             name="OpenShiftLB"
-            label="OpenShift_LB"
+            label={t("OpenShift_LB")}
             labelCol={{ ...layoutForm.labelCol }}
           >
             {this.props.form.getFieldDecorator("OpenShiftLB", {
@@ -213,18 +216,18 @@ class CreateImages extends Component {
               initialValue: "false",
             })(
               <Select>
-                <Select.Option key="yes" value="true">
-                  yes
+                <Select.Option key={t("yes")} value="true">
+                  {t("yes")}
                 </Select.Option>
-                <Select.Option key="no" value="false">
-                  no
+                <Select.Option key={t("no")} value="false">
+                  {t("no")}
                 </Select.Option>
               </Select>
             )}
           </Form.Item>
           <Form.Item
             name="UserName"
-            label="Default Username"
+            label={t("Default Username")}
             labelCol={{ ...layoutForm.labelCol }}
           >
             {this.props.form.getFieldDecorator("UserName", {
@@ -241,7 +244,7 @@ class CreateImages extends Component {
           >
             {
               <Button type="primary" htmlType="submit">
-                Create New Image
+                {t("Create New Image")}
               </Button>
             }
           </Form.Item>
@@ -250,4 +253,8 @@ class CreateImages extends Component {
     );
   }
 }
-export default Form.create({ name: "createImages" })(CreateImages);
+
+export default compose(
+  withTranslation(),
+  Form.create({ name: "createImages" })
+)(CreateImages);

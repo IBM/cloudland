@@ -6,6 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
+import { withTranslation } from "react-i18next";
 import moment from "moment";
 import { Card, Button, Popconfirm, message, Input } from "antd";
 import { keysListApi, delKeyInfor } from "../../service/keys";
@@ -29,7 +30,7 @@ class Keys extends Component {
   }
   columns = [
     {
-      title: "ID",
+      title: this.props.t("ID"),
       key: "ID",
       width: 80,
       align: "center",
@@ -37,17 +38,17 @@ class Keys extends Component {
       //render: (txt, record, index) => index + 1,
     },
     {
-      title: "Name",
+      title: this.props.t("Name"),
       dataIndex: "Name",
       align: "center",
     },
     {
-      title: "Owner",
+      title: this.props.t("Owner"),
       dataIndex: "OwnerInfo.name",
       align: "center",
     },
     {
-      title: "Created At",
+      title: this.props.t("Created_At"),
       dataIndex: "CreatedAt",
       align: "center",
       render: (record) => (
@@ -55,13 +56,16 @@ class Keys extends Component {
       ),
     },
     {
-      title: "Action",
+      title: this.props.t("Action"),
       align: "center",
       render: (txt, record, index) => {
+        const { t } = this.props;
         return (
           <div>
             <Popconfirm
-              title="Are you sure to delete?"
+              title={t("Doyouwanttodelete")}
+              okText={t("yes")}
+              cancelText={t("no")}
               onCancel={() => {
                 console.log("cancelled");
               }}
@@ -74,7 +78,7 @@ class Keys extends Component {
               }}
             >
               <Button style={{ margin: "0 1rem" }} type="danger" size="small">
-                Delete
+                {t("Delete")}
               </Button>
             </Popconfirm>
           </div>
@@ -190,15 +194,21 @@ class Keys extends Component {
     }
   };
   render() {
+    const { t } = this.props;
     return (
       <Card
         title={
-          "Key Manage Panel" + "(Total: " + this.state.filteredList.length + ")"
+          t("Key_Manage_Panel") +
+          "(" +
+          t("Total") +
+          ":" +
+          this.state.filteredList.length +
+          ")"
         }
         extra={
           <div>
             <Search
-              placeholder="Search..."
+              placeholder={t("Search_placeholder")}
               onChange={this.filter}
               enterButton
             />
@@ -211,7 +221,7 @@ class Keys extends Component {
               type="primary"
               onClick={this.createKey}
             >
-              Create
+              {t("Create")}
             </Button>
           </div>
         }
@@ -234,4 +244,4 @@ class Keys extends Component {
   }
 }
 
-export default Keys;
+export default withTranslation()(Keys);
