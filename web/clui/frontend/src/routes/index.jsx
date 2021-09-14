@@ -64,13 +64,13 @@ export const mainRoutes = [
     isShow: true,
     item: "auth",
   },
-  // {
-  //   path: "/users/new",
-  //   component: CreateUser,
-  //   exact: true,
-  //   isShow: false,
-  //   item: "auth",
-  // },
+   {
+     path: "/users/new",
+     component: CreateUser,
+     exact: true,
+     isShow: false,
+     item: "auth",
+   },
   {
     path: "/users/new/:id?",
     component: ModifyUser,
