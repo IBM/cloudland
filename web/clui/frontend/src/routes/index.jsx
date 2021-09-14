@@ -32,6 +32,7 @@ import ModifySecrules from "../pages/secrules/ModifySecrules";
 import Subnets from "../pages/subnets/Subnets";
 import Users from "../pages/users/Users";
 import ModifyUser from "../pages/users/ModifyUser";
+import CreateUser from "../pages/users/CreateUser";
 import Hypers from "../pages/hypers/Hypers";
 import ModifySubnets from "../pages/subnets/ModifySubnets";
 import ModifyGateways from "../pages/gateways/ModifyGateways";
