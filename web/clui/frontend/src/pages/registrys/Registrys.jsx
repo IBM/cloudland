@@ -10,7 +10,6 @@ import { withTranslation } from "react-i18next";
 import { Card, Button, Popconfirm, message, Input } from "antd";
 import { regListApi, delRegInfor } from "../../service/registrys";
 import DataTable from "../../components/DataTable/DataTable";
-import { T } from "antd/lib/upload/utils";
 
 const { Search } = Input;
 class Registrys extends Component {
@@ -101,7 +100,9 @@ class Registrys extends Component {
               {t("Edit")}
             </Button>
             <Popconfirm
-              title={t("Areyousuretodelete")}
+              title={t("Doyouwanttodelete")}
+              okText={t("yes")}
+              cancelText={t("no")}
               onCancel={() => {
                 console.log("cancelled");
               }}
@@ -125,11 +126,6 @@ class Registrys extends Component {
                 }}
                 type="danger"
                 size="small"
-                onClick={() => {
-                  console.log("record", record);
-                  console.log("text", txt);
-                  console.log("index", index);
-                }}
               >
                 {t("Delete")}
               </Button>
@@ -263,14 +259,14 @@ class Registrys extends Component {
       <Card
         title={
           t("Registry_Manage_Panel") +
-          "(Total: " +
-          this.state.filteredList.length +
-          ")"
+          t("Total") +
+          ":" +
+          this.state.filteredList.length
         }
         extra={
           <div>
             <Search
-              placeholder={t("Registry_placeholder")}
+              placeholder={t("Search_placeholder")}
               onChange={this.filter}
               enterButton
             />

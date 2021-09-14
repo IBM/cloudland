@@ -25,15 +25,12 @@ import {
   editInstInfor,
   getInstInforforAll,
 } from "../../service/instances";
+import { withTranslation } from "react-i18next";
+import { compose } from "redux";
 import { createKeyApi } from "../../service/keys";
-import { hypersListApi } from "../../service/hypers";
-import { imagesListApi } from "../../service/images";
-import { flavorsListApi } from "../../service/flavors";
-import { secgroupsListApi } from "../../service/secgroups";
-import { subnetsListApi } from "../../service/subnets";
-import { keysListApi } from "../../service/keys";
+
 import "./instances.css";
-import { connect } from "react-redux";
+
 const layoutButton = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },
@@ -200,16 +197,19 @@ class ModifyInstances extends Component {
       });
   }
   render() {
+    const { t } = this.props;
     return (
       <Card
-        title={this.state.isShowEdit ? "Edit Instance" : "Create Instance"}
+        title={
+          this.state.isShowEdit ? t("Edit Instance") : t("Create New Instance")
+        }
         extra={
           <Button
             style={{ float: "right" }}
             type="primary"
             onClick={this.listInstances}
           >
-            Return
+            {t("Return")}
           </Button>
         }
       >
@@ -221,7 +221,7 @@ class ModifyInstances extends Component {
           wrapperCol={{ ...layoutForm.wrapperCol }}
         >
           <Form.Item
-            label="Hostname (or prefix)"
+            label={t("Hostname_prefix")}
             name="hostname"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -243,7 +243,7 @@ class ModifyInstances extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="Hyper"
+            label={t("Hyper")}
             name="hyper"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={!sessionStorage.loginInfo.isAdmin}
@@ -275,7 +275,7 @@ class ModifyInstances extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="Zone"
+            label={t("Zone")}
             name="zone"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
@@ -296,7 +296,7 @@ class ModifyInstances extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="Created At"
+            label={t("Created_At")}
             name="createdAt"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={!this.state.isShowEdit}
@@ -307,7 +307,7 @@ class ModifyInstances extends Component {
             })(<Input disabled={this.state.isShowEdit} name="createdAt" />)}
           </Form.Item>
           <Form.Item
-            label="Updated At"
+            label={t("Updated_At")}
             name="updatedAt"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={!this.state.isShowEdit}
@@ -318,7 +318,7 @@ class ModifyInstances extends Component {
             })(<Input disabled={this.state.isShowEdit} name="updatedAt" />)}
           </Form.Item>
           <Form.Item
-            label="Count"
+            label={t("Count")}
             name="count"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
@@ -337,7 +337,7 @@ class ModifyInstances extends Component {
           </Form.Item>
           <Form.Item
             name="image"
-            label="Image"
+            label={t("Images")}
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
           >
@@ -361,7 +361,7 @@ class ModifyInstances extends Component {
           </Form.Item>
           <Form.Item
             name="flavor"
-            label="Flavor"
+            label={t("Flavors")}
             labelCol={{ ...layoutForm.labelCol }}
           >
             {this.props.form.getFieldDecorator("flavor", {
@@ -390,7 +390,7 @@ class ModifyInstances extends Component {
           </Form.Item>
           <Form.Item
             name="primary"
-            label="Primary Interface"
+            label={t("Primary Interface")}
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
           >
@@ -415,7 +415,7 @@ class ModifyInstances extends Component {
           </Form.Item>
           <Form.Item
             name="primaryID"
-            label="Primary IP"
+            label={t("Primary IP")}
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
           >
@@ -430,7 +430,7 @@ class ModifyInstances extends Component {
           </Form.Item>
           <Form.Item
             name="primaryMac"
-            label="Primary Mac"
+            label={t("Primary Mac")}
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
           >
@@ -445,7 +445,7 @@ class ModifyInstances extends Component {
           </Form.Item>
           <Form.Item
             name="secondary"
-            label="Secondary Interface"
+            label={t("Secondary Interfaces")}
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
           >
@@ -466,7 +466,7 @@ class ModifyInstances extends Component {
           </Form.Item>
           <Form.Item
             name="secgroups"
-            label="Security Groups"
+            label={t("Security Groups")}
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
           >
@@ -486,7 +486,7 @@ class ModifyInstances extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="Interfaces"
+            label={t("Interfaces")}
             name="interfaces"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={!this.state.isShowEdit}
@@ -524,7 +524,7 @@ class ModifyInstances extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="Keys"
+            label={t("Keys")}
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
           >
@@ -538,7 +538,7 @@ class ModifyInstances extends Component {
                     <Select
                       mode="tags"
                       style={{ width: "100%" }}
-                      placeholder="Key"
+                      placeholder={t("Keys")}
                       disabled={this.state.isShowEdit}
                     >
                       {this.state.keys.map((val, index) => {
@@ -555,14 +555,14 @@ class ModifyInstances extends Component {
               </Col>
               <Col span={5}>
                 <Button type="primary" onClick={this.showKeyModal}>
-                  Create Key
+                  {t("Create New Key")}
                 </Button>
               </Col>
             </Row>
           </Form.Item>
           <Form.Item
             name="userdata"
-            label="User Data"
+            label={t("User Data")}
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
           >
@@ -582,17 +582,17 @@ class ModifyInstances extends Component {
           >
             {this.state.isShowEdit ? (
               <Button type="primary" htmlType="submit">
-                Update Instance
+                {t("Update Instance")}
               </Button>
             ) : (
               <Button type="primary" htmlType="submit">
-                Create Instance
+                {t("Create New Instance")}
               </Button>
             )}
           </Form.Item>
         </Form>
         <CreateKeyModal
-          title="Create New Key"
+          title={t("Create New Key")}
           visible={this.state.visible}
           submit={this.createKey.bind(this)}
           close={() => {
@@ -607,4 +607,7 @@ class ModifyInstances extends Component {
   }
 }
 
-export default Form.create({ name: "modifyInstances" })(ModifyInstances);
+export default compose(
+  withTranslation(),
+  Form.create({ name: "modifyInstances" })
+)(ModifyInstances);

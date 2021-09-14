@@ -1,11 +1,13 @@
 import React, { Component } from "react";
 import { Table } from "antd";
+import { withTranslation } from "react-i18next";
 class DataTable extends Component {
   constructor(props) {
     super(props);
     console.log("this.props--dataTable", this.props);
   }
   render() {
+    const { t } = this.props;
     return (
       <Table
         rowKey={this.props.rowKey}
@@ -25,7 +27,7 @@ class DataTable extends Component {
           onShowSizeChange: this.props.onShowSizeChange,
           onChange: this.props.onPaginationChange,
           showTotal: () => {
-            return "Total " + this.props.total + " items";
+            return t("Total") + this.props.total + t("Items");
           },
           pageSizeOptions: this.props.pageSizeOptions,
         }}
@@ -36,4 +38,4 @@ class DataTable extends Component {
     );
   }
 }
-export default DataTable;
+export default withTranslation()(DataTable);

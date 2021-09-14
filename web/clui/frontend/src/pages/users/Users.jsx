@@ -4,6 +4,8 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import moment from "moment";
+import { withTranslation } from "react-i18next";
+
 import { Card, Button, Popconfirm, message, Input } from "antd";
 import { userListApi, delUserInfor } from "../../service/users";
 
@@ -29,19 +31,19 @@ class Users extends Component {
 
   columns = [
     {
-      title: "ID",
+      title: this.props.t("ID"),
       dataIndex: "ID",
       key: "ID",
       width: 80,
       align: "center",
     },
     {
-      title: "Name",
+      title: this.props.t("Name"),
       dataIndex: "username",
       align: "center",
     },
     {
-      title: "Created At",
+      title: this.props.t("Created_At"),
       dataIndex: "CreatedAt",
       align: "center",
       render: (record) => (
@@ -49,9 +51,10 @@ class Users extends Component {
       ),
     },
     {
-      title: "Action",
+      title: this.props.t("Action"),
       align: "center",
       render: (txt, record, index) => {
+        const { t } = this.props;
         return (
           <div>
             <Button
@@ -61,10 +64,12 @@ class Users extends Component {
                 this.props.history.push("/users/new/" + record.ID);
               }}
             >
-              Edit
+              {t("Edit")}
             </Button>
             <Popconfirm
-              title="Do you want to delete?"
+              title={t("Doyouwanttodelete")}
+              okText={t("yes")}
+              cancelText={t("no")}
               onCancel={() => {
                 console.log("Cancel delete.");
               }}
@@ -77,7 +82,7 @@ class Users extends Component {
               }}
             >
               <Button style={{ margin: "0 1rem" }} type="danger" size="small">
-                Delete
+                {t("Delete")}
               </Button>
             </Popconfirm>
           </div>
@@ -187,13 +192,21 @@ class Users extends Component {
   };
 
   render() {
+    const { t } = this.props;
     return (
       <Card
-        title={"Users" + "(Total: " + this.state.filteredList.length + ")"}
+        title={
+          t("User_Manage_Panel") +
+          "(" +
+          t("Total") +
+          ":" +
+          this.state.filteredList.length +
+          ")"
+        }
         extra={
           <div>
             <Search
-              placeholder="Search..."
+              placeholder={t("Search_placeholder")}
               onChange={this.filter}
               enterButton
             />
@@ -206,7 +219,7 @@ class Users extends Component {
               type="primary"
               onClick={this.createUser}
             >
-              Create
+              {t("Create")}
             </Button>
           </div>
         }
@@ -229,4 +242,4 @@ class Users extends Component {
   }
 }
 
-export default Users;
+export default withTranslation()(Users);

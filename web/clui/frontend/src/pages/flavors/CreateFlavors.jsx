@@ -8,6 +8,8 @@ SPDX-License-Identifier: Apache-2.0
 import React, { Component } from "react";
 import { Form, Card, Input, Button, message, InputNumber } from "antd";
 import { createFlavorApi } from "../../service/flavors";
+import { withTranslation } from "react-i18next";
+import { compose } from "redux";
 const layoutButton = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },
@@ -46,18 +48,7 @@ class CreateFlavors extends Component {
     console.log("handleSubmit-event.target.value:", event.target.value);
     event.preventDefault();
     this.props.form.validateFieldsAndScroll((err) => {
-      //   let _this = this;
       if (!err) {
-        // this.setState({
-        //   flavors: {
-        //     Name: this.state.name,
-        //     Cpu: parseInt(this.state.cpu),
-        //     Memory: parseInt(this.state.memory),
-        //     Disk: parseInt(this.state.disk),
-        //     Swap: parseInt(this.state.swap),
-        //     Ephemeral: parseInt(this.state.ephemeral),
-        //   },
-        // });
         console.log("提交", this.state.flavors);
         createFlavorApi({
           Name: this.state.name,
@@ -80,16 +71,17 @@ class CreateFlavors extends Component {
     });
   };
   render() {
+    const { t } = this.props;
     return (
       <Card
-        title={"Create New Flavor"}
+        title={t("Create New Flavor")}
         extra={
           <Button
             style={{ float: "right" }}
             type="primary"
             onClick={this.listFlavors}
           >
-            Return
+            {t("Return")}
           </Button>
         }
       >
@@ -99,7 +91,7 @@ class CreateFlavors extends Component {
           wrapperCol={{ ...layoutForm.wrapperCol }}
         >
           <Form.Item
-            label="Name"
+            label={t("Name")}
             name="Name"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -117,7 +109,7 @@ class CreateFlavors extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="CPU"
+            label={t("Cpu")}
             name="Cpu"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -135,7 +127,7 @@ class CreateFlavors extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="Memory(M)"
+            label={t("Memory") + "(M)"}
             name="Memory"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -153,7 +145,7 @@ class CreateFlavors extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="Disk(G)"
+            label={t("Disk") + "(G)"}
             name="Disk"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -171,7 +163,7 @@ class CreateFlavors extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="Swap(G)"
+            label={t("Swap") + "(G)"}
             name="Swap"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -186,7 +178,7 @@ class CreateFlavors extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="Ephemeral(G)"
+            label={t("Ephemeral") + "(G)"}
             name="Ephemeral"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -207,7 +199,7 @@ class CreateFlavors extends Component {
           >
             {
               <Button type="primary" htmlType="submit">
-                Create New Flavor
+                {t("Create New Flavor")}
               </Button>
             }
           </Form.Item>
@@ -216,4 +208,8 @@ class CreateFlavors extends Component {
     );
   }
 }
-export default Form.create({ name: "createFlavors" })(CreateFlavors);
+
+export default compose(
+  withTranslation(),
+  Form.create({ name: "createFlavors" })
+)(CreateFlavors);

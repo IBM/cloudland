@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import moment from "moment";
+import { withTranslation } from "react-i18next";
 import { Card, Button, Popconfirm, message, Input } from "antd";
 import { orgsListApi, delOrgInfor } from "../../service/orgs";
 import DataTable from "../../components/DataTable/DataTable";
@@ -30,19 +31,19 @@ class Orgs extends Component {
 
   columns = [
     {
-      title: "ID",
+      title: this.props.t("ID"),
       dataIndex: "ID",
       key: "ID",
       width: 80,
       align: "center",
     },
     {
-      title: "Name",
+      title: this.props.t("Name"),
       dataIndex: "name",
       align: "center",
     },
     {
-      title: "Created At",
+      title: this.props.t("Created_At"),
       dataIndex: "CreatedAt",
       align: "center",
       render: (record) => (
@@ -50,9 +51,10 @@ class Orgs extends Component {
       ),
     },
     {
-      title: "Action",
+      title: this.props.t("Action"),
       align: "center",
       render: (txt, record, index) => {
+        const { t } = this.props;
         return (
           <div>
             <Button
@@ -62,10 +64,12 @@ class Orgs extends Component {
                 this.props.history.push("/orgs/new/" + record.ID);
               }}
             >
-              Edit
+              {t("Edit")}
             </Button>
             <Popconfirm
-              title="Do you want to delete?"
+              title={t("Doyouwanttodelete")}
+              okText={t("yes")}
+              cancelText={t("no")}
               onCancel={() => {
                 console.log("Cancel delete.");
               }}
@@ -78,7 +82,7 @@ class Orgs extends Component {
               }}
             >
               <Button style={{ margin: "0 1rem" }} type="danger" size="small">
-                Delete
+                {t("Delete")}
               </Button>
             </Popconfirm>
           </div>
@@ -185,18 +189,21 @@ class Orgs extends Component {
   };
 
   render() {
+    const { t } = this.props;
     return (
       <Card
         title={
-          "Organization Manage Panel" +
-          "(Total: " +
+          t("Organization_Manage_Panel") +
+          "(" +
+          t("Total") +
+          ":" +
           this.state.filteredList.length +
           ")"
         }
         extra={
           <div>
             <Search
-              placeholder="Search..."
+              placeholder={t("Search_placeholder")}
               onChange={this.filter}
               enterButton
             />
@@ -209,7 +216,7 @@ class Orgs extends Component {
               type="primary"
               onClick={this.createOrg}
             >
-              Create
+              {t("Create")}
             </Button>
           </div>
         }
@@ -232,4 +239,4 @@ class Orgs extends Component {
   }
 }
 
-export default Orgs;
+export default withTranslation()(Orgs);

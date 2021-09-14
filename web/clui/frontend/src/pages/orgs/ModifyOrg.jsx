@@ -6,6 +6,8 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
+import { withTranslation } from "react-i18next";
+import { compose } from "redux";
 import { Form, Card, Input, Select, Button, message } from "antd";
 import { getOrgInforById, editOrgInfor } from "../../service/orgs";
 import "./orgs.css";
@@ -62,6 +64,7 @@ class ModifyOrg extends Component {
   };
 
   render() {
+    const { t } = this.props;
     return (
       <Card
         title={"Edit Organization"}
@@ -71,7 +74,7 @@ class ModifyOrg extends Component {
             type="primary"
             onClick={this.listOrgs}
           >
-            Return
+            {t("Return")}
           </Button>
         }
       >
@@ -81,7 +84,7 @@ class ModifyOrg extends Component {
           onSubmit={(e) => this.handleSubmit(e)}
         >
           <Form.Item
-            label="Organization Name"
+            label={t("Organization Name")}
             name="orgname"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -95,7 +98,7 @@ class ModifyOrg extends Component {
             })(<Input />)}
           </Form.Item>
           <Form.Item
-            label="Owner"
+            label={t("Owner")}
             name="owner"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -109,7 +112,7 @@ class ModifyOrg extends Component {
             })(<Input />)}
           </Form.Item>
           <Form.Item
-            label="Member List"
+            label={t("Member List")}
             style={{ "font-size": "20px", "font-weight": "bold" }}
           ></Form.Item>
           {this.state.members.map((item, index) => {
@@ -159,7 +162,7 @@ class ModifyOrg extends Component {
           >
             {
               <Button type="primary" htmlType="submit">
-                Update Organization
+                {t("Update Organization")}
               </Button>
             }
           </Form.Item>
@@ -168,4 +171,8 @@ class ModifyOrg extends Component {
     );
   }
 }
-export default Form.create({ name: "modifyOrg" })(ModifyOrg);
+
+export default compose(
+  withTranslation(),
+  Form.create({ name: "modifyOrg" })
+)(ModifyOrg);

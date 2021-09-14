@@ -7,7 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import { Input, Form, Modal } from "antd";
-
+import { withTranslation } from "react-i18next";
+import { compose } from "redux";
 const modalFormItem = {
   labelCol: {
     xs: { span: 24 },
@@ -48,6 +49,7 @@ class CreateKeyModal extends Component {
   };
 
   render() {
+    const { t } = this.props;
     return (
       <div>
         <Modal
@@ -57,9 +59,11 @@ class CreateKeyModal extends Component {
           onOk={this.handleOk}
           onCancel={this.handleCancel}
           maskClosable={false}
+          okText={t("OK")}
+          cancelText={t("Cancel")}
         >
           <Form>
-            <Form.Item label="Name" name="name" {...modalFormItem}>
+            <Form.Item label={t("Name")} name="name" {...modalFormItem}>
               {this.props.form.getFieldDecorator("name", {
                 rules: [
                   {
@@ -68,7 +72,7 @@ class CreateKeyModal extends Component {
                 ],
               })(<Input />)}
             </Form.Item>
-            <Form.Item name="pubkey" label="Public Key" {...modalFormItem}>
+            <Form.Item name="pubkey" label={t("Public Key")} {...modalFormItem}>
               {this.props.form.getFieldDecorator("pubkey", {
                 rules: [
                   {
@@ -84,4 +88,7 @@ class CreateKeyModal extends Component {
   }
 }
 
-export default Form.create({ name: "createKeyModal" })(CreateKeyModal);
+export default compose(
+  withTranslation(),
+  Form.create({ name: "createKeyModal" })
+)(CreateKeyModal);

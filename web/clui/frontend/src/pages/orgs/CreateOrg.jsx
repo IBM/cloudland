@@ -6,6 +6,9 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
+import { withTranslation } from "react-i18next";
+import { compose } from "redux";
+
 import { Form, Card, Input, Button, message } from "antd";
 import { createOrgApi } from "../../service/orgs";
 import "./orgs.css";
@@ -50,16 +53,17 @@ class CreateOrg extends Component {
   };
 
   render() {
+    const { t } = this.props;
     return (
       <Card
-        title={"Create Organization"}
+        title={t("Create New Organization")}
         extra={
           <Button
             style={{ float: "right" }}
             type="primary"
             onClick={this.listOrgs}
           >
-            Return
+            {t("Return")}
           </Button>
         }
       >
@@ -69,7 +73,7 @@ class CreateOrg extends Component {
           onSubmit={(e) => this.handleSubmit(e)}
         >
           <Form.Item
-            label="Organization Name"
+            label={t("Organization Name")}
             name="orgname"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -83,7 +87,7 @@ class CreateOrg extends Component {
           </Form.Item>
           <Form.Item
             name="owner"
-            label="Owner"
+            label={t("Owner")}
             labelCol={{ ...layoutForm.labelCol }}
           >
             {this.props.form.getFieldDecorator("owner", {})(<Input />)}
@@ -93,7 +97,7 @@ class CreateOrg extends Component {
             labelCol={{ span: 6 }}
           >
             <Button type="primary" htmlType="submit">
-              Create Organization
+              {t("Create New Organization")}
             </Button>
           </Form.Item>
         </Form>
@@ -101,4 +105,7 @@ class CreateOrg extends Component {
     );
   }
 }
-export default Form.create({ name: "CreateOrg" })(CreateOrg);
+export default compose(
+  withTranslation(),
+  Form.create({ name: "CreateOrg" })
+)(CreateOrg);

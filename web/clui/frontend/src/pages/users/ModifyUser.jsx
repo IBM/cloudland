@@ -6,9 +6,11 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
-import moment from "moment";
+
 import { Form, Card, Input, Select, Button, message } from "antd";
 import { getUserInforById, editUserInfor } from "../../service/users";
+import { withTranslation } from "react-i18next";
+import { compose } from "redux";
 // import "./users.css";
 const layoutButton = {
   labelCol: { span: 8 },
@@ -65,16 +67,17 @@ class ModifyUser extends Component {
   };
 
   render() {
+    const { t } = this.props;
     return (
       <Card
-        title={"Edit User"}
+        title={t("Edit_User")}
         extra={
           <Button
             style={{ float: "right" }}
             type="primary"
             onClick={this.listUsers}
           >
-            Return
+            {t("Return")}
           </Button>
         }
       >
@@ -84,7 +87,7 @@ class ModifyUser extends Component {
           onSubmit={(e) => this.handleSubmit(e)}
         >
           <Form.Item
-            label="Password"
+            label={t("Password")}
             name="password"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -98,7 +101,7 @@ class ModifyUser extends Component {
             })(<Input />)}
           </Form.Item>
           <Form.Item
-            label="Organizations"
+            label={t("Organizations")}
             name="members"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -136,7 +139,7 @@ class ModifyUser extends Component {
           >
             {
               <Button type="primary" htmlType="submit">
-                Update User
+                {t("Update_User")}
               </Button>
             }
           </Form.Item>
@@ -145,4 +148,8 @@ class ModifyUser extends Component {
     );
   }
 }
-export default Form.create({ name: "modifyUser" })(ModifyUser);
+
+export default compose(
+  withTranslation(),
+  Form.create({ name: "modifyUser" })
+)(ModifyUser);

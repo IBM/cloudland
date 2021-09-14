@@ -47,6 +47,7 @@ export const InitRoutes = [
     component: PageNotFound,
   },
 ];
+
 export const mainRoutes = [
   {
     path: "/dashboard",
@@ -58,7 +59,7 @@ export const mainRoutes = [
     path: "/users",
     component: Users,
     exact: true,
-    title: "User",
+    title: "Users",
     icon: "user",
     isShow: true,
     item: "auth",
@@ -80,7 +81,7 @@ export const mainRoutes = [
   {
     path: "/orgs",
     component: Orgs,
-    title: "Organization",
+    title: "Organizations",
     icon: "team",
     exact: true,
     isShow: true,
@@ -118,7 +119,7 @@ export const mainRoutes = [
   {
     path: "/instances",
     component: Instances,
-    title: "Instance",
+    title: "Instances",
     exact: true,
     isShow: true,
     item: "compute",
@@ -132,7 +133,7 @@ export const mainRoutes = [
   {
     path: "/flavors",
     component: Flavors,
-    title: "Flavor",
+    title: "Flavors",
     exact: true,
     isShow: true,
     item: "compute",
@@ -146,7 +147,7 @@ export const mainRoutes = [
   {
     path: "/images",
     component: Images,
-    title: "Image",
+    title: "Images",
     exact: true,
     isShow: true,
     item: "compute",
@@ -189,7 +190,7 @@ export const mainRoutes = [
   {
     path: "/subnets",
     component: Subnets,
-    title: "Subnet",
+    title: "Subnets",
     exact: true,
     isShow: true,
     item: "network",
@@ -203,7 +204,7 @@ export const mainRoutes = [
   {
     path: "/floatingips",
     component: Floatingips,
-    title: "FloatingIp",
+    title: "FloatingIps",
     exact: true,
     isShow: true,
     item: "network",
@@ -217,7 +218,7 @@ export const mainRoutes = [
   {
     path: "/gateways",
     component: Gateways,
-    title: "Gateway",
+    title: "Gateways",
     exact: true,
     isShow: true,
     item: "network",
@@ -230,7 +231,7 @@ export const mainRoutes = [
   },
   {
     path: "/secgroups",
-    title: "SecurityGroup",
+    title: "SecurityGroups",
     component: Secgroups,
     exact: true,
     isShow: true,
@@ -259,10 +260,9 @@ export const mainRoutes = [
   {
     path: "/hypers",
     component: Hypers,
-    title: "Hypervisors",
+    title: "Hypers",
     exact: true,
     isShow: true,
     item: "admin",
   },
 ];
-// export default mainRoutes;

@@ -7,6 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import moment from "moment";
+import { withTranslation } from "react-i18next";
+
 import { Card, Button, Popconfirm, message, Input } from "antd";
 import { imagesListApi, delImgInfor } from "../../service/images";
 import DataTable from "../../components/DataTable/DataTable";
@@ -28,29 +30,29 @@ class Images extends Component {
   }
   columns = [
     {
-      title: "ID",
+      title: this.props.t("ID"),
       dataIndex: "ID",
       key: "ID",
       align: "center",
       width: 70,
     },
     {
-      title: "Name",
+      title: this.props.t("Name"),
       dataIndex: "Name",
       align: "center",
     },
     {
-      title: "Format",
+      title: this.props.t("Format"),
       dataIndex: "Format",
       align: "center",
     },
     {
-      title: "Status",
+      title: this.props.t("Status"),
       dataIndex: "Status",
       align: "center",
     },
     {
-      title: "Created At",
+      title: this.props.t("Created_At"),
       dataIndex: "CreatedAt",
       align: "center",
       width: 100,
@@ -59,33 +61,36 @@ class Images extends Component {
       ),
     },
     {
-      title: "OS Version",
+      title: this.props.t("OS Version"),
       dataIndex: "OsVersion",
       align: "center",
     },
     {
-      title: "Hypervisor Type",
+      title: this.props.t("Hypervisor Type"),
       dataIndex: "VirtType",
       align: "center",
     },
     {
-      title: "Default Username",
+      title: this.props.t("Default Username"),
       dataIndex: "UserName",
       align: "center",
     },
     {
-      title: "Architecture",
+      title: this.props.t("Architecture"),
       dataIndex: "Architecture",
       align: "center",
     },
     {
-      title: "Action",
+      title: this.props.t("Action"),
       align: "center",
       render: (txt, record, index) => {
+        const { t } = this.props;
         return (
           <div>
             <Popconfirm
-              title="Are you sure to delete?"
+              title={t("Doyouwanttodelete")}
+              okText={t("yes")}
+              cancelText={t("no")}
               onCancel={() => {
                 console.log("canceled");
               }}
@@ -230,18 +235,21 @@ class Images extends Component {
     }
   };
   render() {
+    const { t } = this.props;
     return (
       <Card
         title={
-          "Image Manage Panel" +
-          "(Total: " +
+          t("Image_Manage_Panel") +
+          "(" +
+          t("Total") +
+          ":" +
           this.state.filteredList.length +
           ")"
         }
         extra={
           <div>
             <Search
-              placeholder="Search..."
+              placeholder={t("Search_placeholder")}
               onChange={this.filter}
               enterButton
             />
@@ -254,7 +262,7 @@ class Images extends Component {
               type="primary"
               onClick={this.createImages}
             >
-              Create
+              {t("Create")}
             </Button>
           </div>
         }
@@ -277,4 +285,4 @@ class Images extends Component {
   }
 }
 
-export default Images;
+export default withTranslation()(Images);

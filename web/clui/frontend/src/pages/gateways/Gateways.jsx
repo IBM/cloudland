@@ -294,11 +294,10 @@ class Gateways extends Component {
           bordered
           total={this.state.filteredList.length}
           pageSize={this.state.pageSize}
-          scroll={{ y: 600 }}
           onPaginationChange={this.onPaginationChange}
           onShowSizeChange={this.onShowSizeChange}
           pageSizeOptions={this.state.pageSizeOptions}
-          loading={this.state.isLoaded}
+          loading={!this.state.isLoaded}
         />
       </Card>
     );

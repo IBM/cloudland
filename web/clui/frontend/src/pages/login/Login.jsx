@@ -14,7 +14,7 @@ import { loginApi } from "../../service/auth";
 import { compose } from "redux";
 import { withTranslation } from "react-i18next";
 const layoutForm = {
-  labelCol: { span: 6 },
+  labelCol: { span: 8 },
   wrapperCol: { span: 16 },
 };
 const layoutButton = {
@@ -61,7 +61,7 @@ class Login extends Component {
       <Card className="login-form">
         <Form
           onSubmit={this.handleSubmit}
-          wrapperCol={{ ...layoutForm.wrapperCol }}
+          // wrapperCol={{ ...layoutForm.wrapperCol }}
         >
           <div className="login-logo">
             <img src={logoLoginImg} alt="logo" />
@@ -69,11 +69,7 @@ class Login extends Component {
               <h2>CloudLand System</h2>
             </div>
           </div>
-          <Form.Item
-            label={t("Username")}
-            name="username"
-            labelCol={{ ...layoutForm.labelCol }}
-          >
+          <Form.Item name="username" labelCol={{ ...layoutForm.labelCol }}>
             {getFieldDecorator("username", {
               rules: [
                 { required: true, message: "Please input your username!" },
@@ -83,15 +79,11 @@ class Login extends Component {
                 prefix={
                   <Icon type="user" style={{ color: "rgba(0,0,0,.25)" }} />
                 }
-                placeholder="Username"
+                placeholder={t("Username")}
               />
             )}
           </Form.Item>
-          <Form.Item
-            label={t("Password")}
-            name="password"
-            labelCol={{ ...layoutForm.labelCol }}
-          >
+          <Form.Item name="password" labelCol={{ ...layoutForm.labelCol }}>
             {getFieldDecorator("password", {
               rules: [
                 { required: true, message: "Please input your Password!" },
@@ -102,13 +94,13 @@ class Login extends Component {
                   <Icon type="lock" style={{ color: "rgba(0,0,0,.25)" }} />
                 }
                 type="password"
-                placeholder="Password"
+                placeholder={t("Password")}
               />
             )}
           </Form.Item>
           <Form.Item
-            wrapperCol={{ ...layoutButton.wrapperCol, offset: 6 }}
-            labelCol={{ span: 6 }}
+          // wrapperCol={{ ...layoutButton.wrapperCol, offset: 6 }}
+          // labelCol={{ span: 6 }}
           >
             {getFieldDecorator("remember", {
               valuePropName: "checked",
