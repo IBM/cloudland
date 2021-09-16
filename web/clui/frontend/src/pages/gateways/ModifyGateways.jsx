@@ -1,5 +1,7 @@
 import React, { Component } from "react";
 import { Form, Card, Button, Select, Input, message } from "antd";
+import { withTranslation } from "react-i18next";
+import { compose } from "redux";
 import { subnetsListApi } from "../../service/subnets";
 import {
   createGWApi,
@@ -146,16 +148,19 @@ class ModifyGateways extends Component {
     this.props.history.push("/gateways");
   };
   render() {
+    const { t } = this.props;
     return (
       <Card
-        title={this.state.isShowEdit ? "Edit Gateway" : "Create New Gateway "}
+        title={
+          this.state.isShowEdit ? t("Edit Gateway") : t("Create New Gateway")
+        }
         extra={
           <Button
             style={{ float: "right" }}
             type="primary"
             onClick={this.listGateways}
           >
-            Return
+            {t("Return")}
           </Button>
         }
       >
@@ -165,7 +170,7 @@ class ModifyGateways extends Component {
           onSubmit={(e) => this.handleSubmit(e)}
         >
           <Form.Item
-            label="Name"
+            label={t("Name")}
             name="name"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -176,18 +181,10 @@ class ModifyGateways extends Component {
                 },
               ],
               initialValue: this.state.currentData.Name,
-            })(
-              <Input
-              // ref={(c) => {
-              //   this.hostname = c;
-              // }}
-              // disabled={this.state.isShowEdit}
-              // onChange={(e) => this.setState({ hostname: e.target.value })}
-              />
-            )}
+            })(<Input />)}
           </Form.Item>
           <Form.Item
-            label="Zone"
+            label={t("Zone")}
             name="zone"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
@@ -211,7 +208,7 @@ class ModifyGateways extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="Created At"
+            label={t("Created_At")}
             name="createdAt"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={!this.state.isShowEdit}
@@ -222,7 +219,7 @@ class ModifyGateways extends Component {
             })(<Input disabled={this.state.isShowEdit} name="createdAt" />)}
           </Form.Item>
           <Form.Item
-            label="Updated At"
+            label={t("Updated_At")}
             name="updatedAt"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={!this.state.isShowEdit}
@@ -233,7 +230,7 @@ class ModifyGateways extends Component {
             })(<Input disabled={this.state.isShowEdit} name="updatedAt" />)}
           </Form.Item>
           <Form.Item
-            label="Public Gateways"
+            label={t("Public Gateway")}
             name="public"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
@@ -254,7 +251,7 @@ class ModifyGateways extends Component {
           </Form.Item>
 
           <Form.Item
-            label="Private Gateway"
+            label={t("Private Gateway")}
             name="private"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
@@ -274,7 +271,7 @@ class ModifyGateways extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="Subnets"
+            label={t("Subnets")}
             name="subnets"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -290,7 +287,7 @@ class ModifyGateways extends Component {
               <Select
                 mode="multiple"
                 style={{ width: "100%" }}
-                placeholder="Please select"
+                placeholder={t("Pleaseselect")}
                 onChange={this.handleSubChange}
               >
                 {this.state.subnets.map((item, index) => {
@@ -310,11 +307,11 @@ class ModifyGateways extends Component {
           >
             {this.state.isShowEdit ? (
               <Button type="primary" htmlType="submit">
-                Update Gateway
+                {t("Update Gateway")}
               </Button>
             ) : (
               <Button type="primary" htmlType="submit">
-                Create Gateway
+                {t("Create New Gateway")}
               </Button>
             )}
           </Form.Item>
@@ -323,4 +320,8 @@ class ModifyGateways extends Component {
     );
   }
 }
-export default Form.create({ name: "modifygateways" })(ModifyGateways);
+
+export default compose(
+  withTranslation(),
+  Form.create({ name: "modifygateways" })
+)(ModifyGateways);

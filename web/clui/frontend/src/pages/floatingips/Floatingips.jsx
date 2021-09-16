@@ -6,6 +6,8 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
+import { withTranslation } from "react-i18next";
+
 import { Card, Button, Popconfirm, message, Input } from "antd";
 import {
   floatingipsListApi,
@@ -29,40 +31,43 @@ class Floatingips extends Component {
   }
   columns = [
     {
-      title: "ID",
+      title: this.props.t("ID"),
       dataIndex: "ID",
       key: "ID",
       width: 80,
       align: "center",
     },
     {
-      title: "FloatingIP",
+      title: this.props.t("FloatingIps"),
       dataIndex: "FipAddress",
       align: "center",
     },
     {
-      title: "InternalIP",
+      title: this.props.t("InternalIP"),
       dataIndex: "IntAddress",
       align: "center",
     },
     {
-      title: "Instance",
+      title: this.props.t("Instance"),
       dataIndex: "Instance.Hostname",
       align: "center",
     },
     {
-      title: "Zone",
+      title: this.props.t("Zone"),
       dataIndex: "Instance.Zone.Name",
       align: "center",
     },
     {
-      title: "Action",
+      title: this.props.t("Action"),
       align: "center",
       render: (txt, record, index) => {
+        const { t } = this.props;
         return (
           <div>
             <Popconfirm
-              title="Are you sure to delete?"
+              title={t("Doyouwanttodelete")}
+              okText={t("yes")}
+              cancelText={t("no")}
               onCancel={() => {
                 console.log("cancell to delete");
               }}
@@ -88,7 +93,7 @@ class Floatingips extends Component {
                 type="danger"
                 size="small"
               >
-                Delete
+                {t("Delete")}
               </Button>
             </Popconfirm>
           </div>
@@ -207,19 +212,21 @@ class Floatingips extends Component {
   };
   render() {
     console.log("registry-props", this.props);
-
+    const { t } = this.props;
     return (
       <Card
         title={
-          "Floating IP Manage Panel" +
-          "(Total: " +
+          t("Floating_IP_Manage_Panel") +
+          "(" +
+          t("Total") +
+          ":" +
           this.state.filteredList.length +
           ")"
         }
         extra={
           <div>
             <Search
-              placeholder="Search..."
+              placeholder={t("Search_placeholder")}
               onChange={this.filter}
               enterButton
             />
@@ -232,7 +239,7 @@ class Floatingips extends Component {
               type="primary"
               onClick={this.createFloatingips}
             >
-              Create
+              {t("Create")}
             </Button>
           </div>
         }
@@ -254,4 +261,4 @@ class Floatingips extends Component {
     );
   }
 }
-export default Floatingips;
+export default withTranslation()(Floatingips);

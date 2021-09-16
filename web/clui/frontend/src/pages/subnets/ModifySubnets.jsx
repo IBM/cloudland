@@ -1,5 +1,7 @@
 import { Form, Card, Input, Select, Button, message } from "antd";
 import React, { Component } from "react";
+import { withTranslation } from "react-i18next";
+import { compose } from "redux";
 import {
   createSubApi,
   editSubInfor,
@@ -125,16 +127,17 @@ class ModifySubnets extends Component {
     });
   };
   render() {
+    const { t } = this.props;
     return (
       <Card
-        title={"Create New Subnet"}
+        title={t("Create New Subnet")}
         extra={
           <Button
             style={{ float: "right" }}
             type="primary"
             onClick={this.listSubnets}
           >
-            Return
+            {t("Return")}
           </Button>
         }
       >
@@ -145,7 +148,7 @@ class ModifySubnets extends Component {
           onSubmit={(e) => this.handleSubmit(e)}
         >
           <Form.Item
-            label="Name"
+            label={t("Name")}
             name="name"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -159,7 +162,7 @@ class ModifySubnets extends Component {
             })(<Input />)}
           </Form.Item>
           <Form.Item
-            label="Netmask"
+            label={t("Netmask")}
             name="netmask"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -173,7 +176,7 @@ class ModifySubnets extends Component {
             })(<Input />)}
           </Form.Item>
           <Form.Item
-            label="Network"
+            label={t("Network")}
             name="network"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -188,7 +191,7 @@ class ModifySubnets extends Component {
           </Form.Item>
 
           <Form.Item
-            label="Zones"
+            label={t("Zone")}
             name="zones"
             labelCol={{ ...layoutForm.labelCol }}
             // hidden={this.state.isShowEdit}
@@ -208,7 +211,7 @@ class ModifySubnets extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="Gateway"
+            label={t("Gateways")}
             name="gateway"
             labelCol={{ ...layoutForm.labelCol }}
             // hidden={!this.state.isShowEdit}
@@ -219,7 +222,7 @@ class ModifySubnets extends Component {
             })(<Input />)}
           </Form.Item>
           <Form.Item
-            label="Start"
+            label={t("Start")}
             name="start"
             labelCol={{ ...layoutForm.labelCol }}
             // hidden={!this.state.isShowEdit}
@@ -230,7 +233,7 @@ class ModifySubnets extends Component {
             })(<Input />)}
           </Form.Item>
           <Form.Item
-            label="End"
+            label={t("End")}
             name="end"
             labelCol={{ ...layoutForm.labelCol }}
             // hidden={this.state.isShowEdit}
@@ -240,7 +243,7 @@ class ModifySubnets extends Component {
             })(<Input />)}
           </Form.Item>
           <Form.Item
-            label="Name Server"
+            label={t("Name Server")}
             name="dns"
             labelCol={{ ...layoutForm.labelCol }}
             // hidden={this.state.isShowEdit}
@@ -250,7 +253,7 @@ class ModifySubnets extends Component {
             })(<Input />)}
           </Form.Item>
           <Form.Item
-            label="Base Domain"
+            label={t("Base_Domain")}
             name="domain"
             labelCol={{ ...layoutForm.labelCol }}
             // hidden={this.state.isShowEdit}
@@ -260,7 +263,7 @@ class ModifySubnets extends Component {
             })(<Input />)}
           </Form.Item>
           <Form.Item
-            label="Dhcp"
+            label={t("Dhcp")}
             name="dhcp"
             labelCol={{ ...layoutForm.labelCol }}
             // hidden={this.state.isShowEdit}
@@ -268,12 +271,12 @@ class ModifySubnets extends Component {
             {this.props.form.getFieldDecorator("dhcp", {
               rules: [],
             })(
-              <Select placeholder="yes">
+              <Select placeholder={t("yes")}>
                 <Select.Option key="yes" value="yes">
-                  yes
+                  {t("yes")}
                 </Select.Option>
                 <Select.Option key="no" value="no">
-                  no
+                  {t("no")}
                 </Select.Option>
               </Select>
             )}
@@ -289,7 +292,7 @@ class ModifySubnets extends Component {
             })(<Input />)}
           </Form.Item>
           <Form.Item
-            label="Vlan (admin only)"
+            label={t("Vlan") + "(" + t("admin only") + ")"}
             name="vlan"
             labelCol={{ ...layoutForm.labelCol }}
             // hidden={this.state.isShowEdit}
@@ -299,7 +302,7 @@ class ModifySubnets extends Component {
             })(<Input />)}
           </Form.Item>
           <Form.Item
-            label="Routing Type (admin only)"
+            label={t("Routing Type") + "(" + t("admin only") + ")"}
             name="rtype"
             labelCol={{ ...layoutForm.labelCol }}
             // hidden={this.state.isShowEdit}
@@ -307,22 +310,22 @@ class ModifySubnets extends Component {
             {this.props.form.getFieldDecorator("rtype", {
               rules: [],
             })(
-              <Select placeholder="internal">
+              <Select placeholder={t("internal")}>
                 <Select.Option key="private" value="private">
-                  private
+                  {t("private")}
                 </Select.Option>
                 <Select.Option key="public" value="public">
-                  public
+                  {t("public")}
                 </Select.Option>
                 <Select.Option key="internal" value="internal">
-                  internal
+                  {t("internal")}
                 </Select.Option>
               </Select>
             )}
           </Form.Item>
 
           <Form.Item
-            label="Routes (admin only)"
+            label={t("Routes") + "(" + t("admin only") + ")"}
             name="routes"
             labelCol={{ ...layoutForm.labelCol }}
             // hidden={this.state.isShowEdit}
@@ -339,11 +342,11 @@ class ModifySubnets extends Component {
           >
             {this.state.isShowEdit ? (
               <Button type="primary" htmlType="submit">
-                Update Subnet
+                {t("Update Subnet")}
               </Button>
             ) : (
               <Button type="primary" htmlType="submit">
-                Create New Subnet
+                {t("Create New Subnet")}
               </Button>
             )}
           </Form.Item>
@@ -352,4 +355,8 @@ class ModifySubnets extends Component {
     );
   }
 }
-export default Form.create({ name: "modifySubnets" })(ModifySubnets);
+
+export default compose(
+  withTranslation(),
+  Form.create({ name: "modifySubnets" })
+)(ModifySubnets);

@@ -259,9 +259,11 @@ class Registrys extends Component {
       <Card
         title={
           t("Registry_Manage_Panel") +
+          "(" +
           t("Total") +
           ":" +
-          this.state.filteredList.length
+          this.state.filteredList.length +
+          ")"
         }
         extra={
           <div>

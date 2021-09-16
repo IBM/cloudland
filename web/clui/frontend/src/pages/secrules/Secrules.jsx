@@ -7,6 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import { Card, Button, Popconfirm, message, Input } from "antd";
+import { withTranslation } from "react-i18next";
+
 import { secrulesListApi, delSecruleInfor } from "../../service/secrules";
 import DataTable from "../../components/DataTable/DataTable";
 
@@ -31,7 +33,7 @@ class Secrules extends Component {
   }
   columns = [
     {
-      title: "ID",
+      title: this.props.t("ID"),
       dataIndex: "ID",
       key: "ID",
       width: 80,
@@ -39,40 +41,41 @@ class Secrules extends Component {
       // render: (href) => <a>{href}</a>,
     },
     {
-      title: "SecurityGroup",
+      title: this.props.t("SecurityGroup"),
       dataIndex: "Secgroup",
       align: "center",
       // render: (href) => <a>{href}</a>,
     },
     {
-      title: "RemoteIp",
+      title: this.props.t("RemoteIp"),
       dataIndex: "RemoteIp",
       align: "center",
     },
     {
-      title: "Direction",
+      title: this.props.t("Direction"),
       dataIndex: "Direction",
       align: "center",
     },
     {
-      title: "Protocol",
+      title: this.props.t("Protocol"),
       dataIndex: "Protocol",
       align: "center",
     },
     {
-      title: "PortMin|Type",
+      title: this.props.t("PortMin_Type"),
       dataIndex: "PortMin",
       align: "center",
     },
     {
-      title: "PortMax|Type",
+      title: this.props.t("PortMax_Code"),
       dataIndex: "PortMax",
       align: "center",
     },
     {
-      title: "Action",
+      title: this.props.t("Action"),
       align: "center",
       render: (txt, record, index) => {
+        const { t } = this.props;
         return (
           <div>
             <Button
@@ -94,10 +97,12 @@ class Secrules extends Component {
                 );
               }}
             >
-              Edit
+              {t("Edit")}
             </Button>
             <Popconfirm
-              title="Are you sure to delete?"
+              title={t("Doyouwanttodelete")}
+              okText={t("yes")}
+              cancelText={t("no")}
               onCancel={() => {
                 console.log("cancelled");
               }}
@@ -121,7 +126,7 @@ class Secrules extends Component {
                 type="danger"
                 size="small"
               >
-                Delete
+                {t("Delete")}
               </Button>
             </Popconfirm>
           </div>
@@ -247,18 +252,21 @@ class Secrules extends Component {
     }
   };
   render() {
+    const { t } = this.props;
     return (
       <Card
         title={
-          "Security Group Rules Manage Panel" +
-          "(Total: " +
+          t("Security_Rules_Manage_Panel") +
+          "(" +
+          t("Total") +
+          ":" +
           this.state.filteredList.length +
           ")"
         }
         extra={
           <div>
             <Search
-              placeholder="Search..."
+              placeholder={t("Search_placeholder")}
               onChange={this.filter}
               enterButton
             />
@@ -271,7 +279,7 @@ class Secrules extends Component {
               type="primary"
               onClick={this.createSecrules}
             >
-              Create
+              {t("Create")}
             </Button>
             <Button
               style={{
@@ -284,7 +292,7 @@ class Secrules extends Component {
               // size="small"
               onClick={this.listSecgroups}
             >
-              Return
+              {t("Return")}
             </Button>
           </div>
         }
@@ -307,4 +315,4 @@ class Secrules extends Component {
   }
 }
 
-export default Secrules;
+export default withTranslation()(Secrules);

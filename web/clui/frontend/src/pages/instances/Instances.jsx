@@ -106,7 +106,7 @@ class Instances extends Component {
             );
           }}
         >
-          VNC
+          {this.props.t("Vnc")}
         </div>
       ),
     },
@@ -609,6 +609,8 @@ class Instances extends Component {
                     modalFormList={this.modalFormList(everyData)}
                     title={this.state.title}
                     submit={this.handleSubmit.bind(this)}
+                    okText={t("OK")}
+                    cancelText={t("Cancel")}
                     close={() => {
                       this.setState({
                         visible: false,

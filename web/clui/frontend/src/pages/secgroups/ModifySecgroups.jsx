@@ -1,4 +1,6 @@
 import React, { Component } from "react";
+import { withTranslation } from "react-i18next";
+import { compose } from "redux";
 import { Form, Card, Input, Select, Button, message } from "antd";
 import {
   createSecgroupApi,
@@ -40,7 +42,7 @@ class ModifySecgroups extends Component {
     e.preventDefault();
     this.props.form.validateFieldsAndScroll((err, values) => {
       if (!err) {
-        console.log("handleSubmit-value:", values);
+        console.log("handleSubmit-value-sc:", values);
         console.log("提交");
         if (this.props.match.params.id) {
           //const _this = this;
@@ -72,24 +74,25 @@ class ModifySecgroups extends Component {
     });
   };
   render() {
+    const { t } = this.props;
     return (
       <Card
         title={
           this.state.isShowEdit
-            ? "Edit Security Group"
-            : "Create New Security Group "
+            ? t("Edit Security Group")
+            : t("Create New Security Group")
         }
         extra={
           <Button
             style={{
               float: "right",
-              "padding-left": "10px",
-              "padding-right": "10px",
+              paddingLeft: "10px",
+              paddingRight: "10px",
             }}
             type="primary"
             onClick={this.listSecgroups}
           >
-            Return
+            {t("Return")}
           </Button>
         }
       >
@@ -99,7 +102,7 @@ class ModifySecgroups extends Component {
           onSubmit={(e) => this.handleSubmit(e)}
         >
           <Form.Item
-            label="Name"
+            label={t("Name")}
             name="name"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -113,20 +116,23 @@ class ModifySecgroups extends Component {
             })(<Input />)}
           </Form.Item>
           <Form.Item
-            label="Is Default"
+            label={t("Is Default")}
             name="isdefault"
             labelCol={{ ...layoutForm.labelCol }}
           >
             {this.props.form.getFieldDecorator("isdefault", {
               rules: [],
-              initialValue: this.state.currentData.isDefault,
+              initialValue:
+                this.state.currentData.isDefault === "true"
+                  ? t("yes")
+                  : t("no"),
             })(
-              <Select placeholder="no">
-                <Select.Option key="yes" value="yes">
-                  yes
+              <Select>
+                <Select.Option key="yes" value="true">
+                  {t("yes")}
                 </Select.Option>
-                <Select.Option key="no" value="no">
-                  no
+                <Select.Option key="no" value="false">
+                  {t("no")}
                 </Select.Option>
               </Select>
             )}
@@ -137,11 +143,11 @@ class ModifySecgroups extends Component {
           >
             {this.state.isShowEdit ? (
               <Button type="primary" htmlType="submit">
-                Update Security Group
+                {t("Update Security Group")}
               </Button>
             ) : (
               <Button type="primary" htmlType="submit">
-                Create Security Group
+                {t("Create New Security Group")}
               </Button>
             )}
           </Form.Item>
@@ -150,4 +156,8 @@ class ModifySecgroups extends Component {
     );
   }
 }
-export default Form.create({ name: "modifySecgroups" })(ModifySecgroups);
+
+export default compose(
+  withTranslation(),
+  Form.create({ name: "modifySecgroups" })
+)(ModifySecgroups);

@@ -11,6 +11,7 @@ import { compose } from "redux";
 import { Form, Card, Input, Select, Button, message } from "antd";
 import { getOrgInforById, editOrgInfor } from "../../service/orgs";
 import "./orgs.css";
+import { T } from "antd/lib/upload/utils";
 const layoutButton = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },
@@ -146,11 +147,11 @@ class ModifyOrg extends Component {
                   initialValue: item.Role.toString(),
                 })(
                   <Select>
-                    <Select.Option value="0">None</Select.Option>
-                    <Select.Option value="1">Reader</Select.Option>
-                    <Select.Option value="2">Writer</Select.Option>
-                    <Select.Option value="3">Owner</Select.Option>
-                    <Select.Option value="4">Admin</Select.Option>
+                    <Select.Option value="0">{t("None")}</Select.Option>
+                    <Select.Option value="1">{t("Reader")}</Select.Option>
+                    <Select.Option value="2">{t("Writer")}</Select.Option>
+                    <Select.Option value="3">{t("Owner")}</Select.Option>
+                    <Select.Option value="4">{t("Admin")}</Select.Option>
                   </Select>
                 )}
               </Form.Item>,

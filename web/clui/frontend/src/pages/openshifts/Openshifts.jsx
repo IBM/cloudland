@@ -7,6 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import { Card, Button, Popconfirm, Input } from "antd";
+import { withTranslation } from "react-i18next";
+
 import { ocpListApi } from "../../service/openshifts";
 import DataTable from "../../components/DataTable/DataTable";
 const { Search } = Input;
@@ -27,57 +29,58 @@ class Openshifts extends Component {
   }
   columns = [
     {
-      title: "ID",
+      title: this.props.t("ID"),
       dataIndex: "ID",
       key: "ID",
       width: 80,
       align: "center",
     },
     {
-      title: "Cluster Name",
+      title: this.props.t("Cluster_Name"),
       dataIndex: "ClusterName",
       align: "center",
     },
     {
-      title: "Base Domain",
+      title: this.props.t("Base_Domain"),
       dataIndex: "BaseDomain",
       align: "center",
     },
     {
-      title: "Console",
+      title: this.props.t("Console"),
       dataIndex: "console",
       align: "center",
     },
     {
-      title: "Version",
+      title: this.props.t("Version"),
       dataIndex: "Version",
       align: "center",
     },
     {
-      title: "Flavor",
+      title: this.props.t("Flavors"),
       dataIndex: "Flavor",
       align: "center",
     },
     {
-      title: "HA",
+      title: this.props.t("HA"),
       dataIndex: "Haflag",
       // width: 50,
       align: "center",
     },
     {
-      title: "N-Workers",
+      title: this.props.t("N-Workers"),
       dataIndex: "WorkerNum",
       align: "center",
     },
     {
-      title: "Status",
+      title: this.props.t("Status"),
       dataIndex: "Status",
       align: "center",
     },
     {
-      title: "Action",
+      title: this.props.t("Action"),
       align: "center",
       render: (txt, record, index) => {
+        const { t } = this.props;
         return (
           <div>
             <Button
@@ -91,10 +94,12 @@ class Openshifts extends Component {
                 this.props.history.push("/openshifts/new/" + record.ID);
               }}
             >
-              Edit
+              {t("Edit")}
             </Button>
             <Popconfirm
-              title="Are you sure to delete?"
+              title={t("Doyouwanttodelete")}
+              okText={t("yes")}
+              cancelText={t("no")}
               onCancel={() => {
                 console.log("cancelled");
               }}
@@ -112,7 +117,7 @@ class Openshifts extends Component {
                 type="danger"
                 size="small"
               >
-                Delete
+                {t("Delete")}
               </Button>
             </Popconfirm>
           </div>
@@ -234,18 +239,21 @@ class Openshifts extends Component {
     }
   };
   render() {
+    const { t } = this.props;
     return (
       <Card
         title={
-          "Openshift Manage Panel" +
-          "(Total: " +
+          t("Openshift_Cluster_Manage_Panel") +
+          "(" +
+          t("Total") +
+          ":" +
           this.state.filteredList.length +
           ")"
         }
         extra={
           <div>
             <Search
-              placeholder="Search..."
+              placeholder={t("Search_placeholder")}
               onChange={this.filter}
               enterButton
             />
@@ -258,7 +266,7 @@ class Openshifts extends Component {
               type="primary"
               onClick={this.createOpenshift}
             >
-              Create
+              {t("Create")}
             </Button>
           </div>
         }
@@ -281,4 +289,4 @@ class Openshifts extends Component {
   }
 }
 
-export default Openshifts;
+export default withTranslation()(Openshifts);

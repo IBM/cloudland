@@ -1,5 +1,7 @@
 import React, { Component } from "react";
 import { Form, Card, Input, Select, Button, message, InputNumber } from "antd";
+import { withTranslation } from "react-i18next";
+import { compose } from "redux";
 import {
   editOcpInfor,
   createOcpApi,
@@ -180,12 +182,13 @@ class ModifyOpenshifts extends Component {
     });
   };
   render() {
+    const { t } = this.props;
     return (
       <Card
         title={
           this.state.isShowEdit
-            ? "Edit Openshift Cluster"
-            : "Create New Openshift Cluster"
+            ? t("Edit Openshift Cluster")
+            : t("Create New Openshift Cluster")
         }
         extra={
           <Button
@@ -197,7 +200,7 @@ class ModifyOpenshifts extends Component {
             type="primary"
             onClick={this.listOpenshifts}
           >
-            Return
+            {t("Return")}
           </Button>
         }
       >
@@ -209,7 +212,7 @@ class ModifyOpenshifts extends Component {
           wrapperCol={{ ...layoutForm.wrapperCol }}
         >
           <Form.Item
-            label="Cluster Name"
+            label={t("Cluster_Name")}
             name="clustername"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -230,7 +233,7 @@ class ModifyOpenshifts extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="Base Domain"
+            label={t("Base_Domain")}
             name="basedomain"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -244,7 +247,7 @@ class ModifyOpenshifts extends Component {
             })(<Input disabled={this.state.isShowEdit} />)}
           </Form.Item>
           <Form.Item
-            label="Created At"
+            label={t("Created_At")}
             name="createdAt"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={!this.state.isShowEdit}
@@ -255,7 +258,7 @@ class ModifyOpenshifts extends Component {
             })(<Input disabled={this.state.isShowEdit} name="createdAt" />)}
           </Form.Item>
           <Form.Item
-            label="Updated At"
+            label={t("Updated_At")}
             name="updatedAt"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={!this.state.isShowEdit}
@@ -267,7 +270,7 @@ class ModifyOpenshifts extends Component {
           </Form.Item>
 
           <Form.Item
-            label="Zone"
+            label={t("Zone")}
             name="zone"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
@@ -279,7 +282,7 @@ class ModifyOpenshifts extends Component {
                 },
               ],
             })(
-              <Select placeholder="None">
+              <Select placeholder={t("None")}>
                 {this.state.zones.map((item, index) => {
                   return (
                     <Select.Option key={index} value={item.ID}>
@@ -292,7 +295,7 @@ class ModifyOpenshifts extends Component {
           </Form.Item>
 
           <Form.Item
-            label="Infrastructure Type"
+            label={t("InfrastructureType")}
             name="infrtype"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
@@ -305,7 +308,7 @@ class ModifyOpenshifts extends Component {
               ],
               // initialValue: this.state.currentData.infrtype,
             })(
-              <Select placeholder="Infrastructure Type">
+              <Select placeholder={t("InfrastructureType")}>
                 <Select.Option key="s390x" value="s390x">
                   z/VM
                 </Select.Option>
@@ -337,7 +340,7 @@ class ModifyOpenshifts extends Component {
           </Form.Item>
 
           <Form.Item
-            label="High Available"
+            label={t("High Available")}
             name="haflag"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -345,19 +348,19 @@ class ModifyOpenshifts extends Component {
               rules: [],
               initialValue: this.state.currentData.Haflag,
             })(
-              <Select placeholder="no" disabled={this.state.isShowEdit}>
+              <Select placeholder={t("no")} disabled={this.state.isShowEdit}>
                 <Select.Option key="yes" value="yes">
-                  yes
+                  {t("yes")}
                 </Select.Option>
                 <Select.Option key="no" value="no">
-                  no
+                  {t("no")}
                 </Select.Option>
               </Select>
             )}
           </Form.Item>
 
           <Form.Item
-            label="Number of Workers"
+            label={t("Number of Workers")}
             name="nworkers"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -369,7 +372,7 @@ class ModifyOpenshifts extends Component {
             })(<InputNumber />)}
           </Form.Item>
           <Form.Item
-            label="Registry"
+            label={t("Registry")}
             name="registry"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
@@ -381,7 +384,7 @@ class ModifyOpenshifts extends Component {
                 },
               ],
             })(
-              <Select placeholder="None">
+              <Select placeholder={t("None")}>
                 {this.state.registrys.map((val) => {
                   return (
                     <Select.Option key={val.ID} value={val.ID}>
@@ -394,7 +397,7 @@ class ModifyOpenshifts extends Component {
           </Form.Item>
 
           <Form.Item
-            label="LB_Flavor"
+            label={t("LB_Flavor")}
             name="lflavor"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
@@ -411,7 +414,7 @@ class ModifyOpenshifts extends Component {
                   ? ""
                   : this.state.currentData.Flavor,
             })(
-              <Select placeholder="LB_Flavor">
+              <Select placeholder={t("LB_Flavor")}>
                 {this.state.flavors.map((val) => {
                   return (
                     <Select.Option key={val.ID} value={val.ID}>
@@ -423,7 +426,7 @@ class ModifyOpenshifts extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="Master_Flavor"
+            label={t("Master_Flavor")}
             name="mflavor"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
@@ -440,7 +443,7 @@ class ModifyOpenshifts extends Component {
                   ? ""
                   : this.state.currentData.MasterFlavor,
             })(
-              <Select placeholder="Master_Flavor">
+              <Select placeholder={t("Master_Flavor")}>
                 {this.state.flavors.map((val) => {
                   return (
                     <Select.Option key={val.ID} value={val.ID}>
@@ -452,7 +455,7 @@ class ModifyOpenshifts extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="Worker_Flavor"
+            label={t("Worker_Flavor")}
             name="wflavor"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -468,7 +471,7 @@ class ModifyOpenshifts extends Component {
                   ? ""
                   : this.state.currentData.WorkerFlavor,
             })(
-              <Select placeholder="Worker_Flavor">
+              <Select placeholder={t("Worker_Flavor")}>
                 {this.state.flavors.map((val) => {
                   return (
                     <Select.Option key={val.ID} value={val.ID}>
@@ -481,7 +484,7 @@ class ModifyOpenshifts extends Component {
           </Form.Item>
 
           <Form.Item
-            label="Subnet"
+            label={t("Subnets")}
             name="sunbet"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
@@ -489,7 +492,7 @@ class ModifyOpenshifts extends Component {
             {this.props.form.getFieldDecorator("sunbet", {
               rules: [],
             })(
-              <Select placeholder="Subnet">
+              <Select placeholder={t("Subnet")}>
                 {this.state.subnets.map((val) => {
                   if (
                     val.Name === "public" ||
@@ -508,7 +511,7 @@ class ModifyOpenshifts extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="Key"
+            label={t("Keys")}
             name="key"
             labelCol={{ ...layoutForm.labelCol }}
             hidden={this.state.isShowEdit}
@@ -521,7 +524,7 @@ class ModifyOpenshifts extends Component {
               ],
               // initialValue:
             })(
-              <Select placeholder="Key">
+              <Select placeholder={t("Keys")}>
                 {this.state.keys.map((val, index) => {
                   return (
                     <Select.Option key={index} value={val.ID}>
@@ -539,11 +542,11 @@ class ModifyOpenshifts extends Component {
           >
             {this.state.isShowEdit ? (
               <Button type="primary" htmlType="submit">
-                Update Openshift Cluster
+                {t("Update Openshift Cluster")}
               </Button>
             ) : (
               <Button type="primary" htmlType="submit">
-                Create New Openshift Cluster
+                {t("Create New Openshift Cluster")}
               </Button>
             )}
           </Form.Item>
@@ -552,4 +555,8 @@ class ModifyOpenshifts extends Component {
     );
   }
 }
-export default Form.create({ name: "modifyOpenshifts" })(ModifyOpenshifts);
+
+export default compose(
+  withTranslation(),
+  Form.create({ name: "modifyOpenshifts" })
+)(ModifyOpenshifts);

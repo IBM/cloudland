@@ -234,6 +234,8 @@ class InstModal extends Component {
           onOk={this.handleOk}
           onCancel={this.handleCancel}
           maskClosable={false}
+          okText={this.props.okText}
+          cancelText={this.props.cancelText}
         >
           <Form wrapperCol={{ ...layoutForm.wrapperCol }}>
             {p.initFormList()}

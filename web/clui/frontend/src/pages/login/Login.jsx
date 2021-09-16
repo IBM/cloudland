@@ -22,6 +22,9 @@ const layoutButton = {
   wrapperCol: { span: 16 },
 };
 class Login extends Component {
+  constructor(props) {
+    super(props);
+  }
   handleSubmit = (e) => {
     e.preventDefault();
     this.props.form.validateFields((err, values) => {
@@ -35,14 +38,14 @@ class Login extends Component {
         })
           .then((res) => {
             if (res.token) {
-              console.log("login-res:", res);
+              console.log("login-res~~:");
               setAll(JSON.stringify(res));
               setToken(res.token);
-              message.info("Login Successfully");
+              message.info(this.props.t("Login_Successfully"));
               this.props.history.push("/");
             } else {
               //message.info(res.ErrorMsg);
-              message.error("Failure to Login");
+              message.error(this.props.t("Failure_to_Login"));
             }
             console.log(res);
           })
