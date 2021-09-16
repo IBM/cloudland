@@ -118,7 +118,7 @@ class ModifyUser extends Component {
               <Select
                 mode="tags"
                 style={{ width: "100%" }}
-                placeholder="Please select"
+                placeholder={t("Pleaseselect")}
               >
                 {this.state.members.map((item, i) => {
                   console.log("item.OrgName----", item.OrgName);

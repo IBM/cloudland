@@ -6,6 +6,8 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
+import { withTranslation } from "react-i18next";
+
 import { Card, Button, Popconfirm, message, Input } from "antd";
 import { subnetsListApi, delSubInfor } from "../../service/subnets";
 
@@ -28,7 +30,7 @@ class Subnets extends Component {
   }
   columns = [
     {
-      title: "ID",
+      title: this.props.t("ID"),
       dataIndex: "ID",
       key: "ID",
       width: 80,
@@ -36,22 +38,22 @@ class Subnets extends Component {
       //render: (txt, record, index) => index + 1,
     },
     {
-      title: "Name",
+      title: this.props.t("Name"),
       dataIndex: "Name",
       align: "center",
     },
     {
-      title: "Network",
+      title: this.props.t("Network"),
       dataIndex: "Network",
       align: "center",
     },
     {
-      title: "Netmask",
+      title: this.props.t("Netmask"),
       dataIndex: "Netmask",
       align: "center",
     },
     {
-      title: "Zones",
+      title: this.props.t("Zone"),
       dataIndex: "Zones",
       align: "center",
       render: (Zones) => (
@@ -63,24 +65,25 @@ class Subnets extends Component {
       ),
     },
     {
-      title: "Vlan",
+      title: this.props.t("Vlan"),
       dataIndex: "Vlan",
       align: "center",
     },
     {
-      title: "Hyper",
+      title: this.props.t("Hyper"),
       dataIndex: "Netlink.Hyper",
       align: "center",
     },
     {
-      title: "Owner",
+      title: this.props.t("Owner"),
       dataIndex: "OwnerInfo.name",
       align: "center",
     },
     {
-      title: "Action",
+      title: this.props.t("Action"),
       align: "center",
       render: (txt, record, index) => {
+        const { t } = this.props;
         return (
           <div>
             <Button
@@ -94,10 +97,12 @@ class Subnets extends Component {
                 this.props.history.push("/subnets/new/" + record.ID);
               }}
             >
-              Edit
+              {t("Edit")}
             </Button>
             <Popconfirm
-              title="Are you sure to delete?"
+              title={t("Doyouwanttodelete")}
+              okText={t("yes")}
+              cancelText={t("no")}
               onCancel={() => {
                 console.log("cancelled");
               }}
@@ -129,7 +134,7 @@ class Subnets extends Component {
                 type="danger"
                 size="small"
               >
-                Delete
+                {t("Delete")}
               </Button>
             </Popconfirm>
           </div>
@@ -246,18 +251,21 @@ class Subnets extends Component {
     }
   };
   render() {
+    const { t } = this.props;
     return (
       <Card
         title={
-          "Subnet Manage Panel" +
-          "(Total: " +
+          t("Subnet_Manage_Panel") +
+          "(" +
+          t("Total") +
+          ":" +
           this.state.filteredList.length +
           ")"
         }
         extra={
           <div>
             <Search
-              placeholder="Search..."
+              placeholder={t("Search_placeholder")}
               onChange={this.filter}
               enterButton
             />
@@ -270,7 +278,7 @@ class Subnets extends Component {
               type="primary"
               onClick={this.createSubnets}
             >
-              Create
+              {t("Create")}
             </Button>
           </div>
         }
@@ -293,4 +301,4 @@ class Subnets extends Component {
   }
 }
 
-export default Subnets;
+export default withTranslation()(Subnets);

@@ -8,13 +8,14 @@ SPDX-License-Identifier: Apache-2.0
 import React, { Component } from "react";
 import { Form, Card, Input, Select, Button, message } from "antd";
 import { withTranslation } from "react-i18next";
+import { compose } from "redux";
 import {
   createRegApi,
   getRegInforById,
   editRegInfor,
 } from "../../service/registrys";
 import "./registrys.css";
-import { compose } from "redux";
+
 const layoutButton = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },

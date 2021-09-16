@@ -1,5 +1,7 @@
 import React, { Component } from "react";
 import { Form, Card, Input, Select, Button, message } from "antd";
+import { withTranslation } from "react-i18next";
+import { compose } from "redux";
 import {
   createSecruleApi,
   getSecruleInforById,
@@ -84,12 +86,13 @@ class ModifySecrules extends Component {
     });
   };
   render() {
+    const { t } = this.props;
     return (
       <Card
         title={
           this.state.isShowEdit
-            ? "Edit Security Rule"
-            : "Create New Security Rule "
+            ? t("Edit Security Rule")
+            : t("Create New Security Rule")
         }
         extra={
           <Button
@@ -101,7 +104,7 @@ class ModifySecrules extends Component {
             type="primary"
             onClick={this.listSecrules}
           >
-            Return
+            {t("Return")}
           </Button>
         }
       >
@@ -111,7 +114,7 @@ class ModifySecrules extends Component {
           onSubmit={(e) => this.handleSubmit(e)}
         >
           <Form.Item
-            label="RemoteIp"
+            label={t("RemoteIp")}
             name="remoteip"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -125,7 +128,7 @@ class ModifySecrules extends Component {
             })(<Input />)}
           </Form.Item>
           <Form.Item
-            label="Direction"
+            label={t("Direction")}
             name="direction"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -137,7 +140,7 @@ class ModifySecrules extends Component {
               ],
               initialValue: this.state.currentData.Direction,
             })(
-              <Select placeholder="Direction">
+              <Select placeholder={t("Direction")}>
                 <Select.Option key="ingress" value="ingress">
                   ingress
                 </Select.Option>
@@ -148,7 +151,7 @@ class ModifySecrules extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="Protocol"
+            label={t("Protocol")}
             name="protocol"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -160,7 +163,7 @@ class ModifySecrules extends Component {
               ],
               initialValue: this.state.currentData.Protocol,
             })(
-              <Select placeholder="Protocol">
+              <Select placeholder={t("Protocol")}>
                 <Select.Option key="tcp" value="tcp">
                   tcp
                 </Select.Option>
@@ -177,7 +180,7 @@ class ModifySecrules extends Component {
             )}
           </Form.Item>
           <Form.Item
-            label="PortMin | Type"
+            label={t("PortMin_Type")}
             name="portmin"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -191,7 +194,7 @@ class ModifySecrules extends Component {
             })(<Input />)}
           </Form.Item>
           <Form.Item
-            label="PortMax | Type"
+            label={t("PortMax_Code")}
             name="portmax"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -211,11 +214,11 @@ class ModifySecrules extends Component {
           >
             {this.state.isShowEdit ? (
               <Button type="primary" htmlType="submit">
-                Update Security Rule
+                {t("Update Security Rule")}
               </Button>
             ) : (
               <Button type="primary" htmlType="submit">
-                Create New Security Rule
+                {t("Create New Security Rule")}
               </Button>
             )}
           </Form.Item>
@@ -224,4 +227,8 @@ class ModifySecrules extends Component {
     );
   }
 }
-export default Form.create({ name: "modifySecrules" })(ModifySecrules);
+
+export default compose(
+  withTranslation(),
+  Form.create({ name: "modifySecrules" })
+)(ModifySecrules);

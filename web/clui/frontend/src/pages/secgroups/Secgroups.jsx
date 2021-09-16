@@ -7,6 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 */
 import React, { Component } from "react";
 import { Card, Button, Popconfirm, message, Input } from "antd";
+import { withTranslation } from "react-i18next";
+
 import { Link } from "react-router-dom";
 import { secgroupsListApi, delSecgroupInfor } from "../../service/secgroups";
 
@@ -30,7 +32,7 @@ class Secgroups extends Component {
   }
   columns = [
     {
-      title: "ID",
+      title: this.props.t("ID"),
       dataIndex: "ID",
       key: "ID",
       width: 80,
@@ -48,25 +50,26 @@ class Secgroups extends Component {
       ),
     },
     {
-      title: "Name",
+      title: this.props.t("Name"),
       dataIndex: "Name",
       align: "center",
     },
     {
-      title: "IsDefault",
+      title: this.props.t("IsDefault"),
       dataIndex: "IsDefault",
       align: "center",
       render: (record) => <span>{record ? "true" : "false"}</span>,
     },
     {
-      title: "Owner",
+      title: this.props.t("Owner"),
       dataIndex: "OwnerInfo.name",
       align: "center",
     },
     {
-      title: "Action",
+      title: this.props.t("Action"),
       align: "center",
       render: (txt, record, index) => {
+        const { t } = this.props;
         return (
           <div>
             <Button
@@ -80,10 +83,12 @@ class Secgroups extends Component {
                 this.props.history.push("/secgroups/new/" + record.ID);
               }}
             >
-              Edit
+              {t("Edit")}
             </Button>
             <Popconfirm
-              title="Are you sure to delete?"
+              title={t("Doyouwanttodelete")}
+              okText={t("yes")}
+              cancelText={t("no")}
               onCancel={() => {
                 console.log("cancelled");
               }}
@@ -107,7 +112,7 @@ class Secgroups extends Component {
                 type="danger"
                 size="small"
               >
-                Delete
+                {t("Delete")}
               </Button>
             </Popconfirm>
           </div>
@@ -224,18 +229,21 @@ class Secgroups extends Component {
     }
   };
   render() {
+    const { t } = this.props;
     return (
       <Card
         title={
-          "Security Group Manage Panel" +
-          "(Total: " +
+          t("Security_Group_Manage_Panel") +
+          "(" +
+          t("Total") +
+          ":" +
           this.state.filteredList.length +
           ")"
         }
         extra={
           <div>
             <Search
-              placeholder="Search..."
+              placeholder={t("Search_placeholder")}
               onChange={this.filter}
               enterButton
             />
@@ -248,7 +256,7 @@ class Secgroups extends Component {
               type="primary"
               onClick={this.createSecgroups}
             >
-              Create
+              {t("Create")}
             </Button>
           </div>
         }
@@ -271,4 +279,4 @@ class Secgroups extends Component {
   }
 }
 
-export default Secgroups;
+export default withTranslation()(Secgroups);

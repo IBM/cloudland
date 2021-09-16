@@ -6,6 +6,8 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
+import { withTranslation } from "react-i18next";
+
 import { Card } from "antd";
 import { hypersListApi } from "../../service/hypers";
 import DataTable from "../../components/DataTable/DataTable";
@@ -25,49 +27,49 @@ class Hypers extends Component {
   }
   columns = [
     {
-      title: "HyperID",
+      title: this.props.t("HyperID"),
       dataIndex: "ID",
       width: 80,
       align: "center",
       //render: (txt, record, index) => index + 1,
     },
     {
-      title: "Hostname",
+      title: this.props.t("Hostname"),
       dataIndex: "Hostname",
       align: "center",
     },
     {
-      title: "ParentID",
+      title: this.props.t("ParentID"),
       dataIndex: "Parentid",
       align: "center",
     },
     {
-      title: "Children",
+      title: this.props.t("Children"),
       dataIndex: "Children",
       align: "center",
     },
     {
-      title: "HostIP",
+      title: this.props.t("HostIP"),
       dataIndex: "HostIP",
       align: "center",
     },
     {
-      title: "Status",
+      title: this.props.t("Status"),
       dataIndex: "Status",
       align: "center",
     },
     {
-      title: "Zone",
+      title: this.props.t("Zone"),
       dataIndex: "Zone.Name",
       align: "center",
     },
     {
-      title: "CPU",
+      title: this.props.t("Cpu"),
       dataIndex: "Resource.Cpu",
       align: "center",
     },
     {
-      title: "Memory(K)",
+      title: this.props.t("Memory") + "(K)",
       dataIndex: "Resource.Memory",
       align: "center",
       render: (text, record, index) => {
@@ -79,7 +81,7 @@ class Hypers extends Component {
       },
     },
     {
-      title: "Disk(B)",
+      title: this.props.t("Disk") + "(B)",
       dataIndex: "Resource.Disk",
       align: "center",
       render: (text, record, index) => {
@@ -189,4 +191,4 @@ class Hypers extends Component {
     );
   }
 }
-export default Hypers;
+export default withTranslation()(Hypers);

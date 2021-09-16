@@ -10,7 +10,8 @@ import { Card, Button, Popconfirm, message, Input } from "antd";
 import { gwListApi, delGWInfor } from "../../service/gateways";
 import DataTable from "../../components/DataTable/DataTable";
 import "./gateways.css";
-import { connect } from "react-redux";
+import { withTranslation } from "react-i18next";
+
 const { Search } = Input;
 
 class Gateways extends Component {
@@ -31,19 +32,19 @@ class Gateways extends Component {
   }
   columns = [
     {
-      title: "ID",
+      title: this.props.t("ID"),
       dataIndex: "ID",
       key: "ID",
       width: 80,
       align: "center",
     },
     {
-      title: "Name",
+      title: this.props.t("Name"),
       dataIndex: "Name",
       align: "center",
     },
     {
-      title: "Interfaces",
+      title: this.props.t("Interfaces"),
       dataIndex: "Interfaces",
       width: 140,
       align: "center",
@@ -56,7 +57,7 @@ class Gateways extends Component {
       ),
     },
     {
-      title: "Subnets",
+      title: this.props.t("Subnets"),
       dataIndex: "Subnets",
       width: 130,
       align: "center",
@@ -69,7 +70,7 @@ class Gateways extends Component {
       ),
     },
     {
-      title: "Status",
+      title: this.props.t("Status"),
       dataIndex: "Status",
       align: "center",
     },
@@ -85,7 +86,7 @@ class Gateways extends Component {
       ),
     },
     {
-      title: "Owner",
+      title: this.props.t("Owner"),
       dataIndex: "OwnerInfo.name",
       align: "center",
       className: sessionStorage.loginInfo.isAdmin ? "" : "columnHidden",
@@ -96,9 +97,10 @@ class Gateways extends Component {
       align: "center",
     },
     {
-      title: "Action",
+      title: this.props.t("Action"),
       align: "center",
       render: (txt, record, index) => {
+        const { t } = this.props;
         return (
           <div>
             <Button
@@ -112,10 +114,12 @@ class Gateways extends Component {
                 this.props.history.push("/gateways/new/" + record.ID);
               }}
             >
-              Edit
+              {t("Edit")}
             </Button>
             <Popconfirm
-              title="Are you sure to delete?"
+              title={t("Doyouwanttodelete")}
+              okText={t("yes")}
+              cancelText={t("no")}
               onCancel={() => {
                 console.log("cancelled");
               }}
@@ -123,12 +127,8 @@ class Gateways extends Component {
                 console.log("onClick-delete:", record);
                 //this.props.history.push("/registrys/new/" + record.ID);
                 delGWInfor(record.ID).then((res) => {
-                  //const _this = this;
                   message.success(res.Msg);
                   this.loadData(this.state.current, this.state.pageSize);
-
-                  console.log("用户~~", res);
-                  console.log("用户~~state", this.state);
                 });
               }}
             >
@@ -141,7 +141,7 @@ class Gateways extends Component {
                 type="danger"
                 size="small"
               >
-                Delete
+                {t("Delete")}
               </Button>
             </Popconfirm>
           </div>
@@ -258,18 +258,21 @@ class Gateways extends Component {
     }
   };
   render() {
+    const { t } = this.props;
     return (
       <Card
         title={
-          "Gateway Manage Panel" +
-          "(Total: " +
+          t("Gateway_Manage_Panel") +
+          "(" +
+          t("Total") +
+          ":" +
           this.state.filteredList.length +
           ")"
         }
         extra={
           <div>
             <Search
-              placeholder="Search..."
+              placeholder={t("Search_placeholder")}
               onChange={this.filter}
               enterButton
             />
@@ -282,7 +285,7 @@ class Gateways extends Component {
               type="primary"
               onClick={this.createGateways}
             >
-              Create
+              {t("Create")}
             </Button>
           </div>
         }
@@ -304,4 +307,4 @@ class Gateways extends Component {
   }
 }
 
-export default Gateways;
+export default withTranslation()(Gateways);

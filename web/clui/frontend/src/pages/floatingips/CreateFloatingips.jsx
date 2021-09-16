@@ -1,5 +1,7 @@
 import React, { Component } from "react";
 import { Form, Card, Button, Select, Input, message } from "antd";
+import { withTranslation } from "react-i18next";
+import { compose } from "redux";
 import { createFloatingipApi } from "../../service/floatingips";
 import { instListApi } from "../../service/instances";
 
@@ -52,19 +54,7 @@ class CreateFloatingips extends Component {
     console.log("handleSubmit:", event);
     event.preventDefault();
     this.props.form.validateFieldsAndScroll((err, values) => {
-      let _this = this;
       if (!err) {
-        // this.setState({
-        //   flavors: {
-        //     Name: this.state.name,
-        //     Cpu: parseInt(this.state.cpu),
-        //     Memory: parseInt(this.state.memory),
-        //     Disk: parseInt(this.state.disk),
-        //     Swap: parseInt(this.state.swap),
-        //     Ephemeral: parseInt(this.state.ephemeral),
-        //   },
-        // });
-
         let ifaceID = [];
         if (values.privateip != undefined) {
           ifaceID.push(values.privateip);
@@ -85,7 +75,7 @@ class CreateFloatingips extends Component {
         })
           .then((res) => {
             console.log("handleSubmit-res-createFlavorApi:", res);
-            this.props.history.push("/flavors");
+            this.props.history.push("/floatingips");
           })
           .catch((err) => {
             console.log("handleSubmit-error:", err);
@@ -96,16 +86,17 @@ class CreateFloatingips extends Component {
     });
   };
   render() {
+    const { t } = this.props;
     return (
       <Card
-        title={"Create New FloatingIp "}
+        title={t("Create New Floating Ip")}
         extra={
           <Button
             style={{ float: "right" }}
             type="primary"
             onClick={this.listFloatingIps}
           >
-            Return
+            {t("Return")}
           </Button>
         }
       >
@@ -115,7 +106,7 @@ class CreateFloatingips extends Component {
           onSubmit={(e) => this.handleSubmit(e)}
         >
           <Form.Item
-            label="Instance Address"
+            label={t("Instance Address")}
             name="instance"
             labelCol={{ ...layoutForm.labelCol }}
           >
@@ -141,50 +132,22 @@ class CreateFloatingips extends Component {
               </Select>
             )}
           </Form.Item>
-          <Form.Item
-            label="Public IP"
-            name="publicip"
-            labelCol={{ ...layoutForm.labelCol }}
-          >
-            {this.props.form.getFieldDecorator("publicip", {
-              rules: [],
-            })(
-              <Input
-                name="publicip"
-                onChange={(e) => this.setState({ publicip: e.target.value })}
-              />
-            )}
-          </Form.Item>
-          <Form.Item
-            label="Private IP"
-            name="privateip"
-            labelCol={{ ...layoutForm.labelCol }}
-          >
-            {this.props.form.getFieldDecorator("privateip", {
-              rules: [],
-            })(
-              <Input
-                name="privateip"
-                onChange={(e) => this.setState({ privateip: e.target.value })}
-              />
-            )}
-          </Form.Item>
 
           <Form.Item
-            label="Floating IP Type"
+            label={t("Floating IP type")}
             name="ftype"
             labelCol={{ ...layoutForm.labelCol }}
           >
             {this.props.form.getFieldDecorator("ftype", {
               rules: [],
             })(
-              <Select>
+              <Select placeholder={t("Type")}>
                 <Select.Option key="public" value="public">
-                  public
+                  {t("public")}
                 </Select.Option>
 
                 <Select.Option key="private" value="private">
-                  private
+                  {t("private")}
                 </Select.Option>
               </Select>
             )}
@@ -196,7 +159,7 @@ class CreateFloatingips extends Component {
           >
             {
               <Button type="primary" htmlType="submit">
-                Create FloatingIp
+                {t("Create New Floating Ip")}
               </Button>
             }
           </Form.Item>
@@ -205,4 +168,8 @@ class CreateFloatingips extends Component {
     );
   }
 }
-export default Form.create({ name: "createFloatingips" })(CreateFloatingips);
+
+export default compose(
+  withTranslation(),
+  Form.create({ name: "createFloatingips" })
+)(CreateFloatingips);
