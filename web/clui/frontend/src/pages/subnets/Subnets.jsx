@@ -35,7 +35,6 @@ class Subnets extends Component {
       key: "ID",
       width: 80,
       align: "center",
-      //render: (txt, record, index) => index + 1,
     },
     {
       title: this.props.t("Name"),
@@ -93,7 +92,6 @@ class Subnets extends Component {
               type="primary"
               size="small"
               onClick={() => {
-                console.log("onClick:", record);
                 this.props.history.push("/subnets/new/" + record.ID);
               }}
             >
@@ -104,24 +102,16 @@ class Subnets extends Component {
               okText={t("yes")}
               cancelText={t("no")}
               onCancel={() => {
-                console.log("cancelled");
+                this.props.history.push("/subnets");
               }}
               onConfirm={() => {
-                console.log("onClick-delete:", record);
-                //this.props.history.push("/registrys/new/" + record.ID);
                 delSubInfor(record.ID)
                   .then((res) => {
-                    //const _this = this;
-                    console.log("delSubInfor-res", res);
                     message.success(res.Msg);
                     this.loadData(this.state.current, this.state.pageSize);
-
-                    console.log("用户~~", res);
-                    console.log("用户~~state", this.state);
                   })
                   .catch((err) => {
-                    console.log("用户~~err", err);
-                    // message.error(err.response.data.ErrorMsg);
+                    console.log("subnet-err", err);
                   });
               }}
             >
@@ -146,7 +136,6 @@ class Subnets extends Component {
     const _this = this;
     subnetsListApi()
       .then((res) => {
-        console.log("componentDidMount-orgsListApi:", res);
         _this.setState({
           subnets: res.subnets,
           filteredList: res.subnets,
@@ -162,14 +151,11 @@ class Subnets extends Component {
       });
   }
   loadData = (page, pageSize) => {
-    console.log("loadData~~", page, pageSize);
     const _this = this;
     const offset = (page - 1) * pageSize;
     const limit = pageSize;
     subnetsListApi(offset, limit)
       .then((res) => {
-        console.log("loadData", res);
-
         _this.setState({
           subnets: res.subnets,
           filteredList: res.subnets,
@@ -178,7 +164,6 @@ class Subnets extends Component {
           pageSize: limit,
           current: page,
         });
-        console.log("loadData-page-", page, _this.state);
       })
       .catch((error) => {
         message.error(error.response.data.ErrorMsg);
@@ -189,47 +174,23 @@ class Subnets extends Component {
       });
   };
   toSelectchange = (page, num) => {
-    console.log("toSelectchange", page, num);
-    const _this = this;
     const offset = (page - 1) * num;
     const limit = num;
-    console.log("toSelectchange~limit:", offset, limit);
-    subnetsListApi(offset, limit)
-      .then((res) => {
-        console.log("loadData", res);
-        _this.setState({
-          subnets: res.subnets,
-          filteredList: res.subnets,
-          isLoaded: true,
-          total: res.total,
-          pageSize: limit,
-        });
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
+    this.loadData(offset, limit);
   };
   onPaginationChange = (e) => {
-    console.log("onPaginationChange", e);
     this.loadData(e, this.state.pageSize);
   };
   onShowSizeChange = (current, pageSize) => {
-    console.log("onShowSizeChange:", current, pageSize);
-    //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
     this.toSelectchange(current, pageSize);
   };
   createSubnets = () => {
     this.props.history.push("/subnets/new");
   };
   filter = (event) => {
-    console.log("event-filter", event.target.value);
     this.getFilteredList(event.target.value);
   };
   getFilteredList = (word) => {
-    console.log("getFilteredListr-keyword", word);
     var keyword = word.toLowerCase();
     if (keyword) {
       this.setState({
@@ -242,8 +203,6 @@ class Subnets extends Component {
             item.Vlan.toString().indexOf(keyword) > -1
         ),
       });
-
-      console.log("filteredList", this.state.filteredList);
     } else {
       this.setState({
         filteredList: this.state.subnets,

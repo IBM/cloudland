@@ -27,14 +27,11 @@ class ModifySecrules extends Component {
     };
     let tempSg = this.props.location.pathname.split("/");
     if (props.match.params.id) {
-      console.log("props.match.params.id:", this.props);
       getSecruleInforById(tempSg[2], props.match.params.id).then((res) => {
-        console.log("getSecgroupInforById:", res);
         this.setState({
           currentData: res,
           isShowEdit: true,
         });
-        console.log("getSecgroupInforById-this.state:", this.state);
       });
     }
   }
@@ -43,38 +40,18 @@ class ModifySecrules extends Component {
     this.props.history.push(`/secgroups/${tempSg[2]}/secrules`);
   };
   handleSubmit = (e) => {
-    console.log("handleSubmit:", e);
     e.preventDefault();
     this.props.form.validateFieldsAndScroll((err, values) => {
       let tempSg = this.props.location.pathname.split("/");
       if (!err) {
-        console.log("handleSubmit-value:", this.props);
-        console.log("handleSubmit-value:", values);
-        console.log("提交");
         if (this.props.match.params.id) {
-          //const _this = this;
           editSecruleInfor(this.props.match.params.id, values).then((res) => {
-            console.log("editSecruleInfor:", res);
-            // _this.setState({
-            //   isShowEdit: ! this.state.isShowEdit,
-            // });
             this.props.history.push("/secgroups");
           });
         } else {
-          console.log("before-createSecruleApi:", values);
-
-          //   tempString = this.props.location.pathname;
-
-          console.log("temp", tempSg);
-          console.log(
-            "this.props.location.pathname",
-            this.props.location.pathname
-          );
           createSecruleApi(tempSg[2], values)
             .then((res) => {
-              console.log("handleSubmit-res-createSecruleApi:", res);
               this.props.history.push(`/secgroups/${tempSg[2]}/secrules`);
-              //   this.props.history.push(this.props.location.pathname);
             })
             .catch((err) => {
               console.log("handleSubmit-error:", err);

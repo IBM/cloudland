@@ -8,7 +8,6 @@ SPDX-License-Identifier: Apache-2.0
 import React, { Component } from "react";
 import { Typography, Divider } from "antd";
 import { withTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
 class Dashboard extends Component {
   render() {
     const { Title, Paragraph } = Typography;
@@ -53,13 +52,14 @@ class Dashboard extends Component {
               6. {t("Create_an_OpenShift_cluster")}({t("Advanced")})
             </Title>
             <Paragraph className="contentpage-paragraph">
-              <Link
-                to={
-                  "https://github.com/IBM/cloudland/wiki/Manual#create-an-openshift-cluster"
-                }
-              >
-                https://github.com/IBM/cloudland/wiki/Manual#create-an-openshift-cluster
-              </Link>
+              <span>
+                <a
+                  href="https://github.com/IBM/cloudland/wiki/Manual#create-an-openshift-cluster"
+                  target="_blank"
+                >
+                  https://github.com/IBM/cloudland/wiki/Manual#create-an-openshift-cluster
+                </a>
+              </span>
             </Paragraph>
           </Typography>
         </div>

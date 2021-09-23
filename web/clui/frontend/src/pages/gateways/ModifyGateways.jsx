@@ -32,12 +32,10 @@ class ModifyGateways extends Component {
     };
     if (props.match.params.id) {
       getGWInforById(props.match.params.id).then((res) => {
-        console.log("getGWInforById:", res);
         this.setState({
           currentData: res,
           isShowEdit: true,
         });
-        console.log("getGWInforById-state:", this.state.currentData);
       });
     }
   }
@@ -47,7 +45,6 @@ class ModifyGateways extends Component {
 
     subnetsListApi()
       .then((res) => {
-        console.log("componentDidMount-orgsListApi:", res);
         _this.setState({
           subnets: res.subnets,
           isLoaded: true,
@@ -88,30 +85,20 @@ class ModifyGateways extends Component {
       if (initZone.indexOf(item["Name"]) === -1) {
         initZone.push(item["Name"]);
         newZone.push(item);
-        console.log("zonearr", initZone);
       }
       return newZone;
     });
     this.setState({
       zones: newZone,
     });
-
-    console.log("test111", this.state.zones);
   };
   handleSubmit = (event) => {
-    console.log("handleSubmit:", event);
     event.preventDefault();
     this.props.form.validateFieldsAndScroll((err, values) => {
-      console.log("handleSubmit-values", values);
       if (!err) {
-        console.log("handleSubmit-value-editGWInfor:", values);
-        console.log("提交");
         if (this.props.match.params.id) {
-          console.log("gw-edit", this.props.match.params.id, values);
           values.subnets = values.subnets.map(String);
           editGWInfor(this.props.match.params.id, values).then((res) => {
-            console.log("gw-editGWInfor:", res);
-
             this.props.history.push("/gateways");
           });
         } else {
@@ -126,16 +113,11 @@ class ModifyGateways extends Component {
             values.subnets === undefined
               ? this.state.subnetsValue
               : values.subnets.map(String);
-          console.log("submit-value", values);
           createGWApi(values)
             .then((res) => {
-              console.log("handleSubmit-res-createGWApi:", res);
               this.props.history.push("/gateways");
-
-              // Utils.loadData(this.state.current, this.state.pageSize)
             })
             .catch((err) => {
-              console.log("handleSubmit-error:", err);
               message.error(err.response.data.ErrorMsg);
             });
         }

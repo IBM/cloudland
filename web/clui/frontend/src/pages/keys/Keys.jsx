@@ -35,7 +35,6 @@ class Keys extends Component {
       width: 80,
       align: "center",
       dataIndex: "ID",
-      //render: (txt, record, index) => index + 1,
     },
     {
       title: this.props.t("Name"),
@@ -66,11 +65,7 @@ class Keys extends Component {
               title={t("Doyouwanttodelete")}
               okText={t("yes")}
               cancelText={t("no")}
-              onCancel={() => {
-                console.log("cancelled");
-              }}
               onConfirm={() => {
-                console.log("confirmed");
                 delKeyInfor(record.ID).then((res) => {
                   message.success(res.Msg);
                   this.loadData(this.state.current, this.state.pageSize);
@@ -90,7 +85,6 @@ class Keys extends Component {
     const _this = this;
     keysListApi()
       .then((res) => {
-        console.log("componentDidMount-keys:", res);
         _this.setState({
           keys: res.keys,
           filteredList: res.keys,
@@ -107,13 +101,11 @@ class Keys extends Component {
   }
 
   loadData = (page, pageSize) => {
-    console.log("key-loadData~~", page, pageSize);
     const _this = this;
     const offset = (page - 1) * pageSize;
     const limit = pageSize;
     keysListApi(offset, limit)
       .then((res) => {
-        console.log("loadData", res);
         _this.setState({
           keys: res.keys,
           filteredList: res.keys,
@@ -122,7 +114,6 @@ class Keys extends Component {
           pageSize: limit,
           current: page,
         });
-        console.log("loadData-page-", page, _this.state);
       })
       .catch((error) => {
         _this.setState({
@@ -133,49 +124,24 @@ class Keys extends Component {
   };
 
   onPaginationChange = (e) => {
-    console.log("onPaginationChange", e);
     this.loadData(e, this.state.pageSize);
   };
   onShowSizeChange = (current, pageSize) => {
-    console.log("onShowSizeChange:", current, pageSize);
-    //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
     this.toSelectchange(current, pageSize);
   };
   toSelectchange = (page, num) => {
-    console.log("toSelectchange", page, num);
-    const _this = this;
     const offset = (page - 1) * num;
     const limit = num;
-    console.log("key-toSelectchange~limit:", offset, limit);
-    keysListApi(offset, limit)
-      .then((res) => {
-        console.log("loadData", res);
-        _this.setState({
-          keys: res.keys,
-          filteredList: res.keys,
-          isLoaded: true,
-          total: res.total,
-          pageSize: limit,
-          current: page,
-        });
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
+    this.loadData(offset, limit);
   };
   createKey = () => {
     this.props.history.push("/keys/new");
   };
 
   filter = (event) => {
-    console.log("event-filter", event.target.value);
     this.getFilteredList(event.target.value);
   };
   getFilteredList = (word) => {
-    console.log("getFilteredListr-keyword-ocp", word);
     var keyword = word.toLowerCase();
     if (keyword) {
       this.setState({
@@ -185,8 +151,6 @@ class Keys extends Component {
             item.Name.toLowerCase().indexOf(keyword) > -1
         ),
       });
-
-      console.log("filteredList", this.state.filteredList);
     } else {
       this.setState({
         filteredList: this.state.keys,

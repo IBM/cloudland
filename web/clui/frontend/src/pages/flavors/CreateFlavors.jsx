@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
-import { Form, Card, Input, Button, message, InputNumber } from "antd";
+import { Form, Card, Input, Button, message } from "antd";
 import { createFlavorApi } from "../../service/flavors";
 import { withTranslation } from "react-i18next";
 import { compose } from "redux";
@@ -21,7 +21,6 @@ const layoutForm = {
 class CreateFlavors extends Component {
   constructor(props) {
     super(props);
-    //const { getFieldDecorator } = this.props.form;
     this.state = {
       name: "",
       cpu: 1,
@@ -30,26 +29,15 @@ class CreateFlavors extends Component {
       swap: 0,
       ephemeral: 0,
     };
-    console.log("CreateFlavors~~", props);
   }
-  // flavorsChange = (e) => {
-  //   console.log("valueChange-e", e);
-  //   this.setState({
-  //     [e.target.name]: e.target.value,
-  //   });
-  //   console.log("flavorsChange", this.state);
-  // };
+
   listFlavors = () => {
     this.props.history.push("/flavors");
   };
   handleSubmit = (event) => {
-    console.log("handleSubmit-state:", this.state);
-    console.log("handleSubmit:", event);
-    console.log("handleSubmit-event.target.value:", event.target.value);
     event.preventDefault();
     this.props.form.validateFieldsAndScroll((err) => {
       if (!err) {
-        console.log("提交", this.state.flavors);
         createFlavorApi({
           Name: this.state.name,
           Cpu: this.state.cpu,
@@ -59,7 +47,6 @@ class CreateFlavors extends Component {
           Ephemeral: parseInt(this.state.ephemeral),
         })
           .then((res) => {
-            console.log("handleSubmit-res-createFlavorApi:", res);
             this.props.history.push("/flavors");
           })
           .catch((err) => {

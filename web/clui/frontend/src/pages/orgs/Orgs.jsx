@@ -70,11 +70,7 @@ class Orgs extends Component {
               title={t("Doyouwanttodelete")}
               okText={t("yes")}
               cancelText={t("no")}
-              onCancel={() => {
-                console.log("Cancel delete.");
-              }}
               onConfirm={() => {
-                console.log("Confirm delete.");
                 delOrgInfor(record.ID).then((res) => {
                   message.success(res.Msg);
                   this.loadData(this.state.current, this.state.pageSize);
@@ -95,7 +91,6 @@ class Orgs extends Component {
     const _this = this;
     orgsListApi()
       .then((res) => {
-        console.log("componentDidMount-orgsListApi:", res);
         _this.setState({
           orgs: res.orgs,
           filteredList: res.orgs,
@@ -117,7 +112,6 @@ class Orgs extends Component {
     const limit = pageSize;
     orgsListApi(offset, limit)
       .then((res) => {
-        console.log("loadData", res);
         _this.setState({
           orgs: res.orgs,
           filteredList: res.orgs,
@@ -126,7 +120,6 @@ class Orgs extends Component {
           pageSize: limit,
           current: page,
         });
-        console.log("loadData-page-", page, _this.state);
       })
       .catch((error) => {
         _this.setState({
@@ -137,39 +130,18 @@ class Orgs extends Component {
   };
 
   toSelectchange = (page, num) => {
-    console.log("toSelectchange", page, num);
-    const _this = this;
     const offset = (page - 1) * num;
     const limit = num;
-    orgsListApi(offset, limit)
-      .then((res) => {
-        console.log("loadData", res);
-        _this.setState({
-          orgs: res.orgs,
-          filteredList: res.orgs,
-          isLoaded: true,
-          total: res.total,
-          pageSize: limit,
-          current: page,
-        });
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
+    this.loadData(offset, limit);
   };
 
   createOrg = () => {
     this.props.history.push("/orgs/new");
   };
   filter = (event) => {
-    console.log("event-filter", event.target.value);
     this.getFilteredList(event.target.value);
   };
   getFilteredList = (word) => {
-    console.log("getFilteredListr-keyword-ocp", word);
     var keyword = word.toLowerCase();
     if (keyword) {
       this.setState({
@@ -179,8 +151,6 @@ class Orgs extends Component {
             item.name.toLowerCase().indexOf(keyword) > -1
         ),
       });
-
-      console.log("filteredList", this.state.filteredList);
     } else {
       this.setState({
         filteredList: this.state.orgs,

@@ -102,8 +102,6 @@ class Hypers extends Component {
           isLoaded: true,
           total: res.total,
         });
-        console.log("hyper-hypersListApi:", res);
-        console.log("hyper-hypersListApi:", _this.state.hypers);
       })
       .catch((error) => {
         _this.setState({
@@ -113,13 +111,11 @@ class Hypers extends Component {
       });
   }
   loadData = (page, pageSize) => {
-    console.log("hyper-loadData~~", page, pageSize);
     const _this = this;
     const offset = (page - 1) * pageSize;
     const limit = pageSize;
     hypersListApi(offset, limit)
       .then((res) => {
-        console.log("loadData", res);
         _this.setState({
           hypers: res.hypers,
           isLoaded: true,
@@ -127,7 +123,6 @@ class Hypers extends Component {
           pageSize: limit,
           current: page,
         });
-        console.log("loadData-page-", page, _this.state);
       })
       .catch((error) => {
         _this.setState({
@@ -137,36 +132,14 @@ class Hypers extends Component {
       });
   };
   toSelectchange = (page, num) => {
-    console.log("toSelectchange", page, num);
-    const _this = this;
     const offset = (page - 1) * num;
     const limit = num;
-    console.log("hypers-toSelectchange~limit:", offset, limit);
-    hypersListApi(offset, limit)
-      .then((res) => {
-        console.log("loadData", res);
-        _this.setState({
-          hypers: res.hypers,
-          isLoaded: true,
-          total: res.total,
-          pageSize: limit,
-          current: page,
-        });
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
+    this.loadData(offset, limit);
   };
   onPaginationChange = (e) => {
-    console.log("onPaginationChange", e);
     this.loadData(e, this.state.pageSize);
   };
   onShowSizeChange = (current, pageSize) => {
-    console.log("onShowSizeChange:", current, pageSize);
-    //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
     this.toSelectchange(current, pageSize);
   };
   render() {

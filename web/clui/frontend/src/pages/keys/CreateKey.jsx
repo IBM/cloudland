@@ -33,12 +33,9 @@ class CreateKey extends Component {
     this.props.history.push("/keys");
   };
   handleSubmit = (e) => {
-    console.log("handleSubmit:", e);
     e.preventDefault();
     this.props.form.validateFieldsAndScroll((err, values) => {
       if (!err) {
-        console.log("handleSubmit-value:", values);
-
         createKeyApi(values)
           .then((res) => {
             this.props.history.push("/keys");

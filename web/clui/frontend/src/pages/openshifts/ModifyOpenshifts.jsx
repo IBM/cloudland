@@ -23,8 +23,6 @@ const layoutForm = {
 class ModifyOpenshifts extends Component {
   constructor(props) {
     super(props);
-    //const { getFieldDecorator } = this.props.form;
-    console.log("ModifyOcp~~", this);
     this.state = {
       value: "",
       isShowEdit: false,
@@ -39,12 +37,10 @@ class ModifyOpenshifts extends Component {
     let that = this;
     if (props.match.params.id) {
       getOcpInforById(props.match.params.id).then((res) => {
-        console.log("getOcpInforById-res:", res);
         that.setState({
           currentData: res,
           isShowEdit: true,
         });
-        console.log("getOcpInforById-currentData", this.state);
       });
     }
   }
@@ -56,7 +52,6 @@ class ModifyOpenshifts extends Component {
           registrys: res.registrys,
           isLoaded: true,
         });
-        console.log("registrys:", res);
       })
       .catch((error) => {
         _this.setState({
@@ -70,7 +65,6 @@ class ModifyOpenshifts extends Component {
           flavors: res.flavors,
           isLoaded: true,
         });
-        console.log("flavors:", res);
       })
       .catch((error) => {
         _this.setState({
@@ -115,7 +109,6 @@ class ModifyOpenshifts extends Component {
 
     keysListApi()
       .then((res) => {
-        console.log("componentWillMount-keys:", res);
         _this.setState({
           keys: res.keys,
           isLoaded: true,
@@ -138,28 +131,20 @@ class ModifyOpenshifts extends Component {
       if (initZone.indexOf(item["Name"]) === -1) {
         initZone.push(item["Name"]);
         newZone.push(item);
-        console.log("zonearr", initZone);
       }
       return newZone;
     });
     this.setState({
       zones: newZone,
     });
-
-    console.log("test111", this.state.zones);
   };
   handleSubmit = (e) => {
-    console.log("handleSubmit:", e);
     e.preventDefault();
     this.props.form.validateFieldsAndScroll((err, values) => {
       if (!err) {
-        console.log("handleSubmit-value-ocp:", values);
-        console.log("提交");
         if (this.props.match.params.id) {
-          console.log("ocp-edit", this.props.match.params.id, values);
           editOcpInfor(this.props.match.params.id, values)
             .then((res) => {
-              console.log("ocp-editInstInfor:", res);
               this.props.history.push("/openshifts");
             })
             .catch((err) => {
@@ -168,9 +153,7 @@ class ModifyOpenshifts extends Component {
         } else {
           createOcpApi(values)
             .then((res) => {
-              console.log("handleSubmit-res-createOcpApi:", res);
               this.props.history.push("/openshifts");
-              // Utils.loadData(this.state.current, this.state.pageSize)
             })
             .catch((err) => {
               console.log("handleSubmit-error:", err);

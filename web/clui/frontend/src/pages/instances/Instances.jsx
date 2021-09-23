@@ -18,6 +18,7 @@ import {
   Tooltip,
   Input,
 } from "antd";
+
 import {
   instListApi,
   delInstInfor,
@@ -25,20 +26,16 @@ import {
   editInstInfor,
 } from "../../service/instances";
 import DataTable from "../../components/DataTable/DataTable";
-import { Link } from "react-router-dom";
 import { withTranslation } from "react-i18next";
-import { compose } from "redux";
 import InstModal from "./InstModal";
 import "./instances.css";
 const { Search } = Input;
+const REDIRECT_URL = "https://cloudland.pic.cdl.ibm.com";
 class Instances extends Component {
   constructor(props) {
     super(props);
-    console.log("instance-props", this.props);
-    console.log("getAll-instance", sessionStorage.loginInfo);
     this.state = {
       updateInstance: {},
-
       instances: [],
       filteredList: [],
       isLoaded: false,
@@ -97,17 +94,21 @@ class Instances extends Component {
       width: "60px",
       align: "center",
       render: (record) => (
-        <div
-          onClick={() => {
-            window.open(
-              "https://cloudland.pic.cdl.ibm.com/api/instances/" +
-                record.ID +
-                "/console"
-            );
-          }}
-        >
-          {this.props.t("Vnc")}
-        </div>
+        <span>
+          <a
+            href={`${REDIRECT_URL}/api/instances/${record.ID}/console`}
+            target="_blank"
+          >
+            {this.props.t("Vnc")}
+          </a>
+        </span>
+        // <div
+        //   onClick={() => {
+        //     window.open(`${REDIRECT_URL}/api/instances/${record.ID}/console`);
+        //   }}
+        // >
+        //   {this.props.t("Vnc")}
+        // </div>
       ),
     },
     {
@@ -151,7 +152,6 @@ class Instances extends Component {
             <Dropdown.Button
               type="primary"
               onClick={() => {
-                console.log("onClick:", record);
                 this.props.history.push("/instances/new/" + record.ID);
               }}
               overlay={this.menu(record.ID)}
@@ -163,16 +163,12 @@ class Instances extends Component {
               okText={t("yes")}
               cancelText={t("no")}
               onCancel={() => {
-                console.log("cancelled");
+                this.props.history.push("/instances");
               }}
               onConfirm={() => {
-                console.log("onClick-delete:", record);
                 delInstInfor(record.ID).then((res) => {
                   message.success(res.Msg);
                   this.loadData(this.state.current, this.state.pageSize);
-
-                  console.log("用户~~", res);
-                  console.log("用户~~state", this.state);
                 });
               }}
             >
@@ -208,9 +204,7 @@ class Instances extends Component {
   );
 
   handleModal = (id, { key }) => {
-    console.log("handleModal-key", key);
     this.handleChange(id);
-    console.log("handleModal", id);
     if (
       key === "changeHostname" ||
       key === "migrateIns" ||
@@ -257,7 +251,6 @@ class Instances extends Component {
             action: this.state.action,
           })
             .then((res) => {
-              console.log("stopVm", res);
               message.success(res.Msg);
               this.loadData(this.state.current, this.state.pageSize);
             })
@@ -305,20 +298,16 @@ class Instances extends Component {
   };
   handleChange = (id) => {
     getInstInforById(id).then((res) => {
-      console.log("handleChange-getInstInforById-res:", res);
       this.setState((sta) => (sta.everyData = res.instance));
-      console.log("handleChange-state.everyData", this.state);
     });
   };
   onCancel = () => {
-    console.log("cancel");
     this.setState({
       visible: false,
       key: Math.random(),
     });
   };
   handleOk = () => {
-    console.log("ok");
     this.setState({
       visible: false,
       key: Math.random(),
@@ -328,7 +317,6 @@ class Instances extends Component {
     const _this = this;
     instListApi()
       .then((res) => {
-        console.log("componentDidMount-instances:", res);
         _this.setState({
           instances: res.instances,
           filteredList: res.instances,
@@ -345,13 +333,11 @@ class Instances extends Component {
   }
 
   loadData = (page, pageSize) => {
-    console.log("ins-loadData~~", page, pageSize);
     const _this = this;
     const offset = (page - 1) * pageSize;
     const limit = pageSize;
     instListApi(offset, limit)
       .then((res) => {
-        console.log("loadData", res);
         _this.setState({
           instances: res.instances,
           filteredList: res.instances,
@@ -360,7 +346,6 @@ class Instances extends Component {
           pageSize: limit,
           current: page,
         });
-        console.log("loadData-page-", page, _this.state);
       })
       .catch((error) => {
         _this.setState({
@@ -370,37 +355,14 @@ class Instances extends Component {
       });
   };
   toSelectchange = (page, num) => {
-    console.log("toSelectchange", page, num);
-    const _this = this;
     const offset = (page - 1) * num;
     const limit = num;
-    console.log("instance-toSelectchange~limit:", offset, limit);
-    instListApi(offset, limit)
-      .then((res) => {
-        console.log("loadData", res);
-        _this.setState({
-          instances: res.instances,
-          filteredList: res.instances,
-          isLoaded: true,
-          total: res.total,
-          pageSize: limit,
-          current: page,
-        });
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
+    this.loadData(offset, limit);
   };
   onPaginationChange = (e) => {
-    console.log("onPaginationChange", e);
     this.loadData(e, this.state.pageSize);
   };
   onShowSizeChange = (current, pageSize) => {
-    console.log("onShowSizeChange:", current, pageSize);
-    //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
     this.toSelectchange(current, pageSize);
   };
 
@@ -409,8 +371,6 @@ class Instances extends Component {
   };
 
   modalFormList = (data) => {
-    console.log("instance-modalFormList", data);
-    console.log("key-modalFormList", this.state.menuKey);
     const modalFormList = [
       {
         type: "INPUT",
@@ -448,7 +408,6 @@ class Instances extends Component {
         field: this.props.t("ChangeStatus"),
         placeholder: "Please Select Status",
         width: "90%",
-        // disabled:true,
         initialValue: data.Status,
         id: data.ID,
       },
@@ -496,23 +455,15 @@ class Instances extends Component {
             initInstance,
             data
           );
-          console.log("dataInstance", dataInstance);
           this.handleUpdateList(id, dataInstance);
         }
       );
     }
   };
   handleUpdateList = (id, paramsObj) => {
-    console.log("hangleUpdateList", paramsObj, id);
     if (id) {
       editInstInfor(id, paramsObj)
         .then((res) => {
-          // let _json = res.data;
-          // if (_json.return_code === "0") {
-          console.log("handleUpdateList-editInstInfor:", res);
-          // } else {
-          //   message.error(res.message);
-          // }
           this.loadData(this.state.current, this.state.pageSize);
         })
         .catch((err) => {
@@ -525,11 +476,9 @@ class Instances extends Component {
     });
   };
   filter = (event) => {
-    console.log("event-filter", event.target.value);
     this.getFilteredList(event.target.value);
   };
   getFilteredList = (word) => {
-    console.log("getFilteredListr-keyword-ocp", word);
     var keyword = word.toLowerCase();
     if (keyword) {
       this.setState({
@@ -544,8 +493,6 @@ class Instances extends Component {
         ),
         total: this.state.filteredList.length,
       });
-
-      console.log("filteredList", this.state.filteredList);
     } else {
       this.setState({
         filteredList: this.state.instances,

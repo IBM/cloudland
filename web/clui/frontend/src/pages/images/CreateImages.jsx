@@ -36,7 +36,6 @@ class CreateImages extends Component {
     instListApi()
       .then((res) => {
         const _this = this;
-        console.log("componentDidMount-instances:", res);
         _this.setState({
           instances: res.instances,
           isLoaded: true,
@@ -54,16 +53,11 @@ class CreateImages extends Component {
       });
   }
   handleSubmit = (e) => {
-    console.log("handleSubmit:", e);
     e.preventDefault();
     this.props.form.validateFieldsAndScroll((err, values) => {
       if (!err) {
-        console.log("handleSubmit-value:", values);
-        console.log("提交");
-
         createImgApi(values)
           .then((res) => {
-            console.log("handleSubmit-res-createImgApi:", res);
             this.props.history.push("/images");
           })
           .catch((err) => {
@@ -117,7 +111,6 @@ class CreateImages extends Component {
             })(
               <Select>
                 {this.state.instances.map((item, index) => {
-                  console.log("instance~", item, index);
                   return (
                     <Select.Option key={index} value={item.Hostname}>
                       {item.ID} - {item.Hostname}

@@ -17,34 +17,23 @@ const layoutForm = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },
 };
-const layoutButton = {
-  labelCol: { span: 8 },
-  wrapperCol: { span: 16 },
-};
+
 class Login extends Component {
-  constructor(props) {
-    super(props);
-  }
   handleSubmit = (e) => {
     e.preventDefault();
     this.props.form.validateFields((err, values) => {
       if (!err) {
-        console.log("Received values of form: ", values);
-        // setToken(values.username);
-        // this.props.history.push("/");
         loginApi({
           username: values.username,
           password: values.password,
         })
           .then((res) => {
             if (res.token) {
-              console.log("login-res~~:");
               setAll(JSON.stringify(res));
               setToken(res.token);
               message.info(this.props.t("Login_Successfully"));
               this.props.history.push("/");
             } else {
-              //message.info(res.ErrorMsg);
               message.error(this.props.t("Failure_to_Login"));
             }
             console.log(res);
@@ -62,10 +51,7 @@ class Login extends Component {
     const { t } = this.props;
     return (
       <Card className="login-form">
-        <Form
-          onSubmit={this.handleSubmit}
-          // wrapperCol={{ ...layoutForm.wrapperCol }}
-        >
+        <Form onSubmit={this.handleSubmit}>
           <div className="login-logo">
             <img src={logoLoginImg} alt="logo" />
             <div className="login-logo-text">

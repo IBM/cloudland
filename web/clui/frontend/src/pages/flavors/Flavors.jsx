@@ -77,18 +77,12 @@ class Flavors extends Component {
               okText={t("yes")}
               cancelText={t("no")}
               onCancel={() => {
-                console.log("deleted");
+                this.props.history.push("/flavors");
               }}
               onConfirm={() => {
-                console.log("onClick-delete:", record);
-                //this.props.history.push("/registrys/new/" + record.ID);
                 delFlavorInfor(record.ID).then((res) => {
-                  //const _this = this;
                   message.success(res.Msg);
                   this.loadData(this.state.current, this.state.pageSize);
-
-                  console.log("用户~~", res);
-                  console.log("用户~~state", this.state);
                 });
               }}
             >
@@ -111,7 +105,6 @@ class Flavors extends Component {
           isLoaded: true,
           total: res.total,
         });
-        console.log("flavors:", res);
       })
       .catch((error) => {
         _this.setState({
@@ -121,13 +114,11 @@ class Flavors extends Component {
       });
   }
   loadData = (page, pageSize) => {
-    console.log("flavor-loadData~~", page, pageSize);
     const _this = this;
     const offset = (page - 1) * pageSize;
     const limit = pageSize;
     flavorsListApi(offset, limit)
       .then((res) => {
-        console.log("loadData", res);
         _this.setState({
           flavors: res.flavors,
           filteredList: res.flavors,
@@ -136,7 +127,6 @@ class Flavors extends Component {
           pageSize: limit,
           current: page,
         });
-        console.log("loadData-page-", page, _this.state);
       })
       .catch((error) => {
         _this.setState({
@@ -146,114 +136,24 @@ class Flavors extends Component {
       });
   };
   toSelectchange = (page, num) => {
-    console.log("toSelectchange", page, num);
-    const _this = this;
     const offset = (page - 1) * num;
     const limit = num;
-    console.log("flavor-toSelectchange~limit:", offset, limit);
-    flavorsListApi(offset, limit)
-      .then((res) => {
-        console.log("loadData", res);
-        _this.setState({
-          flavors: res.flavors,
-          filteredList: res.flavors,
-          isLoaded: true,
-          total: res.total,
-          pageSize: limit,
-          current: page,
-        });
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
+    this.loadData(offset, limit);
   };
   onPaginationChange = (e) => {
-    console.log("onPaginationChange", e);
     this.loadData(e, this.state.pageSize);
   };
   onShowSizeChange = (current, pageSize) => {
-    console.log("onShowSizeChange:", current, pageSize);
-    //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
     this.toSelectchange(current, pageSize);
   };
   createFlavors = () => {
     this.props.history.push("/flavors/new");
   };
-  flavorsFormList = (data) => {
-    console.log("flavors-FormList", data);
-    const flavorsFormList = [
-      {
-        type: "INPUT",
-        label: this.props.t("Name"),
-        name: "name",
-        // field: "Change Hostname",
-        placeholder: "please input flavor name",
-        width: "90%",
-        // initialValue: data.Hostname,
-        // id: data.ID,
-      },
-      {
-        type: "INPUT",
-        label: this.props.t("Cpu"),
-        name: "cpu",
-        // field: "Change Hostname",
-        placeholder: "please input flavor cpu",
-        width: "90%",
-        // initialValue: data.Hostname,
-        // id: data.ID,
-      },
-      {
-        type: "INPUT",
-        label: this.props.t("Memory") + "(M)",
-        name: "memory",
-        // field: "Change Hostname",
-        placeholder: "please input flavor memory",
-        width: "90%",
-        // initialValue: data.Hostname,
-        // id: data.ID,
-      },
-      {
-        type: "INPUT",
-        label: this.props.t("Disk") + "(G)",
-        name: "disk",
-        // field: "Change Hostname",
-        placeholder: "please input flavor disk",
-        width: "90%",
-        // initialValue: data.Hostname,
-        // id: data.ID,
-      },
-      {
-        type: "INPUT",
-        label: this.props.t("Swap") + "(G)",
-        name: "swap",
-        // field: "Change Hostname",
-        placeholder: "please input flavor swap",
-        width: "90%",
-        // initialValue: data.Hostname,
-        // id: data.ID,
-      },
-      {
-        type: "INPUT",
-        label: this.props.t("Ephemeral") + "(G)",
-        name: "ephemeral",
-        // field: "Change Hostname",
-        placeholder: "please input flavor ephemeral",
-        width: "90%",
-        // initialValue: data.Hostname,
-        // id: data.ID,
-      },
-    ];
-    return flavorsFormList;
-  };
+
   filter = (event) => {
-    console.log("event-filter", event.target.value);
     this.getFilteredList(event.target.value);
   };
   getFilteredList = (word) => {
-    console.log("getFilteredListr-keyword-ocp", word);
     var keyword = word.toLowerCase();
     if (keyword) {
       this.setState({
@@ -263,8 +163,6 @@ class Flavors extends Component {
             item.Name.toLowerCase().indexOf(keyword) > -1
         ),
       });
-
-      console.log("filteredList", this.state.filteredList);
     } else {
       this.setState({
         filteredList: this.state.flavors,

@@ -68,19 +68,10 @@ class Floatingips extends Component {
               title={t("Doyouwanttodelete")}
               okText={t("yes")}
               cancelText={t("no")}
-              onCancel={() => {
-                console.log("cancell to delete");
-              }}
               onConfirm={() => {
-                console.log("onClick-delete-fl:", record);
-                //this.props.history.push("/registrys/new/" + record.ID);
                 delFloatingipInfor(record.ID).then((res) => {
-                  //const _this = this;
                   message.success(res.Msg);
                   this.loadData(this.state.current, this.state.pageSize);
-
-                  console.log("用户~~-fl", res);
-                  console.log("用户~~state", this.state);
                 });
               }}
             >
@@ -104,10 +95,9 @@ class Floatingips extends Component {
   createFloatingips = () => {
     this.props.history.push("/floatingips/new");
   };
-  //组件初始化的时候执行
+  //it will executed while initting component
   componentDidMount() {
     const _this = this;
-    console.log("componentDidMount:", this);
     floatingipsListApi()
       .then((res) => {
         _this.setState({
@@ -116,7 +106,6 @@ class Floatingips extends Component {
           isLoaded: true,
           total: res.total,
         });
-        console.log("floatingipsListApi", res);
       })
       .catch((error) => {
         _this.setState({
@@ -126,14 +115,11 @@ class Floatingips extends Component {
       });
   }
   loadData = (page, pageSize) => {
-    console.log("image-loadData~~", page, pageSize);
     const _this = this;
     const offset = (page - 1) * pageSize;
     const limit = pageSize;
     floatingipsListApi(offset, limit)
       .then((res) => {
-        console.log("loadData", res);
-
         _this.setState({
           floatingips: res.floatingips,
           filteredList: res.floatingips,
@@ -142,7 +128,6 @@ class Floatingips extends Component {
           pageSize: limit,
           current: page,
         });
-        console.log("loadData-page-", page, _this.state);
       })
       .catch((error) => {
         _this.setState({
@@ -152,45 +137,20 @@ class Floatingips extends Component {
       });
   };
   toSelectchange = (page, num) => {
-    console.log("toSelectchange", page, num);
-    const _this = this;
     const offset = (page - 1) * num;
     const limit = num;
-    console.log("flavor-toSelectchange~limit:", offset, limit);
-    floatingipsListApi(offset, limit)
-      .then((res) => {
-        console.log("loadData", res);
-        _this.setState({
-          floatingips: res.floatingips,
-          filteredList: res.floatingips,
-          isLoaded: true,
-          total: res.total,
-          pageSize: limit,
-          current: page,
-        });
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
+    this.loadData(offset, limit);
   };
   onPaginationChange = (e) => {
-    console.log("onPaginationChange", e);
     this.loadData(e, this.state.pageSize);
   };
   onShowSizeChange = (current, pageSize) => {
-    console.log("onShowSizeChange:", current, pageSize);
-    //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
     this.toSelectchange(current, pageSize);
   };
   filter = (event) => {
-    console.log("event-filter", event.target.value);
     this.getFilteredList(event.target.value);
   };
   getFilteredList = (word) => {
-    console.log("getFilteredListr-keyword", word);
     var keyword = word.toLowerCase();
     if (keyword) {
       this.setState({
@@ -202,8 +162,6 @@ class Floatingips extends Component {
             item.Instance.Hostname.toLowerCase().indexOf(keyword) > -1
         ),
       });
-
-      console.log("filteredList", this.state.filteredList);
     } else {
       this.setState({
         filteredList: this.state.floatingips,
@@ -211,7 +169,6 @@ class Floatingips extends Component {
     }
   };
   render() {
-    console.log("registry-props", this.props);
     const { t } = this.props;
     return (
       <Card

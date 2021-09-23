@@ -15,8 +15,6 @@ const { Search } = Input;
 class Registrys extends Component {
   constructor(props) {
     super(props);
-    console.log("props~~:", props);
-
     this.state = {
       registrys: [],
       filteredList: [],
@@ -91,9 +89,7 @@ class Registrys extends Component {
               }}
               type="primary"
               size="small"
-              //onClick={() => console.log("onClick:", record)}
               onClick={() => {
-                console.log("onClick:", record);
                 this.props.history.push("/registrys/new/" + record.ID);
               }}
             >
@@ -103,18 +99,10 @@ class Registrys extends Component {
               title={t("Doyouwanttodelete")}
               okText={t("yes")}
               cancelText={t("no")}
-              onCancel={() => {
-                console.log("cancelled");
-              }}
               onConfirm={() => {
-                console.log("onClick-delete:", record);
-                //this.props.history.push("/registrys/new/" + record.ID);
                 delRegInfor(record.ID).then((res) => {
-                  //const _this = this;
                   message.success(res.Msg);
                   this.loadData(this.state.current, this.state.pageSize);
-
-                  console.log("用户~~", res);
                 });
               }}
             >
@@ -136,18 +124,10 @@ class Registrys extends Component {
     },
   ];
   componentDidMount() {
-    console.log("组件加载完成===================================");
-    // const { regList } = this.props.reg;
-    // const { handleFetchRegList } = this.props;
-    // if (!regList || regList.length === 0) {
-    //   handleFetchRegList();
-    // }
-    const _this = this;
     const limit = this.state.pageSize;
     regListApi(this.state.offset, limit)
       .then((res) => {
-        console.log("regListApi-total:", res.total);
-        _this.setState({
+        this.setState({
           filteredList: res.registrys,
           registrys: res.registrys,
           isLoaded: true,
@@ -155,7 +135,7 @@ class Registrys extends Component {
         });
       })
       .catch((error) => {
-        _this.setState({
+        this.setState({
           isLoaded: false,
           error: error,
         });
@@ -166,13 +146,11 @@ class Registrys extends Component {
     this.props.history.push("/registrys/new");
   };
   loadData = (page, pageSize) => {
-    console.log("loadData~~", page, pageSize);
     const _this = this;
     const offset = (page - 1) * pageSize;
     const limit = pageSize;
     regListApi(offset, limit)
       .then((res) => {
-        console.log("loadData", res);
         _this.setState({
           filteredList: res.registrys,
           registrys: res.registrys,
@@ -181,7 +159,6 @@ class Registrys extends Component {
           pageSize: limit,
           current: page,
         });
-        console.log("loadData-page-", page, _this.state);
       })
       .catch((error) => {
         _this.setState({
@@ -190,46 +167,24 @@ class Registrys extends Component {
         });
       });
   };
-
   toSelectchange = (page, num) => {
-    console.log("toSelectchange", page, num);
-    const _this = this;
     const offset = (page - 1) * num;
     const limit = num;
-    console.log("toSelectchange~limit:", offset, limit);
-    regListApi(offset, limit)
-      .then((res) => {
-        console.log("loadData", res);
-        _this.setState({
-          registrys: res.registrys,
-          filteredList: res.registrys,
-          isLoaded: true,
-          total: res.total,
-          pageSize: limit,
-        });
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
+    this.loadData(offset, limit);
   };
   onPaginationChange = (e) => {
-    console.log("onPaginationChange", e);
     this.loadData(e, this.state.pageSize);
   };
+  // when change pageSize,then to load all data
   onShowSizeChange = (current, pageSize) => {
-    console.log("onShowSizeChange:", current, pageSize);
-    //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
+    //current：how many record in the current page when changing pageSize；pageSize:how many record to show when changed pageSize
     this.toSelectchange(current, pageSize);
   };
+  //get keyword to filter
   filter = (event) => {
-    console.log("event-filter", event.target.value);
     this.getFilteredList(event.target.value);
   };
   getFilteredList = (word) => {
-    console.log("getFilteredListr-keyword", word);
     var keyword = word.toLowerCase();
     if (keyword) {
       this.setState({
@@ -241,19 +196,13 @@ class Registrys extends Component {
             item.RegistryContent.toLowerCase().indexOf(keyword) > -1
         ),
       });
-
-      console.log("filteredList", this.state.filteredList);
     } else {
       this.setState({
         filteredList: this.state.registrys,
       });
     }
   };
-  // row = (column) => {
-  //   console.log("row-column", column);
-  // };
   render() {
-    console.log("registry-props", this.props);
     const { t } = this.props;
     return (
       <Card
@@ -298,7 +247,6 @@ class Registrys extends Component {
           onShowSizeChange={this.onShowSizeChange}
           pageSizeOptions={this.state.pageSizeOptions}
           loading={!this.state.isLoaded}
-          // onHeaderRow={this.row}
         />
       </Card>
     );
