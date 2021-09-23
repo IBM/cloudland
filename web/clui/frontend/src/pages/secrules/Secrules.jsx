@@ -18,7 +18,6 @@ const { Search } = Input;
 class Secrules extends Component {
   constructor(props) {
     super(props);
-    console.log("Secrule.props:", this.props);
     this.state = {
       secrules: [],
       filteredList: [],
@@ -85,15 +84,8 @@ class Secrules extends Component {
               type="primary"
               size="small"
               onClick={() => {
-                console.log("onClick:", record);
-                console.log("onClick-Secgroup:", record.Secgroup);
-                // this.setState({
-                //   sgID: record.Secgroup,
-                // });
-                console.log("onClick-state.sgID:", this.state.sgID);
                 this.props.history.push(
                   `/secgroups/${record.Secgroup}/secrules/new/` + record.ID
-                  // `/secgroups/${this.state.sgID}/secrules/new/` + record.ID
                 );
               }}
             >
@@ -103,17 +95,10 @@ class Secrules extends Component {
               title={t("Doyouwanttodelete")}
               okText={t("yes")}
               cancelText={t("no")}
-              onCancel={() => {
-                console.log("cancelled");
-              }}
               onConfirm={() => {
-                console.log("onClick-delete:", record);
-                console.log("onClick-delete-record.Secgroup:", record.Secgroup);
-
                 delSecruleInfor(record.Secgroup, record.ID).then((res) => {
                   message.success(res.Msg);
                   this.loadData(this.state.current, this.state.pageSize);
-                  console.log("用户~~", this.state);
                 });
               }}
             >
@@ -134,10 +119,9 @@ class Secrules extends Component {
       },
     },
   ];
-  //组件初始化的时候执行
+
   componentDidMount() {
     const _this = this;
-    console.log("componentWillMount:", this);
     secrulesListApi(this.props.match.params.id)
       .then((res) => {
         _this.setState({
@@ -146,7 +130,6 @@ class Secrules extends Component {
           isLoaded: true,
           total: res.total,
         });
-        console.log(res);
       })
       .catch((error) => {
         _this.setState({
@@ -156,7 +139,6 @@ class Secrules extends Component {
       });
   }
   createSecrules = () => {
-    console.log("createSecrules:", this.props);
     this.props.history.push(
       `/secgroups/${this.props.match.params.id}/secrules/new`
     );
@@ -165,14 +147,12 @@ class Secrules extends Component {
     this.props.history.push("/secgroups");
   };
   loadData = (page, pageSize) => {
-    console.log("loadData~~", page, pageSize);
     const _this = this;
     const offset = (page - 1) * pageSize;
     const limit = pageSize;
     const sgID = this.props.match.params.id;
     secrulesListApi(sgID, { offset, limit })
       .then((res) => {
-        console.log("loadData", res);
         _this.setState({
           secrules: res.secrules,
           filteredList: res.secrules,
@@ -181,7 +161,6 @@ class Secrules extends Component {
           pageSize: limit,
           current: page,
         });
-        console.log("loadData-page-", page, _this.state);
       })
       .catch((error) => {
         _this.setState({
@@ -191,47 +170,22 @@ class Secrules extends Component {
       });
   };
   toSelectchange = (page, num) => {
-    console.log("toSelectchange", page, num);
-    const _this = this;
     const offset = (page - 1) * num;
     const limit = num;
     const sgID = this.props.match.params.id;
 
-    // console.log("toSelectchange~limit:", sgID, offset, limit);
-    secrulesListApi(sgID, { offset, limit })
-      .then((res) => {
-        console.log("loadData-toSelectchange", res);
-        _this.setState({
-          secrules: res.secrules,
-          filteredList: res.secrules,
-          isLoaded: true,
-          total: res.total,
-          pageSize: limit,
-        });
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
+    this.loadData(sgID, { offset, limit });
   };
   onPaginationChange = (e) => {
-    console.log("onPaginationChange", e);
-    console.log("onPaginationChange-pageSize", this.state.pageSize);
     this.loadData(e, this.state.pageSize);
   };
   onShowSizeChange = (current, pageSize) => {
-    console.log("onShowSizeChange:", current, pageSize);
-    //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
     this.toSelectchange(current, pageSize);
   };
   filter = (event) => {
-    console.log("event-filter", event.target.value);
     this.getFilteredList(event.target.value);
   };
   getFilteredList = (word) => {
-    console.log("getFilteredListr-keyword", word);
     var keyword = word.toLowerCase();
     if (keyword) {
       this.setState({
@@ -243,8 +197,6 @@ class Secrules extends Component {
             item.RemoteIp.indexOf(keyword) > -1
         ),
       });
-
-      console.log("filteredList", this.state.filteredList);
     } else {
       this.setState({
         filteredList: this.state.secrules,

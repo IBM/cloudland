@@ -32,16 +32,7 @@ const routeNetwork = mainRoutes.filter((route) => {
 const routeAdmin = mainRoutes.filter((route) => {
   return route.item === "admin" && route.isShow;
 });
-// console.log("routeAuth", routeAuth);
-
-// const imageUrl =
-// "https://unified-profile-api.us-south-k8s.intranet.ibm.com/v3/image/";
 class Frame extends Component {
-  constructor(props) {
-    super(props);
-    console.log("props", props);
-    console.log("this", this);
-  }
   render() {
     const { t } = this.props;
     const popMenu = (

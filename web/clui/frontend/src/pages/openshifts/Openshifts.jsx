@@ -6,16 +6,15 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
-import { Card, Button, Popconfirm, Input } from "antd";
+import { Card, Button, Popconfirm, Input, message } from "antd";
 import { withTranslation } from "react-i18next";
 
-import { ocpListApi } from "../../service/openshifts";
+import { ocpListApi, delOcpInfor } from "../../service/openshifts";
 import DataTable from "../../components/DataTable/DataTable";
 const { Search } = Input;
 class Openshifts extends Component {
   constructor(props) {
     super(props);
-    console.log("Openshifts.props:", this.props);
     this.state = {
       openshifts: [],
       filteredList: [],
@@ -90,7 +89,6 @@ class Openshifts extends Component {
               type="primary"
               size="small"
               onClick={() => {
-                console.log("onClick-ocp:", record);
                 this.props.history.push("/openshifts/new/" + record.ID);
               }}
             >
@@ -100,12 +98,11 @@ class Openshifts extends Component {
               title={t("Doyouwanttodelete")}
               okText={t("yes")}
               cancelText={t("no")}
-              onCancel={() => {
-                console.log("cancelled");
-              }}
               onConfirm={() => {
-                console.log("confirmed");
-                //此处调用api接口进行相关操作
+                delOcpInfor(record.ID).then((res) => {
+                  message.success(res.Msg);
+                  this.loadData(this.state.current, this.state.pageSize);
+                });
               }}
             >
               <Button
@@ -125,10 +122,8 @@ class Openshifts extends Component {
       },
     },
   ];
-  //组件初始化的时候执行
   componentDidMount() {
     const _this = this;
-    console.log("componentDidMount:", this);
     ocpListApi()
       .then((res) => {
         _this.setState({
@@ -137,7 +132,6 @@ class Openshifts extends Component {
           isLoaded: true,
           total: res.total,
         });
-        console.log("openshifts", res);
       })
       .catch((error) => {
         _this.setState({
@@ -150,14 +144,11 @@ class Openshifts extends Component {
     this.props.history.push("/openshifts/new");
   };
   loadData = (page, pageSize) => {
-    console.log("loadData~~", page, pageSize);
     const _this = this;
     const offset = (page - 1) * pageSize;
     const limit = pageSize;
     ocpListApi(offset, limit)
       .then((res) => {
-        console.log("loadData", res);
-
         _this.setState({
           openshifts: res.openshifts,
           filteredList: res.openshifts,
@@ -166,7 +157,6 @@ class Openshifts extends Component {
           pageSize: limit,
           current: page,
         });
-        console.log("loadData-page-", page, _this.state);
       })
       .catch((error) => {
         _this.setState({
@@ -177,44 +167,20 @@ class Openshifts extends Component {
   };
 
   toSelectchange = (page, num) => {
-    console.log("toSelectchange", page, num);
-    const _this = this;
     const offset = (page - 1) * num;
     const limit = num;
-    console.log("toSelectchange~limit:", offset, limit);
-    ocpListApi(offset, limit)
-      .then((res) => {
-        console.log("loadData", res);
-        _this.setState({
-          openshifts: res.openshifts,
-          filteredList: res.openshifts,
-          isLoaded: true,
-          total: res.total,
-          pageSize: limit,
-        });
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
+    this.loadData(offset, limit);
   };
   onPaginationChange = (e) => {
-    console.log("onPaginationChange", e);
     this.loadData(e, this.state.pageSize);
   };
   onShowSizeChange = (current, pageSize) => {
-    console.log("onShowSizeChange:", current, pageSize);
-    //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
     this.toSelectchange(current, pageSize);
   };
   filter = (event) => {
-    console.log("event-filter", event.target.value);
     this.getFilteredList(event.target.value);
   };
   getFilteredList = (word) => {
-    console.log("getFilteredListr-keyword-ocp", word);
     var keyword = word.toLowerCase();
     if (keyword) {
       this.setState({
@@ -230,8 +196,6 @@ class Openshifts extends Component {
             item.Version.toLowerCase().indexOf(keyword) > -1
         ),
       });
-
-      console.log("filteredList", this.state.filteredList);
     } else {
       this.setState({
         filteredList: this.state.openshifts,

@@ -33,7 +33,6 @@ class InstModal extends Component {
           flavors: res.flavors,
           isLoaded: true,
         });
-        console.log("flavors:", res);
       })
       .catch((error) => {
         _this.setState({
@@ -47,7 +46,6 @@ class InstModal extends Component {
           hypers: res.hypers,
           isLoaded: true,
         });
-        console.log("hypersListApi~~", this.state.hypers);
       })
       .catch((error) => {
         _this.setState({
@@ -59,13 +57,10 @@ class InstModal extends Component {
   handleOk = () => {
     const p = this;
     const { form } = this.props;
-    console.log("handleOk-form", this.props);
     form.validateFieldsAndScroll((err, values) => {
-      console.log("handleOk", values);
       if (err) {
         return;
       }
-      // this.state.fileList?values.image = this.state.fileList : []
       p.props.submit(values);
     });
   };
@@ -75,7 +70,6 @@ class InstModal extends Component {
     close();
   };
   getOptionList(data) {
-    console.log("getOptionList", data);
     if (!data) {
       return [];
     }
@@ -90,7 +84,6 @@ class InstModal extends Component {
     return options;
   }
   getOptionHyperList(data) {
-    console.log("getOptionList", data);
     if (!data) {
       return [];
     }
@@ -109,11 +102,9 @@ class InstModal extends Component {
     const p = this;
     const { getFieldDecorator } = p.props.form;
     const { modalFormList } = this.props;
-    console.log("basic-modalFormList", modalFormList);
     const formItemList = [];
     if (modalFormList && modalFormList.length > 0) {
       modalFormList.forEach((item) => {
-        console.log("modalFormList-item", item);
         const { label } = item;
         const { rules } = item;
         const rulesType = rules || [
@@ -223,8 +214,6 @@ class InstModal extends Component {
 
   render() {
     const p = this;
-    console.log("instModal-key", this.props.key);
-    // const { getFieldDecorator } = this.props.form;
     return (
       <div>
         <Modal

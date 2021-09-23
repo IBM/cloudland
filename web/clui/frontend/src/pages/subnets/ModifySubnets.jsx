@@ -33,7 +33,6 @@ class ModifySubnets extends Component {
     };
     if (props.match.params.id) {
       getSubInforById(props.match.params.id).then((res) => {
-        console.log("getSubInforById:", res);
         this.setState({
           currentData: res,
           isShowEdit: true,
@@ -83,19 +82,11 @@ class ModifySubnets extends Component {
     });
   };
   handleSubmit = (e) => {
-    console.log("handleSubmit:", e);
     e.preventDefault();
     this.props.form.validateFieldsAndScroll((err, values) => {
       if (!err) {
-        console.log("handleSubmit-value:", values);
-        console.log("提交");
         if (this.props.match.params.id) {
-          //const _this = this;
           editSubInfor(this.props.match.params.id, values).then((res) => {
-            console.log("editSubInfor:", res);
-            // _this.setState({
-            //   isShowEdit: ! this.state.isShowEdit,
-            // });
             this.props.history.push("/subnets");
           });
         } else {

@@ -17,7 +17,6 @@ const { Search } = Input;
 class Gateways extends Component {
   constructor(props) {
     super(props);
-    console.log("gateways.props:", this.props);
     this.state = {
       gateways: [],
       filteredList: [],
@@ -110,7 +109,6 @@ class Gateways extends Component {
               type="primary"
               size="small"
               onClick={() => {
-                console.log("onClick:", record);
                 this.props.history.push("/gateways/new/" + record.ID);
               }}
             >
@@ -120,12 +118,7 @@ class Gateways extends Component {
               title={t("Doyouwanttodelete")}
               okText={t("yes")}
               cancelText={t("no")}
-              onCancel={() => {
-                console.log("cancelled");
-              }}
               onConfirm={() => {
-                console.log("onClick-delete:", record);
-                //this.props.history.push("/registrys/new/" + record.ID);
                 delGWInfor(record.ID).then((res) => {
                   message.success(res.Msg);
                   this.loadData(this.state.current, this.state.pageSize);
@@ -149,10 +142,9 @@ class Gateways extends Component {
       },
     },
   ];
-  //组件初始化的时候执行
+  //it will executed while initting component
   componentDidMount() {
     const _this = this;
-    console.log("componentWillMount:", this.state);
     gwListApi()
       .then((res) => {
         _this.setState({
@@ -161,7 +153,6 @@ class Gateways extends Component {
           isLoaded: true,
           total: res.total,
         });
-        console.log("gwListApi", res);
       })
       .catch((error) => {
         _this.setState({
@@ -171,13 +162,11 @@ class Gateways extends Component {
       });
   }
   loadData = (page, pageSize) => {
-    console.log("gw-loadData~~", page, pageSize);
     const _this = this;
     const offset = (page - 1) * pageSize;
     const limit = pageSize;
     gwListApi(offset, limit)
       .then((res) => {
-        console.log("loadData", res);
         _this.setState({
           gateways: res.gateways,
           filteredList: res.gateways,
@@ -186,7 +175,6 @@ class Gateways extends Component {
           pageSize: limit,
           current: page,
         });
-        console.log("loadData-page-", page, _this.state);
       })
       .catch((error) => {
         _this.setState({
@@ -196,48 +184,23 @@ class Gateways extends Component {
       });
   };
   toSelectchange = (page, num) => {
-    console.log("toSelectchange", page, num);
-    const _this = this;
     const offset = (page - 1) * num;
     const limit = num;
-    console.log("gw-toSelectchange~limit:", offset, limit);
-    gwListApi(offset, limit)
-      .then((res) => {
-        console.log("loadData", res);
-        _this.setState({
-          gateways: res.gateways,
-          filteredList: res.gateways,
-          isLoaded: true,
-          total: res.total,
-          pageSize: limit,
-          current: page,
-        });
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
+    this.loadData(offset, limit);
   };
   onPaginationChange = (e) => {
-    console.log("onPaginationChange", e);
     this.loadData(e, this.state.pageSize);
   };
   onShowSizeChange = (current, pageSize) => {
-    console.log("onShowSizeChange:", current, pageSize);
-    //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
     this.toSelectchange(current, pageSize);
   };
   createGateways = () => {
     this.props.history.push("/gateways/new");
   };
   filter = (event) => {
-    console.log("event-filter", event.target.value);
     this.getFilteredList(event.target.value);
   };
   getFilteredList = (word) => {
-    console.log("getFilteredListr-keyword", word);
     var keyword = word.toLowerCase();
     if (keyword) {
       this.setState({
@@ -249,8 +212,6 @@ class Gateways extends Component {
             item.Hyper.toString().indexOf(keyword) > -1
         ),
       });
-
-      console.log("filteredList", this.state.filteredList);
     } else {
       this.setState({
         filteredList: this.state.gateways,

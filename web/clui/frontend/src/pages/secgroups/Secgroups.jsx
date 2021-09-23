@@ -18,7 +18,6 @@ const { Search } = Input;
 class Secgroups extends Component {
   constructor(props) {
     super(props);
-    console.log("Secgroups.props:", this.props);
     this.state = {
       secgroups: [],
       filteredList: [],
@@ -38,15 +37,7 @@ class Secgroups extends Component {
       width: 80,
       align: "center",
       render: (record) => (
-        <Link
-          to={`/secgroups/${record}/secrules`}
-          // to={{
-          //   pathname: `/secgroups/${record}/secrules`,
-          //   state: { sgID: record },
-          // }}
-        >
-          {record}
-        </Link>
+        <Link to={`/secgroups/${record}/secrules`}>{record}</Link>
       ),
     },
     {
@@ -79,7 +70,6 @@ class Secgroups extends Component {
               type="primary"
               size="small"
               onClick={() => {
-                console.log("onClick:", record);
                 this.props.history.push("/secgroups/new/" + record.ID);
               }}
             >
@@ -89,17 +79,10 @@ class Secgroups extends Component {
               title={t("Doyouwanttodelete")}
               okText={t("yes")}
               cancelText={t("no")}
-              onCancel={() => {
-                console.log("cancelled");
-              }}
               onConfirm={() => {
-                console.log("onClick-delete:", record);
-                //this.props.history.push("/registrys/new/" + record.ID);
                 delSecgroupInfor(record.ID).then((res) => {
-                  //const _this = this;
                   message.success(res.Msg);
                   this.loadData(this.state.current, this.state.pageSize);
-                  console.log("用户~~", res);
                 });
               }}
             >
@@ -121,10 +104,8 @@ class Secgroups extends Component {
     },
   ];
 
-  //组件初始化的时候执行
   componentDidMount() {
     const _this = this;
-    console.log("componentDidMount:", this);
     secgroupsListApi()
       .then((res) => {
         _this.setState({
@@ -133,7 +114,6 @@ class Secgroups extends Component {
           isLoaded: true,
           total: res.total,
         });
-        console.log(res);
       })
       .catch((error) => {
         _this.setState({
@@ -146,14 +126,11 @@ class Secgroups extends Component {
     this.props.history.push("/secgroups/new");
   };
   loadData = (page, pageSize) => {
-    console.log("loadData~~", page, pageSize);
     const _this = this;
     const offset = (page - 1) * pageSize;
     const limit = pageSize;
     secgroupsListApi(offset, limit)
       .then((res) => {
-        console.log("loadData", res);
-
         _this.setState({
           secgroups: res.secgroups,
           filteredList: res.secgroups,
@@ -162,7 +139,6 @@ class Secgroups extends Component {
           pageSize: limit,
           current: page,
         });
-        console.log("loadData-page-", page, _this.state);
       })
       .catch((error) => {
         _this.setState({
@@ -172,44 +148,20 @@ class Secgroups extends Component {
       });
   };
   toSelectchange = (page, num) => {
-    console.log("toSelectchange", page, num);
-    const _this = this;
     const offset = (page - 1) * num;
     const limit = num;
-    console.log("toSelectchange~limit:", offset, limit);
-    secgroupsListApi(offset, limit)
-      .then((res) => {
-        console.log("loadData", res);
-        _this.setState({
-          secgroups: res.secgroups,
-          filteredList: res.secgroups,
-          isLoaded: true,
-          total: res.total,
-          pageSize: limit,
-        });
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
+    this.loadData(offset, limit);
   };
   onPaginationChange = (e) => {
-    console.log("onPaginationChange", e);
     this.loadData(e, this.state.pageSize);
   };
   onShowSizeChange = (current, pageSize) => {
-    console.log("onShowSizeChange:", current, pageSize);
-    //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
     this.toSelectchange(current, pageSize);
   };
   filter = (event) => {
-    console.log("event-filter", event.target.value);
     this.getFilteredList(event.target.value);
   };
   getFilteredList = (word) => {
-    console.log("getFilteredListr-keyword", word);
     var keyword = word.toLowerCase();
     if (keyword) {
       this.setState({
@@ -220,8 +172,6 @@ class Secgroups extends Component {
             item.IsDefault.toString().indexOf(keyword) > -1
         ),
       });
-
-      console.log("filteredList", this.state.filteredList);
     } else {
       this.setState({
         filteredList: this.state.secgroups,

@@ -27,15 +27,12 @@ const layoutForm = {
 class ModifyRegistrys extends Component {
   constructor(props) {
     super(props);
-    //const { getFieldDecorator } = this.props.form;
-    console.log("ModifyRegistry~~", props);
     this.state = {
       isShowEdit: false,
       currentData: [],
     };
     if (props.match.params.id) {
       getRegInforById(props.match.params.id).then((res) => {
-        console.log("getRegInforById:", res);
         this.setState({
           currentData: res,
           isShowEdit: true,
@@ -48,14 +45,10 @@ class ModifyRegistrys extends Component {
     this.props.history.push("/registrys");
   };
   handleSubmit = (e) => {
-    console.log("handleSubmit:", e);
     e.preventDefault();
     this.props.form.validateFieldsAndScroll((err, values) => {
       if (!err) {
-        console.log("handleSubmit-value:", values);
-        console.log("提交");
         if (this.props.match.params.id) {
-          //const _this = this;
           editRegInfor(this.props.match.params.id, values).then((res) => {
             console.log("editRegInfor:", res);
             // _this.setState({
@@ -80,7 +73,6 @@ class ModifyRegistrys extends Component {
   };
   //check if Registry content starts with "pullSecret"
   regContentValidate = (rule, value, callback) => {
-    console.log("regContentValidate:", value);
     if (value.indexOf("pullSecret") === -1) {
       callback("Registry Content should be started with 'pullSecret'");
 

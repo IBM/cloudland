@@ -92,18 +92,12 @@ class Images extends Component {
               okText={t("yes")}
               cancelText={t("no")}
               onCancel={() => {
-                console.log("canceled");
+                this.props.history.push("/images");
               }}
               onConfirm={() => {
-                console.log("onClick-delete:", record);
-                //this.props.history.push("/registrys/new/" + record.ID);
                 delImgInfor(record.ID).then((res) => {
-                  //const _this = this;
                   message.success(res.Msg);
                   this.loadData(this.state.current, this.state.pageSize);
-
-                  console.log("用户~~", res);
-                  console.log("用户~~state", this.state);
                 });
               }}
             >
@@ -115,7 +109,7 @@ class Images extends Component {
                   console.log("用户", record.ID);
                 }}
               >
-                Delete
+                {t("Delete")}
               </Button>
             </Popconfirm>
           </div>
@@ -128,7 +122,6 @@ class Images extends Component {
     const limit = this.state.pageSize;
     imagesListApi(this.state.offset, limit)
       .then((res) => {
-        console.log("imagesListApi-total:", res.total);
         _this.setState({
           images: res.images,
           filteredList: res.images,
@@ -147,14 +140,11 @@ class Images extends Component {
     this.props.history.push("/images/new");
   };
   loadData = (page, pageSize) => {
-    console.log("image-loadData~~", page, pageSize);
     const _this = this;
     const offset = (page - 1) * pageSize;
     const limit = pageSize;
     imagesListApi(offset, limit)
       .then((res) => {
-        console.log("loadData", res);
-
         _this.setState({
           images: res.images,
           filteredList: res.images,
@@ -163,7 +153,6 @@ class Images extends Component {
           pageSize: limit,
           current: page,
         });
-        console.log("loadData-page-", page, _this.state);
       })
       .catch((error) => {
         _this.setState({
@@ -173,45 +162,20 @@ class Images extends Component {
       });
   };
   toSelectchange = (page, num) => {
-    console.log("toSelectchange", page, num);
-    const _this = this;
     const offset = (page - 1) * num;
     const limit = num;
-    console.log("image-toSelectchange~limit:", offset, limit);
-    imagesListApi(offset, limit)
-      .then((res) => {
-        console.log("loadData", res);
-        _this.setState({
-          images: res.images,
-          filteredList: res.images,
-          isLoaded: true,
-          total: res.total,
-          pageSize: limit,
-          current: page,
-        });
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
+    this.loadData(offset, limit);
   };
   onPaginationChange = (e) => {
-    console.log("onPaginationChange", e);
     this.loadData(e, this.state.pageSize);
   };
   onShowSizeChange = (current, pageSize) => {
-    console.log("onShowSizeChange:", current, pageSize);
-    //当几条一页的值改变后调用函数，current：改变显示条数时当前数据所在页；pageSize:改变后的一页显示条数
     this.toSelectchange(current, pageSize);
   };
   filter = (event) => {
-    console.log("event-filter", event.target.value);
     this.getFilteredList(event.target.value);
   };
   getFilteredList = (word) => {
-    console.log("getFilteredListr-keyword-ocp", word);
     var keyword = word.toLowerCase();
     if (keyword) {
       this.setState({
@@ -226,8 +190,6 @@ class Images extends Component {
             item.Architecture.toLowerCase().indexOf(keyword) > -1
         ),
       });
-
-      console.log("filteredList", this.state.filteredList);
     } else {
       this.setState({
         filteredList: this.state.images,

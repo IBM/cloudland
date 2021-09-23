@@ -21,16 +21,14 @@ class ModifySecgroups extends Component {
     this.state = {
       isShowEdit: false,
       currentData: [],
-      isDefault: "",
+      isdefault: "no",
     };
     if (props.match.params.id) {
       getSecgroupInforById(props.match.params.id).then((res) => {
-        console.log("getSecgroupInforById:", res);
         this.setState({
           currentData: res,
           isShowEdit: true,
         });
-        console.log("getSecgroupInforById-this.state:", this.state);
       });
     }
   }
@@ -38,30 +36,24 @@ class ModifySecgroups extends Component {
     this.props.history.push("/secgroups");
   };
   handleSubmit = (e) => {
-    console.log("handleSubmit:", e);
     e.preventDefault();
     this.props.form.validateFieldsAndScroll((err, values) => {
       if (!err) {
-        console.log("handleSubmit-value-sc:", values);
-        console.log("提交");
+        let params = {
+          name: values.name,
+          isdefault: values.isdefault + "",
+        };
         if (this.props.match.params.id) {
-          //const _this = this;
-          editSecgroupInfor(this.props.match.params.id, values).then((res) => {
-            console.log("editSecgroupInfor:", res);
-            // _this.setState({
-            //   isShowEdit: ! this.state.isShowEdit,
-            // });
+          editSecgroupInfor(this.props.match.params.id, params).then((res) => {
             this.props.history.push("/secgroups");
           });
         } else {
-          console.log("before-createSecgroupApi:", values);
-          values.isdefault =
-            values.isdefault === undefined
-              ? this.state.isDefault
-              : values.isdefault;
-          createSecgroupApi(values)
+          let params = {
+            name: values.name,
+            isdefault: values.isdefault,
+          };
+          createSecgroupApi(params)
             .then((res) => {
-              console.log("handleSubmit-res-createSecgroupApi:", res);
               this.props.history.push("/secgroups");
             })
             .catch((err) => {
@@ -123,15 +115,13 @@ class ModifySecgroups extends Component {
             {this.props.form.getFieldDecorator("isdefault", {
               rules: [],
               initialValue:
-                this.state.currentData.isDefault === "true"
-                  ? t("yes")
-                  : t("no"),
+                this.state.currentData.IsDefault === true ? "yes" : "no",
             })(
-              <Select>
-                <Select.Option key="yes" value="true">
+              <Select placeholder={t("no")}>
+                <Select.Option key="yes" value="yes">
                   {t("yes")}
                 </Select.Option>
-                <Select.Option key="no" value="false">
+                <Select.Option key="no" value="no">
                   {t("no")}
                 </Select.Option>
               </Select>

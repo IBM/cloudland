@@ -24,12 +24,11 @@ class CreateFloatingips extends Component {
       instance: "",
     };
   }
-  componentWilMount() {
-    console.log("componentDidMount:", this);
+  //it will executed while initting component
+  componentDidMount() {
     instListApi()
       .then((res) => {
         const _this = this;
-        console.log("componentDidMount-instances:", res);
         _this.setState({
           instances: res.instances,
           isLoaded: true,
@@ -50,8 +49,6 @@ class CreateFloatingips extends Component {
     this.props.history.push("/floatingips");
   };
   handleSubmit = (event) => {
-    console.log("handleSubmit-state:", this.state);
-    console.log("handleSubmit:", event);
     event.preventDefault();
     this.props.form.validateFieldsAndScroll((err, values) => {
       if (!err) {
@@ -63,18 +60,12 @@ class CreateFloatingips extends Component {
           ifaceID.push(values.publicip);
         }
 
-        console.log("提交~~~", {
-          ftype: values.ftype,
-          instance: `${values.instance}`,
-          ifaceID: ifaceID,
-        });
         createFloatingipApi({
           ftype: values.ftype,
           instance: `${values.instance}`,
           publicip: ifaceID,
         })
           .then((res) => {
-            console.log("handleSubmit-res-createFlavorApi:", res);
             this.props.history.push("/floatingips");
           })
           .catch((err) => {
@@ -119,7 +110,6 @@ class CreateFloatingips extends Component {
             })(
               <Select>
                 {this.state.instances.map((item, index) => {
-                  console.log("instance~", item, index);
                   return (
                     <Select.Option key={index} value={item.ID}>
                       {item.ID} - {item.Hostname}-

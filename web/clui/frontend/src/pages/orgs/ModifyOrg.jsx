@@ -32,7 +32,6 @@ class ModifyOrg extends Component {
     let that = this;
     if (props.match.params.id) {
       getOrgInforById(props.match.params.id).then((res) => {
-        console.log("getOrgInforById-res:", res);
         that.setState({
           currentData: res,
           owerUser: res.OwnerUser,
@@ -49,12 +48,9 @@ class ModifyOrg extends Component {
     this.props.history.push("/orgs");
   };
   handleSubmit = (e) => {
-    console.log("handleSubmit:", e);
     e.preventDefault();
     this.props.form.validateFieldsAndScroll((err, values) => {
       if (!err) {
-        console.log("handleSubmit-value:", values);
-        //const _this = this;
         editOrgInfor(this.props.match.params.id, values).then((res) => {
           this.props.history.push("/orgs");
         });
@@ -68,7 +64,7 @@ class ModifyOrg extends Component {
     const { t } = this.props;
     return (
       <Card
-        title={"Edit Organization"}
+        title={t("Edit Organization")}
         extra={
           <Button
             style={{ float: "right" }}

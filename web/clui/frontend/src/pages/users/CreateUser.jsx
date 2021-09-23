@@ -59,7 +59,7 @@ class CreateUser extends Component {
     const { t } = this.props;
     return (
       <Card
-        title={"Create_User"}
+        title={t("Create New User")}
         extra={
           <Button
             style={{ float: "right" }}
@@ -105,7 +105,7 @@ class CreateUser extends Component {
           </Form.Item>
           <Form.Item
             name="confirm"
-            label="Confirm"
+            label={t("Confirm")}
             labelCol={{ ...layoutForm.labelCol }}
           >
             {this.props.form.getFieldDecorator("confirm", {
@@ -122,7 +122,7 @@ class CreateUser extends Component {
             labelCol={{ span: 6 }}
           >
             <Button type="primary" htmlType="submit">
-              Create User
+              {t("Create New User")}
             </Button>
           </Form.Item>
         </Form>
