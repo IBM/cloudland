@@ -38,9 +38,6 @@ class CreateUser extends Component {
     e.preventDefault();
     this.props.form.validateFieldsAndScroll((err, values) => {
       if (!err) {
-        console.log("handleSubmit-value:", values);
-        console.log("提交");
-
         createUserApi(values)
           .then((res) => {
             console.log("handleSubmit-res-createUserApi:", res);
@@ -86,7 +83,6 @@ class CreateUser extends Component {
                   required: true,
                 },
               ],
-              initialValue: this.state.currentData.Username,
             })(<Input />)}
           </Form.Item>
           <Form.Item
@@ -100,7 +96,6 @@ class CreateUser extends Component {
                   required: true,
                 },
               ],
-              initialValue: this.state.currentData.Password,
             })(<Input type="password" />)}
           </Form.Item>
           <Form.Item
@@ -114,7 +109,6 @@ class CreateUser extends Component {
                   required: true,
                 },
               ],
-              initialValue: this.state.currentData.Confirm,
             })(<Input type="password" />)}
           </Form.Item>
           <Form.Item

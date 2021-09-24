@@ -61,7 +61,7 @@ class Users extends Component {
               type="primary"
               size="small"
               onClick={() => {
-                this.props.history.push("/users/new/" + record.ID);
+                this.props.history.push("/users/" + record.ID);
               }}
             >
               {t("Edit")}

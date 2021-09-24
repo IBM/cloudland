@@ -152,7 +152,7 @@ class Instances extends Component {
             <Dropdown.Button
               type="primary"
               onClick={() => {
-                this.props.history.push("/instances/new/" + record.ID);
+                this.props.history.push("/instances/" + record.ID);
               }}
               overlay={this.menu(record.ID)}
             >

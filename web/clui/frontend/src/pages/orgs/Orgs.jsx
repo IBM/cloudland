@@ -61,7 +61,7 @@ class Orgs extends Component {
               type="primary"
               size="small"
               onClick={() => {
-                this.props.history.push("/orgs/new/" + record.ID);
+                this.props.history.push("/orgs/" + record.ID);
               }}
             >
               {t("Edit")}

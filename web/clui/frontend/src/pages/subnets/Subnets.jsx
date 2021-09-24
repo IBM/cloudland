@@ -92,7 +92,7 @@ class Subnets extends Component {
               type="primary"
               size="small"
               onClick={() => {
-                this.props.history.push("/subnets/new/" + record.ID);
+                this.props.history.push("/subnets/" + record.ID);
               }}
             >
               {t("Edit")}

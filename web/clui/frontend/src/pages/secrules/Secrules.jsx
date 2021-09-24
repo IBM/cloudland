@@ -85,7 +85,7 @@ class Secrules extends Component {
               size="small"
               onClick={() => {
                 this.props.history.push(
-                  `/secgroups/${record.Secgroup}/secrules/new/` + record.ID
+                  `/secgroups/${record.Secgroup}/secrules/` + record.ID
                 );
               }}
             >

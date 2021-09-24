@@ -109,7 +109,7 @@ class Gateways extends Component {
               type="primary"
               size="small"
               onClick={() => {
-                this.props.history.push("/gateways/new/" + record.ID);
+                this.props.history.push("/gateways/" + record.ID);
               }}
             >
               {t("Edit")}

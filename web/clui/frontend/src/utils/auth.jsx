@@ -30,10 +30,10 @@ export function setAll(loginInfo) {
   return sessionStorage.setItem("loginInfo", loginInfo);
 }
 
-export function getUserInfo() {
-  // var isAdmin = sessionStorage.getItem("isAdmin");
-  console.log("window-getAll:", sessionStorage.getItem("loginInfo"));
-  var loginInfo = sessionStorage.getItem("loginInfo");
-  console.log("loginInfo", typeof loginInfo);
-  return loginInfo;
-}
+// export function getUserInfo() {
+//   // var isAdmin = sessionStorage.getItem("isAdmin");
+//   console.log("window-getAll:", sessionStorage.getItem("loginInfo"));
+//   var loginInfo = sessionStorage.getItem("loginInfo");
+//   console.log("loginInfo", typeof loginInfo);
+//   return loginInfo;
+// }

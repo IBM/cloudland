@@ -90,7 +90,7 @@ class Registrys extends Component {
               type="primary"
               size="small"
               onClick={() => {
-                this.props.history.push("/registrys/new/" + record.ID);
+                this.props.history.push("/registrys/" + record.ID);
               }}
             >
               {t("Edit")}

@@ -89,7 +89,7 @@ class Openshifts extends Component {
               type="primary"
               size="small"
               onClick={() => {
-                this.props.history.push("/openshifts/new/" + record.ID);
+                this.props.history.push("/openshifts/" + record.ID);
               }}
             >
               {t("Edit")}
