@@ -10,7 +10,7 @@ import axios from "axios";
 import { getToken } from "./auth";
 
 const instance = axios.create({
-  baseURL: "https://cloudland.pic.cdl.ibm.com",
+  baseURL: this.$config.baseUrl,
   timeout: 5000,
   headers: {
     "Content-Type": "application/json;charset=UTF-8",
