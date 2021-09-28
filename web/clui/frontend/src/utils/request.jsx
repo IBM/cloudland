@@ -5,12 +5,13 @@ Copyright <holder> All Rights Reserved
 SPDX-License-Identifier: Apache-2.0
 
 */
+import React from "react";
 import { message } from "antd";
 import axios from "axios";
 import { getToken } from "./auth";
 
 const instance = axios.create({
-  baseURL: this.$config.baseUrl,
+  baseURL: window.config.baseUrl,
   timeout: 5000,
   headers: {
     "Content-Type": "application/json;charset=UTF-8",
