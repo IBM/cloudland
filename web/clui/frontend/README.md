@@ -12,7 +12,7 @@ You can run:
 
 In the project directory, you can run:
 
-### `node install`
+### `npm install`
 
 ### `npm run build`
 

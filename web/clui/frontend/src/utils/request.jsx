@@ -10,7 +10,7 @@ import axios from "axios";
 import { getToken } from "./auth";
 import { BASE_URL } from "./url";
 const instance = axios.create({
-  baseURL: BASE_URL,
+  baseURL: `${React.Component.prototype.$config.baseUrl}`,
   timeout: 5000,
   headers: {
     "Content-Type": "application/json;charset=UTF-8",
