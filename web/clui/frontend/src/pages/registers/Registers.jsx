@@ -24,8 +24,8 @@ class Registers extends Component {
       if (!err) {
         createUserApi(values)
           .then((res) => {
-            console.log("handleSubmit-res-createUserApi:", res);
-            this.props.history.push("/users");
+            message.success(`${res.username} registered successfully`);
+            this.props.history.push("/dashboard");
           })
           .catch((err) => {
             console.log("handleSubmit-error:", err);

@@ -101,14 +101,7 @@ class Images extends Component {
                 });
               }}
             >
-              <Button
-                style={{ margin: "0 1rem" }}
-                type="danger"
-                size="small"
-                onClick={() => {
-                  console.log("用户", record.ID);
-                }}
-              >
+              <Button style={{ margin: "0 1rem" }} type="danger" size="small">
                 {t("Delete")}
               </Button>
             </Popconfirm>

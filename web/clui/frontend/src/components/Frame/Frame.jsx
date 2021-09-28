@@ -14,9 +14,13 @@ import logo from "../../assets/img/logo_header.png";
 import { withRouter } from "react-router-dom";
 import { compose } from "redux";
 import { withTranslation } from "react-i18next";
+import profileImg from "../../assets/img/profile.png";
+
 const { SubMenu } = Menu;
 const { Header, Content, Sider } = Layout;
-
+const routeDashboard = mainRoutes.filter((route) => {
+  return route.isShow && route.item === "dashboard";
+});
 const routeAuth = mainRoutes.filter((route) => {
   return route.isShow && route.item === "auth";
 });
@@ -41,15 +45,20 @@ class Frame extends Component {
           if (p.key === "logOut") {
             //clearToken()
             this.props.history.push("/login");
+          } else if (p.key === "help") {
+            this.props.history.push("/help");
           } else {
-            message.info(p.key);
+            this.props.history.push("/profile");
           }
         }}
       >
+        <Menu.Item key="help">{t("Help")}</Menu.Item>
         <Menu.Item key="profile">Profile</Menu.Item>
         <Menu.Item key="logOut">{t("Logout")}</Menu.Item>
       </Menu>
     );
+    const loginInfor = JSON.parse(sessionStorage.loginInfo);
+
     return (
       <div>
         <Layout>
@@ -59,12 +68,7 @@ class Frame extends Component {
             </div>
             <Dropdown overlay={popMenu}>
               <div>
-                <img
-                  className="profileImg"
-                  // src={`${imageUrl}{uid}?def=avatar`}
-                  src="https://unified-profile-api.us-south-k8s.intranet.ibm.com/v3/image/023482672?def=avatar"
-                  alt=""
-                />
+                <Icon type="user" theme="outlined" />
                 <Icon type="down" />
               </div>
             </Dropdown>
@@ -75,11 +79,30 @@ class Frame extends Component {
                 <Menu
                   mode="inline"
                   defaultSelectedKeys={["1"]}
-                  defaultOpenKeys={["sub1", "sub2", "sub3", "sub4", "sub5"]}
+                  defaultOpenKeys={[
+                    "sub1",
+                    "sub2",
+                    "sub3",
+                    "sub4",
+                    "sub5",
+                    "sub6",
+                  ]}
                   style={{ height: "100%", borderRight: 0 }}
                 >
+                  {routeDashboard.map((routeA) => {
+                    return (
+                      <Menu.Item
+                        key={routeA.path}
+                        onClick={(p) => this.props.history.push(p.key)}
+                      >
+                        <Icon type="dashboard" />
+                        {t(routeA.title)}
+                      </Menu.Item>
+                    );
+                  })}
+
                   <SubMenu
-                    key="sub1"
+                    key="sub2"
                     title={
                       <span>
                         <Icon type="user" />
@@ -99,7 +122,7 @@ class Frame extends Component {
                     })}
                   </SubMenu>
                   <SubMenu
-                    key="sub2"
+                    key="sub3"
                     title={
                       <span>
                         <Icon type="laptop" />
@@ -119,7 +142,7 @@ class Frame extends Component {
                     })}
                   </SubMenu>
                   <SubMenu
-                    key="sub3"
+                    key="sub4"
                     title={
                       <span>
                         <Icon type="desktop" />
@@ -140,7 +163,7 @@ class Frame extends Component {
                   </SubMenu>
 
                   <SubMenu
-                    key="sub4"
+                    key="sub5"
                     title={
                       <span>
                         <Icon type="cloud-o" />
@@ -159,26 +182,30 @@ class Frame extends Component {
                       );
                     })}
                   </SubMenu>
-                  <SubMenu
-                    key="sub5"
-                    title={
-                      <span>
-                        <Icon type="bar-chart" />
-                        {t("Administration")}
-                      </span>
-                    }
-                  >
-                    {routeAdmin.map((routeA) => {
-                      return (
-                        <Menu.Item
-                          key={routeA.path}
-                          onClick={(p) => this.props.history.push(p.key)}
-                        >
-                          {t(routeA.title)}
-                        </Menu.Item>
-                      );
-                    })}
-                  </SubMenu>
+                  {loginInfor.isAdmin ? (
+                    <SubMenu
+                      key="sub6"
+                      title={
+                        <span>
+                          <Icon type="bar-chart" />
+                          {t("Administration")}
+                        </span>
+                      }
+                    >
+                      {routeAdmin.map((routeA) => {
+                        return (
+                          <Menu.Item
+                            key={routeA.path}
+                            onClick={(p) => this.props.history.push(p.key)}
+                          >
+                            {t(routeA.title)}
+                          </Menu.Item>
+                        );
+                      })}
+                    </SubMenu>
+                  ) : (
+                    ""
+                  )}
                 </Menu>
               </Sider>
             </Col>

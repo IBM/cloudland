@@ -24,7 +24,6 @@ const layoutForm = {
 class CreateUser extends Component {
   constructor(props) {
     super(props);
-    console.log("CreateUser~~", props);
     this.state = {
       currentData: [],
     };
@@ -34,13 +33,13 @@ class CreateUser extends Component {
     this.props.history.push("/users");
   };
   handleSubmit = (e) => {
-    console.log("handleSubmit:", e);
     e.preventDefault();
     this.props.form.validateFieldsAndScroll((err, values) => {
       if (!err) {
         createUserApi(values)
           .then((res) => {
-            console.log("handleSubmit-res-createUserApi:", res);
+            console.log("user res", res);
+            message.success(`${res.username} created successfully`);
             this.props.history.push("/users");
           })
           .catch((err) => {

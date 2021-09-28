@@ -38,7 +38,7 @@ class Login extends Component {
             } else {
               message.error(this.props.t("Failure_to_Login"));
             }
-            console.log(res);
+            console.log("login", res);
           })
 
           .catch((err) => {

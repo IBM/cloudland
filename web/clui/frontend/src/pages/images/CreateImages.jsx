@@ -23,8 +23,6 @@ const layoutForm = {
 class CreateImages extends Component {
   constructor(props) {
     super(props);
-    //const { getFieldDecorator } = this.props.form;
-    console.log("ModifyImages~~", props);
     this.state = {
       instances: [],
     };

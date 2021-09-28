@@ -76,7 +76,9 @@ class Gateways extends Component {
     {
       title: "Hyper",
       align: "center",
-      className: sessionStorage.loginInfo.isAdmin ? "" : "columnHidden",
+      className: JSON.parse(sessionStorage.loginInfo).isAdmin
+        ? ""
+        : "columnHidden",
 
       render: (record) => (
         <span>
@@ -88,7 +90,9 @@ class Gateways extends Component {
       title: this.props.t("Owner"),
       dataIndex: "OwnerInfo.name",
       align: "center",
-      className: sessionStorage.loginInfo.isAdmin ? "" : "columnHidden",
+      className: JSON.parse(sessionStorage.loginInfo).isAdmin
+        ? ""
+        : "columnHidden",
     },
     {
       title: "Zone",
@@ -142,6 +146,7 @@ class Gateways extends Component {
       },
     },
   ];
+
   //it will executed while initting component
   componentDidMount() {
     const _this = this;
@@ -220,6 +225,7 @@ class Gateways extends Component {
   };
   render() {
     const { t } = this.props;
+
     return (
       <Card
         title={

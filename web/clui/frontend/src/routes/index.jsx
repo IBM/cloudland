@@ -37,6 +37,8 @@ import ModifySubnets from "../pages/subnets/ModifySubnets";
 import ModifyGateways from "../pages/gateways/ModifyGateways";
 import ModifySecgroups from "../pages/secgroups/ModifySecgroups";
 import Registers from "../pages/registers/Registers";
+import Help from "../pages/help/Help";
+import Profile from "../pages/profile/Profile";
 export const InitRoutes = [
   {
     path: "/login",
@@ -55,9 +57,31 @@ export const InitRoutes = [
 
 export const mainRoutes = [
   {
+    path: "/help",
+    component: Help,
+    title: "Help",
+    exact: true,
+    icon: "bulb",
+
+    //icon:''
+  },
+  {
+    path: "/profile",
+    component: Profile,
+    title: "Profile",
+    exact: true,
+    icon: "profile",
+
+    //icon:''
+  },
+  {
     path: "/dashboard",
     component: Dashboard,
     title: "Dashboard",
+    exact: true,
+    icon: "dashboard",
+    isShow: true,
+    item: "dashboard",
     //icon:''
   },
   {

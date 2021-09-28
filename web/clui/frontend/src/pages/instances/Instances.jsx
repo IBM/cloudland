@@ -52,7 +52,6 @@ class Instances extends Component {
       zone: [],
     };
   }
-
   columns = [
     {
       title: this.props.t("ID"),
@@ -129,13 +128,17 @@ class Instances extends Component {
       title: this.props.t("Hyper"),
       dataIndex: "Hyper",
       align: "center",
-      className: sessionStorage.loginInfo.isAdmin ? "" : "columnHidden",
+      className: JSON.parse(sessionStorage.loginInfo).isAdmin
+        ? ""
+        : "columnHidden",
     },
     {
       title: this.props.t("Owner"),
       dataIndex: "OwnerInfo.name",
       align: "center",
-      className: sessionStorage.loginInfo.isAdmin ? "" : "columnHidden",
+      className: JSON.parse(sessionStorage.loginInfo).isAdmin
+        ? ""
+        : "columnHidden",
     },
     {
       title: this.props.t("Zone"),
@@ -389,7 +392,9 @@ class Instances extends Component {
         name: "hyper",
         field: this.props.t("MigrateInstance"),
         // disabled:true,
-        initialValue: data.Hyper,
+        initialValue: JSON.parse(sessionStorage.loginInfo).isAdmin
+          ? data.Hyper
+          : "",
         id: data.ID,
       },
       {
@@ -502,6 +507,7 @@ class Instances extends Component {
   render() {
     const { everyData } = this.state;
     const { t } = this.props;
+
     return (
       <div>
         <Row>

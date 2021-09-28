@@ -17,7 +17,7 @@ import "./index.css";
 import { InitRoutes } from "./routes";
 import reportWebVitals from "./reportWebVitals";
 import App from "./App";
-
+console.log("process-env", process.env.REACT_BASE_URL);
 ReactDOM.render(
   <Router>
     <Switch>

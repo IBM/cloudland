@@ -90,7 +90,6 @@ class ModifyInstances extends Component {
           let tempFlavor = parseInt(tempFlavorArr[0]);
           values.flavor = tempFlavor;
           editInstInfor(this.props.match.params.id, values).then((res) => {
-            console.log("instance-editInstInfor:", res);
             this.props.history.push("/instances");
           });
         } else {
@@ -99,7 +98,6 @@ class ModifyInstances extends Component {
 
           createInstApi(values)
             .then((res) => {
-              console.log("handleSubmit-res-createInstApi:", res);
               this.props.history.push("/instances");
             })
             .catch((err) => {
@@ -119,7 +117,6 @@ class ModifyInstances extends Component {
       if (initZone.indexOf(item["Name"]) === -1) {
         initZone.push(item["Name"]);
         newZone.push(item);
-        console.log("zonearr", initZone);
       }
       return newZone;
     });
@@ -136,7 +133,6 @@ class ModifyInstances extends Component {
   createKey = (values) => {
     createKeyApi(values)
       .then((res) => {
-        console.log("createKey-createKeyApi:", res);
         this.setState({
           visible: false,
         });
@@ -171,6 +167,7 @@ class ModifyInstances extends Component {
   }
   render() {
     const { t } = this.props;
+    const loginInfor = JSON.parse(sessionStorage.loginInfo);
     return (
       <Card
         title={
@@ -218,7 +215,7 @@ class ModifyInstances extends Component {
             label={t("Hyper")}
             name="hyper"
             labelCol={{ ...layoutForm.labelCol }}
-            hidden={!sessionStorage.loginInfo.isAdmin}
+            hidden={!loginInfor.isAdmin}
           >
             {this.props.form.getFieldDecorator("hyper", {
               rules: [],
