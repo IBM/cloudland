@@ -17,7 +17,7 @@ fi
 
 # Install tools
 yum groupinstall -y "Development Tools"
-yum install -y git golang
+yum install -y git golang nodejs nodejs-full-i18n npm
 
 cland_root_dir=/opt/cloudland
 
@@ -87,6 +87,18 @@ EOF
 
 }
 
+# Build web/clui/frontend
+function build_new_ui()
+{
+su cland << EOF
+    # Build
+    cd $cland_root_dir/web/clui/frontend
+    npm install
+    npm run build
+EOF
+
+}
+
 # Build libvirt-console-proxy
 function inst_console_proxy()
 {
@@ -148,6 +160,14 @@ build_clui
 pushd "$cland_root_dir/web/clui"
 if [[ ! -e "clui" ]]; then
     echo "Error: CloudLand clui build failed."
+    exit -1
+fi
+popd
+
+build_new_ui
+pushd "$cland_root_dir/web/clui/frontend"
+if [[ ! -e "build" ]]; then
+    echo "Error: CloudLand new ui build failed."
     exit -1
 fi
 popd
