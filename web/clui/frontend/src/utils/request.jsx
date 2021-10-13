@@ -8,7 +8,6 @@ SPDX-License-Identifier: Apache-2.0
 import { message } from "antd";
 import axios from "axios";
 import { getToken } from "./auth";
-import { BASE_URL } from "./url";
 const instance = axios.create({
   baseURL: window.config.baseUrl,
   timeout: 5000,

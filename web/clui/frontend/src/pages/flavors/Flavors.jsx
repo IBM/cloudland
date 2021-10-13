@@ -113,6 +113,7 @@ class Flavors extends Component {
         });
       });
   }
+  //loading data while refreshing
   loadData = (page, pageSize) => {
     const _this = this;
     const offset = (page - 1) * pageSize;
@@ -135,11 +136,13 @@ class Flavors extends Component {
         });
       });
   };
+  //go to page selected while clicking
   toSelectchange = (page, num) => {
     const offset = (page - 1) * num;
     const limit = num;
     this.loadData(offset, limit);
   };
+  //  pageSize changed
   onPaginationChange = (e) => {
     this.loadData(e, this.state.pageSize);
   };
@@ -149,7 +152,7 @@ class Flavors extends Component {
   createFlavors = () => {
     this.props.history.push("/flavors/new");
   };
-
+  //it's used to search keyword in the webpage
   filter = (event) => {
     this.getFilteredList(event.target.value);
   };

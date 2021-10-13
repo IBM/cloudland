@@ -166,6 +166,7 @@ class Gateways extends Component {
         });
       });
   }
+  //it's to load data to get gateway data
   loadData = (page, pageSize) => {
     const _this = this;
     const offset = (page - 1) * pageSize;
@@ -188,11 +189,13 @@ class Gateways extends Component {
         });
       });
   };
+  //go to selected page while clicking
   toSelectchange = (page, num) => {
     const offset = (page - 1) * num;
     const limit = num;
     this.loadData(offset, limit);
   };
+  //pageSize changed
   onPaginationChange = (e) => {
     this.loadData(e, this.state.pageSize);
   };
@@ -202,6 +205,7 @@ class Gateways extends Component {
   createGateways = () => {
     this.props.history.push("/gateways/new");
   };
+  //show the filtered results while input keyword
   filter = (event) => {
     this.getFilteredList(event.target.value);
   };

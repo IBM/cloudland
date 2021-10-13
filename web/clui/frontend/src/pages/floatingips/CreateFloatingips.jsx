@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Form, Card, Button, Select, Input, message } from "antd";
+import { Form, Card, Button, Select, message } from "antd";
 import { withTranslation } from "react-i18next";
 import { compose } from "redux";
 import { createFloatingipApi } from "../../service/floatingips";
@@ -48,15 +48,16 @@ class CreateFloatingips extends Component {
   listFloatingIps = () => {
     this.props.history.push("/floatingips");
   };
+  //submit form
   handleSubmit = (event) => {
     event.preventDefault();
     this.props.form.validateFieldsAndScroll((err, values) => {
       if (!err) {
         let ifaceID = [];
-        if (values.privateip != undefined) {
+        if (values.privateip !== undefined) {
           ifaceID.push(values.privateip);
         }
-        if (values.publicip != undefined) {
+        if (values.publicip !== undefined) {
           ifaceID.push(values.publicip);
         }
 

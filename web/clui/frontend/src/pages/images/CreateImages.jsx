@@ -50,6 +50,7 @@ class CreateImages extends Component {
         });
       });
   }
+  //submit form
   handleSubmit = (e) => {
     e.preventDefault();
     this.props.form.validateFieldsAndScroll((err, values) => {

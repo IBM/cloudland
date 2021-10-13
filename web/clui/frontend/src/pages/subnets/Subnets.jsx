@@ -150,6 +150,7 @@ class Subnets extends Component {
         });
       });
   }
+  //it's to load data to get subnet data
   loadData = (page, pageSize) => {
     const _this = this;
     const offset = (page - 1) * pageSize;
@@ -173,6 +174,7 @@ class Subnets extends Component {
         });
       });
   };
+  //go to selected page while clicking
   toSelectchange = (page, num) => {
     const offset = (page - 1) * num;
     const limit = num;
@@ -187,6 +189,7 @@ class Subnets extends Component {
   createSubnets = () => {
     this.props.history.push("/subnets/new");
   };
+  //show the filtered results while input keyword
   filter = (event) => {
     this.getFilteredList(event.target.value);
   };

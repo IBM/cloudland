@@ -34,6 +34,7 @@ class CreateFlavors extends Component {
   listFlavors = () => {
     this.props.history.push("/flavors");
   };
+  //submit form
   handleSubmit = (event) => {
     event.preventDefault();
     this.props.form.validateFieldsAndScroll((err) => {

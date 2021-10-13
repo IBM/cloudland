@@ -105,7 +105,7 @@ class Orgs extends Component {
         });
       });
   }
-
+  //it's to load data to get org data
   loadData = (page, pageSize) => {
     const _this = this;
     const offset = (page - 1) * pageSize;
@@ -128,7 +128,7 @@ class Orgs extends Component {
         });
       });
   };
-
+  //go to selected page while clicking
   toSelectchange = (page, num) => {
     const offset = (page - 1) * num;
     const limit = num;
@@ -138,6 +138,7 @@ class Orgs extends Component {
   createOrg = () => {
     this.props.history.push("/orgs/new");
   };
+  //show the filtered results while input keyword
   filter = (event) => {
     this.getFilteredList(event.target.value);
   };

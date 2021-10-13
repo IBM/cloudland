@@ -110,6 +110,7 @@ class Hypers extends Component {
         });
       });
   }
+  //it's to load data to get hyper data
   loadData = (page, pageSize) => {
     const _this = this;
     const offset = (page - 1) * pageSize;
@@ -131,11 +132,13 @@ class Hypers extends Component {
         });
       });
   };
+  //go to selected page while clicking
   toSelectchange = (page, num) => {
     const offset = (page - 1) * num;
     const limit = num;
     this.loadData(offset, limit);
   };
+  //pageSize changed
   onPaginationChange = (e) => {
     this.loadData(e, this.state.pageSize);
   };

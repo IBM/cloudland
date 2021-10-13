@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
-import { Layout, Menu, Icon, Dropdown, message, Row, Col } from "antd";
+import { Layout, Menu, Icon, Dropdown, Col } from "antd";
 import "antd/dist/antd.css";
 import "./frame.css";
 import { mainRoutes } from "../../routes";
@@ -68,7 +68,12 @@ class Frame extends Component {
             </div>
             <Dropdown overlay={popMenu}>
               <div>
-                <Icon type="user" theme="outlined" />
+                <img
+                  className="profileImg"
+                  // src={`${imageUrl}{uid}?def=avatar`}
+                  src={profileImg}
+                  alt=""
+                />
                 <Icon type="down" />
               </div>
             </Dropdown>

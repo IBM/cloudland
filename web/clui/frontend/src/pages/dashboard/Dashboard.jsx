@@ -6,63 +6,65 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 import React, { Component } from "react";
-import { Typography, Divider } from "antd";
+import * as echarts from "echarts";
+
 import { withTranslation } from "react-i18next";
 class Dashboard extends Component {
+  componentDidMount() {
+    var chartDom = document.getElementById("main");
+    var myChart = echarts.init(chartDom);
+    var option;
+
+    option = {
+      tooltip: {
+        trigger: "item",
+      },
+      legend: {
+        top: "5%",
+        left: "center",
+      },
+      series: [
+        {
+          name: "Access From",
+          type: "pie",
+          radius: ["40%", "70%"],
+          avoidLabelOverlap: false,
+          itemStyle: {
+            borderRadius: 10,
+            borderColor: "#fff",
+            borderWidth: 2,
+          },
+          label: {
+            show: false,
+            position: "center",
+          },
+          emphasis: {
+            label: {
+              show: true,
+              fontSize: "40",
+              fontWeight: "bold",
+            },
+          },
+          labelLine: {
+            show: false,
+          },
+          data: [
+            { value: 1048, name: "Search Engine" },
+            { value: 735, name: "Direct" },
+            { value: 580, name: "Email" },
+            { value: 484, name: "Union Ads" },
+            { value: 300, name: "Video Ads" },
+          ],
+        },
+      ],
+    };
+
+    option && myChart.setOption(option);
+  }
   render() {
-    const { Title, Paragraph } = Typography;
-    const { t } = this.props;
     return (
       <div className="bx--grid content-page">
-        <div className="bx--grid content-page-right">
-          <Typography className="contentpage-typography">
-            <Typography>
-              <Title>{t("Brief_Instructions")}</Title>
-            </Typography>
-            <Title level={4}>1. {t("Create_a_key")}</Title>
-            <Paragraph className="contentpage-paragraph">
-              {t("Create_a_key_content")}
-            </Paragraph>
-            <Divider />
-            <Title level={4}>2. {t("Create_a_gateway")}</Title>
-            <Paragraph className="contentpage-paragraph">
-              {t("Create_a_gateway_content")}
-            </Paragraph>
-            <Divider />
-            <Title level={4}>3. {t("Launch_an_instance")}</Title>
-            <Paragraph className="contentpage-paragraph">
-              {t("Launch_an_instance_content")}
-            </Paragraph>
-            <Divider />
-            <Title level={4}>4. {t("Create_a_floating_IP")}</Title>
-            <Paragraph className="contentpage-paragraph">
-              {t("Create_a_floating_IP_content")}
-            </Paragraph>
-            <Divider />
-            <Title level={4}>
-              5. {t("Use_your_instance_and_modify_security_group_as_needed")}
-            </Title>
-            <Paragraph className="contentpage-paragraph">
-              {t("ssh_key_login_cmd")}
-              {<br />}
-              {t("Use_your_instance_content")}
-            </Paragraph>
-            <Divider />
-            <Title level={4}>
-              6. {t("Create_an_OpenShift_cluster")}({t("Advanced")})
-            </Title>
-            <Paragraph className="contentpage-paragraph">
-              <span>
-                <a
-                  href="https://github.com/IBM/cloudland/wiki/Manual#create-an-openshift-cluster"
-                  target="_blank"
-                >
-                  https://github.com/IBM/cloudland/wiki/Manual#create-an-openshift-cluster
-                </a>
-              </span>
-            </Paragraph>
-          </Typography>
-        </div>
+        <div id="main" style={{ width: "600px", height: "400px" }}></div>
       </div>
     );
   }

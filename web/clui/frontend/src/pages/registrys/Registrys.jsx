@@ -145,6 +145,7 @@ class Registrys extends Component {
   createRegistrys = () => {
     this.props.history.push("/registrys/new");
   };
+  //it's to load data to get key data
   loadData = (page, pageSize) => {
     const _this = this;
     const offset = (page - 1) * pageSize;
@@ -180,7 +181,7 @@ class Registrys extends Component {
     //current：how many record in the current page when changing pageSize；pageSize:how many record to show when changed pageSize
     this.toSelectchange(current, pageSize);
   };
-  //get keyword to filter
+  //show the filtered results while input keyword
   filter = (event) => {
     this.getFilteredList(event.target.value);
   };
