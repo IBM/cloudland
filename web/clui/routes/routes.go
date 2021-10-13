@@ -92,6 +92,7 @@ func New() (m *macaron.Macaron) {
 	m.Get("/", Index)
 	m.Get("/dashboard", dashboard.Show)
 	m.Get("/dashboard/getdata", dashboard.GetData)
+	m.Get("/api/dashboard/getdata", dashboard.GetData)
 	m.Get("/login", userView.LoginGet)
 	m.Post("/login", userView.LoginPost)
 	m.Post("/api/login", binding.Bind(APIUserView{}), apiUserView.LoginPost)
