@@ -27,12 +27,9 @@ ReactDOM.render(
       <Route
         path="/"
         render={(routeProps) => (
-          console.log("routeProps~~", routeProps),
-          (
-            <div className="main-page">
-              <App {...routeProps} />
-            </div>
-          )
+          <div className="main-page">
+            <App {...routeProps} />
+          </div>
         )}
       />
       <Redirect to="/" from="/" />
