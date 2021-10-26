@@ -33,9 +33,7 @@ class CreateKeyModal extends Component {
   handleOk = () => {
     const p = this;
     const { form } = this.props;
-    console.log("handleOk-key-form", this.props);
     form.validateFieldsAndScroll((err, values) => {
-      console.log("handleOk-key", values);
       if (err) {
         return;
       }

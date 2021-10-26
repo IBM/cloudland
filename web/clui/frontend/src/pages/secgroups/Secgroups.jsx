@@ -70,7 +70,7 @@ class Secgroups extends Component {
               type="primary"
               size="small"
               onClick={() => {
-                this.props.history.push("/secgroups/new/" + record.ID);
+                this.props.history.push("/secgroups/" + record.ID);
               }}
             >
               {t("Edit")}
@@ -125,6 +125,7 @@ class Secgroups extends Component {
   createSecgroups = () => {
     this.props.history.push("/secgroups/new");
   };
+  //it's to load data to get secgroup data
   loadData = (page, pageSize) => {
     const _this = this;
     const offset = (page - 1) * pageSize;
@@ -147,6 +148,8 @@ class Secgroups extends Component {
         });
       });
   };
+
+  //go to selected page while clicking
   toSelectchange = (page, num) => {
     const offset = (page - 1) * num;
     const limit = num;
@@ -158,6 +161,7 @@ class Secgroups extends Component {
   onShowSizeChange = (current, pageSize) => {
     this.toSelectchange(current, pageSize);
   };
+  //show the filtered results while input keyword
   filter = (event) => {
     this.getFilteredList(event.target.value);
   };

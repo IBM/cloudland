@@ -11,7 +11,6 @@ import { compose } from "redux";
 import { Form, Card, Input, Select, Button, message } from "antd";
 import { getOrgInforById, editOrgInfor } from "../../service/orgs";
 import "./orgs.css";
-import { T } from "antd/lib/upload/utils";
 const layoutButton = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },

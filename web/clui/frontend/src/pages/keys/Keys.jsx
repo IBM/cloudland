@@ -99,7 +99,7 @@ class Keys extends Component {
         });
       });
   }
-
+  //it's to load data to get key data
   loadData = (page, pageSize) => {
     const _this = this;
     const offset = (page - 1) * pageSize;
@@ -122,13 +122,14 @@ class Keys extends Component {
         });
       });
   };
-
+  //pageSize changed
   onPaginationChange = (e) => {
     this.loadData(e, this.state.pageSize);
   };
   onShowSizeChange = (current, pageSize) => {
     this.toSelectchange(current, pageSize);
   };
+  //go to selected page while clicking
   toSelectchange = (page, num) => {
     const offset = (page - 1) * num;
     const limit = num;
@@ -137,7 +138,7 @@ class Keys extends Component {
   createKey = () => {
     this.props.history.push("/keys/new");
   };
-
+  //show the filtered results while input keyword
   filter = (event) => {
     this.getFilteredList(event.target.value);
   };

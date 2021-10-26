@@ -114,6 +114,7 @@ class Floatingips extends Component {
         });
       });
   }
+  //loading data while refreshing
   loadData = (page, pageSize) => {
     const _this = this;
     const offset = (page - 1) * pageSize;
@@ -136,17 +137,20 @@ class Floatingips extends Component {
         });
       });
   };
+  //go to selected page while clicking
   toSelectchange = (page, num) => {
     const offset = (page - 1) * num;
     const limit = num;
     this.loadData(offset, limit);
   };
+  //pageSize changed
   onPaginationChange = (e) => {
     this.loadData(e, this.state.pageSize);
   };
   onShowSizeChange = (current, pageSize) => {
     this.toSelectchange(current, pageSize);
   };
+  //show the filtered results while input keyword
   filter = (event) => {
     this.getFilteredList(event.target.value);
   };

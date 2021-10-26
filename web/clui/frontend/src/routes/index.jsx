@@ -2,7 +2,6 @@
 Copyright <holder> All Rights Reserved
 SPDX-License-Identifier: Apache-2.0
 */
-import { withTranslation } from "react-i18next";
 import Dashboard from "../pages/dashboard/Dashboard";
 import Flavors from "../pages/flavors/Flavors";
 import CreateFlavors from "../pages/flavors/CreateFlavors";
@@ -37,11 +36,18 @@ import Hypers from "../pages/hypers/Hypers";
 import ModifySubnets from "../pages/subnets/ModifySubnets";
 import ModifyGateways from "../pages/gateways/ModifyGateways";
 import ModifySecgroups from "../pages/secgroups/ModifySecgroups";
+import Registers from "../pages/registers/Registers";
+import Help from "../pages/help/Help";
+import Profile from "../pages/profile/Profile";
 export const InitRoutes = [
   {
     path: "/login",
     component: Login,
     //exact: true,
+  },
+  {
+    path: "/registers",
+    component: Registers,
   },
   {
     path: "/404",
@@ -51,9 +57,31 @@ export const InitRoutes = [
 
 export const mainRoutes = [
   {
+    path: "/help",
+    component: Help,
+    title: "Help",
+    exact: true,
+    icon: "bulb",
+
+    //icon:''
+  },
+  {
+    path: "/profile",
+    component: Profile,
+    title: "Profile",
+    exact: true,
+    icon: "profile",
+
+    //icon:''
+  },
+  {
     path: "/dashboard",
     component: Dashboard,
     title: "Dashboard",
+    exact: true,
+    icon: "dashboard",
+    isShow: true,
+    item: "dashboard",
     //icon:''
   },
   {
@@ -65,15 +93,15 @@ export const mainRoutes = [
     isShow: true,
     item: "auth",
   },
-   {
-     path: "/users/new",
-     component: CreateUser,
-     exact: true,
-     isShow: false,
-     item: "auth",
-   },
   {
-    path: "/users/new/:id?",
+    path: "/users/new",
+    component: CreateUser,
+    exact: true,
+    isShow: false,
+    item: "auth",
+  },
+  {
+    path: "/users/:id?",
     component: ModifyUser,
     exact: true,
     isShow: false,
@@ -96,7 +124,7 @@ export const mainRoutes = [
     item: "auth",
   },
   {
-    path: "/orgs/new/:id?",
+    path: "/orgs/:id?",
     component: ModifyOrg,
     exact: true,
     isShow: false,
@@ -126,7 +154,13 @@ export const mainRoutes = [
     item: "compute",
   },
   {
-    path: "/instances/new/:id?",
+    path: "/instances/new",
+    component: ModifyInstances,
+    isShow: false,
+    item: "compute",
+  },
+  {
+    path: "/instances/:id?",
     component: ModifyInstances,
     isShow: false,
     item: "compute",
@@ -168,7 +202,13 @@ export const mainRoutes = [
     item: "platform",
   },
   {
-    path: "/openshifts/new/:id?",
+    path: "/openshifts/new",
+    component: ModifyOpenshifts,
+    isShow: false,
+    item: "platform",
+  },
+  {
+    path: "/openshifts/:id?",
     component: ModifyOpenshifts,
     isShow: false,
     item: "platform",
@@ -182,7 +222,13 @@ export const mainRoutes = [
     item: "platform",
   },
   {
-    path: "/registrys/new/:id?",
+    path: "/registrys/new",
+    component: ModifyRegistrys,
+    isShow: false,
+    item: "platform",
+  },
+  {
+    path: "/registrys/:id?",
     component: ModifyRegistrys,
     isShow: false,
     item: "platform",
@@ -197,7 +243,13 @@ export const mainRoutes = [
     item: "network",
   },
   {
-    path: "/subnets/new/:id?",
+    path: "/subnets/new",
+    component: ModifySubnets,
+    isShow: false,
+    item: "network",
+  },
+  {
+    path: "/subnets/:id?",
     component: ModifySubnets,
     isShow: false,
     item: "network",
@@ -211,11 +263,12 @@ export const mainRoutes = [
     item: "network",
   },
   {
-    path: "/floatingips/new/:id?",
+    path: "/floatingips/new",
     component: CreateFloatingips,
     isShow: false,
     item: "network",
   },
+
   {
     path: "/gateways",
     component: Gateways,
@@ -225,7 +278,13 @@ export const mainRoutes = [
     item: "network",
   },
   {
-    path: "/gateways/new/:id?",
+    path: "/gateways/new",
+    component: ModifyGateways,
+    isShow: false,
+    item: "network",
+  },
+  {
+    path: "/gateways/:id?",
     component: ModifyGateways,
     isShow: false,
     item: "network",
@@ -239,7 +298,13 @@ export const mainRoutes = [
     item: "network",
   },
   {
-    path: "/secgroups/new/:id?",
+    path: "/secgroups/new",
+    component: ModifySecgroups,
+    isShow: false,
+    item: "network",
+  },
+  {
+    path: "/secgroups/:id?",
     component: ModifySecgroups,
     isShow: false,
     item: "network",
@@ -253,7 +318,13 @@ export const mainRoutes = [
     item: "network",
   },
   {
-    path: "/secgroups/:id/secrules/new/:id?",
+    path: "/secgroups/:id/secrules/new",
+    component: ModifySecrules,
+    isShow: false,
+    item: "network",
+  },
+  {
+    path: "/secgroups/:id/secrules/:id?",
     component: ModifySecrules,
     isShow: false,
     item: "network",

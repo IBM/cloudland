@@ -50,10 +50,6 @@ class ModifyRegistrys extends Component {
       if (!err) {
         if (this.props.match.params.id) {
           editRegInfor(this.props.match.params.id, values).then((res) => {
-            console.log("editRegInfor:", res);
-            // _this.setState({
-            //   isShowEdit: ! this.state.isShowEdit,
-            // });
             this.props.history.push("/registrys");
           });
         } else {

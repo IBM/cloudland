@@ -52,7 +52,6 @@ class Instances extends Component {
       zone: [],
     };
   }
-
   columns = [
     {
       title: this.props.t("ID"),
@@ -129,13 +128,17 @@ class Instances extends Component {
       title: this.props.t("Hyper"),
       dataIndex: "Hyper",
       align: "center",
-      className: sessionStorage.loginInfo.isAdmin ? "" : "columnHidden",
+      className: JSON.parse(sessionStorage.loginInfo).isAdmin
+        ? ""
+        : "columnHidden",
     },
     {
       title: this.props.t("Owner"),
       dataIndex: "OwnerInfo.name",
       align: "center",
-      className: sessionStorage.loginInfo.isAdmin ? "" : "columnHidden",
+      className: JSON.parse(sessionStorage.loginInfo).isAdmin
+        ? ""
+        : "columnHidden",
     },
     {
       title: this.props.t("Zone"),
@@ -152,7 +155,7 @@ class Instances extends Component {
             <Dropdown.Button
               type="primary"
               onClick={() => {
-                this.props.history.push("/instances/new/" + record.ID);
+                this.props.history.push("/instances/" + record.ID);
               }}
               overlay={this.menu(record.ID)}
             >
@@ -190,6 +193,7 @@ class Instances extends Component {
       },
     },
   ];
+  //dropdown list
   menu = (r) => (
     <Menu onClick={this.handleModal.bind(this, r)}>
       <Menu.Item key="changeHostname">
@@ -202,7 +206,7 @@ class Instances extends Component {
       <Menu.Item key="stopVm">{this.props.t("StopVM")}</Menu.Item>
     </Menu>
   );
-
+  // handle modal to pop up conresponding action while clicking dropdown
   handleModal = (id, { key }) => {
     this.handleChange(id);
     if (
@@ -301,12 +305,14 @@ class Instances extends Component {
       this.setState((sta) => (sta.everyData = res.instance));
     });
   };
+  //closed modal
   onCancel = () => {
     this.setState({
       visible: false,
       key: Math.random(),
     });
   };
+  //open modal
   handleOk = () => {
     this.setState({
       visible: false,
@@ -331,7 +337,7 @@ class Instances extends Component {
         });
       });
   }
-
+  //it's to load data to get instance data
   loadData = (page, pageSize) => {
     const _this = this;
     const offset = (page - 1) * pageSize;
@@ -354,11 +360,13 @@ class Instances extends Component {
         });
       });
   };
+  //go to selected page while clicking
   toSelectchange = (page, num) => {
     const offset = (page - 1) * num;
     const limit = num;
     this.loadData(offset, limit);
   };
+  //pageSize changed
   onPaginationChange = (e) => {
     this.loadData(e, this.state.pageSize);
   };
@@ -369,7 +377,7 @@ class Instances extends Component {
   createInstances = () => {
     this.props.history.push("/instances/new");
   };
-
+  //Form in the modal
   modalFormList = (data) => {
     const modalFormList = [
       {
@@ -389,7 +397,9 @@ class Instances extends Component {
         name: "hyper",
         field: this.props.t("MigrateInstance"),
         // disabled:true,
-        initialValue: data.Hyper,
+        initialValue: JSON.parse(sessionStorage.loginInfo).isAdmin
+          ? data.Hyper
+          : "",
         id: data.ID,
       },
       {
@@ -414,6 +424,7 @@ class Instances extends Component {
     ];
     return modalFormList;
   };
+  //form submit to create instance or edit instance
   handleSubmit = (data) => {
     const id = this.state.everyData && this.state.everyData.ID;
     if (id) {
@@ -475,6 +486,7 @@ class Instances extends Component {
       visible: false,
     });
   };
+  //show the filtered results while input keyword
   filter = (event) => {
     this.getFilteredList(event.target.value);
   };
@@ -502,6 +514,7 @@ class Instances extends Component {
   render() {
     const { everyData } = this.state;
     const { t } = this.props;
+
     return (
       <div>
         <Row>

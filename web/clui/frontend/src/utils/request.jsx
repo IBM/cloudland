@@ -9,7 +9,6 @@ import React from "react";
 import { message } from "antd";
 import axios from "axios";
 import { getToken } from "./auth";
-
 const instance = axios.create({
   baseURL: window.config.baseUrl,
   timeout: 5000,
@@ -21,8 +20,6 @@ const instance = axios.create({
 //全局请求拦截，发送请求之前执行
 instance.interceptors.request.use(
   (config) => {
-    console.log("getToken():", getToken());
-
     if (getToken()) {
       config.headers.common["X-Auth-Token"] = getToken();
     } else {
@@ -41,14 +38,12 @@ instance.interceptors.request.use(
 //请求返回之后执行
 instance.interceptors.response.use(
   (response) => {
-    console.log("axios-response", response);
     return response.data;
   },
   (error) => {
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          console.log("Need Login");
           window.location = "/login";
           break;
         default:
@@ -56,10 +51,7 @@ instance.interceptors.response.use(
           break;
       }
     }
-    console.log("axios-error", error.response);
     return Promise.reject(error);
-    // console.log("axios-error", error.response);
-    // return Promise.reject(error);
   }
 );
 export default instance;
