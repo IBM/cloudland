@@ -23,7 +23,6 @@ const layoutForm = {
 class ModifyUser extends Component {
   constructor(props) {
     super(props);
-    console.log("ModifyUser~~", props);
     this.state = {
       isShowEdit: false,
       currentData: [],
@@ -32,7 +31,6 @@ class ModifyUser extends Component {
     let that = this;
     if (props.match.params.id) {
       getUserInforById(props.match.params.id).then((res) => {
-        console.log("getUserInforById-res:", res);
         that.setState({
           currentData: res,
           members: res.Members.filter((item) => {
@@ -48,16 +46,11 @@ class ModifyUser extends Component {
     this.props.history.push("/users");
   };
   handleSubmit = (e) => {
-    console.log("handleSubmit:", e);
     e.preventDefault();
     this.props.form.validateFieldsAndScroll((err, values) => {
       if (!err) {
         console.log("handleSubmit-value:", values);
-        console.log("提交");
-        //const _this = this;
         editUserInfor(this.props.match.params.id, values).then((res) => {
-          console.log("editUserInfor:", res);
-
           this.props.history.push("/users");
         });
       } else {
@@ -121,8 +114,6 @@ class ModifyUser extends Component {
                 placeholder={t("Pleaseselect")}
               >
                 {this.state.members.map((item, i) => {
-                  console.log("item.OrgName----", item.OrgName);
-
                   return (
                     <Select.Option key={i} value={item.OrgName}>
                       {item.OrgName}

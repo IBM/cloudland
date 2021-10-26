@@ -42,7 +42,7 @@ class ModifyGateways extends Component {
 
   componentDidMount() {
     const _this = this;
-
+    //get subnet data while initting data
     subnetsListApi()
       .then((res) => {
         _this.setState({
@@ -56,6 +56,8 @@ class ModifyGateways extends Component {
           error: error,
         });
       });
+    //get hyper data while initting data
+
     hypersListApi()
       .then((res) => {
         _this.setState({
@@ -78,6 +80,7 @@ class ModifyGateways extends Component {
         });
       });
   }
+  //filter zone name while having duplicated zones
   filterZones = () => {
     var initZone = [];
     var newZone = [];
@@ -92,6 +95,7 @@ class ModifyGateways extends Component {
       zones: newZone,
     });
   };
+  //submit form
   handleSubmit = (event) => {
     event.preventDefault();
     this.props.form.validateFieldsAndScroll((err, values) => {

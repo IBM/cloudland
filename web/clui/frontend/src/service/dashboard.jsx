@@ -7,12 +7,10 @@ SPDX-License-Identifier: Apache-2.0
 */
 
 import request from "../utils/request";
-
-//login api
-export function loginApi(user) {
+export function getResourceData(paramsObj) {
   return request({
-    url: "/api/login",
-    method: "post",
-    data: user,
+    url: "/api/dashboard/getdata",
+    method: "get",
+    params: paramsObj ? paramsObj : {},
   });
 }

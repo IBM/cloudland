@@ -11,7 +11,6 @@ import { compose } from "redux";
 import { Form, Card, Input, Button, message } from "antd";
 import { createKeyApi } from "../../service/keys";
 import "./keys.css";
-import { T } from "antd/lib/upload/utils";
 const layoutButton = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },

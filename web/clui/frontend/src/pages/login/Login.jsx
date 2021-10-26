@@ -11,6 +11,8 @@ import logoLoginImg from "../../assets/img/cland.png";
 import "./Login.css";
 import { setAll, setToken } from "../../utils/auth";
 import { loginApi } from "../../service/auth";
+import { Link } from "react-router-dom";
+
 import { compose } from "redux";
 import { withTranslation } from "react-i18next";
 const layoutForm = {
@@ -36,7 +38,7 @@ class Login extends Component {
             } else {
               message.error(this.props.t("Failure_to_Login"));
             }
-            console.log(res);
+            console.log("login", res);
           })
 
           .catch((err) => {
@@ -105,7 +107,7 @@ class Login extends Component {
             >
               {t("Login")}
             </Button>
-            {t("Or")} <a href="">{t("Register now")}</a>
+            {t("Or")} <Link to={`/registers`}>{t("Register now")}</Link>
           </Form.Item>
         </Form>
       </Card>

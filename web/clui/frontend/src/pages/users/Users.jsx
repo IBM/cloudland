@@ -16,7 +16,6 @@ const { Search } = Input;
 class Users extends Component {
   constructor(props) {
     super(props);
-    console.log("Users.props:", this.props);
     this.state = {
       users: [],
       filteredList: [],
@@ -61,7 +60,7 @@ class Users extends Component {
               type="primary"
               size="small"
               onClick={() => {
-                this.props.history.push("/users/new/" + record.ID);
+                this.props.history.push("/users/" + record.ID);
               }}
             >
               {t("Edit")}
@@ -70,11 +69,7 @@ class Users extends Component {
               title={t("Doyouwanttodelete")}
               okText={t("yes")}
               cancelText={t("no")}
-              onCancel={() => {
-                console.log("Cancel delete.");
-              }}
               onConfirm={() => {
-                console.log("Confirm delete.");
                 delUserInfor(record.ID).then((res) => {
                   message.success(res.Msg);
                   this.loadData(this.state.current, this.state.pageSize);
@@ -93,7 +88,6 @@ class Users extends Component {
 
   componentDidMount() {
     const _this = this;
-    console.log("componentDidMount:", this);
     userListApi()
       .then((res) => {
         _this.setState({
@@ -102,7 +96,6 @@ class Users extends Component {
           isLoaded: true,
           total: res.total,
         });
-        console.log(res);
       })
       .catch((error) => {
         _this.setState({
@@ -111,15 +104,13 @@ class Users extends Component {
         });
       });
   }
-
+  //it's to load data to get user data
   loadData = (page, pageSize) => {
-    console.log("user-loadData~~", page, pageSize);
     const _this = this;
     const offset = (page - 1) * pageSize;
     const limit = pageSize;
     userListApi(offset, limit)
       .then((res) => {
-        console.log("loadData", res);
         _this.setState({
           users: res.users,
           filteredList: res.users,
@@ -128,7 +119,6 @@ class Users extends Component {
           pageSize: limit,
           current: page,
         });
-        console.log("loadData-page-", page, _this.state);
       })
       .catch((error) => {
         _this.setState({
@@ -137,42 +127,21 @@ class Users extends Component {
         });
       });
   };
-
+  //go to selected page while clicking
   toSelectchange = (page, num) => {
-    console.log("toSelectchange", page, num);
-    const _this = this;
     const offset = (page - 1) * num;
     const limit = num;
-    console.log("user-toSelectchange~limit:", offset, limit);
-    userListApi(offset, limit)
-      .then((res) => {
-        console.log("loadData", res);
-        _this.setState({
-          users: res.users,
-          filteredList: res.users,
-          isLoaded: true,
-          total: res.total,
-          pageSize: limit,
-          current: page,
-        });
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
+    this.loadData(offset, limit);
   };
 
   createUser = () => {
     this.props.history.push("/users/new");
   };
+  //show the filtered results while input keyword
   filter = (event) => {
-    console.log("event-filter", event.target.value);
     this.getFilteredList(event.target.value);
   };
   getFilteredList = (word) => {
-    console.log("getFilteredListr-keyword", word);
     var keyword = word.toLowerCase();
     if (keyword) {
       this.setState({
@@ -182,8 +151,6 @@ class Users extends Component {
             item.username.toLowerCase().indexOf(keyword) > -1
         ),
       });
-
-      console.log("filteredList", this.state.filteredList);
     } else {
       this.setState({
         filteredList: this.state.users,

@@ -101,14 +101,7 @@ class Images extends Component {
                 });
               }}
             >
-              <Button
-                style={{ margin: "0 1rem" }}
-                type="danger"
-                size="small"
-                onClick={() => {
-                  console.log("用户", record.ID);
-                }}
-              >
+              <Button style={{ margin: "0 1rem" }} type="danger" size="small">
                 {t("Delete")}
               </Button>
             </Popconfirm>
@@ -139,6 +132,7 @@ class Images extends Component {
   createImages = () => {
     this.props.history.push("/images/new");
   };
+  //it's to load data to get image data
   loadData = (page, pageSize) => {
     const _this = this;
     const offset = (page - 1) * pageSize;
@@ -161,17 +155,20 @@ class Images extends Component {
         });
       });
   };
+  //go to selected page while clicking
   toSelectchange = (page, num) => {
     const offset = (page - 1) * num;
     const limit = num;
     this.loadData(offset, limit);
   };
+  //pageSize changed
   onPaginationChange = (e) => {
     this.loadData(e, this.state.pageSize);
   };
   onShowSizeChange = (current, pageSize) => {
     this.toSelectchange(current, pageSize);
   };
+  //show the filtered results while input keyword
   filter = (event) => {
     this.getFilteredList(event.target.value);
   };

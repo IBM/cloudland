@@ -183,6 +183,7 @@
   "Edit_User": "编辑用户",
 
   "Update_User": "更新用户",
+  "Register_User": "注册用户",
   "Confirm": "重复",
   "Create New Volume": "创建新的卷",
   "Instance Address": "实例地址",
@@ -300,5 +301,6 @@
   "Doyouwanttodelete": "确定要删除?",
   "Or": "或",
   "Format": "格式",
-  "Pleaseselect": "请选择"
+  "Pleaseselect": "请选择",
+  "Dashboard": "控制面板"
 }

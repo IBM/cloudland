@@ -15,6 +15,8 @@ const layoutForm = {
   layouttype: "horizontal",
 };
 const { Option } = Select;
+// const loginInfor = JSON.parse(sessionStorage.loginInfo);
+
 class InstModal extends Component {
   constructor(props) {
     super(props);
@@ -40,19 +42,21 @@ class InstModal extends Component {
           error: error,
         });
       });
-    hypersListApi()
-      .then((res) => {
-        _this.setState({
-          hypers: res.hypers,
-          isLoaded: true,
+    if (JSON.parse(sessionStorage.loginInfo).isAdmin) {
+      hypersListApi()
+        .then((res) => {
+          _this.setState({
+            hypers: res.hypers,
+            isLoaded: true,
+          });
+        })
+        .catch((error) => {
+          _this.setState({
+            isLoaded: false,
+            error: error,
+          });
         });
-      })
-      .catch((error) => {
-        _this.setState({
-          isLoaded: false,
-          error: error,
-        });
-      });
+    }
   }
   handleOk = () => {
     const p = this;
@@ -69,7 +73,7 @@ class InstModal extends Component {
 
     close();
   };
-  getOptionList(data) {
+  getOptionFlavorList(data) {
     if (!data) {
       return [];
     }
@@ -127,6 +131,7 @@ class InstModal extends Component {
             sm: { span: 16 },
           },
         };
+
         if (item.field === this.props.title) {
           if (item.type === "INPUT") {
             const INPUT = (
@@ -160,7 +165,7 @@ class InstModal extends Component {
                         initialValue, // true | false
                       })(
                         <Select style={{ width }} placeholder={placeholder}>
-                          {this.getOptionList(this.state.flavors)}
+                          {this.getOptionFlavorList(this.state.flavors)}
                         </Select>
                       )}
                     </Form.Item>
@@ -169,7 +174,12 @@ class InstModal extends Component {
                 }
                 case "hyper": {
                   const SELECT = (
-                    <Form.Item label={label} name={name} {...formItemLayout}>
+                    <Form.Item
+                      label={label}
+                      name={name}
+                      {...formItemLayout}
+                      hidden={!JSON.parse(sessionStorage.loginInfo).isAdmin}
+                    >
                       {getFieldDecorator(`${name}`, {
                         initialValue, // true | false
                       })(
@@ -214,6 +224,7 @@ class InstModal extends Component {
 
   render() {
     const p = this;
+
     return (
       <div>
         <Modal
