@@ -34,7 +34,6 @@ class Dashboard extends Component {
   componentDidMount() {
     getResourceData()
       .then((res) => {
-        console.log("res-get", res);
         this.setState({
           cpu_avail: res.cpu_avail,
           cpu_used: res.cpu_used,
@@ -90,7 +89,6 @@ class Dashboard extends Component {
       normal: {
         label: {
           formatter: (params) => {
-            console.log("formatter-pa", params);
             let res = params.name + ":" + params.value;
             if (
               params.name.indexOf("volume") > -1 ||
