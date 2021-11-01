@@ -51,7 +51,7 @@ class Dashboard extends Component {
         });
       })
       .catch((error) => {
-        console.log("error-get", error);
+        console.log("Error,get resource date error:", error);
       });
   }
   getOption = () => {
