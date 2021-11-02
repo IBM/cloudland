@@ -19,7 +19,7 @@ server {
     ssl_stapling_verify on;
 
     location / {
-        index index.html;
+        try_files $uri /index.html;
     }
 
     location /api {
