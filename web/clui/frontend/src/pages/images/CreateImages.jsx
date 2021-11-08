@@ -60,7 +60,7 @@ class CreateImages extends Component {
             this.props.history.push("/images");
           })
           .catch((err) => {
-            console.log("handleSubmit-error:", err);
+            console.log("Error,Create image handleSubmit-error:", err);
           });
       } else {
         message.error(" input wrong information");
