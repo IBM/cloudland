@@ -70,7 +70,7 @@ class CreateFloatingips extends Component {
             this.props.history.push("/floatingips");
           })
           .catch((err) => {
-            console.log("handleSubmit-error:", err);
+            console.log("Error,Create floating IP handleSubmit-error:", err);
           });
       } else {
         message.error(" input wrong information");
