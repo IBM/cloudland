@@ -51,7 +51,7 @@ class CreateFlavors extends Component {
             this.props.history.push("/flavors");
           })
           .catch((err) => {
-            console.log("handleSubmit-error:", err);
+            console.log("Error,handleSubmit-error:", err);
           });
       } else {
         message.error(" input wrong information");
