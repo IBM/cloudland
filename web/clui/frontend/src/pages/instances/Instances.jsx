@@ -238,7 +238,7 @@ class Instances extends Component {
               this.loadData(this.state.current, this.state.pageSize);
             })
             .catch((error) => {
-              console.log(error);
+              console.log("Error,Get instance info by id error:",error);
             });
           message.success("Start VM successfully");
         }
@@ -259,7 +259,7 @@ class Instances extends Component {
               this.loadData(this.state.current, this.state.pageSize);
             })
             .catch((error) => {
-              console.log(error);
+              console.log("Error,Get instance info by id error:",error);
             });
           message.success("Stop VM successfully");
         }
@@ -478,7 +478,7 @@ class Instances extends Component {
           this.loadData(this.state.current, this.state.pageSize);
         })
         .catch((err) => {
-          console.log("handleUpdateList-error:", err);
+          console.log("Error, Edit instance info handleUpdateList-error:", err);
         });
     }
 
