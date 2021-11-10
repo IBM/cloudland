@@ -101,7 +101,7 @@ class ModifyInstances extends Component {
               this.props.history.push("/instances");
             })
             .catch((err) => {
-              console.log("handleSubmit-error:", err);
+              console.log("Error, Create instance handleSubmit-error:", err);
             });
         }
       } else {
@@ -139,7 +139,7 @@ class ModifyInstances extends Component {
         this.props.form.resetFields();
       })
       .catch((err) => {
-        console.log("createKey-error:", err);
+        console.log("Error, Create Key error:", err);
       });
   };
 
