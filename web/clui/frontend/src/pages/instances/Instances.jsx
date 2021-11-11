@@ -88,6 +88,7 @@ class Instances extends Component {
         </span>
       ),
     },
+    /*
     {
       title: this.props.t("Console"),
       width: "60px",
@@ -110,6 +111,7 @@ class Instances extends Component {
         // </div>
       ),
     },
+    */
     {
       title: this.props.t("Status"),
       align: "center",
