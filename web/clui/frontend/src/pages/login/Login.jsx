@@ -38,12 +38,11 @@ class Login extends Component {
             } else {
               message.error(this.props.t("Failure_to_Login"));
             }
-            console.log("login", res);
           })
 
           .catch((err) => {
             // message.error(err.ErrorMsg);
-            console.log(err);
+            console.log("Error,login error:",err);
           });
       }
     });
