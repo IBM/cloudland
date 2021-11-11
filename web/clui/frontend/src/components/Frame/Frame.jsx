@@ -53,7 +53,6 @@ class Frame extends Component {
         }}
       >
         <Menu.Item key="help">{t("Help")}</Menu.Item>
-        <Menu.Item key="profile">Profile</Menu.Item>
         <Menu.Item key="logOut">{t("Logout")}</Menu.Item>
       </Menu>
     );
