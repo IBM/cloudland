@@ -40,10 +40,10 @@ class CreateKey extends Component {
             this.props.history.push("/keys");
           })
           .catch((err) => {
-            console.log("handleSubmit-error:", err);
+            console.log("Error, Create key handleSubmit-error:", err);
           });
       } else {
-        message.error(" input wrong information");
+        message.error("Input wrong key information.");
       }
     });
   };
