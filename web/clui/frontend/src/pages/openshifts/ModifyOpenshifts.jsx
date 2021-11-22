@@ -148,7 +148,7 @@ class ModifyOpenshifts extends Component {
               this.props.history.push("/openshifts");
             })
             .catch((err) => {
-              console.log("handleSubmit-error:", err);
+              console.log("Error, update openshift handleSubmit-error:", err);
             });
         } else {
           createOcpApi(values)
@@ -156,11 +156,11 @@ class ModifyOpenshifts extends Component {
               this.props.history.push("/openshifts");
             })
             .catch((err) => {
-              console.log("handleSubmit-error:", err);
+              console.log("Error, create openshift handleSubmit-error:", err);
             });
         }
       } else {
-        message.error(" input wrong information");
+        message.error("Error,input wrong information");
       }
     });
   };
