@@ -41,7 +41,7 @@ class CreateOrg extends Component {
             this.props.history.push("/orgs");
           })
           .catch((err) => {
-            console.log("handleSubmit-error:", err);
+            console.log("Error, create org handleSubmit-error:", err);
           });
       } else {
         message.error(" input wrong information");
