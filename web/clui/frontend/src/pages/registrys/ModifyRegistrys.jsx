@@ -59,7 +59,7 @@ class ModifyRegistrys extends Component {
               this.props.history.push("/registrys");
             })
             .catch((err) => {
-              console.log("handleSubmit-error:", err);
+              console.log("Error create registry handleSubmit-error:", err);
             });
         }
       } else {
