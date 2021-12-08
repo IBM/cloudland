@@ -57,7 +57,7 @@ class ModifySecgroups extends Component {
               this.props.history.push("/secgroups");
             })
             .catch((err) => {
-              console.log("handleSubmit-error:", err);
+              console.log("Error, create secgroup handleSubmit-error:", err);
             });
         }
       } else {
