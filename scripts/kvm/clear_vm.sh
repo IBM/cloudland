@@ -5,6 +5,7 @@ source ../cloudrc
 
 [ $# -lt 1 ] && die "$0 <vm_ID>"
 
+ID=$1
 vm_ID=inst-$1
 vm_xml=$(virsh dumpxml $vm_ID)
 virsh undefine $vm_ID
@@ -33,4 +34,4 @@ rm -f ${image_dir}/${vm_ID}.*
 rm -f ${cache_dir}/meta/${vm_ID}.iso
 rm -rf $xml_dir/$vm_ID
 sidecar span log $span "Callback: `basename $0` '$vm_ID'"
-echo "|:-COMMAND-:| $(basename $0) '$1'"
+echo "|:-COMMAND-:| $(basename $0) '$ID'"

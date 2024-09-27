@@ -739,12 +739,9 @@ func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
 			return
 		}
 	}
-	if err = a.deleteInterfaces(ctx, instance); err != nil {
-		log.Println("DB failed to delete interfaces, %v", err)
-		return
-	}
-	if err = db.Delete(&model.Instance{Model: model.Model{ID: id}}).Error; err != nil {
-		log.Println("Failed to delete instance, %v", err)
+	err = db.Model(instance).Update("status", "deleting").Error
+	if err != nil {
+		log.Println("Mark vm as deleting failed, %v", err)
 		return
 	}
 	return

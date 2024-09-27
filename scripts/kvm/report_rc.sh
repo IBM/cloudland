@@ -17,7 +17,7 @@ network=0
 total_network=0
 load=$(w | head -1 | cut -d',' -f5 | cut -d'.' -f1 | xargs)
 total_load=0
-#vtep_ip=$(ifconfig $vxlan_interface | grep 'inet ' | awk '{print $2}')
+vtep_ip=$(ifconfig $vxlan_interface | grep 'inet ' | awk '{print $2}')
 
 function probe_arp()
 {
