@@ -18,9 +18,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/IBM/cloudland/web/clui/grpcs"
+	"github.com/IBM/cloudland/web/clui/rpcs"
 	"github.com/IBM/cloudland/web/clui/model"
-	"github.com/IBM/cloudland/web/clui/scripts"
 	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/go-macaron/session"
 	"github.com/jinzhu/gorm"
@@ -463,22 +462,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 }
 
 func hyperExecute(ctx context.Context, control, command string) (err error) {
-	if control == "" {
-		return
-	}
-	sciClient := grpcs.RemoteExecClient()
-	sciReq := &scripts.ExecuteRequest{
-		Id:      100,
-		Extra:   0,
-		Control: control,
-		Command: command,
-	}
-	_, err = sciClient.Execute(ctx, sciReq)
-	if err != nil {
-		log.Println("SCI client execution failed, %v", err)
-		return
-	}
-	return
+	return rpcs.HyperExecute(ctx, control, command)
 }
 
 func (a *InstanceAdmin) deleteInterfaces(ctx context.Context, instance *model.Instance) (err error) {

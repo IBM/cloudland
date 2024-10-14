@@ -53,6 +53,7 @@ func Run() (err error) {
 	m := New()
 	cert := viper.GetString("api.cert")
 	key := viper.GetString("api.key")
+	log.Printf("cert: %s, key: %s\n", cert, key)
 	if cert != "" && key != "" {
 		listen := viper.GetString("api.listen")
 		http.ListenAndServeTLS(listen, cert, key, m)

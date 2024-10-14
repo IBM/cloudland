@@ -8,9 +8,6 @@ version:
 build: version
 	go build -ldflags "-X \"main.Version=`cat .version`\""
 
-proto:
-	./proto.sh
-
 test:
 	go test ./...
 

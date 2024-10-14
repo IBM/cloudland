@@ -6,17 +6,21 @@ SPDX-License-Identifier: Apache-2.0
 
 #include <unistd.h>
 
-#include "rpcworker.hpp"
 #include "packer.hpp"
 #include "log.hpp"
+#include "rpcworker.hpp"
 
 #include <thread>
+#include <jsoncpp/json/json.h>
 
 #define CLOUDLET_PATH "/opt/cloudland/bin/cloudlet"
 #define CLOUD_HOST_FILE "/opt/cloudland/etc/host.list"
-#define GRPC_SERVER_ENDPOINT "0.0.0.0:50051"
-#define GRPC_REMOTE_ENDPOINT "localhost:50050"
+#define RPC_SERVER_ENDPOINT "0.0.0.0:5006"
+#define RPC_REMOTE_ENDPOINT "localhost:5005"
 
+#include "httplib.h"
+
+/*
 Status RemoteExecServiceImpl::Transmit(ServerContext* context, ServerReader<FileChunk>* reader, TransmitAck* ack)
 {
     FileChunk chunk;
@@ -81,6 +85,7 @@ Status RemoteExecServiceImpl::Transmit(ServerContext* context, ServerReader<File
     ack->set_status("OK");
     return Status::OK;
 }
+*/
 
 int RemoteExecServiceImpl::exec_cmd(int id, char *cmd)
 {
@@ -98,13 +103,18 @@ int RemoteExecServiceImpl::exec_cmd(int id, char *cmd)
     return 0;
 }
 
-Status RemoteExecServiceImpl::Execute(ServerContext* context, const ExecuteRequest* request, ExecuteReply* reply)
+void RemoteExecServiceImpl::Execute(const Request &request, Response &response)
 {
-    int msgID = request->id();
-    int extra = request->extra();
-    char *control = (char *)request->control().c_str();
-    char *command = (char *)request->command().c_str();
-    string trace = "";
+    Json::Reader reader;
+    Json::Value value;
+    if (!reader.parse(request.body, value)) {
+        response.status = BadRequest_400;
+        response.set_content(R"({"error": "fail to parse"})", "application/json");
+    }
+    int msgID = value["Id"].asInt();
+    int extra = value["Extra"].asInt();
+    char *control = strdup(value["Control"].asString().c_str());
+    char *command = strdup(value["Command"].asString().c_str());
     Packer packer;
     packer.packInt(msgID);
     packer.packInt(extra);
@@ -119,17 +129,10 @@ Status RemoteExecServiceImpl::Execute(ServerContext* context, const ExecuteReque
     char *lsgrp = strstr(control, "lsgrp=");
     char *term = strstr(control, "term=");
     char *callback = strstr(control, "callback");
-    multimap<grpc::string_ref, grpc::string_ref> metadata = context->client_metadata();
-    std::multimap<grpc::string_ref, grpc::string_ref>::iterator it = metadata.find("uber-trace-id");
-    if (it != metadata.end()) {
-        trace = string(it->second.data(), it->second.length());
-    }
-    packer.packStr(trace);
     char *message = packer.getPackedMsg();
     int length = packer.getPackedMsgLen();
 
-    reply->set_status("OK");
-    log_info("Received message id: %d, extra: %d, control: %s, command: %s, trace %s: ", msgID, extra, control, command, trace.c_str());
+    log_info("Received message id: %d, extra: %d, control: %s, command: %s", msgID, extra, control, command);
     try {
         if (inter != NULL) {
             int node = -1;
@@ -183,19 +186,27 @@ Status RemoteExecServiceImpl::Execute(ServerContext* context, const ExecuteReque
             sciNet.freeGroup(name);
         } else if (lsgrp != NULL) {
             string groupStr = sciNet.listGroup();
-            reply->set_status(groupStr);
+	    string content = R"({"groups": )" + groupStr + "}";
+            response.set_content(content, "application/json");
+	    return;
         } else if (term != NULL) {
             running = false;
         } else if (callback != NULL) {
             exec_cmd(extra, command);
         } else {
-            reply->set_status("Not Found");
+            response.status = NotFound_404;
+	    response.set_content(R"({"status": "Not Found"})", "application/json");
+	    return;
         }
     } catch (CommonException &e) {
         log_error(e.getErrMsg());
     }
+    response.set_content(R"({"status": "OK"})", "application/json");
+}
 
-    return Status::OK;
+FrontBack::FrontBack(string rHost, int rPort)
+	: remoteHost(rHost), remotePort(rPort)
+{
 }
 
 void FrontBack::ExecuteAsync(int msg_id, int extra, char *ctl, char *cmd, char *trace)
@@ -214,34 +225,34 @@ void FrontBack::ExecuteAsync(int msg_id, int extra, char *ctl, char *cmd, char *
 
 string FrontBack::Execute(int msg_id, int extra, char *ctl, char *cmd, char *trace)
 {
-	ExecuteRequest request;
+    Json::Value content;
+    Json::StreamWriterBuilder writerBuilder;
+    ostringstream cstream;
+    unique_ptr<Json::StreamWriter> jsonWriter(writerBuilder.newStreamWriter());
 
-	request.set_id(msg_id);
-	request.set_extra(extra);
-	request.set_control(ctl);
-	request.set_command(cmd);
-	ExecuteReply reply;
+    content["id"] = msg_id;
+    content["extra"] = extra;
+    content["control"] = ctl;
+    content["command"] = cmd;
+    jsonWriter->write(content, &cstream);
 
-	grpc_connectivity_state state;
-	int retried = 0;
-	state = connChannel->GetState(true);
-	while ((state != GRPC_CHANNEL_READY) && (state != GRPC_CHANNEL_CONNECTING) && (retried < 10)) {
-		usleep(1000);
-		state = connChannel->GetState(true);
-		retried++;
-	} 
-	ClientContext context;
-    context.AddMetadata("uber-trace-id", trace);
-	Status status = stub_->Execute(&context, request, &reply);
-
-	// Act upon its status.
-	if (status.ok()) {
-		return reply.status();
-	} else {
-        string errMsg = "RPC failed: " + status.error_message();
-		log_info("RPC failed with code = %d, message = %s", status.error_code(), status.error_message().c_str());
-		return errMsg;
-	}
+    httplib::Client cli(remoteHost, remotePort);
+//    cli.enable_server_certificate_verification(false);
+    auto res = cli.Post("/internal/execute", cstream.str(), "application/json");
+    if (res.error() != httplib::Error::Success) {
+            string errMsg = "Failed to call RPC";
+            log_info("Failed to call RPC, status: %d", res.error());
+            return errMsg;
+    } 
+    Json::Reader reader;
+    Json::Value value;
+    if ((res->status != OK_200) || (!reader.parse(res->body, value))) {
+        string errMsg = "Failed to parse response body";
+        log_info("Failed to parse response body, status: %d, body: %s", res->status, res->body);
+        return errMsg;
+    }
+    string status = value["status"].asString();
+    return status;
 }
 
 RemoteExecServiceImpl::RemoteExecServiceImpl(NetLayer & sci)
@@ -250,20 +261,30 @@ RemoteExecServiceImpl::RemoteExecServiceImpl(NetLayer & sci)
 }
 
 RpcWorker::RpcWorker()
-    : service(sciNet), rpcClient(NULL)
+    : rpcClient(NULL)
 {
     initConn();
 }
 
 void RpcWorker::initConn() {
-    char *envp = getenv("GRPC_REMOTE_ENDPOINT");
+    char *envp = getenv("RPC_REMOTE_ENDPOINT");
     if (envp == NULL) {
-        envp = GRPC_REMOTE_ENDPOINT;
+        envp = RPC_REMOTE_ENDPOINT;
     }
     if (rpcClient != NULL) {
         delete rpcClient;
     }
-    rpcClient = new FrontBack(grpc::CreateChannel(envp, grpc::InsecureChannelCredentials()));
+    char *endpoint = strdup(envp);
+    string remoteHost = "localhost";
+    int remotePort = 50050;
+    char *token = strchr(endpoint, ':');
+    if (token != NULL) {
+        *token = '\0';
+	remoteHost = endpoint;
+	remotePort = atoi(token + 1);
+    }
+    
+    rpcClient = new FrontBack(remoteHost, remotePort);
 }
 
 RpcWorker::~RpcWorker()
@@ -289,24 +310,27 @@ void RpcWorker::runServer()
         log_error(e.getErrMsg());
     }
 
-    char *sAddr = getenv("GRPC_SERVER_ENDPOINT");
+    string serverAddress = "localhost";
+    int serverPort = 50051;
+    char *sAddr = getenv("RPC_SERVER_ENDPOINT");
     if (sAddr == NULL) {
-        sAddr = GRPC_SERVER_ENDPOINT;
+        sAddr = RPC_SERVER_ENDPOINT;
     }
-    string server_address(sAddr);
-    ServerBuilder builder;
-    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-    builder.RegisterService(&service);
-    unique_ptr<Server> server(builder.BuildAndStart());
-    log_info("Server listening on %s", sAddr);
-    thread server_thread{[&] {
-        server->Wait();
-    }};
-    while (service.getState()) {
-        sleep(2);
+    char *endpoint = strdup(sAddr);
+    char *token = strchr(endpoint, ':');
+    if (token != NULL) {
+        *token = '\0';
+	serverAddress = endpoint;
+	serverPort = atoi(token + 1);
     }
-    server->Shutdown();
-    server_thread.join();
+    Server http;
+    RemoteExecServiceImpl *service = new RemoteExecServiceImpl(sciNet);
+    http.Post("/internal/execute", [service](const Request &req, Response &res) {
+        service->Execute(req, res);
+    });
+    auto httpThread = std::thread([&]() { http.listen(serverAddress, serverPort); });
+    httpThread.join();
+
     sciNet.terminate();
     log_info("RPC worker terminated normally");
 }

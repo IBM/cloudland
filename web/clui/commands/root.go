@@ -16,7 +16,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/IBM/cloudland/web/clui/grpcs"
+	"github.com/IBM/cloudland/web/clui/rpcs"
 	"github.com/IBM/cloudland/web/clui/routes"
 
 	"github.com/spf13/cobra"
@@ -34,7 +34,7 @@ func RunDaemon(cmd *cobra.Command, args []string) (err error) {
 	g, _ := errgroup.WithContext(context.Background())
 	g.Go(routes.Run)
 	// g.Go(routes.RunRest)
-	g.Go(grpcs.Run)
+	g.Go(rpcs.Run)
 	return g.Wait()
 }
 
