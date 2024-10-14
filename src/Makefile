@@ -1,29 +1,22 @@
 HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
 SYSTEM ?= $(HOST_SYSTEM)
 CPP = g++
-CPPFLAGS = -g -Wall -Iremotexec -Icommon -Ifilter -I/opt/sci/include -std=c++11
-LDFLAGS = -Lcommon -lcmn -Lremotexec -lrexec -L/opt/sci/lib64 -L/opt/sci/lib -lsci -pthread
+CPPFLAGS = -g -Wall -Icommon -Ifilter -I/opt/sci/include -std=c++11 -DCPPHTTPLIB_OPENSSL_SUPPORT
+LDFLAGS = -Lcommon -lcmn -ljsoncpp -L/opt/sci/lib64 -L/opt/sci/lib -lsci -pthread -lcrypto -lssl
 
 ifeq ($(SYSTEM),Darwin)
-LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++ grpc`\
-           -lgrpc++_reflection\
-           -ldl
+LDFLAGS += -L/usr/local/lib -ldl
 else
-LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++ grpc`\
-           -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed\
-           -ldl
+LDFLAGS += -L/usr/local/lib -Wl,--no-as-needed -Wl,--as-needed -ldl
 endif
 
 LD_BACK_FLAGS=-Lcommon -lcmn -L/opt/sci/lib64 -L/opt/sci/lib -lsci -pthread
 ARFLAGS = -rv
 
-all: libcmn.a librexec.a scheduler.so cloudland cloudlet grpcmsg grpcfile
+all: libcmn.a scheduler.so cloudland cloudlet
 
 libcmn.a:
 	$(MAKE) -C common || exit 1
-
-librexec.a:
-	$(MAKE) -C remotexec || exit 1
 
 scheduler.so:
 	$(MAKE) -C filter || exit 1
@@ -36,21 +29,6 @@ cloudlet: cloudlet.o
 
 threadpool: threadpool.o
 	$(CPP) -g -Wall -std=c++11 -o $@ $^
-
-grpcmsg: grpcmsg.o rpcworker.o netlayer.o handler.o
-	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
-
-grpcfile: grpcfile.o
-	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
-
-cloudland.o: cloudland.cpp
-	$(CPP) $(CPPFLAGS) -c -o $@ $< $(LDFLAGS)
-
-grpcmsg.o: grpcmsg.cpp
-	$(CPP) $(CPPFLAGS) -c -o $@ $< $(LDFLAGS)
-
-grpcfile.o: grpcfile.cpp
-	$(CPP) $(CPPFLAGS) -c -o $@ $< $(LDFLAGS)
 
 rpcworker.o: rpcworker.cpp
 	$(CPP) $(CPPFLAGS) -c -o $@ $< $(LDFLAGS)
@@ -65,9 +43,9 @@ threadpool.o: threadpool.cpp
 	$(CPP) -g -Wall -pthread -std=c++11 -c -o $@ $<
 
 clean:
-	rm -f *.o common/*.o common/*.a remotexec/*.o remotexec/*.a remotexec/*.pb.cc remotexec/*.pb.h filter/*.so filter/*.o cloudland cloudlet cloudctl grpcmsg
+	rm -f *.o common/*.o common/*.a remotexec/*.o remotexec/*.a remotexec/*.pb.cc remotexec/*.pb.h filter/*.so filter/*.o cloudland cloudlet cloudctl
 
 install:
 	mkdir -p /opt/cloudland/bin /opt/cloudland/lib64
-	cp cloudland cloudlet grpcmsg grpcfile /opt/cloudland/bin
+	cp cloudland cloudlet /opt/cloudland/bin
 	cp filter/*.so /opt/cloudland/lib64/
