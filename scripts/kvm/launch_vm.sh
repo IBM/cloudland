@@ -23,25 +23,20 @@ metadata=$(echo $md | base64 -d)
 ./build_meta.sh "$vm_ID" "$vm_name" <<< $md >/dev/null 2>&1
 vm_img=$volume_dir/$vm_ID.disk
 is_vol="true"
-remote_vm_size=$(curl -sI "$image_cache/$img_name" | grep Content-Length | awk '{print $2}')
-echo "remote_vm_size:$remote_vm_size"
 if [ ! -f "$vm_img" ]; then
     vm_img=$image_dir/$vm_ID.disk
     vm_meta=$cache_dir/meta/$vm_ID.iso
     is_vol="false"
-    if [ ! -f "$image_cache/$img_name" ] || [ `ls -l $image_cache/$img_name | awk '{print $5}'` != $remote_vm_size ]; then
-        wget -q $image_repo/$img_name -O $image_cache/$img_name
-    fi
-    if [ ! -f "$image_cache/$img_name" ]; then
-        echo "Image $img_name downlaod failed!"
-        echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' 'image $img_name downlaod failed!'"
+    if [ ! -s "$image_cache/$img_name" ]; then
+        echo "Image is not available!"
+        echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' 'image $img_name not available!'"
         exit -1
     fi
     format=$(qemu-img info $image_cache/$img_name | grep 'file format' | cut -d' ' -f3)
     cmd="qemu-img convert -f $format -O qcow2 $image_cache/$img_name $vm_img"
     result=$(eval "$cmd")
     sidecar span log $span "Internal: $cmd, result: $result"
-    vsize=$(qemu-img info $vm_img | grep 'virtual size:' | cut -d' ' -f4 | tr -d '(')
+    vsize=$(qemu-img info $vm_img | grep 'virtual size:' | cut -d' ' -f5 | tr -d '(')
     let fsize=$disk_size*1024*1024*1024
     if [ "$vsize" -gt "$fsize" ]; then
         echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' 'flavor is smaller than image size'"
