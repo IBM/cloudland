@@ -111,6 +111,7 @@ void RemoteExecServiceImpl::Execute(const Request &request, Response &response)
         response.status = BadRequest_400;
         response.set_content(R"({"error": "fail to parse"})", "application/json");
     }
+    string trace = request.get_header_value("RequestID");
     int msgID = value["Id"].asInt();
     int extra = value["Extra"].asInt();
     char *control = strdup(value["Control"].asString().c_str());
@@ -243,7 +244,7 @@ string FrontBack::Execute(int msg_id, int extra, char *ctl, char *cmd, char *tra
             string errMsg = "Failed to call RPC";
             log_info("Failed to call RPC, status: %d", res.error());
             return errMsg;
-    } 
+    }
     Json::Reader reader;
     Json::Value value;
     if ((res->status != OK_200) || (!reader.parse(res->body, value))) {

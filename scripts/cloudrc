@@ -134,6 +134,16 @@ function sql_exec()
     sqlite3 $vxlan_db "$*"
 }
 
+function wds_curl()
+{
+    action=$1
+    path=$2
+    data=$3
+    [ -z "$data" ] && data='{}'
+    token="bearer $(curl -L -XPOST -k "$wds_address/api/v1/login" -H "Content-Type: application/json" -d "{\"name\": \"$wds_admin\",\"password\": \"$wds_pass\"}" | jq -r .access_token)"
+    curl -s -L -X$action -H 'Content-Type: application/json' -H "Authorization: $token" -k "$wds_address/$path" -d "$data"
+}
+
 if [ "$span" != "report_rc" ]; then
     sidecar span start $span
     trap end_span EXIT
