@@ -89,7 +89,7 @@ void backHandler(void *user_param, sci_group_t group, void *buffer, int size)
         string cmdStr = command;
         char *trace = packer.unpackStr();
 
-        setenv("JAEGER_TRACE_ID", trace, 1);
+        setenv("RequestID", trace, 1);
         cmdStr = "sudo -E " + cmdStr + " 2>&1";
         cmdStr = cmdStr + " 2>&1";
         fp = popen(cmdStr.c_str(), "r");
@@ -108,7 +108,7 @@ void backHandler(void *user_param, sci_group_t group, void *buffer, int size)
         }
         rc = fclose(fp);
         code = WEXITSTATUS(rc);
-        unsetenv("JAEGER_TRACE_ID");
+        unsetenv("RequestID");
         if (code != 0) {
             Packer resp;
             resp.packInt(id);

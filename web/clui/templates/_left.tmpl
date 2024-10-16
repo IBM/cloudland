@@ -25,13 +25,6 @@
             {{.i18n.Tr "Registry"}}
         </a>
              {{ end }}
-        <div class="header item">{{.i18n.Tr "Platform_Service"}}</div>
-        <a {{ if eq .Link "/openshifts" }} class="active item" {{ else }} class="item" {{ end }} href="/openshifts">
-            {{.i18n.Tr "Openshift"}}
-        </a>
-        <a {{ if eq .Link "/glusterfs" }} class="active item" {{ else }} class="item" {{ end }} href="/glusterfs">
-            {{.i18n.Tr "Glusterfs"}}
-        </a>
         <div class="header item">{{.i18n.Tr "Network_Security"}}</div>
         <a {{ if eq .Link "/subnets" }} class="active item" {{ else }} class="item" {{ end }} href="/subnets">
             {{.i18n.Tr "Subnets"}}

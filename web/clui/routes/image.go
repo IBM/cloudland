@@ -13,7 +13,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"strconv"
 
 	"github.com/IBM/cloudland/web/clui/model"
@@ -43,6 +42,8 @@ func (a *ImageAdmin) Create(ctx context.Context, osVersion, diskType, virtType, 
 	if err != nil {
 		log.Println("DB create image failed, %v", err)
 	}
+	control := "inter="
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_image.sh '%d' '%s'", image.ID, url)
 	if instID > 0 {
 		instance := &model.Instance{Model: model.Model{ID: instID}}
 		err = db.Take(instance).Error
@@ -50,41 +51,13 @@ func (a *ImageAdmin) Create(ctx context.Context, osVersion, diskType, virtType, 
 			log.Println("DB failed to query instance", err)
 			return
 		}
-		control := fmt.Sprintf("inter=%d", instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/capture_image.sh '%d' '%d'", image.ID, instance.ID)
-		err = hyperExecute(ctx, control, command)
-		if err != nil {
-			log.Println("Create image command execution failed", err)
-			return
-		}
-	} else {
-		command := "/opt/cloudland/scripts/frontend/create_image.sh " + strconv.Itoa(int(image.ID)) + " " + url + " " + virtType
-		cmd := exec.Command("/bin/bash", "-c", command)
-		err = cmd.Run()
-		if err != nil {
-			log.Println("Create image command execution failed", err)
-			return
-		}
-		image = &model.Image{Model: model.Model{ID: int64(image.ID)}}
-		err = db.Take(image).Error
-		if err != nil {
-			log.Println("Invalid image ID", err)
-			return
-		}
-		image.Status = "available"
-		file := "/opt/cloudland/cache/image/image-" + strconv.Itoa(int(image.ID))
-		if FileExist(file + ".img") {
-			image.Format = "img"
-		} else if FileExist(file + ".qcow2") {
-			image.Format = "qcow2"
-		} else {
-			image.Format = "raw"
-		}
-		err = db.Save(image).Error
-		if err != nil {
-			log.Println("Update image failed", err)
-			return
-		}
+		control = fmt.Sprintf("inter=%d", instance.Hyper)
+		command = fmt.Sprintf("/opt/cloudland/scripts/backend/capture_image.sh '%d' '%d'", image.ID, instance.ID)
+	}
+	err = hyperExecute(ctx, control, command)
+	if err != nil {
+		log.Println("Create image command execution failed", err)
+		return
 	}
 	return
 }
@@ -105,11 +78,11 @@ func (a *ImageAdmin) Delete(ctx context.Context, id int64) (err error) {
 		return
 	}
 	if image.Status == "available" {
-		command := "/opt/cloudland/scripts/kvm/clear_image.sh " + strconv.Itoa(int(image.ID)) + " " + image.Format
-		cmd := exec.Command("/bin/bash", "-c", command)
-		err = cmd.Run()
+		control := "inter="
+		command := "/opt/cloudland/scripts/backend/clear_image.sh " + strconv.Itoa(int(image.ID)) + " " + image.Format
+		err = hyperExecute(ctx, control, command)
 		if err != nil {
-			log.Println("Create image command execution failed", err)
+			log.Println("Clear image command execution failed", err)
 			return
 		}
 	}
