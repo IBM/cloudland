@@ -1,38 +1,20 @@
-- name: install packages
-  yum: 
-    name: ['@^Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'bc', 'git', 'python3-pip', 'NetworkManager', 'net-tools', 'iptables-services', 'dnsmasq-utils', 'conntrack-tools']
-    state: present
-  when: ansible_distribution_major_version == '7'
-  ignore_errors: yes
-  tags: [be_pkg]
-
-- name: install packages
-  yum: 
-    name: ['@Virtualization Host', 'genisoimage', 'sqlite', 'keepalived', 'jq', 'bc', 'git', 'python3-pip', 'NetworkManager', 'net-tools', 'iptables-services', 'dnsmasq-utils', 'conntrack-tools']
-    state: present
-  when: ansible_distribution_major_version == '8'
-  ignore_errors: yes
-  tags: [be_pkg]
-
 - name: install common packages
-  yum:
-    name: ['sqlite', 'jq', 'wget', 'mkisofs', 'NetworkManager', 'net-tools', 'iptables-services']
+  apt:
+    name: ['sqlite3', 'jq', 'wget', 'mkisofs', 'network-manager', 'net-tools', 'python3-pip']
     state: present
   ignore_errors: yes
   tags: [be_pkg]
 
 - name: install packages for kvm
-  yum:
-    name: ['qemu-kvm', 'qemu-img', 'libvirt', 'libvirt-client', 'dnsmasq', 'keepalived', 'dnsmasq-utils', 'conntrack-tools']
+  apt:
+    name: ['qemu-system-x86', 'qemu-utils', 'libvirt-daemon', 'libvirt-daemon-system', 'libvirt-daemon-system-systemd', 'libvirt-clients', 'dnsmasq', 'keepalived', 'dnsmasq-utils', 'conntrack']
     state: present
-  when: virt_type != "zvm"
   ignore_errors: yes
   tags: [be_pkg]
 
 - pip:
     name: pyparsing
     executable: pip3
-  when: virt_type != "zvm"
   ignore_errors: yes
   tags: [be_pkg]
 
@@ -55,7 +37,6 @@
     - /opt/cloudland/cache/volume
     - /opt/cloudland/cache/dnsmasq
     - /opt/cloudland/cache/xml
-  when: hostname != controller
   tags: [sync]
 
 # - name: synchronize cloudland and grpc
@@ -72,7 +53,6 @@
     src: /opt/sci
     dest: /opt
     mode: preserve
-  when: hostname != controller
   tags: [sci]
 
 - name: copy sci service file
@@ -90,7 +70,6 @@
     dest: "{{ item.dest }}"
   with_items:
     - { src: "/opt/cloudland/scripts", dest: "/opt/cloudland", owner: 'cland', group: 'cland' }
-  when: hostname != controller
   tags: [sync, scripts, scripts_only]
 
 - name: link backend to zvm
@@ -112,7 +91,6 @@
     force: yes
     owner: 'cland'
     group: 'cland'
-  when: virt_type != 'zvm'
   tags: [be_conf, scripts, scripts_only]
 
 - name: create cloudrc local file for zvm
@@ -169,7 +147,6 @@
     dest: "{{ item.dest }}"
   with_items:
     - { src: "/opt/cloudland/bin", dest: "/opt/cloudland", owner: 'cland', group: 'cland' }
-  when: hostname != controller
   tags: [sync, cloudlet]
 
 - name: create cloudlet environment file
@@ -221,7 +198,7 @@
     - 'cloudlet'
   tags: [start_cloudlet]
 
-- name: set compute services libvirtd
+- name: set compute libvirt service
   systemd: 
     name: "{{ item }}"
     enabled: yes
@@ -229,10 +206,9 @@
     state: restarted
   with_items:
     - 'libvirtd'
-  when: virt_type != 'zvm'
   tags: [be_srv]
 
-- name: set compute services NetworkManager and iptables
+- name: set compute services NetworkManager
   systemd: 
     name: "{{ item }}"
     enabled: yes
@@ -240,7 +216,6 @@
     state: restarted
   with_items:
     - 'NetworkManager'
-    - 'iptables'
   tags: [be_srv]
 
 - name: start recover_onboot services
@@ -249,7 +224,6 @@
     enabled: yes
     daemon_reload: yes
     state: stopped
-  when: virt_type != 'zvm'
   tags: [be_srv]
 
 - name: mask firewalld service
@@ -260,31 +234,15 @@
   tags: [firewall]
   ignore_errors: yes
 
-- name: start iptables service
-  systemd: 
-    name: iptables
-    enabled: yes
-    daemon_reload: yes
-    state: restarted
-  tags: [firewall]
-
-- name: Allow necessary ports for ZVM
-  script: firewall.sh {{ hostvars[groups['web'][0]]['ansible_host'] }}
-  tags: [firewall]
-  when: virt_type == 'zvm'
-  ignore_errors: yes
-
 - name: Allow necessary ports for KVM
   script: firewall.sh {{ hostvars[groups['web'][0]]['ansible_host'] }} {{ network_external_vlan }}
   tags: [firewall]
-  when: virt_type != 'zvm'
   ignore_errors: yes
 
 - name: Load nr_bridge kernel module
   modprobe:
     name: br_netfilter
     state: present
-  when: virt_type != 'zvm'
   tags: [sysctl]
 
 - name: Apply sysctl bridge-nf-call-iptables
@@ -293,7 +251,6 @@
     state: present
     value: '1'
     reload: yes
-  when: virt_type != 'zvm'
   tags: [sysctl]
 
 - name: Apply sysctl bridge-nf-call-arptables
@@ -302,7 +259,6 @@
     state: present
     value: '1'
     reload: yes
-  when: virt_type != 'zvm'
   tags: [sysctl]
 
 - name: Apply sysctl bridge-nf-call-ip6tables
@@ -311,7 +267,6 @@
     state: present
     value: '1'
     reload: yes
-  when: virt_type != 'zvm'
   tags: [sysctl]
 
 - name: Apply sysctl net.netfilter.nf_conntrack_max
@@ -320,10 +275,8 @@
     state: present
     value: '6553600'
     reload: yes
-  when: virt_type != 'zvm'
   tags: [sysctl]
 
 - name: Bridge the external network
   script: bridge_ext.sh 
-  when: virt_type != 'zvm'
   tags: [bridge_ext]

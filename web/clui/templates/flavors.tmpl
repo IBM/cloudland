@@ -27,8 +27,6 @@
 			                        <th>{{.i18n.Tr "Cpu"}}</th>
 			                        <th>{{.i18n.Tr "Memory"}}</th>
 			                        <th>{{.i18n.Tr "Disk"}}</th>
-			                        <th>{{.i18n.Tr "Swap"}}</th>
-			                        <th>{{.i18n.Tr "Ephemeral"}}</th>
                                     <th>{{.i18n.Tr "Delete"}}</th>
 		                        </tr>
 	                        </thead>
@@ -41,8 +39,6 @@
 			                        <td>{{.Cpu}}</td>
 			                        <td>{{.Memory}}</td>
 			                        <td>{{.Disk}}</td>
-			                        <td>{{.Swap}}</td>
-			                        <td>{{.Ephemeral}}</td>
                                     <td><div class="delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}"><i class="dark purple trash alternate outline icon"></i></div></td>
 		                        </tr>
                                 {{ end }}
