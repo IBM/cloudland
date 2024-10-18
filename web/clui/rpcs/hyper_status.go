@@ -34,12 +34,7 @@ func HyperStatus(ctx context.Context, args []string) (status string, err error) 
 		log.Println("Invalid hypervisor ID", err)
 		return
 	}
-	hyper := &model.Hyper{}
-	err = db.Where("hostid = ?", hyperID).Take(hyper).Error
-	if err != nil {
-		log.Println("Failed to query hypervisor", err)
-		return
-	}
+	hyper := &model.Hyper{Hostid: int32(hyperID)}
 	hyper.Hostname = args[2]
 	availCpu, err := strconv.Atoi(args[3])
 	if err != nil {
@@ -92,7 +87,7 @@ func HyperStatus(ctx context.Context, args []string) (status string, err error) 
 			return
 		}
 	}
-	err = db.Where("hostid = ?", hyperID).FirstOrCreate(&model.Resource{Hostid: int32(hyperID)}).Error
+	err = db.Where("hostid = ?", hyperID).FirstOrCreate(hyper).Error
 	if err != nil {
 		log.Println("Failed to create resource", err)
 		return
