@@ -46,15 +46,15 @@ func (a *PortmapAdmin) Create(ctx context.Context, instID int64, port int) (port
 		return
 	}
 	iface := instance.Interfaces[0]
-	if iface.Address.Subnet.Router == 0 {
-		err = fmt.Errorf("Portmap can not be created without a gateway")
-		log.Println("Portmap can not be created without a gateway")
+	if iface.Address.Subnet.RouterID == 0 {
+		err = fmt.Errorf("Portmap can not be created without a router")
+		log.Println("Portmap can not be created without a router")
 		return
 	}
-	gateway := &model.Gateway{Model: model.Model{ID: iface.Address.Subnet.Router}}
-	err = db.Model(gateway).Set("gorm:auto_preload", true).Take(gateway).Error
+	router := &model.Router{Model: model.Model{ID: iface.Address.Subnet.RouterID}}
+	err = db.Model(router).Set("gorm:auto_preload", true).Take(router).Error
 	if err != nil {
-		log.Println("DB failed to query gateway", err)
+		log.Println("DB failed to query router", err)
 		return
 	}
 	count := 1
@@ -66,15 +66,15 @@ func (a *PortmapAdmin) Create(ctx context.Context, instID int64, port int) (port
 			return
 		}
 	}
-	control := fmt.Sprintf("toall=router-%d:%d,%d", gateway.ID, gateway.Hyper, gateway.Peer)
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_portmap.sh '%d' '%s' '%d' '%d'", gateway.ID, iface.Address.Address, port, rport)
+	control := fmt.Sprintf("toall=router-%d:%d,%d", router.ID, router.Hyper, router.Peer)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_portmap.sh '%d' '%s' '%d' '%d'", router.ID, iface.Address.Address, port, rport)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Create portmap failed", err)
 		return
 	}
 	name := fmt.Sprintf("%s-%d-%d", instance.Hostname, instance.ID, port)
-	portmap = &model.Portmap{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, GatewayID: gateway.ID, InstanceID: instance.ID, Name: name, Status: "pending", LocalAddress: iface.Address.Address, LocalPort: int32(port), RemotePort: int32(rport)}
+	portmap = &model.Portmap{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, RouterID: router.ID, InstanceID: instance.ID, Name: name, Status: "pending", LocalAddress: iface.Address.Address, LocalPort: int32(port), RemotePort: int32(rport)}
 	err = db.Create(portmap).Error
 	if err != nil {
 		log.Println("DB failed to create port map", err)
@@ -98,9 +98,9 @@ func (a *PortmapAdmin) Delete(ctx context.Context, id int64) (err error) {
 		log.Println("Failed to query port map", err)
 		return
 	}
-	if portmap.Gateway != nil {
-		control := fmt.Sprintf("toall=router-%d:%d,%d", portmap.Gateway.ID, portmap.Gateway.Hyper, portmap.Gateway.Peer)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_portmap.sh '%d' '%s' '%d' '%d'", portmap.Gateway.ID, portmap.LocalAddress, portmap.LocalPort, portmap.RemotePort)
+	if portmap.Router != nil {
+		control := fmt.Sprintf("toall=router-%d:%d,%d", portmap.Router.ID, portmap.Router.Hyper, portmap.Router.Peer)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_portmap.sh '%d' '%s' '%d' '%d'", portmap.Router.ID, portmap.LocalAddress, portmap.LocalPort, portmap.RemotePort)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Delete portmap failed", err)

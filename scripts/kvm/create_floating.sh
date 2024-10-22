@@ -25,8 +25,6 @@ dest_nets=$(grep 'add -net' $notify_sh | awk '{print $8}')
 if [ "$ext_type" = "public" ]; then
     ext_dev=te-$ID
     ip netns exec $router iptables -t nat -I POSTROUTING -s $int_ip -m set ! --match-set nonat dst -j SNAT --to-source $ext_ip
-elif [ "$ext_type" = "private" ]; then
-    ext_dev=ti-$ID
 else
     echo "Rong routing type" && exit 1
 fi

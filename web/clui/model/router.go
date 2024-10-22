@@ -10,7 +10,7 @@ import (
 	"github.com/IBM/cloudland/web/sca/dbs"
 )
 
-type Gateway struct {
+type Router struct {
 	Model
 	Name       string `gorm:"type:varchar(32)"`
 	Status     string `gorm:"type:varchar(32)"`
@@ -21,11 +21,11 @@ type Gateway struct {
 	VrrpAddr   string       `gorm:"type:varchar(64)"`
 	PeerAddr   string       `gorm:"type:varchar(64)"`
 	Interfaces []*Interface `gorm:"foreignkey:Device"`
-	Subnets    []*Subnet    `gorm:"many2many:subnet_routers;"`
+	Subnets    []*Subnet    `gorm:"foreignkey:RouterID"`
 	ZoneID     int64
 	Zone       *Zone     `gorm:"foreignkey:ZoneID"`
 }
 
 func init() {
-	dbs.AutoMigrate(&Gateway{})
+	dbs.AutoMigrate(&Router{})
 }

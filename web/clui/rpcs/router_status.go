@@ -43,19 +43,19 @@ func RouterStatus(ctx context.Context, args []string) (status string, err error)
 			log.Println("Invalid instance ID", err)
 			continue
 		}
-		gateway := &model.Gateway{Model: model.Model{ID: int64(ID)}}
-		err = db.Take(gateway).Error
+		router := &model.Router{Model: model.Model{ID: int64(ID)}}
+		err = db.Take(router).Error
 		if (err != nil && gorm.IsRecordNotFoundError(err)) ||
-			(err == nil && gateway.Hyper > 0 && gateway.Hyper != int32(hyperID) && gateway.Peer > 0 && gateway.Peer != int32(hyperID)) {
+			(err == nil && router.Hyper > 0 && router.Hyper != int32(hyperID) && router.Peer > 0 && router.Peer != int32(hyperID)) {
 			log.Println("Invalid router", err)
 		}
 		if err == nil {
-			if gateway.Hyper == -1 {
-				gateway.Hyper = int32(hyperID)
-			} else if gateway.Peer == -1 {
-				gateway.Peer = int32(hyperID)
+			if router.Hyper == -1 {
+				router.Hyper = int32(hyperID)
+			} else if router.Peer == -1 {
+				router.Peer = int32(hyperID)
 			}
-			err = db.Save(gateway).Error
+			err = db.Save(router).Error
 			if err != nil {
 				log.Println("Failed to update router hyper", err)
 			}

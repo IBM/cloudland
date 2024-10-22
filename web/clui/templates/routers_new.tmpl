@@ -11,7 +11,7 @@
 					<div class="" >
 						<form class="ui form" action="{{.Link}}" method="post">
 							<h3 class="ui top attached header">
-								{{.i18n.Tr "Create New Gateway"}}
+								{{.i18n.Tr "Create New VPC"}}
 							</h3>
 							<div class="ui attached segment">
 								<div class="required inline field">
@@ -53,46 +53,10 @@
 									  </div>
 									</div>
 								</div>
-								<div class="inline field">
-									<label for="private">{{.i18n.Tr "Private Gateway"}}</label>
-									<div class="ui selection dropdown">
-									  <input id="private" name="private" type="hidden">
-									  <i class="dropdown icon"></i>
-									  <div class="default text">{{.i18n.Tr "Private Gateway"}}</div>
-									  <div class="menu">
-										{{ range .Subnets }}
-										{{ if ne .Type "public" }}
-										<div class="item" data-value={{.ID}} data-text={{.Name}}>
-										  {{.Name}}-{{.Network}}/{{.Netmask}}
-										</div>
-										{{ end }}
-										{{ end }}
-									  </div>
-									</div>
-								</div>
 								{{end}}
 								<div class="inline field">
-									<label for="subnets">{{.i18n.Tr "Subnets"}}</label>
-									<div class="ui multiple selection dropdown">
-									  <input name="subnets" id="subnets" type="hidden">
-									  <i class="dropdown icon"></i>
-									  <div class="default text">{{.i18n.Tr "Subnets"}}</div>
-									  <div class="menu">
-										{{ if .Subnets }}
-										{{ range .Subnets }}
-										{{ if eq .Type "internal" }}
-										<div class="item" data-value={{.ID}} data-text={{.Name}}>
-										  {{.Name}}-{{.Network}}/{{.Netmask}}
-										</div>
-										{{ end }}
-										{{ end }}
-										{{ end }}
-									  </div>
-									</div>
-								</div>
-								<div class="inline field">
 									<label></label>
-									<button class="ui green button">{{.i18n.Tr "Create New Gateway"}}</button>
+									<button class="ui green button">{{.i18n.Tr "Create New VPC"}}</button>
 								</div>
 							</div>
 						</form>

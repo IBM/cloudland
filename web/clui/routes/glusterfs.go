@@ -217,9 +217,8 @@ func (a *GlusterfsAdmin) Create(ctx context.Context, name, cookie string, nworke
 			log.Println("Failed to create glusterfs subnet", err)
 			return
 		}
-		subnetIDs := []int64{subnet.ID}
 		tmpName = fmt.Sprintf("g%d-gw", glusterfs.ID)
-		_, err = gatewayAdmin.Create(ctx, tmpName, "", 0, 0, subnetIDs, memberShip.OrgID, zoneID)
+		_, err = routerAdmin.Create(ctx, tmpName, "", 0, memberShip.OrgID, zoneID)
 		if err != nil {
 			log.Println("Failed to create gateway", err)
 			return
@@ -268,8 +267,8 @@ func (a *GlusterfsAdmin) Delete(ctx context.Context, id int64) (err error) {
 	}
 	subnet := glusterfs.Subnet
 	if subnet != nil {
-		if subnet.Router != 0 {
-			err = gatewayAdmin.Delete(ctx, subnet.Router)
+		if subnet.RouterID != 0 {
+			err = routerAdmin.Delete(ctx, subnet.RouterID)
 			if err != nil {
 				log.Println("Failed to delete gateway", err)
 				return

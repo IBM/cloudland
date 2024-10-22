@@ -28,11 +28,6 @@ function probe_arp()
         ext_mac=$(sudo ip netns exec $router ip -o link show te-$ID | awk '{print $17}')
         for ip in $ext_ips; do
             sudo ip netns exec $router arping -c 1 -I te-$ID ${ip%%/*}
-            [ -n "$zlayer2_interface" ] && sudo /usr/sbin/bridge fdb add $ext_mac dev $zlayer2_interface
-        done
-        int_ips=$(sudo ip netns exec $router ip addr show ti-$ID | grep 'inet ' | awk '{print $2}')
-        for ip in $int_ips; do
-            sudo ip netns exec $router arping -c 1 -I ti-$ID ${ip%%/*}
         done
     done
     cd -

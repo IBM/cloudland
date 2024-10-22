@@ -92,16 +92,18 @@ func HyperStatus(ctx context.Context, args []string) (status string, err error) 
 		log.Println("Failed to create resource", err)
 		return
 	}
-	err = db.Model(&model.Resource{}).Where("hostid = ?", hyperID).Update(map[string]interface{}{
-		"cpu":          int64(availCpu),
-		"cpu_total":    int64(totalCpu),
-		"memory":       int64(availMem),
-		"memory_total": int64(totalMem),
-		"disk":         int64(availDisk),
-		"disk_total":   int64(totalDisk),
-	}).Error
+	resource := &model.Resource{
+		Hostid:      int32(hyperID),
+		Cpu:         int64(availCpu),
+		CpuTotal:    int64(totalCpu),
+		Memory:      int64(availMem),
+		MemoryTotal: int64(totalMem),
+		Disk:        int64(availDisk),
+		DiskTotal:   int64(totalDisk),
+	}
+	err = db.Where("hostid = ?", hyperID).Assign(resource).FirstOrCreate(&model.Resource{}).Error
 	if err != nil {
-		log.Println("Failed to save resource", err)
+		log.Println("Failed to create or update hyper resource", err)
 		return
 	}
 	hyper.Status = int32(hyperStatus)

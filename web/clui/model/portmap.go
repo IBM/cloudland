@@ -18,8 +18,8 @@ type Portmap struct {
 	LocalAddress  string `gorm:"type:varchar(64)"`
 	RemotePort    int32
 	RemoteAddress string `gorm:"type:varchar(64)"`
-	GatewayID     int64
-	Gateway       *Gateway `gorm:"foreignkey:GatewayID"`
+	RouterID      int64
+	Router        *Router `gorm:"foreignkey:RouterID"`
 	InstanceID    int64
 }
 

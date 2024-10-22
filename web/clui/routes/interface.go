@@ -405,7 +405,7 @@ func DeallocateAddress(ctx context.Context, ifaces []*model.Interface) (err erro
 	return
 }
 
-func SetGateway(ctx context.Context, subnetID, zoneID, owner int64, router *model.Gateway) (subnet *model.Subnet, iface *model.Interface, err error) {
+func SetGateway(ctx context.Context, subnetID, zoneID, owner int64, router *model.Router) (subnet *model.Subnet, iface *model.Interface, err error) {
 	var db *gorm.DB
 	ctx, db = getCtxDB(ctx)
 	subnet = &model.Subnet{
@@ -445,17 +445,7 @@ func SetGateway(ctx context.Context, subnetID, zoneID, owner int64, router *mode
 		err = fmt.Errorf("Subnet does not cross this zone")
 		return
 	}
-	subnet.Router = router.ID
-	found = false
-	for _, r := range subnet.Routers {
-		if r.ID == router.ID {
-			found = true
-		}
-	}
-	if !found {
-		subnet.Routers = append(subnet.Routers, router)
-	}
-	subnet.Router = router.ID
+	subnet.RouterID = router.ID
 	err = db.Model(subnet).Save(subnet).Error
 	if err != nil {
 		log.Println("Failed to set gateway, %v", err)
@@ -467,7 +457,7 @@ func SetGateway(ctx context.Context, subnetID, zoneID, owner int64, router *mode
 func UnsetGateway(ctx context.Context, subnet *model.Subnet) (err error) {
 	var db *gorm.DB
 	ctx, db = getCtxDB(ctx)
-	subnet.Router = 0
+	subnet.RouterID = 0
 	err = db.Save(subnet).Error
 	if err != nil {
 		log.Println("Failed to unset gateway, %v", err)

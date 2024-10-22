@@ -23,12 +23,11 @@ type Subnet struct {
 	Dhcp         string `gorm:"type:varchar(16)"`
 	Vlan         int64
 	Zones        []*Zone  `gorm:"many2many:subnet_zones;"`
-	Routers      []*Gateway  `gorm:"many2many:subnet_routers;"`
+	Router       *Router  `gorm:"foreignkey:RouterID"`
 	Netlink      *Network `gorm:"foreignkey:Vlan;AssociationForeignKey:Vlan"`
 	Type         string   `gorm:"type:varchar(20);default:'internal'"`
-	Router       int64
+	RouterID     int64
 	Routes       string `gorm:"type:varchar(256)"`
-	VSwitch      string `gorm:"type:varchar(256)"`
 }
 
 type Address struct {

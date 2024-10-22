@@ -27,6 +27,23 @@
 									<input id="netmask"  name="netmask" required>
 								</div>
 								<div class="inline field">
+								    <label for="vpc">{{.i18n.Tr "VPCs"}}</label>
+									<div class="ui selection dropdown">
+									  <input name="vpcs" id="vpcs" type="hidden">
+									  <i class="dropdown icon"></i>
+									  <div class="default text">{{.i18n.Tr "VPCs"}}</div>
+									  <div class="menu">
+										{{ if .Routers }}
+										{{ range .Routers }}
+										<div class="item" data-value={{.ID}} data-text={{.Name}}>
+										  {{.Name}}
+										</div>
+										{{ end }}
+										{{ end }}
+									  </div>
+									</div>
+								</div>
+								<div class="inline field">
 									<label for="zones">{{.i18n.Tr "Zones"}}</label>
 									<div class="ui multiple selection dropdown">
 									  <input name="zones" id="zones" type="hidden">
@@ -74,10 +91,6 @@
 										<div class="item" data-value="no" data-text="no">{{.i18n.Tr "no"}}</div>
 									  </div>
 									</div>
-								</div>
-								<div class="inline field">
-								    <label for="vSwitch">{{.i18n.Tr "vSwitch"}}</label>
-								    <input id="vSwitch" name="vSwitch">
 								</div>
 								{{if .IsAdmin }}
 								<div class="inline field">
