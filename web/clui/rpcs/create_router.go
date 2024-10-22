@@ -29,21 +29,21 @@ func CreateRouter(ctx context.Context, args []string) (status string, err error)
 		log.Println("Invalid args", err)
 		return
 	}
-	gwID, err := strconv.Atoi(args[1])
+	routerID, err := strconv.Atoi(args[1])
 	if err != nil {
-		log.Println("Invalid gateway ID", err)
+		log.Println("Invalid router ID", err)
 		return
 	}
-	gateway := &model.Gateway{Model: model.Model{ID: int64(gwID)}}
-	err = db.Preload("Subnets").Where(gateway).Take(gateway).Error
+	router := &model.Router{Model: model.Model{ID: int64(routerID)}}
+	err = db.Preload("Subnets").Where(router).Take(router).Error
 	if err != nil {
-		log.Println("Invalid gateway ID", err)
+		log.Println("Invalid router ID", err)
 		return
 	}
 	devIfaces := []*model.Interface{}
-	for _, subnet := range gateway.Subnets {
+	for _, subnet := range router.Subnets {
 		iface := &model.Interface{}
-		err = db.Where("subnet = ? and device = ? and type='gateway'", subnet.ID, gateway.ID).Preload("Address").Preload("Address.Subnet").Take(iface).Error
+		err = db.Where("subnet = ? and device = ? and type='gateway'", subnet.ID, router.ID).Preload("Address").Preload("Address.Subnet").Take(iface).Error
 		if err != nil {
 			log.Println("Failed to query interface", err)
 			return
@@ -57,14 +57,14 @@ func CreateRouter(ctx context.Context, args []string) (status string, err error)
 		return
 	}
 	if args[3] == "MASTER" {
-		err = db.Model(&gateway).Updates(map[string]interface{}{"hyper": int32(hyperID), "status": "active"}).Error
+		err = db.Model(router).Updates(map[string]interface{}{"hyper": int32(hyperID), "status": "active"}).Error
 		if err != nil {
 			log.Println("Update hyper ID failed", err)
 			return
 		}
 		if args[4] == "yes" {
 			iface := &model.Interface{}
-			err = db.Model(&iface).Where("device = ? and type = 'gateway'", gwID).Updates(map[string]interface{}{"hyper": int32(hyperID)}).Error
+			err = db.Model(&iface).Where("device = ? and type = 'gateway'", routerID).Updates(map[string]interface{}{"hyper": int32(hyperID)}).Error
 			if err != nil {
 				log.Println("Failed to send fdb rules", err)
 				return
@@ -76,7 +76,7 @@ func CreateRouter(ctx context.Context, args []string) (status string, err error)
 			}
 		}
 	} else if args[3] == "SLAVE" {
-		err = db.Model(&gateway).Updates(map[string]interface{}{"peer": int32(hyperID)}).Error
+		err = db.Model(router).Updates(map[string]interface{}{"peer": int32(hyperID)}).Error
 		if err != nil {
 			log.Println("Update peer ID failed", err)
 			return

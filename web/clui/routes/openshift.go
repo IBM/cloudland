@@ -338,11 +338,10 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, cookie, ha
 			log.Println("Failed to create openshift subnet", err)
 			return
 		}
-		subnetIDs := []int64{subnet.ID}
-		gatewayname := cluster + "-gw"
-		_, err = gatewayAdmin.Create(ctx, gatewayname, "", 0, 0, subnetIDs, memberShip.OrgID, zoneID)
+		routerName := cluster + "-gw"
+		_, err = routerAdmin.Create(ctx, routerName, "", 0, memberShip.OrgID, zoneID)
 		if err != nil {
-			log.Println("Failed to create gateway", err)
+			log.Println("Failed to create router", err)
 			return
 		}
 	} else {
@@ -440,10 +439,10 @@ func (a *OpenshiftAdmin) Delete(ctx context.Context, id int64) (err error) {
 	}
 	subnet := openshift.Subnet
 	if subnet != nil && subnet.Type == "internal" && subnet.Name == openshift.ClusterName+"-sn" && subnet.Network == "192.168.91.0" {
-		if subnet.Router != 0 {
-			err = gatewayAdmin.Delete(ctx, subnet.Router)
+		if subnet.RouterID != 0 {
+			err = routerAdmin.Delete(ctx, subnet.RouterID)
 			if err != nil {
-				log.Println("Failed to delete gateway", err)
+				log.Println("Failed to delete router", err)
 				return
 			}
 		}

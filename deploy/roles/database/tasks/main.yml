@@ -1,6 +1,6 @@
 - name: install postgresql packages
-  yum: 
-    name: ['postgresql', 'postgresql-server', 'postgresql-contrib']
+  apt: 
+    name: ['postgresql-all']
     state: present
 
 - name: init database

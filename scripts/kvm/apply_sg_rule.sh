@@ -77,4 +77,4 @@ while [ $i -lt $len ]; do
     let i=$i+1
 done
 
-service iptables save
+iptables-save >/etc/network/iptables.up.rules

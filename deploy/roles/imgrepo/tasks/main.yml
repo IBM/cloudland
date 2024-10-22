@@ -1,6 +1,6 @@
 - name: install nginx
-  yum:
-    name: ['nginx']
+  apt:
+    name: ['nginx', 'gnutls-bin']
   tags: [nginx]
 
 - name: nginx config

@@ -621,15 +621,6 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet
 	if dns == primaryIP {
 		dns = ""
 	}
-	zvm := []*ZvmData{}
-	if virtType == "zvm" {
-		zd := &ZvmData{
-			OsVersion: image.OsVersion,
-			DiskType:  image.DiskType,
-			VSwitch:   primary.VSwitch,
-		}
-		zvm = append(zvm, zd)
-	}
 	ocp := []*OcpData{}
 	if clusterID > 0 {
 		openshift := &model.Openshift{Model: model.Model{ID: clusterID}}
@@ -649,7 +640,6 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet
 		Userdata: userdata,
 		VirtType: virtType,
 		DNS:      dns,
-		ZVM:      zvm,
 		OCP:      ocp,
 		Vlans:    vlans,
 		Networks: instNetworks,

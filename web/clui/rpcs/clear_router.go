@@ -29,13 +29,13 @@ func ClearRouter(ctx context.Context, args []string) (status string, err error) 
 		log.Println("Invalid args", err)
 		return
 	}
-	gwID, err := strconv.Atoi(args[1])
+	routerID, err := strconv.Atoi(args[1])
 	if err != nil {
 		log.Println("Invalid gateway ID", err)
 		return
 	}
-	gateway := &model.Gateway{Model: model.Model{ID: int64(gwID)}}
-	err = db.Preload("Interfaces").Preload("Interfaces.Address").Preload("Interfaces.Address.Subnet").Where(gateway).Take(gateway).Error
+	router := &model.Router{Model: model.Model{ID: int64(routerID)}}
+	err = db.Preload("Interfaces").Preload("Interfaces.Address").Preload("Interfaces.Address.Subnet").Where(router).Take(router).Error
 	if err != nil {
 		log.Println("Invalid gateway ID", err)
 		return
@@ -46,7 +46,7 @@ func ClearRouter(ctx context.Context, args []string) (status string, err error) 
 		log.Println("Invalid hyper ID", err)
 		return
 	}
-	err = sendFdbRules(ctx, gateway.Interfaces, int32(hyperID), "/opt/cloudland/scripts/backend/del_fwrule.sh")
+	err = sendFdbRules(ctx, router.Interfaces, int32(hyperID), "/opt/cloudland/scripts/backend/del_fwrule.sh")
 	if err != nil {
 		log.Println("Failed to send fdb rules", err)
 		return
