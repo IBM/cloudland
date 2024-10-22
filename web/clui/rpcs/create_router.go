@@ -10,10 +10,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strconv"
-
-	"github.com/IBM/cloudland/web/clui/model"
-	"github.com/IBM/cloudland/web/sca/dbs"
 )
 
 func init() {
@@ -21,66 +17,12 @@ func init() {
 }
 
 func CreateRouter(ctx context.Context, args []string) (status string, err error) {
-	//|:-COMMAND-:| create_router.sh 5 277 MASTER
-	db := dbs.DB()
+	//|:-COMMAND-:| create_router.sh '7' '2' 'MASTER' 'yes'
 	argn := len(args)
-	if argn < 5 {
+	if argn < 3 {
 		err = fmt.Errorf("Wrong params")
 		log.Println("Invalid args", err)
 		return
-	}
-	routerID, err := strconv.Atoi(args[1])
-	if err != nil {
-		log.Println("Invalid router ID", err)
-		return
-	}
-	router := &model.Router{Model: model.Model{ID: int64(routerID)}}
-	err = db.Preload("Subnets").Where(router).Take(router).Error
-	if err != nil {
-		log.Println("Invalid router ID", err)
-		return
-	}
-	devIfaces := []*model.Interface{}
-	for _, subnet := range router.Subnets {
-		iface := &model.Interface{}
-		err = db.Where("subnet = ? and device = ? and type='gateway'", subnet.ID, router.ID).Preload("Address").Preload("Address.Subnet").Take(iface).Error
-		if err != nil {
-			log.Println("Failed to query interface", err)
-			return
-		}
-		devIfaces = append(devIfaces, iface)
-	}
-	hyperID := -1
-	hyperID, err = strconv.Atoi(args[2])
-	if err != nil {
-		log.Println("Invalid hyper ID", err)
-		return
-	}
-	if args[3] == "MASTER" {
-		err = db.Model(router).Updates(map[string]interface{}{"hyper": int32(hyperID), "status": "active"}).Error
-		if err != nil {
-			log.Println("Update hyper ID failed", err)
-			return
-		}
-		if args[4] == "yes" {
-			iface := &model.Interface{}
-			err = db.Model(&iface).Where("device = ? and type = 'gateway'", routerID).Updates(map[string]interface{}{"hyper": int32(hyperID)}).Error
-			if err != nil {
-				log.Println("Failed to send fdb rules", err)
-				return
-			}
-			err = sendFdbRules(ctx, devIfaces, int32(hyperID), "/opt/cloudland/scripts/backend/add_fwrule.sh")
-			if err != nil {
-				log.Println("Failed to send fdb rules", err)
-				return
-			}
-		}
-	} else if args[3] == "SLAVE" {
-		err = db.Model(router).Updates(map[string]interface{}{"peer": int32(hyperID)}).Error
-		if err != nil {
-			log.Println("Update peer ID failed", err)
-			return
-		}
 	}
 	return
 }

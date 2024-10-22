@@ -236,7 +236,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 		return
 	}
 	routerID := 0
-	if rtype == "internal" {
+	if rtype == "internal" || rtype == "" {
 		routerID, err = strconv.Atoi(router)
 		if err != nil {
 			log.Println("Failed to get valid router %s, %v", router, err)

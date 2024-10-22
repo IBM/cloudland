@@ -383,7 +383,7 @@ func (v *RouterView) New(c *macaron.Context, store session.Store) {
 		return
 	}
 	subnets := []*model.Subnet{}
-	err = DB().Set("gorm:auto_preload", true).Where("type = 'internal'").Find(&subnets).Error
+	err = DB().Set("gorm:auto_preload", true).Where("type = 'public'").Find(&subnets).Error
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")

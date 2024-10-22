@@ -100,9 +100,6 @@
                         html += "</td>" +
                         "<td>";
 					}
-					if (data.instancedata[i].Cluster !== null){
-						html += data.instancedata[i].Cluster.ClusterName + ':<br>';
-					}
 					html += '<a href="/instances/' + data.instancedata[i].ID + '">' + data.instancedata[i].Hostname + "</a></td>" +
 					"<td>";
 					if (data.instancedata[i].Flavor !== null){
@@ -112,8 +109,6 @@
 					"<td>";
 					if (data.instancedata[i].Image !== null){
 						html += data.instancedata[i].Image.Name;
-					} else if (data.instancedata[i].Cluster != null) {
-						html += 'RHCOS';
 					}
 					html += "</td>" +
 					"<td>";
@@ -269,9 +264,8 @@
 									{{ if $.IsAdmin }}
 			                        <td><a href="{{$Link}}/{{.ID}}">{{.ID}}</a></td>
 									{{ end }}
-			                        <td>{{ if .Cluster }}{{.Cluster.ClusterName}}:<br>{{end}}<a href="{{$Link}}/{{.ID}}">{{.Hostname}}</a></td>
 			                        <td>{{ if .Flavor }}{{ .Flavor.Name}}{{ end }}</td>
-			                        <td>{{ if .Image }}{{.Image.Name}}{{else if .Cluster }}RHCOS{{end}}</td>
+			                        <td>{{ if .Image }}{{.Image.Name}}{{end}}</td>
 			                        <td>
 						{{ if .FloatingIps }}
 							{{ range .FloatingIps }}

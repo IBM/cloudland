@@ -16,7 +16,7 @@ type Instance struct {
 	Domain      string        `gorm:"type:varchar(128)"`
 	Status      string        `gorm:"type:varchar(32)"`
 	Reason      string        `gorm:"type:text"`
-	FloatingIps []*FloatingIp `gorm:"PRELOAD:false"`
+	FloatingIps []*FloatingIp `gorm:"foreignkey:InstanceID"`
 	Volumes     []*Volume     `gorm:"PRELOAD:false"`
 	Interfaces  []*Interface  `gorm:"foreignkey:Instance"`
 	Portmaps    []*Portmap    `gorm:"foreignkey:instanceID"`
@@ -24,8 +24,6 @@ type Instance struct {
 	Flavor      *Flavor `gorm:"foreignkey:FlavorID"`
 	ImageID     int64
 	Image       *Image `gorm:"foreignkey:ImageID"`
-	ClusterID   int64
-	Cluster     *Openshift `gorm:"PRELOAD:false"`
 	Keys        []*Key     `gorm:"many2many:InstanceKeys;"`
 	Userdata    string     `gorm:"type:text"`
 	Hyper       int32      `gorm:"default:-1"`
