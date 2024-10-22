@@ -51,17 +51,7 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, typ
 		floatingips = instance.FloatingIps
 		return
 	}
-	var iface *model.Interface
-	if ifaceID > 0 {
-		iface = &model.Interface{Model: model.Model{ID: ifaceID}}
-		err = db.Take(iface).Error
-		if err != nil {
-			log.Println("DB failed to query interface", err)
-			return
-		}
-	} else {
-		iface = instance.Interfaces[0]
-	}
+	iface := instance.Interfaces[0]
 	routerID := iface.Address.Subnet.RouterID
 	if routerID <= 0 {
 		err = fmt.Errorf("Floating IP can not be created without a router")
@@ -69,13 +59,13 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, typ
 		return
 	}
 	router := &model.Router{Model: model.Model{ID: routerID}}
-	err = db.Set("gorm:auto_preload", true).Preload("Interfaces").Model(router).Take(router).Error
+	err = db.Set("gorm:auto_preload", true).Model(router).Take(router).Error
 	if err != nil {
-		log.Println("DB failed to query instance, %v", err)
+		log.Println("DB failed to query router, %v", err)
 		return
 	}
 	for _, ftype := range types {
-		floatingip := &model.FloatingIp{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, RouterID: router.ID, InstanceID: instance.ID, Type: ftype}
+		floatingip := &model.FloatingIp{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, RouterID: router.ID, Type: ftype}
 		err = db.Create(floatingip).Error
 		if err != nil {
 			log.Println("DB failed to create floating ip", err)
@@ -310,7 +300,7 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	if ftype == "" {
-		ftype = "public,private"
+		ftype = "public"
 	}
 	publicIp := c.QueryTrim("publicip")
 	types := strings.Split(ftype, ",")
@@ -350,7 +340,7 @@ func (v *FloatingIpView) Assign(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	types := []string{"public", "private"}
+	types := []string{"public"}
 	fipsData := &FloatingIps{Instance: instID}
 	floatingips, err := floatingipAdmin.Create(c.Req.Context(), int64(instID), 0, types, floatingIP)
 	if err != nil {
@@ -371,29 +361,17 @@ func (v *FloatingIpView) Assign(c *macaron.Context, store session.Store) {
 func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, router *model.Router, ftype, address string) (fipIface *model.Interface, err error) {
 	var db *gorm.DB
 	ctx, db = getCtxDB(ctx)
-	var subnet *model.Subnet
-	for _, iface := range router.Interfaces {
-		if strings.Contains(iface.Type, ftype) {
-			subnet = iface.Address.Subnet
-			break
-		}
-	}
-	if subnet == nil {
-		err = fmt.Errorf("Invalid router subnet")
+	subnet := &model.Subnet{}
+	err = db.Where("type = 'public'").Take(subnet).Error
+	if err != nil {
+		log.Println("Failed to query subnet, %v", err)
 		return
 	}
 	name := ftype + "fip"
-	subnets := []*model.Subnet{}
-	err = db.Where("vlan = ?", subnet.Vlan).Find(&subnets).Error
-	if err == nil && len(subnets) > 0 {
-		for _, s := range subnets {
-			fipIface, err = CreateInterface(ctx, s.ID, floatingipID, owner, router.ZoneID, -1, address, "", name, "floating", nil)
-			if err == nil {
-				break
-			}
-		}
-	} else {
-		err = fmt.Errorf("No valid external subnets")
+	fipIface, err = CreateInterface(ctx, subnet.ID, floatingipID, owner, router.ZoneID, -1, address, "", name, "floating", nil)
+	if err != nil {
+		log.Println("Failed to create fip interface, %v", err)
+		return
 	}
 	return
 }

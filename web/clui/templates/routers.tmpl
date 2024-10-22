@@ -27,7 +27,6 @@
 									{{ end }}
 			                        <th>{{.i18n.Tr "Name"}}</th>
 			                        <th>{{.i18n.Tr "Interfaces"}}</th>
-			                        <th>{{.i18n.Tr "Subnets"}}</th>
 			                        <th>{{.i18n.Tr "Status"}}</th>
 		   			        {{ if $.IsAdmin }}
 			                        <th>{{.i18n.Tr "Hyper"}}</th>
@@ -51,13 +50,6 @@
 											    {{ if .Address }}
 												{{ .Address.Address }}
 											    {{ end }}
-											{{ end }}
-										{{ end }}
-									</td>
-			                        <td>
-										{{ if .Subnets }}
-											{{ range .Subnets }}
-												{{ .Router }}
 											{{ end }}
 										{{ end }}
 									</td>

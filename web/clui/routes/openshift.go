@@ -181,7 +181,7 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 		return
 	}
 	secGroups := []*model.SecurityGroup{secgroup}
-	instance = &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, FlavorID: flavorID, Status: "pending", ZoneID: openshift.ZoneID, ClusterID: id}
+	instance = &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, FlavorID: flavorID, Status: "pending", ZoneID: openshift.ZoneID}
 	err = db.Create(instance).Error
 	if err != nil {
 		log.Println("DB create instance failed", err)
@@ -189,7 +189,7 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 	}
 	metadata := ""
 	var ifaces []*model.Interface
-	ifaces, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, "", "", nil, nil, instance, "", secGroups, openshift.ZoneID, openshift.ID, ipaddr)
+	ifaces, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, "", "", nil, nil, instance, "", secGroups, openshift.ZoneID, ipaddr)
 	if err != nil {
 		log.Println("Build instance metadata failed", err)
 		return
@@ -402,7 +402,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, cookie, ha
 		return
 	}
 	lbImg := image.ID
-	instance, err := instanceAdmin.Create(ctx, 1, lbname, userdata, int64(lbImg), lflavor, subnet.ID, openshift.ID, zoneID, lbIP, "", nil, keyIDs, sgIDs, -1)
+	instance, err := instanceAdmin.Create(ctx, 1, lbname, userdata, int64(lbImg), lflavor, subnet.ID, zoneID, lbIP, "", nil, keyIDs, sgIDs, -1)
 	if err != nil {
 		log.Println("Failed to create oc first instance", err)
 		return

@@ -22,7 +22,6 @@ import (
 	"github.com/IBM/cloudland/web/clui/model"
 	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/go-macaron/session"
-	"github.com/jinzhu/gorm"
 	macaron "gopkg.in/macaron.v1"
 )
 
@@ -132,7 +131,7 @@ func (a *InstanceAdmin) getHyperGroup(imageType string, zoneID int64) (hyperGrou
 	return
 }
 
-func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, imageID, flavorID, primaryID, clusterID, zoneID int64, primaryIP, primaryMac string, subnetIDs, keyIDs []int64, sgIDs []int64, hyperID int) (instance *model.Instance, err error) {
+func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, imageID, flavorID, primaryID, zoneID int64, primaryIP, primaryMac string, subnetIDs, keyIDs []int64, sgIDs []int64, hyperID int) (instance *model.Instance, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	image := &model.Image{Model: model.Model{ID: imageID}}
@@ -240,7 +239,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		if count > 1 {
 			hostname = fmt.Sprintf("%s-%d", prefix, i+1)
 		}
-		instance = &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, ImageID: imageID, FlavorID: flavorID, Userdata: userdata, Status: "pending", ClusterID: clusterID, ZoneID: zoneID}
+		instance = &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, ImageID: imageID, FlavorID: flavorID, Userdata: userdata, Status: "pending", ZoneID: zoneID}
 		err = db.Create(instance).Error
 		if err != nil {
 			log.Println("DB create instance failed", err)
@@ -248,7 +247,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		}
 		metadata := ""
 		var ifaces []*model.Interface
-		ifaces, metadata, err = a.buildMetadata(ctx, primary, primaryIP, primaryMac, subnets, keys, instance, userdata, secGroups, zoneID, clusterID, "")
+		ifaces, metadata, err = a.buildMetadata(ctx, primary, primaryIP, primaryMac, subnets, keys, instance, userdata, secGroups, zoneID, "")
 		if err != nil {
 			log.Println("Build instance metadata failed", err)
 			return
@@ -265,14 +264,6 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		command := ""
 		if imageID > 0 {
 			command = fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' 'image-%d.%s' '%s' '%d' '%d' '%d' <<EOF\n%s\nEOF", instance.ID, image.ID, image.Format, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, base64.StdEncoding.EncodeToString([]byte(metadata)))
-		} else if clusterID > 0 {
-			command = fmt.Sprintf("/opt/cloudland/scripts/backend/oc_vm.sh '%d' '%d' '%d' '%d' '%s'<<EOF\n%s\nEOF", instance.ID, flavor.Cpu, flavor.Memory, flavor.Disk, hostname, metadata)
-			openshift := &model.Openshift{Model: model.Model{ID: clusterID}}
-			err = db.Model(openshift).Update("worker_num", gorm.Expr("worker_num + 1")).Error
-			if err != nil {
-				log.Println("Failed to update openshift cluster")
-				return
-			}
 		}
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
@@ -550,7 +541,7 @@ func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subne
 	return
 }
 
-func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet, primaryIP, primaryMac string, subnets []*model.Subnet, keys []*model.Key, instance *model.Instance, userdata string, secGroups []*model.SecurityGroup, zoneID, clusterID int64, service string) (interfaces []*model.Interface, metadata string, err error) {
+func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet, primaryIP, primaryMac string, subnets []*model.Subnet, keys []*model.Key, instance *model.Instance, userdata string, secGroups []*model.SecurityGroup, zoneID int64, service string) (interfaces []*model.Interface, metadata string, err error) {
 	vlans := []*VlanInfo{}
 	instNetworks := []*InstanceNetwork{}
 	instLinks := []*NetworkLink{}
@@ -621,26 +612,10 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet
 	if dns == primaryIP {
 		dns = ""
 	}
-	ocp := []*OcpData{}
-	if clusterID > 0 {
-		openshift := &model.Openshift{Model: model.Model{ID: clusterID}}
-		err = DB().Take(openshift).Error
-		if err != nil {
-			log.Println("Invalid OCP cluster ", clusterID)
-			return
-		}
-		od := &OcpData{
-			OcpVersion: openshift.Version,
-			Service:    service,
-		}
-		ocp = append(ocp, od)
-		virtType = openshift.InfrastructureType
-	}
 	instData := &InstanceData{
 		Userdata: userdata,
 		VirtType: virtType,
 		DNS:      dns,
-		OCP:      ocp,
 		Vlans:    vlans,
 		Networks: instNetworks,
 		Links:    instLinks,
@@ -669,14 +644,6 @@ func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
 	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
 		log.Println("Failed to query instance, %v", err)
 		return
-	}
-	if instance.ClusterID > 0 && strings.Index(instance.Hostname, "worker-") == 0 {
-		openshift := &model.Openshift{Model: model.Model{ID: instance.ClusterID}}
-		err = db.Model(openshift).Update("worker_num", gorm.Expr("worker_num - 1")).Error
-		if err != nil {
-			log.Println("Failed to update openshift cluster")
-			return
-		}
 	}
 	if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
 		log.Println("Failed to query floating ip(s), %v", err)
@@ -737,11 +704,11 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 	}
 	where := memberShip.GetWhere()
 	instances = []*model.Instance{}
-	if err = db.Model(&model.Instance{}).Where(where).Where(query).Where(query).Count(&total).Error; err != nil {
+	if err = db.Model(&model.Instance{}).Where(where).Where(query).Count(&total).Error; err != nil {
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Set("gorm:auto_preload", true).Where(where).Where(query).Where(query).Find(&instances).Error; err != nil {
+	if err = db.Set("gorm:auto_preload", true).Where(where).Where(query).Find(&instances).Error; err != nil {
 		log.Println("Failed to query instance(s), %v", err)
 		return
 	}
@@ -750,13 +717,6 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 		if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
 			log.Println("Failed to query floating ip(s), %v", err)
 			return
-		}
-		if instance.ClusterID > 0 {
-			instance.Cluster = &model.Openshift{Model: model.Model{ID: instance.ClusterID}}
-			if err = db.Take(instance.Cluster).Error; err != nil {
-				log.Println("Failed to query openshift cluster info", err)
-				instance.ClusterID = 0
-			}
 		}
 		permit := memberShip.CheckPermission(model.Admin)
 		if permit {
@@ -1227,9 +1187,9 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		}
 	}
 	image := c.QueryInt64("image")
-	if image <= 0 && cluster <= 0 {
-		log.Println("No valid image ID or cluster ID", err)
-		c.Data["ErrorMsg"] = "No valid image ID or cluster ID"
+	if image <= 0 {
+		log.Println("No valid image ID", image)
+		c.Data["ErrorMsg"] = "No valid image ID"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
@@ -1324,7 +1284,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		sgIDs = append(sgIDs, sgID)
 	}
 	userdata := c.QueryTrim("userdata")
-	instances, err := instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, image, flavor, int64(primaryID), cluster, zoneID, ipAddr, macAddr, subnetIDs, keyIDs, sgIDs, hyperID)
+	instances, err := instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, image, flavor, int64(primaryID), zoneID, ipAddr, macAddr, subnetIDs, keyIDs, sgIDs, hyperID)
 	if err != nil {
 		log.Println("Create instance failed", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
