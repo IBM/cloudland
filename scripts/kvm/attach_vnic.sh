@@ -28,9 +28,9 @@ while read line; do
     mac=$(echo $line | cut -d' ' -f3)
     decapper=$(echo $line | cut -d' ' -f4)
     primary=$(echo $line | cut -d' ' -f5)
-    netmask=$(ipcalc -m $vm_ip | cut -d= -f2)
+    netmask=$(ipcalc -b $vm_ip | grep Netmask | awk '{print $2}')
     addr=${vm_ip%/*}
-	gateway=$(ipcalc --minaddr $vm_ip | cut -d= -f2)
+	gateway=$(ipcalc -b $vm_ip | grep HostMin | awk '{print $2}')
 	if [ "$primary" = 'true' ]; then
 		net_json=$(echo $net_json | jq --arg netmask $netmask --arg gateway $gateway --arg addr $addr --arg mac $mac \
 			'.networks[0].type="ipv4" | .networks[0].netmask=$netmask | .networks[0].link="eth0" | .networks[0].ip_address=$addr | .networks[0].id="network0" |

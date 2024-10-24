@@ -31,8 +31,8 @@ ip link add dev $vs_nic type veth peer name $vm_nic
 ip link set $vs_nic up
 ip link set $vm_nic netns $instance
 ip netns exec $instance ip link set $vm_nic up
-prefix=$(ipcalc -p $vm_ip $vm_mask | cut -d= -f2)
-brdcast=$(ipcalc -b $vm_ip $vm_mask | cut -d= -f2)
+prefix=$(ipcalc -b $vm_ip $vm_mask | grep Netmask | awk '{print $4}')
+brdcast=$(ipcalc -b $vm_ip $vm_mask | grep Broadcast | awk '{print $2}')
 ip netns exec $instance ip link set address $vm_mac dev $vm_nic
 ip netns exec $instance ip link set $vm_nic mtu 1450
 ip netns exec $instance ip addr add ${vm_ip}/$prefix brd $brdcast dev $vm_nic

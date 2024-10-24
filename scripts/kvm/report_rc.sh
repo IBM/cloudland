@@ -148,4 +148,4 @@ calc_resource
 probe_arp >/dev/null 2>&1
 #inst_status
 vlan_status
-#router_status
+router_status

@@ -108,39 +108,22 @@ func (a *RouterAdmin) Create(ctx context.Context, name, stype string, pubID, own
 			return
 		}
 	}
-	intIfaces := []*SubnetIface{}
-	jsonData, err := json.Marshal(intIfaces)
+	router.PublicID = pubSubnet.ID
+	if err = db.Save(router).Error; err != nil {
+		log.Println("Failed to save router", err)
+		return
+	}
+	hyperGroup, err := instanceAdmin.getHyperGroup("", zoneID)
 	if err != nil {
-		log.Println("Failed to marshal router json data, %v", err)
+		log.Println("No valid hypervisor", err)
 		return
-	}
-	hypers := []*model.Hyper{}
-	if err = db.Where("zone_id = ?", zoneID).Find(&hypers).Error; err != nil {
-		log.Println("Hypers query failed", err)
-		return
-	}
-	hyperGroup := fmt.Sprintf("group-zone-%d", zoneID)
-	for i, h := range hypers {
-		if i == 0 {
-			hyperGroup = fmt.Sprintf("%s:%d", hyperGroup, h.Hostid)
-		} else {
-			hyperGroup = fmt.Sprintf("%s,%d", hyperGroup, h.Hostid)
-		}
 	}
 	control := "select=" + hyperGroup
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh '%d' '%s' '%s' '%d' '%s' 'MASTER' <<EOF\n%s\nEOF", router.ID, pubSubnet.Gateway, pubIface.Address.Address, vni, router.VrrpAddr, jsonData)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh '%d' '%s' '%s' '%d' '%s' 'MASTER'", router.ID, pubSubnet.Gateway, pubIface.Address.Address, vni, router.VrrpAddr)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Create master router command execution failed, %v", err)
 		return
-	}
-	if len(hypers) > 1 {
-		command = fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh '%d' '%s' '%s' '%d' '%s' 'SLAVE' <<EOF\n%s\nEOF", router.ID, pubSubnet.Gateway, pubIface.Address.Address, vni, router.PeerAddr, jsonData)
-		err = hyperExecute(ctx, control, command)
-		if err != nil {
-			log.Println("Create peer router command execution failed, %v", err)
-			return
-		}
 	}
 	return
 }

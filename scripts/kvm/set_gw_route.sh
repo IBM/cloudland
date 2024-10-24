@@ -12,5 +12,5 @@ mac=$3
 vni=$4
 mode=$5
 
-./set_gateway.sh $router $addr $mac $vni $mode
-./set_route.sh $router $vni
+./set_gateway.sh "$router" "$addr" "$mac" "$vni" "$mode"
+./set_route.sh "$router" "$vni"

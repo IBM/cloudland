@@ -13,7 +13,7 @@ vni=$4
 mode=$5
 [ -z "$mode" ] && mode='soft'
 
-bcast=$(ipcalc -b $addr | cut -d= -f2)
+bcast=$(ipcalc -b $addr | grep Broadcast | awk '{print $2}')
 ./create_link.sh $vni
 cat /proc/net/dev | grep -q "^\<ln-$vni\>"
 if [ $? -ne 0 ]; then

@@ -18,4 +18,6 @@ nmcli connection down v-$vlan
 nmcli connection del v-$vlan
 nmcli connection down $vm_br
 nmcli connection del $vm_br
+ip link del v-$vlan
+ip link del br$vlan
 apply_bridge -D $vm_br

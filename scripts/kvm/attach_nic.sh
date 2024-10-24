@@ -11,7 +11,6 @@ vm_ip=$3
 vm_mac=$4
 nic_name=tap$(echo $vm_mac | cut -d: -f4- | tr -d :)
 vm_br=br$vlan
-[ "$vm_br" = "br$external_vlan" -a -n "$zlayer2_interface" ] && /usr/sbin/bridge fdb add $vm_mac dev $zlayer2_interface
 ./create_link.sh $vlan
 brctl setageing $vm_br 0
 virsh domiflist $vm_ID | grep $vm_mac
