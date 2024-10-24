@@ -170,7 +170,7 @@ func (a *SubnetAdmin) Update(ctx context.Context, id int64, name, gateway, start
 		return
 	}
 	if subnet.RouterID > 0 {
-		err = setRouting(ctx, subnet.ID, subnet, false)
+		err = setRouting(ctx, subnet.RouterID, subnet, false)
 		if err != nil {
 			log.Println("Failed to set routing for subnet")
 			return
@@ -193,12 +193,43 @@ func (a *SubnetAdmin) Update(ctx context.Context, id int64, name, gateway, start
 	return
 }
 
+func clearRouting(ctx context.Context, routerID int64, subnet *model.Subnet) (err error) {
+	db := DB()
+	router := &model.Router{Model: model.Model{ID: routerID}}
+	err = db.Take(router).Error
+	if err != nil {
+		log.Println("DB failed to query router", err)
+		return
+	}
+	if router.Hyper >= 0 {
+		control := fmt.Sprintf("toall=router-%d:%d", router.ID, router.Hyper)
+		if router.Peer >= 0 {
+			control = fmt.Sprintf("%s,%d", control, router.Peer)
+		}
+		if router.Hyper == router.Peer {
+			control = fmt.Sprintf("inter=%d", router.Hyper)
+		}
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_gateway.sh '%d' '%s' '%d'", router.ID, subnet.Gateway, subnet.Vlan)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Set gateway failed")
+			return
+		}
+	}
+	return
+}
+
 func setRouting(ctx context.Context, routerID int64, subnet *model.Subnet, routeOnly bool) (err error) {
 	db := DB()
 	router := &model.Router{Model: model.Model{ID: routerID}}
 	err = db.Take(router).Error
 	if err != nil {
 		log.Println("DB failed to query router", err)
+		return
+	}
+	iface, err := CreateInterface(ctx, subnet.ID, routerID, router.Owner, router.ZoneID, router.Hyper, subnet.Gateway, "", "subnet-gw", "gateway", nil)
+	if err != nil {
+		log.Println("Failed to create gateway subnet interface", err)
 		return
 	}
 	control := fmt.Sprintf("toall=router-%d:%d,%d", router.ID, router.Hyper, router.Peer)
@@ -209,7 +240,7 @@ func setRouting(ctx context.Context, routerID int64, subnet *model.Subnet, route
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_route.sh '%d' '%d' '%s'<<EOF\n%s\nEOF", router.ID, subnet.Vlan, subnet.Type, subnet.Routes)
 		err = hyperExecute(ctx, control, command)
 	} else {
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_gw_route.sh '%d' '%s' '%d' soft <<EOF\n%s\nEOF", router.ID, subnet.Gateway, subnet.Vlan, subnet.Routes)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_gw_route.sh '%d' '%s' '%s' '%d' soft <<EOF\n%s\nEOF", router.ID, subnet.Gateway, iface.MacAddr, subnet.Vlan, subnet.Routes)
 		err = hyperExecute(ctx, control, command)
 	}
 	if err != nil {
@@ -376,6 +407,13 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 	for _, z := range zoneList {
 		_ = execNetwork(ctx, netlink, subnet, owner, z.ID)
 	}
+	if subnet.RouterID > 0 {
+		err = setRouting(ctx, subnet.RouterID, subnet, false)
+		if err != nil {
+			log.Println("Failed to set routing for subnet")
+			return
+		}
+	}
 	return
 }
 
@@ -434,7 +472,7 @@ func (a *SubnetAdmin) Delete(ctx context.Context, id int64) (err error) {
 		return
 	}
 	count := 0
-	err = db.Model(&model.Interface{}).Where("subnet = ? and type <> ?", subnet.ID, "dhcp").Count(&count).Error
+	err = db.Model(&model.Interface{}).Where("subnet = ? and type <> 'dhcp' and type <> 'gateway'", subnet.ID).Count(&count).Error
 	if err != nil {
 		log.Println("Failed to query interfaces", err)
 		return
@@ -459,6 +497,13 @@ func (a *SubnetAdmin) Delete(ctx context.Context, id int64) (err error) {
 	if err != nil {
 		log.Println("Database delete ip address failed, %v", err)
 		return
+	}
+	if subnet.RouterID > 0 {
+		err = clearRouting(ctx, subnet.RouterID, subnet)
+		if err != nil {
+			log.Println("Failed to set routing for subnet")
+			return
+		}
 	}
 	netlink := subnet.Netlink
 	if netlink != nil {

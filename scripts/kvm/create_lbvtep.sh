@@ -19,8 +19,8 @@ ip link set ${instance}-vs up
 ip link set dev ${instance}-vs master br$vlan
 ip link set ${instance}-vm netns $instance
 ip netns exec $instance ip link set ${instance}-vm up
-prefix=$(ipcalc -p $ip $netmask | cut -d= -f2)
-brdcast=$(ipcalc -b $ip $netmask | cut -d= -f2)
+prefix=$(ipcalc -b $ip $netmask | grep Netmask | awk '{print $4}')
+brdcast=$(ipcalc -b $ip $netmask | grep Broadcast | awk '{print $2}')
 ip netns exec $instance ip link set address $mac dev ${instance}-vm
 ip netns exec $instance ip link set ${instance}-vm mtu 1450
 ip netns exec $instance ip addr add ${ip}/$prefix brd $brdcast dev ${instance}-vm

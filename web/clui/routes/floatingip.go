@@ -65,7 +65,7 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, typ
 		return
 	}
 	for _, ftype := range types {
-		floatingip := &model.FloatingIp{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, RouterID: router.ID, Type: ftype}
+		floatingip := &model.FloatingIp{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, InstanceID: instID, RouterID: router.ID, Type: ftype}
 		err = db.Create(floatingip).Error
 		if err != nil {
 			log.Println("DB failed to create floating ip", err)

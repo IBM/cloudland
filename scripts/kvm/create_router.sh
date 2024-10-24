@@ -14,7 +14,6 @@ vrrp_ip=$5
 role=$6
 
 [ -z "$router" -o -z "$ext_ip" ] && exit 1
-[ "$proxy_mode" = "yes" -a "$role" = "SLAVE" ] && exit 0
 
 ip netns add $router
 #ip netns exec $router iptables -A INPUT -m mark --mark 0x1/0xffff -j ACCEPT
@@ -99,4 +98,4 @@ while [ $i -lt $n ]; do
 done
 
 ip netns exec $router bash -c "echo 1 >/proc/sys/net/ipv4/ip_forward"
-echo "|:-COMMAND-:| $(basename $0) '$ID' '$SCI_CLIENT_ID' '$role' '$proxy_mode'"
+echo "|:-COMMAND-:| $(basename $0) '$ID' '$SCI_CLIENT_ID' '$role'

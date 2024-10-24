@@ -106,18 +106,16 @@ type InstancesData struct {
 func (a *InstanceAdmin) getHyperGroup(imageType string, zoneID int64) (hyperGroup string, err error) {
 	db := DB()
 	hypers := []*model.Hyper{}
-	where := fmt.Sprintf("zone_id = %d", zoneID)
+	where := fmt.Sprintf("zone_id = %d and status = 1", zoneID)
 	if imageType != "" {
 		where = fmt.Sprintf("%s and virt_type = '%s'", where, imageType)
 	}
 	if err = db.Where(where).Find(&hypers).Error; err != nil {
 		log.Println("Hypers query failed", err)
-		fmt.Errorf("Hypers query failed %s", err)
 		return
 	}
 	if len(hypers) == 0 {
 		log.Println("No qualified hypervisor")
-		fmt.Errorf("No qualified hypervisor %s", where)
 		return
 	}
 	hyperGroup = fmt.Sprintf("group-zone-%d", zoneID)

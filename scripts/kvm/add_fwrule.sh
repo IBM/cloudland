@@ -22,6 +22,6 @@ while [ $i -lt $len ]; do
         bridge fdb add $inner_mac dev v-$vni dst $outer_ip self permanent
         ip neighbor add ${inner_ip%%/*} lladdr $inner_mac dev v-$vni nud permanent
     fi
-    sql_exec "insert into vxlan_rules (instance, vni, inner_ip, inner_mac, outer_ip) values ('$instance', '$vni', '$inner_ip', '$inner_mac', '$outer_ip')"
+#    sql_exec "insert into vxlan_rules (instance, vni, inner_ip, inner_mac, outer_ip) values ('$instance', '$vni', '$inner_ip', '$inner_mac', '$outer_ip')"
     let i=$i+1
 done

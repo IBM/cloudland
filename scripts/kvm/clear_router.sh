@@ -12,10 +12,6 @@ vrrp_vni=$2
 
 suffix=$1
 ip netns exec $router ip link set lo down
-if [ -n "$zlayer2_interface" ]; then
-    mac=$(ip netns exec $router ip link show te-$suffix | grep ether | awk '{print $2}')
-    /usr/sbin/bridge fdb del $mac dev $zlayer2_interface
-fi
 ip link del ext-$suffix
 apply_vnic -D ext-$suffix
 ip link del int-$suffix

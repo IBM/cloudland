@@ -22,6 +22,7 @@ type Router struct {
 	PeerAddr   string       `gorm:"type:varchar(64)"`
 	Interfaces []*Interface `gorm:"foreignkey:Device"`
 	Subnets    []*Subnet    `gorm:"foreignkey:RouterID"`
+	PublicID   int64
 	ZoneID     int64
 	Zone       *Zone     `gorm:"foreignkey:ZoneID"`
 }
