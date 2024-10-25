@@ -3,10 +3,11 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 1 ] && die "$0 <vm_ID>"
+[ $# -lt 1 ] && die "$0 <vm_ID> <router>"
 
 ID=$1
 vm_ID=inst-$1
+router=$2
 vm_xml=$(virsh dumpxml $vm_ID)
 virsh undefine $vm_ID
 cmd="virsh destroy $vm_ID"
@@ -26,6 +27,7 @@ for (( i=1; i <= $count; i++ )); do
         ./clear_link.sh $vni
         ./rm_fdb.sh $mac_addr
         ./clear_sg_chain.sh $vif_dev
+	./clear_local_router $router
     fi
     sidecar span log $span "Callback: clear_vnic.sh '$vif_dev'"
 done
