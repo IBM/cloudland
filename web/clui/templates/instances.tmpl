@@ -264,7 +264,8 @@
 									{{ if $.IsAdmin }}
 			                        <td><a href="{{$Link}}/{{.ID}}">{{.ID}}</a></td>
 									{{ end }}
-			                        <td>{{ if .Flavor }}{{ .Flavor.Name}}{{ end }}</td>
+			                        <td>{{ if .Hostname }}<a href="{{$Link}}/{{.ID}}">{{.Hostname}}</a>{{ end }}</td>
+			                        <td>{{ if .Flavor }}{{.Flavor.Name}}{{ end }}</td>
 			                        <td>{{ if .Image }}{{.Image.Name}}{{end}}</td>
 			                        <td>
 						{{ if .FloatingIps }}

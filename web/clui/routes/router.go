@@ -76,19 +76,20 @@ func (a *RouterAdmin) Create(ctx context.Context, name, stype string, pubID, own
 		owner = memberShip.OrgID
 	}
 	db := DB()
+	/*
 	vni, err := getValidVni()
 	if err != nil {
 		log.Println("Failed to get valid vrrp vni %s, %v", vni, err)
 		return
-	}
-	router = &model.Router{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Name: name, Type: stype, VrrpVni: int64(vni), VrrpAddr: "169.254.169.250/24", PeerAddr: "169.254.169.251/24", Status: "pending", ZoneID: zoneID}
+	}*/
+	router = &model.Router{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Name: name, Type: stype, VrrpVni: 0, Status: "available", ZoneID: zoneID}
 	err = db.Create(router).Error
 	if err != nil {
 		log.Println("DB failed to create router, %v", err)
 		return
 	}
+/*	
 	var pubIface *model.Interface
-	var pubSubnet *model.Subnet
 	if pubID == 0 {
 		pubIface, pubSubnet, err = createRouterIface(ctx, "public", router, owner, zoneID)
 		if err != nil || pubIface == nil {
@@ -108,11 +109,27 @@ func (a *RouterAdmin) Create(ctx context.Context, name, stype string, pubID, own
 			return
 		}
 	}
+*/	
+	pubSubnet := &model.Subnet{Model: model.Model{ID: pubID}}
+	if pubID == 0 {
+		err = db.Where("type = 'public'").Take(pubSubnet).Error
+		if err != nil {
+			log.Println("DB failed to query public subnet, %v", err)
+			return
+		}
+	} else {
+		err = db.Model(pubSubnet).Where(pubSubnet).Take(pubSubnet).Error
+		if err != nil {
+			log.Println("DB failed to query public subnet, %v", err)
+			return
+		}
+	}
 	router.PublicID = pubSubnet.ID
 	if err = db.Save(router).Error; err != nil {
 		log.Println("Failed to save router", err)
 		return
 	}
+/*	
 	hyperGroup, err := instanceAdmin.getHyperGroup("", zoneID)
 	if err != nil {
 		log.Println("No valid hypervisor", err)
@@ -125,6 +142,7 @@ func (a *RouterAdmin) Create(ctx context.Context, name, stype string, pubID, own
 		log.Println("Create master router command execution failed, %v", err)
 		return
 	}
+*/
 	return
 }
 
