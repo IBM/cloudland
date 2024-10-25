@@ -1,4 +1,4 @@
-#!/bin/bash -xv
+#!/bin/bash
 
 cd $(dirname $0)
 source ../cloudrc

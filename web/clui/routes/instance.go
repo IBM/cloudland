@@ -276,7 +276,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 func (a *InstanceAdmin) ChangeInstanceStatus(ctx context.Context, id int64, action string) (instance *model.Instance, err error) {
 	db := DB()
 	instance = &model.Instance{Model: model.Model{ID: id}}
-	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
+	if err = db.Take(instance).Error; err != nil {
 		log.Println("Failed to query instance ", err)
 		return
 	}
@@ -293,7 +293,7 @@ func (a *InstanceAdmin) ChangeInstanceStatus(ctx context.Context, id int64, acti
 func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname, action string, subnetIDs, sgIDs []int64, hyper int) (instance *model.Instance, err error) {
 	db := DB()
 	instance = &model.Instance{Model: model.Model{ID: id}}
-	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
+	if err = db.Preload("Interfaces").Preload("Flavor").Take(instance).Error; err != nil {
 		log.Println("Failed to query instance ", err)
 		return
 	}
@@ -361,7 +361,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh '%d' '%s'", instance.ID, action)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
-			log.Println("Delete vm command execution failed", err)
+			log.Println("action vm command execution failed", err)
 			return
 		}
 	}
@@ -639,7 +639,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
 		}
 	}()
 	instance := &model.Instance{Model: model.Model{ID: id}}
-	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
+	if err = db.Preload("FloatingIps").Take(instance).Error; err != nil {
 		log.Println("Failed to query instance, %v", err)
 		return
 	}
@@ -669,14 +669,15 @@ func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
 			}
 		}
 	}
-	if instance.Hyper != -1 {
-		control := fmt.Sprintf("inter=%d", instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh '%d'", instance.ID)
-		err = hyperExecute(ctx, control, command)
-		if err != nil {
-			log.Println("Delete vm command execution failed, %v", err)
-			return
-		}
+	control := fmt.Sprintf("inter=%d", instance.Hyper)
+	if instance.Hyper == -1 {
+		control = "toall="
+	}
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh '%d'", instance.ID)
+	err = hyperExecute(ctx, control, command)
+	if err != nil {
+		log.Println("Delete vm command execution failed, %v", err)
+		return
 	}
 	err = db.Model(instance).Update("status", "deleting").Error
 	if err != nil {
@@ -706,12 +707,16 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Set("gorm:auto_preload", true).Where(where).Where(query).Find(&instances).Error; err != nil {
+	if err = db.Preload("Image").Preload("Zone").Preload("Flavor").Where(where).Where(query).Find(&instances).Error; err != nil {
 		log.Println("Failed to query instance(s), %v", err)
 		return
 	}
 	db = db.Offset(0).Limit(-1)
 	for _, instance := range instances {
+		if err = db.Preload("Address").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
+			log.Println("Failed to query interfaces %v", err)
+			return
+		}
 		if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
 			log.Println("Failed to query floating ip(s), %v", err)
 			return
@@ -951,7 +956,7 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 		return
 	}
 	instance := &model.Instance{Model: model.Model{ID: int64(instanceID)}}
-	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
+	if err = db.Preload("Interfaces").Take(instance).Error; err != nil {
 		log.Println("Image query failed", err)
 		return
 	}

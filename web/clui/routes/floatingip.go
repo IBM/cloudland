@@ -40,9 +40,14 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, typ
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	instance := &model.Instance{Model: model.Model{ID: instID}}
-	err = db.Set("gorm:auto_preload", true).Preload("Interfaces", "primary_if = ?", true).Model(instance).Take(instance).Error
+	err = db.Model(instance).Take(instance).Error
 	if err != nil {
 		log.Println("DB failed to query instance, %v", err)
+		return
+	}
+	err = db.Preload("Address").Preload("Address.Subnet").Where("instance = ? and primary_if = ?", instID, true).Find(&instance.Interfaces).Error
+	if err != nil {
+		log.Println("DB failed to query interfaces, %v", err)
 		return
 	}
 	err = db.Where("instance_id = ?", instID).Find(&instance.FloatingIps).Error
@@ -113,7 +118,7 @@ func (a *FloatingIpAdmin) Delete(ctx context.Context, id int64) (err error) {
 	}()
 	ctx = saveTXtoCtx(ctx, db)
 	floatingip := &model.FloatingIp{Model: model.Model{ID: id}}
-	if err = db.Set("gorm:auto_preload", true).Find(floatingip).Error; err != nil {
+	if err = db.Preload("Router").Find(floatingip).Error; err != nil {
 		log.Println("Failed to query floating ip", err)
 		return
 	}
@@ -158,7 +163,7 @@ func (a *FloatingIpAdmin) List(ctx context.Context, offset, limit int64, order, 
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Set("gorm:auto_preload", true).Where(where).Where(query).Find(&floatingips).Error; err != nil {
+	if err = db.Preload("Instance").Preload("Instance.Zone").Where(where).Where(query).Find(&floatingips).Error; err != nil {
 		log.Println("DB failed to query floating ip(s), %v", err)
 		return
 	}
@@ -273,8 +278,16 @@ func (v *FloatingIpView) New(c *macaron.Context, store session.Store) {
 	db := DB()
 	where := memberShip.GetWhere()
 	instances := []*model.Instance{}
-	if err := db.Preload("Interfaces", "primary_if = ?", true).Preload("Interfaces.Address").Preload("Interfaces.Address.Subnet").Where(where).Find(&instances).Error; err != nil {
+	err := db.Where(where).Find(&instances).Error
+	if err != nil {
+		log.Println("Failed to query instances %v", err)
 		return
+	}
+	for _, instance := range instances {
+		if err = db.Preload("Address").Preload("Address.Subnet").Where("instance = ? and primary_if = true", instance.ID).Find(&instance.Interfaces).Error; err != nil {
+			log.Println("Failed to query interfaces %v", err)
+			return
+		}
 	}
 	c.Data["Instances"] = instances
 	c.HTML(200, "floatingips_new")

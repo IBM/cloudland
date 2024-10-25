@@ -48,7 +48,7 @@ func sendFdbRules(ctx context.Context, devIfaces []*model.Interface, hyperNode i
 	allIfaces := []*model.Interface{}
 	hyperSet := make(map[int32]struct{})
 	for _, subnetID := range allSubnets {
-		err := db.Preload("Address").Preload("Address.Subnet").Where("subnet = ?", subnetID).Find(&allIfaces).Error
+		err := db.Preload("Address").Preload("Address.Subnet").Where("subnet = ? and instance > 0", subnetID).Find(&allIfaces).Error
 		if err != nil {
 			log.Println("Failed to query all interfaces", err)
 			continue
@@ -124,9 +124,15 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 		}
 		return
 	}
-	err = db.Preload("Interfaces").Preload("Interfaces.Address").Preload("Interfaces.Address.Subnet").Take(instance).Error
+	err = db.Take(instance).Error
 	if err != nil {
 		log.Println("Invalid instance ID", err)
+		reason = err.Error()
+		return
+	}
+	err = db.Preload("Address").Preload("Address.Subnet").Where("instance = ?", instID).Find(&instance.Interfaces).Error
+	if err != nil {
+		log.Println("Failed to get interfaces", err)
 		reason = err.Error()
 		return
 	}
