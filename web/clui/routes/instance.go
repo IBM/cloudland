@@ -59,6 +59,8 @@ type NetworkLink struct {
 type VlanInfo struct {
 	Device  string `json:"device"`
 	Vlan    int64  `json:"vlan"`
+	Gateway string `json:"gateway"`
+	Router  int64  `json:"router"`
 	IpAddr  string `json:"ip_address"`
 	MacAddr string `json:"mac_address"`
 }
@@ -163,14 +165,14 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		return
 	}
 	if hyperID >= 0 {
-		hyper := &model.Hyper{Hostid: int32(hyperID)}
-		err = db.Where(hyper).Take(hyper).Error
+		hyper := &model.Hyper{}
+		err = db.Where("hostid = ?", hyperID).Take(hyper).Error
 		if err != nil {
 			log.Println("Failed to query hypervisor", err)
 			return
 		}
 		if zoneID > 0 && hyper.ZoneID != zoneID {
-			log.Println("Hypervisor is not in this zone", err)
+			log.Printf("Hypervisor %v is not in zone %d, %v", hyper, zoneID, err)
 			err = fmt.Errorf("Hypervisor is not in this zone")
 			return
 		}
@@ -556,7 +558,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet
 	instNetwork.Routes = append(instNetwork.Routes, instRoute)
 	instNetworks = append(instNetworks, instNetwork)
 	instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, IpAddr: address, MacAddr: iface.MacAddr})
+	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, Gateway: primary.Gateway, Router: primary.RouterID, IpAddr: address, MacAddr: iface.MacAddr})
 	for i, subnet := range subnets {
 		ifname := fmt.Sprintf("eth%d", i+1)
 		iface, err = a.createInterface(ctx, subnet, "", "", instance, ifname, secGroups, zoneID)
@@ -574,7 +576,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet
 			ID:      fmt.Sprintf("network%d", i+1),
 		})
 		instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, IpAddr: address, MacAddr: iface.MacAddr})
+		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: address, MacAddr: iface.MacAddr})
 	}
 	var instKeys []string
 	for _, key := range keys {
@@ -673,7 +675,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
 	if instance.Hyper == -1 {
 		control = "toall="
 	}
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh '%d'", instance.ID)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh '%d' '%d'", instance.ID, instance.ZoneID)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Delete vm command execution failed, %v", err)

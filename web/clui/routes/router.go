@@ -217,24 +217,10 @@ func (a *RouterAdmin) Delete(ctx context.Context, id int64) (err error) {
 		return
 	}
 	control := "toall="
-	if router.Hyper != -1 {
-		control = fmt.Sprintf("inter=%d", router.Hyper)
-	}
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_router.sh '%d' '%d' <<EOF\n%s\nEOF", router.ID, router.VrrpVni, jsonData)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Delete master failed")
-	}
-	if control != "toall=" {
-		control = "toall="
-		if router.Peer != -1 {
-			control = fmt.Sprintf("inter=%d", router.Peer)
-		}
-		command = fmt.Sprintf("/opt/cloudland/scripts/backend/clear_router.sh '%d' '%d' <<EOF\n%s\nEOF", router.ID, router.VrrpVni, jsonData)
-		err = hyperExecute(ctx, control, command)
-		if err != nil {
-			log.Println("Delete slave failed")
-		}
 	}
 	if err = db.Delete(router).Error; err != nil {
 		log.Println("DB failed to delete router", err)
