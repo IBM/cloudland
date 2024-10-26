@@ -18,7 +18,8 @@ ip netns list | grep -q $router
 
 ext_dev=te-$ID
 ip netns exec $router ip addr add $ext_cidr dev $ext_dev
-ip netns exec $router ip route add default via $pub_gw
+ip netns exec $router ip route add default via $pub_gw table fip
+ip netns exec $router ip rule add from $int_ip lookup fip
 ip netns exec $router iptables -t nat -I POSTROUTING -s $int_ip -m set ! --match-set nonat dst -j SNAT --to-source $ext_ip
 ip netns exec $router iptables -t nat -I PREROUTING -d $ext_ip -j DNAT --to-destination $int_ip
 ip netns exec $router arping -c 3 -I $ext_dev -s $ext_ip $ext_ip

@@ -18,3 +18,6 @@ suffix=$1
 ip link del ext-$suffix
 ip link del int-$suffix
 ip netns del $router
+
+nat_ip=169.$(($SCI_CLIENT_ID % 234)).$(($suffix % 234)).3
+iptables -t nat -D POSTROUTING -s ${nat_ip}/32 -j SNAT --to-source $route_ip
