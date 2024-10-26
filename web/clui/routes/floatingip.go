@@ -78,7 +78,8 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, typ
 		}
 		address := publicIp
 		var fipIface *model.Interface
-		fipIface, err = AllocateFloatingIp(ctx, floatingip.ID, memberShip.OrgID, router, ftype, address)
+		var gateway string
+		fipIface, gateway, err = AllocateFloatingIp(ctx, floatingip.ID, memberShip.OrgID, router, ftype, address)
 		if err != nil {
 			log.Println("DB failed to allocate floating ip", err)
 			return
@@ -96,7 +97,7 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, typ
 		if router.Hyper == router.Peer {
 			control = fmt.Sprintf("inter=%d", router.Hyper)
 		}
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_floating.sh '%d' '%s' '%s' '%s'", router.ID, ftype, floatingip.FipAddress, iface.Address.Address)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_floating.sh '%d' '%s' '%s' '%s'", router.ID, floatingip.FipAddress, iface.Address.Address, gateway)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Create floating ip failed", err)
@@ -127,7 +128,7 @@ func (a *FloatingIpAdmin) Delete(ctx context.Context, id int64) (err error) {
 		if floatingip.Router.Hyper == floatingip.Router.Peer {
 			control = fmt.Sprintf("inter=%d", floatingip.Router.Hyper)
 		}
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_floating.sh '%d' '%s' '%s' '%s'", floatingip.RouterID, floatingip.Type, floatingip.FipAddress, floatingip.IntAddress)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_floating.sh '%d' '%s' '%s'", floatingip.RouterID, floatingip.FipAddress, floatingip.IntAddress)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Create floating ip failed", err)
@@ -371,7 +372,7 @@ func (v *FloatingIpView) Assign(c *macaron.Context, store session.Store) {
 	c.JSON(200, fipsData)
 }
 
-func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, router *model.Router, ftype, address string) (fipIface *model.Interface, err error) {
+func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, router *model.Router, ftype, address string) (fipIface *model.Interface, gateway string, err error) {
 	var db *gorm.DB
 	ctx, db = getCtxDB(ctx)
 	subnet := &model.Subnet{}
@@ -386,6 +387,7 @@ func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, router *
 		log.Println("Failed to create fip interface, %v", err)
 		return
 	}
+	gateway = subnet.Gateway
 	return
 }
 
