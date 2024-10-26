@@ -67,7 +67,6 @@ else
     template=$template_dir/wds_template.xml
 fi
 
-hyper_ip=$(ifconfig $vxlan_interface | grep 'inet addr:' | cut -d: -f2 | cut -d' ' -f1)
 [ -z "$vm_mem" ] && vm_mem='1024m'
 [ -z "$vm_cpu" ] && vm_cpu=1
 let vm_mem=${vm_mem%[m|M]}*1024

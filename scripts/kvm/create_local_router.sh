@@ -26,7 +26,8 @@ ip netns exec $router ipset create nonat nethash
 ip netns exec $router iptables -t nat -S | grep "source \<$nat_ip\>"
 if [ $? -ne 0 ]; then
     ip netns exec $router iptables -t nat -A POSTROUTING -m set --match-set nonat src -m set ! --match-set nonat dst -j SNAT --to-source $nat_ip
-    iptables -t nat -A POSTROUTING -s ${nat_ip}/32 -j SNAT --to-source $peer_ip
+    route_ip=$(ifconfig $vxlan_interface | grep 'inet ' | awk '{print $2}')
+    iptables -t nat -A POSTROUTING -s ${nat_ip}/32 -j SNAT --to-source $route_ip
     apply_vnic -I ext-$suffix
     apply_vnic -I int-$suffix
 fi
