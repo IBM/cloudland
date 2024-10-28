@@ -239,7 +239,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		if count > 1 {
 			hostname = fmt.Sprintf("%s-%d", prefix, i+1)
 		}
-		instance = &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, ImageID: imageID, FlavorID: flavorID, Userdata: userdata, Status: "pending", ZoneID: zoneID}
+		instance = &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, ImageID: imageID, FlavorID: flavorID, Userdata: userdata, Status: "pending", ZoneID: zoneID, RouterID: primary.RouterID}
 		err = db.Create(instance).Error
 		if err != nil {
 			log.Println("DB create instance failed", err)
@@ -675,7 +675,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
 	if instance.Hyper == -1 {
 		control = "toall="
 	}
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh '%d' '%d'", instance.ID, instance.ZoneID)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh '%d' '%d'", instance.ID, instance.RouterID)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Delete vm command execution failed, %v", err)

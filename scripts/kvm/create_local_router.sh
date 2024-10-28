@@ -5,8 +5,8 @@ source ../cloudrc
 
 [ $# -lt 1 ] && echo "$0 <router>" && exit -1
 
-ID=$1
-router=router-$ID
+router=$1
+[ "${router/router-/}" = "$router" ] && router=router-$1
 
 [ -z "$router" ] && exit 1
 
@@ -21,12 +21,14 @@ nat_ip=169.$(($SCI_CLIENT_ID % 234)).$(($suffix % 234)).3
 peer_ip=169.$(($SCI_CLIENT_ID % 234)).$(($suffix % 234)).2
 ip netns exec $router ip addr add ${nat_ip}/31 dev ti-$suffix
 ip addr add ${peer_ip}/31 dev int-$suffix
+ip route add default via
 
 ip netns exec $router ipset create nonat nethash
 ip netns exec $router iptables -t nat -S | grep "source \<$nat_ip\>"
 if [ $? -ne 0 ]; then
     ip netns exec $router iptables -t nat -A POSTROUTING -m set --match-set nonat src -m set ! --match-set nonat dst -j SNAT --to-source $nat_ip
     route_ip=$(ifconfig $vxlan_interface | grep 'inet ' | awk '{print $2}')
+    ip netns exec $router ip route add default via $peer_ip
     iptables -t nat -A POSTROUTING -s ${nat_ip}/32 -j SNAT --to-source $route_ip
     apply_vnic -I ext-$suffix
     apply_vnic -I int-$suffix

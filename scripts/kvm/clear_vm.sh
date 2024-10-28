@@ -24,8 +24,6 @@ for (( i=1; i <= $count; i++ )); do
         sidecar span log $span "Internal: $vif_dev is deleted" "result: $result"
     else
         vni=${br_name#br}
-        ./clear_link.sh $vni
-        ./rm_fdb.sh $mac_addr
         ./clear_sg_chain.sh $vif_dev
 	./clear_local_router $router
     fi

@@ -9,7 +9,6 @@ package routes
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -178,20 +177,34 @@ func (a *RouterAdmin) Delete(ctx context.Context, id int64) (err error) {
 	err = db.Model(&model.FloatingIp{}).Where("router_id = ?", id).Count(&count).Error
 	if err != nil {
 		log.Println("Failed to count floating ip")
+		err = fmt.Errorf("Failed to count floating ip")
 		return
 	}
 	if count > 0 {
 		log.Println("There are floating ips")
+		err = fmt.Errorf("There areassociated floating ips")
 		return
 	}
 	count = 0
+	err = db.Model(&model.Subnet{}).Where("router_id = ?", id).Count(&count).Error
+	if err != nil {
+		log.Println("Failed to count subnet")
+		err = fmt.Errorf("Failed to count subnet")
+		return
+	}
+	if count > 0 {
+		log.Println("There are associated subnets")
+		err = fmt.Errorf("There are associated subnets")
+		return
+	}
 	err = db.Model(&model.Portmap{}).Where("router_id = ?", id).Count(&count).Error
 	if err != nil {
 		log.Println("Failed to count portmap")
 		return
 	}
 	if count > 0 {
-		log.Println("There are floating ips")
+		log.Println("There are associated portmaps")
+		err = fmt.Errorf("There are associated portmaps")
 		return
 	}
 	router := &model.Router{Model: model.Model{ID: id}}
@@ -199,25 +212,8 @@ func (a *RouterAdmin) Delete(ctx context.Context, id int64) (err error) {
 		log.Println("Failed to query router", err)
 		return
 	}
-	intIfaces := []*SubnetIface{}
-	for _, subnet := range router.Subnets {
-		intIfaces = append(intIfaces, &SubnetIface{Address: subnet.Gateway, Vni: subnet.Vlan})
-	}
-	jsonData, err := json.Marshal(intIfaces)
-	if err != nil {
-		log.Println("Failed to marshal router json data, %v", err)
-		return
-	}
-	if err = db.Model(&model.Subnet{}).Where("router = ?", id).Update("router", 0).Error; err != nil {
-		log.Println("DB failed to update router for subnet, %v", err)
-		return
-	}
-	if err = DeleteInterfaces(ctx, id, 0, "gateway"); err != nil {
-		log.Println("DB failed to delete interfaces, %v", err)
-		return
-	}
 	control := "toall="
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_router.sh '%d' '%d' <<EOF\n%s\nEOF", router.ID, router.VrrpVni, jsonData)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_local_router.sh '%d'", router.ID)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Delete master failed")
