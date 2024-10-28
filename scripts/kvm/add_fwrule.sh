@@ -5,6 +5,7 @@ source ../cloudrc
 
 rules=$(cat)
 len=$(jq length <<< $rules)
+vtep_ip=$(ifconfig $vxlan_interface | grep 'inet ' | awk '{print $2}')
 i=0
 while [ $i -lt $len ]; do
     rule=$(jq -r .[$i] <<< $rules)

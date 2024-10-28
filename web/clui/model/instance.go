@@ -29,6 +29,7 @@ type Instance struct {
 	Hyper       int32      `gorm:"default:-1"`
 	ZoneID      int64
 	Zone        *Zone     `gorm:"foreignkey:ZoneID"`
+	RouterID    int64
 }
 
 func init() {

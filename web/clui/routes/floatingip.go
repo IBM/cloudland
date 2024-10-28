@@ -93,10 +93,7 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, typ
 			return
 		}
 		floatingips = append(floatingips, floatingip)
-		control := fmt.Sprintf("toall=router-%d:%d,%d", router.ID, router.Hyper, router.Peer)
-		if router.Hyper == router.Peer {
-			control = fmt.Sprintf("inter=%d", router.Hyper)
-		}
+		control := fmt.Sprintf("inter=%d", instance.Hyper)
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_floating.sh '%d' '%s' '%s' '%s'", router.ID, floatingip.FipAddress, iface.Address.Address, gateway)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
@@ -119,21 +116,16 @@ func (a *FloatingIpAdmin) Delete(ctx context.Context, id int64) (err error) {
 	}()
 	ctx = saveTXtoCtx(ctx, db)
 	floatingip := &model.FloatingIp{Model: model.Model{ID: id}}
-	if err = db.Preload("Router").Find(floatingip).Error; err != nil {
+	if err = db.Preload("Router").Preload("Instance").Find(floatingip).Error; err != nil {
 		log.Println("Failed to query floating ip", err)
 		return
 	}
-	if floatingip.Router != nil {
-		control := fmt.Sprintf("toall=router-%d:%d,%d", floatingip.Router.ID, floatingip.Router.Hyper, floatingip.Router.Peer)
-		if floatingip.Router.Hyper == floatingip.Router.Peer {
-			control = fmt.Sprintf("inter=%d", floatingip.Router.Hyper)
-		}
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_floating.sh '%d' '%s' '%s'", floatingip.RouterID, floatingip.FipAddress, floatingip.IntAddress)
-		err = hyperExecute(ctx, control, command)
-		if err != nil {
-			log.Println("Create floating ip failed", err)
-			return
-		}
+	control := fmt.Sprintf("inter=%d", floatingip.Instance.Hyper)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_floating.sh '%d' '%s' '%s'", floatingip.RouterID, floatingip.FipAddress, floatingip.IntAddress)
+	err = hyperExecute(ctx, control, command)
+	if err != nil {
+		log.Println("Create floating ip failed", err)
+		return
 	}
 	err = DeallocateFloatingIp(ctx, id)
 	if err != nil {

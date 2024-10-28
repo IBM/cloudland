@@ -22,13 +22,4 @@ if [ $? -ne 0 ]; then
 fi
 ./create_sg_chain.sh $nic_name $vm_ip $vm_mac
 ./apply_sg_rule.sh $nic_name
-./create_local_router.sh $router
-bcast=$(ipcalc -b $gateway | grep Broadcast | awk '{print $2}')
-./create_veth.sh router-$router ln-$vlan ns-$vlan
-brctl addif br$vlan ln-$vlan
-ipnet=$(ipcalc -b $gateway | grep Network | awk '{print $2}')
-ip netns exec $router ipset add nonat $ip_net
-ip netns exec router-$router ip addr add $gateway brd $bcast dev ns-$vlan
-if [ $? -eq 0 ]; then
-    ip netns exec router-$router ip link set ns-$vlan address 52:54:00:00:00:01
-fi
+./set_subnet_gw $router $vlan $gateway

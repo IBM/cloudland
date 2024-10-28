@@ -30,13 +30,12 @@ type FdbRule struct {
 	OuterIP  string `json:"outer_ip"`
 }
 
-func sendFdbRules(ctx context.Context, devIfaces []*model.Interface, hyperNode int32, fdbScript string) (err error) {
+func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript string) (err error) {
 	db := dbs.DB()
-	allSubnets := []int64{}
 	localRules := []*FdbRule{}
 	spreadRules := []*FdbRule{}
-	for _, iface := range devIfaces {
-		allSubnets = append(allSubnets, iface.Address.SubnetID)
+	hyperNode := instance.Hyper
+	for _, iface := range instance.Interfaces {
 		hyper := &model.Hyper{}
 		err = db.Where("hostid = ?", hyperNode).Take(hyper).Error
 		if err != nil || hyper.Hostid < 0 {
@@ -47,22 +46,20 @@ func sendFdbRules(ctx context.Context, devIfaces []*model.Interface, hyperNode i
 	}
 	allIfaces := []*model.Interface{}
 	hyperSet := make(map[int32]struct{})
-	for _, subnetID := range allSubnets {
-		err := db.Preload("Address").Preload("Address.Subnet").Where("subnet = ? and instance > 0", subnetID).Find(&allIfaces).Error
+	err = db.Preload("Address").Preload("Address.Subnet").Where("router_id = ? and instance > 0", instance.RouterID).Find(&allIfaces).Error
+	if err != nil {
+		log.Println("Failed to query all interfaces", err)
+		return
+	}
+	for _, iface := range allIfaces {
+		hyper := &model.Hyper{}
+		err = db.Where("hostid = ? and hostid != ?", iface.Hyper, hyperNode).Take(hyper).Error
 		if err != nil {
-			log.Println("Failed to query all interfaces", err)
+			log.Println("Failed to query hypervisor", err)
 			continue
 		}
-		for _, iface := range allIfaces {
-			hyper := &model.Hyper{}
-			err = db.Where("hostid = ? and hostid != ?", iface.Hyper, hyperNode).Take(hyper).Error
-			if err != nil {
-				log.Println("Failed to query hypervisor", err)
-				continue
-			}
-			hyperSet[iface.Hyper] = struct{}{}
-			localRules = append(localRules, &FdbRule{Instance: iface.Name, Vni: iface.Address.Subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper.HostIP})
-		}
+		hyperSet[iface.Hyper] = struct{}{}
+		localRules = append(localRules, &FdbRule{Instance: iface.Name, Vni: iface.Address.Subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper.HostIP})
 	}
 	if len(hyperSet) > 0 && len(spreadRules) > 0 {
 		hyperList := fmt.Sprintf("group-fdb-%d", hyperNode)
@@ -162,7 +159,7 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 		log.Println("Failed to update interface", err)
 		return
 	}
-	err = sendFdbRules(ctx, instance.Interfaces, instance.Hyper, "/opt/cloudland/scripts/backend/add_fwrule.sh")
+	err = sendFdbRules(ctx, instance, "/opt/cloudland/scripts/backend/add_fwrule.sh")
 	if err != nil {
 		log.Println("Failed to send fdb rules", err)
 		return

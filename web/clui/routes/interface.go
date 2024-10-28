@@ -519,6 +519,7 @@ func CreateInterface(ctx context.Context, subnetID, ID, owner, zoneID int64, hyp
 		Type:      ifType,
 		Mtu:       1450,
 		ZoneID:    zoneID,
+		RouterID:  subnet.RouterID,
 		Secgroups: secGroups,
 	}
 	if ifType == "instance" {

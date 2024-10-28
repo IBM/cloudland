@@ -103,7 +103,7 @@ func ClearVM(ctx context.Context, args []string) (status string, err error) {
 	if err != nil {
 		return
 	}
-	err = sendFdbRules(ctx, instance.Interfaces, instance.Hyper, "/opt/cloudland/scripts/backend/del_fwrule.sh")
+	err = sendFdbRules(ctx, instance, "/opt/cloudland/scripts/backend/del_fwrule.sh")
 	if err != nil {
 		log.Println("Failed to send clear fdb rules", err)
 		return

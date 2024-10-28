@@ -40,16 +40,5 @@ func ClearRouter(ctx context.Context, args []string) (status string, err error) 
 		log.Println("Invalid gateway ID", err)
 		return
 	}
-	hyperID := -1
-	hyperID, err = strconv.Atoi(args[2])
-	if err != nil {
-		log.Println("Invalid hyper ID", err)
-		return
-	}
-	err = sendFdbRules(ctx, router.Interfaces, int32(hyperID), "/opt/cloudland/scripts/backend/del_fwrule.sh")
-	if err != nil {
-		log.Println("Failed to send fdb rules", err)
-		return
-	}
 	return
 }
