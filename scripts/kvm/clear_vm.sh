@@ -25,10 +25,10 @@ for (( i=1; i <= $count; i++ )); do
     else
         vni=${br_name#br}
         ./clear_sg_chain.sh $vif_dev
-	./clear_local_router $router
     fi
     sidecar span log $span "Callback: clear_vnic.sh '$vif_dev'"
 done
+./clear_local_router.sh $router
 
 rm -f ${cache_dir}/meta/${vm_ID}.iso
 rm -rf $xml_dir/$vm_ID

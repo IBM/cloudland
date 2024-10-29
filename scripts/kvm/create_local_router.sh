@@ -13,7 +13,7 @@ router=$1
 ip netns add $router
 #ip netns exec $router iptables -A INPUT -m mark --mark 0x1/0xffff -j ACCEPT
 ip netns exec $router ip link set lo up
-suffix=$1
+suffix=${router/router-/}
 
 ./create_veth.sh $router ext-$suffix te-$suffix
 ./create_veth.sh $router int-$suffix ti-$suffix

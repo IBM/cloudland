@@ -3,7 +3,7 @@
 cd `dirname $0`
 source ../cloudrc
 
-[ $# -lt 4 ] && echo "$0 <router> <vlan> <gateway>" && exit -1
+[ $# -lt 3 ] && echo "$0 <router> <vlan> <gateway>" && exit -1
 
 router=$1
 [ "${router/router-/}" = "$router" ] && router=router-$1

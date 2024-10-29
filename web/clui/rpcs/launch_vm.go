@@ -28,6 +28,8 @@ type FdbRule struct {
 	InnerIP  string `json:"inner_ip"`
 	InnerMac string `json:"inner_mac"`
 	OuterIP  string `json:"outer_ip"`
+	Gateway  string `json:"gateway"`
+	Router   int64  `json:"router"`
 }
 
 func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript string) (err error) {
@@ -42,7 +44,9 @@ func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript strin
 			log.Println("Failed to query hypervisor")
 			continue
 		}
-		spreadRules = append(spreadRules, &FdbRule{Instance: iface.Name, Vni: iface.Address.Subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper.HostIP})
+		if iface.Address.Subnet.Type != "public" {
+			spreadRules = append(spreadRules, &FdbRule{Instance: iface.Name, Vni: iface.Address.Subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper.HostIP, Gateway: iface.Address.Subnet.Gateway, Router: iface.Address.Subnet.RouterID})
+		}
 	}
 	allIfaces := []*model.Interface{}
 	hyperSet := make(map[int32]struct{})
@@ -51,34 +55,36 @@ func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript strin
 		log.Println("Failed to query all interfaces", err)
 		return
 	}
-	for _, iface := range allIfaces {
-		hyper := &model.Hyper{}
-		err = db.Where("hostid = ? and hostid != ?", iface.Hyper, hyperNode).Take(hyper).Error
-		if err != nil {
-			log.Println("Failed to query hypervisor", err)
-			continue
-		}
-		hyperSet[iface.Hyper] = struct{}{}
-		localRules = append(localRules, &FdbRule{Instance: iface.Name, Vni: iface.Address.Subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper.HostIP})
-	}
-	if len(hyperSet) > 0 && len(spreadRules) > 0 {
-		hyperList := fmt.Sprintf("group-fdb-%d", hyperNode)
-		i := 0
-		for key := range hyperSet {
-			if i == 0 {
-				hyperList = fmt.Sprintf("%s:%d", hyperList, key)
-			} else {
-				hyperList = fmt.Sprintf("%s,%d", hyperList, key)
+	if instance.Status != "deleted" {
+		for _, iface := range allIfaces {
+			hyper := &model.Hyper{}
+			hyperErr := db.Where("hostid = ? and hostid != ?", iface.Hyper, hyperNode).Take(hyper).Error
+			if hyperErr != nil {
+				log.Println("Failed to query hypervisor", hyperErr)
+				continue
 			}
-			i++
+			hyperSet[iface.Hyper] = struct{}{}
+			localRules = append(localRules, &FdbRule{Instance: iface.Name, Vni: iface.Address.Subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper.HostIP,  Gateway: iface.Address.Subnet.Gateway, Router: iface.Address.Subnet.RouterID})
 		}
-		fdbJson, _ := json.Marshal(spreadRules)
-		control := "toall=" + hyperList
-		command := fmt.Sprintf("%s <<EOF\n%s\nEOF", fdbScript, fdbJson)
-		err = HyperExecute(ctx, control, command)
-		if err != nil {
-			log.Println("Add_fwrule execution failed", err)
-			return
+		if len(hyperSet) > 0 && len(spreadRules) > 0 {
+			hyperList := fmt.Sprintf("group-fdb-%d", hyperNode)
+			i := 0
+			for key := range hyperSet {
+				if i == 0 {
+					hyperList = fmt.Sprintf("%s:%d", hyperList, key)
+				} else {
+					hyperList = fmt.Sprintf("%s,%d", hyperList, key)
+				}
+				i++
+			}
+			fdbJson, _ := json.Marshal(spreadRules)
+			control := "toall=" + hyperList
+			command := fmt.Sprintf("%s <<EOF\n%s\nEOF", fdbScript, fdbJson)
+			err = HyperExecute(ctx, control, command)
+			if err != nil {
+				log.Println("Add_fwrule execution failed", err)
+				return
+			}
 		}
 	}
 	if len(localRules) > 0 {
