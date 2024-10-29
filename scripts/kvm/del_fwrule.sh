@@ -8,7 +8,10 @@ len=$(jq length <<< $rules)
 i=0
 while [ $i -lt $len ]; do
     rule=$(jq -r .[$i] <<< $rules)
-    instance=$(jq -r .instance <<< $rule)
+    router=router-$(jq -r .router <<< $rule)
+    ip netns | grep "\<$router\>"
+    [ $? -eq 0 ] && continue
+#    instance=$(jq -r .instance <<< $rule)
     vni=$(jq -r .vni <<< $rule)
     inner_ip=$(jq -r .inner_ip <<< $rule)
     inner_mac=$(jq -r .inner_mac <<< $rule)

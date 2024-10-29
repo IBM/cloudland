@@ -97,15 +97,11 @@ func ClearVM(ctx context.Context, args []string) (status string, err error) {
 		reason = err.Error()
 		return
 	}
+	instance.Status = "deleted"
 	err = db.Model(&instance).Updates(map[string]interface{}{
 		"status": "deleted",
 		"reason": reason}).Error
 	if err != nil {
-		return
-	}
-	err = sendFdbRules(ctx, instance, "/opt/cloudland/scripts/backend/del_fwrule.sh")
-	if err != nil {
-		log.Println("Failed to send clear fdb rules", err)
 		return
 	}
 	err = deleteInterfaces(ctx, instance)
@@ -115,6 +111,11 @@ func ClearVM(ctx context.Context, args []string) (status string, err error) {
 	}
 	if err = db.Delete(instance).Error; err != nil {
 		log.Println("Failed to delete instance, %v", err)
+		return
+	}
+	err = sendFdbRules(ctx, instance, "/opt/cloudland/scripts/backend/del_fwrule.sh")
+	if err != nil {
+		log.Println("Failed to send clear fdb rules", err)
 		return
 	}
 	return
