@@ -9,7 +9,7 @@
   become_user: root
   roles:
     - {role: hyper, become: yes, tags: [hyper]}
-    - {role: imgrepo, become: yes, tags: [imgrepo], when client_id == 0}
+    - {role: imgrepo, become: yes, tags: [nginx]}
 
 # deploy root node
 - name: install cland
