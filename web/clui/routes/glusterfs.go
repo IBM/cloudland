@@ -128,7 +128,7 @@ func (a *GlusterfsAdmin) Update(ctx context.Context, id, heketiKey, flavorID int
 			userdata = fmt.Sprintf("%s\n./gluster.sh '%d' '%s'", userdata, glusterfs.ID, glusterfs.Endpoint)
 			sgIDs := []int64{secgroup.ID}
 			keyIDs := []int64{glusterfs.Key, glusterfs.HeketiKey}
-			_, err = instanceAdmin.Create(ctx, 1, hostname, userdata, 1, glusterfs.Flavor, glusterfs.SubnetID, glusterfs.ClusterID, glusterfs.ZoneID, ipaddr, "", nil, keyIDs, sgIDs, -1)
+			_, err = instanceAdmin.Create(ctx, 1, hostname, userdata, 1, glusterfs.Flavor, glusterfs.SubnetID, glusterfs.ZoneID, ipaddr, "", nil, keyIDs, sgIDs, -1)
 			if err != nil {
 				log.Println("Failed to launch a worker", err)
 				return
@@ -202,28 +202,17 @@ func (a *GlusterfsAdmin) Create(ctx context.Context, name, cookie string, nworke
 	}
 	var subnet *model.Subnet
 	var openshift *model.Openshift
-	if cluster > 0 {
-		openshift = &model.Openshift{Model: model.Model{ID: cluster}}
-		err = db.Preload("Subnet").Take(openshift).Error
-		if err != nil {
-			log.Println("DB failed to query openshift cluster", err)
-			return
-		}
-		subnet = openshift.Subnet
-	} else {
-		tmpName := fmt.Sprintf("g%d-sn", glusterfs.ID)
-		subnet, err = subnetAdmin.Create(ctx, tmpName, "", "192.168.91.0", "255.255.255.0", "", "", "", "", "", "", "", "yes", "", "", memberShip.OrgID)
-		if err != nil {
-			log.Println("Failed to create glusterfs subnet", err)
-			return
-		}
-		subnetIDs := []int64{subnet.ID}
-		tmpName = fmt.Sprintf("g%d-gw", glusterfs.ID)
-		_, err = gatewayAdmin.Create(ctx, tmpName, "", 0, 0, subnetIDs, memberShip.OrgID, zoneID)
-		if err != nil {
-			log.Println("Failed to create gateway", err)
-			return
-		}
+	tmpName := fmt.Sprintf("g%d-sn", glusterfs.ID)
+	subnet, err = subnetAdmin.Create(ctx, tmpName, "", "192.168.91.0", "255.255.255.0", "", "", "", "", "", "", "", "yes", "", "", memberShip.OrgID)
+	if err != nil {
+		log.Println("Failed to create glusterfs subnet", err)
+		return
+	}
+	tmpName = fmt.Sprintf("g%d-gw", glusterfs.ID)
+	_, err = routerAdmin.Create(ctx, tmpName, "", 0, memberShip.OrgID, zoneID)
+	if err != nil {
+		log.Println("Failed to create gateway", err)
+		return
 	}
 	secgroup, err := a.createSecgroup(ctx, "gluster", "192.168.91.0/24", memberShip.OrgID)
 	keyIDs := []int64{key}
@@ -232,8 +221,8 @@ func (a *GlusterfsAdmin) Create(ctx context.Context, name, cookie string, nworke
 	userdata := getUserdata("heketi")
 	userdata = fmt.Sprintf("%s\ncurl -k -O '%s/misc/glusterfs/heketi.sh'\nchmod +x heketi.sh", userdata, endpoint)
 	userdata = fmt.Sprintf("%s\n./heketi.sh '%d' '%s' '%s' '%d' '%d'", userdata, glusterfs.ID, endpoint, cookie, subnet.ID, nworkers)
-	tmpName := fmt.Sprintf("g%d-heketi", glusterfs.ID)
-	_, err = instanceAdmin.Create(ctx, 1, tmpName, userdata, 1, flavor, subnet.ID, cluster, 0, "192.168.91.199", "", nil, keyIDs, sgIDs, -1)
+	tmpName = fmt.Sprintf("g%d-heketi", glusterfs.ID)
+	_, err = instanceAdmin.Create(ctx, 1, tmpName, userdata, 1, flavor, subnet.ID, 0, "192.168.91.199", "", nil, keyIDs, sgIDs, -1)
 	if err != nil {
 		log.Println("Failed to create heketi instance", err)
 		return
@@ -268,8 +257,8 @@ func (a *GlusterfsAdmin) Delete(ctx context.Context, id int64) (err error) {
 	}
 	subnet := glusterfs.Subnet
 	if subnet != nil {
-		if subnet.Router != 0 {
-			err = gatewayAdmin.Delete(ctx, subnet.Router)
+		if subnet.RouterID != 0 {
+			err = routerAdmin.Delete(ctx, subnet.RouterID)
 			if err != nil {
 				log.Println("Failed to delete gateway", err)
 				return

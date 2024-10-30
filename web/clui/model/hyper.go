@@ -18,7 +18,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/IBM/cloudland/web/clui/hypers"
 	"github.com/IBM/cloudland/web/sca/dbs"
 )
 
@@ -61,6 +60,7 @@ var (
 	}
 )
 
+/*
 func (hyper *Hyper) LoadRequest(h *hypers.Hyper) {
 	hyper.Hostid = h.GetId()
 	hyper.Hostname = h.GetHostname()
@@ -79,6 +79,7 @@ func (hyper *Hyper) ToReply() (h *hypers.Hyper) {
 	}
 	return
 }
+*/
 
 func (hyper *Hyper) LoadControl(control string) {
 	items := strings.Split(control, " ")

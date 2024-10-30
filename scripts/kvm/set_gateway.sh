@@ -13,7 +13,7 @@ vni=$4
 mode=$5
 [ -z "$mode" ] && mode='soft'
 
-bcast=$(ipcalc -b $addr | cut -d= -f2)
+bcast=$(ipcalc -b $addr | grep Broadcast | awk '{print $2}')
 ./create_link.sh $vni
 cat /proc/net/dev | grep -q "^\<ln-$vni\>"
 if [ $? -ne 0 ]; then
@@ -31,7 +31,7 @@ sed -i "\#.* dev $iface#d" $vrrp_conf
 #    ip netns exec $router ip addr del $addr dev $iface
 #done
 
-ip netns exec $router ip link set $iface address $mac
+[ -n "$mac" ] && ip netns exec $router ip link set $iface address $mac
 if [ "$mode" = "hard" ]; then
     ip netns exec $router ip addr add $addr brd $bcast dev $iface
 else

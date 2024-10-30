@@ -22,7 +22,7 @@ function inet_ntoa()
     done | sed "s/\.$//g"
 }
 
-hostmin=$(ipcalc $ip $mask | grep HostMin | awk '{print $2}')
+hostmin=$(ipcalc -b $ip $mask | grep HostMin | awk '{print $2}')
 let pingip=$(inet_aton $hostmin)+1
 #myip=$(inet_aton $ip)
 

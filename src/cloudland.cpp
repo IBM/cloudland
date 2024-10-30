@@ -17,8 +17,8 @@ SPDX-License-Identifier: Apache-2.0
 #include <fstream>
 
 #include "handler.hpp"
-#include "netlayer.hpp"
 #include "rpcworker.hpp"
+#include "netlayer.hpp"
 #include "log.hpp"
 
 const int MAXFD = 1024;

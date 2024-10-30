@@ -39,12 +39,12 @@ dns_host=$dmasq_dir/$nspace/${nspace}.host
 dns_opt=$dmasq_dir/$nspace/${nspace}.opts
 dns_sh=$dmasq_dir/$nspace/${nspace}.sh
 pid_file=$dmasq_dir/$nspace/${nspace}.pid
-pfix=`ipcalc -p $dhcp_ip | cut -d'=' -f2`
-brd=`ipcalc -b $dhcp_ip | cut -d'=' -f2`
+pfix=$(ipcalc -b $dhcp_ip | grep Netmask | awk '{print $4}')
+brd=$(ipcalc -b $dhcp_ip | grep Broadcast | awk '{print $2}')
 ip netns exec $nspace ip addr add $dhcp_ip brd $brd dev ns-$vlan
 
 if [ "$role" != "BOOT" ]; then
-    ipcalc -c $gateway >/dev/null 2>&1
+    ipcalc -b $gateway >/dev/null 2>&1
     if [ $? -eq 0 ]; then
         echo "tag:tag$vlan-$tag_id,option:router,$gateway" >> $dns_opt
     else

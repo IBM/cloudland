@@ -31,7 +31,7 @@ config:
           - type: static
             ipv4: true
             address: ${cidr%/*}
-            netmask: $(ipcalc -m $cidr | cut -d= -f2)
+	    netmask: $(ipcalc -b $cidr | grep Netmask | awk '{print $2}')
             gateway: $gateway
             control: auto
     - type: nameserver

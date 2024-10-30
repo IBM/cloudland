@@ -1,4 +1,4 @@
-#!/bin/bash -xv
+#!/bin/bash
 cd `dirname $0`
 source ../cloudrc
 [ $# -lt 2 ] && echo "$0 <vm_ID> <vm_name>" && exit -1

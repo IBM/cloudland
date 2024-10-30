@@ -18,7 +18,6 @@ notify_sh=$router_dir/notify.sh
 pid_file=$router_dir/keepalived.pid
 
 iface=ns-$vni
-[ "$rtype" = "private" ] && iface=ti-$ID
 [ "$rtype" = "pubilc" ] && iface=te-$ID
 sed -i "\#ip netns exec $router route add -net .* gw .* dev $iface#d" $notify_sh
 i=0

@@ -23,8 +23,8 @@ ovs-ofctl add-flow $br_name "table=0,priority=100,ip,nw_dst=$ip,actions=output:$
 ovs-ofctl add-flow $br_name "table=0,priority=100,ip,in_port=$vm_port,actions=resubmit(,10)"
 ip link set ${instance}-vm netns $instance
 ip netns exec $instance ip link set ${instance}-vm up
-prefix=$(ipcalc -p $ip $netmask | cut -d= -f2)
-brdcast=$(ipcalc -b $ip $netmask | cut -d= -f2)
+prefix=$(ipcalc -b $ip $netmask | grep Netmask | awk '{print $4}')
+brdcast=$(ipcalc -b $ip $netmask | grep Broadcast | awk '{print $4}')
 ip netns exec $instance ip link set address $mac dev ${instance}-vm
 ip netns exec $instance ip link set ${instance}-vm mtu 1450
 ip netns exec $instance ip addr add ${ip}/$prefix brd $brdcast dev ${instance}-vm

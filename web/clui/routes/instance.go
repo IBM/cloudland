@@ -18,12 +18,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/IBM/cloudland/web/clui/grpcs"
+	"github.com/IBM/cloudland/web/clui/rpcs"
 	"github.com/IBM/cloudland/web/clui/model"
-	"github.com/IBM/cloudland/web/clui/scripts"
 	"github.com/IBM/cloudland/web/sca/dbs"
 	"github.com/go-macaron/session"
-	"github.com/jinzhu/gorm"
 	macaron "gopkg.in/macaron.v1"
 )
 
@@ -61,6 +59,8 @@ type NetworkLink struct {
 type VlanInfo struct {
 	Device  string `json:"device"`
 	Vlan    int64  `json:"vlan"`
+	Gateway string `json:"gateway"`
+	Router  int64  `json:"router"`
 	IpAddr  string `json:"ip_address"`
 	MacAddr string `json:"mac_address"`
 }
@@ -108,18 +108,16 @@ type InstancesData struct {
 func (a *InstanceAdmin) getHyperGroup(imageType string, zoneID int64) (hyperGroup string, err error) {
 	db := DB()
 	hypers := []*model.Hyper{}
-	where := fmt.Sprintf("zone_id = %d", zoneID)
+	where := fmt.Sprintf("zone_id = %d and status = 1", zoneID)
 	if imageType != "" {
 		where = fmt.Sprintf("%s and virt_type = '%s'", where, imageType)
 	}
 	if err = db.Where(where).Find(&hypers).Error; err != nil {
 		log.Println("Hypers query failed", err)
-		fmt.Errorf("Hypers query failed %s", err)
 		return
 	}
 	if len(hypers) == 0 {
 		log.Println("No qualified hypervisor")
-		fmt.Errorf("No qualified hypervisor %s", where)
 		return
 	}
 	hyperGroup = fmt.Sprintf("group-zone-%d", zoneID)
@@ -133,7 +131,7 @@ func (a *InstanceAdmin) getHyperGroup(imageType string, zoneID int64) (hyperGrou
 	return
 }
 
-func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, imageID, flavorID, primaryID, clusterID, zoneID int64, primaryIP, primaryMac string, subnetIDs, keyIDs []int64, sgIDs []int64, hyperID int) (instance *model.Instance, err error) {
+func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, imageID, flavorID, primaryID, zoneID int64, primaryIP, primaryMac string, subnetIDs, keyIDs []int64, sgIDs []int64, hyperID int) (instance *model.Instance, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	image := &model.Image{Model: model.Model{ID: imageID}}
@@ -167,14 +165,14 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		return
 	}
 	if hyperID >= 0 {
-		hyper := &model.Hyper{Hostid: int32(hyperID)}
-		err = db.Where(hyper).Take(hyper).Error
+		hyper := &model.Hyper{}
+		err = db.Where("hostid = ?", hyperID).Take(hyper).Error
 		if err != nil {
 			log.Println("Failed to query hypervisor", err)
 			return
 		}
 		if zoneID > 0 && hyper.ZoneID != zoneID {
-			log.Println("Hypervisor is not in this zone", err)
+			log.Printf("Hypervisor %v is not in zone %d, %v", hyper, zoneID, err)
 			err = fmt.Errorf("Hypervisor is not in this zone")
 			return
 		}
@@ -241,7 +239,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		if count > 1 {
 			hostname = fmt.Sprintf("%s-%d", prefix, i+1)
 		}
-		instance = &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, ImageID: imageID, FlavorID: flavorID, Userdata: userdata, Status: "pending", ClusterID: clusterID, ZoneID: zoneID}
+		instance = &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, ImageID: imageID, FlavorID: flavorID, Userdata: userdata, Status: "pending", ZoneID: zoneID, RouterID: primary.RouterID}
 		err = db.Create(instance).Error
 		if err != nil {
 			log.Println("DB create instance failed", err)
@@ -249,7 +247,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		}
 		metadata := ""
 		var ifaces []*model.Interface
-		ifaces, metadata, err = a.buildMetadata(ctx, primary, primaryIP, primaryMac, subnets, keys, instance, userdata, secGroups, zoneID, clusterID, "")
+		ifaces, metadata, err = a.buildMetadata(ctx, primary, primaryIP, primaryMac, subnets, keys, instance, userdata, secGroups, zoneID, "")
 		if err != nil {
 			log.Println("Build instance metadata failed", err)
 			return
@@ -265,15 +263,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		}
 		command := ""
 		if imageID > 0 {
-			command = fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' 'image-%d.%s' '%s' '%d' '%d' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, image.ID, image.Format, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, flavor.Swap, flavor.Ephemeral, base64.StdEncoding.EncodeToString([]byte(metadata)))
-		} else if clusterID > 0 {
-			command = fmt.Sprintf("/opt/cloudland/scripts/backend/oc_vm.sh '%d' '%d' '%d' '%d' '%s'<<EOF\n%s\nEOF", instance.ID, flavor.Cpu, flavor.Memory, flavor.Disk, hostname, metadata)
-			openshift := &model.Openshift{Model: model.Model{ID: clusterID}}
-			err = db.Model(openshift).Update("worker_num", gorm.Expr("worker_num + 1")).Error
-			if err != nil {
-				log.Println("Failed to update openshift cluster")
-				return
-			}
+			command = fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' 'image-%d.%s' '%s' '%d' '%d' '%d' <<EOF\n%s\nEOF", instance.ID, image.ID, image.Format, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, base64.StdEncoding.EncodeToString([]byte(metadata)))
 		}
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
@@ -288,7 +278,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 func (a *InstanceAdmin) ChangeInstanceStatus(ctx context.Context, id int64, action string) (instance *model.Instance, err error) {
 	db := DB()
 	instance = &model.Instance{Model: model.Model{ID: id}}
-	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
+	if err = db.Take(instance).Error; err != nil {
 		log.Println("Failed to query instance ", err)
 		return
 	}
@@ -305,7 +295,7 @@ func (a *InstanceAdmin) ChangeInstanceStatus(ctx context.Context, id int64, acti
 func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname, action string, subnetIDs, sgIDs []int64, hyper int) (instance *model.Instance, err error) {
 	db := DB()
 	instance = &model.Instance{Model: model.Model{ID: id}}
-	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
+	if err = db.Preload("Interfaces").Preload("Flavor").Take(instance).Error; err != nil {
 		log.Println("Failed to query instance ", err)
 		return
 	}
@@ -373,7 +363,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh '%d' '%s'", instance.ID, action)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
-			log.Println("Delete vm command execution failed", err)
+			log.Println("action vm command execution failed", err)
 			return
 		}
 	}
@@ -463,22 +453,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 }
 
 func hyperExecute(ctx context.Context, control, command string) (err error) {
-	if control == "" {
-		return
-	}
-	sciClient := grpcs.RemoteExecClient()
-	sciReq := &scripts.ExecuteRequest{
-		Id:      100,
-		Extra:   0,
-		Control: control,
-		Command: command,
-	}
-	_, err = sciClient.Execute(ctx, sciReq)
-	if err != nil {
-		log.Println("SCI client execution failed, %v", err)
-		return
-	}
-	return
+	return rpcs.HyperExecute(ctx, control, command)
 }
 
 func (a *InstanceAdmin) deleteInterfaces(ctx context.Context, instance *model.Instance) (err error) {
@@ -566,7 +541,7 @@ func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subne
 	return
 }
 
-func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet, primaryIP, primaryMac string, subnets []*model.Subnet, keys []*model.Key, instance *model.Instance, userdata string, secGroups []*model.SecurityGroup, zoneID, clusterID int64, service string) (interfaces []*model.Interface, metadata string, err error) {
+func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet, primaryIP, primaryMac string, subnets []*model.Subnet, keys []*model.Key, instance *model.Instance, userdata string, secGroups []*model.SecurityGroup, zoneID int64, service string) (interfaces []*model.Interface, metadata string, err error) {
 	vlans := []*VlanInfo{}
 	instNetworks := []*InstanceNetwork{}
 	instLinks := []*NetworkLink{}
@@ -583,7 +558,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet
 	instNetwork.Routes = append(instNetwork.Routes, instRoute)
 	instNetworks = append(instNetworks, instNetwork)
 	instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, IpAddr: address, MacAddr: iface.MacAddr})
+	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, Gateway: primary.Gateway, Router: primary.RouterID, IpAddr: address, MacAddr: iface.MacAddr})
 	for i, subnet := range subnets {
 		ifname := fmt.Sprintf("eth%d", i+1)
 		iface, err = a.createInterface(ctx, subnet, "", "", instance, ifname, secGroups, zoneID)
@@ -601,7 +576,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet
 			ID:      fmt.Sprintf("network%d", i+1),
 		})
 		instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, IpAddr: address, MacAddr: iface.MacAddr})
+		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: address, MacAddr: iface.MacAddr})
 	}
 	var instKeys []string
 	for _, key := range keys {
@@ -637,36 +612,10 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primary *model.Subnet
 	if dns == primaryIP {
 		dns = ""
 	}
-	zvm := []*ZvmData{}
-	if virtType == "zvm" {
-		zd := &ZvmData{
-			OsVersion: image.OsVersion,
-			DiskType:  image.DiskType,
-			VSwitch:   primary.VSwitch,
-		}
-		zvm = append(zvm, zd)
-	}
-	ocp := []*OcpData{}
-	if clusterID > 0 {
-		openshift := &model.Openshift{Model: model.Model{ID: clusterID}}
-		err = DB().Take(openshift).Error
-		if err != nil {
-			log.Println("Invalid OCP cluster ", clusterID)
-			return
-		}
-		od := &OcpData{
-			OcpVersion: openshift.Version,
-			Service:    service,
-		}
-		ocp = append(ocp, od)
-		virtType = openshift.InfrastructureType
-	}
 	instData := &InstanceData{
 		Userdata: userdata,
 		VirtType: virtType,
 		DNS:      dns,
-		ZVM:      zvm,
-		OCP:      ocp,
 		Vlans:    vlans,
 		Networks: instNetworks,
 		Links:    instLinks,
@@ -692,17 +641,9 @@ func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
 		}
 	}()
 	instance := &model.Instance{Model: model.Model{ID: id}}
-	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
+	if err = db.Preload("FloatingIps").Take(instance).Error; err != nil {
 		log.Println("Failed to query instance, %v", err)
 		return
-	}
-	if instance.ClusterID > 0 && strings.Index(instance.Hostname, "worker-") == 0 {
-		openshift := &model.Openshift{Model: model.Model{ID: instance.ClusterID}}
-		err = db.Model(openshift).Update("worker_num", gorm.Expr("worker_num - 1")).Error
-		if err != nil {
-			log.Println("Failed to update openshift cluster")
-			return
-		}
 	}
 	if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
 		log.Println("Failed to query floating ip(s), %v", err)
@@ -730,14 +671,15 @@ func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
 			}
 		}
 	}
-	if instance.Hyper != -1 {
-		control := fmt.Sprintf("inter=%d", instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh '%d'", instance.ID)
-		err = hyperExecute(ctx, control, command)
-		if err != nil {
-			log.Println("Delete vm command execution failed, %v", err)
-			return
-		}
+	control := fmt.Sprintf("inter=%d", instance.Hyper)
+	if instance.Hyper == -1 {
+		control = "toall="
+	}
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh '%d' '%d'", instance.ID, instance.RouterID)
+	err = hyperExecute(ctx, control, command)
+	if err != nil {
+		log.Println("Delete vm command execution failed, %v", err)
+		return
 	}
 	err = db.Model(instance).Update("status", "deleting").Error
 	if err != nil {
@@ -763,26 +705,23 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 	}
 	where := memberShip.GetWhere()
 	instances = []*model.Instance{}
-	if err = db.Model(&model.Instance{}).Where(where).Where(query).Where(query).Count(&total).Error; err != nil {
+	if err = db.Model(&model.Instance{}).Where(where).Where(query).Count(&total).Error; err != nil {
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Set("gorm:auto_preload", true).Where(where).Where(query).Where(query).Find(&instances).Error; err != nil {
+	if err = db.Preload("Image").Preload("Zone").Preload("Flavor").Where(where).Where(query).Find(&instances).Error; err != nil {
 		log.Println("Failed to query instance(s), %v", err)
 		return
 	}
 	db = db.Offset(0).Limit(-1)
 	for _, instance := range instances {
+		if err = db.Preload("Address").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
+			log.Println("Failed to query interfaces %v", err)
+			return
+		}
 		if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
 			log.Println("Failed to query floating ip(s), %v", err)
 			return
-		}
-		if instance.ClusterID > 0 {
-			instance.Cluster = &model.Openshift{Model: model.Model{ID: instance.ClusterID}}
-			if err = db.Take(instance.Cluster).Error; err != nil {
-				log.Println("Failed to query openshift cluster info", err)
-				instance.ClusterID = 0
-			}
 		}
 		permit := memberShip.CheckPermission(model.Admin)
 		if permit {
@@ -1019,7 +958,7 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 		return
 	}
 	instance := &model.Instance{Model: model.Model{ID: int64(instanceID)}}
-	if err = db.Set("gorm:auto_preload", true).Take(instance).Error; err != nil {
+	if err = db.Preload("Interfaces").Take(instance).Error; err != nil {
 		log.Println("Image query failed", err)
 		return
 	}
@@ -1253,9 +1192,9 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		}
 	}
 	image := c.QueryInt64("image")
-	if image <= 0 && cluster <= 0 {
-		log.Println("No valid image ID or cluster ID", err)
-		c.Data["ErrorMsg"] = "No valid image ID or cluster ID"
+	if image <= 0 {
+		log.Println("No valid image ID", image)
+		c.Data["ErrorMsg"] = "No valid image ID"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
@@ -1350,7 +1289,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		sgIDs = append(sgIDs, sgID)
 	}
 	userdata := c.QueryTrim("userdata")
-	instances, err := instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, image, flavor, int64(primaryID), cluster, zoneID, ipAddr, macAddr, subnetIDs, keyIDs, sgIDs, hyperID)
+	instances, err := instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, image, flavor, int64(primaryID), zoneID, ipAddr, macAddr, subnetIDs, keyIDs, sgIDs, hyperID)
 	if err != nil {
 		log.Println("Create instance failed", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
