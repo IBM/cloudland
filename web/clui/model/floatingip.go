@@ -19,7 +19,6 @@ type FloatingIp struct {
 	Instance   *Instance  `gorm:"foreignkey:InstanceID",gorm:"PRELOAD:false"`
 	Interface  *Interface `gorm:"foreignkey:FloatingIp"`
 	RouterID   int64
-	Router     *Router `gorm:"foreignkey:RouterID"`
 	IPAddress  string
 }
 

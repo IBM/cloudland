@@ -562,7 +562,7 @@ func (a *SubnetAdmin) List(ctx context.Context, offset, limit int64, order, quer
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Preload("Netlink").Preload("Zones").Where(where).Where(query).Where(sql).Find(&subnets).Error; err != nil {
+	if err = db.Preload("Router").Preload("Zones").Where(where).Where(query).Where(sql).Find(&subnets).Error; err != nil {
 		return
 	}
 	permit := memberShip.CheckPermission(model.Admin)

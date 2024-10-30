@@ -64,7 +64,7 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, typ
 		return
 	}
 	router := &model.Router{Model: model.Model{ID: routerID}}
-	err = db.Set("gorm:auto_preload", true).Model(router).Take(router).Error
+	err = db.Model(router).Take(router).Error
 	if err != nil {
 		log.Println("DB failed to query router, %v", err)
 		return
@@ -116,7 +116,7 @@ func (a *FloatingIpAdmin) Delete(ctx context.Context, id int64) (err error) {
 	}()
 	ctx = saveTXtoCtx(ctx, db)
 	floatingip := &model.FloatingIp{Model: model.Model{ID: id}}
-	if err = db.Preload("Router").Preload("Instance").Find(floatingip).Error; err != nil {
+	if err = db.Preload("Instance").Find(floatingip).Error; err != nil {
 		log.Println("Failed to query floating ip", err)
 		return
 	}

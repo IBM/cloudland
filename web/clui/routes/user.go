@@ -259,7 +259,6 @@ func (v *UserView) LoginGet(c *macaron.Context, store session.Store) {
 	if logout == "" {
 		c.Data["PageIsSignIn"] = true
 		c.HTML(200, "login")
-	} else {
 	}
 }
 

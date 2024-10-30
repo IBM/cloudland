@@ -26,10 +26,9 @@
 			                        <th>{{.i18n.Tr "ID"}}</th>
 									{{ end }}
 			                        <th>{{.i18n.Tr "Name"}}</th>
-			                        <th>{{.i18n.Tr "Interfaces"}}</th>
+			                        <th>{{.i18n.Tr "Subnets"}}</th>
 			                        <th>{{.i18n.Tr "Status"}}</th>
 		   			        {{ if $.IsAdmin }}
-			                        <th>{{.i18n.Tr "Hyper"}}</th>
 			                        <th>{{.i18n.Tr "Owner"}}</th>
 						{{ end }}
 			                        <th>{{.i18n.Tr "Zone"}}</th>
@@ -45,19 +44,14 @@
 									{{ end }}
 			                        <td><a href="{{$Link}}/{{.ID}}">{{.Name}}</a></td>
 			                        <td>
-										{{ if .Interfaces }}
-											{{ range .Interfaces }}
-											    {{ if .Address }}
-												{{ .Address.Address }}
-											    {{ end }}
+										{{ if .Subnets }}
+											{{ range .Subnets }}
+												{{ .Name }}
 											{{ end }}
 										{{ end }}
 									</td>
 			                        <td>{{ $.i18n.Tr .Status }}</td>
 		   			        {{ if $.IsAdmin }}
-			                        <td>
-										{{ .Hyper }},{{ .Peer }}
-                                    		</td>
 			                        <td>{{.OwnerInfo.Name}}</td>
 						{{ end }}
 									<td>
