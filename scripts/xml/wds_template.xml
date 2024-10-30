@@ -2,6 +2,12 @@
   <name>VM_ID</name>
   <memory unit='KiB'>VM_MEM</memory>
   <currentMemory unit='KiB'>VM_MEM</currentMemory>
+  <memoryBacking>
+    <hugepages/>
+    <nosharepages/>
+    <access mode='shared'/>
+    <allocation mode='immediate'/>
+  </memoryBacking>
   <vcpu placement='static'>VM_CPU</vcpu>
   <os>
     <type arch='x86_64'>hvm</type>
@@ -19,9 +25,9 @@
   <on_crash>restart</on_crash>
   <devices>
     <emulator>/usr/bin/qemu-system-x86_64</emulator>
-    <disk type='file' device='disk'>
-      <driver name='qemu' type='qcow2' cache='writeback'/>
-      <source file='VM_IMG'/>
+    <disk type='vhostuser' device='disk' snapshot='no'>
+      <driver name='qemu' type='raw'/>
+      <source type='unix' path='VM_UNIX_SOCK'/>
       <target dev='vda' bus='virtio'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>
     </disk>
