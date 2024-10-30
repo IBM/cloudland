@@ -181,7 +181,7 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 		return
 	}
 	secGroups := []*model.SecurityGroup{secgroup}
-	instance = &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, FlavorID: flavorID, Status: "pending", ZoneID: openshift.ZoneID, ClusterID: id}
+	instance = &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, FlavorID: flavorID, Status: "pending", ZoneID: openshift.ZoneID}
 	err = db.Create(instance).Error
 	if err != nil {
 		log.Println("DB create instance failed", err)
@@ -189,7 +189,7 @@ func (a *OpenshiftAdmin) Launch(ctx context.Context, id int64, hostname, ipaddr 
 	}
 	metadata := ""
 	var ifaces []*model.Interface
-	ifaces, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, "", "", nil, nil, instance, "", secGroups, openshift.ZoneID, openshift.ID, ipaddr)
+	ifaces, metadata, err = instanceAdmin.buildMetadata(ctx, subnet, "", "", nil, nil, instance, "", secGroups, openshift.ZoneID, ipaddr)
 	if err != nil {
 		log.Println("Build instance metadata failed", err)
 		return
@@ -338,11 +338,10 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, cookie, ha
 			log.Println("Failed to create openshift subnet", err)
 			return
 		}
-		subnetIDs := []int64{subnet.ID}
-		gatewayname := cluster + "-gw"
-		_, err = gatewayAdmin.Create(ctx, gatewayname, "", 0, 0, subnetIDs, memberShip.OrgID, zoneID)
+		routerName := cluster + "-gw"
+		_, err = routerAdmin.Create(ctx, routerName, "", 0, memberShip.OrgID, zoneID)
 		if err != nil {
-			log.Println("Failed to create gateway", err)
+			log.Println("Failed to create router", err)
 			return
 		}
 	} else {
@@ -403,7 +402,7 @@ func (a *OpenshiftAdmin) Create(ctx context.Context, cluster, domain, cookie, ha
 		return
 	}
 	lbImg := image.ID
-	instance, err := instanceAdmin.Create(ctx, 1, lbname, userdata, int64(lbImg), lflavor, subnet.ID, openshift.ID, zoneID, lbIP, "", nil, keyIDs, sgIDs, -1)
+	instance, err := instanceAdmin.Create(ctx, 1, lbname, userdata, int64(lbImg), lflavor, subnet.ID, zoneID, lbIP, "", nil, keyIDs, sgIDs, -1)
 	if err != nil {
 		log.Println("Failed to create oc first instance", err)
 		return
@@ -440,10 +439,10 @@ func (a *OpenshiftAdmin) Delete(ctx context.Context, id int64) (err error) {
 	}
 	subnet := openshift.Subnet
 	if subnet != nil && subnet.Type == "internal" && subnet.Name == openshift.ClusterName+"-sn" && subnet.Network == "192.168.91.0" {
-		if subnet.Router != 0 {
-			err = gatewayAdmin.Delete(ctx, subnet.Router)
+		if subnet.RouterID != 0 {
+			err = routerAdmin.Delete(ctx, subnet.RouterID)
 			if err != nil {
-				log.Println("Failed to delete gateway", err)
+				log.Println("Failed to delete router", err)
 				return
 			}
 		}

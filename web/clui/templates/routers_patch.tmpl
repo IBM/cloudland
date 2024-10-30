@@ -1,0 +1,47 @@
+{{template "_head" .}}
+<div class="user signup">
+	<div class="ui middle very relaxed page grid">
+        <div class="column" >
+            <form class="ui form" action="{{.Link}}" method="post">
+                <h3 class="ui top attached header">
+                    {{.i18n.Tr "Update Gateway"}}
+                </h3>
+                <div class="ui attached segment">
+                    <div class="required inline field">
+                        <label for="name">{{.i18n.Tr "Name"}}</label>
+                        <input id="name" name="name" value="{{ .Gateway.Name }}" required>
+                    </div>
+                    <div class="inline field">
+                        <label for="createdat">{{.i18n.Tr "Created_At"}}</label>
+                        <input id="createdat" name="createdat" value="{{ .Gateway.CreatedAt }}" disabled>
+                    </div>
+                    <div class="inline field">
+                        <label for="updatedat">{{.i18n.Tr "Updated_At"}}</label>
+                        <input id="updatedat" name="updatedat" value="{{ .Gateway.UpdatedAt }}" disabled>
+                    </div>
+                    <div class="inline field">
+                        <label for="subnets">{{.i18n.Tr "Subnets"}}</label>
+                        <select name="subnets" id="subnets" multiple="" class="ui multiple selection dropdown">
+							{{ if .Gateway.Subnets }}
+							{{ range .Gateway.Subnets }}
+                               <option value="{{ .ID }}" selected>{{.Name}}-{{.Network}}/{{.Netmask}}</option>
+							{{ end }}
+							{{ end }}
+							{{ if .Subnets }}
+							{{ range .Subnets }}
+                               <option value="{{ .ID }}" >{{.Name}}-{{.Network}}/{{.Netmask}}</option>
+							{{ end }}
+							{{ end }}
+                        </select>
+                    </div>
+                    <div class="inline field">
+                        <label></label>
+                        <button class="ui green button">Update Gateway</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+	</div>
+</div>
+{{template "_footer" .}}
+

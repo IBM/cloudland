@@ -31,7 +31,7 @@
 			                        <th>{{.i18n.Tr "Zones"}}</th>
 						{{ if $.IsAdmin }}
 			                        <th>{{.i18n.Tr "Vlan"}}</th>
-			                        <th>{{.i18n.Tr "Hyper"}}</th>
+			                        <th>{{.i18n.Tr "VPC"}}</th>
 			                        <th>{{.i18n.Tr "Owner"}}</th>
 						{{ end }}
                                     <th>{{.i18n.Tr "Delete"}}</th>
@@ -58,8 +58,8 @@
 						</td>
 			                        <td>{{.Vlan}}</td>
 			                        <td>
-						{{ if .Netlink }}
-						{{ .Netlink.Hyper }},{{ .Netlink.Peer }}
+						{{ if .Router }}
+						{{ .Router.Name }}
 						{{ end }}
                                     		</td>
 			                        <td>{{.OwnerInfo.Name}}</td>

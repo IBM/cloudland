@@ -9,7 +9,7 @@ router=$1
 addr=$2
 vni=$3
 
-bcast=$(ipcalc -b $addr | cut -d= -f2)
+bcast=$(ipcalc -b $addr | grep Broadcast | awk '{print $2}')
 router_dir=/opt/cloudland/cache/router/$router
 vrrp_conf=$router_dir/keepalived.conf
 pid_file=$router_dir/keepalived.pid

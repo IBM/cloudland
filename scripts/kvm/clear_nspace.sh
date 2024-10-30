@@ -29,11 +29,6 @@ elif [ ${nspace} != ${nspace##router-} ]; then
             ip link del ext-$ext_no
             apply_vnic -D ext-$ext_no
         fi
-        int_no=${dev##ti-}
-        if [ -n "$int_no" -a "$int_no" != "$dev" ]; then
-            ip link del int-$int_no
-            apply_vnic -D int-$ext_no
-        fi
     done
     rm -rf /opt/cloudland/cache/router/$nspace
 fi

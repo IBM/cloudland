@@ -25,22 +25,15 @@
             {{.i18n.Tr "Registry"}}
         </a>
              {{ end }}
-        <div class="header item">{{.i18n.Tr "Platform_Service"}}</div>
-        <a {{ if eq .Link "/openshifts" }} class="active item" {{ else }} class="item" {{ end }} href="/openshifts">
-            {{.i18n.Tr "Openshift"}}
-        </a>
-        <a {{ if eq .Link "/glusterfs" }} class="active item" {{ else }} class="item" {{ end }} href="/glusterfs">
-            {{.i18n.Tr "Glusterfs"}}
-        </a>
         <div class="header item">{{.i18n.Tr "Network_Security"}}</div>
+        <a {{ if eq .Link "/routers" }} class="active item" {{ else }} class="item" {{ end }} href="/routers">
+            {{.i18n.Tr "VPCs"}}
+        </a>
         <a {{ if eq .Link "/subnets" }} class="active item" {{ else }} class="item" {{ end }} href="/subnets">
             {{.i18n.Tr "Subnets"}}
         </a>
         <a {{ if eq .Link "/floatingips" }} class="active item" {{ else }} class="item" {{ end }} href="/floatingips">
             {{.i18n.Tr "FloatingIps"}}
-        </a>
-        <a {{ if eq .Link "/gateways" }} class="active item" {{ else }} class="item" {{ end }} href="/gateways">
-            {{.i18n.Tr "Gateways"}}
         </a>
         <a {{ if eq .Link "/secgroups" }} class="active item" {{ else }} class="item" {{ end }} href="/secgroups">
             {{.i18n.Tr "SecurityGroups"}}

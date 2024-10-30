@@ -125,9 +125,6 @@ def tokenize_config(configfile):
                 if device[0] == 'te':
                     os.system("/opt/cloudland/scripts/backend/create_veth.sh %s ext-%s te-%s" % (router, device[1], device[1]))
                     print("/opt/cloudland/scripts/backend/create_veth.sh %s ext-%s te-%s" % (router, device[1], device[1]))
-                elif device[0] == 'ti':
-                    os.system("/opt/cloudland/scripts/backend/create_veth.sh %s int-%s ti-%s" % (router, device[1], device[1]))
-                    print("/opt/cloudland/scripts/backend/create_veth.sh %s int-%s ti-%s" % (router, device[1], device[1]))
                 elif device[0] == 'ns':
                     os.system("/opt/cloudland/scripts/backend/create_veth.sh %s ln-%s ns-%s" % (router, device[1], device[1]))
                     print("/opt/cloudland/scripts/backend/create_veth.sh %s ln-%s ns-%s" % (router, device[1], device[1]))

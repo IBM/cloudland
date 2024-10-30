@@ -27,15 +27,13 @@ var (
 type FlavorAdmin struct{}
 type FlavorView struct{}
 
-func (a *FlavorAdmin) Create(name string, cpu, memory, disk, swap, ephemeral int32) (flavor *model.Flavor, err error) {
+func (a *FlavorAdmin) Create(name string, cpu, memory, disk int32) (flavor *model.Flavor, err error) {
 	db := DB()
 	flavor = &model.Flavor{
 		Name:      name,
 		Cpu:       cpu,
 		Disk:      disk,
 		Memory:    memory,
-		Swap:      swap,
-		Ephemeral: ephemeral,
 	}
 	err = db.Create(flavor).Error
 	return
@@ -193,9 +191,7 @@ func (v *FlavorView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	swap := c.QueryInt("swap")
-	ephemeral := c.QueryInt("ephemeral")
-	flavor, err := flavorAdmin.Create(name, int32(cpu), int32(memory), int32(disk), int32(swap), int32(ephemeral))
+	flavor, err := flavorAdmin.Create(name, int32(cpu), int32(memory), int32(disk))
 	if err != nil {
 		log.Println("Create flavor failed", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
