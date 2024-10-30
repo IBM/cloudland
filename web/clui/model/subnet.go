@@ -26,6 +26,7 @@ type Subnet struct {
 	Netlink      *Network `gorm:"foreignkey:Vlan;AssociationForeignKey:Vlan"`
 	Type         string   `gorm:"type:varchar(20);default:'internal'"`
 	RouterID     int64
+	Router       *Router `gorm:"foreignkey:RouterID"`
 	Routes       string `gorm:"type:varchar(256)"`
 }
 

@@ -148,7 +148,7 @@ func (a *RouterAdmin) Create(ctx context.Context, name, stype string, pubID, own
 func (a *RouterAdmin) Update(ctx context.Context, id int64, name string, pubID int64) (router *model.Router, err error) {
 	db := DB()
 	router = &model.Router{Model: model.Model{ID: id}}
-	if err = db.Set("gorm:auto_preload", true).Find(router).Error; err != nil {
+	if err = db.Find(router).Error; err != nil {
 		log.Println("Failed to query router", err)
 		return
 	}
@@ -208,7 +208,7 @@ func (a *RouterAdmin) Delete(ctx context.Context, id int64) (err error) {
 		return
 	}
 	router := &model.Router{Model: model.Model{ID: id}}
-	if err = db.Set("gorm:auto_preload", true).Take(router).Error; err != nil {
+	if err = db.Take(router).Error; err != nil {
 		log.Println("Failed to query router", err)
 		return
 	}
@@ -246,7 +246,7 @@ func (a *RouterAdmin) List(ctx context.Context, offset, limit int64, order, quer
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Set("gorm:auto_preload", true).Where(where).Where(query).Find(&routers).Error; err != nil {
+	if err = db.Preload("Zone").Preload("Subnets").Where(where).Where(query).Find(&routers).Error; err != nil {
 		log.Println("DB failed to query routers, %v", err)
 		return
 	}
@@ -365,18 +365,6 @@ func (v *RouterView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
-	subnets := []*model.Subnet{}
-	err = DB().Set("gorm:auto_preload", true).Where("type = 'public'").Find(&subnets).Error
-	if err != nil {
-		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(500, "500")
-		return
-	}
-	subnetList := []*model.Subnet{}
-	for _, subnet := range subnets {
-		subnetList = append(subnetList, subnet)
-	}
-	c.Data["Subnets"] = subnetList
 	c.Data["Zones"] = zones
 	c.HTML(200, "routers_new")
 }
@@ -400,23 +388,11 @@ func (v *RouterView) Edit(c *macaron.Context, store session.Store) {
 		return
 	}
 	router := &model.Router{Model: model.Model{ID: int64(routerID)}}
-	if err = db.Set("gorm:auto_preload", true).Find(router).Error; err != nil {
+	if err = db.Find(router).Error; err != nil {
 		log.Println("Failed to query router, %v", err)
 		return
 	}
-	subnets := []*model.Subnet{}
-	where := "type = 'internal'"
-	for _, gsub := range router.Subnets {
-		where = fmt.Sprintf("%s and id != %d", where, gsub.ID)
-	}
-	if err := db.Where(where).Where(memberShip.GetWhere()).Find(&subnets).Error; err != nil {
-		log.Println("DB failed to query subnets, %v", err)
-		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(500, "500")
-		return
-	}
 	c.Data["Router"] = router
-	c.Data["Subnets"] = subnets
 	c.HTML(200, "routers_patch")
 }
 
