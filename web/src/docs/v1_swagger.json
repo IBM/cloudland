@@ -1,0 +1,100 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "APIs for CloudLand Functions",
+        "title": "CloudLand API",
+        "contact": {},
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "basePath": "/api/v1",
+    "paths": {
+        "/login": {
+            "post": {
+                "description": "get token by user name",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authorities"
+                ],
+                "summary": "login to get the accesstoken",
+                "parameters": [
+                    {
+                        "description": "User Credential",
+                        "name": "message",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/apis.UserPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/apis.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Need user with password",
+                        "schema": {
+                            "$ref": "#/definitions/apis.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/apis.APIError"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "apis.APIError": {
+            "type": "object",
+            "properties": {
+                "errorCode": {
+                    "type": "integer"
+                },
+                "errorMessage": {
+                    "type": "string"
+                }
+            }
+        },
+        "apis.User": {
+            "type": "object",
+            "properties": {
+                "Org": {
+                    "type": "string"
+                },
+                "access_token": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "apis.UserPayload": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

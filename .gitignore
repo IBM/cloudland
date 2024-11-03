@@ -35,9 +35,11 @@
 #Others
 wget-log
 /deploy/hosts/hosts
-/web/clui/clui
-/web/clui/public/misc/openshift/ocd.conf*
-web/clui/public/novnc
+/web/clui
+/web/clbase
+/web/clapi
+/web/src/public/misc/openshift/ocd.conf*
+/web/src/public/novnc
 /deploy/*.retry
 /deploy/netconf.yml
 /web/clui/conf/config.toml
