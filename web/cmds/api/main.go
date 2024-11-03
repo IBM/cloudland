@@ -58,7 +58,7 @@ func RootCmd() (cmd *cobra.Command) {
 func init() {
 	viper.Set("AppVersion", Version)
 	viper.Set("GoVersion", strings.Title(runtime.Version()))
-	file := "/opt/cloudland/log/clui.log"
+	file := "/opt/cloudland/log/clapi.log"
 	logFile, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0766)
 	if err != nil {
 		panic(err)

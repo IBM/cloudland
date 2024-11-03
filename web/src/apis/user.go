@@ -20,21 +20,16 @@ var userAdmin = &routes.UserAdmin{}
 type UserAPI struct{}
 
 type UserPayload struct {
-	Name     string        `json:"name,required"`
+	Username string        `json:"username,required"`
 	Password string        `json:"password,required"`
 	Org      *Organization `json:"org,omitempty"`
 }
 
-type UserInfo struct {
-	Name string `json:"name"`
-	ID   string `json:"id"`
-}
-
-type User struct {
-	UserInfo    *UserInfo     `json:"user_info"`
-	OrgInfo     *Organization `json:"org_info"`
-	AccessToken string        `json:"access_token"`
-	Role        string        `json:"role"`
+type UserResponse struct {
+	UserInfo    *BaseReference `json:"user"`
+	OrgInfo     *BaseReference `json:"org"`
+	AccessToken string         `json:"token"`
+	Role        string         `json:"role"`
 }
 
 //
@@ -44,7 +39,7 @@ type User struct {
 // @Accept  json
 // @Produce json
 // @Param   message	body   UserPayload  true   "User Credential"
-// @Success 200 {object} User
+// @Success 200 {object} UserResponse
 // @Failure 401 {object} APIError "Invalied user name or password"
 // @Router /login [post]
 func (v *UserAPI) LoginPost(c *gin.Context) {
@@ -54,7 +49,7 @@ func (v *UserAPI) LoginPost(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, &APIError{ErrorMessage: "Input JSON format error"})
 		return
 	}
-	username := payload.Name
+	username := payload.Username
 	password := payload.Password
 	user, err := userAdmin.Validate(c.Request.Context(), username, password)
 	if err != nil {
@@ -74,12 +69,12 @@ func (v *UserAPI) LoginPost(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, &APIError{ErrorMessage: "Invalid org with username"})
 	}
-	userResp := &User{
-		UserInfo: &UserInfo{
+	userResp := &UserResponse{
+		UserInfo: &BaseReference{
 			Name: username,
 			ID:   user.UUID,
 		},
-		OrgInfo: &Organization{
+		OrgInfo: &BaseReference{
 			Name: orgName,
 			ID:   org.UUID,
 		},

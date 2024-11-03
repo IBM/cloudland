@@ -24,7 +24,7 @@ type Instance struct {
 	Flavor      *Flavor `gorm:"foreignkey:FlavorID"`
 	ImageID     int64
 	Image       *Image `gorm:"foreignkey:ImageID"`
-	Keys        []*Key     `gorm:"many2many:InstanceKeys;"`
+	Keys        []*Key     `gorm:"many2many:instance_keys;"`
 	Userdata    string     `gorm:"type:text"`
 	Hyper       int32      `gorm:"default:-1"`
 	ZoneID      int64

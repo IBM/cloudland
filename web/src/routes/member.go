@@ -119,9 +119,9 @@ func GetMemberShip(ctx context.Context) *MemberShip {
 	return &MemberShip{}
 }
 
-func GetDBMemberShip(userID, orgID int64) (ms *MemberShip, err error) {
+func GetDBMemberShip(userID, orgID int64) (m *MemberShip, err error) {
 	db := dbs.DB()
-	m := &MemberShip{
+	m = &MemberShip{
 		UserID: userID,
 		OrgID:  orgID,
 	}

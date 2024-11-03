@@ -59,6 +59,16 @@ func (a *UserAdmin) Create(ctx context.Context, username, password string) (user
 	return
 }
 
+func (a *UserAdmin) Get(name string) (user *model.User, err error) {
+	db := DB()
+	user = &model.User{}
+	if err = db.Where("username = ?", name).Take(user).Error; err != nil {
+		log.Println("DB failed to get user", err)
+		return
+	}
+	return
+}
+
 func (a *UserAdmin) Delete(id int64) (err error) {
 	db := DB()
 	db = db.Begin()

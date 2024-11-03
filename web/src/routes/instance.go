@@ -239,7 +239,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		if count > 1 {
 			hostname = fmt.Sprintf("%s-%d", prefix, i+1)
 		}
-		instance = &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, ImageID: imageID, FlavorID: flavorID, Userdata: userdata, Status: "pending", ZoneID: zoneID, RouterID: primary.RouterID}
+		instance = &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, ImageID: imageID, FlavorID: flavorID, Keys: keys, Userdata: userdata, Status: "pending", ZoneID: zoneID, RouterID: primary.RouterID}
 		err = db.Create(instance).Error
 		if err != nil {
 			log.Println("DB create instance failed", err)
@@ -709,7 +709,7 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Preload("Image").Preload("Zone").Preload("Flavor").Where(where).Where(query).Find(&instances).Error; err != nil {
+	if err = db.Preload("Image").Preload("Zone").Preload("Flavor").Preload("Keys").Where(where).Where(query).Find(&instances).Error; err != nil {
 		log.Println("Failed to query instance(s), %v", err)
 		return
 	}
@@ -758,12 +758,6 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	query := c.QueryTrim("q")
 	total, instances, err := instanceAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -774,15 +768,6 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	c.Data["Pages"] = pages
 	c.Data["Query"] = query
 	c.Data["HostName"] = hostname
-	if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, map[string]interface{}{
-			"instances": instances,
-			"total":     total,
-			"pages":     pages,
-			"query":     query,
-		})
-		return
-	}
 	c.HTML(200, "instances")
 }
 
@@ -807,12 +792,6 @@ func (v *InstanceView) UpdateTable(c *macaron.Context, store session.Store) {
 	query := c.QueryTrim("q")
 	_, instances, err := instanceAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -1076,17 +1055,8 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 	instance, err = instanceAdmin.Update(c.Req.Context(), id, flavor, hostname, action, subnetIDs, sgIDs, hyperID)
 	if err != nil {
 		log.Println("Create instance failed, %v", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
-		return
-	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, instance)
 		return
 	}
 	c.Redirect(redirectTo)
@@ -1282,19 +1252,10 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		sgIDs = append(sgIDs, sgID)
 	}
 	userdata := c.QueryTrim("userdata")
-	instances, err := instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, image, flavor, int64(primaryID), zoneID, ipAddr, macAddr, subnetIDs, keyIDs, sgIDs, hyperID)
+	_, err = instanceAdmin.Create(c.Req.Context(), count, hostname, userdata, image, flavor, int64(primaryID), zoneID, ipAddr, macAddr, subnetIDs, keyIDs, sgIDs, hyperID)
 	if err != nil {
 		log.Println("Create instance failed", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.HTML(http.StatusBadRequest, err.Error())
-		return
-	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, instances)
 		return
 	}
 	c.Redirect(redirectTo)

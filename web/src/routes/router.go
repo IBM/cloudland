@@ -145,6 +145,16 @@ func (a *RouterAdmin) Create(ctx context.Context, name, stype string, pubID, own
 	return
 }
 
+func (a *RouterAdmin) Get(ctx context.Context, id int64) (router *model.Router, err error) {
+	db := DB()
+	router = &model.Router{Model: model.Model{ID: id}}
+	if err = db.Find(router).Error; err != nil {
+		log.Println("Failed to query router", err)
+		return
+	}
+	return
+}
+
 func (a *RouterAdmin) Update(ctx context.Context, id int64, name string, pubID int64) (router *model.Router, err error) {
 	db := DB()
 	router = &model.Router{Model: model.Model{ID: id}}

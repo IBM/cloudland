@@ -29,14 +29,14 @@ var (
 	_privateKey *rsa.PrivateKey
 )
 
-type HypercubeClaims struct {
+type CustomClaims struct {
 	jwt.StandardClaims
 	UID  string     `json:"uid,omitempty"`
 	OID  string     `json:"oid,omitempty"`
 	Role model.Role `json:"r,omitempty"`
 }
 
-func (*HypercubeClaims) verifyPrivilege(resource interface{}) (result bool) {
+func (*CustomClaims) verifyPrivilege(resource interface{}) (result bool) {
 	// TODO:  checkout authority
 	return true
 }
@@ -45,7 +45,7 @@ func NewClaims(u, o, uid, oid string, role model.Role) (claims jwt.Claims, issue
 	now := time.Now()
 	issuedAt = now.Unix()
 	ExpiresAt = now.Add(time.Hour * 2).Unix()
-	claims = &HypercubeClaims{
+	claims = &CustomClaims{
 		StandardClaims: jwt.StandardClaims{
 			Audience:  u,
 			ExpiresAt: ExpiresAt,
@@ -110,9 +110,9 @@ func NewToken(u, o, uid, oid string, role model.Role) (signed string, issueAt, e
 	return
 }
 
-func ParseToken(tokenString string) (tokenClaims *HypercubeClaims, err error) {
-	tokenClaims = &HypercubeClaims{}
-	_, err = jwt.ParseWithClaims(
+func ParseToken(tokenString string) (token *jwt.Token, tokenClaims *CustomClaims, err error) {
+	tokenClaims = &CustomClaims{}
+	token, err = jwt.ParseWithClaims(
 		tokenString,
 		tokenClaims,
 		func(token *jwt.Token) (interface{}, error) {
