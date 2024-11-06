@@ -14,8 +14,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/IBM/cloudland/web/src/model"
-	"github.com/IBM/cloudland/web/src/dbs"
+	"web/src/dbs"
+	"web/src/model"
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -76,39 +76,39 @@ func (a *RouterAdmin) Create(ctx context.Context, name, stype string, pubID, own
 	}
 	db := DB()
 	/*
-	vni, err := getValidVni()
-	if err != nil {
-		log.Println("Failed to get valid vrrp vni %s, %v", vni, err)
-		return
-	}*/
+		vni, err := getValidVni()
+		if err != nil {
+			log.Println("Failed to get valid vrrp vni %s, %v", vni, err)
+			return
+		}*/
 	router = &model.Router{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Name: name, Type: stype, VrrpVni: 0, Status: "available", ZoneID: zoneID}
 	err = db.Create(router).Error
 	if err != nil {
 		log.Println("DB failed to create router, %v", err)
 		return
 	}
-/*	
-	var pubIface *model.Interface
-	if pubID == 0 {
-		pubIface, pubSubnet, err = createRouterIface(ctx, "public", router, owner, zoneID)
-		if err != nil || pubIface == nil {
-			log.Println("DB failed to create public interface", err)
-			return
+	/*
+		var pubIface *model.Interface
+		if pubID == 0 {
+			pubIface, pubSubnet, err = createRouterIface(ctx, "public", router, owner, zoneID)
+			if err != nil || pubIface == nil {
+				log.Println("DB failed to create public interface", err)
+				return
+			}
+		} else {
+			pubSubnet = &model.Subnet{Model: model.Model{ID: pubID}}
+			err = db.Model(pubSubnet).Where(pubSubnet).Take(pubSubnet).Error
+			if err != nil {
+				log.Println("DB failed to query public subnet, %v", err)
+				return
+			}
+			pubIface, err = CreateInterface(ctx, pubSubnet.ID, router.ID, owner, zoneID, router.Hyper, "", "", fmt.Sprintf("pub%d", pubSubnet.ID), "gateway_public", nil)
+			if err != nil {
+				log.Println("DB failed to create public interface, %v", err)
+				return
+			}
 		}
-	} else {
-		pubSubnet = &model.Subnet{Model: model.Model{ID: pubID}}
-		err = db.Model(pubSubnet).Where(pubSubnet).Take(pubSubnet).Error
-		if err != nil {
-			log.Println("DB failed to query public subnet, %v", err)
-			return
-		}
-		pubIface, err = CreateInterface(ctx, pubSubnet.ID, router.ID, owner, zoneID, router.Hyper, "", "", fmt.Sprintf("pub%d", pubSubnet.ID), "gateway_public", nil)
-		if err != nil {
-			log.Println("DB failed to create public interface, %v", err)
-			return
-		}
-	}
-*/	
+	*/
 	pubSubnet := &model.Subnet{Model: model.Model{ID: pubID}}
 	if pubID == 0 {
 		err = db.Where("type = 'public'").Take(pubSubnet).Error
@@ -128,20 +128,20 @@ func (a *RouterAdmin) Create(ctx context.Context, name, stype string, pubID, own
 		log.Println("Failed to save router", err)
 		return
 	}
-/*	
-	hyperGroup, err := instanceAdmin.getHyperGroup("", zoneID)
-	if err != nil {
-		log.Println("No valid hypervisor", err)
-		return
-	}
-	control := "select=" + hyperGroup
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh '%d' '%s' '%s' '%d' '%s' 'MASTER'", router.ID, pubSubnet.Gateway, pubIface.Address.Address, vni, router.VrrpAddr)
-	err = hyperExecute(ctx, control, command)
-	if err != nil {
-		log.Println("Create master router command execution failed, %v", err)
-		return
-	}
-*/
+	/*
+		hyperGroup, err := instanceAdmin.getHyperGroup("", zoneID)
+		if err != nil {
+			log.Println("No valid hypervisor", err)
+			return
+		}
+		control := "select=" + hyperGroup
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_router.sh '%d' '%s' '%s' '%d' '%s' 'MASTER'", router.ID, pubSubnet.Gateway, pubIface.Address.Address, vni, router.VrrpAddr)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Create master router command execution failed, %v", err)
+			return
+		}
+	*/
 	return
 }
 

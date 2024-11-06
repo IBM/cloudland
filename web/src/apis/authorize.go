@@ -11,7 +11,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/IBM/cloudland/web/src/routes"
+	"web/src/routes"
 	"github.com/gin-gonic/gin"
 )
 

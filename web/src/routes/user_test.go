@@ -16,7 +16,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/IBM/cloudland/web/src/model"
+	"web/src/model"
 )
 
 func TestUserAdminCreate(t *testing.T) {

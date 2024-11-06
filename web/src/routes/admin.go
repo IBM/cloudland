@@ -16,8 +16,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/IBM/cloudland/web/src/model"
-	"github.com/IBM/cloudland/web/src/dbs"
+	"web/src/dbs"
+	"web/src/model"
 	"github.com/jinzhu/gorm"
 	"github.com/spf13/viper"
 )

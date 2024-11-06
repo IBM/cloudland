@@ -15,7 +15,7 @@ package routes
 import (
 	"context"
 
-	"github.com/IBM/cloudland/web/src/dbs"
+	"web/src/dbs"
 	"github.com/jinzhu/gorm"
 )
 

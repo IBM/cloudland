@@ -1,0 +1,2118 @@
+basePath: /api/v1
+definitions:
+  apis.APIError:
+    properties:
+      error_message:
+        type: string
+    type: object
+  apis.BaseReference:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  apis.FlavorListResponse:
+    properties:
+      flavors:
+        items:
+          $ref: '#/definitions/apis.VPCResponse'
+        type: array
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
+  apis.FlavorPatchPayload:
+    type: object
+  apis.FlavorPayload:
+    type: object
+  apis.FlavorResponse:
+    properties:
+      cpu:
+        type: integer
+      disk:
+        type: integer
+      id:
+        type: string
+      memory:
+        type: integer
+      name:
+        type: string
+    type: object
+  apis.FloatingIpInfo:
+    properties:
+      id:
+        type: string
+      ip_address:
+        type: string
+      name:
+        type: string
+    type: object
+  apis.FloatingIpListResponse:
+    properties:
+      floatingIps:
+        items:
+          $ref: '#/definitions/apis.FloatingIpResponse'
+        type: array
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
+  apis.FloatingIpPatchPayload:
+    type: object
+  apis.FloatingIpPayload:
+    type: object
+  apis.FloatingIpResponse:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  apis.HyperListResponse:
+    properties:
+      hypers:
+        items:
+          $ref: '#/definitions/apis.VPCResponse'
+        type: array
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
+  apis.HyperResponse:
+    properties:
+      cpu:
+        type: integer
+      disk:
+        type: integer
+      id:
+        type: string
+      memory:
+        type: integer
+      name:
+        type: string
+    type: object
+  apis.ImageListResponse:
+    properties:
+      images:
+        items:
+          $ref: '#/definitions/apis.VPCResponse'
+        type: array
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
+  apis.ImagePatchPayload:
+    type: object
+  apis.ImagePayload:
+    type: object
+  apis.ImageResponse:
+    properties:
+      cpu:
+        type: integer
+      disk:
+        type: integer
+      id:
+        type: string
+      memory:
+        type: integer
+      name:
+        type: string
+    type: object
+  apis.InstanceListResponse:
+    properties:
+      instances:
+        items:
+          $ref: '#/definitions/apis.InstanceResponse'
+        type: array
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
+  apis.InstancePatchPayload:
+    properties:
+      hostname:
+        type: string
+      power_action:
+        $ref: '#/definitions/apis.PowerAction'
+    type: object
+  apis.InstancePayload:
+    properties:
+      flavor:
+        type: string
+      hostname:
+        type: string
+      image:
+        type: string
+      interfaces:
+        items:
+          $ref: '#/definitions/apis.InterfacePayload'
+        type: array
+      keys:
+        items:
+          type: string
+        type: array
+      zone:
+        type: string
+    type: object
+  apis.InstanceResponse:
+    properties:
+      flavor:
+        $ref: '#/definitions/apis.BaseReference'
+      hostname:
+        type: string
+      id:
+        type: string
+      image:
+        $ref: '#/definitions/apis.BaseReference'
+      interfaces:
+        items:
+          $ref: '#/definitions/apis.InterfaceResponse'
+        type: array
+      keys:
+        items:
+          $ref: '#/definitions/apis.BaseReference'
+        type: array
+      status:
+        type: string
+      vpc:
+        $ref: '#/definitions/apis.BaseReference'
+      zone:
+        type: string
+    type: object
+  apis.InterfacePatchPayload:
+    type: object
+  apis.InterfacePayload:
+    type: object
+  apis.InterfaceResponse:
+    properties:
+      floating_ips:
+        items:
+          $ref: '#/definitions/apis.FloatingIpInfo'
+        type: array
+      id:
+        type: string
+      ip_address:
+        type: string
+      is_primary:
+        type: boolean
+      mac_address:
+        type: string
+      name:
+        type: string
+      subnet:
+        $ref: '#/definitions/apis.BaseReference'
+    type: object
+  apis.KeyListResponse:
+    properties:
+      keys:
+        items:
+          $ref: '#/definitions/apis.VPCResponse'
+        type: array
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
+  apis.KeyPatchPayload:
+    type: object
+  apis.KeyPayload:
+    type: object
+  apis.KeyResponse:
+    properties:
+      cpu:
+        type: integer
+      disk:
+        type: integer
+      id:
+        type: string
+      memory:
+        type: integer
+      name:
+        type: string
+    type: object
+  apis.OrgListResponse:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+      orgs:
+        items:
+          $ref: '#/definitions/apis.OrgResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  apis.OrgPatchPayload:
+    type: object
+  apis.OrgPayload:
+    type: object
+  apis.OrgResponse:
+    properties:
+      cpu:
+        type: integer
+      disk:
+        type: integer
+      id:
+        type: string
+      memory:
+        type: integer
+      name:
+        type: string
+    type: object
+  apis.PowerAction:
+    enum:
+    - stop
+    - hard_stop
+    - start
+    - restart
+    - hard_restart
+    - pause
+    - unpause
+    type: string
+    x-enum-varnames:
+    - Stop
+    - HardStop
+    - Start
+    - Restart
+    - HardRestart
+    - Pause
+    - Unpause
+  apis.SecgroupListResponse:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+      secgroups:
+        items:
+          $ref: '#/definitions/apis.VPCResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  apis.SecgroupPatchPayload:
+    type: object
+  apis.SecgroupPayload:
+    type: object
+  apis.SecgroupResponse:
+    properties:
+      cpu:
+        type: integer
+      disk:
+        type: integer
+      id:
+        type: string
+      memory:
+        type: integer
+      name:
+        type: string
+    type: object
+  apis.SecruleListResponse:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+      secrules:
+        items:
+          $ref: '#/definitions/apis.VPCResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  apis.SecrulePatchPayload:
+    type: object
+  apis.SecrulePayload:
+    type: object
+  apis.SecruleResponse:
+    properties:
+      cpu:
+        type: integer
+      disk:
+        type: integer
+      id:
+        type: string
+      memory:
+        type: integer
+      name:
+        type: string
+    type: object
+  apis.SubnetListResponse:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+      subnets:
+        items:
+          $ref: '#/definitions/apis.SubnetResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  apis.SubnetPatchPayload:
+    type: object
+  apis.SubnetPayload:
+    type: object
+  apis.SubnetResponse:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  apis.UserListResponse:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+      users:
+        items:
+          $ref: '#/definitions/apis.OrgResponse'
+        type: array
+    type: object
+  apis.UserPatchPayload:
+    properties:
+      password:
+        type: string
+    type: object
+  apis.UserPayload:
+    properties:
+      org:
+        $ref: '#/definitions/apis.BaseReference'
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  apis.UserResponse:
+    properties:
+      org:
+        $ref: '#/definitions/apis.BaseReference'
+      role:
+        type: string
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/apis.BaseReference'
+    type: object
+  apis.VPCListResponse:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+      vpcs:
+        items:
+          $ref: '#/definitions/apis.VPCResponse'
+        type: array
+    type: object
+  apis.VPCPatchPayload:
+    type: object
+  apis.VPCPayload:
+    type: object
+  apis.VPCResponse:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      subnets:
+        items:
+          $ref: '#/definitions/apis.BaseReference'
+        type: array
+    type: object
+  apis.VolumeListResponse:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+      volumes:
+        items:
+          $ref: '#/definitions/apis.VPCResponse'
+        type: array
+    type: object
+  apis.VolumePatchPayload:
+    type: object
+  apis.VolumePayload:
+    type: object
+  apis.VolumeResponse:
+    properties:
+      cpu:
+        type: integer
+      disk:
+        type: integer
+      id:
+        type: string
+      memory:
+        type: integer
+      name:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: APIs for CloudLand Functions
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: CloudLand API
+  version: "1.0"
+paths:
+  /flavors:
+    get:
+      consumes:
+      - application/json
+      description: list flavors
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.FlavorListResponse'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: list flavors
+      tags:
+      - Compute
+    post:
+      consumes:
+      - application/json
+      description: create a flavor
+      parameters:
+      - description: Flavor create payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.FlavorPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.FlavorResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: create a flavor
+      tags:
+      - Compute
+  /flavors/:id:
+    delete:
+      consumes:
+      - application/json
+      description: delete a flavor
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: delete a flavor
+      tags:
+      - Compute
+    get:
+      consumes:
+      - application/json
+      description: get a flavor
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.FlavorResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: get a flavor
+      tags:
+      - Compute
+    patch:
+      consumes:
+      - application/json
+      description: patch a flavor
+      parameters:
+      - description: Flavor patch payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.FlavorPatchPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.FlavorResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: patch a flavor
+      tags:
+      - Compute
+  /floating_ips:
+    get:
+      consumes:
+      - application/json
+      description: list floating ips
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.FloatingIpListResponse'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: list floating ips
+      tags:
+      - Network
+    post:
+      consumes:
+      - application/json
+      description: create a floating ip
+      parameters:
+      - description: Floating ip create payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.FloatingIpPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.FloatingIpResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: create a floating ip
+      tags:
+      - Network
+  /floating_ips/:id:
+    delete:
+      consumes:
+      - application/json
+      description: delete a floating ip
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: delete a floating ip
+      tags:
+      - Network
+    get:
+      consumes:
+      - application/json
+      description: get a floating ip
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.FloatingIpResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: get a floating ip
+      tags:
+      - Network
+    patch:
+      consumes:
+      - application/json
+      description: patch a floating ip
+      parameters:
+      - description: Floating ip patch payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.FloatingIpPatchPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.FloatingIpResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: patch a floating ip
+      tags:
+      - Network
+  /hypers:
+    get:
+      consumes:
+      - application/json
+      description: list hypervisors
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.HyperListResponse'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: list hypervisors
+      tags:
+      - Administration
+  /hypers/:id:
+    get:
+      consumes:
+      - application/json
+      description: get a hypervisor
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.HyperResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: get a hypervisor
+      tags:
+      - Administration
+  /images:
+    get:
+      consumes:
+      - application/json
+      description: list images
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.ImageListResponse'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: list images
+      tags:
+      - Compute
+    post:
+      consumes:
+      - application/json
+      description: create a image
+      parameters:
+      - description: Image create payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.ImagePayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.ImageResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: create a image
+      tags:
+      - Compute
+  /images/:id:
+    delete:
+      consumes:
+      - application/json
+      description: delete a image
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: delete a image
+      tags:
+      - Compute
+    get:
+      consumes:
+      - application/json
+      description: get a image
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.ImageResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: get a image
+      tags:
+      - Compute
+    patch:
+      consumes:
+      - application/json
+      description: patch a image
+      parameters:
+      - description: Image patch payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.ImagePatchPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.ImageResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: patch a image
+      tags:
+      - Compute
+  /instances:
+    get:
+      consumes:
+      - application/json
+      description: list instances
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.InstanceListResponse'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: list instances
+      tags:
+      - Compute
+    post:
+      consumes:
+      - application/json
+      description: create a instance
+      parameters:
+      - description: Instance create payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.InstancePayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.InstanceResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: create a instance
+      tags:
+      - Compute
+  /instances/:id:
+    delete:
+      consumes:
+      - application/json
+      description: delete a instance
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: delete a instance
+      tags:
+      - Compute
+    get:
+      consumes:
+      - application/json
+      description: get a instance
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.InstanceResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: get a instance
+      tags:
+      - Compute
+    patch:
+      consumes:
+      - application/json
+      description: patch a instance
+      parameters:
+      - description: Instance patch payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.InstancePatchPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.InstanceResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: patch a instance
+      tags:
+      - Compute
+  /interfaces:
+    get:
+      consumes:
+      - application/json
+      description: list interfaces
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/apis.InterfaceResponse'
+            type: array
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: list interfaces
+      tags:
+      - Network
+    post:
+      consumes:
+      - application/json
+      description: create a interface
+      parameters:
+      - description: Interface create payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.InterfacePayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.InterfaceResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: create a interface
+      tags:
+      - Network
+  /interfaces/:id:
+    delete:
+      consumes:
+      - application/json
+      description: delete a interface
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: delete a interface
+      tags:
+      - Network
+    get:
+      consumes:
+      - application/json
+      description: get a interface
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.InterfaceResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: get a interface
+      tags:
+      - Network
+    patch:
+      consumes:
+      - application/json
+      description: patch a interface
+      parameters:
+      - description: Interface patch payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.InterfacePatchPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.InterfaceResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: patch a interface
+      tags:
+      - Network
+  /keys:
+    get:
+      consumes:
+      - application/json
+      description: list keys
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.KeyListResponse'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: list keys
+      tags:
+      - Authorization
+    post:
+      consumes:
+      - application/json
+      description: create a key
+      parameters:
+      - description: Key create payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.KeyPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.KeyResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: create a key
+      tags:
+      - Authorization
+  /keys/:id:
+    delete:
+      consumes:
+      - application/json
+      description: delete a key
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: delete a key
+      tags:
+      - Authorization
+    get:
+      consumes:
+      - application/json
+      description: get a key
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.KeyResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: get a key
+      tags:
+      - Authorization
+    patch:
+      consumes:
+      - application/json
+      description: patch a key
+      parameters:
+      - description: Key patch payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.KeyPatchPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.KeyResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: patch a key
+      tags:
+      - Authorization
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: get token by user name
+      parameters:
+      - description: User Credential
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.UserPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.UserResponse'
+        "401":
+          description: Invalied user name or password
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: login to get the accesstoken
+      tags:
+      - Authorization
+  /orgs:
+    get:
+      consumes:
+      - application/json
+      description: list orgs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.OrgListResponse'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: list orgs
+      tags:
+      - Authorization
+    post:
+      consumes:
+      - application/json
+      description: create a org
+      parameters:
+      - description: Org create payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.OrgPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.OrgResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: create a org
+      tags:
+      - Authorization
+  /orgs/:id:
+    delete:
+      consumes:
+      - application/json
+      description: delete a org
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: delete a org
+      tags:
+      - Authorization
+    get:
+      consumes:
+      - application/json
+      description: get a org
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.OrgResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: get a org
+      tags:
+      - Authorization
+    patch:
+      consumes:
+      - application/json
+      description: patch a org
+      parameters:
+      - description: Org patch payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.OrgPatchPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.OrgResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: patch a org
+      tags:
+      - Authorization
+  /security_groups:
+    get:
+      consumes:
+      - application/json
+      description: list secgroups
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.SecgroupListResponse'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: list secgroups
+      tags:
+      - Network
+    post:
+      consumes:
+      - application/json
+      description: create a secgroup
+      parameters:
+      - description: Secgroup create payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.SecgroupPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.SecgroupResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: create a secgroup
+      tags:
+      - Network
+  /security_groups/:id:
+    delete:
+      consumes:
+      - application/json
+      description: delete a secgroup
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: delete a secgroup
+      tags:
+      - Network
+    get:
+      consumes:
+      - application/json
+      description: get a secgroup
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.SecgroupResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: get a secgroup
+      tags:
+      - Network
+    patch:
+      consumes:
+      - application/json
+      description: patch a secgroup
+      parameters:
+      - description: Secgroup patch payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.SecgroupPatchPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.SecgroupResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: patch a secgroup
+      tags:
+      - Network
+  /security_groups/:id/rules:
+    get:
+      consumes:
+      - application/json
+      description: list secrules
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.SecruleListResponse'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: list secrules
+      tags:
+      - Network
+    post:
+      consumes:
+      - application/json
+      description: create a secrule
+      parameters:
+      - description: Secrule create payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.SecrulePayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.SecruleResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: create a secrule
+      tags:
+      - Network
+  /security_groups/:id/rules/:rule_id:
+    delete:
+      consumes:
+      - application/json
+      description: delete a secrule
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: delete a secrule
+      tags:
+      - Network
+    get:
+      consumes:
+      - application/json
+      description: get a secrule
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.SecruleResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: get a secrule
+      tags:
+      - Network
+    patch:
+      consumes:
+      - application/json
+      description: patch a secrule
+      parameters:
+      - description: Secrule patch payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.SecrulePatchPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.SecruleResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: patch a secrule
+      tags:
+      - Network
+  /subnets:
+    get:
+      consumes:
+      - application/json
+      description: list subnets
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.SubnetListResponse'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: list subnets
+      tags:
+      - Network
+    post:
+      consumes:
+      - application/json
+      description: create a subnet
+      parameters:
+      - description: Subnet create payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.SubnetPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.SubnetResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: create a subnet
+      tags:
+      - Network
+  /subnets/:id:
+    delete:
+      consumes:
+      - application/json
+      description: delete a subnet
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: delete a subnet
+      tags:
+      - Network
+    get:
+      consumes:
+      - application/json
+      description: get a subnet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.SubnetResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: get a subnet
+      tags:
+      - Network
+    patch:
+      consumes:
+      - application/json
+      description: patch a subnet
+      parameters:
+      - description: Subnet patch payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.SubnetPatchPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.SubnetResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: patch a subnet
+      tags:
+      - Network
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: list users
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.UserListResponse'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: list users
+      tags:
+      - Authorization
+    post:
+      consumes:
+      - application/json
+      description: create a user
+      parameters:
+      - description: User create payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.UserPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.UserResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: create a user
+      tags:
+      - Authorization
+  /users/:id:
+    delete:
+      consumes:
+      - application/json
+      description: delete a user
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: delete a user
+      tags:
+      - Authorization
+    get:
+      consumes:
+      - application/json
+      description: get a user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.UserResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: get a user
+      tags:
+      - Authorization
+    patch:
+      consumes:
+      - application/json
+      description: patch a user
+      parameters:
+      - description: User patch payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.UserPatchPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.UserResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: patch a user
+      tags:
+      - Authorization
+  /volumes:
+    get:
+      consumes:
+      - application/json
+      description: list volumes
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.VolumeListResponse'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: list volumes
+      tags:
+      - Compute
+    post:
+      consumes:
+      - application/json
+      description: create a volume
+      parameters:
+      - description: Volume create payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.VolumePayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.VolumeResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: create a volume
+      tags:
+      - Compute
+  /volumes/:id:
+    delete:
+      consumes:
+      - application/json
+      description: delete a volume
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: delete a volume
+      tags:
+      - Compute
+    get:
+      consumes:
+      - application/json
+      description: get a volume
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.VolumeResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: get a volume
+      tags:
+      - Compute
+    patch:
+      consumes:
+      - application/json
+      description: patch a volume
+      parameters:
+      - description: Volume patch payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.VolumePatchPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.VolumeResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: patch a volume
+      tags:
+      - Compute
+  /vpcs:
+    get:
+      consumes:
+      - application/json
+      description: list vpcs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.VPCListResponse'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: list vpcs
+      tags:
+      - Network
+    post:
+      consumes:
+      - application/json
+      description: create a vpc
+      parameters:
+      - description: VPC create payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.VPCPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.VPCResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: create a vpc
+      tags:
+      - Network
+  /vpcs/:id:
+    delete:
+      consumes:
+      - application/json
+      description: delete a vpc
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: delete a vpc
+      tags:
+      - Network
+    get:
+      consumes:
+      - application/json
+      description: get a vpc
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.VPCResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: get a vpc
+      tags:
+      - Network
+    patch:
+      consumes:
+      - application/json
+      description: patch a vpc
+      parameters:
+      - description: VPC patch payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.VPCPatchPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.VPCResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/apis.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/apis.APIError'
+      summary: patch a vpc
+      tags:
+      - Network
+swagger: "2.0"

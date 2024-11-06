@@ -13,8 +13,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/IBM/cloudland/web/src/model"
-	"github.com/IBM/cloudland/web/src/dbs"
+	"web/src/model"
+	"web/src/dbs"
 	"github.com/jinzhu/gorm"
 )
 

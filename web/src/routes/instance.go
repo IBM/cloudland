@@ -18,9 +18,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/IBM/cloudland/web/src/rpcs"
-	"github.com/IBM/cloudland/web/src/model"
-	"github.com/IBM/cloudland/web/src/dbs"
+	"web/src/dbs"
+	"web/src/model"
+	"web/src/rpcs"
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -641,7 +641,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
 		}
 	}()
 	instance := &model.Instance{Model: model.Model{ID: id}}
-	if err = db.Preload("FloatingIps").Take(instance).Error; err != nil {
+	if err = db.Take(instance).Error; err != nil {
 		log.Println("Failed to query instance, %v", err)
 		return
 	}
@@ -689,6 +689,26 @@ func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
 	return
 }
 
+func (a *InstanceAdmin) GetInstanceByUUID(ctx context.Context, uuID string) (instance *model.Instance, err error) {
+	memberShip := GetMemberShip(ctx)
+	db := DB()
+	where := memberShip.GetWhere()
+	instance = &model.Instance{}
+	if err = db.Preload("Image").Preload("Zone").Preload("Flavor").Preload("Keys").Where(where).Where("uuid = ?", uuID).Take(instance).Error; err != nil {
+		log.Println("Failed to query instance, %v", err)
+		return
+	}
+	if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
+		log.Println("Failed to query floating ip(s), %v", err)
+		return
+	}
+	if err = db.Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
+		log.Println("Failed to query interfaces %v", err)
+		return
+	}
+	return
+}
+
 func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, instances []*model.Instance, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
@@ -715,7 +735,7 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 	}
 	db = db.Offset(0).Limit(-1)
 	for _, instance := range instances {
-		if err = db.Preload("Address").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
+		if err = db.Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
 			log.Println("Failed to query interfaces %v", err)
 			return
 		}

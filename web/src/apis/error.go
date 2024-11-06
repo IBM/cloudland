@@ -14,6 +14,8 @@ import (
 )
 
 type APIError struct {
+//	InternalErr error
+//	ErrorCode int `json:"error_code"`
 	ErrorMessage string `json:"error_message"`
 }
 

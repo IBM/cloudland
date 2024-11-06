@@ -10,7 +10,7 @@ package apis
 import (
 	"net/http"
 
-	"github.com/IBM/cloudland/web/src/routes"
+	"web/src/routes"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,9 +20,13 @@ var userAdmin = &routes.UserAdmin{}
 type UserAPI struct{}
 
 type UserPayload struct {
-	Username string        `json:"username,required"`
-	Password string        `json:"password,required"`
-	Org      *Organization `json:"org,omitempty"`
+	Username string         `json:"username,required"`
+	Password string         `json:"password,required"`
+	Org      *BaseReference `json:"org,omitempty"`
+}
+
+type UserPatchPayload struct {
+	Password string         `json:"password,required"`
 }
 
 type UserResponse struct {
@@ -32,10 +36,91 @@ type UserResponse struct {
 	Role        string         `json:"role"`
 }
 
+type UserListResponse struct {
+	Offset int            `json:"offset"`
+	Total  int            `json:"total"`
+	Limit  int            `json:"limit"`
+	Users   []*OrgResponse `json:"users"`
+}
+
+//
+// @Summary get a user
+// @Description get a user
+// @tags Authorization
+// @Accept  json
+// @Produce json
+// @Success 200 {object} UserResponse
+// @Failure 400 {object} APIError "Bad request"
+// @Failure 401 {object} APIError "Not authorized"
+// @Router /users/:id [get]
+func (v *UserAPI) Get(c *gin.Context) {
+	userResp := &UserResponse{}
+	c.JSON(http.StatusOK, userResp)
+}
+
+//
+// @Summary patch a user
+// @Description patch a user
+// @tags Authorization
+// @Accept  json
+// @Produce json
+// @Param   message	body   UserPatchPayload  true   "User patch payload"
+// @Success 200 {object} UserResponse
+// @Failure 400 {object} APIError "Bad request"
+// @Failure 401 {object} APIError "Not authorized"
+// @Router /users/:id [patch]
+func (v *UserAPI) Patch(c *gin.Context) {
+	userResp := &UserResponse{}
+	c.JSON(http.StatusOK, userResp)
+}
+
+//
+// @Summary delete a user
+// @Description delete a user
+// @tags Authorization
+// @Accept  json
+// @Produce json
+// @Success 204
+// @Failure 400 {object} APIError "Bad request"
+// @Failure 401 {object} APIError "Not authorized"
+// @Router /users/:id [delete]
+func (v *UserAPI) Delete(c *gin.Context) {
+	c.JSON(http.StatusNoContent, nil)
+}
+
+//
+// @Summary create a user
+// @Description create a user
+// @tags Authorization
+// @Accept  json
+// @Produce json
+// @Param   message	body   UserPayload  true   "User create payload"
+// @Success 200 {object} UserResponse
+// @Failure 400 {object} APIError "Bad request"
+// @Failure 401 {object} APIError "Not authorized"
+// @Router /users [post]
+func (v *UserAPI) Create(c *gin.Context) {
+	userResp := &UserResponse{}
+	c.JSON(http.StatusOK, userResp)
+}
+
+//
+// @Summary list users
+// @Description list users
+// @tags Authorization
+// @Accept  json
+// @Produce json
+// @Success 200 {object} UserListResponse
+// @Failure 401 {object} APIError "Not authorized"
+// @Router /users [get]
+func (v *UserAPI) List(c *gin.Context) {
+	userListResp := &UserListResponse{}
+	c.JSON(http.StatusOK, userListResp)
+}
 //
 // @Summary login to get the accesstoken
 // @Description get token by user name
-// @tags Authorities
+// @tags Authorization
 // @Accept  json
 // @Produce json
 // @Param   message	body   UserPayload  true   "User Credential"

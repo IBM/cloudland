@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package model
 
 import (
-	"github.com/IBM/cloudland/web/src/dbs"
+	"web/src/dbs"
 )
 
 type Registry struct {

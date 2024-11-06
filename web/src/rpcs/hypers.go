@@ -13,9 +13,9 @@ History:
 package rpcs
 
 import (
-//	"github.com/IBM/cloudland/web/clui/model"
-//	"github.com/IBM/cloudland/web/sca/dbs"
-	"github.com/IBM/cloudland/web/src/logs"
+//	"web/clui/model"
+//	"web/sca/dbs"
+	"web/src/logs"
 )
 
 /*

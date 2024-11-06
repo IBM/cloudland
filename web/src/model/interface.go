@@ -10,7 +10,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/IBM/cloudland/web/src/dbs"
+	"web/src/dbs"
 )
 
 type Interface struct {

@@ -16,7 +16,7 @@ import (
 	"encoding/gob"
 	"fmt"
 
-	"github.com/IBM/cloudland/web/src/dbs"
+	"web/src/dbs"
 )
 
 func init() {

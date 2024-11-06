@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/IBM/cloudland/web/src/dbs"
+	"web/src/dbs"
 )
 
 type Hyper struct {

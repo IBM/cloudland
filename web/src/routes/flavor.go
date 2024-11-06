@@ -13,8 +13,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/IBM/cloudland/web/src/model"
-	"github.com/IBM/cloudland/web/src/dbs"
+	"web/src/dbs"
+	"web/src/model"
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -30,10 +30,10 @@ type FlavorView struct{}
 func (a *FlavorAdmin) Create(name string, cpu, memory, disk int32) (flavor *model.Flavor, err error) {
 	db := DB()
 	flavor = &model.Flavor{
-		Name:      name,
-		Cpu:       cpu,
-		Disk:      disk,
-		Memory:    memory,
+		Name:   name,
+		Cpu:    cpu,
+		Disk:   disk,
+		Memory: memory,
 	}
 	err = db.Create(flavor).Error
 	return

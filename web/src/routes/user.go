@@ -21,8 +21,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/IBM/cloudland/web/src/model"
-	"github.com/IBM/cloudland/web/src/dbs"
+	"web/src/dbs"
+	"web/src/model"
 	"github.com/go-macaron/session"
 	"golang.org/x/crypto/bcrypt"
 	macaron "gopkg.in/macaron.v1"

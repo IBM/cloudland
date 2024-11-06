@@ -13,8 +13,8 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/IBM/cloudland/web/src/model"
-	"github.com/IBM/cloudland/web/src/dbs"
+	"web/src/model"
+	"web/src/dbs"
 )
 
 func init() {

@@ -13,7 +13,7 @@ History:
 package dbs
 
 import (
-	"github.com/IBM/cloudland/web/src/configs"
+	"web/src/configs"
 	"github.com/spf13/viper"
 )
 

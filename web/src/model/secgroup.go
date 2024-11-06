@@ -9,7 +9,7 @@ package model
 import (
 	"log"
 
-	"github.com/IBM/cloudland/web/src/dbs"
+	"web/src/dbs"
 )
 
 func init() {

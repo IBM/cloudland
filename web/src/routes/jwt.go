@@ -19,7 +19,7 @@ import (
 
 	"math/rand"
 
-	"github.com/IBM/cloudland/web/src/model"
+	"web/src/model"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/spf13/viper"
 )

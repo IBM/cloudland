@@ -9,7 +9,7 @@ package model
 import (
 	"time"
 
-	"github.com/IBM/cloudland/web/src/dbs"
+	"web/src/dbs"
 )
 
 type Resource struct {

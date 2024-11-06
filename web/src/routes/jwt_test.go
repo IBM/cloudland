@@ -16,7 +16,7 @@ import (
 	"crypto/rsa"
 	"testing"
 
-	"github.com/IBM/cloudland/web/src/model"
+	"web/src/model"
 	jwt "github.com/dgrijalva/jwt-go"
 )
 

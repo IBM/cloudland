@@ -15,7 +15,7 @@ package model
 import (
 	context "context"
 
-	"github.com/IBM/cloudland/web/src/logs"
+	"web/src/logs"
 )
 
 var (

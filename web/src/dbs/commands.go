@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/IBM/cloudland/web/src/tables"
+	"web/src/tables"
 	"github.com/spf13/cobra"
 	context "golang.org/x/net/context"
 )

@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/IBM/cloudland/web/src/model"
-	"github.com/IBM/cloudland/web/src/dbs"
+	"web/src/dbs"
+	"web/src/model"
 	"github.com/apparentlymart/go-cidr/cidr"
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
@@ -160,9 +160,9 @@ func (a *SubnetAdmin) Update(ctx context.Context, id int64, name, gateway, start
 			subnet.End = end
 		}
 	}
- 	if dns != "" {
-                subnet.NameServer = dns
-        }
+	if dns != "" {
+		subnet.NameServer = dns
+	}
 	subnet.Routes = routes
 	err = db.Save(subnet).Error
 	if err != nil {

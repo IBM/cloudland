@@ -13,7 +13,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/IBM/cloudland/web/src/model"
+	"web/src/model"
 	"github.com/go-macaron/session"
 	"gopkg.in/macaron.v1"
 )

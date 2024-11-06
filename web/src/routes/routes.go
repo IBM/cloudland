@@ -20,7 +20,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/IBM/cloudland/web/src/model"
+	"web/src/model"
 	"github.com/go-macaron/i18n"
 	"github.com/go-macaron/session"
 	_ "github.com/go-macaron/session/postgres"
