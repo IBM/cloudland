@@ -29,6 +29,10 @@ type InterfaceResponse struct {
 }
 
 type InterfacePayload struct {
+	Subnet *BasePayloadRef `json:"subnet,required"`
+	IpAddress *string `json:"ip_address,omitempty"`
+	MacAddress *string `json:"mac_address,omitempty"`
+	SecurityGroups []*BasePayloadRef `json:"security_group,omitempty"`
 }
 
 type InterfacePatchPayload struct {

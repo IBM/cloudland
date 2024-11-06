@@ -25,10 +25,14 @@ var instanceAdmin = &routes.InstanceAdmin{}
 type InstanceAPI struct{}
 
 type BaseReference struct {
-	ID   string `json:"id,required"`
+	ID   string `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
 }
 
+type BasePayloadRef struct {
+	ID   *string `json:"id,omitempty"`
+	Name *string `json:"name,omitempty"`
+}
 type PowerAction string
 
 const (
@@ -42,17 +46,22 @@ const (
 )
 
 type InstancePatchPayload struct {
-	Hostname    string       `json:"hostname,omitempty"`
+	Hostname    *string       `json:"hostname,omitempty"`
 	PowerAction *PowerAction `json:"power_action,omitempty"`
 }
 
 type InstancePayload struct {
-	Hostname   string              `json:"hostname,required"`
-	Keys       []string            `json:"keys,required"`
-	Flavor     string              `json:"flavor,required"`
-	Image      string              `json:"image,required"`
-	Interfaces []*InterfacePayload `json:"interfaces,required"`
-	Zone       string              `json:"zone,required"`
+	Count      *int                 `json:"count,omitempty"`
+	Hyper      *int                 `json:"hyper,omitempty"`
+	Hostname   *string              `json:"hostname,required"`
+	Keys       []*BasePayloadRef    `json:"keys,required"`
+	Flavor     *string      `json:"flavor,required"`
+	Image      *BasePayloadRef      `json:"image,required"`
+	PrimaryInterface *InterfacePayload `json:"primary_interface,required"`
+	SecondaryInterfaces []*InterfacePayload `json:"secondary_interfaces,omitempty"`
+	Zone       *string              `json:"zone,required"`
+	vpc       *BasePayloadRef              `json:"zone,omitempty"`
+	Userdata   *string              `json:"userdata,omitempty"`
 }
 
 type InstanceResponse struct {
@@ -60,7 +69,7 @@ type InstanceResponse struct {
 	Hostname   string               `json:"hostname"`
 	Status     string               `json:"status"`
 	Interfaces []*InterfaceResponse `json:"interfaces"`
-	Flavor     *BaseReference       `json:"flavor"`
+	Flavor     string       `json:"flavor"`
 	Image      *BaseReference       `json:"image"`
 	Keys       []*BaseReference     `json:"keys"`
 	Zone       string               `json:"zone"`
@@ -138,13 +147,123 @@ func (v *InstanceAPI) Delete(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Param   message	body   InstancePayload  true   "Instance create payload"
-// @Success 200 {object} InstanceResponse
+// @Success 200 {array} InstanceResponse
 // @Failure 400 {object} APIError "Bad request"
 // @Failure 401 {object} APIError "Not authorized"
 // @Router /instances [post]
 func (v *InstanceAPI) Create(c *gin.Context) {
-	instanceResp := &InstanceResponse{}
-	c.JSON(http.StatusOK, instanceResp)
+	ctx := c.Request.Context()
+	payload := &InstancePayload{}
+	err := c.ShouldBindJSON(payload)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Input JSON format error", err)
+		return
+	}
+	count := 1
+	if payload.Count != nil {
+		count = *payload.Count
+	}
+	if count <= 0 || count > InstanceQuota {
+		errMsg := fmt.Sprintf("Provided count must be 1-%d", InstanceQuota)
+		ErrorResponse(c, http.StatusBadRequest, errMsg, err)
+		return
+	}
+	if payload.Hostname == nil {
+		ErrorResponse(c, http.StatusBadRequest, "Hostname must be provided", nil)
+		return
+	}
+	hostname := *payload.Hostname
+	userdata := ""
+	if payload.Userdata != nil {
+		userdata = *payload.Userdata
+	}
+	if payload.Image == nil || (payload.Image.ID == nil && payload.Image.Name == nil) {
+		ErrorResponse(c, http.StatusBadRequest, "Image must be provided", nil)
+		return
+	}
+	image, err := imageAdmin.GetImage(ctx, payload.Image.ID, payload.Image.Name)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid image", nil)
+		return
+	}
+	if payload.Flavor == nil {
+		ErrorResponse(c, http.StatusBadRequest, "Flavor must be provided", nil)
+		return
+	}
+	flavor, err := flavorAdmin.GetFlavorByName(ctx, *payload.Flavor)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid flavor", nil)
+		return
+	}
+	if payload.Zone == nil {
+		ErrorResponse(c, http.StatusBadRequest, "Zone must be provided", nil)
+		return
+	}
+	zone, err := zoneAdmin.GetZoneByName(ctx, *payload.Zone)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid zone", nil)
+		return
+	}
+	primaryIface, err := v.getInterfaceInfo(ctx, payload.PrimaryInterface)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid primary interface", nil)
+		return
+	}
+	routerID := primaryIface.Subnet.RouterID
+	/*
+	if payload.VPC != nil {
+		router := routerAdmin.GetRouter(ctx, payload.VPC)
+	}
+	*/
+	var secondaryIfaces []*routes.InterfaceInfo
+	for _, ifacePayload := range payload.SecondaryInterfaces {
+		var ifaceInfo *routes.InterfaceInfo
+		ifaceInfo, err = v.getInterfaceInfo(ctx, ifacePayload)
+		if err != nil {
+			ErrorResponse(c, http.StatusBadRequest, "Invalid secondary interfaces", nil)
+			return
+		}
+		secondaryIfaces = append(secondaryIfaces, ifaceInfo)
+	}
+	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, routerID, primaryIface, secondaryIfaces, nil, 0)
+	if err != nil {
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to create instances", nil)
+		return
+	}
+	c.JSON(http.StatusOK, instances)
+}
+
+func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, ifacePayload *InterfacePayload) (ifaceInfo *routes.InterfaceInfo, err error) {
+	if ifacePayload == nil || ifacePayload.Subnet == nil {
+		err = fmt.Errorf("Interface with subnet must be provided")
+		return
+	}
+	/*
+	subnet, err := subnetAdmin.GetSubnet(ctx, subnetRef)
+	if err != nil {
+		return
+	}
+	*/
+	ifaceInfo = &routes.InterfaceInfo{
+	//	Subnet: subnet,
+	}
+	if ifacePayload.IpAddress != nil {
+		ifaceInfo.IpAddress = *ifacePayload.IpAddress
+	}
+	if ifacePayload.MacAddress != nil {
+		ifaceInfo.MacAddress = *ifacePayload.MacAddress
+	}
+	/*
+	for _, sg := range primaryPayload.SecurityGroups {
+		secGroup, sgErr := secgroupAdmin.GetSecurityGroup(ctx, sg.ID, sg.Name, primarySubnet.RouterID)
+		if sgErr != nil {
+			ErrorResponse(c, http.StatusBadRequest, "Invalid security group", nil)
+			return
+		}
+		ifaceInfo.SecurityGroups = append(ifaceInfo.SecurityGroups, secGroup)
+	}
+	*/
+	return
 }
 
 func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.Instance) (instanceResp *InstanceResponse, err error) {
@@ -152,10 +271,7 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 		ID:       instance.UUID,
 		Hostname: instance.Hostname,
 		Status:   instance.Status,
-		Flavor: &BaseReference{
-			ID:   instance.Flavor.UUID,
-			Name: instance.Flavor.Name,
-		},
+		Flavor: instance.Flavor.Name,
 		Image: &BaseReference{
 			ID:   instance.Image.UUID,
 			Name: instance.Image.Name,

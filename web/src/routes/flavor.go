@@ -8,6 +8,7 @@ SPDX-License-Identifier: Apache-2.0
 package routes
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 
 	"web/src/dbs"
 	"web/src/model"
+
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -36,6 +38,33 @@ func (a *FlavorAdmin) Create(name string, cpu, memory, disk int32) (flavor *mode
 		Memory: memory,
 	}
 	err = db.Create(flavor).Error
+	return
+}
+
+func (a *FlavorAdmin) GetFlavorByName(ctx context.Context, name string) (flavor *model.Flavor, err error) {
+	db := DB()
+	flavor = &model.Flavor{}
+	err = db.Where("name = ?", name).Take(flavor).Error
+	if err != nil {
+		log.Println("Failed to query flavor, %v", err)
+		return
+	}
+	return
+}
+
+func (a *FlavorAdmin) Get(ctx context.Context, id int64) (flavor *model.Flavor, err error) {
+	if id <= 0 {
+		err = fmt.Errorf("Invalid flavor ID: %d", id)
+		log.Println(err)
+		return
+	}
+	db := DB()
+	flavor = &model.Flavor{Model: model.Model{ID: id}}
+	err = db.Take(flavor).Error
+	if err != nil {
+		log.Println("DB failed to query flavor, err", err)
+		return
+	}
 	return
 }
 

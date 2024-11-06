@@ -155,6 +155,15 @@ func (a *SecgroupAdmin) Delete(id int64) (err error) {
 	return
 }
 
+func (a *SecgroupAdmin) GetSecurityGroups(ctx context.Context, sgIDs []int64) (secGroups []*model.SecurityGroup, err error) {
+	db := DB()
+	err = db.Where(sgIDs).Find(&secGroups).Error
+	if err != nil {
+		log.Println("DB failed to query security groups", err)
+	}
+	return
+}
+
 func (a *SecgroupAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, secgroups []*model.SecurityGroup, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()

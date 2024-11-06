@@ -62,6 +62,74 @@ func (a *ImageAdmin) Create(ctx context.Context, osVersion, diskType, virtType, 
 	return
 }
 
+func (a *ImageAdmin) GetImageByUUID(ctx context.Context, uuID string) (image *model.Image, err error) {
+	memberShip := GetMemberShip(ctx)
+	db := DB()
+	where := memberShip.GetWhere()
+	image = &model.Image{}
+	err = db.Where(where).Where("uuid = ?", uuID).Take(image).Error
+	if err != nil {
+		log.Println("Failed to query image, %v", err)
+		return
+	}
+	return
+}
+
+func (a *ImageAdmin) GetImageByName(ctx context.Context, name string) (image *model.Image, err error) {
+	memberShip := GetMemberShip(ctx)
+	db := DB()
+	where := memberShip.GetWhere()
+	image = &model.Image{}
+	err = db.Where(where).Where("name = ?", name).Take(image).Error
+	if err != nil {
+		log.Println("Failed to query image, %v", err)
+		return
+	}
+	return
+}
+
+func (a *ImageAdmin) Get(ctx context.Context, id int64) (image *model.Image, err error) {
+	if id <= 0 {
+		err = fmt.Errorf("Invalid image ID: %d", id)
+		log.Println(err)
+		return
+	}
+	memberShip := GetMemberShip(ctx)
+	db := DB()
+	where := memberShip.GetWhere()
+	image = &model.Image{Model: model.Model{ID: id}}
+	err = db.Where(where).Take(image).Error
+	if err != nil {
+		log.Println("DB failed to query image, %v", err)
+		return
+	}
+	return
+}
+
+func (a *ImageAdmin) GetImage(ctx context.Context, uuID, name *string) (image *model.Image, err error) {
+	if uuID == nil && name == nil {
+		err = fmt.Errorf("Either image uuid or name must be provided")
+		return
+	}
+	if uuID != nil {
+		if *uuID == "" {
+			err = fmt.Errorf("Image uuid must not be empty")
+			return
+		}
+		image, err = a.GetImageByUUID(ctx, *uuID)
+		return
+	}
+	if name != nil {
+		if *name == "" {
+			err = fmt.Errorf("Image name must not be empty")
+			return
+		}
+		image, err = a.GetImageByName(ctx, *name)
+		return
+	}
+	return
+}
+
 func (a *ImageAdmin) Delete(ctx context.Context, id int64) (err error) {
 	db := DB()
 	db = db.Begin()

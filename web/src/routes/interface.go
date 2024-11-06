@@ -29,6 +29,13 @@ var (
 	interfaceView  = &InterfaceView{}
 )
 
+type InterfaceInfo struct {
+        Subnet      *model.Subnet
+        MacAddress  string
+        IpAddress   string
+	SecurityGroups   []*model.SecurityGroup
+}
+
 type InterfaceAdmin struct{}
 
 type InterfaceView struct{}

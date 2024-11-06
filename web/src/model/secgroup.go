@@ -21,6 +21,7 @@ type SecurityGroup struct {
 	Name       string       `gorm:"type:varchar(32)"`
 	IsDefault  bool         `gorm:"default:false"`
 	Interfaces []*Interface `gorm:"many2many:secgroup_ifaces;"`
+	RouterID   int64
 }
 
 type SecurityRule struct {

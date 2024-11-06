@@ -131,14 +131,14 @@ func (v *UserAPI) LoginPost(c *gin.Context) {
 	payload := &UserPayload{}
 	err := c.ShouldBindJSON(payload)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, &APIError{ErrorMessage: "Input JSON format error"})
+		ErrorResponse(c, http.StatusBadRequest, "Input JSON format error", err)
 		return
 	}
 	username := payload.Username
 	password := payload.Password
 	user, err := userAdmin.Validate(c.Request.Context(), username, password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, &APIError{ErrorMessage: "Invalid username or password"})
+		ErrorResponse(c, http.StatusBadRequest, "Invalid username or password", err)
 		return
 	}
 	orgName := username
@@ -147,12 +147,13 @@ func (v *UserAPI) LoginPost(c *gin.Context) {
 	}
 	org, err := orgAdmin.Get(orgName)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, &APIError{ErrorMessage: "Invalid orgnazation"})
+		ErrorResponse(c, http.StatusBadRequest, "Invalid organization", err)
 		return
 	}
 	_, role, token, _, _, err := userAdmin.AccessToken(user.ID, username, orgName)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, &APIError{ErrorMessage: "Invalid org with username"})
+		ErrorResponse(c, http.StatusBadRequest, "Invalid organization with username", err)
+		return
 	}
 	userResp := &UserResponse{
 		UserInfo: &BaseReference{

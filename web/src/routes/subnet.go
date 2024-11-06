@@ -118,6 +118,24 @@ func generateIPAddresses(subnet *model.Subnet, start net.IP, end net.IP, preSize
 	return nil
 }
 
+func (a *SubnetAdmin) Get(ctx context.Context, id int64) (subnet *model.Subnet, err error) {
+	if id <= 0 {
+		err = fmt.Errorf("Invalid subnet ID: %d", id)
+		log.Println(err)
+		return
+	}
+	memberShip := GetMemberShip(ctx)
+	db := DB()
+	where := memberShip.GetWhere()
+	subnet = &model.Subnet{Model: model.Model{ID: id}}
+	err = db.Where(where).Take(subnet).Error
+	if err != nil {
+		log.Println("DB failed to query subnet ", err)
+		return
+	}
+	return
+}
+
 func (a *SubnetAdmin) Update(ctx context.Context, id int64, name, gateway, start, end, dns, routes string) (subnet *model.Subnet, err error) {
 	db := DB()
 	subnet = &model.Subnet{Model: model.Model{ID: id}}
