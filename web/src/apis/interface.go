@@ -32,8 +32,9 @@ type InterfaceResponse struct {
 
 type InterfacePayload struct {
 	Subnet         *common.BaseReference   `json:"subnet,required" binding:"required"`
-	IpAddress      *string                  `json:"ip_address,omitempty", binding:"omitempty,ipv4"`
-	MacAddress     *string                  `json:"mac_address,omitempty" binding:"required,mac"`
+	IpAddress      string                  `json:"ip_address,omitempty", binding:"omitempty,ipv4"`
+	MacAddress     string                  `json:"mac_address,omitempty" binding:"omitempty,mac"`
+	Name           string                  `json:"name,omitempty" binding:"omitempty,min=2"`
 	SecurityGroups []*common.BaseReference `json:"security_group,omitempty"`
 }
 

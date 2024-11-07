@@ -18,8 +18,10 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
+	"web/src/common"
 	"web/src/dbs"
 	"web/src/model"
+
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -92,6 +94,61 @@ func (a *KeyAdmin) Delete(id int64) (err error) {
 	}()
 	if err = db.Delete(&model.Key{Model: model.Model{ID: id}}).Error; err != nil {
 		log.Println("DB failed to delete key, %v", err)
+		return
+	}
+	return
+}
+
+func (a *KeyAdmin) Get(ctx context.Context, id int64) (key *model.Key, err error) {
+	db := DB()
+	memberShip := GetMemberShip(ctx)
+	where := memberShip.GetWhere()
+	key = &model.Key{Model: model.Model{ID: id}}
+	err = db.Where(where).Take(key).Error
+	if err != nil {
+		log.Println("Failed to query key, %v", err)
+		return
+	}
+	return
+}
+
+func (a *KeyAdmin) GetKeyByUUID(ctx context.Context, uuID string) (key *model.Key, err error) {
+	db := DB()
+	memberShip := GetMemberShip(ctx)
+	where := memberShip.GetWhere()
+	key = &model.Key{}
+	err = db.Where(where).Where("uuid = ?", uuID).Take(key).Error
+	if err != nil {
+		log.Println("Failed to query key, %v", err)
+		return
+	}
+	return
+}
+
+func (a *KeyAdmin) GetKeyByName(ctx context.Context, name string) (key *model.Key, err error) {
+	db := DB()
+	memberShip := GetMemberShip(ctx)
+	where := memberShip.GetWhere()
+	key = &model.Key{}
+	err = db.Where(where).Where("name = ?", name).Take(key).Error
+	if err != nil {
+		log.Println("Failed to query key, %v", err)
+		return
+	}
+	return
+}
+
+func (a *KeyAdmin) GetKey(ctx context.Context, reference *common.BaseReference) (key *model.Key, err error) {
+	if reference == nil || (reference.ID == "" && reference.Name == "") {
+		err = fmt.Errorf("Key base reference must be provided with either uuid or name")
+		return
+	}
+	if reference.ID != "" {
+		key, err = a.GetKeyByUUID(ctx, reference.ID)
+		return
+	}
+	if reference.Name != "" {
+		key, err = a.GetKeyByName(ctx, reference.Name)
 		return
 	}
 	return

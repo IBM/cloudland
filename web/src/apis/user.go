@@ -22,8 +22,8 @@ var userAdmin = &routes.UserAdmin{}
 type UserAPI struct{}
 
 type UserPayload struct {
-	Username string                `json:"username,required" binding:"required,min=1"`
-	Password string                `json:"password,required" binding:"required,min=6"`
+	Username string                `json:"username,required" binding:"required,min=2"`
+	Password string                `json:"password,required" binding:"required,min=8,max=32"`
 	Org      *common.BaseReference `json:"org,omitempty" binding:"omitempty"`
 }
 

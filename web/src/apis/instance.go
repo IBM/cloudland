@@ -26,21 +26,21 @@ var instanceAdmin = &routes.InstanceAdmin{}
 type InstanceAPI struct{}
 
 type InstancePatchPayload struct {
-	Hostname    string      `json:"hostname,omitempty" binding:"omitempty,hostname|fqdn"`
+	Hostname    string             `json:"hostname,omitempty" binding:"omitempty,hostname|fqdn"`
 	PowerAction common.PowerAction `json:"power_action,omitempty" binding:"omitempty,oneof=stop hard_stop start restart hard_restart pause unpause)"`
-	Flavor      string      `json:"flavor,required" binding:"required,min=1,max=25"`
+	Flavor      string             `json:"flavor,required" binding:"required,min=1,max=32"`
 }
 
 type InstancePayload struct {
-	Count               int                     `json:"count,omitempty" binding:"omitempty,gte=1,lte=20"`
+	Count               int                     `json:"count,omitempty" binding:"omitempty,gte=1,lte=16"`
 	Hyper               int                     `json:"hyper,omitempty" binding:"omitempty,gte=0"`
 	Hostname            string                  `json:"hostname,required" binding:"required,hostname|fqdn"`
-	Keys                []*common.BaseReference `json:"keys,required", binding:"required,len>0"`
-	Flavor              string                  `json:"flavor,required" binding:"required,min=1,max=25"`
+	Keys                []*common.BaseReference `json:"keys,required" binding:"required,gte=1,lte=16"`
+	Flavor              string                  `json:"flavor,required" binding:"required,min=1,max=32"`
 	Image               *common.BaseReference   `json:"image,required" binding:"required"`
-	PrimaryInterface    *InterfacePayload        `json:"primary_interface,required", binding:"required"`
-	SecondaryInterfaces []*InterfacePayload      `json:"secondary_interfaces,omitempty" binding:"omitempty"`
-	Zone                string                  `json:"zone,required" binding:"required,min=1,max=25"`
+	PrimaryInterface    *InterfacePayload       `json:"primary_interface,required", binding:"required"`
+	SecondaryInterfaces []*InterfacePayload     `json:"secondary_interfaces,omitempty" binding:"omitempty"`
+	Zone                string                  `json:"zone,required" binding:"required,min=1,max=32"`
 	VPC                 *common.BaseReference   `json:"vpc,omitempty" binding:"omitempty"`
 	Userdata            string                  `json:"userdata,omitempty"`
 }
@@ -126,10 +126,10 @@ func (v *InstanceAPI) Patch(c *gin.Context) {
 		}
 	}
 	err = instanceAdmin.Update(ctx, instance, flavor, hostname, payload.PowerAction, int(instance.Hyper))
-        if err != nil {
-                log.Println("Patch instance failed, %v", err)
-                return
-        }
+	if err != nil {
+		log.Println("Patch instance failed, %v", err)
+		return
+	}
 	instanceResp, err := v.getInstanceResponse(ctx, instance)
 	if err != nil {
 		common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
@@ -227,12 +227,26 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 	if payload.Count > count {
 		count = payload.Count
 	}
-	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, routerID, primaryIface, secondaryIfaces, nil, 0)
+	var keys []*model.Key
+	for _, ky := range payload.Keys {
+		var key *model.Key
+		key, err = keyAdmin.GetKey(ctx, ky)
+		keys = append(keys, key)
+	}
+	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, routerID, primaryIface, secondaryIfaces, keys, -1)
 	if err != nil {
 		common.ErrorResponse(c, http.StatusInternalServerError, "Failed to create instances", err)
 		return
 	}
-	c.JSON(http.StatusOK, instances)
+	instancesResp := make([]*InstanceResponse, len(instances))
+	for i, instance := range instances {
+		instancesResp[i], err = v.getInstanceResponse(ctx, instance)
+		if err != nil {
+			common.ErrorResponse(c, http.StatusInternalServerError, "Failed to create instances", err)
+			return
+		}
+	}
+	c.JSON(http.StatusOK, instancesResp)
 }
 
 func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, ifacePayload *InterfacePayload) (ifaceInfo *routes.InterfaceInfo, err error) {
@@ -247,11 +261,11 @@ func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, ifacePayload *Interf
 	ifaceInfo = &routes.InterfaceInfo{
 		Subnet: subnet,
 	}
-	if ifacePayload.IpAddress != nil {
-		ifaceInfo.IpAddress = *ifacePayload.IpAddress
+	if ifacePayload.IpAddress != "" {
+		ifaceInfo.IpAddress = ifacePayload.IpAddress
 	}
-	if ifacePayload.MacAddress != nil {
-		ifaceInfo.MacAddress = *ifacePayload.MacAddress
+	if ifacePayload.MacAddress != "" {
+		ifaceInfo.MacAddress = ifacePayload.MacAddress
 	}
 	for _, sg := range ifacePayload.SecurityGroups {
 		var secGroup *model.SecurityGroup

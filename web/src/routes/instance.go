@@ -133,7 +133,7 @@ func (a *InstanceAdmin) getHyperGroup(imageType string, zoneID int64) (hyperGrou
 	return
 }
 
-func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, image *model.Image, flavor *model.Flavor, zone *model.Zone, routerID int64, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo, keyIDs []int64, hyperID int) (instances []*model.Instance, err error) {
+func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, image *model.Image, flavor *model.Flavor, zone *model.Zone, routerID int64, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo, keys []*model.Key, hyperID int) (instances []*model.Instance, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if image.Status != "available" {
@@ -160,11 +160,6 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		log.Println("No valid hypervisor", err)
 		return
 	}
-	keys := []*model.Key{}
-	if err = db.Where(keyIDs).Find(&keys).Error; err != nil {
-		log.Println("Keys query failed", err)
-		return
-	}
 	i := 0
 	hostname := prefix
 	for i < count {
@@ -177,6 +172,9 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			log.Println("DB create instance failed", err)
 			return
 		}
+		instance.Image = image
+		instance.Flavor = flavor
+		instance.Zone = zone
 		metadata := ""
 		var ifaces []*model.Interface
 		ifaces, metadata, err = a.buildMetadata(ctx, primaryIface, secondaryIfaces, keys, instance, userdata, routerID, zoneID, "")
@@ -1069,21 +1067,22 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	}
 	keys := c.QueryTrim("keys")
 	k := strings.Split(keys, ",")
-	var keyIDs []int64
+	var instKeys []*model.Key
 	for i := 0; i < len(k); i++ {
 		kID, err := strconv.Atoi(k[i])
 		if err != nil {
 			log.Println("Invalid key ID, %v", err)
 			continue
 		}
-		permit, err = memberShip.CheckOwner(model.Writer, "keys", int64(kID))
-		if !permit {
-			log.Println("Not authorized to access key")
-			c.Data["ErrorMsg"] = "Not authorized to access key"
+		var key *model.Key
+		key, err = keyAdmin.Get(ctx, int64(kID))
+		if key != nil {
+			log.Println("Failed to access key")
+			c.Data["ErrorMsg"] = "Failed to access key"
 			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
-		keyIDs = append(keyIDs, int64(kID))
+		instKeys = append(instKeys, key)
 	}
 	secgroups := c.QueryTrim("secgroups")
 	var sgIDs []int64
@@ -1150,7 +1149,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		})
 	}
 	userdata := c.QueryTrim("userdata")
-	_, err = instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, primarySubnet.RouterID, primaryIface, secondaryIfaces, keyIDs, hyperID)
+	_, err = instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, primarySubnet.RouterID, primaryIface, secondaryIfaces, instKeys, hyperID)
 	if err != nil {
 		log.Println("Create instance failed", err)
 		c.HTML(http.StatusBadRequest, err.Error())

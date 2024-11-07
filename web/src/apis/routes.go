@@ -40,8 +40,7 @@ func Run() (err error) {
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 // @BasePath /api/v1
 func Register() (r *gin.Engine) {
-	r = gin.New()
-	r.Use(gin.Recovery())
+	r = gin.Default()
 
 	r.POST("/api/v1/login", userAPI.LoginPost)
 	authGroup := r.Group("").Use(Authorize())
