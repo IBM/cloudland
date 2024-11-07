@@ -10,7 +10,9 @@ package apis
 import (
 	"net/http"
 
+	"web/src/common"
 	"web/src/routes"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,17 +22,17 @@ var imageAdmin = &routes.ImageAdmin{}
 type ImageAPI struct{}
 
 type ImageResponse struct {
-	*BaseReference
+	*common.BaseReference
 	Cpu    int32 `json:"cpu"`
 	Memory int32 `json:"memory"`
 	Disk   int32
 }
 
 type ImageListResponse struct {
-	Offset int            `json:"offset"`
-	Total  int            `json:"total"`
-	Limit  int            `json:"limit"`
-	Images []*VPCResponse `json:"images"`
+	Offset int              `json:"offset"`
+	Total  int              `json:"total"`
+	Limit  int              `json:"limit"`
+	Images []*ImageResponse `json:"images"`
 }
 
 type ImagePayload struct {

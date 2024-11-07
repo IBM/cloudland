@@ -10,7 +10,9 @@ package apis
 import (
 	"net/http"
 
+	"web/src/common"
 	"web/src/routes"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,12 +22,12 @@ var floatingIpAdmin = &routes.FloatingIpAdmin{}
 type FloatingIpAPI struct{}
 
 type FloatingIpInfo struct {
-	*BaseReference
+	*common.BaseReference
 	IpAddress string `json:"ip_address"`
 }
 
 type FloatingIpResponse struct {
-	*BaseReference
+	*common.BaseReference
 }
 
 type FloatingIpListResponse struct {

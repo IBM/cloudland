@@ -10,7 +10,9 @@ package apis
 import (
 	"net/http"
 
+	"web/src/common"
 	"web/src/routes"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,7 +22,7 @@ var subnetAdmin = &routes.SubnetAdmin{}
 type SubnetAPI struct{}
 
 type SubnetResponse struct {
-	*BaseReference
+	*common.BaseReference
 }
 
 type SubnetListResponse struct {

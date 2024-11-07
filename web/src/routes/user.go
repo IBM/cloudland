@@ -59,7 +59,7 @@ func (a *UserAdmin) Create(ctx context.Context, username, password string) (user
 	return
 }
 
-func (a *UserAdmin) Get(name string) (user *model.User, err error) {
+func (a *UserAdmin) GetUserByName(name string) (user *model.User, err error) {
 	db := DB()
 	user = &model.User{}
 	if err = db.Where("username = ?", name).Take(user).Error; err != nil {
@@ -297,7 +297,7 @@ func (v *UserView) LoginPost(c *macaron.Context, store session.Store) {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(403, "403")
 	}
-	org, err := orgAdmin.Get(organization)
+	org, err := orgAdmin.GetOrgByName(organization)
 	store.Set("login", username)
 	store.Set("uid", uid)
 	store.Set("oid", oid)

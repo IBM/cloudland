@@ -10,7 +10,9 @@ package apis
 import (
 	"net/http"
 
+	"web/src/common"
 	"web/src/routes"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,17 +22,17 @@ var hyperAdmin = &routes.HyperAdmin{}
 type HyperAPI struct{}
 
 type HyperResponse struct {
-	*BaseReference
+	*common.BaseReference
 	Cpu    int32 `json:"cpu"`
 	Memory int32 `json:"memory"`
 	Disk   int32
 }
 
 type HyperListResponse struct {
-	Offset  int            `json:"offset"`
-	Total   int            `json:"total"`
-	Limit   int            `json:"limit"`
-	Hypers []*VPCResponse `json:"hypers"`
+	Offset int              `json:"offset"`
+	Total  int              `json:"total"`
+	Limit  int              `json:"limit"`
+	Hypers []*HyperResponse `json:"hypers"`
 }
 
 type HyperPayload struct {

@@ -10,7 +10,9 @@ package apis
 import (
 	"net/http"
 
+	"web/src/common"
 	"web/src/routes"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,24 +21,24 @@ var secgroupAdmin = &routes.SecgroupAdmin{}
 
 type SecgroupAPI struct{}
 
-type SecgroupResponse struct {
-	*BaseReference
+type SecurityGroupResponse struct {
+	*common.BaseReference
 	Cpu    int32 `json:"cpu"`
 	Memory int32 `json:"memory"`
 	Disk   int32
 }
 
-type SecgroupListResponse struct {
-	Offset  int            `json:"offset"`
-	Total   int            `json:"total"`
-	Limit   int            `json:"limit"`
-	Secgroups []*VPCResponse `json:"secgroups"`
+type SecurityGroupListResponse struct {
+	Offset         int                      `json:"offset"`
+	Total          int                      `json:"total"`
+	Limit          int                      `json:"limit"`
+	Securitygroups []*SecurityGroupResponse `json:"security_groups"`
 }
 
-type SecgroupPayload struct {
+type SecurityGroupPayload struct {
 }
 
-type SecgroupPatchPayload struct {
+type SecurityGroupPatchPayload struct {
 }
 
 //
@@ -45,12 +47,12 @@ type SecgroupPatchPayload struct {
 // @tags Network
 // @Accept  json
 // @Produce json
-// @Success 200 {object} SecgroupResponse
+// @Success 200 {object} SecurityGroupResponse
 // @Failure 400 {object} APIError "Bad request"
 // @Failure 401 {object} APIError "Not authorized"
 // @Router /security_groups/:id [get]
 func (v *SecgroupAPI) Get(c *gin.Context) {
-	secgroupResp := &SecgroupResponse{}
+	secgroupResp := &SecurityGroupResponse{}
 	c.JSON(http.StatusOK, secgroupResp)
 }
 
@@ -61,12 +63,12 @@ func (v *SecgroupAPI) Get(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Param   message	body   SecgroupPatchPayload  true   "Secgroup patch payload"
-// @Success 200 {object} SecgroupResponse
+// @Success 200 {object} SecurityGroupResponse
 // @Failure 400 {object} APIError "Bad request"
 // @Failure 401 {object} APIError "Not authorized"
 // @Router /security_groups/:id [patch]
 func (v *SecgroupAPI) Patch(c *gin.Context) {
-	secgroupResp := &SecgroupResponse{}
+	secgroupResp := &SecurityGroupResponse{}
 	c.JSON(http.StatusOK, secgroupResp)
 }
 
@@ -90,13 +92,13 @@ func (v *SecgroupAPI) Delete(c *gin.Context) {
 // @tags Network
 // @Accept  json
 // @Produce json
-// @Param   message	body   SecgroupPayload  true   "Secgroup create payload"
-// @Success 200 {object} SecgroupResponse
+// @Param   message	body   SecurityGroupPayload  true   "Secgroup create payload"
+// @Success 200 {object} SecurityGroupResponse
 // @Failure 400 {object} APIError "Bad request"
 // @Failure 401 {object} APIError "Not authorized"
 // @Router /security_groups [post]
 func (v *SecgroupAPI) Create(c *gin.Context) {
-	secgroupResp := &SecgroupResponse{}
+	secgroupResp := &SecurityGroupResponse{}
 	c.JSON(http.StatusOK, secgroupResp)
 }
 
@@ -106,10 +108,10 @@ func (v *SecgroupAPI) Create(c *gin.Context) {
 // @tags Network
 // @Accept  json
 // @Produce json
-// @Success 200 {object} SecgroupListResponse
+// @Success 200 {object} SecurityGroupListResponse
 // @Failure 401 {object} APIError "Not authorized"
 // @Router /security_groups [get]
 func (v *SecgroupAPI) List(c *gin.Context) {
-	secgroupListResp := &SecgroupListResponse{}
+	secgroupListResp := &SecurityGroupListResponse{}
 	c.JSON(http.StatusOK, secgroupListResp)
 }

@@ -158,7 +158,7 @@ func (a *OrgAdmin) Update(ctx context.Context, orgID int64, members, users []str
 	return
 }
 
-func (a *OrgAdmin) Get(name string) (org *model.Organization, err error) {
+func (a *OrgAdmin) GetOrgByName(name string) (org *model.Organization, err error) {
 	org = &model.Organization{}
 	db := DB()
 	err = db.Take(org, &model.Organization{Name: name}).Error

@@ -11,6 +11,7 @@ import (
 	"log"
 
 	_ "web/docs"
+
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-macaron/session/postgres"
 	"github.com/spf13/viper"

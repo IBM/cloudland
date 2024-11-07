@@ -10,7 +10,9 @@ package apis
 import (
 	"net/http"
 
+	"web/src/common"
 	"web/src/routes"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,27 +22,27 @@ var userAdmin = &routes.UserAdmin{}
 type UserAPI struct{}
 
 type UserPayload struct {
-	Username string         `json:"username,required"`
-	Password string         `json:"password,required"`
-	Org      *BaseReference `json:"org,omitempty"`
+	Username string                `json:"username,required" binding:"required,min=1"`
+	Password string                `json:"password,required" binding:"required,min=6"`
+	Org      *common.BaseReference `json:"org,omitempty" binding:"omitempty"`
 }
 
 type UserPatchPayload struct {
-	Password string         `json:"password,required"`
+	Password string `json:"password,required" binding:"required,min=6"`
 }
 
 type UserResponse struct {
-	UserInfo    *BaseReference `json:"user"`
-	OrgInfo     *BaseReference `json:"org"`
-	AccessToken string         `json:"token"`
-	Role        string         `json:"role"`
+	UserInfo    *common.BaseReference `json:"user"`
+	OrgInfo     *common.BaseReference `json:"org"`
+	AccessToken string                `json:"token"`
+	Role        string                `json:"role"`
 }
 
 type UserListResponse struct {
 	Offset int            `json:"offset"`
 	Total  int            `json:"total"`
 	Limit  int            `json:"limit"`
-	Users   []*OrgResponse `json:"users"`
+	Users  []*OrgResponse `json:"users"`
 }
 
 //
@@ -117,6 +119,7 @@ func (v *UserAPI) List(c *gin.Context) {
 	userListResp := &UserListResponse{}
 	c.JSON(http.StatusOK, userListResp)
 }
+
 //
 // @Summary login to get the accesstoken
 // @Description get token by user name
@@ -131,36 +134,36 @@ func (v *UserAPI) LoginPost(c *gin.Context) {
 	payload := &UserPayload{}
 	err := c.ShouldBindJSON(payload)
 	if err != nil {
-		ErrorResponse(c, http.StatusBadRequest, "Input JSON format error", err)
+		common.ErrorResponse(c, http.StatusBadRequest, "Input JSON format error", err)
 		return
 	}
 	username := payload.Username
 	password := payload.Password
 	user, err := userAdmin.Validate(c.Request.Context(), username, password)
 	if err != nil {
-		ErrorResponse(c, http.StatusBadRequest, "Invalid username or password", err)
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid username or password", err)
 		return
 	}
 	orgName := username
 	if payload.Org != nil {
 		orgName = payload.Org.Name
 	}
-	org, err := orgAdmin.Get(orgName)
+	org, err := orgAdmin.GetOrgByName(orgName)
 	if err != nil {
-		ErrorResponse(c, http.StatusBadRequest, "Invalid organization", err)
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid organization", err)
 		return
 	}
 	_, role, token, _, _, err := userAdmin.AccessToken(user.ID, username, orgName)
 	if err != nil {
-		ErrorResponse(c, http.StatusBadRequest, "Invalid organization with username", err)
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid organization with username", err)
 		return
 	}
 	userResp := &UserResponse{
-		UserInfo: &BaseReference{
+		UserInfo: &common.BaseReference{
 			Name: username,
 			ID:   user.UUID,
 		},
-		OrgInfo: &BaseReference{
+		OrgInfo: &common.BaseReference{
 			Name: orgName,
 			ID:   org.UUID,
 		},

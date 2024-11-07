@@ -14,8 +14,10 @@ import (
 	"net/http"
 	"strconv"
 
+	"web/src/common"
 	"web/src/dbs"
 	"web/src/model"
+
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -147,9 +149,53 @@ func (a *RouterAdmin) Create(ctx context.Context, name, stype string, pubID, own
 
 func (a *RouterAdmin) Get(ctx context.Context, id int64) (router *model.Router, err error) {
 	db := DB()
+	memberShip := GetMemberShip(ctx)
+	where := memberShip.GetWhere()
 	router = &model.Router{Model: model.Model{ID: id}}
-	if err = db.Find(router).Error; err != nil {
+	if err = db.Where(where).Take(router).Error; err != nil {
 		log.Println("Failed to query router", err)
+		return
+	}
+	return
+}
+
+func (a *RouterAdmin) GetRouterByUUID(ctx context.Context, uuID string) (router *model.Router, err error) {
+	db := DB()
+	memberShip := GetMemberShip(ctx)
+	where := memberShip.GetWhere()
+	router = &model.Router{}
+	err = db.Where(where).Where("uuid = ?", uuID).Take(router).Error
+	if err != nil {
+		log.Println("Failed to query router, %v", err)
+		return
+	}
+	return
+}
+
+func (a *RouterAdmin) GetRouterByName(ctx context.Context, name string) (router *model.Router, err error) {
+	db := DB()
+	memberShip := GetMemberShip(ctx)
+	where := memberShip.GetWhere()
+	router = &model.Router{}
+	err = db.Where(where).Where("name = ?", name).Take(router).Error
+	if err != nil {
+		log.Println("Failed to query router, %v", err)
+		return
+	}
+	return
+}
+
+func (a *RouterAdmin) GetRouter(ctx context.Context, reference *common.BaseReference) (router *model.Router, err error) {
+	if reference == nil || (reference.ID == "" && reference.Name == "") {
+		err = fmt.Errorf("Router base reference must be provided with either uuid or name")
+		return
+	}
+	if reference.ID != "" {
+		router, err = a.GetRouterByUUID(ctx, reference.ID)
+		return
+	}
+	if reference.Name != "" {
+		router, err = a.GetRouterByName(ctx, reference.Name)
 		return
 	}
 	return

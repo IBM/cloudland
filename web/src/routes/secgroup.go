@@ -13,8 +13,10 @@ import (
 	"net/http"
 	"strconv"
 
+	"web/src/common"
 	"web/src/dbs"
 	"web/src/model"
+
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -76,6 +78,66 @@ func (a *SecgroupAdmin) Update(ctx context.Context, sgID int64, name string, isD
 	err = db.Save(secgroup).Error
 	if err != nil {
 		log.Println("Failed to save security group", err)
+		return
+	}
+	return
+}
+
+func (a *SecgroupAdmin) Get(ctx context.Context, id int64) (secgroup *model.SecurityGroup, err error) {
+	if id <= 0 {
+		err = fmt.Errorf("Invalid secgroup ID: %d", id)
+		log.Println(err)
+		return
+	}
+	memberShip := GetMemberShip(ctx)
+	db := DB()
+	where := memberShip.GetWhere()
+	secgroup = &model.SecurityGroup{Model: model.Model{ID: id}}
+	err = db.Where(where).Take(secgroup).Error
+	if err != nil {
+		log.Println("DB failed to query secgroup ", err)
+		return
+	}
+	return
+}
+
+func (a *SecgroupAdmin) GetSecgroupByUUID(ctx context.Context, uuID string, routerID int64) (secgroup *model.SecurityGroup, err error) {
+	db := DB()
+	memberShip := GetMemberShip(ctx)
+	where := memberShip.GetWhere()
+	secgroup = &model.SecurityGroup{}
+	err = db.Where(where).Where("uuid = ? and router_id = ?", uuID, routerID).Take(secgroup).Error
+	if err != nil {
+		log.Println("Failed to query secgroup, %v", err)
+		return
+	}
+	return
+}
+
+func (a *SecgroupAdmin) GetSecgroupByName(ctx context.Context, name string, routerID int64) (secgroup *model.SecurityGroup, err error) {
+	db := DB()
+	memberShip := GetMemberShip(ctx)
+	where := memberShip.GetWhere()
+	secgroup = &model.SecurityGroup{}
+	err = db.Where(where).Where("name = ? and router_id = ?", name, routerID).Take(secgroup).Error
+	if err != nil {
+		log.Println("Failed to query secgroup, %v", err)
+		return
+	}
+	return
+}
+
+func (a *SecgroupAdmin) GetSecurityGroup(ctx context.Context, reference *common.BaseReference, routerID int64) (subnet *model.SecurityGroup, err error) {
+	if reference == nil || (reference.ID == "" && reference.Name == "") {
+		err = fmt.Errorf("Security group base reference must be provided with either uuid or name")
+		return
+	}
+	if reference.ID != "" {
+		subnet, err = a.GetSecgroupByUUID(ctx, reference.ID, routerID)
+		return
+	}
+	if reference.Name != "" {
+		subnet, err = a.GetSecgroupByName(ctx, reference.Name, routerID)
 		return
 	}
 	return

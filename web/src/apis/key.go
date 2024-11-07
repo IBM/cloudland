@@ -10,7 +10,9 @@ package apis
 import (
 	"net/http"
 
+	"web/src/common"
 	"web/src/routes"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,7 +22,7 @@ var keyAdmin = &routes.KeyAdmin{}
 type KeyAPI struct{}
 
 type KeyResponse struct {
-	*BaseReference
+	*common.BaseReference
 	Cpu    int32 `json:"cpu"`
 	Memory int32 `json:"memory"`
 	Disk   int32
@@ -30,7 +32,7 @@ type KeyListResponse struct {
 	Offset int            `json:"offset"`
 	Total  int            `json:"total"`
 	Limit  int            `json:"limit"`
-	Keys   []*VPCResponse `json:"keys"`
+	Keys   []*KeyResponse `json:"keys"`
 }
 
 type KeyPayload struct {

@@ -18,9 +18,11 @@ import (
 	"strconv"
 	"strings"
 
+	"web/src/common"
 	"web/src/dbs"
 	"web/src/model"
 	"web/src/rpcs"
+
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -57,13 +59,13 @@ type NetworkLink struct {
 }
 
 type VlanInfo struct {
-	Device  string `json:"device"`
-	Vlan    int64  `json:"vlan"`
-	Gateway string `json:"gateway"`
-	Router  int64  `json:"router"`
-	IpAddr  string `json:"ip_address"`
-	MacAddr string `json:"mac_address"`
-	SecRules []*SecurityData    `json:"security"`
+	Device   string          `json:"device"`
+	Vlan     int64           `json:"vlan"`
+	Gateway  string          `json:"gateway"`
+	Router   int64           `json:"router"`
+	IpAddr   string          `json:"ip_address"`
+	MacAddr  string          `json:"mac_address"`
+	SecRules []*SecurityData `json:"security"`
 }
 
 type SecurityData struct {
@@ -217,39 +219,36 @@ func (a *InstanceAdmin) ChangeInstanceStatus(ctx context.Context, id int64, acti
 	return
 }
 
-func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname, action string, subnetIDs, sgIDs []int64, hyper int) (instance *model.Instance, err error) {
-	db := DB()
-	instance = &model.Instance{Model: model.Model{ID: id}}
-	if err = db.Preload("Interfaces").Preload("Flavor").Take(instance).Error; err != nil {
-		log.Println("Failed to query instance ", err)
+func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, flavor *model.Flavor, hostname string, action common.PowerAction, hyperID int) (err error) {
+	memberShip := GetMemberShip(ctx)
+	permit, err := memberShip.CheckOwner(model.Writer, "instances", instance.ID)
+	if err != nil {
+		log.Println("Failed to check owner")
 		return
 	}
-	if hyper != int(instance.Hyper) {
-		if instance.Status != "shut_off" {
-			log.Println("Instance must be shutdown before migration")
-			err = fmt.Errorf("Instance must be shutdown before migration")
-			return
-		}
-		control := fmt.Sprintf("inter=%d", instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/migrate_vm.sh '%d' '%d'", instance.ID, hyper)
-		err = hyperExecute(ctx, control, command)
-		if err != nil {
-			log.Println("Migrate vm command execution failed", err)
-			return
-		}
+	if !permit {
+		log.Println("Not authorized to delete the instance")
+		err = fmt.Errorf("Not authorized")
+		return
 	}
-	if flavorID != instance.FlavorID {
+
+	db := DB()
+	if hyperID != int(instance.Hyper) {
+		permit, err = memberShip.CheckAdmin(model.Admin, "instances", instance.ID)
+		if !permit {
+			log.Println("Not authorized to migrate VM")
+			err = fmt.Errorf("Not authorized to migrate VM")
+			return
+		}
+		// TODO: migrate VM
+	}
+	if flavor.ID != instance.FlavorID {
 		if instance.Status == "running" {
 			err = fmt.Errorf("Instance must be shutdown first before resize")
 			log.Println("Instance must be shutdown first before resize", err)
 			return
 		}
-		flavor := &model.Flavor{Model: model.Model{ID: flavorID}}
-		if err = db.Take(flavor).Error; err != nil {
-			log.Println("Failed to query flavor", err)
-			return
-		}
-		if flavor.Disk < instance.Flavor.Disk || flavor.Ephemeral < instance.Flavor.Ephemeral {
+		if flavor.Disk < instance.Flavor.Disk {
 			err = fmt.Errorf("Disk(s) can not be resized to smaller size")
 			return
 		}
@@ -269,109 +268,23 @@ func (a *InstanceAdmin) Update(ctx context.Context, id, flavorID int64, hostname
 			log.Println("Resize vm command execution failed", err)
 			return
 		}
-		instance.FlavorID = flavorID
+		instance.FlavorID = flavor.ID
 		instance.Flavor = flavor
-		if err = db.Save(instance).Error; err != nil {
-			log.Println("Failed to save instance", err)
-			return
-		}
 	}
 	if instance.Hostname != hostname {
 		instance.Hostname = hostname
-		if err = db.Save(instance).Error; err != nil {
-			log.Println("Failed to save instance", err)
-			return
-		}
 	}
-	if action == "shutdown" || action == "destroy" || action == "start" || action == "suspend" || action == "resume" {
+	if err = db.Save(instance).Error; err != nil {
+		log.Println("Failed to save instance", err)
+		return
+	}
+	if string(action) != "" {
 		control := fmt.Sprintf("inter=%d", instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh '%d' '%s'", instance.ID, action)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh '%d' '%s'", instance.ID, string(action))
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("action vm command execution failed", err)
 			return
-		}
-	}
-	secGroups := []*model.SecurityGroup{}
-	if err = db.Where(sgIDs).Find(&secGroups).Error; err != nil {
-		log.Println("Security group query failed", err)
-		return
-	}
-	secRules, err := model.GetSecurityRules(secGroups)
-	if err != nil {
-		log.Println("Failed to get security rules", err)
-		return
-	}
-	securityData := []*SecurityData{}
-	for _, rule := range secRules {
-		sgr := &SecurityData{
-			Secgroup:    rule.Secgroup,
-			RemoteIp:    rule.RemoteIp,
-			RemoteGroup: rule.RemoteGroup,
-			Direction:   rule.Direction,
-			IpVersion:   rule.IpVersion,
-			Protocol:    rule.Protocol,
-			PortMin:     rule.PortMin,
-			PortMax:     rule.PortMax,
-		}
-		securityData = append(securityData, sgr)
-	}
-	jsonData, err := json.Marshal(securityData)
-	if err != nil {
-		log.Println("Failed to marshal security json data, %v", err)
-		return
-	}
-	for _, iface := range instance.Interfaces {
-		found := false
-		for _, sID := range subnetIDs {
-			if iface.Address.SubnetID == sID {
-				found = true
-				log.Println("Found SID ", sID)
-				break
-			}
-		}
-		if found == false {
-			control := fmt.Sprintf("inter=%d", instance.Hyper)
-			command := fmt.Sprintf("/opt/cloudland/scripts/backend/detach_nic.sh '%d' '%d' '%s' '%s'", instance.ID, iface.Address.Subnet.Vlan, iface.Address.Address, iface.MacAddr)
-			err = hyperExecute(ctx, control, command)
-			if err != nil {
-				log.Println("Delete vm command execution failed", err)
-				return
-			}
-			err = a.deleteInterface(ctx, iface)
-			if err != nil {
-				log.Println("Failed to delete interface", err)
-				return
-			}
-		}
-	}
-	index := len(instance.Interfaces)
-	for i, sID := range subnetIDs {
-		found := false
-		for _, iface := range instance.Interfaces {
-			if iface.Address.SubnetID == sID {
-				found = true
-				log.Println("Found SID ", sID)
-				break
-			}
-		}
-		if found == false {
-			var iface *model.Interface
-			ifname := fmt.Sprintf("eth%d", i+index)
-			subnet := &model.Subnet{Model: model.Model{ID: sID}}
-			err = db.Take(subnet).Error
-			if err != nil {
-				log.Println("Failed to query subnet", err)
-				return
-			}
-			iface, err = a.createInterface(ctx, subnet, "", "", instance, ifname, secGroups, instance.ZoneID)
-			control := fmt.Sprintf("inter=%d", instance.Hyper)
-			command := fmt.Sprintf("/opt/cloudland/scripts/backend/attach_nic.sh '%d' '%d' '%s' '%s' <<EOF\n%s\nEOF", instance.ID, iface.Address.Subnet.Vlan, iface.Address.Address, iface.MacAddr, jsonData)
-			err = hyperExecute(ctx, control, command)
-			if err != nil {
-				log.Println("Delete vm command execution failed", err)
-				return
-			}
 		}
 	}
 	return
@@ -571,7 +484,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 	return interfaces, string(jsonData), nil
 }
 
-func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
+func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (err error) {
 	db := DB()
 	db = db.Begin()
 	defer func() {
@@ -581,9 +494,15 @@ func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
 			db.Rollback()
 		}
 	}()
-	instance := &model.Instance{Model: model.Model{ID: id}}
-	if err = db.Take(instance).Error; err != nil {
-		log.Println("Failed to query instance, %v", err)
+	memberShip := GetMemberShip(ctx)
+	permit, err := memberShip.CheckOwner(model.Writer, "instances", instance.ID)
+	if err != nil {
+		log.Println("Failed to check owner")
+		return
+	}
+	if !permit {
+		log.Println("Not authorized to delete the instance")
+		err = fmt.Errorf("Not authorized")
 		return
 	}
 	if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
@@ -630,9 +549,21 @@ func (a *InstanceAdmin) Delete(ctx context.Context, id int64) (err error) {
 	return
 }
 
-func (a *InstanceAdmin) GetInstanceByUUID(ctx context.Context, uuID string) (instance *model.Instance, err error) {
-	memberShip := GetMemberShip(ctx)
+func (a *InstanceAdmin) Get(ctx context.Context, id int64) (instance *model.Instance, err error) {
 	db := DB()
+	memberShip := GetMemberShip(ctx)
+	where := memberShip.GetWhere()
+	instance = &model.Instance{Model: model.Model{ID: id}}
+	if err = db.Where(where).Take(instance).Error; err != nil {
+		log.Println("Failed to query instance", err)
+		return
+	}
+	return
+}
+
+func (a *InstanceAdmin) GetInstanceByUUID(ctx context.Context, uuID string) (instance *model.Instance, err error) {
+	db := DB()
+	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	instance = &model.Instance{}
 	if err = db.Preload("Image").Preload("Zone").Preload("Flavor").Preload("Keys").Where(where).Where("uuid = ?", uuID).Take(instance).Error; err != nil {
@@ -768,7 +699,7 @@ func (v *InstanceView) UpdateTable(c *macaron.Context, store session.Store) {
 }
 
 func (v *InstanceView) Delete(c *macaron.Context, store session.Store) (err error) {
-	memberShip := GetMemberShip(c.Req.Context())
+	ctx := c.Req.Context()
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is empty"
@@ -781,14 +712,13 @@ func (v *InstanceView) Delete(c *macaron.Context, store session.Store) (err erro
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instanceID))
-	if !permit {
-		log.Println("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
+	instance, err := instanceAdmin.Get(ctx, int64(instanceID))
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	err = instanceAdmin.Delete(c.Req.Context(), int64(instanceID))
+	err = instanceAdmin.Delete(ctx, instance)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
@@ -956,64 +886,31 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 }
 
 func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
-	memberShip := GetMemberShip(c.Req.Context())
+	ctx := c.Req.Context()
 	redirectTo := "../instances"
-	id := c.ParamsInt64("id")
-	permit, err := memberShip.CheckOwner(model.Writer, "instances", id)
-	if !permit {
-		log.Println("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
-	flavor := c.QueryInt64("flavor")
+	instanceID := c.ParamsInt64("id")
+	flavorID := c.QueryInt64("flavor")
 	hostname := c.QueryTrim("hostname")
 	hyperID := c.QueryInt("hyper")
 	action := c.QueryTrim("action")
-	ifaces := c.QueryStrings("ifaces")
-	instance := &model.Instance{Model: model.Model{ID: id}}
-	err = DB().Take(instance).Error
+	instance, err := instanceAdmin.Get(ctx, instanceID)
 	if err != nil {
 		log.Println("Invalid instance", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	if hyperID != int(instance.Hyper) {
-		permit, err = memberShip.CheckAdmin(model.Admin, "instances", id)
-		if !permit {
-			log.Println("Not authorized to migrate VM")
-			err = fmt.Errorf("Not authorized to migrate VM")
-			return
-		}
-	}
-	hyper := &model.Hyper{Hostid: int32(hyperID)}
-	err = DB().Take(hyper).Error
-	if err != nil {
-		log.Println("Invalid hypervisor", err)
-		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
-	var subnetIDs []int64
-	for _, s := range ifaces {
-		sID, err := strconv.Atoi(s)
+	var flavor *model.Flavor
+	if flavorID > 0 {
+		flavor, err = flavorAdmin.Get(ctx, flavorID)
 		if err != nil {
-			log.Println("Invalid secondary subnet ID, %v", err)
-			continue
-		}
-		permit, err = memberShip.CheckOwner(model.Writer, "subnets", int64(sID))
-		if !permit {
-			log.Println("Not authorized for this operation")
-			c.Data["ErrorMsg"] = "Not authorized for this operation"
+			log.Println("Invalid flavor", err)
+			c.Data["ErrorMsg"] = err.Error()
 			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
-		subnetIDs = append(subnetIDs, int64(sID))
 	}
-	var sgIDs []int64
-	sgIDs = append(sgIDs, store.Get("defsg").(int64))
-	instance, err = instanceAdmin.Update(c.Req.Context(), id, flavor, hostname, action, subnetIDs, sgIDs, hyperID)
+	err = instanceAdmin.Update(c.Req.Context(), instance, flavor, hostname, common.PowerAction(action), hyperID)
 	if err != nil {
 		log.Println("Create instance failed, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
@@ -1231,9 +1128,9 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	primaryIface := &InterfaceInfo{
-		Subnet: primarySubnet,
-		IpAddress: ipAddr,
-		MacAddress: macAddr,
+		Subnet:         primarySubnet,
+		IpAddress:      ipAddr,
+		MacAddress:     macAddr,
 		SecurityGroups: securityGroups,
 	}
 	var secondaryIfaces []*InterfaceInfo
@@ -1246,9 +1143,9 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			return
 		}
 		secondaryIfaces = append(secondaryIfaces, &InterfaceInfo{
-			Subnet: subnet,
-			IpAddress: "",
-			MacAddress: "",
+			Subnet:         subnet,
+			IpAddress:      "",
+			MacAddress:     "",
 			SecurityGroups: securityGroups,
 		})
 	}

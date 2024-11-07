@@ -10,7 +10,9 @@ package apis
 import (
 	"net/http"
 
+	"web/src/common"
 	"web/src/routes"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,16 +22,16 @@ var secruleAdmin = &routes.SecruleAdmin{}
 type SecruleAPI struct{}
 
 type SecruleResponse struct {
-	*BaseReference
+	*common.BaseReference
 	Cpu    int32 `json:"cpu"`
 	Memory int32 `json:"memory"`
 	Disk   int32
 }
 
 type SecruleListResponse struct {
-	Offset  int            `json:"offset"`
-	Total   int            `json:"total"`
-	Limit   int            `json:"limit"`
+	Offset   int            `json:"offset"`
+	Total    int            `json:"total"`
+	Limit    int            `json:"limit"`
 	Secrules []*VPCResponse `json:"secrules"`
 }
 

@@ -10,7 +10,9 @@ package apis
 import (
 	"net/http"
 
+	"web/src/common"
 	"web/src/routes"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,8 +22,8 @@ var routerAdmin = &routes.RouterAdmin{}
 type VPCAPI struct{}
 
 type VPCResponse struct {
-	*BaseReference
-	Subnets []*BaseReference `json:"subnets,omitempty"`
+	*common.BaseReference
+	Subnets []*common.BaseReference `json:"subnets,omitempty"`
 }
 
 type VPCListResponse struct {

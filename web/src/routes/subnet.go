@@ -21,8 +21,10 @@ import (
 	"strings"
 	"time"
 
+	"web/src/common"
 	"web/src/dbs"
 	"web/src/model"
+
 	"github.com/apparentlymart/go-cidr/cidr"
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
@@ -131,6 +133,48 @@ func (a *SubnetAdmin) Get(ctx context.Context, id int64) (subnet *model.Subnet, 
 	err = db.Where(where).Take(subnet).Error
 	if err != nil {
 		log.Println("DB failed to query subnet ", err)
+		return
+	}
+	return
+}
+
+func (a *SubnetAdmin) GetSubnetByUUID(ctx context.Context, uuID string) (subnet *model.Subnet, err error) {
+	db := DB()
+	memberShip := GetMemberShip(ctx)
+	where := memberShip.GetWhere()
+	subnet = &model.Subnet{}
+	err = db.Where(where).Where("uuid = ?", uuID).Take(subnet).Error
+	if err != nil {
+		log.Println("Failed to query subnet, %v", err)
+		return
+	}
+	return
+}
+
+func (a *SubnetAdmin) GetSubnetByName(ctx context.Context, name string) (subnet *model.Subnet, err error) {
+	db := DB()
+	memberShip := GetMemberShip(ctx)
+	where := memberShip.GetWhere()
+	subnet = &model.Subnet{}
+	err = db.Where(where).Where("name = ?", name).Take(subnet).Error
+	if err != nil {
+		log.Println("Failed to query subnet, %v", err)
+		return
+	}
+	return
+}
+
+func (a *SubnetAdmin) GetSubnet(ctx context.Context, reference *common.BaseReference) (subnet *model.Subnet, err error) {
+	if reference == nil || (reference.ID == "" && reference.Name == "") {
+		err = fmt.Errorf("Subnet base reference must be provided with either uuid or name")
+		return
+	}
+	if reference.ID != "" {
+		subnet, err = a.GetSubnetByUUID(ctx, reference.ID)
+		return
+	}
+	if reference.Name != "" {
+		subnet, err = a.GetSubnetByName(ctx, reference.Name)
 		return
 	}
 	return

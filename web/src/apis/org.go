@@ -10,7 +10,9 @@ package apis
 import (
 	"net/http"
 
+	"web/src/common"
 	"web/src/routes"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,7 +22,7 @@ var orgAdmin = &routes.OrgAdmin{}
 type OrgAPI struct{}
 
 type OrgResponse struct {
-	*BaseReference
+	*common.BaseReference
 	Cpu    int32 `json:"cpu"`
 	Memory int32 `json:"memory"`
 	Disk   int32

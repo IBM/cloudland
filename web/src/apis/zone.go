@@ -10,7 +10,9 @@ package apis
 import (
 	"net/http"
 
+	"web/src/common"
 	"web/src/routes"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,17 +22,17 @@ var zoneAdmin = &routes.ZoneAdmin{}
 type ZoneAPI struct{}
 
 type ZoneResponse struct {
-	*BaseReference
+	*common.BaseReference
 	Cpu    int32 `json:"cpu"`
 	Memory int32 `json:"memory"`
 	Disk   int32
 }
 
 type ZoneListResponse struct {
-	Offset  int            `json:"offset"`
-	Total   int            `json:"total"`
-	Limit   int            `json:"limit"`
-	Zones []*VPCResponse `json:"zones"`
+	Offset int             `json:"offset"`
+	Total  int             `json:"total"`
+	Limit  int             `json:"limit"`
+	Zones  []*ZoneResponse `json:"zones"`
 }
 
 //

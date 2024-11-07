@@ -15,8 +15,10 @@ import (
 	"os"
 	"strconv"
 
+	"web/src/common"
 	"web/src/dbs"
 	"web/src/model"
+
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -63,8 +65,8 @@ func (a *ImageAdmin) Create(ctx context.Context, osVersion, diskType, virtType, 
 }
 
 func (a *ImageAdmin) GetImageByUUID(ctx context.Context, uuID string) (image *model.Image, err error) {
-	memberShip := GetMemberShip(ctx)
 	db := DB()
+	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	image = &model.Image{}
 	err = db.Where(where).Where("uuid = ?", uuID).Take(image).Error
@@ -76,8 +78,8 @@ func (a *ImageAdmin) GetImageByUUID(ctx context.Context, uuID string) (image *mo
 }
 
 func (a *ImageAdmin) GetImageByName(ctx context.Context, name string) (image *model.Image, err error) {
-	memberShip := GetMemberShip(ctx)
 	db := DB()
+	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	image = &model.Image{}
 	err = db.Where(where).Where("name = ?", name).Take(image).Error
@@ -106,25 +108,17 @@ func (a *ImageAdmin) Get(ctx context.Context, id int64) (image *model.Image, err
 	return
 }
 
-func (a *ImageAdmin) GetImage(ctx context.Context, uuID, name *string) (image *model.Image, err error) {
-	if uuID == nil && name == nil {
-		err = fmt.Errorf("Either image uuid or name must be provided")
+func (a *ImageAdmin) GetImage(ctx context.Context, reference *common.BaseReference) (image *model.Image, err error) {
+	if reference == nil || (reference.ID == "" && reference.Name == "") {
+		err = fmt.Errorf("Image base reference must be provided with either uuid or name")
 		return
 	}
-	if uuID != nil {
-		if *uuID == "" {
-			err = fmt.Errorf("Image uuid must not be empty")
-			return
-		}
-		image, err = a.GetImageByUUID(ctx, *uuID)
+	if reference.ID != "" {
+		image, err = a.GetImageByUUID(ctx, reference.ID)
 		return
 	}
-	if name != nil {
-		if *name == "" {
-			err = fmt.Errorf("Image name must not be empty")
-			return
-		}
-		image, err = a.GetImageByName(ctx, *name)
+	if reference.Name != "" {
+		image, err = a.GetImageByName(ctx, reference.Name)
 		return
 	}
 	return

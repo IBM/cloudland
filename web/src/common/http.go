@@ -5,13 +5,18 @@ SPDX-License-Identifier: Apache-2.0
 
 */
 
-package apis
+package common
 
 import (
 	"log"
 
 	"github.com/gin-gonic/gin"
 )
+
+type BaseReference struct {
+	ID   string `json:"id,omitempty" binding:"omitempty,uuid"`
+	Name string `json:"name,omitempty" binding:"omitempty,min=2"`
+}
 
 type APIError struct {
 //	InternalErr error

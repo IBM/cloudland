@@ -10,7 +10,9 @@ package apis
 import (
 	"net/http"
 
+	"web/src/common"
 	"web/src/routes"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,17 +22,17 @@ var flavorAdmin = &routes.FlavorAdmin{}
 type FlavorAPI struct{}
 
 type FlavorResponse struct {
-	*BaseReference
+	*common.BaseReference
 	Cpu    int32 `json:"cpu"`
 	Memory int32 `json:"memory"`
 	Disk   int32
 }
 
 type FlavorListResponse struct {
-	Offset  int            `json:"offset"`
-	Total   int            `json:"total"`
-	Limit   int            `json:"limit"`
-	Flavors []*VPCResponse `json:"flavors"`
+	Offset  int               `json:"offset"`
+	Total   int               `json:"total"`
+	Limit   int               `json:"limit"`
+	Flavors []*FlavorResponse `json:"flavors"`
 }
 
 type FlavorPayload struct {
@@ -76,7 +78,7 @@ func (v *FlavorAPI) Patch(c *gin.Context) {
 // @tags Compute
 // @Accept  json
 // @Produce json
-// @Success 200 
+// @Success 200
 // @Failure 400 {object} APIError "Bad request"
 // @Failure 401 {object} APIError "Not authorized"
 // @Router /flavors/:id [delete]
