@@ -15,8 +15,8 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/IBM/cloudland/web/src/routes"
-	"github.com/IBM/cloudland/web/src/rpcs"
+	"web/src/routes"
+	"web/src/rpcs"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"

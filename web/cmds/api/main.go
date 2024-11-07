@@ -15,7 +15,7 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/IBM/cloudland/web/src/apis"
+	"web/src/apis"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"

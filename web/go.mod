@@ -3,7 +3,6 @@ module web
 go 1.18
 
 require (
-	github.com/IBM/cloudland/web v0.0.0-00010101000000-000000000000
 	github.com/apparentlymart/go-cidr v1.1.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.10.0
@@ -89,4 +88,3 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/IBM/cloudland/web => /opt/cloudland/web
