@@ -1211,7 +1211,7 @@ const docTemplatev1 = `{
                 "tags": [
                     "Authorization"
                 ],
-                "summary": "login to get the accesstoken",
+                "summary": "login to get the access token",
                 "parameters": [
                     {
                         "description": "User Credential",
@@ -2794,9 +2794,6 @@ const docTemplatev1 = `{
         },
         "apis.InstancePatchPayload": {
             "type": "object",
-            "required": [
-                "flavor"
-            ],
             "properties": {
                 "flavor": {
                     "type": "string",
@@ -2806,6 +2803,9 @@ const docTemplatev1 = `{
                 "hostname": {
                     "type": "string"
                 },
+                "migrate_action": {
+                    "$ref": "#/definitions/apis.MigrateAction"
+                },
                 "power_action": {
                     "enum": [
                         "stop",
@@ -2814,7 +2814,7 @@ const docTemplatev1 = `{
                         "restart",
                         "hard_restart",
                         "pause",
-                        "unpause)"
+                        "resume"
                     ],
                     "allOf": [
                         {
@@ -2844,12 +2844,12 @@ const docTemplatev1 = `{
                     "maxLength": 32,
                     "minLength": 1
                 },
-                "hostname": {
-                    "type": "string"
-                },
-                "hyper": {
+                "host": {
                     "type": "integer",
                     "minimum": 0
+                },
+                "hostname": {
+                    "type": "string"
                 },
                 "image": {
                     "$ref": "#/definitions/common.BaseReference"
@@ -2891,6 +2891,9 @@ const docTemplatev1 = `{
                     "type": "string"
                 },
                 "hostname": {
+                    "type": "string"
+                },
+                "hypervisor": {
                     "type": "string"
                 },
                 "id": {
@@ -3029,6 +3032,20 @@ const docTemplatev1 = `{
                     "type": "string",
                     "maxLength": 32,
                     "minLength": 2
+                }
+            }
+        },
+        "apis.MigrateAction": {
+            "type": "object",
+            "required": [
+                "to_hypervisor"
+            ],
+            "properties": {
+                "from_hypervisor": {
+                    "type": "string"
+                },
+                "to_hypervisor": {
+                    "type": "string"
                 }
             }
         },
@@ -3451,7 +3468,7 @@ const docTemplatev1 = `{
                 "restart",
                 "hard_restart",
                 "pause",
-                "unpause"
+                "resume"
             ],
             "x-enum-varnames": [
                 "Stop",

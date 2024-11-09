@@ -25,15 +25,21 @@ var instanceAdmin = &routes.InstanceAdmin{}
 
 type InstanceAPI struct{}
 
+type MigrateAction struct {
+	FromHypervisor string `json:"from_hypervisor" binding:"omitempty"`
+	ToHypervisor   string `json:"to_hypervisor" binding:"required"`
+}
+
 type InstancePatchPayload struct {
-	Hostname    string             `json:"hostname" binding:"omitempty,hostname|fqdn"`
-	PowerAction common.PowerAction `json:"power_action" binding:"omitempty,oneof=stop hard_stop start restart hard_restart pause unpause)"`
-	Flavor      string             `json:"flavor" binding:"required,min=1,max=32"`
+	Hostname      string             `json:"hostname" binding:"omitempty,hostname|fqdn"`
+	PowerAction   common.PowerAction `json:"power_action" binding:"omitempty,oneof=stop hard_stop start restart hard_restart pause resume"`
+	MigrateAction MigrateAction      `json:"migrate_action" binding:"omitempty"`
+	Flavor        string             `json:"flavor" binding:"omitempty,min=1,max=32"`
 }
 
 type InstancePayload struct {
 	Count               int                     `json:"count" binding:"omitempty,gte=1,lte=16"`
-	Hyper               int                     `json:"hyper" binding:"omitempty,gte=0"`
+	Host                int                     `json:"host" binding:"omitempty,gte=0"`
 	Hostname            string                  `json:"hostname" binding:"required,hostname|fqdn"`
 	Keys                []*common.BaseReference `json:"keys" binding:"required,gte=1,lte=16"`
 	Flavor              string                  `json:"flavor" binding:"required,min=1,max=32"`
@@ -55,6 +61,7 @@ type InstanceResponse struct {
 	Keys       []*common.BaseReference `json:"keys"`
 	Zone       string                  `json:"zone"`
 	VPC        *common.BaseReference   `json:"vpc,omitempty"`
+	Hypervisor string                  `json:"hypervisor,omitempty"`
 }
 
 type InstanceListResponse struct {
@@ -274,6 +281,7 @@ func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, ifacePayload *Interf
 			return
 		}
 		ifaceInfo.SecurityGroups = append(ifaceInfo.SecurityGroups, secGroup)
+
 	}
 	return
 }
@@ -296,6 +304,10 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 			ID:   key.UUID,
 			Name: key.Name,
 		}
+	}
+	hyper, err := hyperAdmin.GetHyperByHostid(ctx, instance.Hyper)
+	if err == nil {
+		instanceResp.Hypervisor = hyper.Hostname
 	}
 	instanceResp.Keys = keys
 	interfaces := make([]*InterfaceResponse, len(instance.Interfaces))

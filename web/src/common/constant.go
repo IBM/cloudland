@@ -16,5 +16,5 @@ const (
 	Restart     PowerAction = "restart"
 	HardRestart PowerAction = "hard_restart"
 	Pause       PowerAction = "pause"
-	Unpause     PowerAction = "unpause"
+	Unpause     PowerAction = "resume"
 )

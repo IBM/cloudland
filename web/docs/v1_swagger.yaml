@@ -150,6 +150,8 @@ definitions:
         type: string
       hostname:
         type: string
+      migrate_action:
+        $ref: '#/definitions/apis.MigrateAction'
       power_action:
         allOf:
         - $ref: '#/definitions/common.PowerAction'
@@ -160,9 +162,7 @@ definitions:
         - restart
         - hard_restart
         - pause
-        - unpause)
-    required:
-    - flavor
+        - resume
     type: object
   apis.InstancePayload:
     properties:
@@ -174,11 +174,11 @@ definitions:
         maxLength: 32
         minLength: 1
         type: string
-      hostname:
-        type: string
-      hyper:
+      host:
         minimum: 0
         type: integer
+      hostname:
+        type: string
       image:
         $ref: '#/definitions/common.BaseReference'
       keys:
@@ -213,6 +213,8 @@ definitions:
       flavor:
         type: string
       hostname:
+        type: string
+      hypervisor:
         type: string
       id:
         type: string
@@ -306,6 +308,15 @@ definitions:
         maxLength: 32
         minLength: 2
         type: string
+    type: object
+  apis.MigrateAction:
+    properties:
+      from_hypervisor:
+        type: string
+      to_hypervisor:
+        type: string
+    required:
+    - to_hypervisor
     type: object
   apis.OrgListResponse:
     properties:
@@ -589,7 +600,7 @@ definitions:
     - restart
     - hard_restart
     - pause
-    - unpause
+    - resume
     type: string
     x-enum-varnames:
     - Stop
@@ -1409,7 +1420,7 @@ paths:
           description: Invalied user name or password
           schema:
             $ref: '#/definitions/common.APIError'
-      summary: login to get the accesstoken
+      summary: login to get the access token
       tags:
       - Authorization
   /orgs:

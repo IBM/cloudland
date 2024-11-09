@@ -8,12 +8,14 @@ SPDX-License-Identifier: Apache-2.0
 package routes
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 
 	"web/src/dbs"
 	"web/src/model"
+
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -53,6 +55,23 @@ func (a *HyperAdmin) List(offset, limit int64, order, query string) (total int64
 		err = db.Where("hostid = ?", hyper.Hostid).Take(hyper.Resource).Error
 	}
 
+	return
+}
+
+func (a *HyperAdmin) GetHyperByHostid(ctx context.Context, hostid int32) (hyper *model.Hyper, err error) {
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		err = fmt.Errorf("Not authorized for this operation")
+		log.Println("Not authorized for this operation", err)
+		return
+	}
+	db := DB()
+	hyper = &model.Hyper{}
+	if err = db.Where("hostid = ?", hostid).Take(hyper).Error; err != nil {
+		log.Println("Failed to query hypervisor", err)
+		return
+	}
 	return
 }
 

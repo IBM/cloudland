@@ -79,23 +79,10 @@ type SecurityData struct {
 	PortMax     int32  `json:"port_max"`
 }
 
-type ZvmData struct {
-	OsVersion string `json:"osVersion"`
-	DiskType  string `json:"diskType"`
-	VSwitch   string `json:"vswitch"`
-}
-
-type OcpData struct {
-	OcpVersion string `json:"ocpVersion"`
-	Service    string `json:"service"`
-}
-
 type InstanceData struct {
 	Userdata string             `json:"userdata"`
 	VirtType string             `json:"virt_type"`
 	DNS      string             `json:"dns"`
-	ZVM      []*ZvmData         `json:"zvm"`
-	OCP      []*OcpData         `json:"ocp"`
 	Vlans    []*VlanInfo        `json:"vlans"`
 	Networks []*InstanceNetwork `json:"networks"`
 	Links    []*NetworkLink     `json:"links"`
@@ -240,7 +227,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 		}
 		// TODO: migrate VM
 	}
-	if flavor.ID != instance.FlavorID {
+	if flavor != nil && flavor.ID != instance.FlavorID {
 		if instance.Status == "running" {
 			err = fmt.Errorf("Instance must be shutdown first before resize")
 			log.Println("Instance must be shutdown first before resize", err)

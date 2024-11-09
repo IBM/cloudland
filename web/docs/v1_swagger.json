@@ -1204,7 +1204,7 @@
                 "tags": [
                     "Authorization"
                 ],
-                "summary": "login to get the accesstoken",
+                "summary": "login to get the access token",
                 "parameters": [
                     {
                         "description": "User Credential",
@@ -2787,9 +2787,6 @@
         },
         "apis.InstancePatchPayload": {
             "type": "object",
-            "required": [
-                "flavor"
-            ],
             "properties": {
                 "flavor": {
                     "type": "string",
@@ -2799,6 +2796,9 @@
                 "hostname": {
                     "type": "string"
                 },
+                "migrate_action": {
+                    "$ref": "#/definitions/apis.MigrateAction"
+                },
                 "power_action": {
                     "enum": [
                         "stop",
@@ -2807,7 +2807,7 @@
                         "restart",
                         "hard_restart",
                         "pause",
-                        "unpause)"
+                        "resume"
                     ],
                     "allOf": [
                         {
@@ -2837,12 +2837,12 @@
                     "maxLength": 32,
                     "minLength": 1
                 },
-                "hostname": {
-                    "type": "string"
-                },
-                "hyper": {
+                "host": {
                     "type": "integer",
                     "minimum": 0
+                },
+                "hostname": {
+                    "type": "string"
                 },
                 "image": {
                     "$ref": "#/definitions/common.BaseReference"
@@ -2884,6 +2884,9 @@
                     "type": "string"
                 },
                 "hostname": {
+                    "type": "string"
+                },
+                "hypervisor": {
                     "type": "string"
                 },
                 "id": {
@@ -3022,6 +3025,20 @@
                     "type": "string",
                     "maxLength": 32,
                     "minLength": 2
+                }
+            }
+        },
+        "apis.MigrateAction": {
+            "type": "object",
+            "required": [
+                "to_hypervisor"
+            ],
+            "properties": {
+                "from_hypervisor": {
+                    "type": "string"
+                },
+                "to_hypervisor": {
+                    "type": "string"
                 }
             }
         },
@@ -3444,7 +3461,7 @@
                 "restart",
                 "hard_restart",
                 "pause",
-                "unpause"
+                "resume"
             ],
             "x-enum-varnames": [
                 "Stop",
