@@ -48,8 +48,8 @@ type SecurityGroupPatchPayload struct {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} SecurityGroupResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /security_groups/:id [get]
 func (v *SecgroupAPI) Get(c *gin.Context) {
 	secgroupResp := &SecurityGroupResponse{}
@@ -62,10 +62,10 @@ func (v *SecgroupAPI) Get(c *gin.Context) {
 // @tags Network
 // @Accept  json
 // @Produce json
-// @Param   message	body   SecgroupPatchPayload  true   "Secgroup patch payload"
+// @Param   message	body   SecurityGroupPatchPayload  true   "Secgroup patch payload"
 // @Success 200 {object} SecurityGroupResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /security_groups/:id [patch]
 func (v *SecgroupAPI) Patch(c *gin.Context) {
 	secgroupResp := &SecurityGroupResponse{}
@@ -79,8 +79,8 @@ func (v *SecgroupAPI) Patch(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 204
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /security_groups/:id [delete]
 func (v *SecgroupAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
@@ -94,8 +94,8 @@ func (v *SecgroupAPI) Delete(c *gin.Context) {
 // @Produce json
 // @Param   message	body   SecurityGroupPayload  true   "Secgroup create payload"
 // @Success 200 {object} SecurityGroupResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /security_groups [post]
 func (v *SecgroupAPI) Create(c *gin.Context) {
 	secgroupResp := &SecurityGroupResponse{}
@@ -109,7 +109,7 @@ func (v *SecgroupAPI) Create(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} SecurityGroupListResponse
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /security_groups [get]
 func (v *SecgroupAPI) List(c *gin.Context) {
 	secgroupListResp := &SecurityGroupListResponse{}

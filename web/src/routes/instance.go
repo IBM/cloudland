@@ -1047,95 +1047,48 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	subnets := c.QueryTrim("subnets")
-	s := strings.Split(subnets, ",")
-	var subnetIDs []int64
-	for i := 0; i < len(s); i++ {
-		sID, err := strconv.Atoi(s[i])
-		if err != nil {
-			log.Println("Invalid secondary subnet ID, %v", err)
-			continue
-		}
-		permit, err = memberShip.CheckAdmin(model.Writer, "subnets", int64(sID))
-		if !permit {
-			log.Println("Not authorized to access subnet")
-			c.Data["ErrorMsg"] = "Not authorized to access subnet"
-			c.HTML(http.StatusBadRequest, "error")
-			return
-		}
-		subnetIDs = append(subnetIDs, int64(sID))
-	}
-	keys := c.QueryTrim("keys")
-	k := strings.Split(keys, ",")
-	var instKeys []*model.Key
-	for i := 0; i < len(k); i++ {
-		kID, err := strconv.Atoi(k[i])
-		if err != nil {
-			log.Println("Invalid key ID, %v", err)
-			continue
-		}
-		var key *model.Key
-		key, err = keyAdmin.Get(ctx, int64(kID))
-		if key != nil {
-			log.Println("Failed to access key")
-			c.Data["ErrorMsg"] = "Failed to access key"
-			c.HTML(http.StatusBadRequest, "error")
-			return
-		}
-		instKeys = append(instKeys, key)
-	}
 	secgroups := c.QueryTrim("secgroups")
-	var sgIDs []int64
+	var securityGroups []*model.SecurityGroup
 	if secgroups != "" {
 		sg := strings.Split(secgroups, ",")
 		for i := 0; i < len(sg); i++ {
 			sgID, err := strconv.Atoi(sg[i])
 			if err != nil {
-				log.Println("Invalid security group ID", err)
 				continue
 			}
-			permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
-			if !permit {
-				log.Println("Not authorized to access security group")
-				c.Data["ErrorMsg"] = "Not authorized to access security group"
-				c.HTML(http.StatusBadRequest, "error")
+			var secGroup *model.SecurityGroup
+			secGroup, err = secgroupAdmin.Get(ctx, int64(sgID))
+			if err != nil {
+				log.Println("Get security groups failed", err)
+				c.Data["ErrorMsg"] = "Get security groups failed"
+				c.HTML(http.StatusBadRequest, err.Error())
 				return
 			}
-			sgIDs = append(sgIDs, int64(sgID))
+			securityGroups = append(securityGroups, secGroup)
 		}
 	} else {
 		sgID := store.Get("defsg").(int64)
-		permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
-		if !permit {
-			log.Println("Not authorized to access security group")
-			c.Data["ErrorMsg"] = "Not authorized to access security group"
-			c.HTML(http.StatusBadRequest, "error")
+		var secGroup *model.SecurityGroup
+		secGroup, err = secgroupAdmin.Get(ctx, sgID)
+		if err != nil {
+			log.Println("Get default security groups failed", err)
+			c.Data["ErrorMsg"] = "Get default security groups failed"
+			c.HTML(http.StatusBadRequest, err.Error())
 			return
 		}
-		sgIDs = append(sgIDs, sgID)
+		securityGroups = append(securityGroups, secGroup)
 	}
-	primarySubnet, err := subnetAdmin.Get(ctx, int64(primaryID))
-	if err != nil {
-		log.Println("Get primary subnet failed", err)
-		c.HTML(http.StatusBadRequest, err.Error())
-		return
-	}
-	securityGroups, err := secgroupAdmin.GetSecurityGroups(ctx, sgIDs)
-	if err != nil {
-		log.Println("Get security groups failed", err)
-		c.HTML(http.StatusBadRequest, err.Error())
-		return
-	}
-	primaryIface := &InterfaceInfo{
-		Subnet:         primarySubnet,
-		IpAddress:      ipAddr,
-		MacAddress:     macAddr,
-		SecurityGroups: securityGroups,
-	}
+	subnets := c.QueryTrim("subnets")
 	var secondaryIfaces []*InterfaceInfo
-	for _, sID := range subnetIDs {
+	s := strings.Split(subnets, ",")
+	for i := 0; i < len(s); i++ {
+		sID, err := strconv.Atoi(s[i])
+		if err != nil {
+			log.Println("Invalid secondary subnet ID", err)
+			continue
+		}
 		var subnet *model.Subnet
-		subnet, err = subnetAdmin.Get(ctx, sID)
+		subnet, err = subnetAdmin.Get(ctx, int64(sID))
 		if err != nil {
 			log.Println("Get secondary subnet failed", err)
 			c.HTML(http.StatusBadRequest, err.Error())
@@ -1147,6 +1100,37 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			MacAddress:     "",
 			SecurityGroups: securityGroups,
 		})
+	}
+	keys := c.QueryTrim("keys")
+	k := strings.Split(keys, ",")
+	var instKeys []*model.Key
+	for i := 0; i < len(k); i++ {
+		kID, err := strconv.Atoi(k[i])
+		if err != nil {
+			log.Println("Invalid key ID", err)
+			continue
+		}
+		var key *model.Key
+		key, err = keyAdmin.Get(ctx, int64(kID))
+		if err != nil {
+			log.Println("Failed to access key", err)
+			c.Data["ErrorMsg"] = "Failed to access key"
+			c.HTML(http.StatusBadRequest, "error")
+			return
+		}
+		instKeys = append(instKeys, key)
+	}
+	primarySubnet, err := subnetAdmin.Get(ctx, int64(primaryID))
+	if err != nil {
+		log.Println("Get primary subnet failed", err)
+		c.HTML(http.StatusBadRequest, err.Error())
+		return
+	}
+	primaryIface := &InterfaceInfo{
+		Subnet:         primarySubnet,
+		IpAddress:      ipAddr,
+		MacAddress:     macAddr,
+		SecurityGroups: securityGroups,
 	}
 	userdata := c.QueryTrim("userdata")
 	_, err = instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, primarySubnet.RouterID, primaryIface, secondaryIfaces, instKeys, hyperID)

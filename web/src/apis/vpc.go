@@ -46,8 +46,8 @@ type VPCPatchPayload struct {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} VPCResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /vpcs/:id [get]
 func (v *VPCAPI) Get(c *gin.Context) {
 	vpcResp := &VPCResponse{}
@@ -62,8 +62,8 @@ func (v *VPCAPI) Get(c *gin.Context) {
 // @Produce json
 // @Param   message	body   VPCPatchPayload  true   "VPC patch payload"
 // @Success 200 {object} VPCResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /vpcs/:id [patch]
 func (v *VPCAPI) Patch(c *gin.Context) {
 	vpcResp := &VPCResponse{}
@@ -77,8 +77,8 @@ func (v *VPCAPI) Patch(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 204
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /vpcs/:id [delete]
 func (v *VPCAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
@@ -92,8 +92,8 @@ func (v *VPCAPI) Delete(c *gin.Context) {
 // @Produce json
 // @Param   message	body   VPCPayload  true   "VPC create payload"
 // @Success 200 {object} VPCResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /vpcs [post]
 func (v *VPCAPI) Create(c *gin.Context) {
 	vpcResp := &VPCResponse{}
@@ -107,7 +107,7 @@ func (v *VPCAPI) Create(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} VPCListResponse
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /vpcs [get]
 func (v *VPCAPI) List(c *gin.Context) {
 	vpcListResp := &VPCListResponse{}

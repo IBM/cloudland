@@ -1,22 +1,10 @@
 basePath: /api/v1
 definitions:
-  apis.APIError:
-    properties:
-      error_message:
-        type: string
-    type: object
-  apis.BaseReference:
-    properties:
-      id:
-        type: string
-      name:
-        type: string
-    type: object
   apis.FlavorListResponse:
     properties:
       flavors:
         items:
-          $ref: '#/definitions/apis.VPCResponse'
+          $ref: '#/definitions/apis.FlavorResponse'
         type: array
       limit:
         type: integer
@@ -40,6 +28,8 @@ definitions:
       memory:
         type: integer
       name:
+        maxLength: 32
+        minLength: 2
         type: string
     type: object
   apis.FloatingIpInfo:
@@ -49,6 +39,8 @@ definitions:
       ip_address:
         type: string
       name:
+        maxLength: 32
+        minLength: 2
         type: string
     type: object
   apis.FloatingIpListResponse:
@@ -73,13 +65,15 @@ definitions:
       id:
         type: string
       name:
+        maxLength: 32
+        minLength: 2
         type: string
     type: object
   apis.HyperListResponse:
     properties:
       hypers:
         items:
-          $ref: '#/definitions/apis.VPCResponse'
+          $ref: '#/definitions/apis.HyperResponse'
         type: array
       limit:
         type: integer
@@ -99,13 +93,15 @@ definitions:
       memory:
         type: integer
       name:
+        maxLength: 32
+        minLength: 2
         type: string
     type: object
   apis.ImageListResponse:
     properties:
       images:
         items:
-          $ref: '#/definitions/apis.VPCResponse'
+          $ref: '#/definitions/apis.ImageResponse'
         type: array
       limit:
         type: integer
@@ -129,6 +125,8 @@ definitions:
       memory:
         type: integer
       name:
+        maxLength: 32
+        minLength: 2
         type: string
     type: object
   apis.InstanceListResponse:
@@ -146,58 +144,115 @@ definitions:
     type: object
   apis.InstancePatchPayload:
     properties:
+      flavor:
+        maxLength: 32
+        minLength: 1
+        type: string
       hostname:
         type: string
       power_action:
-        $ref: '#/definitions/apis.PowerAction'
+        allOf:
+        - $ref: '#/definitions/common.PowerAction'
+        enum:
+        - stop
+        - hard_stop
+        - start
+        - restart
+        - hard_restart
+        - pause
+        - unpause)
+    required:
+    - flavor
     type: object
   apis.InstancePayload:
     properties:
+      count:
+        maximum: 16
+        minimum: 1
+        type: integer
       flavor:
+        maxLength: 32
+        minLength: 1
         type: string
       hostname:
         type: string
+      hyper:
+        minimum: 0
+        type: integer
       image:
-        type: string
-      interfaces:
+        $ref: '#/definitions/common.BaseReference'
+      keys:
+        items:
+          $ref: '#/definitions/common.BaseReference'
+        maxItems: 16
+        minItems: 1
+        type: array
+      primary_interface:
+        $ref: '#/definitions/apis.InterfacePayload'
+      secondary_interfaces:
         items:
           $ref: '#/definitions/apis.InterfacePayload'
         type: array
-      keys:
-        items:
-          type: string
-        type: array
-      zone:
+      userdata:
         type: string
+      vpc:
+        $ref: '#/definitions/common.BaseReference'
+      zone:
+        maxLength: 32
+        minLength: 1
+        type: string
+    required:
+    - flavor
+    - hostname
+    - image
+    - keys
+    - zone
     type: object
   apis.InstanceResponse:
     properties:
       flavor:
-        $ref: '#/definitions/apis.BaseReference'
+        type: string
       hostname:
         type: string
       id:
         type: string
       image:
-        $ref: '#/definitions/apis.BaseReference'
+        $ref: '#/definitions/common.BaseReference'
       interfaces:
         items:
           $ref: '#/definitions/apis.InterfaceResponse'
         type: array
       keys:
         items:
-          $ref: '#/definitions/apis.BaseReference'
+          $ref: '#/definitions/common.BaseReference'
         type: array
       status:
         type: string
       vpc:
-        $ref: '#/definitions/apis.BaseReference'
+        $ref: '#/definitions/common.BaseReference'
       zone:
         type: string
     type: object
   apis.InterfacePatchPayload:
     type: object
   apis.InterfacePayload:
+    properties:
+      ip_address:
+        type: string
+      mac_address:
+        type: string
+      name:
+        maxLength: 32
+        minLength: 2
+        type: string
+      security_group:
+        items:
+          $ref: '#/definitions/common.BaseReference'
+        type: array
+      subnet:
+        $ref: '#/definitions/common.BaseReference'
+    required:
+    - subnet
     type: object
   apis.InterfaceResponse:
     properties:
@@ -214,15 +269,17 @@ definitions:
       mac_address:
         type: string
       name:
+        maxLength: 32
+        minLength: 2
         type: string
       subnet:
-        $ref: '#/definitions/apis.BaseReference'
+        $ref: '#/definitions/common.BaseReference'
     type: object
   apis.KeyListResponse:
     properties:
       keys:
         items:
-          $ref: '#/definitions/apis.VPCResponse'
+          $ref: '#/definitions/apis.KeyResponse'
         type: array
       limit:
         type: integer
@@ -246,6 +303,8 @@ definitions:
       memory:
         type: integer
       name:
+        maxLength: 32
+        minLength: 2
         type: string
     type: object
   apis.OrgListResponse:
@@ -276,54 +335,8 @@ definitions:
       memory:
         type: integer
       name:
-        type: string
-    type: object
-  apis.PowerAction:
-    enum:
-    - stop
-    - hard_stop
-    - start
-    - restart
-    - hard_restart
-    - pause
-    - unpause
-    type: string
-    x-enum-varnames:
-    - Stop
-    - HardStop
-    - Start
-    - Restart
-    - HardRestart
-    - Pause
-    - Unpause
-  apis.SecgroupListResponse:
-    properties:
-      limit:
-        type: integer
-      offset:
-        type: integer
-      secgroups:
-        items:
-          $ref: '#/definitions/apis.VPCResponse'
-        type: array
-      total:
-        type: integer
-    type: object
-  apis.SecgroupPatchPayload:
-    type: object
-  apis.SecgroupPayload:
-    type: object
-  apis.SecgroupResponse:
-    properties:
-      cpu:
-        type: integer
-      disk:
-        type: integer
-      id:
-        type: string
-      memory:
-        type: integer
-      name:
+        maxLength: 32
+        minLength: 2
         type: string
     type: object
   apis.SecruleListResponse:
@@ -354,6 +367,40 @@ definitions:
       memory:
         type: integer
       name:
+        maxLength: 32
+        minLength: 2
+        type: string
+    type: object
+  apis.SecurityGroupListResponse:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+      security_groups:
+        items:
+          $ref: '#/definitions/apis.SecurityGroupResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  apis.SecurityGroupPatchPayload:
+    type: object
+  apis.SecurityGroupPayload:
+    type: object
+  apis.SecurityGroupResponse:
+    properties:
+      cpu:
+        type: integer
+      disk:
+        type: integer
+      id:
+        type: string
+      memory:
+        type: integer
+      name:
+        maxLength: 32
+        minLength: 2
         type: string
     type: object
   apis.SubnetListResponse:
@@ -378,6 +425,8 @@ definitions:
       id:
         type: string
       name:
+        maxLength: 32
+        minLength: 2
         type: string
     type: object
   apis.UserListResponse:
@@ -396,27 +445,36 @@ definitions:
   apis.UserPatchPayload:
     properties:
       password:
+        minLength: 6
         type: string
+    required:
+    - password
     type: object
   apis.UserPayload:
     properties:
       org:
-        $ref: '#/definitions/apis.BaseReference'
+        $ref: '#/definitions/common.BaseReference'
       password:
+        maxLength: 32
+        minLength: 8
         type: string
       username:
+        minLength: 2
         type: string
+    required:
+    - password
+    - username
     type: object
   apis.UserResponse:
     properties:
       org:
-        $ref: '#/definitions/apis.BaseReference'
+        $ref: '#/definitions/common.BaseReference'
       role:
         type: string
       token:
         type: string
       user:
-        $ref: '#/definitions/apis.BaseReference'
+        $ref: '#/definitions/common.BaseReference'
     type: object
   apis.VPCListResponse:
     properties:
@@ -440,10 +498,12 @@ definitions:
       id:
         type: string
       name:
+        maxLength: 32
+        minLength: 2
         type: string
       subnets:
         items:
-          $ref: '#/definitions/apis.BaseReference'
+          $ref: '#/definitions/common.BaseReference'
         type: array
     type: object
   apis.VolumeListResponse:
@@ -456,7 +516,7 @@ definitions:
         type: integer
       volumes:
         items:
-          $ref: '#/definitions/apis.VPCResponse'
+          $ref: '#/definitions/apis.VolumeResponse'
         type: array
     type: object
   apis.VolumePatchPayload:
@@ -474,8 +534,71 @@ definitions:
       memory:
         type: integer
       name:
+        maxLength: 32
+        minLength: 2
         type: string
     type: object
+  apis.ZoneListResponse:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+      zones:
+        items:
+          $ref: '#/definitions/apis.ZoneResponse'
+        type: array
+    type: object
+  apis.ZoneResponse:
+    properties:
+      cpu:
+        type: integer
+      disk:
+        type: integer
+      id:
+        type: string
+      memory:
+        type: integer
+      name:
+        maxLength: 32
+        minLength: 2
+        type: string
+    type: object
+  common.APIError:
+    properties:
+      error_message:
+        description: "InternalErr error\n\tErrorCode int `json:\"error_code\"`"
+        type: string
+    type: object
+  common.BaseReference:
+    properties:
+      id:
+        type: string
+      name:
+        maxLength: 32
+        minLength: 2
+        type: string
+    type: object
+  common.PowerAction:
+    enum:
+    - stop
+    - hard_stop
+    - start
+    - restart
+    - hard_restart
+    - pause
+    - unpause
+    type: string
+    x-enum-varnames:
+    - Stop
+    - HardStop
+    - Start
+    - Restart
+    - HardRestart
+    - Pause
+    - Unpause
 info:
   contact: {}
   description: APIs for CloudLand Functions
@@ -500,7 +623,7 @@ paths:
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: list flavors
       tags:
       - Compute
@@ -525,11 +648,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: create a flavor
       tags:
       - Compute
@@ -546,11 +669,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: delete a flavor
       tags:
       - Compute
@@ -568,11 +691,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: get a flavor
       tags:
       - Compute
@@ -597,11 +720,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: patch a flavor
       tags:
       - Compute
@@ -620,7 +743,7 @@ paths:
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: list floating ips
       tags:
       - Network
@@ -645,11 +768,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: create a floating ip
       tags:
       - Network
@@ -666,11 +789,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: delete a floating ip
       tags:
       - Network
@@ -688,11 +811,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: get a floating ip
       tags:
       - Network
@@ -717,11 +840,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: patch a floating ip
       tags:
       - Network
@@ -740,7 +863,7 @@ paths:
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: list hypervisors
       tags:
       - Administration
@@ -759,11 +882,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: get a hypervisor
       tags:
       - Administration
@@ -782,7 +905,7 @@ paths:
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: list images
       tags:
       - Compute
@@ -807,11 +930,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: create a image
       tags:
       - Compute
@@ -828,11 +951,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: delete a image
       tags:
       - Compute
@@ -850,11 +973,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: get a image
       tags:
       - Compute
@@ -879,11 +1002,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: patch a image
       tags:
       - Compute
@@ -902,7 +1025,7 @@ paths:
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: list instances
       tags:
       - Compute
@@ -923,23 +1046,31 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/apis.InstanceResponse'
+            items:
+              $ref: '#/definitions/apis.InstanceResponse'
+            type: array
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: create a instance
       tags:
       - Compute
-  /instances/:id:
+  /instances/{id}:
     delete:
       consumes:
       - application/json
       description: delete a instance
+      parameters:
+      - description: Instance ID
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -948,11 +1079,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: delete a instance
       tags:
       - Compute
@@ -960,6 +1091,12 @@ paths:
       consumes:
       - application/json
       description: get a instance
+      parameters:
+      - description: Instance ID
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -970,11 +1107,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: get a instance
       tags:
       - Compute
@@ -999,11 +1136,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: patch a instance
       tags:
       - Compute
@@ -1024,7 +1161,7 @@ paths:
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: list interfaces
       tags:
       - Network
@@ -1049,11 +1186,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: create a interface
       tags:
       - Network
@@ -1070,11 +1207,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: delete a interface
       tags:
       - Network
@@ -1092,11 +1229,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: get a interface
       tags:
       - Network
@@ -1121,11 +1258,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: patch a interface
       tags:
       - Network
@@ -1144,7 +1281,7 @@ paths:
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: list keys
       tags:
       - Authorization
@@ -1169,11 +1306,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: create a key
       tags:
       - Authorization
@@ -1190,11 +1327,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: delete a key
       tags:
       - Authorization
@@ -1212,11 +1349,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: get a key
       tags:
       - Authorization
@@ -1241,11 +1378,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: patch a key
       tags:
       - Authorization
@@ -1271,7 +1408,7 @@ paths:
         "401":
           description: Invalied user name or password
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: login to get the accesstoken
       tags:
       - Authorization
@@ -1290,7 +1427,7 @@ paths:
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: list orgs
       tags:
       - Authorization
@@ -1315,11 +1452,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: create a org
       tags:
       - Authorization
@@ -1336,11 +1473,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: delete a org
       tags:
       - Authorization
@@ -1358,11 +1495,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: get a org
       tags:
       - Authorization
@@ -1387,11 +1524,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: patch a org
       tags:
       - Authorization
@@ -1406,11 +1543,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/apis.SecgroupListResponse'
+            $ref: '#/definitions/apis.SecurityGroupListResponse'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: list secgroups
       tags:
       - Network
@@ -1424,22 +1561,22 @@ paths:
         name: message
         required: true
         schema:
-          $ref: '#/definitions/apis.SecgroupPayload'
+          $ref: '#/definitions/apis.SecurityGroupPayload'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/apis.SecgroupResponse'
+            $ref: '#/definitions/apis.SecurityGroupResponse'
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: create a secgroup
       tags:
       - Network
@@ -1456,11 +1593,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: delete a secgroup
       tags:
       - Network
@@ -1474,15 +1611,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/apis.SecgroupResponse'
+            $ref: '#/definitions/apis.SecurityGroupResponse'
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: get a secgroup
       tags:
       - Network
@@ -1496,22 +1633,22 @@ paths:
         name: message
         required: true
         schema:
-          $ref: '#/definitions/apis.SecgroupPatchPayload'
+          $ref: '#/definitions/apis.SecurityGroupPatchPayload'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/apis.SecgroupResponse'
+            $ref: '#/definitions/apis.SecurityGroupResponse'
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: patch a secgroup
       tags:
       - Network
@@ -1530,7 +1667,7 @@ paths:
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: list secrules
       tags:
       - Network
@@ -1555,11 +1692,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: create a secrule
       tags:
       - Network
@@ -1576,11 +1713,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: delete a secrule
       tags:
       - Network
@@ -1598,11 +1735,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: get a secrule
       tags:
       - Network
@@ -1627,11 +1764,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: patch a secrule
       tags:
       - Network
@@ -1650,7 +1787,7 @@ paths:
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: list subnets
       tags:
       - Network
@@ -1675,11 +1812,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: create a subnet
       tags:
       - Network
@@ -1696,11 +1833,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: delete a subnet
       tags:
       - Network
@@ -1718,11 +1855,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: get a subnet
       tags:
       - Network
@@ -1747,11 +1884,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: patch a subnet
       tags:
       - Network
@@ -1770,7 +1907,7 @@ paths:
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: list users
       tags:
       - Authorization
@@ -1795,11 +1932,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: create a user
       tags:
       - Authorization
@@ -1816,11 +1953,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: delete a user
       tags:
       - Authorization
@@ -1838,11 +1975,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: get a user
       tags:
       - Authorization
@@ -1867,11 +2004,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: patch a user
       tags:
       - Authorization
@@ -1890,7 +2027,7 @@ paths:
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: list volumes
       tags:
       - Compute
@@ -1915,11 +2052,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: create a volume
       tags:
       - Compute
@@ -1936,11 +2073,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: delete a volume
       tags:
       - Compute
@@ -1958,11 +2095,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: get a volume
       tags:
       - Compute
@@ -1987,11 +2124,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: patch a volume
       tags:
       - Compute
@@ -2010,7 +2147,7 @@ paths:
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: list vpcs
       tags:
       - Network
@@ -2035,11 +2172,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: create a vpc
       tags:
       - Network
@@ -2056,11 +2193,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: delete a vpc
       tags:
       - Network
@@ -2078,11 +2215,11 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: get a vpc
       tags:
       - Network
@@ -2107,12 +2244,54 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
         "401":
           description: Not authorized
           schema:
-            $ref: '#/definitions/apis.APIError'
+            $ref: '#/definitions/common.APIError'
       summary: patch a vpc
       tags:
       - Network
+  /zones:
+    get:
+      consumes:
+      - application/json
+      description: list zonevisors
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.ZoneListResponse'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/common.APIError'
+      summary: list zonevisors
+      tags:
+      - Zone
+  /zones/:id:
+    get:
+      consumes:
+      - application/json
+      description: get a zonevisor
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.ZoneResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/common.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/common.APIError'
+      summary: get a zonevisor
+      tags:
+      - Zone
 swagger: "2.0"

@@ -48,8 +48,8 @@ type HyperPatchPayload struct {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} HyperResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /hypers/:id [get]
 func (v *HyperAPI) Get(c *gin.Context) {
 	hyperResp := &HyperResponse{}
@@ -63,7 +63,7 @@ func (v *HyperAPI) Get(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} HyperListResponse
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /hypers [get]
 func (v *HyperAPI) List(c *gin.Context) {
 	hyperListResp := &HyperListResponse{}

@@ -42,7 +42,7 @@ const docTemplatev1 = `{
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -80,13 +80,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -115,13 +115,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -145,13 +145,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -189,13 +189,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -224,7 +224,7 @@ const docTemplatev1 = `{
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -262,13 +262,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -297,13 +297,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -327,13 +327,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -371,13 +371,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -406,7 +406,7 @@ const docTemplatev1 = `{
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -435,13 +435,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -470,7 +470,7 @@ const docTemplatev1 = `{
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -508,13 +508,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -543,13 +543,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -573,13 +573,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -617,13 +617,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -652,7 +652,7 @@ const docTemplatev1 = `{
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -684,25 +684,28 @@ const docTemplatev1 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/apis.InstanceResponse"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/apis.InstanceResponse"
+                            }
                         }
                     },
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
             }
         },
-        "/instances/:id": {
+        "/instances/{id}": {
             "get": {
                 "description": "get a instance",
                 "consumes": [
@@ -715,6 +718,15 @@ const docTemplatev1 = `{
                     "Compute"
                 ],
                 "summary": "get a instance",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Instance ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -725,13 +737,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -748,6 +760,15 @@ const docTemplatev1 = `{
                     "Compute"
                 ],
                 "summary": "delete a instance",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Instance ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -755,13 +776,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -799,13 +820,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -837,7 +858,7 @@ const docTemplatev1 = `{
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -875,13 +896,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -910,13 +931,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -940,13 +961,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -984,13 +1005,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1019,7 +1040,7 @@ const docTemplatev1 = `{
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1057,13 +1078,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1092,13 +1113,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1122,13 +1143,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1166,13 +1187,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1212,7 +1233,7 @@ const docTemplatev1 = `{
                     "401": {
                         "description": "Invalied user name or password",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1241,7 +1262,7 @@ const docTemplatev1 = `{
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1279,13 +1300,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1314,13 +1335,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1344,13 +1365,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1388,13 +1409,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1417,13 +1438,13 @@ const docTemplatev1 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/apis.SecgroupListResponse"
+                            "$ref": "#/definitions/apis.SecurityGroupListResponse"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1447,7 +1468,7 @@ const docTemplatev1 = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/apis.SecgroupPayload"
+                            "$ref": "#/definitions/apis.SecurityGroupPayload"
                         }
                     }
                 ],
@@ -1455,19 +1476,19 @@ const docTemplatev1 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/apis.SecgroupResponse"
+                            "$ref": "#/definitions/apis.SecurityGroupResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1490,19 +1511,19 @@ const docTemplatev1 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/apis.SecgroupResponse"
+                            "$ref": "#/definitions/apis.SecurityGroupResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1526,13 +1547,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1556,7 +1577,7 @@ const docTemplatev1 = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/apis.SecgroupPatchPayload"
+                            "$ref": "#/definitions/apis.SecurityGroupPatchPayload"
                         }
                     }
                 ],
@@ -1564,19 +1585,19 @@ const docTemplatev1 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/apis.SecgroupResponse"
+                            "$ref": "#/definitions/apis.SecurityGroupResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1605,7 +1626,7 @@ const docTemplatev1 = `{
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1643,13 +1664,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1678,13 +1699,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1708,13 +1729,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1752,13 +1773,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1787,7 +1808,7 @@ const docTemplatev1 = `{
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1825,13 +1846,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1860,13 +1881,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1890,13 +1911,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1934,13 +1955,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -1969,7 +1990,7 @@ const docTemplatev1 = `{
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -2007,13 +2028,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -2042,13 +2063,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -2072,13 +2093,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -2116,13 +2137,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -2151,7 +2172,7 @@ const docTemplatev1 = `{
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -2189,13 +2210,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -2224,13 +2245,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -2254,13 +2275,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -2298,13 +2319,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -2333,7 +2354,7 @@ const docTemplatev1 = `{
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -2371,13 +2392,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -2406,13 +2427,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -2436,13 +2457,13 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -2480,13 +2501,77 @@ const docTemplatev1 = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
                         }
                     },
                     "401": {
                         "description": "Not authorized",
                         "schema": {
-                            "$ref": "#/definitions/apis.APIError"
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/zones": {
+            "get": {
+                "description": "list zonevisors",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Zone"
+                ],
+                "summary": "list zonevisors",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/apis.ZoneListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/zones/:id": {
+            "get": {
+                "description": "get a zonevisor",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Zone"
+                ],
+                "summary": "get a zonevisor",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/apis.ZoneResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
                         }
                     }
                 }
@@ -2494,32 +2579,13 @@ const docTemplatev1 = `{
         }
     },
     "definitions": {
-        "apis.APIError": {
-            "type": "object",
-            "properties": {
-                "error_message": {
-                    "type": "string"
-                }
-            }
-        },
-        "apis.BaseReference": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
         "apis.FlavorListResponse": {
             "type": "object",
             "properties": {
                 "flavors": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/apis.VPCResponse"
+                        "$ref": "#/definitions/apis.FlavorResponse"
                     }
                 },
                 "limit": {
@@ -2555,7 +2621,9 @@ const docTemplatev1 = `{
                     "type": "integer"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
                 }
             }
         },
@@ -2569,7 +2637,9 @@ const docTemplatev1 = `{
                     "type": "string"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
                 }
             }
         },
@@ -2606,7 +2676,9 @@ const docTemplatev1 = `{
                     "type": "string"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
                 }
             }
         },
@@ -2616,7 +2688,7 @@ const docTemplatev1 = `{
                 "hypers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/apis.VPCResponse"
+                        "$ref": "#/definitions/apis.HyperResponse"
                     }
                 },
                 "limit": {
@@ -2646,7 +2718,9 @@ const docTemplatev1 = `{
                     "type": "integer"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
                 }
             }
         },
@@ -2656,7 +2730,7 @@ const docTemplatev1 = `{
                 "images": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/apis.VPCResponse"
+                        "$ref": "#/definitions/apis.ImageResponse"
                     }
                 },
                 "limit": {
@@ -2692,7 +2766,9 @@ const docTemplatev1 = `{
                     "type": "integer"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
                 }
             }
         },
@@ -2718,41 +2794,93 @@ const docTemplatev1 = `{
         },
         "apis.InstancePatchPayload": {
             "type": "object",
+            "required": [
+                "flavor"
+            ],
             "properties": {
+                "flavor": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 1
+                },
                 "hostname": {
                     "type": "string"
                 },
                 "power_action": {
-                    "$ref": "#/definitions/apis.PowerAction"
+                    "enum": [
+                        "stop",
+                        "hard_stop",
+                        "start",
+                        "restart",
+                        "hard_restart",
+                        "pause",
+                        "unpause)"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.PowerAction"
+                        }
+                    ]
                 }
             }
         },
         "apis.InstancePayload": {
             "type": "object",
+            "required": [
+                "flavor",
+                "hostname",
+                "image",
+                "keys",
+                "zone"
+            ],
             "properties": {
+                "count": {
+                    "type": "integer",
+                    "maximum": 16,
+                    "minimum": 1
+                },
                 "flavor": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 1
                 },
                 "hostname": {
                     "type": "string"
                 },
-                "image": {
-                    "type": "string"
+                "hyper": {
+                    "type": "integer",
+                    "minimum": 0
                 },
-                "interfaces": {
+                "image": {
+                    "$ref": "#/definitions/common.BaseReference"
+                },
+                "keys": {
+                    "type": "array",
+                    "maxItems": 16,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/common.BaseReference"
+                    }
+                },
+                "primary_interface": {
+                    "$ref": "#/definitions/apis.InterfacePayload"
+                },
+                "secondary_interfaces": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/apis.InterfacePayload"
                     }
                 },
-                "keys": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "userdata": {
+                    "type": "string"
+                },
+                "vpc": {
+                    "$ref": "#/definitions/common.BaseReference"
                 },
                 "zone": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 1
                 }
             }
         },
@@ -2760,7 +2888,7 @@ const docTemplatev1 = `{
             "type": "object",
             "properties": {
                 "flavor": {
-                    "$ref": "#/definitions/apis.BaseReference"
+                    "type": "string"
                 },
                 "hostname": {
                     "type": "string"
@@ -2769,7 +2897,7 @@ const docTemplatev1 = `{
                     "type": "string"
                 },
                 "image": {
-                    "$ref": "#/definitions/apis.BaseReference"
+                    "$ref": "#/definitions/common.BaseReference"
                 },
                 "interfaces": {
                     "type": "array",
@@ -2780,14 +2908,14 @@ const docTemplatev1 = `{
                 "keys": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/apis.BaseReference"
+                        "$ref": "#/definitions/common.BaseReference"
                     }
                 },
                 "status": {
                     "type": "string"
                 },
                 "vpc": {
-                    "$ref": "#/definitions/apis.BaseReference"
+                    "$ref": "#/definitions/common.BaseReference"
                 },
                 "zone": {
                     "type": "string"
@@ -2798,7 +2926,32 @@ const docTemplatev1 = `{
             "type": "object"
         },
         "apis.InterfacePayload": {
-            "type": "object"
+            "type": "object",
+            "required": [
+                "subnet"
+            ],
+            "properties": {
+                "ip_address": {
+                    "type": "string"
+                },
+                "mac_address": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                },
+                "security_group": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.BaseReference"
+                    }
+                },
+                "subnet": {
+                    "$ref": "#/definitions/common.BaseReference"
+                }
+            }
         },
         "apis.InterfaceResponse": {
             "type": "object",
@@ -2822,10 +2975,12 @@ const docTemplatev1 = `{
                     "type": "string"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
                 },
                 "subnet": {
-                    "$ref": "#/definitions/apis.BaseReference"
+                    "$ref": "#/definitions/common.BaseReference"
                 }
             }
         },
@@ -2835,7 +2990,7 @@ const docTemplatev1 = `{
                 "keys": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/apis.VPCResponse"
+                        "$ref": "#/definitions/apis.KeyResponse"
                     }
                 },
                 "limit": {
@@ -2871,7 +3026,9 @@ const docTemplatev1 = `{
                     "type": "integer"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
                 }
             }
         },
@@ -2917,74 +3074,9 @@ const docTemplatev1 = `{
                     "type": "integer"
                 },
                 "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "apis.PowerAction": {
-            "type": "string",
-            "enum": [
-                "stop",
-                "hard_stop",
-                "start",
-                "restart",
-                "hard_restart",
-                "pause",
-                "unpause"
-            ],
-            "x-enum-varnames": [
-                "Stop",
-                "HardStop",
-                "Start",
-                "Restart",
-                "HardRestart",
-                "Pause",
-                "Unpause"
-            ]
-        },
-        "apis.SecgroupListResponse": {
-            "type": "object",
-            "properties": {
-                "limit": {
-                    "type": "integer"
-                },
-                "offset": {
-                    "type": "integer"
-                },
-                "secgroups": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/apis.VPCResponse"
-                    }
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "apis.SecgroupPatchPayload": {
-            "type": "object"
-        },
-        "apis.SecgroupPayload": {
-            "type": "object"
-        },
-        "apis.SecgroupResponse": {
-            "type": "object",
-            "properties": {
-                "cpu": {
-                    "type": "integer"
-                },
-                "disk": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "memory": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
                 }
             }
         },
@@ -3030,7 +3122,57 @@ const docTemplatev1 = `{
                     "type": "integer"
                 },
                 "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                }
+            }
+        },
+        "apis.SecurityGroupListResponse": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer"
+                },
+                "offset": {
+                    "type": "integer"
+                },
+                "security_groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/apis.SecurityGroupResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "apis.SecurityGroupPatchPayload": {
+            "type": "object"
+        },
+        "apis.SecurityGroupPayload": {
+            "type": "object"
+        },
+        "apis.SecurityGroupResponse": {
+            "type": "object",
+            "properties": {
+                "cpu": {
+                    "type": "integer"
+                },
+                "disk": {
+                    "type": "integer"
+                },
+                "id": {
                     "type": "string"
+                },
+                "memory": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
                 }
             }
         },
@@ -3067,7 +3209,9 @@ const docTemplatev1 = `{
                     "type": "string"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
                 }
             }
         },
@@ -3093,23 +3237,34 @@ const docTemplatev1 = `{
         },
         "apis.UserPatchPayload": {
             "type": "object",
+            "required": [
+                "password"
+            ],
             "properties": {
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 6
                 }
             }
         },
         "apis.UserPayload": {
             "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
             "properties": {
                 "org": {
-                    "$ref": "#/definitions/apis.BaseReference"
+                    "$ref": "#/definitions/common.BaseReference"
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 8
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 2
                 }
             }
         },
@@ -3117,7 +3272,7 @@ const docTemplatev1 = `{
             "type": "object",
             "properties": {
                 "org": {
-                    "$ref": "#/definitions/apis.BaseReference"
+                    "$ref": "#/definitions/common.BaseReference"
                 },
                 "role": {
                     "type": "string"
@@ -3126,7 +3281,7 @@ const docTemplatev1 = `{
                     "type": "string"
                 },
                 "user": {
-                    "$ref": "#/definitions/apis.BaseReference"
+                    "$ref": "#/definitions/common.BaseReference"
                 }
             }
         },
@@ -3163,12 +3318,14 @@ const docTemplatev1 = `{
                     "type": "string"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
                 },
                 "subnets": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/apis.BaseReference"
+                        "$ref": "#/definitions/common.BaseReference"
                     }
                 }
             }
@@ -3188,7 +3345,7 @@ const docTemplatev1 = `{
                 "volumes": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/apis.VPCResponse"
+                        "$ref": "#/definitions/apis.VolumeResponse"
                     }
                 }
             }
@@ -3215,9 +3372,96 @@ const docTemplatev1 = `{
                     "type": "integer"
                 },
                 "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                }
+            }
+        },
+        "apis.ZoneListResponse": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer"
+                },
+                "offset": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "zones": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/apis.ZoneResponse"
+                    }
+                }
+            }
+        },
+        "apis.ZoneResponse": {
+            "type": "object",
+            "properties": {
+                "cpu": {
+                    "type": "integer"
+                },
+                "disk": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "memory": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                }
+            }
+        },
+        "common.APIError": {
+            "type": "object",
+            "properties": {
+                "error_message": {
+                    "description": "InternalErr error\n\tErrorCode int ` + "`" + `json:\"error_code\"` + "`" + `",
                     "type": "string"
                 }
             }
+        },
+        "common.BaseReference": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                }
+            }
+        },
+        "common.PowerAction": {
+            "type": "string",
+            "enum": [
+                "stop",
+                "hard_stop",
+                "start",
+                "restart",
+                "hard_restart",
+                "pause",
+                "unpause"
+            ],
+            "x-enum-varnames": [
+                "Stop",
+                "HardStop",
+                "Start",
+                "Restart",
+                "HardRestart",
+                "Pause",
+                "Unpause"
+            ]
         }
     }
 }`

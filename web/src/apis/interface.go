@@ -31,11 +31,11 @@ type InterfaceResponse struct {
 }
 
 type InterfacePayload struct {
-	Subnet         *common.BaseReference   `json:"subnet,required" binding:"required"`
-	IpAddress      string                  `json:"ip_address,omitempty", binding:"omitempty,ipv4"`
-	MacAddress     string                  `json:"mac_address,omitempty" binding:"omitempty,mac"`
-	Name           string                  `json:"name,omitempty" binding:"omitempty,min=2"`
-	SecurityGroups []*common.BaseReference `json:"security_group,omitempty"`
+	Subnet         *common.BaseReference   `json:"subnet" binding:"required"`
+	IpAddress      string                  `json:"ip_address", binding:"omitempty,ipv4"`
+	MacAddress     string                  `json:"mac_address" binding:"omitempty,mac"`
+	Name           string                  `json:"name" binding:"omitempty,min=2,max=32"`
+	SecurityGroups []*common.BaseReference `json:"security_group" binding:"omitempty"`
 }
 
 type InterfacePatchPayload struct {
@@ -48,8 +48,8 @@ type InterfacePatchPayload struct {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} InterfaceResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /interfaces/:id [get]
 func (v *InterfaceAPI) Get(c *gin.Context) {
 	interfaceResp := &InterfaceResponse{}
@@ -64,8 +64,8 @@ func (v *InterfaceAPI) Get(c *gin.Context) {
 // @Produce json
 // @Param   message	body   InterfacePatchPayload  true   "Interface patch payload"
 // @Success 200 {object} InterfaceResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /interfaces/:id [patch]
 func (v *InterfaceAPI) Patch(c *gin.Context) {
 	interfaceResp := &InterfaceResponse{}
@@ -79,8 +79,8 @@ func (v *InterfaceAPI) Patch(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 204
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /interfaces/:id [delete]
 func (v *InterfaceAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
@@ -94,8 +94,8 @@ func (v *InterfaceAPI) Delete(c *gin.Context) {
 // @Produce json
 // @Param   message	body   InterfacePayload  true   "Interface create payload"
 // @Success 200 {object} InterfaceResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /interfaces [post]
 func (v *InterfaceAPI) Create(c *gin.Context) {
 	interfaceResp := &InterfaceResponse{}
@@ -109,7 +109,7 @@ func (v *InterfaceAPI) Create(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 200 {array} InterfaceResponse
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /interfaces [get]
 func (v *InterfaceAPI) List(c *gin.Context) {
 	interfaceListResp := []*InterfaceResponse{}

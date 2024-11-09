@@ -45,8 +45,8 @@ type SubnetPatchPayload struct {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} SubnetResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /subnets/:id [get]
 func (v *SubnetAPI) Get(c *gin.Context) {
 	subnetResp := &SubnetResponse{}
@@ -61,8 +61,8 @@ func (v *SubnetAPI) Get(c *gin.Context) {
 // @Produce json
 // @Param   message	body   SubnetPatchPayload  true   "Subnet patch payload"
 // @Success 200 {object} SubnetResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /subnets/:id [patch]
 func (v *SubnetAPI) Patch(c *gin.Context) {
 	subnetResp := &SubnetResponse{}
@@ -76,8 +76,8 @@ func (v *SubnetAPI) Patch(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 204
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /subnets/:id [delete]
 func (v *SubnetAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
@@ -91,8 +91,8 @@ func (v *SubnetAPI) Delete(c *gin.Context) {
 // @Produce json
 // @Param   message	body   SubnetPayload  true   "Subnet create payload"
 // @Success 200 {object} SubnetResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /subnets [post]
 func (v *SubnetAPI) Create(c *gin.Context) {
 	subnetResp := &SubnetResponse{}
@@ -106,7 +106,7 @@ func (v *SubnetAPI) Create(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} SubnetListResponse
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /subnets [get]
 func (v *SubnetAPI) List(c *gin.Context) {
 	subnetListResp := &SubnetListResponse{}

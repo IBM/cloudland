@@ -42,8 +42,8 @@ type ZoneListResponse struct {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} ZoneResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /zones/:id [get]
 func (v *ZoneAPI) Get(c *gin.Context) {
 	zoneResp := &ZoneResponse{}
@@ -57,7 +57,7 @@ func (v *ZoneAPI) Get(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} ZoneListResponse
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /zones [get]
 func (v *ZoneAPI) List(c *gin.Context) {
 	zoneListResp := &ZoneListResponse{}

@@ -26,22 +26,22 @@ var instanceAdmin = &routes.InstanceAdmin{}
 type InstanceAPI struct{}
 
 type InstancePatchPayload struct {
-	Hostname    string             `json:"hostname,omitempty" binding:"omitempty,hostname|fqdn"`
-	PowerAction common.PowerAction `json:"power_action,omitempty" binding:"omitempty,oneof=stop hard_stop start restart hard_restart pause unpause)"`
-	Flavor      string             `json:"flavor,required" binding:"required,min=1,max=32"`
+	Hostname    string             `json:"hostname" binding:"omitempty,hostname|fqdn"`
+	PowerAction common.PowerAction `json:"power_action" binding:"omitempty,oneof=stop hard_stop start restart hard_restart pause unpause)"`
+	Flavor      string             `json:"flavor" binding:"required,min=1,max=32"`
 }
 
 type InstancePayload struct {
-	Count               int                     `json:"count,omitempty" binding:"omitempty,gte=1,lte=16"`
-	Hyper               int                     `json:"hyper,omitempty" binding:"omitempty,gte=0"`
-	Hostname            string                  `json:"hostname,required" binding:"required,hostname|fqdn"`
-	Keys                []*common.BaseReference `json:"keys,required" binding:"required,gte=1,lte=16"`
-	Flavor              string                  `json:"flavor,required" binding:"required,min=1,max=32"`
-	Image               *common.BaseReference   `json:"image,required" binding:"required"`
-	PrimaryInterface    *InterfacePayload       `json:"primary_interface,required", binding:"required"`
-	SecondaryInterfaces []*InterfacePayload     `json:"secondary_interfaces,omitempty" binding:"omitempty"`
-	Zone                string                  `json:"zone,required" binding:"required,min=1,max=32"`
-	VPC                 *common.BaseReference   `json:"vpc,omitempty" binding:"omitempty"`
+	Count               int                     `json:"count" binding:"omitempty,gte=1,lte=16"`
+	Hyper               int                     `json:"hyper" binding:"omitempty,gte=0"`
+	Hostname            string                  `json:"hostname" binding:"required,hostname|fqdn"`
+	Keys                []*common.BaseReference `json:"keys" binding:"required,gte=1,lte=16"`
+	Flavor              string                  `json:"flavor" binding:"required,min=1,max=32"`
+	Image               *common.BaseReference   `json:"image" binding:"required"`
+	PrimaryInterface    *InterfacePayload       `json:"primary_interface", binding:"required"`
+	SecondaryInterfaces []*InterfacePayload     `json:"secondary_interfaces" binding:"omitempty"`
+	Zone                string                  `json:"zone" binding:"required,min=1,max=32"`
+	VPC                 *common.BaseReference   `json:"vpc" binding:"omitempty"`
 	Userdata            string                  `json:"userdata,omitempty"`
 }
 
@@ -72,8 +72,8 @@ type InstanceListResponse struct {
 // @Produce json
 // @Param   id  path  int  true  "Instance ID"
 // @Success 200 {object} InstanceResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /instances/{id} [get]
 func (v *InstanceAPI) Get(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -98,8 +98,8 @@ func (v *InstanceAPI) Get(c *gin.Context) {
 // @Produce json
 // @Param   message	body   InstancePatchPayload  true   "Instance patch payload"
 // @Success 200 {object} InstanceResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /instances/{id} [patch]
 func (v *InstanceAPI) Patch(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -145,8 +145,8 @@ func (v *InstanceAPI) Patch(c *gin.Context) {
 // @Produce json
 // @Param   id  path  int  true  "Instance ID"
 // @Success 200
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /instances/{id} [delete]
 func (v *InstanceAPI) Delete(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -170,8 +170,8 @@ func (v *InstanceAPI) Delete(c *gin.Context) {
 // @Produce json
 // @Param   message	body   InstancePayload  true   "Instance create payload"
 // @Success 200 {array} InstanceResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /instances [post]
 func (v *InstanceAPI) Create(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -347,7 +347,7 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 // @Accept  json
 // @Produce json
 // @Success 200 {object} InstanceListResponse
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /instances [get]
 func (v *InstanceAPI) List(c *gin.Context) {
 	ctx := c.Request.Context()

@@ -48,8 +48,8 @@ type ImagePatchPayload struct {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} ImageResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /images/:id [get]
 func (v *ImageAPI) Get(c *gin.Context) {
 	imageResp := &ImageResponse{}
@@ -64,8 +64,8 @@ func (v *ImageAPI) Get(c *gin.Context) {
 // @Produce json
 // @Param   message	body   ImagePatchPayload  true   "Image patch payload"
 // @Success 200 {object} ImageResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /images/:id [patch]
 func (v *ImageAPI) Patch(c *gin.Context) {
 	imageResp := &ImageResponse{}
@@ -79,8 +79,8 @@ func (v *ImageAPI) Patch(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 200
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /images/:id [delete]
 func (v *ImageAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
@@ -94,8 +94,8 @@ func (v *ImageAPI) Delete(c *gin.Context) {
 // @Produce json
 // @Param   message	body   ImagePayload  true   "Image create payload"
 // @Success 200 {object} ImageResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /images [post]
 func (v *ImageAPI) Create(c *gin.Context) {
 	imageResp := &ImageResponse{}
@@ -109,7 +109,7 @@ func (v *ImageAPI) Create(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} ImageListResponse
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /images [get]
 func (v *ImageAPI) List(c *gin.Context) {
 	imageListResp := &ImageListResponse{}

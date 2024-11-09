@@ -48,8 +48,8 @@ type SecrulePatchPayload struct {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} SecruleResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /security_groups/:id/rules/:rule_id [get]
 func (v *SecruleAPI) Get(c *gin.Context) {
 	secruleResp := &SecruleResponse{}
@@ -64,8 +64,8 @@ func (v *SecruleAPI) Get(c *gin.Context) {
 // @Produce json
 // @Param   message	body   SecrulePatchPayload  true   "Secrule patch payload"
 // @Success 200 {object} SecruleResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /security_groups/:id/rules/:rule_id [patch]
 func (v *SecruleAPI) Patch(c *gin.Context) {
 	secruleResp := &SecruleResponse{}
@@ -79,8 +79,8 @@ func (v *SecruleAPI) Patch(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 204
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /security_groups/:id/rules/:rule_id [delete]
 func (v *SecruleAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
@@ -94,8 +94,8 @@ func (v *SecruleAPI) Delete(c *gin.Context) {
 // @Produce json
 // @Param   message	body   SecrulePayload  true   "Secrule create payload"
 // @Success 200 {object} SecruleResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /security_groups/:id/rules [post]
 func (v *SecruleAPI) Create(c *gin.Context) {
 	secruleResp := &SecruleResponse{}
@@ -109,7 +109,7 @@ func (v *SecruleAPI) Create(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} SecruleListResponse
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /security_groups/:id/rules [get]
 func (v *SecruleAPI) List(c *gin.Context) {
 	secruleListResp := &SecruleListResponse{}

@@ -48,8 +48,8 @@ type VolumePatchPayload struct {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} VolumeResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /volumes/:id [get]
 func (v *VolumeAPI) Get(c *gin.Context) {
 	volumeResp := &VolumeResponse{}
@@ -64,8 +64,8 @@ func (v *VolumeAPI) Get(c *gin.Context) {
 // @Produce json
 // @Param   message	body   VolumePatchPayload  true   "Volume patch payload"
 // @Success 200 {object} VolumeResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /volumes/:id [patch]
 func (v *VolumeAPI) Patch(c *gin.Context) {
 	volumeResp := &VolumeResponse{}
@@ -79,8 +79,8 @@ func (v *VolumeAPI) Patch(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 204
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /volumes/:id [delete]
 func (v *VolumeAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
@@ -94,8 +94,8 @@ func (v *VolumeAPI) Delete(c *gin.Context) {
 // @Produce json
 // @Param   message	body   VolumePayload  true   "Volume create payload"
 // @Success 200 {object} VolumeResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /volumes [post]
 func (v *VolumeAPI) Create(c *gin.Context) {
 	volumeResp := &VolumeResponse{}
@@ -109,7 +109,7 @@ func (v *VolumeAPI) Create(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} VolumeListResponse
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /volumes [get]
 func (v *VolumeAPI) List(c *gin.Context) {
 	volumeListResp := &VolumeListResponse{}

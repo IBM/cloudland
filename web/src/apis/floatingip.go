@@ -50,8 +50,8 @@ type FloatingIpPatchPayload struct {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} FloatingIpResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /floating_ips/:id [get]
 func (v *FloatingIpAPI) Get(c *gin.Context) {
 	floatingIpResp := &FloatingIpResponse{}
@@ -66,8 +66,8 @@ func (v *FloatingIpAPI) Get(c *gin.Context) {
 // @Produce json
 // @Param   message	body   FloatingIpPatchPayload  true   "Floating ip patch payload"
 // @Success 200 {object} FloatingIpResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /floating_ips/:id [patch]
 func (v *FloatingIpAPI) Patch(c *gin.Context) {
 	floatingIpResp := &FloatingIpResponse{}
@@ -81,8 +81,8 @@ func (v *FloatingIpAPI) Patch(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 200
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /floating_ips/:id [delete]
 func (v *FloatingIpAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
@@ -96,8 +96,8 @@ func (v *FloatingIpAPI) Delete(c *gin.Context) {
 // @Produce json
 // @Param   message	body   FloatingIpPayload  true   "Floating ip create payload"
 // @Success 200 {object} FloatingIpResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /floating_ips [post]
 func (v *FloatingIpAPI) Create(c *gin.Context) {
 	floatingIpResp := &FloatingIpResponse{}
@@ -111,7 +111,7 @@ func (v *FloatingIpAPI) Create(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} FloatingIpListResponse
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /floating_ips [get]
 func (v *FloatingIpAPI) List(c *gin.Context) {
 	floatingIpListResp := &FloatingIpListResponse{}

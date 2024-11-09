@@ -48,8 +48,8 @@ type OrgPatchPayload struct {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} OrgResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /orgs/:id [get]
 func (v *OrgAPI) Get(c *gin.Context) {
 	orgResp := &OrgResponse{}
@@ -64,8 +64,8 @@ func (v *OrgAPI) Get(c *gin.Context) {
 // @Produce json
 // @Param   message	body   OrgPatchPayload  true   "Org patch payload"
 // @Success 200 {object} OrgResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /orgs/:id [patch]
 func (v *OrgAPI) Patch(c *gin.Context) {
 	orgResp := &OrgResponse{}
@@ -79,8 +79,8 @@ func (v *OrgAPI) Patch(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 204
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /orgs/:id [delete]
 func (v *OrgAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
@@ -94,8 +94,8 @@ func (v *OrgAPI) Delete(c *gin.Context) {
 // @Produce json
 // @Param   message	body   OrgPayload  true   "Org create payload"
 // @Success 200 {object} OrgResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /orgs [post]
 func (v *OrgAPI) Create(c *gin.Context) {
 	orgResp := &OrgResponse{}
@@ -109,7 +109,7 @@ func (v *OrgAPI) Create(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} OrgListResponse
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /orgs [get]
 func (v *OrgAPI) List(c *gin.Context) {
 	orgListResp := &OrgListResponse{}

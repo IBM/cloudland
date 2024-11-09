@@ -48,8 +48,8 @@ type FlavorPatchPayload struct {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} FlavorResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /flavors/:id [get]
 func (v *FlavorAPI) Get(c *gin.Context) {
 	flavorResp := &FlavorResponse{}
@@ -64,8 +64,8 @@ func (v *FlavorAPI) Get(c *gin.Context) {
 // @Produce json
 // @Param   message	body   FlavorPatchPayload  true   "Flavor patch payload"
 // @Success 200 {object} FlavorResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /flavors/:id [patch]
 func (v *FlavorAPI) Patch(c *gin.Context) {
 	flavorResp := &FlavorResponse{}
@@ -79,8 +79,8 @@ func (v *FlavorAPI) Patch(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 200
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /flavors/:id [delete]
 func (v *FlavorAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
@@ -94,8 +94,8 @@ func (v *FlavorAPI) Delete(c *gin.Context) {
 // @Produce json
 // @Param   message	body   FlavorPayload  true   "Flavor create payload"
 // @Success 200 {object} FlavorResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /flavors [post]
 func (v *FlavorAPI) Create(c *gin.Context) {
 	flavorResp := &FlavorResponse{}
@@ -109,7 +109,7 @@ func (v *FlavorAPI) Create(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} FlavorListResponse
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /flavors [get]
 func (v *FlavorAPI) List(c *gin.Context) {
 	flavorListResp := &FlavorListResponse{}

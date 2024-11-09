@@ -52,8 +52,8 @@ type UserListResponse struct {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} UserResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /users/:id [get]
 func (v *UserAPI) Get(c *gin.Context) {
 	userResp := &UserResponse{}
@@ -68,8 +68,8 @@ func (v *UserAPI) Get(c *gin.Context) {
 // @Produce json
 // @Param   message	body   UserPatchPayload  true   "User patch payload"
 // @Success 200 {object} UserResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /users/:id [patch]
 func (v *UserAPI) Patch(c *gin.Context) {
 	userResp := &UserResponse{}
@@ -83,8 +83,8 @@ func (v *UserAPI) Patch(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 204
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /users/:id [delete]
 func (v *UserAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
@@ -98,8 +98,8 @@ func (v *UserAPI) Delete(c *gin.Context) {
 // @Produce json
 // @Param   message	body   UserPayload  true   "User create payload"
 // @Success 200 {object} UserResponse
-// @Failure 400 {object} APIError "Bad request"
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /users [post]
 func (v *UserAPI) Create(c *gin.Context) {
 	userResp := &UserResponse{}
@@ -113,7 +113,7 @@ func (v *UserAPI) Create(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} UserListResponse
-// @Failure 401 {object} APIError "Not authorized"
+// @Failure 401 {object} common.APIError "Not authorized"
 // @Router /users [get]
 func (v *UserAPI) List(c *gin.Context) {
 	userListResp := &UserListResponse{}
@@ -121,14 +121,14 @@ func (v *UserAPI) List(c *gin.Context) {
 }
 
 //
-// @Summary login to get the accesstoken
+// @Summary login to get the access token
 // @Description get token by user name
 // @tags Authorization
 // @Accept  json
 // @Produce json
 // @Param   message	body   UserPayload  true   "User Credential"
 // @Success 200 {object} UserResponse
-// @Failure 401 {object} APIError "Invalied user name or password"
+// @Failure 401 {object} common.APIError "Invalied user name or password"
 // @Router /login [post]
 func (v *UserAPI) LoginPost(c *gin.Context) {
 	payload := &UserPayload{}
