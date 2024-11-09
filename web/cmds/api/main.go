@@ -13,10 +13,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/spf13/viper"
-
 	"web/src/apis"
 
+	"github.com/spf13/viper"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 )
@@ -41,7 +40,7 @@ func RootCmd() (cmd *cobra.Command) {
 	for _, arg := range os.Args {
 		if arg == "--daemon" {
 			daemonCmd := &cobra.Command{
-				Use:  "hypercube",
+				Use:  "CloudlandAPI",
 				RunE: RunDaemon,
 			}
 			daemonCmd.Flags().Bool("daemon", false, "daemon")

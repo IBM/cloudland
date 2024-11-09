@@ -12,8 +12,8 @@ import (
 	"log"
 	"strconv"
 
-	"web/src/model"
 	"web/src/dbs"
+	"web/src/model"
 )
 
 func init() {
@@ -33,15 +33,15 @@ func deleteInterfaces(ctx context.Context, instance *model.Instance) (err error)
 
 func deleteInterface(ctx context.Context, iface *model.Interface) (err error) {
 	db := dbs.DB()
-        if err = db.Model(&model.Address{}).Where("interface = ?", iface.ID).Update(map[string]interface{}{"allocated": false, "interface": 0}).Error; err != nil {
-                log.Println("Failed to Update addresses, %v", err)
-                return
-        }
-        err = db.Delete(iface).Error
-        if err != nil {
-                log.Println("Failed to delete interface", err)
-                return
-        }
+	if err = db.Model(&model.Address{}).Where("interface = ?", iface.ID).Update(map[string]interface{}{"allocated": false, "interface": 0}).Error; err != nil {
+		log.Println("Failed to Update addresses, %v", err)
+		return
+	}
+	err = db.Delete(iface).Error
+	if err != nil {
+		log.Println("Failed to delete interface", err)
+		return
+	}
 	vlan := iface.Address.Subnet.Vlan
 	netlink := iface.Address.Subnet.Netlink
 	if netlink == nil {

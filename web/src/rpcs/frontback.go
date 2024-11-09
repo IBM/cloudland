@@ -15,19 +15,20 @@ package rpcs
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 	"sync"
 	"time"
-	"log"
 
 	"web/src/model"
+
 	"golang.org/x/net/context"
 	"gopkg.in/macaron.v1"
 )
 
 var frontbackService = &FrontbackService{}
 
-type FrontbackService struct {}
+type FrontbackService struct{}
 
 func (fb *FrontbackService) CallbackAgent(ctx context.Context, control, command string, duration time.Duration) (ids []int32, err error) {
 	values := &model.Hyper{}

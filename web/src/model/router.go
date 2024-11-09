@@ -24,7 +24,7 @@ type Router struct {
 	Subnets    []*Subnet    `gorm:"foreignkey:RouterID"`
 	PublicID   int64
 	ZoneID     int64
-	Zone       *Zone     `gorm:"foreignkey:ZoneID"`
+	Zone       *Zone `gorm:"foreignkey:ZoneID"`
 }
 
 func init() {

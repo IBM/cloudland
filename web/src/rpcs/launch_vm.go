@@ -13,8 +13,8 @@ import (
 	"log"
 	"strconv"
 
-	"web/src/model"
 	"web/src/dbs"
+	"web/src/model"
 )
 
 func init() {
@@ -64,7 +64,7 @@ func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript strin
 				continue
 			}
 			hyperSet[iface.Hyper] = struct{}{}
-			localRules = append(localRules, &FdbRule{Instance: iface.Name, Vni: iface.Address.Subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper.HostIP,  Gateway: iface.Address.Subnet.Gateway, Router: iface.Address.Subnet.RouterID})
+			localRules = append(localRules, &FdbRule{Instance: iface.Name, Vni: iface.Address.Subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper.HostIP, Gateway: iface.Address.Subnet.Gateway, Router: iface.Address.Subnet.RouterID})
 		}
 		if len(hyperSet) > 0 && len(spreadRules) > 0 {
 			hyperList := fmt.Sprintf("group-fdb-%d", hyperNode)

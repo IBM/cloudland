@@ -27,7 +27,7 @@ type Subnet struct {
 	Type         string   `gorm:"type:varchar(20);default:'internal'"`
 	RouterID     int64
 	Router       *Router `gorm:"foreignkey:RouterID"`
-	Routes       string `gorm:"type:varchar(256)"`
+	Routes       string  `gorm:"type:varchar(256)"`
 }
 
 type Address struct {

@@ -36,11 +36,10 @@ type ExecuteReply struct {
 
 var remoteExecPath string
 
-
 func HyperExecute(ctx context.Context, control, command string) (err error) {
 	execReq := &ExecuteRequest{
-		Id: 100,
-		Extra: 0,
+		Id:      100,
+		Extra:   0,
 		Control: control,
 		Command: command,
 	}
