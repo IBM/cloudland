@@ -297,14 +297,12 @@ func (v *UserView) LoginPost(c *macaron.Context, store session.Store) {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(403, "403")
 	}
-	org, err := orgAdmin.GetOrgByName(organization)
 	store.Set("login", username)
 	store.Set("uid", uid)
 	store.Set("oid", oid)
 	store.Set("role", role)
 	store.Set("act", token)
 	store.Set("org", organization)
-	store.Set("defsg", org.DefaultSG)
 	store.Set("members", members)
 	redirectTo := UrlBefore
 	if c.Req.Header.Get("X-Json-Format") == "yes" {
@@ -443,7 +441,6 @@ func (v *UserView) Change(c *macaron.Context, store session.Store) {
 					store.Set("oid", org.ID)
 					store.Set("role", em.Role)
 					store.Set("org", org.Name)
-					store.Set("defsg", org.DefaultSG)
 					memberShip.OrgID = org.ID
 					memberShip.OrgName = org.Name
 					memberShip.Role = em.Role

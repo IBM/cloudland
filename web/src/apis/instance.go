@@ -205,25 +205,23 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 		common.ErrorResponse(c, http.StatusBadRequest, "Invalid zone", err)
 		return
 	}
-	primaryIface, err := v.getInterfaceInfo(ctx, payload.PrimaryInterface)
-	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid primary interface", err)
-		return
-	}
-	routerID := primaryIface.Subnet.RouterID
+	var router *model.Router
 	if payload.VPC != nil {
-		var router *model.Router
 		router, err = routerAdmin.GetRouter(ctx, payload.VPC)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusBadRequest, "Invalid VPC", nil)
 			return
 		}
-		routerID = router.ID
+	}
+	router, primaryIface, err := v.getInterfaceInfo(ctx, router, payload.PrimaryInterface)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid primary interface", err)
+		return
 	}
 	var secondaryIfaces []*routes.InterfaceInfo
 	for _, ifacePayload := range payload.SecondaryInterfaces {
 		var ifaceInfo *routes.InterfaceInfo
-		ifaceInfo, err = v.getInterfaceInfo(ctx, ifacePayload)
+		_, ifaceInfo, err = v.getInterfaceInfo(ctx, router, ifacePayload)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusBadRequest, "Invalid secondary interfaces", err)
 			return
@@ -240,7 +238,7 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 		key, err = keyAdmin.GetKey(ctx, ky)
 		keys = append(keys, key)
 	}
-	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, routerID, primaryIface, secondaryIfaces, keys, -1)
+	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, router.ID, primaryIface, secondaryIfaces, keys, -1)
 	if err != nil {
 		common.ErrorResponse(c, http.StatusInternalServerError, "Failed to create instances", err)
 		return
@@ -256,7 +254,7 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 	c.JSON(http.StatusOK, instancesResp)
 }
 
-func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, ifacePayload *InterfacePayload) (ifaceInfo *routes.InterfaceInfo, err error) {
+func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, vpc *model.Router, ifacePayload *InterfacePayload) (router *model.Router, ifaceInfo *routes.InterfaceInfo, err error) {
 	if ifacePayload == nil || ifacePayload.Subnet == nil {
 		err = fmt.Errorf("Interface with subnet must be provided")
 		return
@@ -264,6 +262,17 @@ func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, ifacePayload *Interf
 	subnet, err := subnetAdmin.GetSubnet(ctx, ifacePayload.Subnet)
 	if err != nil {
 		return
+	}
+	router = vpc
+	if router != nil && router.ID != subnet.RouterID {
+		err = fmt.Errorf("VPC of subnet must be the same with VPC of instance")
+		return
+	}
+	if router == nil {
+		router, err = routerAdmin.Get(ctx, subnet.RouterID)
+		if err != nil {
+			return
+		}
 	}
 	ifaceInfo = &routes.InterfaceInfo{
 		Subnet: subnet,
@@ -274,14 +283,21 @@ func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, ifacePayload *Interf
 	if ifacePayload.MacAddress != "" {
 		ifaceInfo.MacAddress = ifacePayload.MacAddress
 	}
-	for _, sg := range ifacePayload.SecurityGroups {
-		var secGroup *model.SecurityGroup
-		secGroup, err = secgroupAdmin.GetSecurityGroup(ctx, sg, subnet.RouterID)
+	var secGroup *model.SecurityGroup
+	if len(ifacePayload.SecurityGroups) == 0 {
+		secGroup, err = secgroupAdmin.Get(ctx, router.DefaultSG, router.ID)
 		if err != nil {
 			return
 		}
 		ifaceInfo.SecurityGroups = append(ifaceInfo.SecurityGroups, secGroup)
-
+	} else {
+		for _, sg := range ifacePayload.SecurityGroups {
+			secGroup, err = secgroupAdmin.GetSecurityGroup(ctx, sg, subnet.RouterID)
+			if err != nil {
+				return
+			}
+			ifaceInfo.SecurityGroups = append(ifaceInfo.SecurityGroups, secGroup)
+		}
 	}
 	return
 }

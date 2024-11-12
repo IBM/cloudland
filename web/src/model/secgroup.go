@@ -22,6 +22,7 @@ type SecurityGroup struct {
 	IsDefault  bool         `gorm:"default:false"`
 	Interfaces []*Interface `gorm:"many2many:secgroup_ifaces;"`
 	RouterID   int64
+	Router     *Router `gorm:"foreignkey:RouterID"`
 }
 
 type SecurityRule struct {

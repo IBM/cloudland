@@ -1034,6 +1034,12 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
+	primarySubnet, err := subnetAdmin.Get(ctx, int64(primaryID))
+	if err != nil {
+		log.Println("Get primary subnet failed", err)
+		c.HTML(http.StatusBadRequest, err.Error())
+		return
+	}
 	secgroups := c.QueryTrim("secgroups")
 	var securityGroups []*model.SecurityGroup
 	if secgroups != "" {
@@ -1044,7 +1050,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 				continue
 			}
 			var secGroup *model.SecurityGroup
-			secGroup, err = secgroupAdmin.Get(ctx, int64(sgID))
+			secGroup, err = secgroupAdmin.Get(ctx, int64(sgID), primarySubnet.RouterID)
 			if err != nil {
 				log.Println("Get security groups failed", err)
 				c.Data["ErrorMsg"] = "Get security groups failed"
@@ -1056,7 +1062,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	} else {
 		sgID := store.Get("defsg").(int64)
 		var secGroup *model.SecurityGroup
-		secGroup, err = secgroupAdmin.Get(ctx, sgID)
+		secGroup, err = secgroupAdmin.Get(ctx, sgID, primarySubnet.RouterID)
 		if err != nil {
 			log.Println("Get default security groups failed", err)
 			c.Data["ErrorMsg"] = "Get default security groups failed"
@@ -1064,6 +1070,12 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			return
 		}
 		securityGroups = append(securityGroups, secGroup)
+	}
+	primaryIface := &InterfaceInfo{
+		Subnet:         primarySubnet,
+		IpAddress:      ipAddr,
+		MacAddress:     macAddr,
+		SecurityGroups: securityGroups,
 	}
 	subnets := c.QueryTrim("subnets")
 	var secondaryIfaces []*InterfaceInfo
@@ -1106,18 +1118,6 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			return
 		}
 		instKeys = append(instKeys, key)
-	}
-	primarySubnet, err := subnetAdmin.Get(ctx, int64(primaryID))
-	if err != nil {
-		log.Println("Get primary subnet failed", err)
-		c.HTML(http.StatusBadRequest, err.Error())
-		return
-	}
-	primaryIface := &InterfaceInfo{
-		Subnet:         primarySubnet,
-		IpAddress:      ipAddr,
-		MacAddress:     macAddr,
-		SecurityGroups: securityGroups,
 	}
 	userdata := c.QueryTrim("userdata")
 	_, err = instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, primarySubnet.RouterID, primaryIface, secondaryIfaces, instKeys, hyperID)

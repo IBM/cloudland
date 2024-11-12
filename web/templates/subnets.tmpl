@@ -29,9 +29,9 @@
 			                        <th>{{.i18n.Tr "Network"}}</th>
 			                        <th>{{.i18n.Tr "Netmask"}}</th>
 			                        <th>{{.i18n.Tr "Zones"}}</th>
+			                        <th>{{.i18n.Tr "VPC"}}</th>
 						{{ if $.IsAdmin }}
 			                        <th>{{.i18n.Tr "Vlan"}}</th>
-			                        <th>{{.i18n.Tr "VPC"}}</th>
 			                        <th>{{.i18n.Tr "Owner"}}</th>
 						{{ end }}
                                     <th>{{.i18n.Tr "Delete"}}</th>
@@ -54,14 +54,14 @@
 			                        	{{.Name}} 
 						{{ end }}
 						{{ end }}
-						{{ if $.IsAdmin }}
-						</td>
-			                        <td>{{.Vlan}}</td>
 			                        <td>
 						{{ if .Router }}
 						{{ .Router.Name }}
 						{{ end }}
                                     		</td>
+						{{ if $.IsAdmin }}
+						</td>
+			                        <td>{{.Vlan}}</td>
 			                        <td>{{.OwnerInfo.Name}}</td>
 						{{ end }}
                                     <td><div class="delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}"><i class="dark purple trash alternate outline icon"></i></div></td>

@@ -27,6 +27,7 @@
 									{{ end }}
 			                        <th>{{.i18n.Tr "Name"}}</th>
 			                        <th>{{.i18n.Tr "IsDefault"}}</th>
+			                        <th>{{.i18n.Tr "VPC"}}</th>
 						{{ if $.IsAdmin }}
 			                        <th>{{.i18n.Tr "Owner"}}</th>
 						{{ end }}
@@ -43,6 +44,11 @@
 									{{ end }}
 			                        <td><a href="{{$Link}}/{{.ID}}/secrules">{{.Name}}</a></td>
 			                        <td>{{.IsDefault}}</td>
+			                        <td>
+						{{ if .Router }}
+						{{ .Router.Name }}
+						{{ end }}
+                                    		</td>
 						{{ if $.IsAdmin }}
 			                        <td>{{ if .OwnerInfo }} {{.OwnerInfo.Name}} {{end}}</td>
 						{{ end }}

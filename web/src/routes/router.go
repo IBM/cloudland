@@ -77,7 +77,7 @@ func (a *RouterAdmin) Create(ctx context.Context, name, stype string, pubID, own
 		owner = memberShip.OrgID
 	}
 	db := DB()
-	router = &model.Router{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Name: name, Type: stype, VrrpVni: 0, Status: "available", ZoneID: zoneID}
+	router = &model.Router{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Name: name, Type: stype, Status: "available", ZoneID: zoneID}
 	err = db.Create(router).Error
 	if err != nil {
 		log.Println("DB failed to create router, %v", err)
@@ -98,6 +98,11 @@ func (a *RouterAdmin) Create(ctx context.Context, name, stype string, pubID, own
 		}
 	}
 	router.PublicID = pubSubnet.ID
+	secGroup, err := secgroupAdmin.Create(ctx, name+"-default", true, router.ID, owner)
+	if err != nil {
+		log.Println("Failed to create security group", err)
+	}
+	router.DefaultSG = secGroup.ID
 	if err = db.Save(router).Error; err != nil {
 		log.Println("Failed to save router", err)
 		return

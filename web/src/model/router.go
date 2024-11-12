@@ -17,9 +17,7 @@ type Router struct {
 	Type       string `gorm:"type:varchar(32)"`
 	Hyper      int32  `gorm:"default:-1"`
 	Peer       int32  `gorm:"default:-1"`
-	VrrpVni    int64
-	VrrpAddr   string       `gorm:"type:varchar(64)"`
-	PeerAddr   string       `gorm:"type:varchar(64)"`
+	DefaultSG  int64
 	Interfaces []*Interface `gorm:"foreignkey:Device"`
 	Subnets    []*Subnet    `gorm:"foreignkey:RouterID"`
 	PublicID   int64
