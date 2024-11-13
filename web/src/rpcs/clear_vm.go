@@ -43,23 +43,7 @@ func deleteInterface(ctx context.Context, iface *model.Interface) (err error) {
 		return
 	}
 	vlan := iface.Address.Subnet.Vlan
-	netlink := iface.Address.Subnet.Netlink
-	if netlink == nil {
-		log.Println("Subnet doesn't have network")
-		return
-	}
 	control := ""
-	if netlink.Hyper >= 0 {
-		control = fmt.Sprintf("inter=%d", netlink.Hyper)
-		if netlink.Peer >= 0 && netlink.Hyper != netlink.Peer {
-			control = fmt.Sprintf("toall=vlan-%d:%d,%d", iface.Address.Subnet.Vlan, netlink.Hyper, netlink.Peer)
-		}
-	} else if netlink.Peer >= 0 {
-		control = fmt.Sprintf("inter=%d", netlink.Peer)
-	} else {
-		log.Println("Network has no valid hypers")
-		return
-	}
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/del_host.sh '%d' '%s' '%s'", vlan, iface.MacAddr, iface.Address.Address)
 	err = HyperExecute(ctx, control, command)
 	if err != nil {

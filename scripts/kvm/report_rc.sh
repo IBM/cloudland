@@ -143,9 +143,9 @@ function replace_vnc_passwd()
     fi
 }
 
-replace_vnc_passwd
+#replace_vnc_passwd
 calc_resource
 probe_arp >/dev/null 2>&1
 #inst_status
-vlan_status
+#vlan_status
 #router_status

@@ -28,6 +28,7 @@ type InterfaceResponse struct {
 	IPAddress   string                `json:"ip_address"`
 	IsPrimary   bool                  `json:"is_primary"`
 	FloatingIps []*FloatingIpInfo     `json:"floating_ips,omitempty"`
+	SecurityGroups []*common.BaseReference     `json:"security_groups,omitempty"`
 }
 
 type InterfacePayload struct {

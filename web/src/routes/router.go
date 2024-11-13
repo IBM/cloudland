@@ -42,7 +42,7 @@ type SubnetIface struct {
 type RouterAdmin struct{}
 type RouterView struct{}
 
-func createRouterIface(ctx context.Context, rtype string, router *model.Router, owner, zoneID int64) (iface *model.Interface, subnet *model.Subnet, err error) {
+func createRouterIface(ctx context.Context, rtype string, router *model.Router, owner int64) (iface *model.Interface, subnet *model.Subnet, err error) {
 	db := DB()
 	subnets := []*model.Subnet{}
 	err = db.Where("type = ?", rtype).Find(&subnets).Error
@@ -62,7 +62,7 @@ func createRouterIface(ctx context.Context, rtype string, router *model.Router, 
 		} else {
 			continue
 		}
-		iface, err = CreateInterface(ctx, subnet.ID, router.ID, owner, zoneID, router.Hyper, "", "", name, ifType, nil)
+		iface, err = CreateInterface(ctx, subnet.ID, router.ID, owner, router.Hyper, "", "", name, ifType, nil)
 		if err == nil {
 			log.Println("Created gateway interface from subnet")
 			break
@@ -71,13 +71,13 @@ func createRouterIface(ctx context.Context, rtype string, router *model.Router, 
 	return
 }
 
-func (a *RouterAdmin) Create(ctx context.Context, name, stype string, pubID, owner, zoneID int64) (router *model.Router, err error) {
+func (a *RouterAdmin) Create(ctx context.Context, name, stype string, pubID, owner int64) (router *model.Router, err error) {
 	memberShip := GetMemberShip(ctx)
 	if owner == 0 {
 		owner = memberShip.OrgID
 	}
 	db := DB()
-	router = &model.Router{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Name: name, Type: stype, Status: "available", ZoneID: zoneID}
+	router = &model.Router{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Name: name, Type: stype, Status: "available"}
 	err = db.Create(router).Error
 	if err != nil {
 		log.Println("DB failed to create router, %v", err)
@@ -181,7 +181,7 @@ func (a *RouterAdmin) Update(ctx context.Context, id int64, name string, pubID i
 	return
 }
 
-func (a *RouterAdmin) Delete(ctx context.Context, id int64) (err error) {
+func (a *RouterAdmin) Delete(ctx context.Context, router *model.Router) (err error) {
 	db := DB()
 	db = db.Begin()
 	defer func() {
@@ -192,8 +192,15 @@ func (a *RouterAdmin) Delete(ctx context.Context, id int64) (err error) {
 		}
 	}()
 	ctx = saveTXtoCtx(ctx, db)
+	memberShip := GetMemberShip(ctx)
+	permit, err := memberShip.ValidateOwner(model.Writer, router.Owner)
+	if !permit {
+		log.Println("Not authorized to delete the router")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
 	count := 0
-	err = db.Model(&model.FloatingIp{}).Where("router_id = ?", id).Count(&count).Error
+	err = db.Model(&model.FloatingIp{}).Where("router_id = ?", router.ID).Count(&count).Error
 	if err != nil {
 		log.Println("Failed to count floating ip")
 		err = fmt.Errorf("Failed to count floating ip")
@@ -205,7 +212,7 @@ func (a *RouterAdmin) Delete(ctx context.Context, id int64) (err error) {
 		return
 	}
 	count = 0
-	err = db.Model(&model.Subnet{}).Where("router_id = ?", id).Count(&count).Error
+	err = db.Model(&model.Subnet{}).Where("router_id = ?", router.ID).Count(&count).Error
 	if err != nil {
 		log.Println("Failed to count subnet")
 		err = fmt.Errorf("Failed to count subnet")
@@ -216,7 +223,7 @@ func (a *RouterAdmin) Delete(ctx context.Context, id int64) (err error) {
 		err = fmt.Errorf("There are associated subnets")
 		return
 	}
-	err = db.Model(&model.Portmap{}).Where("router_id = ?", id).Count(&count).Error
+	err = db.Model(&model.Portmap{}).Where("router_id = ?", router.ID).Count(&count).Error
 	if err != nil {
 		log.Println("Failed to count portmap")
 		return
@@ -224,11 +231,6 @@ func (a *RouterAdmin) Delete(ctx context.Context, id int64) (err error) {
 	if count > 0 {
 		log.Println("There are associated portmaps")
 		err = fmt.Errorf("There are associated portmaps")
-		return
-	}
-	router := &model.Router{Model: model.Model{ID: id}}
-	if err = db.Take(router).Error; err != nil {
-		log.Println("Failed to query router", err)
 		return
 	}
 	control := "toall="
@@ -265,7 +267,7 @@ func (a *RouterAdmin) List(ctx context.Context, offset, limit int64, order, quer
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Preload("Zone").Preload("Subnets").Where(where).Where(query).Find(&routers).Error; err != nil {
+	if err = db.Preload("Subnets").Where(where).Where(query).Find(&routers).Error; err != nil {
 		log.Println("DB failed to query routers, %v", err)
 		return
 	}
@@ -333,7 +335,7 @@ func (v *RouterView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *RouterView) Delete(c *macaron.Context, store session.Store) (err error) {
-	memberShip := GetMemberShip(c.Req.Context())
+	ctx := c.Req.Context()
 	id := c.Params("id")
 	if id == "" {
 		log.Println("Id is empty")
@@ -348,14 +350,14 @@ func (v *RouterView) Delete(c *macaron.Context, store session.Store) (err error)
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	permit, err := memberShip.CheckOwner(model.Writer, "routers", int64(routerID))
-	if !permit {
-		log.Println("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
+	router, err := routerAdmin.Get(ctx, int64(routerID))
+	if err != nil {
+		log.Println("Not able to get vpc")
+		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	err = routerAdmin.Delete(c.Req.Context(), int64(routerID))
+	err = routerAdmin.Delete(ctx, router)
 	if err != nil {
 		log.Println("Failed to delete router, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
@@ -377,14 +379,12 @@ func (v *RouterView) New(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	zones := []*model.Zone{}
-	err := DB().Find(&zones).Error
-	if err != nil {
-		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(500, "500")
+	db := dbs.DB()
+	subnets := []*model.Subnet{}
+	if err := db.Model(&model.Subnet{}).Where("type = 'public'").Find(&subnets).Error; err != nil {
 		return
 	}
-	c.Data["Zones"] = zones
+	c.Data["Subnets"] = subnets
 	c.HTML(200, "routers_new")
 }
 
@@ -470,14 +470,13 @@ func (v *RouterView) Create(c *macaron.Context, store session.Store) {
 	}
 	redirectTo := "../routers"
 	name := c.QueryTrim("name")
-	zoneID := c.QueryInt64("zone")
 	pubSubnet := c.QueryTrim("public")
 	pubID, err := strconv.Atoi(pubSubnet)
 	if err != nil {
 		log.Println("Invalid public subnet id, %v", err)
 		pubID = 0
 	}
-	router, err := routerAdmin.Create(c.Req.Context(), name, "", int64(pubID), memberShip.OrgID, zoneID)
+	router, err := routerAdmin.Create(c.Req.Context(), name, "", int64(pubID), memberShip.OrgID)
 	if err != nil {
 		log.Println("Failed to create router, %v", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {

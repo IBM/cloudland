@@ -1,4 +1,4 @@
-[api]
+[base]
 listen = "127.0.0.1:5443"
 endpoint = "https://142.0.129.162:443"
 key = "/etc/ssl/private/cland-selfsigned.key"
@@ -19,7 +19,9 @@ listen = "server-2:5005"
 endpoint = "142.0.129.162:5005"
 
 [sci]
-endpoint = "http://server-2:5006"
+endpoints = [
+    { region = "sv-dev-1", endpoint = "http://server-2:5006" },
+]
 
 [db]
 type = "postgres"

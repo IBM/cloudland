@@ -28,7 +28,6 @@
 			                        <th>{{.i18n.Tr "Name"}}</th>
 			                        <th>{{.i18n.Tr "Network"}}</th>
 			                        <th>{{.i18n.Tr "Netmask"}}</th>
-			                        <th>{{.i18n.Tr "Zones"}}</th>
 			                        <th>{{.i18n.Tr "VPC"}}</th>
 						{{ if $.IsAdmin }}
 			                        <th>{{.i18n.Tr "Vlan"}}</th>
@@ -48,19 +47,12 @@
 			                        <td><a href="{{$Link}}/{{.ID}}">{{.Name}}</a></td>
 			                        <td>{{.Network}}</td>
 			                        <td>{{.Netmask}}</td>
-						<td>
-						{{ if .Zones }}
-						{{ range .Zones }}
-			                        	{{.Name}} 
-						{{ end }}
-						{{ end }}
 			                        <td>
 						{{ if .Router }}
 						{{ .Router.Name }}
 						{{ end }}
                                     		</td>
 						{{ if $.IsAdmin }}
-						</td>
 			                        <td>{{.Vlan}}</td>
 			                        <td>{{.OwnerInfo.Name}}</td>
 						{{ end }}

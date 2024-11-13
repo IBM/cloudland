@@ -297,23 +297,7 @@ func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interf
 		return
 	}
 	vlan := iface.Address.Subnet.Vlan
-	netlink := iface.Address.Subnet.Netlink
-	if netlink == nil {
-		log.Println("Subnet doesn't have network")
-		return
-	}
 	control := ""
-	if netlink.Hyper >= 0 {
-		control = fmt.Sprintf("inter=%d", netlink.Hyper)
-		if netlink.Peer >= 0 && netlink.Hyper != netlink.Peer {
-			control = fmt.Sprintf("toall=vlan-%d:%d,%d", iface.Address.Subnet.Vlan, netlink.Hyper, netlink.Peer)
-		}
-	} else if netlink.Peer >= 0 {
-		control = fmt.Sprintf("inter=%d", netlink.Peer)
-	} else {
-		log.Println("Network has no valid hypers")
-		return
-	}
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/del_host.sh '%d' '%s' '%s'", vlan, iface.MacAddr, iface.Address.Address)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
@@ -325,37 +309,12 @@ func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interf
 
 func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subnet, address, mac string, instance *model.Instance, ifname string, secGroups []*model.SecurityGroup, zoneID int64) (iface *model.Interface, err error) {
 	memberShip := GetMemberShip(ctx)
-	db := DB()
-	iface, err = CreateInterface(ctx, subnet.ID, instance.ID, memberShip.OrgID, zoneID, instance.Hyper, address, mac, ifname, "instance", secGroups)
+	iface, err = CreateInterface(ctx, subnet.ID, instance.ID, memberShip.OrgID, instance.Hyper, address, mac, ifname, "instance", secGroups)
 	if err != nil {
 		log.Println("Failed to create interface")
 		return
 	}
-	netlink := subnet.Netlink
-	if netlink == nil {
-		netlink = &model.Network{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Vlan: subnet.Vlan}
-		err = db.Create(netlink).Error
-		if err != nil {
-			log.Println("Failed to query network")
-			return
-		}
-	}
-	if err != nil {
-		log.Println("Failed to execute network creation")
-		return
-	}
 	control := ""
-	if netlink.Hyper >= 0 {
-		control = fmt.Sprintf("inter=%d", netlink.Hyper)
-		if netlink.Peer >= 0 && netlink.Hyper != netlink.Peer {
-			control = fmt.Sprintf("toall=vlan-%d:%d,%d", subnet.Vlan, netlink.Hyper, netlink.Peer)
-		}
-	} else if netlink.Peer >= 0 {
-		control = fmt.Sprintf("inter=%d", netlink.Peer)
-	} else {
-		log.Println("Network has no valid hypers")
-		return
-	}
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_host.sh '%d' '%s' '%s' '%s' '%s'", subnet.Vlan, iface.MacAddr, instance.Hostname, iface.Address.Address, subnet.DomainSearch)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
@@ -480,7 +439,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 		}
 	}()
 	memberShip := GetMemberShip(ctx)
-	permit, err := memberShip.CheckOwner(model.Writer, "instances", instance.ID)
+	permit, err := memberShip.ValidateOwner(model.Writer, instance.Owner)
 	if err != nil {
 		log.Println("Failed to check owner")
 		return
@@ -559,7 +518,7 @@ func (a *InstanceAdmin) GetInstanceByUUID(ctx context.Context, uuID string) (ins
 		log.Println("Failed to query floating ip(s), %v", err)
 		return
 	}
-	if err = db.Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
+	if err = db.Preload("Secgroups").Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
 		log.Println("Failed to query interfaces %v", err)
 		return
 	}
@@ -567,7 +526,6 @@ func (a *InstanceAdmin) GetInstanceByUUID(ctx context.Context, uuID string) (ins
 }
 
 func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, instances []*model.Instance, err error) {
-	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
 		limit = 16
@@ -580,6 +538,7 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 	if query != "" {
 		query = fmt.Sprintf("hostname like '%%%s%%'", query)
 	}
+	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	instances = []*model.Instance{}
 	if err = db.Model(&model.Instance{}).Where(where).Where(query).Count(&total).Error; err != nil {
@@ -592,7 +551,7 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 	}
 	db = db.Offset(0).Limit(-1)
 	for _, instance := range instances {
-		if err = db.Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
+		if err = db.Preload("Secgroups").Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
 			log.Println("Failed to query interfaces %v", err)
 			return
 		}
@@ -738,8 +697,7 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 		return
 	}
 	ctx := c.Req.Context()
-	sql := fmt.Sprintf("type = 'public' or owner = %d", memberShip.OrgID)
-	_, subnets, err := subnetAdmin.List(ctx, 0, -1, "", "", sql)
+	_, subnets, err := subnetAdmin.List(ctx, 0, -1, "", "")
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
@@ -814,7 +772,7 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 		log.Println("Failed to query floating ip(s), %v", err)
 		return
 	}
-	_, subnets, err := subnetAdmin.List(c.Req.Context(), 0, -1, "", "", "")
+	_, subnets, err := subnetAdmin.List(c.Req.Context(), 0, -1, "", "")
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")

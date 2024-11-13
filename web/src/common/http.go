@@ -25,8 +25,10 @@ type APIError struct {
 }
 
 func ErrorResponse(c *gin.Context, code int, errorMsg string, err error) {
-	log.Printf("%s, %v", errorMsg, err)
-	errorMsg = errorMsg + ": " + err.Error()
+	log.Printf("%s, %v\n", errorMsg, err)
+	if err != nil {
+		errorMsg = errorMsg + ": " + err.Error()
+	}
 	c.JSON(code, &APIError{ErrorMessage: errorMsg})
 	return
 }

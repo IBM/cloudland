@@ -22,7 +22,6 @@ type Interface struct {
 	Dhcp       int64
 	FloatingIp int64
 	Subnet     int64
-	ZoneID     int64
 	RouterID   int64
 	Address    *Address `gorm:"foreignkey:Interface"`
 	Hyper      int32    `gorm:"default:-1"`

@@ -8,9 +8,12 @@ SPDX-License-Identifier: Apache-2.0
 package apis
 
 import (
+	"context"
 	"net/http"
+	"strconv"
 
 	"web/src/common"
+	"web/src/model"
 	"web/src/routes"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +26,7 @@ type VPCAPI struct{}
 
 type VPCResponse struct {
 	*common.BaseReference
-	Subnets []*common.BaseReference `json:"subnets,omitempty"`
+	Subnets []*SubnetResponse `json:"subnets,omitempty"`
 }
 
 type VPCListResponse struct {
@@ -48,9 +51,20 @@ type VPCPatchPayload struct {
 // @Success 200 {object} VPCResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /vpcs/:id [get]
+// @Router /vpcs/{id} [get]
 func (v *VPCAPI) Get(c *gin.Context) {
-	vpcResp := &VPCResponse{}
+	ctx := c.Request.Context()
+	uuID := c.Param("id")
+	router, err := routerAdmin.GetRouterByUUID(ctx, uuID)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid vpc query", err)
+		return
+	}
+	vpcResp, err := getVPCResponse(ctx, router)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+		return
+	}
 	c.JSON(http.StatusOK, vpcResp)
 }
 
@@ -64,7 +78,7 @@ func (v *VPCAPI) Get(c *gin.Context) {
 // @Success 200 {object} VPCResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /vpcs/:id [patch]
+// @Router /vpcs/{id} [patch]
 func (v *VPCAPI) Patch(c *gin.Context) {
 	vpcResp := &VPCResponse{}
 	c.JSON(http.StatusOK, vpcResp)
@@ -79,8 +93,20 @@ func (v *VPCAPI) Patch(c *gin.Context) {
 // @Success 204
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /vpcs/:id [delete]
+// @Router /vpcs/{id} [delete]
 func (v *VPCAPI) Delete(c *gin.Context) {
+	ctx := c.Request.Context()
+	uuID := c.Param("id")
+	router, err := routerAdmin.GetRouterByUUID(ctx, uuID)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
+		return
+	}
+	err = routerAdmin.Delete(ctx, router)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Not able to delete", err)
+		return
+	}
 	c.JSON(http.StatusNoContent, nil)
 }
 
@@ -100,6 +126,23 @@ func (v *VPCAPI) Create(c *gin.Context) {
 	c.JSON(http.StatusOK, vpcResp)
 }
 
+func getVPCResponse(ctx context.Context, router *model.Router) (vpcResp *VPCResponse, err error) {
+	vpcResp = &VPCResponse{
+		BaseReference: &common.BaseReference{
+			ID:   router.UUID,
+			Name: router.Name,
+		},
+	}
+	vpcResp.Subnets = make([]*SubnetResponse, len(router.Subnets))
+	for i, subnet := range router.Subnets {
+		vpcResp.Subnets[i], err = getSubnetResponse(ctx, subnet)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
 //
 // @Summary list vpcs
 // @Description list vpcs
@@ -110,6 +153,40 @@ func (v *VPCAPI) Create(c *gin.Context) {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /vpcs [get]
 func (v *VPCAPI) List(c *gin.Context) {
-	vpcListResp := &VPCListResponse{}
+	ctx := c.Request.Context()
+	offsetStr := c.DefaultQuery("offset", "0")
+	limitStr := c.DefaultQuery("limit", "50")
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query offset: "+offsetStr, err)
+		return
+	}
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query limit: "+limitStr, err)
+		return
+	}
+	if offset < 0 || limit < 0 {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", err)
+		return
+	}
+	total, routers, err := routerAdmin.List(ctx, int64(offset), int64(limit), "-created_at", "")
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Failed to list vpcs", err)
+		return
+	}
+	vpcListResp := &VPCListResponse{
+		Total:  int(total),
+		Offset: offset,
+		Limit:  len(routers),
+	}
+	vpcListResp.VPCs = make([]*VPCResponse, vpcListResp.Limit)
+	for i, router := range routers {
+		vpcListResp.VPCs[i], err = getVPCResponse(ctx, router)
+		if err != nil {
+			common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+			return
+		}
+	}
 	c.JSON(http.StatusOK, vpcListResp)
 }

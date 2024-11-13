@@ -88,10 +88,12 @@ func (v *InstanceAPI) Get(c *gin.Context) {
 	instance, err := instanceAdmin.GetInstanceByUUID(ctx, uuID)
 	if err != nil {
 		common.ErrorResponse(c, http.StatusBadRequest, "Invalid instance query", err)
+		return
 	}
 	instanceResp, err := v.getInstanceResponse(ctx, instance)
 	if err != nil {
 		common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+		return
 	}
 
 	c.JSON(http.StatusOK, instanceResp)
@@ -114,6 +116,7 @@ func (v *InstanceAPI) Patch(c *gin.Context) {
 	instance, err := instanceAdmin.GetInstanceByUUID(ctx, uuID)
 	if err != nil {
 		common.ErrorResponse(c, http.StatusBadRequest, "Invalid instance query", err)
+		return
 	}
 	payload := &InstancePatchPayload{}
 	err = c.ShouldBindJSON(payload)
@@ -130,6 +133,7 @@ func (v *InstanceAPI) Patch(c *gin.Context) {
 		flavor, err = flavorAdmin.GetFlavorByName(ctx, payload.Flavor)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusBadRequest, "Invalid flavor query", err)
+			return
 		}
 	}
 	err = instanceAdmin.Update(ctx, instance, flavor, hostname, payload.PowerAction, int(instance.Hyper))
@@ -140,6 +144,7 @@ func (v *InstanceAPI) Patch(c *gin.Context) {
 	instanceResp, err := v.getInstanceResponse(ctx, instance)
 	if err != nil {
 		common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+		return
 	}
 	c.JSON(http.StatusOK, instanceResp)
 }
@@ -161,10 +166,12 @@ func (v *InstanceAPI) Delete(c *gin.Context) {
 	instance, err := instanceAdmin.GetInstanceByUUID(ctx, uuID)
 	if err != nil {
 		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
+		return
 	}
 	err = instanceAdmin.Delete(ctx, instance)
 	if err != nil {
 		common.ErrorResponse(c, http.StatusBadRequest, "Not able to delete", err)
+		return
 	}
 	c.JSON(http.StatusNoContent, nil)
 }
@@ -353,6 +360,12 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 			}
 			interfaces[i].FloatingIps = floatingIps
 		}
+		for _, sg := range iface.Secgroups {
+			interfaces[i].SecurityGroups = append(interfaces[i].SecurityGroups, &common.BaseReference{
+				ID: sg.UUID,
+				Name: sg.Name,
+			})
+		}
 	}
 	instanceResp.Interfaces = interfaces
 	if instance.RouterID > 0 {
@@ -379,8 +392,6 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 // @Router /instances [get]
 func (v *InstanceAPI) List(c *gin.Context) {
 	ctx := c.Request.Context()
-	memberShip := routes.GetMemberShip(ctx)
-	log.Printf("Membership: %v\n", memberShip)
 	offsetStr := c.DefaultQuery("offset", "0")
 	limitStr := c.DefaultQuery("limit", "50")
 	offset, err := strconv.Atoi(offsetStr)
@@ -412,6 +423,7 @@ func (v *InstanceAPI) List(c *gin.Context) {
 		instanceList[i], err = v.getInstanceResponse(ctx, instance)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+			return
 		}
 	}
 	instanceListResp.Instances = instanceList

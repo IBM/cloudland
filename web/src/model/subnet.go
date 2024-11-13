@@ -22,8 +22,6 @@ type Subnet struct {
 	DomainSearch string `gorm:"type:varchar(256)"`
 	Dhcp         string `gorm:"type:varchar(16)"`
 	Vlan         int64
-	Zones        []*Zone  `gorm:"many2many:subnet_zones;"`
-	Netlink      *Network `gorm:"foreignkey:Vlan;AssociationForeignKey:Vlan"`
 	Type         string   `gorm:"type:varchar(20);default:'internal'"`
 	RouterID     int64
 	Router       *Router `gorm:"foreignkey:RouterID"`

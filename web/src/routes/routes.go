@@ -51,14 +51,14 @@ func runArgs(cfg string) (args []interface{}) {
 
 func Run() (err error) {
 	m := New()
-	cert := viper.GetString("api.cert")
-	key := viper.GetString("api.key")
+	cert := viper.GetString("base.cert")
+	key := viper.GetString("base.key")
 	log.Printf("cert: %s, key: %s\n", cert, key)
 	if cert != "" && key != "" {
-		listen := viper.GetString("api.listen")
+		listen := viper.GetString("base.listen")
 		http.ListenAndServeTLS(listen, cert, key, m)
 	} else {
-		m.Run(runArgs("api.listen")...)
+		m.Run(runArgs("base.listen")...)
 	}
 	return
 }

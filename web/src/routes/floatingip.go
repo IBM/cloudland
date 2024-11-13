@@ -374,7 +374,7 @@ func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, router *
 		return
 	}
 	name := ftype + "fip"
-	fipIface, err = CreateInterface(ctx, subnet.ID, floatingipID, owner, router.ZoneID, -1, address, "", name, "floating", nil)
+	fipIface, err = CreateInterface(ctx, subnet.ID, floatingipID, owner, -1, address, "", name, "floating", nil)
 	if err != nil {
 		log.Println("Failed to create fip interface, %v", err)
 		return
