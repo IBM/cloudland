@@ -500,7 +500,7 @@ definitions:
         type: integer
       users:
         items:
-          $ref: '#/definitions/apis.OrgResponse'
+          $ref: '#/definitions/apis.UserResponse'
         type: array
     type: object
   apis.UserPatchPayload:

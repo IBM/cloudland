@@ -1,7 +1,7 @@
 - name: base
   hosts: all
   roles:
-    - {role: base, become: yes, tags: [base]}
+    - {role: base, become: yes}
 
 # deploy hypers
 - name: install hyper

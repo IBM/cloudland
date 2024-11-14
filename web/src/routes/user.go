@@ -59,6 +59,44 @@ func (a *UserAdmin) Create(ctx context.Context, username, password string) (user
 	return
 }
 
+func (a *UserAdmin) Get(ctx context.Context, id int64) (user *model.User, err error) {
+	db := DB()
+	memberShip := GetMemberShip(ctx)
+	where := memberShip.GetWhere()
+	user = &model.User{Model: model.Model{ID: id}}
+	err = db.Where(where).Take(user).Error
+	if err != nil {
+		log.Println("Failed to query user, %v", err)
+		return
+	}
+	permit := memberShip.ValidateOwner(model.Reader, user.Owner)
+	if !permit {
+		log.Println("Not authorized to read the user")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
+	return
+}
+
+func (a *UserAdmin) GetUserByUUID(ctx context.Context, uuID string) (user *model.User, err error) {
+	db := DB()
+	memberShip := GetMemberShip(ctx)
+	where := memberShip.GetWhere()
+	user = &model.User{}
+	err = db.Where(where).Where("uuid = ?", uuID).Take(user).Error
+	if err != nil {
+		log.Println("Failed to query user, %v", err)
+		return
+	}
+	permit := memberShip.ValidateOwner(model.Reader, user.Owner)
+	if !permit {
+		log.Println("Not authorized to read the user")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
+	return
+}
+
 func (a *UserAdmin) GetUserByName(name string) (user *model.User, err error) {
 	db := DB()
 	user = &model.User{}
@@ -69,7 +107,14 @@ func (a *UserAdmin) GetUserByName(name string) (user *model.User, err error) {
 	return
 }
 
-func (a *UserAdmin) Delete(id int64) (err error) {
+func (a *UserAdmin) Delete(ctx context.Context, user *model.User) (err error) {
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		log.Println("Not authorized to delete the user")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
 	db := DB()
 	db = db.Begin()
 	defer func() {
@@ -79,11 +124,11 @@ func (a *UserAdmin) Delete(id int64) (err error) {
 			db.Rollback()
 		}
 	}()
-	if err = db.Where("user_id = ?", id).Delete(&model.Member{}).Error; err != nil {
+	if err = db.Where("user_id = ?", user.ID).Delete(&model.Member{}).Error; err != nil {
 		log.Println("DB failed to delete members", err)
 		return
 	}
-	if err = db.Delete(&model.User{Model: model.Model{ID: id}}).Error; err != nil {
+	if err = db.Delete(user).Error; err != nil {
 		log.Println("DB failed to delete members", err)
 		return
 	}
@@ -305,17 +350,6 @@ func (v *UserView) LoginPost(c *macaron.Context, store session.Store) {
 	store.Set("org", organization)
 	store.Set("members", members)
 	redirectTo := UrlBefore
-	if c.Req.Header.Get("X-Json-Format") == "yes" {
-		cookie := "MacaronSession=" + c.GetCookie("MacaronSession")
-		c.JSON(200, map[string]interface{}{
-			"user":   username,
-			"uid":    uid,
-			"oid":    oid,
-			"token":  token,
-			"cookie": cookie,
-		})
-		return
-	}
 	c.Redirect(redirectTo)
 }
 
@@ -497,31 +531,31 @@ func (v *UserView) Patch(c *macaron.Context, store session.Store) {
 }
 
 func (v *UserView) Delete(c *macaron.Context, store session.Store) (err error) {
-	memberShip := GetMemberShip(c.Req.Context())
-	permit := memberShip.CheckPermission(model.Admin)
-	if !permit {
-		log.Println("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
+	ctx := c.Req.Context()
 	id := c.Params("id")
 	if id == "" {
-		log.Println("User id is empty, %v", err)
+		log.Println("User id is empty ", err)
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	userID, err := strconv.Atoi(id)
 	if err != nil {
-		log.Println("Failed to get user id, %v", err)
+		log.Println("Failed to get user id ", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	err = userAdmin.Delete(int64(userID))
+	user, err := userAdmin.Get(ctx, int64(userID))
 	if err != nil {
-		log.Println("Failed to delete user, %v", err)
+		log.Println("Failed to get user ", err)
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	err = userAdmin.Delete(ctx, user)
+	if err != nil {
+		log.Println("Failed to delete user ", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return

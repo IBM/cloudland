@@ -3322,7 +3322,7 @@ const docTemplatev1 = `{
                 "users": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/apis.OrgResponse"
+                        "$ref": "#/definitions/apis.UserResponse"
                     }
                 }
             }
