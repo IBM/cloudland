@@ -14,7 +14,6 @@ type Router struct {
 	Model
 	Name       string `gorm:"type:varchar(32)"`
 	Status     string `gorm:"type:varchar(32)"`
-	Type       string `gorm:"type:varchar(32)"`
 	Hyper      int32  `gorm:"default:-1"`
 	Peer       int32  `gorm:"default:-1"`
 	DefaultSG  int64

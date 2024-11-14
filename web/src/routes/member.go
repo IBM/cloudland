@@ -97,7 +97,7 @@ func (m *MemberShip) CheckOwner(reqRole model.Role, table string, id int64) (isO
 	return
 }
 
-func (m *MemberShip) ValidateOwner(reqRole model.Role, owner int64) (isOwner bool, err error) {
+func (m *MemberShip) ValidateOwner(reqRole model.Role, owner int64) (isOwner bool) {
 	isOwner = false
 	if owner == 0 {
 		return

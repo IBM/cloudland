@@ -439,11 +439,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 		}
 	}()
 	memberShip := GetMemberShip(ctx)
-	permit, err := memberShip.ValidateOwner(model.Writer, instance.Owner)
-	if err != nil {
-		log.Println("Failed to check owner")
-		return
-	}
+	permit := memberShip.ValidateOwner(model.Writer, instance.Owner)
 	if !permit {
 		log.Println("Not authorized to delete the instance")
 		err = fmt.Errorf("Not authorized")
@@ -520,6 +516,12 @@ func (a *InstanceAdmin) GetInstanceByUUID(ctx context.Context, uuID string) (ins
 	}
 	if err = db.Preload("Secgroups").Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
 		log.Println("Failed to query interfaces %v", err)
+		return
+	}
+	permit := memberShip.ValidateOwner(model.Reader, instance.Owner)
+	if !permit {
+		log.Println("Not authorized to read the instance")
+		err = fmt.Errorf("Not authorized")
 		return
 	}
 	return

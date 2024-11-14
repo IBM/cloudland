@@ -135,6 +135,14 @@ func (a *SubnetAdmin) Get(ctx context.Context, id int64) (subnet *model.Subnet, 
 		log.Println("DB failed to query subnet ", err)
 		return
 	}
+	if subnet.Type != "public" {
+		permit := memberShip.ValidateOwner(model.Reader, subnet.Owner)
+		if !permit {
+			log.Println("Not authorized to read the subnet")
+			err = fmt.Errorf("Not authorized")
+			return
+		}
+	}
 	return
 }
 
@@ -148,6 +156,14 @@ func (a *SubnetAdmin) GetSubnetByUUID(ctx context.Context, uuID string) (subnet 
 		log.Println("Failed to query subnet, %v", err)
 		return
 	}
+	if subnet.Type != "public" {
+		permit := memberShip.ValidateOwner(model.Reader, subnet.Owner)
+		if !permit {
+			log.Println("Not authorized to read the subnet")
+			err = fmt.Errorf("Not authorized")
+			return
+		}
+	}
 	return
 }
 
@@ -160,6 +176,14 @@ func (a *SubnetAdmin) GetSubnetByName(ctx context.Context, name string) (subnet 
 	if err != nil {
 		log.Println("Failed to query subnet, %v", err)
 		return
+	}
+	if subnet.Type != "public" {
+		permit := memberShip.ValidateOwner(model.Reader, subnet.Owner)
+		if !permit {
+			log.Println("Not authorized to read the subnet")
+			err = fmt.Errorf("Not authorized")
+			return
+		}
 	}
 	return
 }
@@ -445,7 +469,7 @@ func (a *SubnetAdmin) Delete(ctx context.Context, subnet *model.Subnet) (err err
 	}()
 	ctx = saveTXtoCtx(ctx, db)
 	memberShip := GetMemberShip(ctx)
-	permit, err := memberShip.ValidateOwner(model.Writer, subnet.Owner)
+	permit := memberShip.ValidateOwner(model.Writer, subnet.Owner)
 	if !permit {
 		log.Println("Not authorized to delete the subnet")
 		err = fmt.Errorf("Not authorized")
@@ -550,12 +574,6 @@ func (v *SubnetView) List(c *macaron.Context, store session.Store) {
 	query := c.QueryTrim("q")
 	total, subnets, err := subnetAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return

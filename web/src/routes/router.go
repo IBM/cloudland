@@ -71,27 +71,19 @@ func createRouterIface(ctx context.Context, rtype string, router *model.Router, 
 	return
 }
 
-func (a *RouterAdmin) Create(ctx context.Context, name, stype string, pubID, owner int64) (router *model.Router, err error) {
+func (a *RouterAdmin) Create(ctx context.Context, name string, pubSubnet *model.Subnet) (router *model.Router, err error) {
 	memberShip := GetMemberShip(ctx)
-	if owner == 0 {
-		owner = memberShip.OrgID
-	}
+	owner := memberShip.OrgID
 	db := DB()
-	router = &model.Router{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Name: name, Type: stype, Status: "available"}
+	router = &model.Router{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Name: name, Status: "available"}
 	err = db.Create(router).Error
 	if err != nil {
 		log.Println("DB failed to create router, %v", err)
 		return
 	}
-	pubSubnet := &model.Subnet{Model: model.Model{ID: pubID}}
-	if pubID == 0 {
+	if pubSubnet == nil {
+		pubSubnet := &model.Subnet{}
 		err = db.Where("type = 'public'").Take(pubSubnet).Error
-		if err != nil {
-			log.Println("DB failed to query public subnet, %v", err)
-			return
-		}
-	} else {
-		err = db.Model(pubSubnet).Where(pubSubnet).Take(pubSubnet).Error
 		if err != nil {
 			log.Println("DB failed to query public subnet, %v", err)
 			return
@@ -119,6 +111,12 @@ func (a *RouterAdmin) Get(ctx context.Context, id int64) (router *model.Router, 
 		log.Println("Failed to query router", err)
 		return
 	}
+	permit := memberShip.ValidateOwner(model.Reader, router.Owner)
+	if !permit {
+		log.Println("Not authorized to read the router")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
 	return
 }
 
@@ -132,6 +130,12 @@ func (a *RouterAdmin) GetRouterByUUID(ctx context.Context, uuID string) (router 
 		log.Println("Failed to query router, %v", err)
 		return
 	}
+	permit := memberShip.ValidateOwner(model.Reader, router.Owner)
+	if !permit {
+		log.Println("Not authorized to read the router")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
 	return
 }
 
@@ -143,6 +147,12 @@ func (a *RouterAdmin) GetRouterByName(ctx context.Context, name string) (router 
 	err = db.Where(where).Where("name = ?", name).Take(router).Error
 	if err != nil {
 		log.Println("Failed to query router, %v", err)
+		return
+	}
+	permit := memberShip.ValidateOwner(model.Reader, router.Owner)
+	if !permit {
+		log.Println("Not authorized to read the router")
+		err = fmt.Errorf("Not authorized")
 		return
 	}
 	return
@@ -193,7 +203,7 @@ func (a *RouterAdmin) Delete(ctx context.Context, router *model.Router) (err err
 	}()
 	ctx = saveTXtoCtx(ctx, db)
 	memberShip := GetMemberShip(ctx)
-	permit, err := memberShip.ValidateOwner(model.Writer, router.Owner)
+	permit := memberShip.ValidateOwner(model.Writer, router.Owner)
 	if !permit {
 		log.Println("Not authorized to delete the router")
 		err = fmt.Errorf("Not authorized")
@@ -460,38 +470,26 @@ func (v *RouterView) Patch(c *macaron.Context, store session.Store) {
 }
 
 func (v *RouterView) Create(c *macaron.Context, store session.Store) {
-	memberShip := GetMemberShip(c.Req.Context())
-	permit := memberShip.CheckPermission(model.Writer)
-	if !permit {
-		log.Println("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
+	ctx := c.Req.Context()
 	redirectTo := "../routers"
 	name := c.QueryTrim("name")
-	pubSubnet := c.QueryTrim("public")
-	pubID, err := strconv.Atoi(pubSubnet)
-	if err != nil {
-		log.Println("Invalid public subnet id, %v", err)
-		pubID = 0
-	}
-	router, err := routerAdmin.Create(c.Req.Context(), name, "", int64(pubID), memberShip.OrgID)
-	if err != nil {
-		log.Println("Failed to create router, %v", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-
+	pubID := c.QueryInt64("public")
+	var pubSubnet *model.Subnet
+	var err error
+	if pubID > 0 {
+		pubSubnet, err = subnetAdmin.Get(ctx, pubID)
+		if err != nil {
+			log.Println("Failed to get public subnet ", err)
+			c.Data["ErrorMsg"] = err.Error()
+			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
-
+	}
+	_, err = routerAdmin.Create(c.Req.Context(), name, pubSubnet)
+	if err != nil {
+		log.Println("Failed to create router, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
-		return
-	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, router)
 		return
 	}
 	c.Redirect(redirectTo)
