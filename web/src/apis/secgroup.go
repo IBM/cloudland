@@ -50,7 +50,7 @@ type SecurityGroupPatchPayload struct {
 // @Success 200 {object} SecurityGroupResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /security_groups/:id [get]
+// @Router /security_groups/{id} [get]
 func (v *SecgroupAPI) Get(c *gin.Context) {
 	secgroupResp := &SecurityGroupResponse{}
 	c.JSON(http.StatusOK, secgroupResp)
@@ -66,7 +66,7 @@ func (v *SecgroupAPI) Get(c *gin.Context) {
 // @Success 200 {object} SecurityGroupResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /security_groups/:id [patch]
+// @Router /security_groups/{id} [patch]
 func (v *SecgroupAPI) Patch(c *gin.Context) {
 	secgroupResp := &SecurityGroupResponse{}
 	c.JSON(http.StatusOK, secgroupResp)
@@ -81,7 +81,7 @@ func (v *SecgroupAPI) Patch(c *gin.Context) {
 // @Success 204
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /security_groups/:id [delete]
+// @Router /security_groups/{id} [delete]
 func (v *SecgroupAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }

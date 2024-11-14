@@ -50,7 +50,7 @@ type KeyPatchPayload struct {
 // @Success 200 {object} KeyResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /keys/:id [get]
+// @Router /keys/{id} [get]
 func (v *KeyAPI) Get(c *gin.Context) {
 	keyResp := &KeyResponse{}
 	c.JSON(http.StatusOK, keyResp)
@@ -66,7 +66,7 @@ func (v *KeyAPI) Get(c *gin.Context) {
 // @Success 200 {object} KeyResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /keys/:id [patch]
+// @Router /keys/{id} [patch]
 func (v *KeyAPI) Patch(c *gin.Context) {
 	keyResp := &KeyResponse{}
 	c.JSON(http.StatusOK, keyResp)
@@ -81,7 +81,7 @@ func (v *KeyAPI) Patch(c *gin.Context) {
 // @Success 204
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /keys/:id [delete]
+// @Router /keys/{id} [delete]
 func (v *KeyAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }

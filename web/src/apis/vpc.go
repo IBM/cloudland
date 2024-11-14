@@ -37,6 +37,8 @@ type VPCListResponse struct {
 }
 
 type VPCPayload struct {
+	Name          string                `json:"name" binding:"omitempty,min=2,max=32"`
+	PublicNetwork *common.BaseReference `json:"public_network" binding:"omitempty"`
 }
 
 type VPCPatchPayload struct {
@@ -60,7 +62,7 @@ func (v *VPCAPI) Get(c *gin.Context) {
 		common.ErrorResponse(c, http.StatusBadRequest, "Invalid vpc query", err)
 		return
 	}
-	vpcResp, err := getVPCResponse(ctx, router)
+	vpcResp, err := v.getVPCResponse(ctx, router)
 	if err != nil {
 		common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
 		return
@@ -122,11 +124,39 @@ func (v *VPCAPI) Delete(c *gin.Context) {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /vpcs [post]
 func (v *VPCAPI) Create(c *gin.Context) {
-	vpcResp := &VPCResponse{}
+	ctx := c.Request.Context()
+	payload := &VPCPayload{}
+	err := c.ShouldBindJSON(payload)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
+		return
+	}
+	var publicSubnet *model.Subnet
+	if payload.PublicNetwork != nil {
+		publicSubnet, err = subnetAdmin.GetSubnet(ctx, payload.PublicNetwork)
+		if err != nil {
+			common.ErrorResponse(c, http.StatusBadRequest, "Not able to get subnet", err)
+			return
+		}
+	}
+	if publicSubnet.Type != "public" {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid public network type", err)
+		return
+	}
+	router, err := routerAdmin.Create(ctx, payload.Name, publicSubnet)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Failed to create vpc", err)
+		return
+	}
+	vpcResp, err := v.getVPCResponse(ctx, router)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+		return
+	}
 	c.JSON(http.StatusOK, vpcResp)
 }
 
-func getVPCResponse(ctx context.Context, router *model.Router) (vpcResp *VPCResponse, err error) {
+func (v *VPCAPI) getVPCResponse(ctx context.Context, router *model.Router) (vpcResp *VPCResponse, err error) {
 	vpcResp = &VPCResponse{
 		BaseReference: &common.BaseReference{
 			ID:   router.UUID,
@@ -135,7 +165,7 @@ func getVPCResponse(ctx context.Context, router *model.Router) (vpcResp *VPCResp
 	}
 	vpcResp.Subnets = make([]*SubnetResponse, len(router.Subnets))
 	for i, subnet := range router.Subnets {
-		vpcResp.Subnets[i], err = getSubnetResponse(ctx, subnet)
+		vpcResp.Subnets[i], err = subnetAPI.getSubnetResponse(ctx, subnet)
 		if err != nil {
 			return
 		}
@@ -182,7 +212,7 @@ func (v *VPCAPI) List(c *gin.Context) {
 	}
 	vpcListResp.VPCs = make([]*VPCResponse, vpcListResp.Limit)
 	for i, router := range routers {
-		vpcListResp.VPCs[i], err = getVPCResponse(ctx, router)
+		vpcListResp.VPCs[i], err = v.getVPCResponse(ctx, router)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
 			return

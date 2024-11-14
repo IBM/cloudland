@@ -52,7 +52,7 @@ type FloatingIpPatchPayload struct {
 // @Success 200 {object} FloatingIpResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /floating_ips/:id [get]
+// @Router /floating_ips/{id} [get]
 func (v *FloatingIpAPI) Get(c *gin.Context) {
 	floatingIpResp := &FloatingIpResponse{}
 	c.JSON(http.StatusOK, floatingIpResp)
@@ -68,7 +68,7 @@ func (v *FloatingIpAPI) Get(c *gin.Context) {
 // @Success 200 {object} FloatingIpResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /floating_ips/:id [patch]
+// @Router /floating_ips/{id} [patch]
 func (v *FloatingIpAPI) Patch(c *gin.Context) {
 	floatingIpResp := &FloatingIpResponse{}
 	c.JSON(http.StatusOK, floatingIpResp)
@@ -83,7 +83,7 @@ func (v *FloatingIpAPI) Patch(c *gin.Context) {
 // @Success 200
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /floating_ips/:id [delete]
+// @Router /floating_ips/{id} [delete]
 func (v *FloatingIpAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }

@@ -54,7 +54,7 @@ type UserListResponse struct {
 // @Success 200 {object} UserResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /users/:id [get]
+// @Router /users/{id} [get]
 func (v *UserAPI) Get(c *gin.Context) {
 	userResp := &UserResponse{}
 	c.JSON(http.StatusOK, userResp)
@@ -70,7 +70,7 @@ func (v *UserAPI) Get(c *gin.Context) {
 // @Success 200 {object} UserResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /users/:id [patch]
+// @Router /users/{id} [patch]
 func (v *UserAPI) Patch(c *gin.Context) {
 	userResp := &UserResponse{}
 	c.JSON(http.StatusOK, userResp)
@@ -85,7 +85,7 @@ func (v *UserAPI) Patch(c *gin.Context) {
 // @Success 204
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /users/:id [delete]
+// @Router /users/{id} [delete]
 func (v *UserAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }

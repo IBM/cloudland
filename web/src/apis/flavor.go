@@ -50,7 +50,7 @@ type FlavorPatchPayload struct {
 // @Success 200 {object} FlavorResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /flavors/:id [get]
+// @Router /flavors/{id} [get]
 func (v *FlavorAPI) Get(c *gin.Context) {
 	flavorResp := &FlavorResponse{}
 	c.JSON(http.StatusOK, flavorResp)
@@ -66,7 +66,7 @@ func (v *FlavorAPI) Get(c *gin.Context) {
 // @Success 200 {object} FlavorResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /flavors/:id [patch]
+// @Router /flavors/{id} [patch]
 func (v *FlavorAPI) Patch(c *gin.Context) {
 	flavorResp := &FlavorResponse{}
 	c.JSON(http.StatusOK, flavorResp)
@@ -81,7 +81,7 @@ func (v *FlavorAPI) Patch(c *gin.Context) {
 // @Success 200
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /flavors/:id [delete]
+// @Router /flavors/{id} [delete]
 func (v *FlavorAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }

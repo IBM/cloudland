@@ -31,7 +31,7 @@ type SubnetResponse struct {
 	Gateway    string                `json:"gateway"`
 	NameServer string                `json:"dns,omitempty"`
 	VPC        *common.BaseReference `json:"vpc,omitempty"`
-	Type       string                `json:"type"`
+	Type       common.SubnetType `json:"type"`
 }
 
 type SubnetListResponse struct {
@@ -42,6 +42,17 @@ type SubnetListResponse struct {
 }
 
 type SubnetPayload struct {
+	Name        string                `json:"name" binding:"required,min=2,max=32"`
+	NetworkCIDR string                `json:"network_cidr" binding:"required,cidrv4"`
+	Gateway     string                `json:"gateway" binding:"omitempty,ipv4"`
+	StartIP     string                `json:"start_ip" binding:"omitempty,ipv4"`
+	EndIP       string                `json:"end_ip" binding:"omitempty",ipv4`
+	NameServer  string                `json:"dns" binding:"omitempty"`
+	BaseDomain  string                `json:"base_domain" binding:"omitempty"`
+	Dhcp        bool                  `json:"dhcp" binding:"omitempty"`
+	VPC         *common.BaseReference `json:"vpc" binding:"omitempty"`
+	Vlan        int `json:"vlan" binding:"omitempty,gte=1,lte=16777215"`
+	Type        common.SubnetType `json:"type" binding:"omitempty,oneof=public internal"`
 }
 
 type SubnetPatchPayload struct {
@@ -64,7 +75,7 @@ func (v *SubnetAPI) Get(c *gin.Context) {
 		common.ErrorResponse(c, http.StatusBadRequest, "Invalid subnet query", err)
 		return
 	}
-	subnetResp, err := getSubnetResponse(ctx, subnet)
+	subnetResp, err := v.getSubnetResponse(ctx, subnet)
 	if err != nil {
 		common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
 		return
@@ -123,11 +134,39 @@ func (v *SubnetAPI) Delete(c *gin.Context) {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /subnets [post]
 func (v *SubnetAPI) Create(c *gin.Context) {
-	subnetResp := &SubnetResponse{}
+	ctx := c.Request.Context()
+	payload := &SubnetPayload{}
+	err := c.ShouldBindJSON(payload)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
+		return
+	}
+	var router *model.Router
+	if payload.VPC != nil {
+		if payload.Type != common.Public {
+			common.ErrorResponse(c, http.StatusBadRequest, "VPC must be specified if network type not public", err)
+			return
+		}
+		router, err = routerAdmin.GetRouter(ctx, payload.VPC)
+		if err != nil {
+			common.ErrorResponse(c, http.StatusBadRequest, "Failed to get router", err)
+			return
+		}
+	}
+	subnet, err := subnetAdmin.Create(ctx, payload.Vlan, payload.Name, payload.NetworkCIDR, payload.Gateway, payload.StartIP, payload.EndIP, string(payload.Type), payload.NameServer, payload.BaseDomain, payload.Dhcp, router)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Failed to create subnet", err)
+		return
+	}
+	subnetResp, err := v.getSubnetResponse(ctx, subnet)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+		return
+	}
 	c.JSON(http.StatusOK, subnetResp)
 }
 
-func getSubnetResponse(ctx context.Context, subnet *model.Subnet) (subnetResp *SubnetResponse, err error) {
+func (v *SubnetAPI) getSubnetResponse(ctx context.Context, subnet *model.Subnet) (subnetResp *SubnetResponse, err error) {
 	subnetResp = &SubnetResponse{
 		BaseReference: &common.BaseReference{
 			ID:   subnet.UUID,
@@ -137,7 +176,7 @@ func getSubnetResponse(ctx context.Context, subnet *model.Subnet) (subnetResp *S
 		Netmask:    subnet.Netmask,
 		Gateway:    subnet.Gateway,
 		NameServer: subnet.NameServer,
-		Type:       subnet.Type,
+		Type:       common.SubnetType(subnet.Type),
 	}
 	if subnet.Router != nil {
 		subnetResp.VPC = &common.BaseReference{
@@ -186,7 +225,7 @@ func (v *SubnetAPI) List(c *gin.Context) {
 	}
 	subnetListResp.Subnets = make([]*SubnetResponse, subnetListResp.Limit)
 	for i, subnet := range subnets {
-		subnetListResp.Subnets[i], err = getSubnetResponse(ctx, subnet)
+		subnetListResp.Subnets[i], err = v.getSubnetResponse(ctx, subnet)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
 			return

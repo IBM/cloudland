@@ -50,7 +50,7 @@ type HyperPatchPayload struct {
 // @Success 200 {object} HyperResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /hypers/:id [get]
+// @Router /hypers/{name} [get]
 func (v *HyperAPI) Get(c *gin.Context) {
 	hyperResp := &HyperResponse{}
 	c.JSON(http.StatusOK, hyperResp)

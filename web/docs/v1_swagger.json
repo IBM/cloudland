@@ -85,7 +85,7 @@
                 }
             }
         },
-        "/flavors/:id": {
+        "/flavors/{id}": {
             "get": {
                 "description": "get a flavor",
                 "consumes": [
@@ -267,7 +267,7 @@
                 }
             }
         },
-        "/floating_ips/:id": {
+        "/floating_ips/{id}": {
             "get": {
                 "description": "get a floating ip",
                 "consumes": [
@@ -405,7 +405,7 @@
                 }
             }
         },
-        "/hypers/:id": {
+        "/hypers/{name}": {
             "get": {
                 "description": "get a hypervisor",
                 "consumes": [
@@ -513,7 +513,7 @@
                 }
             }
         },
-        "/images/:id": {
+        "/images/{id}": {
             "get": {
                 "description": "get a image",
                 "consumes": [
@@ -901,7 +901,7 @@
                 }
             }
         },
-        "/interfaces/:id": {
+        "/interfaces/{id}": {
             "get": {
                 "description": "get a interface",
                 "consumes": [
@@ -1083,7 +1083,7 @@
                 }
             }
         },
-        "/keys/:id": {
+        "/keys/{id}": {
             "get": {
                 "description": "get a key",
                 "consumes": [
@@ -1305,7 +1305,7 @@
                 }
             }
         },
-        "/orgs/:id": {
+        "/orgs/{id}": {
             "get": {
                 "description": "get a org",
                 "consumes": [
@@ -1487,7 +1487,7 @@
                 }
             }
         },
-        "/security_groups/:id": {
+        "/security_groups/{id}": {
             "get": {
                 "description": "get a secgroup",
                 "consumes": [
@@ -1596,7 +1596,7 @@
                 }
             }
         },
-        "/security_groups/:id/rules": {
+        "/security_groups/{id}/rules": {
             "get": {
                 "description": "list secrules",
                 "consumes": [
@@ -1669,7 +1669,7 @@
                 }
             }
         },
-        "/security_groups/:id/rules/:rule_id": {
+        "/security_groups/{id}/rules/{rule_id}": {
             "get": {
                 "description": "get a secrule",
                 "consumes": [
@@ -1851,7 +1851,7 @@
                 }
             }
         },
-        "/subnets/:id": {
+        "/subnets/{id}": {
             "get": {
                 "description": "get a subnet",
                 "consumes": [
@@ -2033,7 +2033,7 @@
                 }
             }
         },
-        "/users/:id": {
+        "/users/{id}": {
             "get": {
                 "description": "get a user",
                 "consumes": [
@@ -2215,7 +2215,7 @@
                 }
             }
         },
-        "/volumes/:id": {
+        "/volumes/{id}": {
             "get": {
                 "description": "get a volume",
                 "consumes": [
@@ -2397,7 +2397,7 @@
                 }
             }
         },
-        "/vpcs/:id": {
+        "/vpcs/{id}": {
             "get": {
                 "description": "get a vpc",
                 "consumes": [
@@ -2535,7 +2535,7 @@
                 }
             }
         },
-        "/zones/:id": {
+        "/zones/{name}": {
             "get": {
                 "description": "get a zonevisor",
                 "consumes": [
@@ -2975,6 +2975,12 @@
                     "maxLength": 32,
                     "minLength": 2
                 },
+                "security_groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.BaseReference"
+                    }
+                },
                 "subnet": {
                     "$ref": "#/definitions/common.BaseReference"
                 }
@@ -3210,11 +3216,68 @@
             "type": "object"
         },
         "apis.SubnetPayload": {
-            "type": "object"
+            "type": "object",
+            "required": [
+                "name",
+                "network_cidr"
+            ],
+            "properties": {
+                "base_domain": {
+                    "type": "string"
+                },
+                "dhcp": {
+                    "type": "boolean"
+                },
+                "dns": {
+                    "type": "string"
+                },
+                "end_ip": {
+                    "type": "string"
+                },
+                "gateway": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                },
+                "network_cidr": {
+                    "type": "string"
+                },
+                "start_ip": {
+                    "type": "string"
+                },
+                "type": {
+                    "enum": [
+                        "public",
+                        "internal"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.SubnetType"
+                        }
+                    ]
+                },
+                "vlan": {
+                    "type": "integer",
+                    "maximum": 16777215,
+                    "minimum": 1
+                },
+                "vpc": {
+                    "$ref": "#/definitions/common.BaseReference"
+                }
+            }
         },
         "apis.SubnetResponse": {
             "type": "object",
             "properties": {
+                "dns": {
+                    "type": "string"
+                },
+                "gateway": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -3222,6 +3285,18 @@
                     "type": "string",
                     "maxLength": 32,
                     "minLength": 2
+                },
+                "netmask": {
+                    "type": "string"
+                },
+                "network": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/common.SubnetType"
+                },
+                "vpc": {
+                    "$ref": "#/definitions/common.BaseReference"
                 }
             }
         },
@@ -3319,7 +3394,17 @@
             "type": "object"
         },
         "apis.VPCPayload": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                },
+                "public_network": {
+                    "$ref": "#/definitions/common.BaseReference"
+                }
+            }
         },
         "apis.VPCResponse": {
             "type": "object",
@@ -3335,7 +3420,7 @@
                 "subnets": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.BaseReference"
+                        "$ref": "#/definitions/apis.SubnetResponse"
                     }
                 }
             }
@@ -3470,7 +3555,18 @@
                 "Restart",
                 "HardRestart",
                 "Pause",
-                "Unpause"
+                "Resume"
+            ]
+        },
+        "common.SubnetType": {
+            "type": "string",
+            "enum": [
+                "public",
+                "internal"
+            ],
+            "x-enum-varnames": [
+                "Public",
+                "Internal"
             ]
         }
     }

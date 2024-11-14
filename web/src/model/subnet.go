@@ -20,9 +20,9 @@ type Subnet struct {
 	End          string `gorm:"type:varchar(64)"`
 	NameServer   string `gorm:"type:varchar(64)"`
 	DomainSearch string `gorm:"type:varchar(256)"`
-	Dhcp         string `gorm:"type:varchar(16)"`
+	Dhcp         bool   `gorm:"default:false"`
 	Vlan         int64
-	Type         string   `gorm:"type:varchar(20);default:'internal'"`
+	Type         string `gorm:"type:varchar(20);default:'internal'"`
 	RouterID     int64
 	Router       *Router `gorm:"foreignkey:RouterID"`
 	Routes       string  `gorm:"type:varchar(256)"`

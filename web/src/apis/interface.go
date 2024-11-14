@@ -23,12 +23,12 @@ type InterfaceAPI struct{}
 
 type InterfaceResponse struct {
 	*common.BaseReference
-	Subnet      *common.BaseReference `json:"subnet"`
-	MacAddress  string                `json:"mac_address"`
-	IPAddress   string                `json:"ip_address"`
-	IsPrimary   bool                  `json:"is_primary"`
-	FloatingIps []*FloatingIpInfo     `json:"floating_ips,omitempty"`
-	SecurityGroups []*common.BaseReference     `json:"security_groups,omitempty"`
+	Subnet         *common.BaseReference   `json:"subnet"`
+	MacAddress     string                  `json:"mac_address"`
+	IPAddress      string                  `json:"ip_address"`
+	IsPrimary      bool                    `json:"is_primary"`
+	FloatingIps    []*FloatingIpInfo       `json:"floating_ips,omitempty"`
+	SecurityGroups []*common.BaseReference `json:"security_groups,omitempty"`
 }
 
 type InterfacePayload struct {
@@ -51,7 +51,7 @@ type InterfacePatchPayload struct {
 // @Success 200 {object} InterfaceResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /interfaces/:id [get]
+// @Router /interfaces/{id} [get]
 func (v *InterfaceAPI) Get(c *gin.Context) {
 	interfaceResp := &InterfaceResponse{}
 	c.JSON(http.StatusOK, interfaceResp)
@@ -67,7 +67,7 @@ func (v *InterfaceAPI) Get(c *gin.Context) {
 // @Success 200 {object} InterfaceResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /interfaces/:id [patch]
+// @Router /interfaces/{id} [patch]
 func (v *InterfaceAPI) Patch(c *gin.Context) {
 	interfaceResp := &InterfaceResponse{}
 	c.JSON(http.StatusOK, interfaceResp)
@@ -82,7 +82,7 @@ func (v *InterfaceAPI) Patch(c *gin.Context) {
 // @Success 204
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /interfaces/:id [delete]
+// @Router /interfaces/{id} [delete]
 func (v *InterfaceAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }

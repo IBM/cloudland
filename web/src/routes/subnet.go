@@ -336,43 +336,34 @@ func setRouting(ctx context.Context, routerID int64, subnet *model.Subnet, route
 	return
 }
 
-func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, router, zones, gateway, start, end, rtype, dns, domain, dhcp string, routes string, owner int64) (subnet *model.Subnet, err error) {
+func (a *SubnetAdmin) Create(ctx context.Context, vlan int, name, network, gateway, start, end, rtype, dns, domain string, dhcp bool, router *model.Router) (subnet *model.Subnet, err error) {
 	memberShip := GetMemberShip(ctx)
-	if owner == 0 {
-		owner = memberShip.OrgID
-	}
-	db := DB()
-	vlanNo := 0
-	if vlan == "" {
-		vlanNo, err = getValidVni()
-	} else {
-		vlanNo, err = strconv.Atoi(vlan)
-	}
-	if err != nil {
-		log.Println("Failed to get valid vlan %s, %v", vlan, err)
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		err = fmt.Errorf("Not authorized for this operation")
 		return
 	}
-	routerID := 0
-	if rtype == "internal" || rtype == "" {
-		routerID, err = strconv.Atoi(router)
+	owner := memberShip.OrgID
+	db := DB()
+	if vlan <= 0 {
+		vlan, err = getValidVni()
 		if err != nil {
-			log.Println("Failed to get valid router %s, %v", router, err)
+			log.Println("Failed to get valid vlan %s, %v", vlan, err)
 			return
 		}
-	} else {
-		dhcp = "no"
 	}
 	count := 0
-	err = db.Model(&model.Subnet{}).Where("vlan = ?", vlanNo).Count(&count).Error
+	err = db.Model(&model.Subnet{}).Where("vlan = ?", vlan).Count(&count).Error
 	if err != nil {
 		log.Println("Database failed to count network", err)
 		return
 	}
-	inNet := &net.IPNet{
-		IP:   net.ParseIP(network),
-		Mask: net.IPMask(net.ParseIP(netmask).To4()),
+	var routerID int64
+	if router != nil {
+		routerID = router.ID
 	}
-	_, ipNet, err := net.ParseCIDR(inNet.String())
+	_, ipNet, err := net.ParseCIDR(network)
 	if err != nil {
 		log.Println("CIDR parsing failed, %v", err)
 		return
@@ -387,7 +378,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 		rtype = "internal"
 	}
 	first, last := cidr.AddressRange(ipNet)
-	preSize, _ := inNet.Mask.Size()
+	preSize, _ := ipNet.Mask.Size()
 	if gateway == "" {
 		gateway = cidr.Inc(first).String()
 	}
@@ -404,6 +395,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 		end = cidr.Dec(net.ParseIP(end)).String()
 	}
 	gateway = fmt.Sprintf("%s/%d", gateway, preSize)
+	netmask := ipNet.Mask.String()
 	subnet = &model.Subnet{
 		Model:        model.Model{Creater: memberShip.UserID, Owner: owner},
 		Name:         name,
@@ -415,10 +407,9 @@ func (a *SubnetAdmin) Create(ctx context.Context, name, vlan, network, netmask, 
 		NameServer:   dns,
 		DomainSearch: domain,
 		Dhcp:         dhcp,
-		Vlan:         int64(vlanNo),
+		Vlan:         int64(vlan),
 		Type:         rtype,
-		Routes:       routes,
-		RouterID:     int64(routerID),
+		RouterID:     routerID,
 	}
 	err = db.Create(subnet).Error
 	if err != nil {
@@ -645,13 +636,6 @@ func (v *SubnetView) New(c *macaron.Context, store session.Store) {
 		return
 	}
 	c.Data["Routers"] = routers
-	zones := []*model.Zone{}
-	err = DB().Find(&zones).Error
-	if err != nil {
-		log.Println("Database failed to query zones", err)
-		return
-	}
-	c.Data["Zones"] = zones
 	c.HTML(200, "subnets_new")
 }
 
@@ -837,51 +821,47 @@ func (v *SubnetView) Patch(c *macaron.Context, store session.Store) {
 }
 
 func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
-	memberShip := GetMemberShip(c.Req.Context())
-	permit := memberShip.CheckPermission(model.Writer)
-	if !permit {
-		log.Println("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
+	ctx := c.Req.Context()
 	redirectTo := "../subnets"
 	name := c.QueryTrim("name")
-	vlan := c.QueryTrim("vlan")
+	vlan := c.QueryInt("vlan")
 	rtype := c.QueryTrim("rtype")
 	network := c.QueryTrim("network")
-	netmask := c.QueryTrim("netmask")
-	router := c.QueryTrim("router")
-	zones := c.QueryTrim("zones")
+	routerID := c.QueryInt64("router")
 	gateway := c.QueryTrim("gateway")
-	routes := c.QueryTrim("routes")
 	start := c.QueryTrim("start")
 	end := c.QueryTrim("end")
 	dns := c.QueryTrim("dns")
 	domain := c.QueryTrim("domain")
-	dhcp := c.QueryTrim("dhcp")
-	if dhcp != "no" {
-		dhcp = "yes"
+	dhcpStr := c.QueryTrim("dhcp")
+	dhcp := false
+	if dhcpStr != "no" {
+		dhcp = true
 	}
+	/*
 	routeJson, err := v.checkRoutes(network, netmask, gateway, start, end, dns, routes, 0)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	subnet, err := subnetAdmin.Create(c.Req.Context(), name, vlan, network, netmask, router, zones, gateway, start, end, rtype, dns, domain, dhcp, routeJson, memberShip.OrgID)
-	if err != nil {
-		log.Println("Create subnet failed, %v", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
+	*/
+	var router *model.Router
+	var err error
+	if routerID > 0 {
+		router, err = routerAdmin.Get(ctx, routerID)
+		if err != nil {
+			log.Println("Get router failed, %v", err)
+			c.Data["ErrorMsg"] = err.Error()
+			c.HTML(404, "404")
 			return
 		}
+	}
+	_, err = subnetAdmin.Create(ctx, vlan, name, network, gateway, start, end, rtype, dns, domain, dhcp, router)
+	if err != nil {
+		log.Println("Create subnet failed, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
-	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, subnet)
 		return
 	}
 	c.Redirect(redirectTo)

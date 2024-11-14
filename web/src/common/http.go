@@ -14,8 +14,8 @@ import (
 )
 
 type BaseReference struct {
-	ID   string `json:"id,omitempty" binding:"omitempty,uuid"`
-	Name string `json:"name,omitempty" binding:"omitempty,min=2,max=32"`
+	ID   string `json:"id" binding:"omitempty,uuid"`
+	Name string `json:"name" binding:"omitempty,min=2,max=32"`
 }
 
 type APIError struct {

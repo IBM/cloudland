@@ -50,7 +50,7 @@ type OrgPatchPayload struct {
 // @Success 200 {object} OrgResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /orgs/:id [get]
+// @Router /orgs/{id} [get]
 func (v *OrgAPI) Get(c *gin.Context) {
 	orgResp := &OrgResponse{}
 	c.JSON(http.StatusOK, orgResp)
@@ -66,7 +66,7 @@ func (v *OrgAPI) Get(c *gin.Context) {
 // @Success 200 {object} OrgResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /orgs/:id [patch]
+// @Router /orgs/{id} [patch]
 func (v *OrgAPI) Patch(c *gin.Context) {
 	orgResp := &OrgResponse{}
 	c.JSON(http.StatusOK, orgResp)
@@ -81,7 +81,7 @@ func (v *OrgAPI) Patch(c *gin.Context) {
 // @Success 204
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /orgs/:id [delete]
+// @Router /orgs/{id} [delete]
 func (v *OrgAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }

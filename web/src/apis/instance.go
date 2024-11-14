@@ -247,7 +247,7 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 	}
 	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, router.ID, primaryIface, secondaryIfaces, keys, -1)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Failed to create instances", err)
+		common.ErrorResponse(c, http.StatusBadRequest, "Failed to create instances", err)
 		return
 	}
 	instancesResp := make([]*InstanceResponse, len(instances))
@@ -362,7 +362,7 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 		}
 		for _, sg := range iface.Secgroups {
 			interfaces[i].SecurityGroups = append(interfaces[i].SecurityGroups, &common.BaseReference{
-				ID: sg.UUID,
+				ID:   sg.UUID,
 				Name: sg.Name,
 			})
 		}

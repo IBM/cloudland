@@ -44,7 +44,7 @@ type ZoneListResponse struct {
 // @Success 200 {object} ZoneResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /zones/:id [get]
+// @Router /zones/{name} [get]
 func (v *ZoneAPI) Get(c *gin.Context) {
 	zoneResp := &ZoneResponse{}
 	c.JSON(http.StatusOK, zoneResp)
