@@ -15,6 +15,7 @@ import (
 
 type Interface struct {
 	Model
+	Owner      int64  `gorm:"default:1"` /* The organization ID of the resource */
 	Name       string `gorm:"type:varchar(32)"`
 	MacAddr    string `gorm:"type:varchar(32)"`
 	Instance   int64

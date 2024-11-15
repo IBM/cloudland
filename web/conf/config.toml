@@ -19,9 +19,7 @@ listen = "server-2:5005"
 endpoint = "142.0.129.162:5005"
 
 [sci]
-endpoints = [
-    { region = "sv-dev-1", endpoint = "http://server-2:5006" },
-]
+endpoint = "http://server-2:5006"
 
 [db]
 type = "postgres"

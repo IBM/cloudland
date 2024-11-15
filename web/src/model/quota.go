@@ -12,6 +12,7 @@ import (
 
 type Quota struct {
 	Model
+	Owner     int64  `gorm:"default:1"` /* The organization ID of the resource */
 	Name      string `gorm:"type:varchar(128)"`
 	Type      string `gorm:"type:varchar(32)"`
 	Cpu       int32

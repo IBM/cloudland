@@ -17,6 +17,7 @@ import (
 
 	"web/src/dbs"
 	"web/src/model"
+
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -155,7 +156,8 @@ func (a *SecruleAdmin) Create(ctx context.Context, sgID, owner int64, remoteIp, 
 		return
 	}
 	secrule = &model.SecurityRule{
-		Model:     model.Model{Creater: memberShip.UserID, Owner: owner},
+		Model:     model.Model{Creater: memberShip.UserID},
+		Owner: owner,
 		Secgroup:  sgID,
 		RemoteIp:  remoteIp,
 		Direction: direction,

@@ -145,7 +145,7 @@ func (a *SecgroupAdmin) GetSecurityGroup(ctx context.Context, reference *common.
 func (a *SecgroupAdmin) Create(ctx context.Context, name string, isDefault bool, routerID, owner int64) (secgroup *model.SecurityGroup, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
-	secgroup = &model.SecurityGroup{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Name: name, IsDefault: isDefault, RouterID: routerID}
+	secgroup = &model.SecurityGroup{Model: model.Model{Creater: memberShip.UserID}, Owner: owner, Name: name, IsDefault: isDefault, RouterID: routerID}
 	err = db.Create(secgroup).Error
 	if err != nil {
 		log.Println("DB failed to create security group, %v", err)
@@ -417,21 +417,21 @@ func (v *SecgroupView) Patch(c *macaron.Context, store session.Store) {
 		return
 	}
 	/*
-	if isDef {
-		err = secgroupAdmin.Switch(c.Req.Context(), secgroup, store)
-		if err != nil {
-			log.Println("Failed to switch security group", err)
-			if c.Req.Header.Get("X-Json-Format") == "yes" {
-				c.JSON(500, map[string]interface{}{
-					"error": err.Error(),
-				})
+		if isDef {
+			err = secgroupAdmin.Switch(c.Req.Context(), secgroup, store)
+			if err != nil {
+				log.Println("Failed to switch security group", err)
+				if c.Req.Header.Get("X-Json-Format") == "yes" {
+					c.JSON(500, map[string]interface{}{
+						"error": err.Error(),
+					})
+					return
+				}
+				c.Data["ErrorMsg"] = err.Error()
+				c.HTML(500, "500")
 				return
 			}
-			c.Data["ErrorMsg"] = err.Error()
-			c.HTML(500, "500")
-			return
 		}
-	}
 	*/
 	if c.Req.Header.Get("X-Json-Format") == "yes" {
 		c.JSON(200, secgroup)

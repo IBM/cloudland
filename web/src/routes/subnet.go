@@ -98,10 +98,8 @@ func generateIPAddresses(subnet *model.Subnet, start net.IP, end net.IP, preSize
 			}
 		}
 		address := &model.Address{
-			Model: model.Model{
-				Creater: subnet.Creater,
-				Owner:   subnet.Owner,
-			},
+			Model: model.Model{ Creater: subnet.Creater},
+			Owner:   subnet.Owner,
 			Address:  ipstr,
 			Netmask:  subnet.Netmask,
 			Type:     "ipv4",
@@ -313,24 +311,9 @@ func setRouting(ctx context.Context, routerID int64, subnet *model.Subnet, route
 		log.Println("DB failed to query router", err)
 		return
 	}
-	iface, err := CreateInterface(ctx, subnet.ID, routerID, router.Owner, router.Hyper, subnet.Gateway, "", "subnet-gw", "gateway", nil)
+	_, err = CreateInterface(ctx, subnet.ID, routerID, router.Owner, router.Hyper, subnet.Gateway, "", "subnet-gw", "gateway", nil)
 	if err != nil {
 		log.Println("Failed to create gateway subnet interface", err)
-		return
-	}
-	control := fmt.Sprintf("toall=router-%d:%d,%d", router.ID, router.Hyper, router.Peer)
-	if router.Hyper == router.Peer {
-		control = fmt.Sprintf("inter=%d", router.Hyper)
-	}
-	if routeOnly {
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_route.sh '%d' '%d' '%s'<<EOF\n%s\nEOF", router.ID, subnet.Vlan, subnet.Type, subnet.Routes)
-		err = hyperExecute(ctx, control, command)
-	} else {
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_gw_route.sh '%d' '%s' '%s' '%d' soft <<EOF\n%s\nEOF", router.ID, subnet.Gateway, iface.MacAddr, subnet.Vlan, subnet.Routes)
-		err = hyperExecute(ctx, control, command)
-	}
-	if err != nil {
-		log.Println("Set gateway failed")
 		return
 	}
 	return
@@ -395,9 +378,10 @@ func (a *SubnetAdmin) Create(ctx context.Context, vlan int, name, network, gatew
 		end = cidr.Dec(net.ParseIP(end)).String()
 	}
 	gateway = fmt.Sprintf("%s/%d", gateway, preSize)
-	netmask := ipNet.Mask.String()
+	netmask := net.IP(net.CIDRMask(preSize, 32)).String()
 	subnet = &model.Subnet{
-		Model:        model.Model{Creater: memberShip.UserID, Owner: owner},
+		Model:        model.Model{Creater: memberShip.UserID},
+		Owner: owner,
 		Name:         name,
 		Network:      first.String(),
 		Netmask:      netmask,
@@ -419,7 +403,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, vlan int, name, network, gatew
 	ip := net.ParseIP(start)
 	for {
 		ipstr := fmt.Sprintf("%s/%d", ip.String(), preSize)
-		address := &model.Address{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Address: ipstr, Netmask: netmask, Type: "ipv4", SubnetID: subnet.ID}
+		address := &model.Address{Model: model.Model{Creater: memberShip.UserID}, Owner: owner, Address: ipstr, Netmask: netmask, Type: "ipv4", SubnetID: subnet.ID}
 		err = db.Create(address).Error
 		if err != nil {
 			log.Println("Database create address failed, %v", err)
@@ -433,7 +417,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, vlan int, name, network, gatew
 		}
 	}
 	// Create record for gateway
-	address := &model.Address{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Address: gateway, Netmask: netmask, Type: "ipv4", SubnetID: subnet.ID}
+	address := &model.Address{Model: model.Model{Creater: memberShip.UserID}, Owner: owner, Address: gateway, Netmask: netmask, Type: "ipv4", SubnetID: subnet.ID}
 	err = db.Create(address).Error
 	if err != nil {
 		log.Println("Database create address for gateway failed, %v", err)
@@ -839,19 +823,19 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 		dhcp = true
 	}
 	/*
-	routeJson, err := v.checkRoutes(network, netmask, gateway, start, end, dns, routes, 0)
-	if err != nil {
-		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
+		routeJson, err := v.checkRoutes(network, netmask, gateway, start, end, dns, routes, 0)
+		if err != nil {
+			c.Data["ErrorMsg"] = err.Error()
+			c.HTML(http.StatusBadRequest, "error")
+			return
+		}
 	*/
 	var router *model.Router
 	var err error
 	if routerID > 0 {
 		router, err = routerAdmin.Get(ctx, routerID)
 		if err != nil {
-			log.Println("Get router failed, %v", err)
+			log.Println("Get router failed ", err)
 			c.Data["ErrorMsg"] = err.Error()
 			c.HTML(404, "404")
 			return
@@ -859,9 +843,9 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 	}
 	_, err = subnetAdmin.Create(ctx, vlan, name, network, gateway, start, end, rtype, dns, domain, dhcp, router)
 	if err != nil {
-		log.Println("Create subnet failed, %v", err)
+		log.Println("Create subnet failed ", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(500, "500")
+		c.HTML(400, "400")
 		return
 	}
 	c.Redirect(redirectTo)

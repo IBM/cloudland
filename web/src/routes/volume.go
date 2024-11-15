@@ -15,6 +15,7 @@ import (
 
 	"web/src/dbs"
 	"web/src/model"
+
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -30,7 +31,7 @@ type VolumeView struct{}
 func (a *VolumeAdmin) Create(ctx context.Context, name string, size int) (volume *model.Volume, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
-	volume = &model.Volume{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Name: name, Format: "raw", Size: int32(size), Status: "pending"}
+	volume = &model.Volume{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, Name: name, Format: "raw", Size: int32(size), Status: "pending"}
 	err = db.Create(volume).Error
 	if err != nil {
 		log.Println("DB failed to create volume", err)

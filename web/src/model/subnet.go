@@ -12,7 +12,8 @@ import (
 
 type Subnet struct {
 	Model
-	Name         string `gorm:"type:varchar(32)"`
+	Owner        int64  `gorm:"default:1"` /* The organization ID of the resource */
+	Name         string `gorm:"unique_index:idx_router_subnet;type:varchar(32)"`
 	Network      string `gorm:"type:varchar(64)"`
 	Netmask      string `gorm:"type:varchar(64)"`
 	Gateway      string `gorm:"type:varchar(64)"`
@@ -22,14 +23,15 @@ type Subnet struct {
 	DomainSearch string `gorm:"type:varchar(256)"`
 	Dhcp         bool   `gorm:"default:false"`
 	Vlan         int64
-	Type         string `gorm:"type:varchar(20);default:'internal'"`
-	RouterID     int64
+	Type         string  `gorm:"type:varchar(20);default:'internal'"`
+	RouterID     int64   `gorm:"unique_index:idx_router_subnet"`
 	Router       *Router `gorm:"foreignkey:RouterID"`
 	Routes       string  `gorm:"type:varchar(256)"`
 }
 
 type Address struct {
 	Model
+	Owner        int64  `gorm:"default:1"` /* The organization ID of the resource */
 	Address   string `gorm:"type:varchar(64)"`
 	Netmask   string `gorm:"type:varchar(64)"`
 	Type      string `gorm:"type:varchar(20);default:'native'"`

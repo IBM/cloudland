@@ -22,6 +22,7 @@ import (
 
 	"web/src/dbs"
 	"web/src/model"
+
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -46,7 +47,8 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 		return
 	}
 	org = &model.Organization{
-		Model: model.Model{Owner: user.ID, Creater: memberShip.UserID},
+		Model: model.Model{Creater: memberShip.UserID},
+		Owner: user.ID,
 		Name:  name,
 	}
 	err = db.Create(org).Error
@@ -105,7 +107,8 @@ func (a *OrgAdmin) Update(ctx context.Context, orgID int64, members, users []str
 			continue
 		}
 		member := &model.Member{
-			Model:    model.Model{Creater: memberShip.UserID, Owner: orgID},
+			Model:    model.Model{Creater: memberShip.UserID},
+			Owner:    orgID,
 			UserName: name,
 			UserID:   user.ID,
 			OrgName:  org.Name,

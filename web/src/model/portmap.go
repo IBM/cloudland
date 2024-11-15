@@ -12,6 +12,7 @@ import (
 
 type Portmap struct {
 	Model
+	Owner         int64  `gorm:"default:1"` /* The organization ID of the resource */
 	Name          string `gorm:"type:varchar(32)"`
 	Status        string `gorm:"type:varchar(32)"`
 	LocalPort     int32

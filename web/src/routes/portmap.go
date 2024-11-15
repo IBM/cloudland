@@ -17,6 +17,7 @@ import (
 
 	"web/src/dbs"
 	"web/src/model"
+
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -67,15 +68,15 @@ func (a *PortmapAdmin) Create(ctx context.Context, instID int64, port int) (port
 		}
 	}
 	/*
-	control := fmt.Sprintf("toall=router-%d:%d,%d", router.ID, router.Hyper, router.Peer)
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_portmap.sh '%d' '%s' '%d' '%d'", router.ID, iface.Address.Address, port, rport)
-	err = hyperExecute(ctx, control, command)
-	if err != nil {
-		log.Println("Create portmap failed", err)
-		return
-	}*/
+		control := fmt.Sprintf("toall=router-%d:%d,%d", router.ID, router.Hyper, router.Peer)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_portmap.sh '%d' '%s' '%d' '%d'", router.ID, iface.Address.Address, port, rport)
+		err = hyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Create portmap failed", err)
+			return
+		}*/
 	name := fmt.Sprintf("%s-%d-%d", instance.Hostname, instance.ID, port)
-	portmap = &model.Portmap{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, RouterID: router.ID, InstanceID: instance.ID, Name: name, Status: "pending", LocalAddress: iface.Address.Address, LocalPort: int32(port), RemotePort: int32(rport)}
+	portmap = &model.Portmap{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, RouterID: router.ID, InstanceID: instance.ID, Name: name, Status: "pending", LocalAddress: iface.Address.Address, LocalPort: int32(port), RemotePort: int32(rport)}
 	err = db.Create(portmap).Error
 	if err != nil {
 		log.Println("DB failed to create port map", err)

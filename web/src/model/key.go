@@ -12,6 +12,7 @@ import (
 
 type Key struct {
 	Model
+	Owner       int64  `gorm:"default:1"` /* The organization ID of the resource */
 	Name        string `gorm:"type:varchar(100)"`
 	PublicKey   string `gorm:"type:varchar(8192)"`
 	Length      int32

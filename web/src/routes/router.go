@@ -75,17 +75,17 @@ func (a *RouterAdmin) Create(ctx context.Context, name string, pubSubnet *model.
 	memberShip := GetMemberShip(ctx)
 	owner := memberShip.OrgID
 	db := DB()
-	router = &model.Router{Model: model.Model{Creater: memberShip.UserID, Owner: owner}, Name: name, Status: "available"}
+	router = &model.Router{Model: model.Model{Creater: memberShip.UserID}, Owner: owner, Name: name, Status: "available"}
 	err = db.Create(router).Error
 	if err != nil {
-		log.Println("DB failed to create router, %v", err)
+		log.Println("DB failed to create router ", err)
 		return
 	}
 	if pubSubnet == nil {
-		pubSubnet := &model.Subnet{}
+		pubSubnet = &model.Subnet{}
 		err = db.Where("type = 'public'").Take(pubSubnet).Error
 		if err != nil {
-			log.Println("DB failed to query public subnet, %v", err)
+			log.Println("DB failed to query public subnet ", err)
 			return
 		}
 	}
@@ -248,6 +248,7 @@ func (a *RouterAdmin) Delete(ctx context.Context, router *model.Router) (err err
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Delete master failed")
+		return
 	}
 	if err = db.Delete(router).Error; err != nil {
 		log.Println("DB failed to delete router", err)

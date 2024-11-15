@@ -153,7 +153,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		if count > 1 {
 			hostname = fmt.Sprintf("%s-%d", prefix, i+1)
 		}
-		instance := &model.Instance{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Hostname: hostname, ImageID: image.ID, FlavorID: flavor.ID, Keys: keys, Userdata: userdata, Status: "pending", ZoneID: zoneID, RouterID: routerID}
+		instance := &model.Instance{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, Hostname: hostname, ImageID: image.ID, FlavorID: flavor.ID, Keys: keys, Userdata: userdata, Status: "pending", ZoneID: zoneID, RouterID: routerID}
 		err = db.Create(instance).Error
 		if err != nil {
 			log.Println("DB create instance failed", err)

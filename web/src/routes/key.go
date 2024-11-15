@@ -73,7 +73,7 @@ func (point *KeyTemp) CreateFingerPrint(publicKey string) (fingerPrint string, e
 func (a *KeyAdmin) Create(ctx context.Context, name, pubkey, fingerprint string) (key *model.Key, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
-	key = &model.Key{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Name: name, PublicKey: pubkey, FingerPrint: fingerprint}
+	key = &model.Key{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, Name: name, PublicKey: pubkey, FingerPrint: fingerprint}
 	err = db.Create(key).Error
 	if err != nil {
 		log.Println("DB failed to create key, %v", err)

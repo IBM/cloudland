@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"web/src/model"
+
 	"github.com/go-macaron/session"
 	"github.com/jinzhu/gorm"
 	macaron "gopkg.in/macaron.v1"
@@ -30,10 +31,10 @@ var (
 )
 
 type InterfaceInfo struct {
-        Subnet      *model.Subnet
-        MacAddress  string
-        IpAddress   string
-	SecurityGroups   []*model.SecurityGroup
+	Subnet         *model.Subnet
+	MacAddress     string
+	IpAddress      string
+	SecurityGroups []*model.SecurityGroup
 }
 
 type InterfaceAdmin struct{}
@@ -417,7 +418,7 @@ func SetGateway(ctx context.Context, subnetID, zoneID, owner int64, router *mode
 	subnet = &model.Subnet{
 		Model: model.Model{ID: subnetID},
 	}
-	err = db.Model(subnet).Preload("Routers").Preload("Zones").Take(subnet).Error
+	err = db.Model(subnet).Preload("Routers").Take(subnet).Error
 	if err != nil {
 		log.Println("Failed to get subnet, %v", err)
 		return
@@ -468,7 +469,7 @@ func CreateInterface(ctx context.Context, subnetID, ID, owner int64, hyper int32
 	var db *gorm.DB
 	ctx, db = getCtxDB(ctx)
 	subnet := &model.Subnet{Model: model.Model{ID: subnetID}}
-	err = db.Preload("Zones").Take(subnet).Error
+	err = db.Take(subnet).Error
 	if err != nil {
 		log.Println("DB failed to query subnet, %v", err)
 		return
@@ -485,7 +486,7 @@ func CreateInterface(ctx context.Context, subnetID, ID, owner int64, hyper int32
 		}
 	}
 	iface = &model.Interface{
-		Model:     model.Model{Owner: owner},
+		Owner:     owner,
 		Name:      ifaceName,
 		MacAddr:   mac,
 		PrimaryIf: primary,

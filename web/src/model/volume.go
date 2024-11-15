@@ -12,6 +12,7 @@ import (
 
 type Volume struct {
 	Model
+	Owner      int64  `gorm:"default:1"` /* The organization ID of the resource */
 	Name       string `gorm:"type:varchar(128)"`
 	Path       string `gorm:"type:varchar(128)"`
 	Size       int32
