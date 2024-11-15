@@ -141,12 +141,12 @@ func (v *SubnetAPI) Create(c *gin.Context) {
 		common.ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
 		return
 	}
+	if payload.VPC == nil && payload.Type != common.Public {
+		common.ErrorResponse(c, http.StatusBadRequest, "VPC must be specified if network type not public", err)
+		return
+	}
 	var router *model.Router
 	if payload.VPC != nil {
-		if payload.Type != common.Public {
-			common.ErrorResponse(c, http.StatusBadRequest, "VPC must be specified if network type not public", err)
-			return
-		}
 		router, err = routerAdmin.GetRouter(ctx, payload.VPC)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusBadRequest, "Failed to get router", err)

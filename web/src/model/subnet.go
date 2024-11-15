@@ -31,7 +31,7 @@ type Subnet struct {
 
 type Address struct {
 	Model
-	Owner        int64  `gorm:"default:1"` /* The organization ID of the resource */
+	Owner     int64  `gorm:"default:1"` /* The organization ID of the resource */
 	Address   string `gorm:"type:varchar(64)"`
 	Netmask   string `gorm:"type:varchar(64)"`
 	Type      string `gorm:"type:varchar(20);default:'native'"`

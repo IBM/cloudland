@@ -68,7 +68,7 @@ func (Organization) TableName() string {
 
 type Member struct {
 	Model
-	Owner     int64     `gorm:"default:1"` /* The organization ID of the resource */
+	Owner    int64 `gorm:"default:1"` /* The organization ID of the resource */
 	UserID   int64
 	UserName string
 	OrgID    int64

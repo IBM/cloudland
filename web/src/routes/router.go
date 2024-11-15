@@ -107,7 +107,7 @@ func (a *RouterAdmin) Get(ctx context.Context, id int64) (router *model.Router, 
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	router = &model.Router{Model: model.Model{ID: id}}
-	if err = db.Where(where).Take(router).Error; err != nil {
+	if err = db.Preload("Subnets").Where(where).Take(router).Error; err != nil {
 		log.Println("Failed to query router", err)
 		return
 	}
@@ -125,7 +125,7 @@ func (a *RouterAdmin) GetRouterByUUID(ctx context.Context, uuID string) (router 
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	router = &model.Router{}
-	err = db.Where(where).Where("uuid = ?", uuID).Take(router).Error
+	err = db.Preload("Subnets").Where(where).Where("uuid = ?", uuID).Take(router).Error
 	if err != nil {
 		log.Println("Failed to query router, %v", err)
 		return
@@ -144,7 +144,7 @@ func (a *RouterAdmin) GetRouterByName(ctx context.Context, name string) (router 
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	router = &model.Router{}
-	err = db.Where(where).Where("name = ?", name).Take(router).Error
+	err = db.Preload("Subnets").Where(where).Where("name = ?", name).Take(router).Error
 	if err != nil {
 		log.Println("Failed to query router, %v", err)
 		return
@@ -248,6 +248,12 @@ func (a *RouterAdmin) Delete(ctx context.Context, router *model.Router) (err err
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Delete master failed")
+		return
+	}
+	router.Name = fmt.Sprintf("%s-%d", router.Name, router.CreatedAt.Unix())
+	err = db.Save(router).Error
+	if err != nil {
+		log.Println("DB failed to update router name", err)
 		return
 	}
 	if err = db.Delete(router).Error; err != nil {

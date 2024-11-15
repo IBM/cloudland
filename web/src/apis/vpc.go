@@ -139,7 +139,7 @@ func (v *VPCAPI) Create(c *gin.Context) {
 			return
 		}
 	}
-	if publicSubnet.Type != "public" {
+	if publicSubnet != nil && publicSubnet.Type != "public" {
 		common.ErrorResponse(c, http.StatusBadRequest, "Invalid public network type", err)
 		return
 	}

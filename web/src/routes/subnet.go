@@ -383,7 +383,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, vlan int, name, network, gatew
 		Model:        model.Model{Creater: memberShip.UserID},
 		Owner: owner,
 		Name:         name,
-		Network:      first.String(),
+		Network:      network,
 		Netmask:      netmask,
 		Gateway:      gateway,
 		Start:        start,
