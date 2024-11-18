@@ -243,6 +243,19 @@ func (a *RouterAdmin) Delete(ctx context.Context, router *model.Router) (err err
 		err = fmt.Errorf("There are associated portmaps")
 		return
 	}
+	secgroups := []*model.SecurityGroup{}
+	err = db.Where("router_id = ?", router.ID).Find(&secgroups).Error
+	if err != nil {
+		log.Println("DB failed to query security groups", err)
+		return
+	}
+	for _, sg := range secgroups {
+		err = secgroupAdmin.Delete(sg.ID)
+		if err != nil {
+			log.Println("Can not delete security group", err)
+			return
+		}
+	}
 	control := "toall="
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_local_router.sh '%d'", router.ID)
 	err = hyperExecute(ctx, control, command)

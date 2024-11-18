@@ -1019,17 +1019,6 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			}
 			securityGroups = append(securityGroups, secGroup)
 		}
-	} else {
-		sgID := store.Get("defsg").(int64)
-		var secGroup *model.SecurityGroup
-		secGroup, err = secgroupAdmin.Get(ctx, sgID, primarySubnet.RouterID)
-		if err != nil {
-			log.Println("Get default security groups failed", err)
-			c.Data["ErrorMsg"] = "Get default security groups failed"
-			c.HTML(http.StatusBadRequest, err.Error())
-			return
-		}
-		securityGroups = append(securityGroups, secGroup)
 	}
 	primaryIface := &InterfaceInfo{
 		Subnet:         primarySubnet,

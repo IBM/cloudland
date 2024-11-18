@@ -203,19 +203,6 @@ func (a *OrgAdmin) Delete(ctx context.Context, id int64) (err error) {
 			return
 		}
 	}
-	secgroups := []*model.SecurityGroup{}
-	err = db.Where("owner = ?", id).Find(&secgroups).Error
-	if err != nil {
-		log.Println("DB failed to query security groups", err)
-		return
-	}
-	for _, sg := range secgroups {
-		err = secgroupAdmin.Delete(sg.ID)
-		if err != nil {
-			log.Println("Can not delete security group", err)
-			return
-		}
-	}
 	err = db.Delete(&model.Organization{Model: model.Model{ID: id}}).Error
 	if err != nil {
 		log.Println("DB failed to delete organization, %v", err)
