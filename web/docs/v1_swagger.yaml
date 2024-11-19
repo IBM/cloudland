@@ -303,7 +303,8 @@ definitions:
         minLength: 2
         type: string
       public_key:
-        minLength: 4096
+        maxLength: 4096
+        minLength: 4
         type: string
     required:
     - name

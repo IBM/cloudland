@@ -3030,7 +3030,8 @@ const docTemplatev1 = `{
                 },
                 "public_key": {
                     "type": "string",
-                    "minLength": 4096
+                    "maxLength": 4096,
+                    "minLength": 4
                 }
             }
         },

@@ -38,7 +38,7 @@ type KeyListResponse struct {
 
 type KeyPayload struct {
 	Name      string `json:"name" binding:"required,min=2,max=32"`
-	PublicKey string `json:"public_key" binding:"required,min=4096"`
+	PublicKey string `json:"public_key" binding:"required,min=4,max=4096"`
 }
 
 type KeyPatchPayload struct {

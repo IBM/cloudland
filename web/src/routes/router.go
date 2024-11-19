@@ -73,7 +73,7 @@ func createRouterIface(ctx context.Context, rtype string, router *model.Router, 
 
 func (a *RouterAdmin) Create(ctx context.Context, name string, pubSubnet *model.Subnet) (router *model.Router, err error) {
 	memberShip := GetMemberShip(ctx)
-	permit := memberShip.ValidateOwner(model.Writer, router.Owner)
+	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
 		log.Println("Not authorized to create routers")
 		err = fmt.Errorf("Not authorized")

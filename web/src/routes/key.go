@@ -382,22 +382,13 @@ func (v *KeyView) SearchDbFingerPrint(c *macaron.Context, store session.Store, f
 
 func (v *KeyView) SolveListKeyError(c *macaron.Context, store session.Store) {
 	if c.QueryTrim("from_instance") != "" {
-		_, keys, err := keyAdmin.List(c.Req.Context(), 0, -1, "", "")
+		_, _, err := keyAdmin.List(c.Req.Context(), 0, -1, "", "")
 		if err != nil {
 			log.Println("Failed to list keys, %v", err)
-			if c.Req.Header.Get("X-Json-Format") == "yes" {
-				c.JSON(500, map[string]interface{}{
-					"error": err.Error(),
-				})
-				return
-			}
 			c.Data["ErrorMsg"] = err.Error()
 			c.HTML(500, "500")
 			return
 		}
-		c.JSON(200, map[string]interface{}{
-			"keys": keys,
-		})
 	} else {
 		redirectTo := "../keys"
 		c.Redirect(redirectTo)
@@ -416,6 +407,8 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 			c.Data["ErrorMsg"] = err.Error()
 			c.HTML(http.StatusBadRequest, "error")
 		}
+		redirectTo := "../keys"
+		c.Redirect(redirectTo)
 	} else {
 		publicKey, fingerPrint, privateKey, err := keyAdmin.CreateKeyPair(ctx)
 		if err != nil {
