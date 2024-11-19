@@ -3017,22 +3017,31 @@ const docTemplatev1 = `{
             "type": "object"
         },
         "apis.KeyPayload": {
-            "type": "object"
+            "type": "object",
+            "required": [
+                "name",
+                "public_key"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                },
+                "public_key": {
+                    "type": "string",
+                    "minLength": 4096
+                }
+            }
         },
         "apis.KeyResponse": {
             "type": "object",
             "properties": {
-                "cpu": {
-                    "type": "integer"
-                },
-                "disk": {
-                    "type": "integer"
+                "finger_print": {
+                    "type": "string"
                 },
                 "id": {
                     "type": "string"
-                },
-                "memory": {
-                    "type": "integer"
                 },
                 "name": {
                     "type": "string",
@@ -3402,6 +3411,9 @@ const docTemplatev1 = `{
         },
         "apis.VPCPayload": {
             "type": "object",
+            "required": [
+                "name"
+            ],
             "properties": {
                 "name": {
                     "type": "string",

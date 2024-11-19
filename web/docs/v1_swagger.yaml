@@ -297,17 +297,24 @@ definitions:
   apis.KeyPatchPayload:
     type: object
   apis.KeyPayload:
+    properties:
+      name:
+        maxLength: 32
+        minLength: 2
+        type: string
+      public_key:
+        minLength: 4096
+        type: string
+    required:
+    - name
+    - public_key
     type: object
   apis.KeyResponse:
     properties:
-      cpu:
-        type: integer
-      disk:
-        type: integer
+      finger_print:
+        type: string
       id:
         type: string
-      memory:
-        type: integer
       name:
         maxLength: 32
         minLength: 2
@@ -560,6 +567,8 @@ definitions:
         type: string
       public_network:
         $ref: '#/definitions/common.BaseReference'
+    required:
+    - name
     type: object
   apis.VPCResponse:
     properties:

@@ -37,7 +37,7 @@ type VPCListResponse struct {
 }
 
 type VPCPayload struct {
-	Name          string                `json:"name" binding:"omitempty,min=2,max=32"`
+	Name          string                `json:"name" binding:"required,min=2,max=32"`
 	PublicNetwork *common.BaseReference `json:"public_network" binding:"omitempty"`
 }
 

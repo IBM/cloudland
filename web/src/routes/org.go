@@ -197,7 +197,7 @@ func (a *OrgAdmin) Delete(ctx context.Context, id int64) (err error) {
 		return
 	}
 	for _, key := range keys {
-		err = keyAdmin.Delete(key.ID)
+		err = keyAdmin.Delete(ctx, key)
 		if err != nil {
 			log.Println("Can not delete key", err)
 			return

@@ -58,7 +58,19 @@ type UserListResponse struct {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /users/{id} [get]
 func (v *UserAPI) Get(c *gin.Context) {
-	userResp := &UserResponse{}
+	ctx := c.Request.Context()
+	uuID := c.Param("id")
+	user, err := userAdmin.GetUserByUUID(ctx, uuID)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
+		return
+	}
+	userResp := &UserResponse{
+		UserInfo: &common.BaseReference{
+			ID:   user.UUID,
+			Name: user.Username,
+		},
+	}
 	c.JSON(http.StatusOK, userResp)
 }
 
@@ -74,7 +86,30 @@ func (v *UserAPI) Get(c *gin.Context) {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /users/{id} [patch]
 func (v *UserAPI) Patch(c *gin.Context) {
-	userResp := &UserResponse{}
+	ctx := c.Request.Context()
+	uuID := c.Param("id")
+	payload := &UserPatchPayload{}
+	err := c.ShouldBindJSON(payload)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
+		return
+	}
+	user, err := userAdmin.GetUserByUUID(ctx, uuID)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
+		return
+	}
+	user, err = userAdmin.Update(ctx, user.ID, payload.Password, nil)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
+		return
+	}
+	userResp := &UserResponse{
+		UserInfo: &common.BaseReference{
+			ID:   user.UUID,
+			Name: user.Username,
+		},
+	}
 	c.JSON(http.StatusOK, userResp)
 }
 
