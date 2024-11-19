@@ -50,7 +50,7 @@ type ImagePatchPayload struct {
 // @Success 200 {object} ImageResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /images/:id [get]
+// @Router /images/{id} [get]
 func (v *ImageAPI) Get(c *gin.Context) {
 	imageResp := &ImageResponse{}
 	c.JSON(http.StatusOK, imageResp)
@@ -66,7 +66,7 @@ func (v *ImageAPI) Get(c *gin.Context) {
 // @Success 200 {object} ImageResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /images/:id [patch]
+// @Router /images/{id} [patch]
 func (v *ImageAPI) Patch(c *gin.Context) {
 	imageResp := &ImageResponse{}
 	c.JSON(http.StatusOK, imageResp)
@@ -81,7 +81,7 @@ func (v *ImageAPI) Patch(c *gin.Context) {
 // @Success 200
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /images/:id [delete]
+// @Router /images/{id} [delete]
 func (v *ImageAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }

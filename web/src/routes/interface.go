@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"web/src/model"
+
 	"github.com/go-macaron/session"
 	"github.com/jinzhu/gorm"
 	macaron "gopkg.in/macaron.v1"
@@ -30,10 +31,10 @@ var (
 )
 
 type InterfaceInfo struct {
-        Subnet      *model.Subnet
-        MacAddress  string
-        IpAddress   string
-	SecurityGroups   []*model.SecurityGroup
+	Subnet         *model.Subnet
+	MacAddress     string
+	IpAddress      string
+	SecurityGroups []*model.SecurityGroup
 }
 
 type InterfaceAdmin struct{}
@@ -205,7 +206,6 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	instID := c.QueryInt64("instance")
-	zoneID := c.QueryInt64("zone")
 	if instID > 0 {
 		permit, err = memberShip.CheckOwner(model.Writer, "instances", int64(instID))
 		if !permit {
@@ -253,7 +253,7 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 		log.Println("Security group query failed", err)
 		return
 	}
-	iface, err := CreateInterface(ctx, subnetID, instID, memberShip.OrgID, zoneID, -1, address, mac, ifname, "instance", secGroups)
+	iface, err := CreateInterface(ctx, subnetID, instID, memberShip.OrgID, -1, address, mac, ifname, "instance", secGroups)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
 			"error": err.Error(),
@@ -418,7 +418,7 @@ func SetGateway(ctx context.Context, subnetID, zoneID, owner int64, router *mode
 	subnet = &model.Subnet{
 		Model: model.Model{ID: subnetID},
 	}
-	err = db.Model(subnet).Preload("Routers").Preload("Zones").Take(subnet).Error
+	err = db.Model(subnet).Preload("Routers").Take(subnet).Error
 	if err != nil {
 		log.Println("Failed to get subnet, %v", err)
 		return
@@ -428,28 +428,9 @@ func SetGateway(ctx context.Context, subnetID, zoneID, owner int64, router *mode
 		err = fmt.Errorf("Only internal gateway can be set gateway")
 		return
 	}
-	iface, err = CreateInterface(ctx, subnetID, router.ID, owner, zoneID, -1, subnet.Gateway, "", "subnet-gw", "gateway", nil)
+	iface, err = CreateInterface(ctx, subnetID, router.ID, owner, -1, subnet.Gateway, "", "subnet-gw", "gateway", nil)
 	if err != nil {
 		log.Println("Failed to create gateway subnet interface", err)
-		return
-	}
-	found := false
-	log.Println("going to for circle")
-	log.Println("SetGateway,zoneID=", zoneID)
-	for _, z := range subnet.Zones {
-		log.Println("setGatewayzoneID=", zoneID)
-		if z.ID == zoneID {
-			log.Println("z.ID=", z.ID)
-			log.Println("setGatewayzoneID=", zoneID)
-			found = true
-			break
-		}
-	}
-	log.Println("SetGateway")
-	log.Println("found=", found)
-	if !found {
-		log.Println("Subnet does not cross this zone")
-		err = fmt.Errorf("Subnet does not cross this zone")
 		return
 	}
 	subnet.RouterID = router.ID
@@ -484,25 +465,13 @@ func genMacaddr() (mac string, err error) {
 	return mac, nil
 }
 
-func CreateInterface(ctx context.Context, subnetID, ID, owner, zoneID int64, hyper int32, address, mac, ifaceName, ifType string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
+func CreateInterface(ctx context.Context, subnetID, ID, owner int64, hyper int32, address, mac, ifaceName, ifType string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
 	var db *gorm.DB
 	ctx, db = getCtxDB(ctx)
 	subnet := &model.Subnet{Model: model.Model{ID: subnetID}}
-	err = db.Preload("Zones").Take(subnet).Error
+	err = db.Take(subnet).Error
 	if err != nil {
 		log.Println("DB failed to query subnet, %v", err)
-		return
-	}
-	found := false
-	for _, z := range subnet.Zones {
-		if z.ID == zoneID {
-			found = true
-			break
-		}
-	}
-	if !found {
-		log.Println("Subnet does not cross this zone")
-		err = fmt.Errorf("Subnet does not cross this zone")
 		return
 	}
 	primary := false
@@ -517,7 +486,7 @@ func CreateInterface(ctx context.Context, subnetID, ID, owner, zoneID int64, hyp
 		}
 	}
 	iface = &model.Interface{
-		Model:     model.Model{Owner: owner},
+		Owner:     owner,
 		Name:      ifaceName,
 		MacAddr:   mac,
 		PrimaryIf: primary,
@@ -525,7 +494,6 @@ func CreateInterface(ctx context.Context, subnetID, ID, owner, zoneID int64, hyp
 		Hyper:     hyper,
 		Type:      ifType,
 		Mtu:       1450,
-		ZoneID:    zoneID,
 		RouterID:  subnet.RouterID,
 		Secgroups: secGroups,
 	}

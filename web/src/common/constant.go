@@ -8,6 +8,7 @@ SPDX-License-Identifier: Apache-2.0
 package common
 
 type PowerAction string
+type SubnetType string
 
 const (
 	Stop        PowerAction = "stop"
@@ -16,5 +17,8 @@ const (
 	Restart     PowerAction = "restart"
 	HardRestart PowerAction = "hard_restart"
 	Pause       PowerAction = "pause"
-	Unpause     PowerAction = "resume"
+	Resume      PowerAction = "resume"
+
+	Public      SubnetType = "public"
+	Internal    SubnetType = "internal"
 )

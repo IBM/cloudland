@@ -14,6 +14,7 @@ import (
 	"net/http"
 
 	"web/src/model"
+
 	"github.com/go-macaron/session"
 	"gopkg.in/macaron.v1"
 )

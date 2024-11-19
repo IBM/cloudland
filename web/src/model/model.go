@@ -22,10 +22,9 @@ type Model struct {
 	ID        int64 `gorm:"primary_key"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	DeletedAt *time.Time    `sql:"index"`
+	DeletedAt *time.Time    `gorm:"index"`
 	UUID      string        `gorm:"type:varchar(64)"`
 	Creater   int64         `gorm:"default:1"` /* The user ID of the resource */
-	Owner     int64         `gorm:"default:1"` /* The organization ID of the resource */
 	OwnerInfo *Organization `gorm:"PRELOAD:false","foreignkey:Owner"`
 }
 

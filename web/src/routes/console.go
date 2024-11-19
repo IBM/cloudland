@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"web/src/model"
+
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/go-macaron/session"
 	"github.com/spf13/viper"

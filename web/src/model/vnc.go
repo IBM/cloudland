@@ -14,6 +14,7 @@ import (
 
 type Vnc struct {
 	Model
+	Owner         int64  `gorm:"default:1"` /* The organization ID of the resource */
 	LocalAddress  string `gorm:"type:varchar(64)"`
 	LocalPort     int32
 	AccessAddress string `gorm:"type:varchar(64)"`

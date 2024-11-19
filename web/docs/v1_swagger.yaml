@@ -274,6 +274,10 @@ definitions:
         maxLength: 32
         minLength: 2
         type: string
+      security_groups:
+        items:
+          $ref: '#/definitions/common.BaseReference'
+        type: array
       subnet:
         $ref: '#/definitions/common.BaseReference'
     type: object
@@ -293,17 +297,25 @@ definitions:
   apis.KeyPatchPayload:
     type: object
   apis.KeyPayload:
+    properties:
+      name:
+        maxLength: 32
+        minLength: 2
+        type: string
+      public_key:
+        maxLength: 4096
+        minLength: 4
+        type: string
+    required:
+    - name
+    - public_key
     type: object
   apis.KeyResponse:
     properties:
-      cpu:
-        type: integer
-      disk:
-        type: integer
+      finger_print:
+        type: string
       id:
         type: string
-      memory:
-        type: integer
       name:
         maxLength: 32
         minLength: 2
@@ -430,15 +442,61 @@ definitions:
   apis.SubnetPatchPayload:
     type: object
   apis.SubnetPayload:
+    properties:
+      base_domain:
+        type: string
+      dhcp:
+        type: boolean
+      dns:
+        type: string
+      end_ip:
+        type: string
+      gateway:
+        type: string
+      name:
+        maxLength: 32
+        minLength: 2
+        type: string
+      network_cidr:
+        type: string
+      start_ip:
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/common.SubnetType'
+        enum:
+        - public
+        - internal
+      vlan:
+        maximum: 16777215
+        minimum: 1
+        type: integer
+      vpc:
+        $ref: '#/definitions/common.BaseReference'
+    required:
+    - name
+    - network_cidr
     type: object
   apis.SubnetResponse:
     properties:
+      dns:
+        type: string
+      gateway:
+        type: string
       id:
         type: string
       name:
         maxLength: 32
         minLength: 2
         type: string
+      netmask:
+        type: string
+      network:
+        type: string
+      type:
+        $ref: '#/definitions/common.SubnetType'
+      vpc:
+        $ref: '#/definitions/common.BaseReference'
     type: object
   apis.UserListResponse:
     properties:
@@ -450,7 +508,7 @@ definitions:
         type: integer
       users:
         items:
-          $ref: '#/definitions/apis.OrgResponse'
+          $ref: '#/definitions/apis.UserResponse'
         type: array
     type: object
   apis.UserPatchPayload:
@@ -503,6 +561,15 @@ definitions:
   apis.VPCPatchPayload:
     type: object
   apis.VPCPayload:
+    properties:
+      name:
+        maxLength: 32
+        minLength: 2
+        type: string
+      public_network:
+        $ref: '#/definitions/common.BaseReference'
+    required:
+    - name
     type: object
   apis.VPCResponse:
     properties:
@@ -514,7 +581,7 @@ definitions:
         type: string
       subnets:
         items:
-          $ref: '#/definitions/common.BaseReference'
+          $ref: '#/definitions/apis.SubnetResponse'
         type: array
     type: object
   apis.VolumeListResponse:
@@ -609,7 +676,15 @@ definitions:
     - Restart
     - HardRestart
     - Pause
-    - Unpause
+    - Resume
+  common.SubnetType:
+    enum:
+    - public
+    - internal
+    type: string
+    x-enum-varnames:
+    - Public
+    - Internal
 info:
   contact: {}
   description: APIs for CloudLand Functions
@@ -667,7 +742,7 @@ paths:
       summary: create a flavor
       tags:
       - Compute
-  /flavors/:id:
+  /flavors/{id}:
     delete:
       consumes:
       - application/json
@@ -787,7 +862,7 @@ paths:
       summary: create a floating ip
       tags:
       - Network
-  /floating_ips/:id:
+  /floating_ips/{id}:
     delete:
       consumes:
       - application/json
@@ -878,7 +953,7 @@ paths:
       summary: list hypervisors
       tags:
       - Administration
-  /hypers/:id:
+  /hypers/{name}:
     get:
       consumes:
       - application/json
@@ -949,7 +1024,7 @@ paths:
       summary: create a image
       tags:
       - Compute
-  /images/:id:
+  /images/{id}:
     delete:
       consumes:
       - application/json
@@ -1205,7 +1280,7 @@ paths:
       summary: create a interface
       tags:
       - Network
-  /interfaces/:id:
+  /interfaces/{id}:
     delete:
       consumes:
       - application/json
@@ -1325,7 +1400,7 @@ paths:
       summary: create a key
       tags:
       - Authorization
-  /keys/:id:
+  /keys/{id}:
     delete:
       consumes:
       - application/json
@@ -1471,7 +1546,7 @@ paths:
       summary: create a org
       tags:
       - Authorization
-  /orgs/:id:
+  /orgs/{id}:
     delete:
       consumes:
       - application/json
@@ -1591,7 +1666,7 @@ paths:
       summary: create a secgroup
       tags:
       - Network
-  /security_groups/:id:
+  /security_groups/{id}:
     delete:
       consumes:
       - application/json
@@ -1663,7 +1738,7 @@ paths:
       summary: patch a secgroup
       tags:
       - Network
-  /security_groups/:id/rules:
+  /security_groups/{id}/rules:
     get:
       consumes:
       - application/json
@@ -1711,7 +1786,7 @@ paths:
       summary: create a secrule
       tags:
       - Network
-  /security_groups/:id/rules/:rule_id:
+  /security_groups/{id}/rules/{rule_id}:
     delete:
       consumes:
       - application/json
@@ -1831,7 +1906,7 @@ paths:
       summary: create a subnet
       tags:
       - Network
-  /subnets/:id:
+  /subnets/{id}:
     delete:
       consumes:
       - application/json
@@ -1951,7 +2026,7 @@ paths:
       summary: create a user
       tags:
       - Authorization
-  /users/:id:
+  /users/{id}:
     delete:
       consumes:
       - application/json
@@ -2071,7 +2146,7 @@ paths:
       summary: create a volume
       tags:
       - Compute
-  /volumes/:id:
+  /volumes/{id}:
     delete:
       consumes:
       - application/json
@@ -2191,7 +2266,7 @@ paths:
       summary: create a vpc
       tags:
       - Network
-  /vpcs/:id:
+  /vpcs/{id}:
     delete:
       consumes:
       - application/json
@@ -2282,7 +2357,7 @@ paths:
       summary: list zonevisors
       tags:
       - Zone
-  /zones/:id:
+  /zones/{name}:
     get:
       consumes:
       - application/json

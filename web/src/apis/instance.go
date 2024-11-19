@@ -88,10 +88,12 @@ func (v *InstanceAPI) Get(c *gin.Context) {
 	instance, err := instanceAdmin.GetInstanceByUUID(ctx, uuID)
 	if err != nil {
 		common.ErrorResponse(c, http.StatusBadRequest, "Invalid instance query", err)
+		return
 	}
 	instanceResp, err := v.getInstanceResponse(ctx, instance)
 	if err != nil {
 		common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+		return
 	}
 
 	c.JSON(http.StatusOK, instanceResp)
@@ -114,6 +116,7 @@ func (v *InstanceAPI) Patch(c *gin.Context) {
 	instance, err := instanceAdmin.GetInstanceByUUID(ctx, uuID)
 	if err != nil {
 		common.ErrorResponse(c, http.StatusBadRequest, "Invalid instance query", err)
+		return
 	}
 	payload := &InstancePatchPayload{}
 	err = c.ShouldBindJSON(payload)
@@ -130,6 +133,7 @@ func (v *InstanceAPI) Patch(c *gin.Context) {
 		flavor, err = flavorAdmin.GetFlavorByName(ctx, payload.Flavor)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusBadRequest, "Invalid flavor query", err)
+			return
 		}
 	}
 	err = instanceAdmin.Update(ctx, instance, flavor, hostname, payload.PowerAction, int(instance.Hyper))
@@ -140,6 +144,7 @@ func (v *InstanceAPI) Patch(c *gin.Context) {
 	instanceResp, err := v.getInstanceResponse(ctx, instance)
 	if err != nil {
 		common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+		return
 	}
 	c.JSON(http.StatusOK, instanceResp)
 }
@@ -161,10 +166,12 @@ func (v *InstanceAPI) Delete(c *gin.Context) {
 	instance, err := instanceAdmin.GetInstanceByUUID(ctx, uuID)
 	if err != nil {
 		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
+		return
 	}
 	err = instanceAdmin.Delete(ctx, instance)
 	if err != nil {
 		common.ErrorResponse(c, http.StatusBadRequest, "Not able to delete", err)
+		return
 	}
 	c.JSON(http.StatusNoContent, nil)
 }
@@ -205,25 +212,23 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 		common.ErrorResponse(c, http.StatusBadRequest, "Invalid zone", err)
 		return
 	}
-	primaryIface, err := v.getInterfaceInfo(ctx, payload.PrimaryInterface)
-	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid primary interface", err)
-		return
-	}
-	routerID := primaryIface.Subnet.RouterID
+	var router *model.Router
 	if payload.VPC != nil {
-		var router *model.Router
 		router, err = routerAdmin.GetRouter(ctx, payload.VPC)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusBadRequest, "Invalid VPC", nil)
 			return
 		}
-		routerID = router.ID
+	}
+	router, primaryIface, err := v.getInterfaceInfo(ctx, router, payload.PrimaryInterface)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid primary interface", err)
+		return
 	}
 	var secondaryIfaces []*routes.InterfaceInfo
 	for _, ifacePayload := range payload.SecondaryInterfaces {
 		var ifaceInfo *routes.InterfaceInfo
-		ifaceInfo, err = v.getInterfaceInfo(ctx, ifacePayload)
+		_, ifaceInfo, err = v.getInterfaceInfo(ctx, router, ifacePayload)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusBadRequest, "Invalid secondary interfaces", err)
 			return
@@ -240,9 +245,9 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 		key, err = keyAdmin.GetKey(ctx, ky)
 		keys = append(keys, key)
 	}
-	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, routerID, primaryIface, secondaryIfaces, keys, -1)
+	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, router.ID, primaryIface, secondaryIfaces, keys, -1)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Failed to create instances", err)
+		common.ErrorResponse(c, http.StatusBadRequest, "Failed to create instances", err)
 		return
 	}
 	instancesResp := make([]*InstanceResponse, len(instances))
@@ -256,7 +261,7 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 	c.JSON(http.StatusOK, instancesResp)
 }
 
-func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, ifacePayload *InterfacePayload) (ifaceInfo *routes.InterfaceInfo, err error) {
+func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, vpc *model.Router, ifacePayload *InterfacePayload) (router *model.Router, ifaceInfo *routes.InterfaceInfo, err error) {
 	if ifacePayload == nil || ifacePayload.Subnet == nil {
 		err = fmt.Errorf("Interface with subnet must be provided")
 		return
@@ -264,6 +269,17 @@ func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, ifacePayload *Interf
 	subnet, err := subnetAdmin.GetSubnet(ctx, ifacePayload.Subnet)
 	if err != nil {
 		return
+	}
+	router = vpc
+	if router != nil && router.ID != subnet.RouterID {
+		err = fmt.Errorf("VPC of subnet must be the same with VPC of instance")
+		return
+	}
+	if router == nil {
+		router, err = routerAdmin.Get(ctx, subnet.RouterID)
+		if err != nil {
+			return
+		}
 	}
 	ifaceInfo = &routes.InterfaceInfo{
 		Subnet: subnet,
@@ -274,14 +290,21 @@ func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, ifacePayload *Interf
 	if ifacePayload.MacAddress != "" {
 		ifaceInfo.MacAddress = ifacePayload.MacAddress
 	}
-	for _, sg := range ifacePayload.SecurityGroups {
-		var secGroup *model.SecurityGroup
-		secGroup, err = secgroupAdmin.GetSecurityGroup(ctx, sg, subnet.RouterID)
+	var secGroup *model.SecurityGroup
+	if len(ifacePayload.SecurityGroups) == 0 {
+		secGroup, err = secgroupAdmin.Get(ctx, router.DefaultSG, router.ID)
 		if err != nil {
 			return
 		}
 		ifaceInfo.SecurityGroups = append(ifaceInfo.SecurityGroups, secGroup)
-
+	} else {
+		for _, sg := range ifacePayload.SecurityGroups {
+			secGroup, err = secgroupAdmin.GetSecurityGroup(ctx, sg, subnet.RouterID)
+			if err != nil {
+				return
+			}
+			ifaceInfo.SecurityGroups = append(ifaceInfo.SecurityGroups, secGroup)
+		}
 	}
 	return
 }
@@ -337,6 +360,12 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 			}
 			interfaces[i].FloatingIps = floatingIps
 		}
+		for _, sg := range iface.Secgroups {
+			interfaces[i].SecurityGroups = append(interfaces[i].SecurityGroups, &common.BaseReference{
+				ID:   sg.UUID,
+				Name: sg.Name,
+			})
+		}
 	}
 	instanceResp.Interfaces = interfaces
 	if instance.RouterID > 0 {
@@ -363,8 +392,6 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 // @Router /instances [get]
 func (v *InstanceAPI) List(c *gin.Context) {
 	ctx := c.Request.Context()
-	memberShip := routes.GetMemberShip(ctx)
-	log.Printf("Membership: %v\n", memberShip)
 	offsetStr := c.DefaultQuery("offset", "0")
 	limitStr := c.DefaultQuery("limit", "50")
 	offset, err := strconv.Atoi(offsetStr)
@@ -396,6 +423,7 @@ func (v *InstanceAPI) List(c *gin.Context) {
 		instanceList[i], err = v.getInstanceResponse(ctx, instance)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+			return
 		}
 	}
 	instanceListResp.Instances = instanceList

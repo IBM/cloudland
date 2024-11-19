@@ -31,7 +31,6 @@
 		   			        {{ if $.IsAdmin }}
 			                        <th>{{.i18n.Tr "Owner"}}</th>
 						{{ end }}
-			                        <th>{{.i18n.Tr "Zone"}}</th>
                                     <th>{{.i18n.Tr "Delete"}}</th>
 		                        </tr>
 	                        </thead>
@@ -54,11 +53,6 @@
 		   			        {{ if $.IsAdmin }}
 			                        <td>{{.OwnerInfo.Name}}</td>
 						{{ end }}
-									<td>
-										{{ if .Zone }}
-											{{ .Zone.Name }}
-										{{ end }}
-									</td>
                                     <td><div class="delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}"><i class="dark purple trash alternate outline icon"></i></div></td>
 		                        </tr>
                                 {{ end }}

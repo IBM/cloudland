@@ -12,19 +12,15 @@ import (
 
 type Router struct {
 	Model
-	Name       string `gorm:"type:varchar(32)"`
+	Owner      int64  `gorm:"unique_index:idx_account_router;default:1"` /* The organization ID of the resource */
+	Name       string `gorm:"unique_index:idx_account_router;type:varchar(64)"`
 	Status     string `gorm:"type:varchar(32)"`
-	Type       string `gorm:"type:varchar(32)"`
 	Hyper      int32  `gorm:"default:-1"`
 	Peer       int32  `gorm:"default:-1"`
-	VrrpVni    int64
-	VrrpAddr   string       `gorm:"type:varchar(64)"`
-	PeerAddr   string       `gorm:"type:varchar(64)"`
+	DefaultSG  int64
 	Interfaces []*Interface `gorm:"foreignkey:Device"`
 	Subnets    []*Subnet    `gorm:"foreignkey:RouterID"`
 	PublicID   int64
-	ZoneID     int64
-	Zone       *Zone `gorm:"foreignkey:ZoneID"`
 }
 
 func init() {

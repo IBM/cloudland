@@ -39,7 +39,7 @@ func FileExist(filename string) bool {
 func (a *ImageAdmin) Create(ctx context.Context, osVersion, diskType, virtType, userName, name, url, format, architecture string, instID int64, isLB bool) (image *model.Image, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
-	image = &model.Image{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, OsVersion: osVersion, DiskType: diskType, VirtType: virtType, UserName: userName, Name: name, OSCode: name, Format: format, Status: "creating", Architecture: architecture, OpenShiftLB: isLB}
+	image = &model.Image{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, OsVersion: osVersion, DiskType: diskType, VirtType: virtType, UserName: userName, Name: name, OSCode: name, Format: format, Status: "creating", Architecture: architecture, OpenShiftLB: isLB}
 	err = db.Create(image).Error
 	if err != nil {
 		log.Println("DB create image failed, %v", err)

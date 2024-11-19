@@ -1,6 +1,6 @@
 export GO111MODULE=on
 
-all: build
+all: base api
 
 version:
 	git describe --always --tags > .version

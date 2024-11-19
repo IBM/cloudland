@@ -8,9 +8,12 @@ SPDX-License-Identifier: Apache-2.0
 package apis
 
 import (
+	"context"
 	"net/http"
+	"strconv"
 
 	"web/src/common"
+	"web/src/model"
 	"web/src/routes"
 
 	"github.com/gin-gonic/gin"
@@ -23,9 +26,7 @@ type KeyAPI struct{}
 
 type KeyResponse struct {
 	*common.BaseReference
-	Cpu    int32 `json:"cpu"`
-	Memory int32 `json:"memory"`
-	Disk   int32
+	FingerPrint string `json:"finger_print"`
 }
 
 type KeyListResponse struct {
@@ -36,6 +37,8 @@ type KeyListResponse struct {
 }
 
 type KeyPayload struct {
+	Name      string `json:"name" binding:"required,min=2,max=32"`
+	PublicKey string `json:"public_key" binding:"required,min=4,max=4096"`
 }
 
 type KeyPatchPayload struct {
@@ -50,9 +53,20 @@ type KeyPatchPayload struct {
 // @Success 200 {object} KeyResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /keys/:id [get]
+// @Router /keys/{id} [get]
 func (v *KeyAPI) Get(c *gin.Context) {
-	keyResp := &KeyResponse{}
+	ctx := c.Request.Context()
+	uuID := c.Param("id")
+	key, err := keyAdmin.GetKeyByUUID(ctx, uuID)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid vpc query", err)
+		return
+	}
+	keyResp, err := v.getKeyResponse(ctx, key)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+		return
+	}
 	c.JSON(http.StatusOK, keyResp)
 }
 
@@ -66,7 +80,7 @@ func (v *KeyAPI) Get(c *gin.Context) {
 // @Success 200 {object} KeyResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /keys/:id [patch]
+// @Router /keys/{id} [patch]
 func (v *KeyAPI) Patch(c *gin.Context) {
 	keyResp := &KeyResponse{}
 	c.JSON(http.StatusOK, keyResp)
@@ -81,8 +95,20 @@ func (v *KeyAPI) Patch(c *gin.Context) {
 // @Success 204
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /keys/:id [delete]
+// @Router /keys/{id} [delete]
 func (v *KeyAPI) Delete(c *gin.Context) {
+	ctx := c.Request.Context()
+	uuID := c.Param("id")
+	key, err := keyAdmin.GetKeyByUUID(ctx, uuID)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
+		return
+	}
+	err = keyAdmin.Delete(ctx, key)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Not able to delete", err)
+		return
+	}
 	c.JSON(http.StatusNoContent, nil)
 }
 
@@ -98,8 +124,35 @@ func (v *KeyAPI) Delete(c *gin.Context) {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /keys [post]
 func (v *KeyAPI) Create(c *gin.Context) {
-	keyResp := &KeyResponse{}
+	ctx := c.Request.Context()
+	payload := &KeyPayload{}
+	err := c.ShouldBindJSON(payload)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
+		return
+	}
+	key, err := keyAdmin.Create(ctx, payload.Name, payload.PublicKey)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Not able to create", err)
+		return
+	}
+	keyResp, err := v.getKeyResponse(ctx, key)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+		return
+	}
 	c.JSON(http.StatusOK, keyResp)
+}
+
+func (v *KeyAPI) getKeyResponse(ctx context.Context, key *model.Key) (keyResp *KeyResponse, err error) {
+	keyResp = &KeyResponse{
+		BaseReference: &common.BaseReference{
+			ID:          key.UUID,
+			Name:        key.Name,
+		},
+		FingerPrint: key.FingerPrint,
+	}
+	return
 }
 
 //
@@ -112,6 +165,40 @@ func (v *KeyAPI) Create(c *gin.Context) {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /keys [get]
 func (v *KeyAPI) List(c *gin.Context) {
-	keyListResp := &KeyListResponse{}
+	ctx := c.Request.Context()
+	offsetStr := c.DefaultQuery("offset", "0")
+	limitStr := c.DefaultQuery("limit", "50")
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query offset: "+offsetStr, err)
+		return
+	}
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query limit: "+limitStr, err)
+		return
+	}
+	if offset < 0 || limit < 0 {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", err)
+		return
+	}
+	total, keys, err := keyAdmin.List(ctx, int64(offset), int64(limit), "-created_at", "")
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Failed to list vpcs", err)
+		return
+	}
+	keyListResp := &KeyListResponse{
+		Total:  int(total),
+		Offset: offset,
+		Limit:  len(keys),
+	}
+	keyListResp.Keys = make([]*KeyResponse, keyListResp.Limit)
+	for i, key := range keys {
+		keyListResp.Keys[i], err = v.getKeyResponse(ctx, key)
+		if err != nil {
+			common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+			return
+		}
+	}
 	c.JSON(http.StatusOK, keyListResp)
 }

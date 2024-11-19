@@ -14,8 +14,8 @@ import (
 )
 
 type BaseReference struct {
-	ID   string `json:"id,omitempty" binding:"omitempty,uuid"`
-	Name string `json:"name,omitempty" binding:"omitempty,min=2,max=32"`
+	ID   string `json:"id" binding:"omitempty,uuid"`
+	Name string `json:"name" binding:"omitempty,min=2,max=32"`
 }
 
 type APIError struct {
@@ -25,8 +25,10 @@ type APIError struct {
 }
 
 func ErrorResponse(c *gin.Context, code int, errorMsg string, err error) {
-	log.Printf("%s, %v", errorMsg, err)
-	errorMsg = errorMsg + ": " + err.Error()
+	log.Printf("%s, %v\n", errorMsg, err)
+	if err != nil {
+		errorMsg = errorMsg + ": " + err.Error()
+	}
 	c.JSON(code, &APIError{ErrorMessage: errorMsg})
 	return
 }

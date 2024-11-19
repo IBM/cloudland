@@ -22,6 +22,7 @@ import (
 
 	"web/src/dbs"
 	"web/src/model"
+
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -46,17 +47,14 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 		return
 	}
 	org = &model.Organization{
-		Model: model.Model{Owner: user.ID, Creater: memberShip.UserID},
+		Model: model.Model{Creater: memberShip.UserID},
+		Owner: user.ID,
 		Name:  name,
 	}
 	err = db.Create(org).Error
 	if err != nil {
 		log.Println("DB failed to create organization ", err)
 		return
-	}
-	secGroup, err := secgroupAdmin.Create(ctx, name, true, org.ID)
-	if err != nil {
-		log.Println("Failed to create security group", err)
 	}
 	member := &model.Member{UserID: user.ID, UserName: owner, OrgID: org.ID, OrgName: name, Role: model.Owner}
 	err = db.Create(member).Error
@@ -70,7 +68,6 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 		log.Println("DB failed to update user owner", err)
 		return
 	}
-	org.DefaultSG = secGroup.ID
 	err = db.Save(org).Error
 	if err != nil {
 		log.Println("DB failed to update orgabization default security group", err)
@@ -110,7 +107,8 @@ func (a *OrgAdmin) Update(ctx context.Context, orgID int64, members, users []str
 			continue
 		}
 		member := &model.Member{
-			Model:    model.Model{Creater: memberShip.UserID, Owner: orgID},
+			Model:    model.Model{Creater: memberShip.UserID},
+			Owner:    orgID,
 			UserName: name,
 			UserID:   user.ID,
 			OrgName:  org.Name,
@@ -199,22 +197,9 @@ func (a *OrgAdmin) Delete(ctx context.Context, id int64) (err error) {
 		return
 	}
 	for _, key := range keys {
-		err = keyAdmin.Delete(key.ID)
+		err = keyAdmin.Delete(ctx, key)
 		if err != nil {
 			log.Println("Can not delete key", err)
-			return
-		}
-	}
-	secgroups := []*model.SecurityGroup{}
-	err = db.Where("owner = ?", id).Find(&secgroups).Error
-	if err != nil {
-		log.Println("DB failed to query security groups", err)
-		return
-	}
-	for _, sg := range secgroups {
-		err = secgroupAdmin.Delete(sg.ID)
-		if err != nil {
-			log.Println("Can not delete security group", err)
 			return
 		}
 	}

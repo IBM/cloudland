@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"web/src/model"
+
 	jwt "github.com/dgrijalva/jwt-go"
 )
 

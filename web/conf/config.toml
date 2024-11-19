@@ -1,4 +1,4 @@
-[api]
+[base]
 listen = "127.0.0.1:5443"
 endpoint = "https://142.0.129.162:443"
 key = "/etc/ssl/private/cland-selfsigned.key"

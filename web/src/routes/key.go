@@ -29,14 +29,19 @@ import (
 var (
 	keyAdmin = &KeyAdmin{}
 	keyView  = &KeyView{}
-	keyTemp  = &KeyTemp{}
 )
 
 type KeyAdmin struct{}
 type KeyView struct{}
-type KeyTemp struct{}
 
-func (point *KeyTemp) Create() (publicKey, fingerPrint, privateKey string, err error) {
+func (a *KeyAdmin) CreateKeyPair(ctx context.Context) (publicKey, fingerPrint, privateKey string, err error) {
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized to create keys")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
 	// generate key
 	private, er := rsa.GenerateKey(rand.Reader, 1024)
 	if er != nil {
@@ -58,22 +63,23 @@ func (point *KeyTemp) Create() (publicKey, fingerPrint, privateKey string, err e
 	return
 }
 
-func (point *KeyTemp) CreateFingerPrint(publicKey string) (fingerPrint string, err error) {
-	pubKeyBytes := []byte(publicKey)
-	pub, _, _, _, puberr := ssh.ParseAuthorizedKey(pubKeyBytes)
+func (a *KeyAdmin) Create(ctx context.Context, name, publicKey string) (key *model.Key, err error) {
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized to create keys")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
+	pub, _, _, _, puberr := ssh.ParseAuthorizedKey([]byte(publicKey))
 	if puberr != nil {
-		log.Println("Public key is wrong")
+		log.Println("Invalid public key")
 		err = puberr
 		return
 	}
-	fingerPrint = ssh.FingerprintLegacyMD5(pub)
-	return
-}
-
-func (a *KeyAdmin) Create(ctx context.Context, name, pubkey, fingerprint string) (key *model.Key, err error) {
-	memberShip := GetMemberShip(ctx)
+	fingerPrint := ssh.FingerprintLegacyMD5(pub)
 	db := DB()
-	key = &model.Key{Model: model.Model{Creater: memberShip.UserID, Owner: memberShip.OrgID}, Name: name, PublicKey: pubkey, FingerPrint: fingerprint}
+	key = &model.Key{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, Name: name, PublicKey: publicKey, FingerPrint: fingerPrint}
 	err = db.Create(key).Error
 	if err != nil {
 		log.Println("DB failed to create key, %v", err)
@@ -82,7 +88,7 @@ func (a *KeyAdmin) Create(ctx context.Context, name, pubkey, fingerprint string)
 	return
 }
 
-func (a *KeyAdmin) Delete(id int64) (err error) {
+func (a *KeyAdmin) Delete(ctx context.Context, key *model.Key) (err error) {
 	db := DB()
 	db = db.Begin()
 	defer func() {
@@ -92,8 +98,15 @@ func (a *KeyAdmin) Delete(id int64) (err error) {
 			db.Rollback()
 		}
 	}()
-	if err = db.Delete(&model.Key{Model: model.Model{ID: id}}).Error; err != nil {
-		log.Println("DB failed to delete key, %v", err)
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.ValidateOwner(model.Writer, key.Owner)
+	if !permit {
+		log.Println("Not authorized to delete the key")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
+	if err = db.Delete(key).Error; err != nil {
+		log.Println("DB failed to delete key ", err)
 		return
 	}
 	return
@@ -244,7 +257,7 @@ func (v *KeyView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *KeyView) Delete(c *macaron.Context, store session.Store) (err error) {
-	memberShip := GetMemberShip(c.Req.Context())
+	ctx := c.Req.Context()
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is Empty"
@@ -258,14 +271,14 @@ func (v *KeyView) Delete(c *macaron.Context, store session.Store) (err error) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	permit, err := memberShip.CheckOwner(model.Writer, "keys", int64(keyID))
-	if !permit {
-		log.Println("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
+	key, err := keyAdmin.Get(ctx, int64(keyID))
+	if err != nil {
+		log.Println("Failed to get key, %v", err)
+		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	err = keyAdmin.Delete(int64(keyID))
+	err = keyAdmin.Delete(ctx, key)
 	if err != nil {
 		log.Println("Failed to delete key, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
@@ -291,53 +304,24 @@ func (v *KeyView) New(c *macaron.Context, store session.Store) {
 }
 
 func (v *KeyView) Confirm(c *macaron.Context, store session.Store) {
-	memberShip := GetMemberShip(c.Req.Context())
-	permit := memberShip.CheckPermission(model.Writer)
-	if !permit {
-		log.Println("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
+	ctx := c.Req.Context()
 	name := c.QueryTrim("name")
 	publicKey := c.QueryTrim("pubkey")
-	log.Println("Your Public Key, %v", publicKey)
-	pubKeyBytes := []byte(publicKey)
-	pub, _, _, _, _ := ssh.ParseAuthorizedKey(pubKeyBytes)
-	fingerPrint := ssh.FingerprintLegacyMD5(pub)
-	key, err := keyAdmin.Create(c.Req.Context(), name, publicKey, fingerPrint)
+	_, err := keyAdmin.Create(ctx, name, publicKey)
 	if err != nil {
-		log.Println("Failed to create key, %v", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
+		log.Println("Failed to create key ", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
-	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, key)
-		return
 	}
 	if c.QueryTrim("from_instance") != "" {
-		_, keys, err := keyAdmin.List(c.Req.Context(), 0, -1, "", "")
+		_, _, err := keyAdmin.List(c.Req.Context(), 0, -1, "", "")
 		if err != nil {
-			log.Println("Failed to list keys, %v", err)
-			if c.Req.Header.Get("X-Json-Format") == "yes" {
-				c.JSON(500, map[string]interface{}{
-					"error": err.Error(),
-				})
-				return
-			}
+			log.Println("Failed to list keys ", err)
 			c.Data["ErrorMsg"] = err.Error()
 			c.HTML(500, "500")
 			return
 		}
-		c.JSON(200, map[string]interface{}{
-			"keys": keys,
-		})
 	} else {
 		var redirectTo string
 		redirectTo = "../keys"
@@ -362,21 +346,13 @@ func (v *KeyView) SolvePrintedPublicKeyError(c *macaron.Context, store session.S
 	return
 }
 
+/*
 func (v *KeyView) SolvePublicKeyDbError(c *macaron.Context, store session.Store, name, publicKey, fingerPrint string) {
 	key, err := keyAdmin.Create(c.Req.Context(), name, publicKey, fingerPrint)
 	if err != nil {
 		log.Println("Failed, %v", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
-		return
-	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, key)
 		return
 	}
 	return
@@ -402,25 +378,17 @@ func (v *KeyView) SearchDbFingerPrint(c *macaron.Context, store session.Store, f
 		keyView.SolvePublicKeyDbError(c, store, name, publicKey, fingerPrint)
 	}
 }
+*/
 
 func (v *KeyView) SolveListKeyError(c *macaron.Context, store session.Store) {
 	if c.QueryTrim("from_instance") != "" {
-		_, keys, err := keyAdmin.List(c.Req.Context(), 0, -1, "", "")
+		_, _, err := keyAdmin.List(c.Req.Context(), 0, -1, "", "")
 		if err != nil {
 			log.Println("Failed to list keys, %v", err)
-			if c.Req.Header.Get("X-Json-Format") == "yes" {
-				c.JSON(500, map[string]interface{}{
-					"error": err.Error(),
-				})
-				return
-			}
 			c.Data["ErrorMsg"] = err.Error()
 			c.HTML(500, "500")
 			return
 		}
-		c.JSON(200, map[string]interface{}{
-			"keys": keys,
-		})
 	} else {
 		redirectTo := "../keys"
 		c.Redirect(redirectTo)
@@ -429,23 +397,20 @@ func (v *KeyView) SolveListKeyError(c *macaron.Context, store session.Store) {
 }
 
 func (v *KeyView) Create(c *macaron.Context, store session.Store) {
-	memberShip := GetMemberShip(c.Req.Context())
-	permit := memberShip.CheckPermission(model.Writer)
-	if !permit {
-		log.Println("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
+	ctx := c.Req.Context()
 	name := c.QueryTrim("name")
 	if c.QueryTrim("pubkey") != "" {
 		publicKey := c.QueryTrim("pubkey")
-		fingerPrint, puberr := keyTemp.CreateFingerPrint(publicKey)
-		keyView.SolvePrintedPublicKeyError(c, store, puberr)
-		keyView.SearchDbFingerPrint(c, store, fingerPrint, publicKey, name)
-		keyView.SolveListKeyError(c, store)
+		_, err := keyAdmin.Create(ctx, name, publicKey)
+		if err != nil {
+			log.Println("failed to create key")
+			c.Data["ErrorMsg"] = err.Error()
+			c.HTML(http.StatusBadRequest, "error")
+		}
+		redirectTo := "../keys"
+		c.Redirect(redirectTo)
 	} else {
-		publicKey, fingerPrint, privateKey, err := keyTemp.Create()
+		publicKey, fingerPrint, privateKey, err := keyAdmin.CreateKeyPair(ctx)
 		if err != nil {
 			log.Println("failed")
 			c.Data["ErrorMsg"] = err.Error()

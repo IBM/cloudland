@@ -22,10 +22,6 @@
 									<label for="network">{{.i18n.Tr "Network"}}</label>
 									<input id="network" name="network" required>
 								</div>
-								<div class="required inline field">
-									<label for="netmask">{{.i18n.Tr "Netmask"}}</label>
-									<input id="netmask"  name="netmask" required>
-								</div>
 								<div class="inline field">
 								    <label for="router">{{.i18n.Tr "VPCs"}}</label>
 									<div class="ui selection dropdown">
@@ -35,23 +31,6 @@
 									  <div class="menu">
 										{{ if .Routers }}
 										{{ range .Routers }}
-										<div class="item" data-value={{.ID}} data-text={{.Name}}>
-										  {{.Name}}
-										</div>
-										{{ end }}
-										{{ end }}
-									  </div>
-									</div>
-								</div>
-								<div class="inline field">
-									<label for="zones">{{.i18n.Tr "Zones"}}</label>
-									<div class="ui multiple selection dropdown">
-									  <input name="zones" id="zones" type="hidden">
-									  <i class="dropdown icon"></i>
-									  <div class="default text">{{.i18n.Tr "Zones"}}</div>
-									  <div class="menu">
-										{{ if .Zones }}
-										{{ range .Zones }}
 										<div class="item" data-value={{.ID}} data-text={{.Name}}>
 										  {{.Name}}
 										</div>
@@ -109,10 +88,6 @@
 										<div class="item" data-value="private" data-text="private">{{.i18n.Tr "private"}}</div>
 									  </div>
 									</div>
-								</div>
-								<div class="inline field">
-									<label for="routes">{{.i18n.Tr "Routes"}} ({{.i18n.Tr "admin only"}})</label>
-									<input id="routes" name="routes" placeholder="eg. 10.0.0.0/8:10.5.5.5 172.0.0.0/16:172.5.5.5">
 								</div>
 								{{end}}
 								<div class="inline field">

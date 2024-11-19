@@ -50,7 +50,7 @@ type SecrulePatchPayload struct {
 // @Success 200 {object} SecruleResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /security_groups/:id/rules/:rule_id [get]
+// @Router /security_groups/{id}/rules/{rule_id} [get]
 func (v *SecruleAPI) Get(c *gin.Context) {
 	secruleResp := &SecruleResponse{}
 	c.JSON(http.StatusOK, secruleResp)
@@ -66,7 +66,7 @@ func (v *SecruleAPI) Get(c *gin.Context) {
 // @Success 200 {object} SecruleResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /security_groups/:id/rules/:rule_id [patch]
+// @Router /security_groups/{id}/rules/{rule_id} [patch]
 func (v *SecruleAPI) Patch(c *gin.Context) {
 	secruleResp := &SecruleResponse{}
 	c.JSON(http.StatusOK, secruleResp)
@@ -81,7 +81,7 @@ func (v *SecruleAPI) Patch(c *gin.Context) {
 // @Success 204
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /security_groups/:id/rules/:rule_id [delete]
+// @Router /security_groups/{id}/rules/{rule_id} [delete]
 func (v *SecruleAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }
@@ -96,7 +96,7 @@ func (v *SecruleAPI) Delete(c *gin.Context) {
 // @Success 200 {object} SecruleResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /security_groups/:id/rules [post]
+// @Router /security_groups/{id}/rules [post]
 func (v *SecruleAPI) Create(c *gin.Context) {
 	secruleResp := &SecruleResponse{}
 	c.JSON(http.StatusOK, secruleResp)
@@ -110,7 +110,7 @@ func (v *SecruleAPI) Create(c *gin.Context) {
 // @Produce json
 // @Success 200 {object} SecruleListResponse
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /security_groups/:id/rules [get]
+// @Router /security_groups/{id}/rules [get]
 func (v *SecruleAPI) List(c *gin.Context) {
 	secruleListResp := &SecruleListResponse{}
 	c.JSON(http.StatusOK, secruleListResp)

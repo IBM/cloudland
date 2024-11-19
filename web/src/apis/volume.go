@@ -50,7 +50,7 @@ type VolumePatchPayload struct {
 // @Success 200 {object} VolumeResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /volumes/:id [get]
+// @Router /volumes/{id} [get]
 func (v *VolumeAPI) Get(c *gin.Context) {
 	volumeResp := &VolumeResponse{}
 	c.JSON(http.StatusOK, volumeResp)
@@ -66,7 +66,7 @@ func (v *VolumeAPI) Get(c *gin.Context) {
 // @Success 200 {object} VolumeResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /volumes/:id [patch]
+// @Router /volumes/{id} [patch]
 func (v *VolumeAPI) Patch(c *gin.Context) {
 	volumeResp := &VolumeResponse{}
 	c.JSON(http.StatusOK, volumeResp)
@@ -81,7 +81,7 @@ func (v *VolumeAPI) Patch(c *gin.Context) {
 // @Success 204
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /volumes/:id [delete]
+// @Router /volumes/{id} [delete]
 func (v *VolumeAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }

@@ -92,7 +92,7 @@ const docTemplatev1 = `{
                 }
             }
         },
-        "/flavors/:id": {
+        "/flavors/{id}": {
             "get": {
                 "description": "get a flavor",
                 "consumes": [
@@ -274,7 +274,7 @@ const docTemplatev1 = `{
                 }
             }
         },
-        "/floating_ips/:id": {
+        "/floating_ips/{id}": {
             "get": {
                 "description": "get a floating ip",
                 "consumes": [
@@ -412,7 +412,7 @@ const docTemplatev1 = `{
                 }
             }
         },
-        "/hypers/:id": {
+        "/hypers/{name}": {
             "get": {
                 "description": "get a hypervisor",
                 "consumes": [
@@ -520,7 +520,7 @@ const docTemplatev1 = `{
                 }
             }
         },
-        "/images/:id": {
+        "/images/{id}": {
             "get": {
                 "description": "get a image",
                 "consumes": [
@@ -908,7 +908,7 @@ const docTemplatev1 = `{
                 }
             }
         },
-        "/interfaces/:id": {
+        "/interfaces/{id}": {
             "get": {
                 "description": "get a interface",
                 "consumes": [
@@ -1090,7 +1090,7 @@ const docTemplatev1 = `{
                 }
             }
         },
-        "/keys/:id": {
+        "/keys/{id}": {
             "get": {
                 "description": "get a key",
                 "consumes": [
@@ -1312,7 +1312,7 @@ const docTemplatev1 = `{
                 }
             }
         },
-        "/orgs/:id": {
+        "/orgs/{id}": {
             "get": {
                 "description": "get a org",
                 "consumes": [
@@ -1494,7 +1494,7 @@ const docTemplatev1 = `{
                 }
             }
         },
-        "/security_groups/:id": {
+        "/security_groups/{id}": {
             "get": {
                 "description": "get a secgroup",
                 "consumes": [
@@ -1603,7 +1603,7 @@ const docTemplatev1 = `{
                 }
             }
         },
-        "/security_groups/:id/rules": {
+        "/security_groups/{id}/rules": {
             "get": {
                 "description": "list secrules",
                 "consumes": [
@@ -1676,7 +1676,7 @@ const docTemplatev1 = `{
                 }
             }
         },
-        "/security_groups/:id/rules/:rule_id": {
+        "/security_groups/{id}/rules/{rule_id}": {
             "get": {
                 "description": "get a secrule",
                 "consumes": [
@@ -1858,7 +1858,7 @@ const docTemplatev1 = `{
                 }
             }
         },
-        "/subnets/:id": {
+        "/subnets/{id}": {
             "get": {
                 "description": "get a subnet",
                 "consumes": [
@@ -2040,7 +2040,7 @@ const docTemplatev1 = `{
                 }
             }
         },
-        "/users/:id": {
+        "/users/{id}": {
             "get": {
                 "description": "get a user",
                 "consumes": [
@@ -2222,7 +2222,7 @@ const docTemplatev1 = `{
                 }
             }
         },
-        "/volumes/:id": {
+        "/volumes/{id}": {
             "get": {
                 "description": "get a volume",
                 "consumes": [
@@ -2404,7 +2404,7 @@ const docTemplatev1 = `{
                 }
             }
         },
-        "/vpcs/:id": {
+        "/vpcs/{id}": {
             "get": {
                 "description": "get a vpc",
                 "consumes": [
@@ -2542,7 +2542,7 @@ const docTemplatev1 = `{
                 }
             }
         },
-        "/zones/:id": {
+        "/zones/{name}": {
             "get": {
                 "description": "get a zonevisor",
                 "consumes": [
@@ -2982,6 +2982,12 @@ const docTemplatev1 = `{
                     "maxLength": 32,
                     "minLength": 2
                 },
+                "security_groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.BaseReference"
+                    }
+                },
                 "subnet": {
                     "$ref": "#/definitions/common.BaseReference"
                 }
@@ -3011,22 +3017,32 @@ const docTemplatev1 = `{
             "type": "object"
         },
         "apis.KeyPayload": {
-            "type": "object"
+            "type": "object",
+            "required": [
+                "name",
+                "public_key"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                },
+                "public_key": {
+                    "type": "string",
+                    "maxLength": 4096,
+                    "minLength": 4
+                }
+            }
         },
         "apis.KeyResponse": {
             "type": "object",
             "properties": {
-                "cpu": {
-                    "type": "integer"
-                },
-                "disk": {
-                    "type": "integer"
+                "finger_print": {
+                    "type": "string"
                 },
                 "id": {
                     "type": "string"
-                },
-                "memory": {
-                    "type": "integer"
                 },
                 "name": {
                     "type": "string",
@@ -3217,11 +3233,68 @@ const docTemplatev1 = `{
             "type": "object"
         },
         "apis.SubnetPayload": {
-            "type": "object"
+            "type": "object",
+            "required": [
+                "name",
+                "network_cidr"
+            ],
+            "properties": {
+                "base_domain": {
+                    "type": "string"
+                },
+                "dhcp": {
+                    "type": "boolean"
+                },
+                "dns": {
+                    "type": "string"
+                },
+                "end_ip": {
+                    "type": "string"
+                },
+                "gateway": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                },
+                "network_cidr": {
+                    "type": "string"
+                },
+                "start_ip": {
+                    "type": "string"
+                },
+                "type": {
+                    "enum": [
+                        "public",
+                        "internal"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.SubnetType"
+                        }
+                    ]
+                },
+                "vlan": {
+                    "type": "integer",
+                    "maximum": 16777215,
+                    "minimum": 1
+                },
+                "vpc": {
+                    "$ref": "#/definitions/common.BaseReference"
+                }
+            }
         },
         "apis.SubnetResponse": {
             "type": "object",
             "properties": {
+                "dns": {
+                    "type": "string"
+                },
+                "gateway": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -3229,6 +3302,18 @@ const docTemplatev1 = `{
                     "type": "string",
                     "maxLength": 32,
                     "minLength": 2
+                },
+                "netmask": {
+                    "type": "string"
+                },
+                "network": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/common.SubnetType"
+                },
+                "vpc": {
+                    "$ref": "#/definitions/common.BaseReference"
                 }
             }
         },
@@ -3247,7 +3332,7 @@ const docTemplatev1 = `{
                 "users": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/apis.OrgResponse"
+                        "$ref": "#/definitions/apis.UserResponse"
                     }
                 }
             }
@@ -3326,7 +3411,20 @@ const docTemplatev1 = `{
             "type": "object"
         },
         "apis.VPCPayload": {
-            "type": "object"
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                },
+                "public_network": {
+                    "$ref": "#/definitions/common.BaseReference"
+                }
+            }
         },
         "apis.VPCResponse": {
             "type": "object",
@@ -3342,7 +3440,7 @@ const docTemplatev1 = `{
                 "subnets": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.BaseReference"
+                        "$ref": "#/definitions/apis.SubnetResponse"
                     }
                 }
             }
@@ -3477,7 +3575,18 @@ const docTemplatev1 = `{
                 "Restart",
                 "HardRestart",
                 "Pause",
-                "Unpause"
+                "Resume"
+            ]
+        },
+        "common.SubnetType": {
+            "type": "string",
+            "enum": [
+                "public",
+                "internal"
+            ],
+            "x-enum-varnames": [
+                "Public",
+                "Internal"
             ]
         }
     }
