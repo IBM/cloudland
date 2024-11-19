@@ -37,7 +37,6 @@ else
     done
     rm -f ${image}.raw
     volume_id=$(wds_curl GET "api/v2/sync/block/volumes" | jq --arg image image-$ID -r '.volumes | .[] | select(.name == $image) | .id')
-    ret_code=$(wds_curl POST "api/v2/sync/block/snaps" "{\"name\": \"image-$ID\", \"description\": \"image-ID\", \"volume_id\": \"$volume_id\"}" | jq -r .ret_code)
-    [ "$ret_code" = "0" ] && state=available
+    [ -n "$volume_id" ] && state=available
 fi
 echo "|:-COMMAND-:| $(basename $0) '$ID' '$state' '$format'"

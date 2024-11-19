@@ -32,6 +32,8 @@ var (
 	instanceView  = &InstanceView{}
 )
 
+const MaxmumSnapshot = 96
+
 type InstanceAdmin struct{}
 
 type InstanceView struct{}
@@ -153,7 +155,13 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		if count > 1 {
 			hostname = fmt.Sprintf("%s-%d", prefix, i+1)
 		}
-		instance := &model.Instance{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, Hostname: hostname, ImageID: image.ID, FlavorID: flavor.ID, Keys: keys, Userdata: userdata, Status: "pending", ZoneID: zoneID, RouterID: routerID}
+		total := 0
+		if err = db.Model(&model.Instance{}).Where("image_id = ?", image.ID).Count(&total).Error; err != nil {
+			log.Println("Failed to query total instances with the image", err)
+			return
+		}
+		snapshot := total / MaxmumSnapshot + 1 // Same snapshot reference can not be over 128, so use 96 here
+		instance := &model.Instance{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, Hostname: hostname, ImageID: image.ID, Snapshot: int64(snapshot), FlavorID: flavor.ID, Keys: keys, Userdata: userdata, Status: "pending", ZoneID: zoneID, RouterID: routerID}
 		err = db.Create(instance).Error
 		if err != nil {
 			log.Println("DB create instance failed", err)
@@ -175,7 +183,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		if i == 0 && hyperID >= 0 {
 			control = fmt.Sprintf("inter=%d %s", hyperID, rcNeeded)
 		}
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' 'image-%d.%s' '%s' '%d' '%d' '%d' <<EOF\n%s\nEOF", instance.ID, image.ID, image.Format, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, base64.StdEncoding.EncodeToString([]byte(metadata)))
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' 'image-%d.%s' '%d' '%s' '%d' '%d' '%d' <<EOF\n%s\nEOF", instance.ID, image.ID, image.Format, snapshot, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, base64.StdEncoding.EncodeToString([]byte(metadata)))
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Launch vm command execution failed", err)
