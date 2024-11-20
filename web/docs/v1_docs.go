@@ -2753,22 +2753,25 @@ const docTemplatev1 = `{
         "apis.ImageResponse": {
             "type": "object",
             "properties": {
-                "cpu": {
-                    "type": "integer"
+                "architecture": {
+                    "type": "string"
                 },
-                "disk": {
-                    "type": "integer"
+                "format": {
+                    "type": "string"
                 },
                 "id": {
                     "type": "string"
-                },
-                "memory": {
-                    "type": "integer"
                 },
                 "name": {
                     "type": "string",
                     "maxLength": 32,
                     "minLength": 2
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         },

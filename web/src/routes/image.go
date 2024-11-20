@@ -38,7 +38,7 @@ func FileExist(filename string) bool {
 
 func (a *ImageAdmin) Create(ctx context.Context, osVersion, diskType, virtType, userName, name, url, format, architecture string, instID int64, isLB bool) (image *model.Image, err error) {
 	memberShip := GetMemberShip(ctx)
-	db := DB()
+	db := dbs.DB()
 	image = &model.Image{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, OsVersion: osVersion, DiskType: diskType, VirtType: virtType, UserName: userName, Name: name, OSCode: name, Format: format, Status: "creating", Architecture: architecture, OpenShiftLB: isLB}
 	err = db.Create(image).Error
 	if err != nil {
@@ -65,11 +65,9 @@ func (a *ImageAdmin) Create(ctx context.Context, osVersion, diskType, virtType, 
 }
 
 func (a *ImageAdmin) GetImageByUUID(ctx context.Context, uuID string) (image *model.Image, err error) {
-	db := DB()
-	memberShip := GetMemberShip(ctx)
-	where := memberShip.GetWhere()
+	db := dbs.DB()
 	image = &model.Image{}
-	err = db.Where(where).Where("uuid = ?", uuID).Take(image).Error
+	err = db.Where("uuid = ?", uuID).Take(image).Error
 	if err != nil {
 		log.Println("Failed to query image, %v", err)
 		return
@@ -78,11 +76,9 @@ func (a *ImageAdmin) GetImageByUUID(ctx context.Context, uuID string) (image *mo
 }
 
 func (a *ImageAdmin) GetImageByName(ctx context.Context, name string) (image *model.Image, err error) {
-	db := DB()
-	memberShip := GetMemberShip(ctx)
-	where := memberShip.GetWhere()
+	db := dbs.DB()
 	image = &model.Image{}
-	err = db.Where(where).Where("name = ?", name).Take(image).Error
+	err = db.Where("name = ?", name).Take(image).Error
 	if err != nil {
 		log.Println("Failed to query image, %v", err)
 		return
@@ -96,11 +92,9 @@ func (a *ImageAdmin) Get(ctx context.Context, id int64) (image *model.Image, err
 		log.Println(err)
 		return
 	}
-	memberShip := GetMemberShip(ctx)
-	db := DB()
-	where := memberShip.GetWhere()
+	db := dbs.DB()
 	image = &model.Image{Model: model.Model{ID: id}}
-	err = db.Where(where).Take(image).Error
+	err = db.Take(image).Error
 	if err != nil {
 		log.Println("DB failed to query image, %v", err)
 		return
@@ -125,7 +119,7 @@ func (a *ImageAdmin) GetImage(ctx context.Context, reference *common.BaseReferen
 }
 
 func (a *ImageAdmin) Delete(ctx context.Context, id int64) (err error) {
-	db := DB()
+	db := dbs.DB()
 	db = db.Begin()
 	defer func() {
 		if err == nil {
@@ -155,7 +149,7 @@ func (a *ImageAdmin) Delete(ctx context.Context, id int64) (err error) {
 }
 
 func (a *ImageAdmin) List(offset, limit int64, order, query string) (total int64, images []*model.Image, err error) {
-	db := DB()
+	db := dbs.DB()
 	if limit == 0 {
 		limit = 16
 	}

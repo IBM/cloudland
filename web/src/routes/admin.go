@@ -37,9 +37,6 @@ func adminInit(ctx context.Context) {
 	dbs.AutoUpgrade("01-admin-upgrade", func(db *gorm.DB) (err error) {
 		if err = db.Take(&model.User{}, "username = ?", username).Error; err != nil {
 			//replace DB function to avoid AutoUpgrade loop
-			dbFunc := DB
-			defer func() { DB = dbFunc }()
-			DB = func() *gorm.DB { return db }
 			password := adminPassword()
 			_, err = userAdmin.Create(ctx, username, password)
 			if err != nil {

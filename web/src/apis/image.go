@@ -8,9 +8,12 @@ SPDX-License-Identifier: Apache-2.0
 package apis
 
 import (
+	"context"
 	"net/http"
+	"strconv"
 
 	"web/src/common"
+	"web/src/model"
 	"web/src/routes"
 
 	"github.com/gin-gonic/gin"
@@ -23,9 +26,10 @@ type ImageAPI struct{}
 
 type ImageResponse struct {
 	*common.BaseReference
-	Cpu    int32 `json:"cpu"`
-	Memory int32 `json:"memory"`
-	Disk   int32
+	Size         int64  `json:"size"`
+	Format       string `json:"format"`
+	Architecture string `json:"architecture"`
+	Username     string `json:"username"`
 }
 
 type ImageListResponse struct {
@@ -102,6 +106,20 @@ func (v *ImageAPI) Create(c *gin.Context) {
 	c.JSON(http.StatusOK, imageResp)
 }
 
+func (v *ImageAPI) getImageResponse(ctx context.Context, image *model.Image) (imageResp *ImageResponse, err error) {
+	imageResp = &ImageResponse{
+		BaseReference: &common.BaseReference{
+			ID:   image.UUID,
+			Name: image.Name,
+		},
+		Size:         image.Size,
+		Format:       image.Format,
+		Architecture: image.Architecture,
+		Username:     image.UserName,
+	}
+	return
+}
+
 //
 // @Summary list images
 // @Description list images
@@ -112,6 +130,40 @@ func (v *ImageAPI) Create(c *gin.Context) {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /images [get]
 func (v *ImageAPI) List(c *gin.Context) {
-	imageListResp := &ImageListResponse{}
+	ctx := c.Request.Context()
+	offsetStr := c.DefaultQuery("offset", "0")
+	limitStr := c.DefaultQuery("limit", "50")
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query offset: "+offsetStr, err)
+		return
+	}
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query limit: "+limitStr, err)
+		return
+	}
+	if offset < 0 || limit < 0 {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", err)
+		return
+	}
+	total, images, err := imageAdmin.List(int64(offset), int64(limit), "-created_at", "")
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Failed to list images", err)
+		return
+	}
+	imageListResp := &ImageListResponse{
+		Total:  int(total),
+		Offset: offset,
+		Limit:  len(images),
+	}
+	imageListResp.Images = make([]*ImageResponse, imageListResp.Limit)
+	for i, image := range images {
+		imageListResp.Images[i], err = v.getImageResponse(ctx, image)
+		if err != nil {
+			common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+			return
+		}
+	}
 	c.JSON(http.StatusOK, imageListResp)
 }

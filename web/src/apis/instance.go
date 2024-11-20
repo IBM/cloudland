@@ -328,8 +328,8 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 			Name: key.Name,
 		}
 	}
-	hyper, err := hyperAdmin.GetHyperByHostid(ctx, instance.Hyper)
-	if err == nil {
+	hyper, hyperErr := hyperAdmin.GetHyperByHostid(ctx, instance.Hyper)
+	if hyperErr == nil {
 		instanceResp.Hypervisor = hyper.Hostname
 	}
 	instanceResp.Keys = keys

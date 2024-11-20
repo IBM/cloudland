@@ -116,17 +116,19 @@ definitions:
     type: object
   apis.ImageResponse:
     properties:
-      cpu:
-        type: integer
-      disk:
-        type: integer
+      architecture:
+        type: string
+      format:
+        type: string
       id:
         type: string
-      memory:
-        type: integer
       name:
         maxLength: 32
         minLength: 2
+        type: string
+      size:
+        type: integer
+      username:
         type: string
     type: object
   apis.InstanceListResponse:

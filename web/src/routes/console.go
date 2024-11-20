@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"web/src/model"
+	"web/src/dbs"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/go-macaron/session"
@@ -81,7 +82,7 @@ func MakeToken(instanceID int, secret string, memberShip *MemberShip) (string, e
 	data.Write([]byte(secret))
 	data.Read(tokenHash)
 	hashSecret := fmt.Sprintf("%x", tokenHash)
-	db := DB()
+	db := dbs.DB()
 	console := &model.Console{
 		Instance:   int64(instanceID),
 		Type:       "vnc",
@@ -112,7 +113,7 @@ func ResolveToken(tokenString string) (int, *MemberShip, error) {
 	}
 	instanceID := claims.InstanceID
 	console := &model.Console{Instance: int64(instanceID)}
-	err = DB().Where(console).Take(console).Error
+	err = dbs.DB().Where(console).Take(console).Error
 	if err != nil {
 		return 0, nil, err
 	}
@@ -186,7 +187,7 @@ func (a *ConsoleView) ConsoleResolve(c *macaron.Context, store session.Store) {
 		return
 	}
 
-	db := DB()
+	db := dbs.DB()
 	vnc := &model.Vnc{InstanceID: int64(instanceID)}
 	err = db.Where(vnc).Take(vnc).Error
 	if err != nil {

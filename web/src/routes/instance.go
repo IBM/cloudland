@@ -97,7 +97,7 @@ type InstancesData struct {
 }
 
 func (a *InstanceAdmin) getHyperGroup(imageType string, zoneID int64) (hyperGroup string, err error) {
-	db := DB()
+	db := dbs.DB()
 	hypers := []*model.Hyper{}
 	where := fmt.Sprintf("zone_id = %d and status = 1", zoneID)
 	if imageType != "" {
@@ -124,7 +124,7 @@ func (a *InstanceAdmin) getHyperGroup(imageType string, zoneID int64) (hyperGrou
 
 func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, image *model.Image, flavor *model.Flavor, zone *model.Zone, routerID int64, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo, keys []*model.Key, hyperID int) (instances []*model.Instance, err error) {
 	memberShip := GetMemberShip(ctx)
-	db := DB()
+	db := dbs.DB()
 	if image.Status != "available" {
 		err = fmt.Errorf("Image status not available")
 		log.Println("Image status not available")
@@ -196,7 +196,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 }
 
 func (a *InstanceAdmin) ChangeInstanceStatus(ctx context.Context, id int64, action string) (instance *model.Instance, err error) {
-	db := DB()
+	db := dbs.DB()
 	instance = &model.Instance{Model: model.Model{ID: id}}
 	if err = db.Take(instance).Error; err != nil {
 		log.Println("Failed to query instance ", err)
@@ -225,7 +225,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 		return
 	}
 
-	db := DB()
+	db := dbs.DB()
 	if hyperID != int(instance.Hyper) {
 		permit, err = memberShip.CheckAdmin(model.Admin, "instances", instance.ID)
 		if !permit {
@@ -299,7 +299,7 @@ func (a *InstanceAdmin) deleteInterfaces(ctx context.Context, instance *model.In
 }
 
 func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interface) (err error) {
-	err = DeleteInterface(ctx, iface)
+	err = common.DeleteInterface(ctx, iface)
 	if err != nil {
 		log.Println("Failed to create interface")
 		return
@@ -317,7 +317,7 @@ func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interf
 
 func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subnet, address, mac string, instance *model.Instance, ifname string, secGroups []*model.SecurityGroup, zoneID int64) (iface *model.Interface, err error) {
 	memberShip := GetMemberShip(ctx)
-	iface, err = CreateInterface(ctx, subnet.ID, instance.ID, memberShip.OrgID, instance.Hyper, address, mac, ifname, "instance", secGroups)
+	iface, err = common.CreateInterface(ctx, subnet.ID, instance.ID, memberShip.OrgID, instance.Hyper, address, mac, ifname, "instance", secGroups)
 	if err != nil {
 		log.Println("Failed to create interface")
 		return
@@ -409,7 +409,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 		instKeys = append(instKeys, key.PublicKey)
 	}
 	image := &model.Image{Model: model.Model{ID: instance.ImageID}}
-	err = DB().Take(image).Error
+	err = dbs.DB().Take(image).Error
 	if err != nil {
 		log.Println("Invalid image ", instance.ImageID)
 		return
@@ -437,7 +437,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 }
 
 func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (err error) {
-	db := DB()
+	db := dbs.DB()
 	db = db.Begin()
 	defer func() {
 		if err == nil {
@@ -498,7 +498,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 }
 
 func (a *InstanceAdmin) Get(ctx context.Context, id int64) (instance *model.Instance, err error) {
-	db := DB()
+	db := dbs.DB()
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	instance = &model.Instance{Model: model.Model{ID: id}}
@@ -510,7 +510,7 @@ func (a *InstanceAdmin) Get(ctx context.Context, id int64) (instance *model.Inst
 }
 
 func (a *InstanceAdmin) GetInstanceByUUID(ctx context.Context, uuID string) (instance *model.Instance, err error) {
-	db := DB()
+	db := dbs.DB()
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	instance = &model.Instance{}
@@ -536,7 +536,7 @@ func (a *InstanceAdmin) GetInstanceByUUID(ctx context.Context, uuID string) (ins
 }
 
 func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, instances []*model.Instance, err error) {
-	db := DB()
+	db := dbs.DB()
 	if limit == 0 {
 		limit = 16
 	}
@@ -693,7 +693,7 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	db := DB()
+	db := dbs.DB()
 	images := []*model.Image{}
 	if err := db.Find(&images).Error; err != nil {
 		c.Data["ErrorMsg"] = err.Error()
@@ -752,7 +752,7 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 
 func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
-	db := DB()
+	db := dbs.DB()
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is Empty"
@@ -875,7 +875,7 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 
 func (v *InstanceView) checkNetparam(subnetID int64, IP, mac string) (macAddr string, err error) {
 	subnet := &model.Subnet{Model: model.Model{ID: subnetID}}
-	err = DB().Take(subnet).Error
+	err = dbs.DB().Take(subnet).Error
 	if err != nil {
 		log.Println("DB failed to query subnet ", err)
 		return
@@ -941,14 +941,6 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
-	}
-	hyper := &model.Hyper{Hostid: int32(hyperID)}
-	err = DB().Take(hyper).Error
-	if err != nil {
-		log.Println("Invalid hypervisor", err)
-		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
-		return
 	}
 	imageID := c.QueryInt64("image")
 	if imageID <= 0 {

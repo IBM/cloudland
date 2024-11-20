@@ -8,9 +8,12 @@ SPDX-License-Identifier: Apache-2.0
 package apis
 
 import (
+	"context"
 	"net/http"
+	"strconv"
 
 	"web/src/common"
+	"web/src/model"
 	"web/src/routes"
 
 	"github.com/gin-gonic/gin"
@@ -22,10 +25,10 @@ var flavorAdmin = &routes.FlavorAdmin{}
 type FlavorAPI struct{}
 
 type FlavorResponse struct {
-	*common.BaseReference
-	Cpu    int32 `json:"cpu"`
-	Memory int32 `json:"memory"`
-	Disk   int32
+	Name   string `json:"name"`
+	Cpu    int32  `json:"cpu"`
+	Memory int32  `json:"memory"`
+	Disk   int32  `json:"disk"`
 }
 
 type FlavorListResponse struct {
@@ -102,6 +105,16 @@ func (v *FlavorAPI) Create(c *gin.Context) {
 	c.JSON(http.StatusOK, flavorResp)
 }
 
+func (v *FlavorAPI) getFlavorResponse(ctx context.Context, flavor *model.Flavor) (flavorResp *FlavorResponse, err error) {
+	flavorResp = &FlavorResponse{
+		Name: flavor.Name,
+		Cpu:    flavor.Cpu,
+		Memory: flavor.Memory,
+		Disk:   flavor.Disk,
+	}
+	return
+}
+
 //
 // @Summary list flavors
 // @Description list flavors
@@ -112,6 +125,40 @@ func (v *FlavorAPI) Create(c *gin.Context) {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /flavors [get]
 func (v *FlavorAPI) List(c *gin.Context) {
-	flavorListResp := &FlavorListResponse{}
+	ctx := c.Request.Context()
+	offsetStr := c.DefaultQuery("offset", "0")
+	limitStr := c.DefaultQuery("limit", "50")
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query offset: "+offsetStr, err)
+		return
+	}
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query limit: "+limitStr, err)
+		return
+	}
+	if offset < 0 || limit < 0 {
+		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", err)
+		return
+	}
+	total, flavors, err := flavorAdmin.List(int64(offset), int64(limit), "-created_at", "")
+	if err != nil {
+		common.ErrorResponse(c, http.StatusBadRequest, "Failed to list flavors", err)
+		return
+	}
+	flavorListResp := &FlavorListResponse{
+		Total:  int(total),
+		Offset: offset,
+		Limit:  len(flavors),
+	}
+	flavorListResp.Flavors = make([]*FlavorResponse, flavorListResp.Limit)
+	for i, flavor := range flavors {
+		flavorListResp.Flavors[i], err = v.getFlavorResponse(ctx, flavor)
+		if err != nil {
+			common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+			return
+		}
+	}
 	c.JSON(http.StatusOK, flavorListResp)
 }

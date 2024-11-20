@@ -29,7 +29,7 @@ type ZoneAdmin struct{}
 type ZoneView struct{}
 
 func (a *ZoneAdmin) List(offset, limit int64, order, query string) (total int64, zones []*model.Zone, err error) {
-	db := DB()
+	db := dbs.DB()
 	if limit == 0 {
 		limit = 16
 	}
@@ -54,7 +54,7 @@ func (a *ZoneAdmin) List(offset, limit int64, order, query string) (total int64,
 }
 
 func (a *ZoneAdmin) Get(ctx context.Context, id int64) (zone *model.Zone, err error) {
-	db := DB()
+	db := dbs.DB()
 	zone = &model.Zone{ID: id}
 	if err = db.Take(zone).Error; err != nil {
 		log.Println("Failed to query zone", err)
@@ -64,7 +64,7 @@ func (a *ZoneAdmin) Get(ctx context.Context, id int64) (zone *model.Zone, err er
 }
 
 func (a *ZoneAdmin) GetZoneByName(ctx context.Context, name string) (zone *model.Zone, err error) {
-	db := DB()
+	db := dbs.DB()
 	zone = &model.Zone{}
 	err = db.Where("name = ?", name).Take(zone).Error
 	if err != nil {

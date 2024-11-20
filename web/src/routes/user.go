@@ -40,7 +40,7 @@ type UserView struct{}
 
 func (a *UserAdmin) Create(ctx context.Context, username, password string) (user *model.User, err error) {
 	memberShip := GetMemberShip(ctx)
-	db := DB()
+	db := dbs.DB()
 	if password, err = a.GenerateFromPassword(password); err != nil {
 		return
 	}
@@ -61,7 +61,7 @@ func (a *UserAdmin) Create(ctx context.Context, username, password string) (user
 }
 
 func (a *UserAdmin) Get(ctx context.Context, id int64) (user *model.User, err error) {
-	db := DB()
+	db := dbs.DB()
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	user = &model.User{Model: model.Model{ID: id}}
@@ -80,7 +80,7 @@ func (a *UserAdmin) Get(ctx context.Context, id int64) (user *model.User, err er
 }
 
 func (a *UserAdmin) GetUserByUUID(ctx context.Context, uuID string) (user *model.User, err error) {
-	db := DB()
+	db := dbs.DB()
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	user = &model.User{}
@@ -99,7 +99,7 @@ func (a *UserAdmin) GetUserByUUID(ctx context.Context, uuID string) (user *model
 }
 
 func (a *UserAdmin) GetUserByName(name string) (user *model.User, err error) {
-	db := DB()
+	db := dbs.DB()
 	user = &model.User{}
 	if err = db.Where("username = ?", name).Take(user).Error; err != nil {
 		log.Println("DB failed to get user", err)
@@ -116,7 +116,7 @@ func (a *UserAdmin) Delete(ctx context.Context, user *model.User) (err error) {
 		err = fmt.Errorf("Not authorized")
 		return
 	}
-	db := DB()
+	db := dbs.DB()
 	db = db.Begin()
 	defer func() {
 		if err == nil {
@@ -137,7 +137,7 @@ func (a *UserAdmin) Delete(ctx context.Context, user *model.User) (err error) {
 }
 
 func (a *UserAdmin) Update(ctx context.Context, id int64, password string, members []string) (user *model.User, err error) {
-	db := DB()
+	db := dbs.DB()
 	user = &model.User{Model: model.Model{ID: id}}
 	err = db.Set("gorm:auto_preload", true).Take(user).Error
 	if err != nil {
@@ -178,7 +178,7 @@ func (a *UserAdmin) List(ctx context.Context, offset, limit int64, order, query 
 	memberShip := GetMemberShip(ctx)
 	log.Println("memberShip in users is ", memberShip)
 	log.Println("start to connect to DB useradmin.list")
-	db := DB()
+	db := dbs.DB()
 	if limit == 0 {
 		limit = 16
 	}
@@ -226,7 +226,7 @@ func (a *UserAdmin) List(ctx context.Context, offset, limit int64, order, query 
 }
 
 func (a *UserAdmin) Validate(ctx context.Context, username, password string) (user *model.User, err error) {
-	db := DB()
+	db := dbs.DB()
 	hasUser := true
 	user = &model.User{}
 	err = db.Take(user, "username = ?", username).Error
@@ -264,7 +264,7 @@ func (a *UserAdmin) Validate(ctx context.Context, username, password string) (us
 }
 
 func (a *UserAdmin) AccessToken(uid int64, username, organization string) (oid int64, role model.Role, token string, issueAt, expiresAt int64, err error) {
-	db := DB()
+	db := dbs.DB()
 	member := &model.Member{}
 	err = db.Take(member, "user_name = ? and org_name = ?", username, organization).Error
 	if err != nil {
@@ -425,7 +425,7 @@ func (v *UserView) Edit(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	db := DB()
+	db := dbs.DB()
 	user := &model.User{Model: model.Model{ID: int64(userID)}}
 	err = db.Set("gorm:auto_preload", true).Take(user).Error
 	if err != nil {
@@ -454,7 +454,7 @@ func (v *UserView) Change(c *macaron.Context, store session.Store) {
 		return
 	}
 	orgName := c.QueryTrim("org")
-	db := DB()
+	db := dbs.DB()
 	user := &model.User{Model: model.Model{ID: int64(userID)}}
 	err = db.Set("gorm:auto_preload", true).Take(user).Error
 	if err != nil {

@@ -29,7 +29,7 @@ type HyperAdmin struct{}
 type HyperView struct{}
 
 func (a *HyperAdmin) List(offset, limit int64, order, query string) (total int64, hypers []*model.Hyper, err error) {
-	db := DB()
+	db := dbs.DB()
 	if limit == 0 {
 		limit = 16
 	}
@@ -66,7 +66,7 @@ func (a *HyperAdmin) GetHyperByHostid(ctx context.Context, hostid int32) (hyper 
 		log.Println("Not authorized for this operation", err)
 		return
 	}
-	db := DB()
+	db := dbs.DB()
 	hyper = &model.Hyper{}
 	if err = db.Where("hostid = ?", hostid).Take(hyper).Error; err != nil {
 		log.Println("Failed to query hypervisor", err)

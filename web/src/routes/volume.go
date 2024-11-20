@@ -30,7 +30,7 @@ type VolumeView struct{}
 
 func (a *VolumeAdmin) Create(ctx context.Context, name string, size int) (volume *model.Volume, err error) {
 	memberShip := GetMemberShip(ctx)
-	db := DB()
+	db := dbs.DB()
 	volume = &model.Volume{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, Name: name, Format: "raw", Size: int32(size), Status: "pending"}
 	err = db.Create(volume).Error
 	if err != nil {
@@ -48,7 +48,7 @@ func (a *VolumeAdmin) Create(ctx context.Context, name string, size int) (volume
 }
 
 func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID int64) (volume *model.Volume, err error) {
-	db := DB()
+	db := dbs.DB()
 	volume = &model.Volume{Model: model.Model{ID: id}}
 	if err = db.Preload("Instance").Take(volume).Error; err != nil {
 		log.Println("DB: query volume failed", err)
@@ -95,7 +95,7 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 }
 
 func (a *VolumeAdmin) Delete(ctx context.Context, id int64) (err error) {
-	db := DB()
+	db := dbs.DB()
 	db = db.Begin()
 	defer func() {
 		if err == nil {
@@ -129,7 +129,7 @@ func (a *VolumeAdmin) Delete(ctx context.Context, id int64) (err error) {
 
 func (a *VolumeAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, volumes []*model.Volume, err error) {
 	memberShip := GetMemberShip(ctx)
-	db := DB()
+	db := dbs.DB()
 	if limit == 0 {
 		limit = 16
 	}
@@ -260,7 +260,7 @@ func (v *VolumeView) New(c *macaron.Context, store session.Store) {
 
 func (v *VolumeView) Edit(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
-	db := DB()
+	db := dbs.DB()
 	id := c.Params(":id")
 	volID, err := strconv.Atoi(id)
 	if err != nil {

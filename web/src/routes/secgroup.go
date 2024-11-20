@@ -31,7 +31,7 @@ type SecgroupView struct{}
 
 func (a *SecgroupAdmin) Switch(ctx context.Context, newSg *model.SecurityGroup, router *model.Router) (err error) {
 	memberShip := GetMemberShip(ctx)
-	db := DB()
+	db := dbs.DB()
 	org := &model.Organization{Model: model.Model{ID: memberShip.OrgID}}
 	err = db.Take(org).Error
 	if err != nil {
@@ -61,7 +61,7 @@ func (a *SecgroupAdmin) Switch(ctx context.Context, newSg *model.SecurityGroup, 
 }
 
 func (a *SecgroupAdmin) Update(ctx context.Context, sgID int64, name string, isDefault bool) (secgroup *model.SecurityGroup, err error) {
-	db := DB()
+	db := dbs.DB()
 	secgroup = &model.SecurityGroup{Model: model.Model{ID: sgID}}
 	err = db.Take(secgroup).Error
 	if err != nil {
@@ -89,7 +89,7 @@ func (a *SecgroupAdmin) Get(ctx context.Context, id, routerID int64) (secgroup *
 		return
 	}
 	memberShip := GetMemberShip(ctx)
-	db := DB()
+	db := dbs.DB()
 	where := memberShip.GetWhere()
 	secgroup = &model.SecurityGroup{Model: model.Model{ID: id}}
 	err = db.Where(where).Where("router_id = ?", routerID).Take(secgroup).Error
@@ -101,7 +101,7 @@ func (a *SecgroupAdmin) Get(ctx context.Context, id, routerID int64) (secgroup *
 }
 
 func (a *SecgroupAdmin) GetSecgroupByUUID(ctx context.Context, uuID string, routerID int64) (secgroup *model.SecurityGroup, err error) {
-	db := DB()
+	db := dbs.DB()
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	secgroup = &model.SecurityGroup{}
@@ -114,7 +114,7 @@ func (a *SecgroupAdmin) GetSecgroupByUUID(ctx context.Context, uuID string, rout
 }
 
 func (a *SecgroupAdmin) GetSecgroupByName(ctx context.Context, name string, routerID int64) (secgroup *model.SecurityGroup, err error) {
-	db := DB()
+	db := dbs.DB()
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	secgroup = &model.SecurityGroup{}
@@ -144,7 +144,7 @@ func (a *SecgroupAdmin) GetSecurityGroup(ctx context.Context, reference *common.
 
 func (a *SecgroupAdmin) Create(ctx context.Context, name string, isDefault bool, routerID, owner int64) (secgroup *model.SecurityGroup, err error) {
 	memberShip := GetMemberShip(ctx)
-	db := DB()
+	db := dbs.DB()
 	secgroup = &model.SecurityGroup{Model: model.Model{Creater: memberShip.UserID}, Owner: owner, Name: name, IsDefault: isDefault, RouterID: routerID}
 	err = db.Create(secgroup).Error
 	if err != nil {
@@ -185,7 +185,7 @@ func (a *SecgroupAdmin) Create(ctx context.Context, name string, isDefault bool,
 }
 
 func (a *SecgroupAdmin) Delete(id int64) (err error) {
-	db := DB()
+	db := dbs.DB()
 	db = db.Begin()
 	defer func() {
 		if err == nil {
@@ -218,7 +218,7 @@ func (a *SecgroupAdmin) Delete(id int64) (err error) {
 
 func (a *SecgroupAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, secgroups []*model.SecurityGroup, err error) {
 	memberShip := GetMemberShip(ctx)
-	db := DB()
+	db := dbs.DB()
 	if limit == 0 {
 		limit = 16
 	}
@@ -354,7 +354,7 @@ func (v *SecgroupView) New(c *macaron.Context, store session.Store) {
 
 func (v *SecgroupView) Edit(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
-	db := DB()
+	db := dbs.DB()
 	id := c.Params(":id")
 	sgID, err := strconv.Atoi(id)
 	if err != nil {
