@@ -370,15 +370,17 @@ func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, router *
 	var db *gorm.DB
 	ctx, db = GetCtxDB(ctx)
 	subnets := []*model.Subnet{}
-	err = db.Where("type = 'public'").Take(subnets).Error
+	err = db.Where("type = 'public' and vlan = ?", router.PublicLink).Find(&subnets).Error
 	if err != nil {
 		log.Println("Failed to query subnets ", err)
 		return
 	}
 	name := ftype + "fip"
+	log.Printf("Subnets: %v\n", subnets)
 	for _, subnet := range subnets {
 		fipIface, err = CreateInterface(ctx, subnet, floatingipID, owner, -1, address, "", name, "floating", nil)
 		if err == nil {
+			log.Printf("FipIface: %v\n", fipIface)
 			gateway = subnet.Gateway
 			return
 		}

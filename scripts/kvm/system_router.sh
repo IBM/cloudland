@@ -18,7 +18,7 @@ ip netns exec $router ip addr add $ext_ip dev link-sys
 ip netns exec $router ip route add default via $gateway
 route_ip=${ext_ip%/*}
 ip netns exec $router iptables -t nat -S | grep "source $ext_ip\>"
-[ $? -ne 0 ] && ip netns exec $router iptables -t nat -A POSTROUTING -j SNAT --to-source $ext_ip
+[ $? -ne 0 ] && ip netns exec $router iptables -t nat -A POSTROUTING -j SNAT --to-source $route_ip
 
 router_dir=$cache_dir/router/$router
 mkdir -p $router_dir

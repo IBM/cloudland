@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os/exec"
 	"strconv"
 	"strings"
 
@@ -228,37 +227,10 @@ func (a *UserAdmin) List(ctx context.Context, offset, limit int64, order, query 
 
 func (a *UserAdmin) Validate(ctx context.Context, username, password string) (user *model.User, err error) {
 	db := DB()
-	hasUser := true
 	user = &model.User{}
 	err = db.Take(user, "username = ?", username).Error
 	if err != nil {
 		log.Println("DB failed to qeury user", err)
-		hasUser = false
-	}
-	if strings.Contains(username, "@") && strings.Contains(username, "ibm.com") {
-		cmd := exec.Command("/opt/cloudland/scripts/frontend/ldap_auth.sh", username, password)
-		err = cmd.Start()
-		if err != nil {
-			log.Println("cmd.Start: ", err)
-		}
-		err = cmd.Wait()
-		if err != nil {
-			log.Println("cmd.Wait: ", err)
-			return
-		} else if hasUser {
-			return
-		}
-		_, err = a.Create(ctx, username, password)
-		if err != nil {
-			log.Println("Failed to create user", err)
-			return
-		}
-		_, err = orgAdmin.Create(ctx, username, username)
-		if err != nil {
-			log.Println("Failed to create organization", err)
-			return
-		}
-		return
 	}
 	err = a.CompareHashAndPassword(user.Password, password)
 	return
