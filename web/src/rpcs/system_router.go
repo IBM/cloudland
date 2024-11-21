@@ -12,8 +12,8 @@ import (
 	"log"
 	"strconv"
 
-	"web/src/model"
 	. "web/src/common"
+	"web/src/model"
 )
 
 func init() {
@@ -52,7 +52,7 @@ func SystemRouter(ctx context.Context, args []string) (status string, err error)
 		return
 	}
 	var sysIface *model.Interface
-	if hyper.HostIP == "" {
+	if hyper.RouteIP == "" {
 		for _, subnet := range subnets {
 			sysIface, err = CreateInterface(ctx, subnet, 0, 0, int32(hyperID), "", "", hyperName, "system", nil)
 			if err == nil {
@@ -60,7 +60,7 @@ func SystemRouter(ctx context.Context, args []string) (status string, err error)
 			}
 			log.Printf("Failed to create system router interface for hypervisor %d from subnet %d, %v", hyperID, subnet.ID, err)
 		}
-		hyper.HostIP = sysIface.Address.Address
+		hyper.RouteIP = sysIface.Address.Address
 		err = db.Save(hyper).Error
 		if err != nil {
 			log.Println("Failed to save hyper address", err)
@@ -68,7 +68,7 @@ func SystemRouter(ctx context.Context, args []string) (status string, err error)
 		}
 	} else {
 		address := &model.Address{}
-		err = db.Preload("Subnet").Where("address = ?", hyper.HostIP).Take(address).Error
+		err = db.Preload("Subnet").Where("address = ?", hyper.RouteIP).Take(address).Error
 		if err != nil {
 			log.Println("Failed to get hyper address", err)
 			return
@@ -76,9 +76,9 @@ func SystemRouter(ctx context.Context, args []string) (status string, err error)
 		if address.Allocated {
 			sysIface = &model.Interface{Address: address}
 		} else {
-			sysIface, err = CreateInterface(ctx, address.Subnet, 0, 0, int32(hyperID), hyper.HostIP, "", hyperName, "system", nil)
+			sysIface, err = CreateInterface(ctx, address.Subnet, 0, 0, int32(hyperID), hyper.RouteIP, "", hyperName, "system", nil)
 			if err != nil {
-				log.Printf("Failed to create interface with address %s, %v", hyper.HostIP, err)
+				log.Printf("Failed to create interface with address %s, %v", hyper.RouteIP, err)
 				return
 			}
 		}

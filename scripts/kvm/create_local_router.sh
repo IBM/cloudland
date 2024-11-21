@@ -3,9 +3,10 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 1 ] && echo "$0 <router>" && exit -1
+[ $# -lt 2 ] && echo "$0 <router> <ext_vlan>" && exit -1
 
 router=$1
+ext_vlan=$2
 [ "${router/router-/}" = "$router" ] && router=router-$1
 [ -z "$router" ] && exit 1
 [ -f "/var/run/netns/$router" ] && exit 0
@@ -15,7 +16,7 @@ ip netns add $router
 ip netns exec $router ip link set lo up
 suffix=${router/router-/}
 
-./create_veth.sh $router ext-$suffix te-$suffix
+./create_veth.sh $router ext-$suffix te-$suffix $ext_vlan
 ./create_veth.sh $router int-$suffix ti-$suffix
 local_ip=169.$(($SCI_CLIENT_ID % 234)).$(($suffix % 234)).3
 peer_ip=169.$(($SCI_CLIENT_ID % 234)).$(($suffix % 234)).2

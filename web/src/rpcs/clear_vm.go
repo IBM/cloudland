@@ -75,7 +75,7 @@ func ClearVM(ctx context.Context, args []string) (status string, err error) {
 		reason = err.Error()
 		return
 	}
-	err = db.Preload("Address").Preload("Address.Subnet").Where("instance = ?", instID).Find(&instance.Interfaces).Error
+	err = db.Preload("Address").Preload("Address.Subnet").Preload("Address.Subnet").Where("instance = ?", instID).Find(&instance.Interfaces).Error
 	if err != nil {
 		log.Println("Failed to get interfaces", err)
 		reason = err.Error()

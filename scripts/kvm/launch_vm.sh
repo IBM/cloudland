@@ -96,7 +96,8 @@ while [ $i -lt $nvlan ]; do
     mac=$(jq -r .[$i].mac_address <<< $vlans)
     gateway=$(jq -r .[$i].gateway <<< $vlans)
     router=$(jq -r .[$i].router <<< $vlans)
-    jq -r .[$i].security <<< $vlans | ./attach_nic.sh "$ID" "$vlan" "$ip" "$mac" "$gateway" "$router"
+    ext_vlan=$(jq -r .[$i].public_link <<< $vlans)
+    jq -r .[$i].security <<< $vlans | ./attach_nic.sh "$ID" "$vlan" "$ip" "$mac" "$gateway" "$router" "$ext_vlan"
     let i=$i+1
 done
 virsh start $vm_ID

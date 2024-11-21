@@ -23,13 +23,14 @@ func init() {
 }
 
 type FdbRule struct {
-	Instance string `json:"instance"`
-	Vni      int64  `json:"vni"`
-	InnerIP  string `json:"inner_ip"`
-	InnerMac string `json:"inner_mac"`
-	OuterIP  string `json:"outer_ip"`
-	Gateway  string `json:"gateway"`
-	Router   int64  `json:"router"`
+	Instance   string `json:"instance"`
+	Vni        int64  `json:"vni"`
+	InnerIP    string `json:"inner_ip"`
+	InnerMac   string `json:"inner_mac"`
+	OuterIP    string `json:"outer_ip"`
+	Gateway    string `json:"gateway"`
+	Router     int64  `json:"router"`
+	PublicLink int64  `json:"public_link"`
 }
 
 func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript string) (err error) {
@@ -45,7 +46,7 @@ func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript strin
 			continue
 		}
 		if iface.Address.Subnet.Type != "public" {
-			spreadRules = append(spreadRules, &FdbRule{Instance: iface.Name, Vni: iface.Address.Subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper.HostIP, Gateway: iface.Address.Subnet.Gateway, Router: iface.Address.Subnet.RouterID})
+			spreadRules = append(spreadRules, &FdbRule{Instance: iface.Name, Vni: iface.Address.Subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper.HostIP, Gateway: iface.Address.Subnet.Gateway, Router: iface.Address.Subnet.RouterID, PublicLink: iface.Address.Subnet.Router.PublicLink})
 		}
 	}
 	allIfaces := []*model.Interface{}
@@ -64,7 +65,7 @@ func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript strin
 				continue
 			}
 			hyperSet[iface.Hyper] = struct{}{}
-			localRules = append(localRules, &FdbRule{Instance: iface.Name, Vni: iface.Address.Subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper.HostIP, Gateway: iface.Address.Subnet.Gateway, Router: iface.Address.Subnet.RouterID})
+			localRules = append(localRules, &FdbRule{Instance: iface.Name, Vni: iface.Address.Subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper.HostIP, Gateway: iface.Address.Subnet.Gateway, Router: iface.Address.Subnet.RouterID, PublicLink: iface.Address.Subnet.Router.PublicLink})
 		}
 		if len(hyperSet) > 0 && len(spreadRules) > 0 {
 			hyperList := fmt.Sprintf("group-fdb-%d", hyperNode)
@@ -133,7 +134,7 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 		reason = err.Error()
 		return
 	}
-	err = db.Preload("Address").Preload("Address.Subnet").Where("instance = ?", instID).Find(&instance.Interfaces).Error
+	err = db.Preload("Address").Preload("Address.Subnet").Preload("Address.Subnet.Router").Where("instance = ?", instID).Find(&instance.Interfaces).Error
 	if err != nil {
 		log.Println("Failed to get interfaces", err)
 		reason = err.Error()

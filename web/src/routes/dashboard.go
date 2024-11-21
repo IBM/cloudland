@@ -13,8 +13,8 @@ import (
 	"log"
 	"net/http"
 
-	"web/src/model"
 	. "web/src/common"
+	"web/src/model"
 
 	"github.com/go-macaron/session"
 	"gopkg.in/macaron.v1"

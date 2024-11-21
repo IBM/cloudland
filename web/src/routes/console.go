@@ -16,8 +16,8 @@ import (
 	"strconv"
 	"time"
 
-	"web/src/model"
 	. "web/src/common"
+	"web/src/model"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/go-macaron/session"

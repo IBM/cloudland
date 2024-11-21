@@ -15,8 +15,8 @@ import (
 	"strconv"
 
 	. "web/src/common"
-	"web/src/model"
 	"web/src/dbs"
+	"web/src/model"
 
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"

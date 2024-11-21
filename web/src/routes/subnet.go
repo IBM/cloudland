@@ -98,8 +98,8 @@ func generateIPAddresses(subnet *model.Subnet, start net.IP, end net.IP, preSize
 			}
 		}
 		address := &model.Address{
-			Model: model.Model{ Creater: subnet.Creater},
-			Owner:   subnet.Owner,
+			Model:    model.Model{Creater: subnet.Creater},
+			Owner:    subnet.Owner,
 			Address:  ipstr,
 			Netmask:  subnet.Netmask,
 			Type:     "ipv4",
@@ -128,7 +128,7 @@ func (a *SubnetAdmin) Get(ctx context.Context, id int64) (subnet *model.Subnet, 
 	db := DB()
 	where := memberShip.GetWhere()
 	subnet = &model.Subnet{Model: model.Model{ID: id}}
-	err = db.Where(where).Take(subnet).Error
+	err = db.Preload("Router").Where(where).Take(subnet).Error
 	if err != nil {
 		log.Println("DB failed to query subnet ", err)
 		return
@@ -149,7 +149,7 @@ func (a *SubnetAdmin) GetSubnetByUUID(ctx context.Context, uuID string) (subnet 
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	subnet = &model.Subnet{}
-	err = db.Where(where).Where("uuid = ?", uuID).Take(subnet).Error
+	err = db.Preload("Router").Where(where).Where("uuid = ?", uuID).Take(subnet).Error
 	if err != nil {
 		log.Println("Failed to query subnet, %v", err)
 		return
@@ -170,7 +170,7 @@ func (a *SubnetAdmin) GetSubnetByName(ctx context.Context, name string) (subnet 
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	subnet = &model.Subnet{}
-	err = db.Where(where).Where("name = ?", name).Take(subnet).Error
+	err = db.Preload("Router").Where(where).Where("name = ?", name).Take(subnet).Error
 	if err != nil {
 		log.Println("Failed to query subnet, %v", err)
 		return
@@ -381,7 +381,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, vlan int, name, network, gatew
 	netmask := net.IP(net.CIDRMask(preSize, 32)).String()
 	subnet = &model.Subnet{
 		Model:        model.Model{Creater: memberShip.UserID},
-		Owner: owner,
+		Owner:        owner,
 		Name:         name,
 		Network:      network,
 		Netmask:      netmask,

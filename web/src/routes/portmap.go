@@ -15,8 +15,8 @@ import (
 	"strconv"
 	"time"
 
-	"web/src/dbs"
 	. "web/src/common"
+	"web/src/dbs"
 	"web/src/model"
 
 	"github.com/go-macaron/session"

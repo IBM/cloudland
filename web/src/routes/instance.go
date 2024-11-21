@@ -61,13 +61,14 @@ type NetworkLink struct {
 }
 
 type VlanInfo struct {
-	Device   string          `json:"device"`
-	Vlan     int64           `json:"vlan"`
-	Gateway  string          `json:"gateway"`
-	Router   int64           `json:"router"`
-	IpAddr   string          `json:"ip_address"`
-	MacAddr  string          `json:"mac_address"`
-	SecRules []*SecurityData `json:"security"`
+	Device     string          `json:"device"`
+	Vlan       int64           `json:"vlan"`
+	Gateway    string          `json:"gateway"`
+	Router     int64           `json:"router"`
+	PublicLink int64           `json:"public_link"`
+	IpAddr     string          `json:"ip_address"`
+	MacAddr    string          `json:"mac_address"`
+	SecRules   []*SecurityData `json:"security"`
 }
 
 type SecurityData struct {
@@ -160,7 +161,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			log.Println("Failed to query total instances with the image", err)
 			return
 		}
-		snapshot := total / MaxmumSnapshot + 1 // Same snapshot reference can not be over 128, so use 96 here
+		snapshot := total/MaxmumSnapshot + 1 // Same snapshot reference can not be over 128, so use 96 here
 		instance := &model.Instance{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, Hostname: hostname, ImageID: image.ID, Snapshot: int64(snapshot), FlavorID: flavor.ID, Keys: keys, Userdata: userdata, Status: "pending", ZoneID: zoneID, RouterID: routerID}
 		err = db.Create(instance).Error
 		if err != nil {
@@ -378,7 +379,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 		log.Println("Get security data for primary interface failed, %v", err)
 		return
 	}
-	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, Gateway: primary.Gateway, Router: primary.RouterID, IpAddr: address, MacAddr: iface.MacAddr, SecRules: securityData})
+	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, Gateway: primary.Gateway, Router: primary.RouterID, PublicLink: primary.Router.PublicLink, IpAddr: address, MacAddr: iface.MacAddr, SecRules: securityData})
 	for i, ifaceInfo := range secondaryIfaces {
 		subnet := ifaceInfo.Subnet
 		ifname := fmt.Sprintf("eth%d", i+1)
@@ -402,7 +403,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 			return
 		}
 		instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: address, MacAddr: iface.MacAddr, SecRules: securityData})
+		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Gateway: subnet.Gateway, Router: subnet.RouterID, PublicLink: subnet.Router.PublicLink, IpAddr: address, MacAddr: iface.MacAddr, SecRules: securityData})
 	}
 	var instKeys []string
 	for _, key := range keys {
