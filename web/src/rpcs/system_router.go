@@ -13,8 +13,7 @@ import (
 	"strconv"
 
 	"web/src/model"
-	"web/src/dbs"
-	"web/src/common"
+	. "web/src/common"
 )
 
 func init() {
@@ -23,7 +22,7 @@ func init() {
 
 func SystemRouter(ctx context.Context, args []string) (status string, err error) {
 	//|:-COMMAND-:| create_router.sh '7' '2' 'MASTER' 'yes'
-	db := dbs.DB()
+	db := DB()
 	argn := len(args)
 	if argn < 2 {
 		err = fmt.Errorf("Wrong params")
@@ -52,7 +51,7 @@ func SystemRouter(ctx context.Context, args []string) (status string, err error)
 		log.Println("Failed to get public subnet", err)
 		return
 	}
-	sysIface, err := common.CreateInterface(ctx, subnet.ID, 0, 0, int32(hyperID), "", "", hyperName, "system", nil)
+	sysIface, err := CreateInterface(ctx, subnet.ID, 0, 0, int32(hyperID), "", "", hyperName, "system", nil)
 	if err != nil {
 		log.Printf("Failed to create system router interface for hypervisor %d, %v", hyperID, err)
 		return

@@ -12,7 +12,7 @@ import (
 	"log"
 	"strconv"
 
-	"web/src/dbs"
+	. "web/src/common"
 	"web/src/model"
 )
 
@@ -22,7 +22,7 @@ func init() {
 
 func ActionVM(ctx context.Context, args []string) (status string, err error) {
 	//|:-COMMAND-:| clear_vm.sh '127'
-	db := dbs.DB()
+	db := DB()
 	argn := len(args)
 	if argn < 2 {
 		err = fmt.Errorf("Wrong params")

@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"web/src/common"
+	. "web/src/common"
 	"web/src/model"
 	"web/src/routes"
 
@@ -130,21 +130,21 @@ func (v *FlavorAPI) List(c *gin.Context) {
 	limitStr := c.DefaultQuery("limit", "50")
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query offset: "+offsetStr, err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset: "+offsetStr, err)
 		return
 	}
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query limit: "+limitStr, err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query limit: "+limitStr, err)
 		return
 	}
 	if offset < 0 || limit < 0 {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", err)
 		return
 	}
 	total, flavors, err := flavorAdmin.List(int64(offset), int64(limit), "-created_at", "")
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Failed to list flavors", err)
+		ErrorResponse(c, http.StatusBadRequest, "Failed to list flavors", err)
 		return
 	}
 	flavorListResp := &FlavorListResponse{
@@ -156,7 +156,7 @@ func (v *FlavorAPI) List(c *gin.Context) {
 	for i, flavor := range flavors {
 		flavorListResp.Flavors[i], err = v.getFlavorResponse(ctx, flavor)
 		if err != nil {
-			common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+			ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
 			return
 		}
 	}

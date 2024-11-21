@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"log"
 
-	"web/src/dbs"
+	. "web/src/common"
 	"web/src/model"
 )
 
@@ -21,7 +21,7 @@ func init() {
 
 func CreatePortmap(ctx context.Context, args []string) (status string, err error) {
 	//|:-COMMAND-:| create_portmap.sh 1.2.3.4 18010
-	db := dbs.DB()
+	db := DB()
 	argn := len(args)
 	if argn < 3 {
 		err = fmt.Errorf("Wrong params")

@@ -19,8 +19,8 @@ type BaseReference struct {
 }
 
 type APIError struct {
-//	InternalErr error
-//	ErrorCode int `json:"error_code"`
+	//	InternalErr error
+	//	ErrorCode int `json:"error_code"`
 	ErrorMessage string `json:"error_message"`
 }
 

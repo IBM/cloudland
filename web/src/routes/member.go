@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"log"
 
-	"web/src/dbs"
+	. "web/src/common"
 	"web/src/model"
 )
 
@@ -42,7 +42,7 @@ func (m *MemberShip) CheckPermission(reqRole model.Role) (permit bool) {
 
 func (m *MemberShip) CheckCreater(table string, id int64) (isCreater bool, err error) {
 	isCreater = false
-	db := dbs.DB()
+	db := DB()
 	type Result struct {
 		Creater int64
 	}
@@ -60,7 +60,7 @@ func (m *MemberShip) CheckCreater(table string, id int64) (isCreater bool, err e
 
 func (m *MemberShip) CheckUser(id int64) (permit bool, err error) {
 	permit = false
-	db := dbs.DB()
+	db := DB()
 	user := &model.User{Model: model.Model{ID: id}}
 	err = db.Take(&user).Error
 	if err != nil {
@@ -85,7 +85,7 @@ func (m *MemberShip) CheckOwner(reqRole model.Role, table string, id int64) (isO
 		Owner int64
 	}
 	var result Result
-	db := dbs.DB()
+	db := DB()
 	err = db.Table(table).Select("owner").Where("id = ?", id).Scan(&result).Error
 	if err != nil {
 		log.Println("Failed to query resource owner", err)
@@ -134,7 +134,7 @@ func GetMemberShip(ctx context.Context) *MemberShip {
 }
 
 func GetDBMemberShip(userID, orgID int64) (m *MemberShip, err error) {
-	db := dbs.DB()
+	db := DB()
 	m = &MemberShip{
 		UserID: userID,
 		OrgID:  orgID,

@@ -23,13 +23,9 @@ definitions:
         type: integer
       disk:
         type: integer
-      id:
-        type: string
       memory:
         type: integer
       name:
-        maxLength: 32
-        minLength: 2
         type: string
     type: object
   apis.FloatingIpInfo:

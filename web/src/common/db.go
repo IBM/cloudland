@@ -20,6 +20,10 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+var (
+	DB = dbs.DB
+)
+
 const (
 	contextDBKey = "dbs"
 )

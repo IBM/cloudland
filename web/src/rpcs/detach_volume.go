@@ -12,7 +12,7 @@ import (
 	"log"
 	"strconv"
 
-	"web/src/dbs"
+	. "web/src/common"
 	"web/src/model"
 )
 
@@ -22,7 +22,7 @@ func init() {
 
 func DetachVolume(ctx context.Context, args []string) (status string, err error) {
 	//|:-COMMAND-:| detach_volume.sh 5 7
-	db := dbs.DB()
+	db := DB()
 	argn := len(args)
 	if argn < 3 {
 		err = fmt.Errorf("Wrong params")

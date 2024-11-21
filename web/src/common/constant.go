@@ -19,6 +19,6 @@ const (
 	Pause       PowerAction = "pause"
 	Resume      PowerAction = "resume"
 
-	Public      SubnetType = "public"
-	Internal    SubnetType = "internal"
+	Public   SubnetType = "public"
+	Internal SubnetType = "internal"
 )

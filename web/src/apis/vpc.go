@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"web/src/common"
+	. "web/src/common"
 	"web/src/model"
 	"web/src/routes"
 
@@ -25,7 +25,7 @@ var routerAdmin = &routes.RouterAdmin{}
 type VPCAPI struct{}
 
 type VPCResponse struct {
-	*common.BaseReference
+	*BaseReference
 	Subnets []*SubnetResponse `json:"subnets,omitempty"`
 }
 
@@ -38,7 +38,7 @@ type VPCListResponse struct {
 
 type VPCPayload struct {
 	Name          string                `json:"name" binding:"required,min=2,max=32"`
-	PublicNetwork *common.BaseReference `json:"public_network" binding:"omitempty"`
+	PublicNetwork *BaseReference `json:"public_network" binding:"omitempty"`
 }
 
 type VPCPatchPayload struct {
@@ -59,12 +59,12 @@ func (v *VPCAPI) Get(c *gin.Context) {
 	uuID := c.Param("id")
 	router, err := routerAdmin.GetRouterByUUID(ctx, uuID)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid vpc query", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid vpc query", err)
 		return
 	}
 	vpcResp, err := v.getVPCResponse(ctx, router)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+		ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
 		return
 	}
 	c.JSON(http.StatusOK, vpcResp)
@@ -101,12 +101,12 @@ func (v *VPCAPI) Delete(c *gin.Context) {
 	uuID := c.Param("id")
 	router, err := routerAdmin.GetRouterByUUID(ctx, uuID)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
 		return
 	}
 	err = routerAdmin.Delete(ctx, router)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Not able to delete", err)
+		ErrorResponse(c, http.StatusBadRequest, "Not able to delete", err)
 		return
 	}
 	c.JSON(http.StatusNoContent, nil)
@@ -128,29 +128,29 @@ func (v *VPCAPI) Create(c *gin.Context) {
 	payload := &VPCPayload{}
 	err := c.ShouldBindJSON(payload)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
 		return
 	}
 	var publicSubnet *model.Subnet
 	if payload.PublicNetwork != nil {
 		publicSubnet, err = subnetAdmin.GetSubnet(ctx, payload.PublicNetwork)
 		if err != nil {
-			common.ErrorResponse(c, http.StatusBadRequest, "Not able to get subnet", err)
+			ErrorResponse(c, http.StatusBadRequest, "Not able to get subnet", err)
 			return
 		}
 	}
 	if publicSubnet != nil && publicSubnet.Type != "public" {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid public network type", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid public network type", err)
 		return
 	}
 	router, err := routerAdmin.Create(ctx, payload.Name, publicSubnet)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Failed to create vpc", err)
+		ErrorResponse(c, http.StatusBadRequest, "Failed to create vpc", err)
 		return
 	}
 	vpcResp, err := v.getVPCResponse(ctx, router)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+		ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
 		return
 	}
 	c.JSON(http.StatusOK, vpcResp)
@@ -158,7 +158,7 @@ func (v *VPCAPI) Create(c *gin.Context) {
 
 func (v *VPCAPI) getVPCResponse(ctx context.Context, router *model.Router) (vpcResp *VPCResponse, err error) {
 	vpcResp = &VPCResponse{
-		BaseReference: &common.BaseReference{
+		BaseReference: &BaseReference{
 			ID:   router.UUID,
 			Name: router.Name,
 		},
@@ -188,21 +188,21 @@ func (v *VPCAPI) List(c *gin.Context) {
 	limitStr := c.DefaultQuery("limit", "50")
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query offset: "+offsetStr, err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset: "+offsetStr, err)
 		return
 	}
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query limit: "+limitStr, err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query limit: "+limitStr, err)
 		return
 	}
 	if offset < 0 || limit < 0 {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", err)
 		return
 	}
 	total, routers, err := routerAdmin.List(ctx, int64(offset), int64(limit), "-created_at", "")
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Failed to list vpcs", err)
+		ErrorResponse(c, http.StatusBadRequest, "Failed to list vpcs", err)
 		return
 	}
 	vpcListResp := &VPCListResponse{
@@ -214,7 +214,7 @@ func (v *VPCAPI) List(c *gin.Context) {
 	for i, router := range routers {
 		vpcListResp.VPCs[i], err = v.getVPCResponse(ctx, router)
 		if err != nil {
-			common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+			ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
 			return
 		}
 	}

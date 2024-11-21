@@ -14,7 +14,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"web/src/common"
+	. "web/src/common"
 	"web/src/dbs"
 	"web/src/model"
 
@@ -43,7 +43,7 @@ type RouterAdmin struct{}
 type RouterView struct{}
 
 func createRouterIface(ctx context.Context, rtype string, router *model.Router, owner int64) (iface *model.Interface, subnet *model.Subnet, err error) {
-	db := dbs.DB()
+	db := DB()
 	subnets := []*model.Subnet{}
 	err = db.Where("type = ?", rtype).Find(&subnets).Error
 	if err != nil {
@@ -62,7 +62,7 @@ func createRouterIface(ctx context.Context, rtype string, router *model.Router, 
 		} else {
 			continue
 		}
-		iface, err = common.CreateInterface(ctx, subnet.ID, router.ID, owner, router.Hyper, "", "", name, ifType, nil)
+		iface, err = CreateInterface(ctx, subnet.ID, router.ID, owner, router.Hyper, "", "", name, ifType, nil)
 		if err == nil {
 			log.Println("Created gateway interface from subnet")
 			break
@@ -80,7 +80,7 @@ func (a *RouterAdmin) Create(ctx context.Context, name string, pubSubnet *model.
 		return
 	}
 	owner := memberShip.OrgID
-	db := dbs.DB()
+	db := DB()
 	router = &model.Router{Model: model.Model{Creater: memberShip.UserID}, Owner: owner, Name: name, Status: "available"}
 	err = db.Create(router).Error
 	if err != nil {
@@ -109,7 +109,7 @@ func (a *RouterAdmin) Create(ctx context.Context, name string, pubSubnet *model.
 }
 
 func (a *RouterAdmin) Get(ctx context.Context, id int64) (router *model.Router, err error) {
-	db := dbs.DB()
+	db := DB()
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	router = &model.Router{Model: model.Model{ID: id}}
@@ -127,7 +127,7 @@ func (a *RouterAdmin) Get(ctx context.Context, id int64) (router *model.Router, 
 }
 
 func (a *RouterAdmin) GetRouterByUUID(ctx context.Context, uuID string) (router *model.Router, err error) {
-	db := dbs.DB()
+	db := DB()
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	router = &model.Router{}
@@ -146,7 +146,7 @@ func (a *RouterAdmin) GetRouterByUUID(ctx context.Context, uuID string) (router 
 }
 
 func (a *RouterAdmin) GetRouterByName(ctx context.Context, name string) (router *model.Router, err error) {
-	db := dbs.DB()
+	db := DB()
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	router = &model.Router{}
@@ -164,7 +164,7 @@ func (a *RouterAdmin) GetRouterByName(ctx context.Context, name string) (router 
 	return
 }
 
-func (a *RouterAdmin) GetRouter(ctx context.Context, reference *common.BaseReference) (router *model.Router, err error) {
+func (a *RouterAdmin) GetRouter(ctx context.Context, reference *BaseReference) (router *model.Router, err error) {
 	if reference == nil || (reference.ID == "" && reference.Name == "") {
 		err = fmt.Errorf("Router base reference must be provided with either uuid or name")
 		return
@@ -181,7 +181,7 @@ func (a *RouterAdmin) GetRouter(ctx context.Context, reference *common.BaseRefer
 }
 
 func (a *RouterAdmin) Update(ctx context.Context, id int64, name string, pubID int64) (router *model.Router, err error) {
-	db := dbs.DB()
+	db := DB()
 	router = &model.Router{Model: model.Model{ID: id}}
 	if err = db.Find(router).Error; err != nil {
 		log.Println("Failed to query router", err)
@@ -198,7 +198,7 @@ func (a *RouterAdmin) Update(ctx context.Context, id int64, name string, pubID i
 }
 
 func (a *RouterAdmin) Delete(ctx context.Context, router *model.Router) (err error) {
-	db := dbs.DB()
+	db := DB()
 	db = db.Begin()
 	defer func() {
 		if err == nil {
@@ -207,7 +207,7 @@ func (a *RouterAdmin) Delete(ctx context.Context, router *model.Router) (err err
 			db.Rollback()
 		}
 	}()
-	ctx = common.SaveTXtoCtx(ctx, db)
+	ctx = SaveTXtoCtx(ctx, db)
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.ValidateOwner(model.Writer, router.Owner)
 	if !permit {
@@ -284,7 +284,7 @@ func (a *RouterAdmin) Delete(ctx context.Context, router *model.Router) (err err
 
 func (a *RouterAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, routers []*model.Router, err error) {
 	memberShip := GetMemberShip(ctx)
-	db := dbs.DB()
+	db := DB()
 	if limit == 0 {
 		limit = 16
 	}
@@ -415,7 +415,7 @@ func (v *RouterView) New(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	db := dbs.DB()
+	db := DB()
 	subnets := []*model.Subnet{}
 	if err := db.Model(&model.Subnet{}).Where("type = 'public'").Find(&subnets).Error; err != nil {
 		return
@@ -426,7 +426,7 @@ func (v *RouterView) New(c *macaron.Context, store session.Store) {
 
 func (v *RouterView) Edit(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
-	db := dbs.DB()
+	db := DB()
 	id := c.Params("id")
 	routerID, err := strconv.Atoi(id)
 	if err != nil {

@@ -20,6 +20,7 @@ import (
 	"strconv"
 	"strings"
 
+	. "web/src/common"
 	"web/src/dbs"
 	"web/src/model"
 
@@ -39,7 +40,7 @@ type OrgView struct{}
 
 func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.Organization, err error) {
 	memberShip := GetMemberShip(ctx)
-	db := dbs.DB()
+	db := DB()
 	user := &model.User{Username: owner}
 	err = db.Where(user).Take(user).Error
 	if err != nil {
@@ -78,7 +79,7 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 
 func (a *OrgAdmin) Update(ctx context.Context, orgID int64, members, users []string, roles []model.Role) (org *model.Organization, err error) {
 	memberShip := GetMemberShip(ctx)
-	db := dbs.DB()
+	db := DB()
 	org = &model.Organization{Model: model.Model{ID: orgID}}
 	err = db.Set("gorm:auto_preload", true).Take(org).Take(org).Error
 	if err != nil {
@@ -158,13 +159,13 @@ func (a *OrgAdmin) Update(ctx context.Context, orgID int64, members, users []str
 
 func (a *OrgAdmin) GetOrgByName(name string) (org *model.Organization, err error) {
 	org = &model.Organization{}
-	db := dbs.DB()
+	db := DB()
 	err = db.Take(org, &model.Organization{Name: name}).Error
 	return
 }
 
 func (a *OrgAdmin) Delete(ctx context.Context, id int64) (err error) {
-	db := dbs.DB()
+	db := DB()
 	db = db.Begin()
 	defer func() {
 		if err != nil {
@@ -224,7 +225,7 @@ func (a *OrgAdmin) List(ctx context.Context, offset, limit int64, order, query s
 	if query != "" {
 		query = fmt.Sprintf("name like '%%%s%%'", query)
 	}
-	db := dbs.DB()
+	db := DB()
 	user := &model.User{Model: model.Model{ID: memberShip.UserID}}
 	err = db.Take(user).Error
 	if err != nil {
@@ -335,7 +336,7 @@ func (v *OrgView) New(c *macaron.Context, store session.Store) {
 
 func (v *OrgView) Edit(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
-	db := dbs.DB()
+	db := DB()
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is Empty"

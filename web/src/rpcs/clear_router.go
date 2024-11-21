@@ -12,7 +12,7 @@ import (
 	"log"
 	"strconv"
 
-	"web/src/dbs"
+	. "web/src/common"
 	"web/src/model"
 )
 
@@ -22,7 +22,7 @@ func init() {
 
 func ClearRouter(ctx context.Context, args []string) (status string, err error) {
 	//|:-COMMAND-:| clear_router.sh 5 277 MASTER
-	db := dbs.DB()
+	db := DB()
 	argn := len(args)
 	if argn < 3 {
 		err = fmt.Errorf("Wrong params")

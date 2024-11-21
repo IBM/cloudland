@@ -13,7 +13,7 @@ import (
 	"log"
 	"strconv"
 
-	"web/src/dbs"
+	. "web/src/common"
 	"web/src/model"
 )
 
@@ -33,7 +33,7 @@ type FdbRule struct {
 }
 
 func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript string) (err error) {
-	db := dbs.DB()
+	db := DB()
 	localRules := []*FdbRule{}
 	spreadRules := []*FdbRule{}
 	hyperNode := instance.Hyper
@@ -102,7 +102,7 @@ func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript strin
 
 func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 	//|:-COMMAND-:| launch_vm.sh '127' 'running' '3' 'reason'
-	db := dbs.DB()
+	db := DB()
 	argn := len(args)
 	if argn < 4 {
 		err = fmt.Errorf("Wrong params")

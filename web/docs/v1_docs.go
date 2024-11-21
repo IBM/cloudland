@@ -2614,16 +2614,11 @@ const docTemplatev1 = `{
                 "disk": {
                     "type": "integer"
                 },
-                "id": {
-                    "type": "string"
-                },
                 "memory": {
                     "type": "integer"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
+                    "type": "string"
                 }
             }
         },

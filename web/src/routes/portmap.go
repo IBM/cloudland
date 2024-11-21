@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"web/src/dbs"
+	. "web/src/common"
 	"web/src/model"
 
 	"github.com/go-macaron/session"
@@ -39,7 +40,7 @@ func init() {
 
 func (a *PortmapAdmin) Create(ctx context.Context, instID int64, port int) (portmap *model.Portmap, err error) {
 	memberShip := GetMemberShip(ctx)
-	db := dbs.DB()
+	db := DB()
 	instance := &model.Instance{Model: model.Model{ID: instID}}
 	err = db.Set("gorm:auto_preload", true).Preload("Interfaces", "primary_if = ?", true).Model(instance).Take(instance).Error
 	if err != nil {
@@ -86,7 +87,7 @@ func (a *PortmapAdmin) Create(ctx context.Context, instID int64, port int) (port
 }
 
 func (a *PortmapAdmin) Delete(ctx context.Context, id int64) (err error) {
-	db := dbs.DB()
+	db := DB()
 	db = db.Begin()
 	defer func() {
 		if err == nil {
@@ -119,7 +120,7 @@ func (a *PortmapAdmin) Delete(ctx context.Context, id int64) (err error) {
 
 func (a *PortmapAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, portmaps []*model.Portmap, err error) {
 	memberShip := GetMemberShip(ctx)
-	db := dbs.DB()
+	db := DB()
 	if limit == 0 {
 		limit = 16
 	}
@@ -234,7 +235,7 @@ func (v *PortmapView) New(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	db := dbs.DB()
+	db := DB()
 	instances := []*model.Instance{}
 	if err := db.Preload("Interfaces", "primary_if = ?", true).Preload("Interfaces.Address").Find(&instances).Error; err != nil {
 		return

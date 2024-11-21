@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"web/src/dbs"
+	. "web/src/common"
 	"web/src/model"
 
 	"github.com/go-macaron/session"
@@ -31,7 +32,7 @@ type SecruleAdmin struct{}
 type SecruleView struct{}
 
 func (a *SecruleAdmin) ApplySecgroup(ctx context.Context, secgroup *model.SecurityGroup, ruleID int64) (err error) {
-	db := dbs.DB()
+	db := DB()
 	if len(secgroup.Interfaces) <= 0 {
 		return
 	}
@@ -82,7 +83,7 @@ func (a *SecruleAdmin) ApplySecgroup(ctx context.Context, secgroup *model.Securi
 }
 
 func (a *SecruleAdmin) Update(ctx context.Context, id int64, remoteIp, direction, protocol string, portMin, portMax int) (secrule *model.SecurityRule, err error) {
-	db := dbs.DB()
+	db := DB()
 	//secrule = &model.SecurityRule{Model: model.Model{ID: id}}
 	secrules := &model.SecurityRule{Model: model.Model{ID: id}}
 	err = db.Take(secrules).Error
@@ -148,7 +149,7 @@ func (a *SecruleAdmin) Update(ctx context.Context, id int64, remoteIp, direction
 
 func (a *SecruleAdmin) Create(ctx context.Context, sgID, owner int64, remoteIp, direction, protocol string, portMin, portMax int) (secrule *model.SecurityRule, err error) {
 	memberShip := GetMemberShip(ctx)
-	db := dbs.DB()
+	db := DB()
 	secgroup := &model.SecurityGroup{Model: model.Model{ID: sgID}}
 	err = db.Model(secgroup).Preload("Address").Related(&secgroup.Interfaces, "Interfaces").Error
 	if err != nil {
@@ -180,7 +181,7 @@ func (a *SecruleAdmin) Create(ctx context.Context, sgID, owner int64, remoteIp, 
 }
 
 func (a *SecruleAdmin) Delete(ctx context.Context, sgID, id int64) (err error) {
-	db := dbs.DB()
+	db := DB()
 	db = db.Begin()
 	defer func() {
 		if err == nil {
@@ -209,7 +210,7 @@ func (a *SecruleAdmin) Delete(ctx context.Context, sgID, id int64) (err error) {
 
 func (a *SecruleAdmin) List(ctx context.Context, offset, limit int64, order string, secgroupID int64) (total int64, secrules []*model.SecurityRule, err error) {
 	memberShip := GetMemberShip(ctx)
-	db := dbs.DB()
+	db := DB()
 	if limit == 0 {
 		limit = 16
 	}
@@ -421,7 +422,7 @@ func (v *SecruleView) Create(c *macaron.Context, store session.Store) {
 	c.Redirect(redirectTo)
 }
 func (v *SecruleView) Edit(c *macaron.Context, store session.Store) {
-	db := dbs.DB()
+	db := DB()
 	id := c.Params("id")
 	secruleID, err := strconv.Atoi(id)
 	if err != nil {

@@ -12,7 +12,7 @@ import (
 	"log"
 	"strconv"
 
-	"web/src/dbs"
+	. "web/src/common"
 	"web/src/model"
 )
 
@@ -22,7 +22,7 @@ func init() {
 
 func CreateImage(ctx context.Context, args []string) (status string, err error) {
 	//|:-COMMAND-:| create_image.sh '5' 'available' 'qcow2'
-	db := dbs.DB()
+	db := DB()
 	argn := len(args)
 	if argn < 4 {
 		err = fmt.Errorf("Wrong params")

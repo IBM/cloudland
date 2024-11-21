@@ -16,8 +16,7 @@ import (
 	"strconv"
 	"strings"
 
-	"web/src/common"
-	"web/src/dbs"
+	. "web/src/common"
 	"web/src/model"
 
 	"github.com/go-macaron/session"
@@ -41,7 +40,7 @@ type InterfaceAdmin struct{}
 type InterfaceView struct{}
 
 func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name, pairs string, sgIDs []int64) (iface *model.Interface, err error) {
-	db := dbs.DB()
+	db := DB()
 	iface = &model.Interface{Model: model.Model{ID: id}}
 	if err = db.Set("gorm:auto_preload", true).Take(iface).Error; err != nil {
 		log.Println("Failed to query interface ", err)
@@ -157,7 +156,7 @@ func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name, pairs strin
 
 func (v *InterfaceView) Edit(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
-	db := dbs.DB()
+	db := DB()
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is Empty"
@@ -248,11 +247,11 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 		sgIDs = append(sgIDs, sgID)
 	}
 	secGroups := []*model.SecurityGroup{}
-	if err = dbs.DB().Where(sgIDs).Find(&secGroups).Error; err != nil {
+	if err = DB().Where(sgIDs).Find(&secGroups).Error; err != nil {
 		log.Println("Security group query failed", err)
 		return
 	}
-	iface, err := common.CreateInterface(ctx, subnetID, instID, memberShip.OrgID, -1, address, mac, ifname, "instance", secGroups)
+	iface, err := CreateInterface(ctx, subnetID, instID, memberShip.OrgID, -1, address, mac, ifname, "instance", secGroups)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
 			"error": err.Error(),
@@ -273,13 +272,13 @@ func (v *InterfaceView) Delete(c *macaron.Context, store session.Store) {
 		return
 	}
 	iface := &model.Interface{Model: model.Model{ID: id}}
-	err = dbs.DB().Take(iface).Error
+	err = DB().Take(iface).Error
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	err = common.DeleteInterface(ctx, iface)
+	err = DeleteInterface(ctx, iface)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")

@@ -12,7 +12,7 @@ import (
 	"log"
 	"strconv"
 
-	"web/src/dbs"
+	. "web/src/common"
 	"web/src/model"
 )
 
@@ -32,7 +32,7 @@ func deleteInterfaces(ctx context.Context, instance *model.Instance) (err error)
 }
 
 func deleteInterface(ctx context.Context, iface *model.Interface) (err error) {
-	db := dbs.DB()
+	db := DB()
 	if err = db.Model(&model.Address{}).Where("interface = ?", iface.ID).Update(map[string]interface{}{"allocated": false, "interface": 0}).Error; err != nil {
 		log.Println("Failed to Update addresses, %v", err)
 		return
@@ -55,7 +55,7 @@ func deleteInterface(ctx context.Context, iface *model.Interface) (err error) {
 
 func ClearVM(ctx context.Context, args []string) (status string, err error) {
 	//|:-COMMAND-:| clear_vm.sh '127'
-	db := dbs.DB()
+	db := DB()
 	argn := len(args)
 	if argn < 2 {
 		err = fmt.Errorf("Wrong params")

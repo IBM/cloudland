@@ -20,13 +20,6 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-type InterfaceInfo struct {
-	Subnet         *model.Subnet
-	MacAddress     string
-	IpAddress      string
-	SecurityGroups []*model.SecurityGroup
-}
-
 func AllocateAddress(ctx context.Context, subnetID, ifaceID int64, ipaddr, addrType string) (address *model.Address, err error) {
 	var db *gorm.DB
 	ctx, db = GetCtxDB(ctx)

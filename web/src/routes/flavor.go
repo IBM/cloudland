@@ -14,8 +14,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"web/src/dbs"
+	. "web/src/common"
 	"web/src/model"
+	"web/src/dbs"
 
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
@@ -30,7 +31,7 @@ type FlavorAdmin struct{}
 type FlavorView struct{}
 
 func (a *FlavorAdmin) Create(name string, cpu, memory, disk int32) (flavor *model.Flavor, err error) {
-	db := dbs.DB()
+	db := DB()
 	flavor = &model.Flavor{
 		Name:   name,
 		Cpu:    cpu,
@@ -42,7 +43,7 @@ func (a *FlavorAdmin) Create(name string, cpu, memory, disk int32) (flavor *mode
 }
 
 func (a *FlavorAdmin) GetFlavorByName(ctx context.Context, name string) (flavor *model.Flavor, err error) {
-	db := dbs.DB()
+	db := DB()
 	flavor = &model.Flavor{}
 	err = db.Where("name = ?", name).Take(flavor).Error
 	if err != nil {
@@ -58,7 +59,7 @@ func (a *FlavorAdmin) Get(ctx context.Context, id int64) (flavor *model.Flavor, 
 		log.Println(err)
 		return
 	}
-	db := dbs.DB()
+	db := DB()
 	flavor = &model.Flavor{Model: model.Model{ID: id}}
 	err = db.Take(flavor).Error
 	if err != nil {
@@ -69,7 +70,7 @@ func (a *FlavorAdmin) Get(ctx context.Context, id int64) (flavor *model.Flavor, 
 }
 
 func (a *FlavorAdmin) Delete(id int64) (err error) {
-	db := dbs.DB()
+	db := DB()
 	db = db.Begin()
 	defer func() {
 		if err == nil {
@@ -86,7 +87,7 @@ func (a *FlavorAdmin) Delete(id int64) (err error) {
 }
 
 func (a *FlavorAdmin) List(offset, limit int64, order, query string) (total int64, flavors []*model.Flavor, err error) {
-	db := dbs.DB()
+	db := DB()
 	if limit == 0 {
 		limit = 16
 	}

@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"web/src/common"
+	. "web/src/common"
 	"web/src/dbs"
 	"web/src/model"
 
@@ -58,7 +58,7 @@ func ipToInt(ip net.IP) (*big.Int, int) {
 }
 
 func getValidVni() (vni int, err error) {
-	db := dbs.DB()
+	db := DB()
 	count := 1
 	for count > 0 {
 		vni = rand.Intn(vniMax-vniMin) + vniMin
@@ -71,7 +71,7 @@ func getValidVni() (vni int, err error) {
 }
 
 func checkIfExistVni(vni int64) (result bool, err error) {
-	db := dbs.DB()
+	db := DB()
 	count := 0
 	if err = db.Model(&model.Subnet{}).Where("vlan = ?", vni).Count(&count).Error; err != nil {
 		log.Println("Failed to query existing vlan, %v", err)
@@ -85,7 +85,7 @@ func checkIfExistVni(vni int64) (result bool, err error) {
 }
 
 func generateIPAddresses(subnet *model.Subnet, start net.IP, end net.IP, preSize int) (err error) {
-	db := dbs.DB()
+	db := DB()
 	ip := start
 	for {
 		ipstr := fmt.Sprintf("%s/%d", ip.String(), preSize)
@@ -125,7 +125,7 @@ func (a *SubnetAdmin) Get(ctx context.Context, id int64) (subnet *model.Subnet, 
 		return
 	}
 	memberShip := GetMemberShip(ctx)
-	db := dbs.DB()
+	db := DB()
 	where := memberShip.GetWhere()
 	subnet = &model.Subnet{Model: model.Model{ID: id}}
 	err = db.Where(where).Take(subnet).Error
@@ -145,7 +145,7 @@ func (a *SubnetAdmin) Get(ctx context.Context, id int64) (subnet *model.Subnet, 
 }
 
 func (a *SubnetAdmin) GetSubnetByUUID(ctx context.Context, uuID string) (subnet *model.Subnet, err error) {
-	db := dbs.DB()
+	db := DB()
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	subnet = &model.Subnet{}
@@ -166,7 +166,7 @@ func (a *SubnetAdmin) GetSubnetByUUID(ctx context.Context, uuID string) (subnet 
 }
 
 func (a *SubnetAdmin) GetSubnetByName(ctx context.Context, name string) (subnet *model.Subnet, err error) {
-	db := dbs.DB()
+	db := DB()
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	subnet = &model.Subnet{}
@@ -186,7 +186,7 @@ func (a *SubnetAdmin) GetSubnetByName(ctx context.Context, name string) (subnet 
 	return
 }
 
-func (a *SubnetAdmin) GetSubnet(ctx context.Context, reference *common.BaseReference) (subnet *model.Subnet, err error) {
+func (a *SubnetAdmin) GetSubnet(ctx context.Context, reference *BaseReference) (subnet *model.Subnet, err error) {
 	if reference == nil || (reference.ID == "" && reference.Name == "") {
 		err = fmt.Errorf("Subnet base reference must be provided with either uuid or name")
 		return
@@ -203,7 +203,7 @@ func (a *SubnetAdmin) GetSubnet(ctx context.Context, reference *common.BaseRefer
 }
 
 func (a *SubnetAdmin) Update(ctx context.Context, id int64, name, gateway, start, end, dns, routes string) (subnet *model.Subnet, err error) {
-	db := dbs.DB()
+	db := DB()
 	subnet = &model.Subnet{Model: model.Model{ID: id}}
 	err = db.Take(subnet).Error
 	if err != nil {
@@ -278,7 +278,7 @@ func (a *SubnetAdmin) Update(ctx context.Context, id int64, name, gateway, start
 }
 
 func clearRouting(ctx context.Context, routerID int64, subnet *model.Subnet) (err error) {
-	db := dbs.DB()
+	db := DB()
 	router := &model.Router{Model: model.Model{ID: routerID}}
 	err = db.Take(router).Error
 	if err != nil {
@@ -304,14 +304,14 @@ func clearRouting(ctx context.Context, routerID int64, subnet *model.Subnet) (er
 }
 
 func setRouting(ctx context.Context, routerID int64, subnet *model.Subnet, routeOnly bool) (err error) {
-	db := dbs.DB()
+	db := DB()
 	router := &model.Router{Model: model.Model{ID: routerID}}
 	err = db.Take(router).Error
 	if err != nil {
 		log.Println("DB failed to query router", err)
 		return
 	}
-	_, err = common.CreateInterface(ctx, subnet.ID, routerID, router.Owner, router.Hyper, subnet.Gateway, "", "subnet-gw", "gateway", nil)
+	_, err = CreateInterface(ctx, subnet.ID, routerID, router.Owner, router.Hyper, subnet.Gateway, "", "subnet-gw", "gateway", nil)
 	if err != nil {
 		log.Println("Failed to create gateway subnet interface", err)
 		return
@@ -328,7 +328,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, vlan int, name, network, gatew
 		return
 	}
 	owner := memberShip.OrgID
-	db := dbs.DB()
+	db := DB()
 	if vlan <= 0 {
 		vlan, err = getValidVni()
 		if err != nil {
@@ -433,7 +433,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, vlan int, name, network, gatew
 }
 
 func (a *SubnetAdmin) Delete(ctx context.Context, subnet *model.Subnet) (err error) {
-	db := dbs.DB()
+	db := DB()
 	db = db.Begin()
 	defer func() {
 		if err == nil {
@@ -442,7 +442,7 @@ func (a *SubnetAdmin) Delete(ctx context.Context, subnet *model.Subnet) (err err
 			db.Rollback()
 		}
 	}()
-	ctx = common.SaveTXtoCtx(ctx, db)
+	ctx = SaveTXtoCtx(ctx, db)
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.ValidateOwner(model.Writer, subnet.Owner)
 	if !permit {
@@ -488,7 +488,7 @@ func (a *SubnetAdmin) Delete(ctx context.Context, subnet *model.Subnet) (err err
 }
 
 func (a *SubnetAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, subnets []*model.Subnet, err error) {
-	db := dbs.DB()
+	db := DB()
 	if limit == 0 {
 		limit = 16
 	}
@@ -614,7 +614,7 @@ func (v *SubnetView) New(c *macaron.Context, store session.Store) {
 		return
 	}
 	routers := []*model.Router{}
-	err := dbs.DB().Find(&routers).Error
+	err := DB().Find(&routers).Error
 	if err != nil {
 		log.Println("Database failed to query gateways", err)
 		return
@@ -646,7 +646,7 @@ func (v *SubnetView) Edit(c *macaron.Context, store session.Store) {
 		return
 	}
 	subnet := &model.Subnet{Model: model.Model{ID: id}}
-	err = dbs.DB().Take(subnet).Error
+	err = DB().Take(subnet).Error
 	if err != nil {
 		log.Println("Database failed to query subnet", err)
 		return
@@ -672,7 +672,7 @@ func (v *SubnetView) Edit(c *macaron.Context, store session.Store) {
 
 func (v *SubnetView) checkRoutes(network, netmask, gateway, start, end, dns, routes string, id int64) (routeJson string, err error) {
 	if id > 0 {
-		db := dbs.DB()
+		db := DB()
 		subnet := &model.Subnet{Model: model.Model{ID: id}}
 		err = db.Take(subnet).Error
 		if err != nil {

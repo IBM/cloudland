@@ -18,7 +18,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
-	"web/src/common"
+	. "web/src/common"
 	"web/src/dbs"
 	"web/src/model"
 
@@ -78,7 +78,7 @@ func (a *KeyAdmin) Create(ctx context.Context, name, publicKey string) (key *mod
 		return
 	}
 	fingerPrint := ssh.FingerprintLegacyMD5(pub)
-	db := dbs.DB()
+	db := DB()
 	key = &model.Key{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, Name: name, PublicKey: publicKey, FingerPrint: fingerPrint}
 	err = db.Create(key).Error
 	if err != nil {
@@ -89,7 +89,7 @@ func (a *KeyAdmin) Create(ctx context.Context, name, publicKey string) (key *mod
 }
 
 func (a *KeyAdmin) Delete(ctx context.Context, key *model.Key) (err error) {
-	db := dbs.DB()
+	db := DB()
 	db = db.Begin()
 	defer func() {
 		if err == nil {
@@ -113,7 +113,7 @@ func (a *KeyAdmin) Delete(ctx context.Context, key *model.Key) (err error) {
 }
 
 func (a *KeyAdmin) Get(ctx context.Context, id int64) (key *model.Key, err error) {
-	db := dbs.DB()
+	db := DB()
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	key = &model.Key{Model: model.Model{ID: id}}
@@ -126,7 +126,7 @@ func (a *KeyAdmin) Get(ctx context.Context, id int64) (key *model.Key, err error
 }
 
 func (a *KeyAdmin) GetKeyByUUID(ctx context.Context, uuID string) (key *model.Key, err error) {
-	db := dbs.DB()
+	db := DB()
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	key = &model.Key{}
@@ -139,7 +139,7 @@ func (a *KeyAdmin) GetKeyByUUID(ctx context.Context, uuID string) (key *model.Ke
 }
 
 func (a *KeyAdmin) GetKeyByName(ctx context.Context, name string) (key *model.Key, err error) {
-	db := dbs.DB()
+	db := DB()
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	key = &model.Key{}
@@ -151,7 +151,7 @@ func (a *KeyAdmin) GetKeyByName(ctx context.Context, name string) (key *model.Ke
 	return
 }
 
-func (a *KeyAdmin) GetKey(ctx context.Context, reference *common.BaseReference) (key *model.Key, err error) {
+func (a *KeyAdmin) GetKey(ctx context.Context, reference *BaseReference) (key *model.Key, err error) {
 	if reference == nil || (reference.ID == "" && reference.Name == "") {
 		err = fmt.Errorf("Key base reference must be provided with either uuid or name")
 		return
@@ -169,7 +169,7 @@ func (a *KeyAdmin) GetKey(ctx context.Context, reference *common.BaseReference) 
 
 func (a *KeyAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, keys []*model.Key, err error) {
 	memberShip := GetMemberShip(ctx)
-	db := dbs.DB()
+	db := DB()
 	if limit == 0 {
 		limit = 16
 	}
@@ -359,7 +359,7 @@ func (v *KeyView) SolvePublicKeyDbError(c *macaron.Context, store session.Store,
 }
 
 func (v *KeyView) SearchDbFingerPrint(c *macaron.Context, store session.Store, fingerPrint, publicKey, name string) {
-	db := dbs.DB()
+	db := DB()
 	var keydb []model.Key
 	x := db.Where(&model.Key{FingerPrint: fingerPrint}).Find(&keydb)
 	length := len(*(x.Value.(*[]model.Key)))

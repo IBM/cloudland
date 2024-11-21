@@ -12,7 +12,7 @@ import (
 	"log"
 	"strconv"
 
-	"web/src/dbs"
+	. "web/src/common"
 	"web/src/model"
 )
 
@@ -22,7 +22,7 @@ func init() {
 
 func HyperStatus(ctx context.Context, args []string) (status string, err error) {
 	//|:-COMMAND-:| hyper_status.sh '127' 'hyper-0' '0' '64' '26684376' '263662552' '1561731870272' '3086445260864' '1'
-	db := dbs.DB()
+	db := DB()
 	argn := len(args)
 	if argn < 10 {
 		err = fmt.Errorf("Wrong params")

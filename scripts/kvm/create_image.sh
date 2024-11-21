@@ -22,6 +22,7 @@ format=$(qemu-img info $image | grep 'file format' | cut -d' ' -f3)
 
 if [ -z "$wds_address" ]; then
     mv $image ${image}.$format
+    state=available
     #sync_target /opt/cloudland/cache/image
 else
     qemu-img convert -f $format -O raw ${image} ${image}.raw

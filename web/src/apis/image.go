@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"web/src/common"
+	. "web/src/common"
 	"web/src/model"
 	"web/src/routes"
 
@@ -25,7 +25,7 @@ var imageAdmin = &routes.ImageAdmin{}
 type ImageAPI struct{}
 
 type ImageResponse struct {
-	*common.BaseReference
+	*BaseReference
 	Size         int64  `json:"size"`
 	Format       string `json:"format"`
 	Architecture string `json:"architecture"`
@@ -108,7 +108,7 @@ func (v *ImageAPI) Create(c *gin.Context) {
 
 func (v *ImageAPI) getImageResponse(ctx context.Context, image *model.Image) (imageResp *ImageResponse, err error) {
 	imageResp = &ImageResponse{
-		BaseReference: &common.BaseReference{
+		BaseReference: &BaseReference{
 			ID:   image.UUID,
 			Name: image.Name,
 		},
@@ -135,21 +135,21 @@ func (v *ImageAPI) List(c *gin.Context) {
 	limitStr := c.DefaultQuery("limit", "50")
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query offset: "+offsetStr, err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset: "+offsetStr, err)
 		return
 	}
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query limit: "+limitStr, err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query limit: "+limitStr, err)
 		return
 	}
 	if offset < 0 || limit < 0 {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", err)
 		return
 	}
 	total, images, err := imageAdmin.List(int64(offset), int64(limit), "-created_at", "")
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Failed to list images", err)
+		ErrorResponse(c, http.StatusBadRequest, "Failed to list images", err)
 		return
 	}
 	imageListResp := &ImageListResponse{
@@ -161,7 +161,7 @@ func (v *ImageAPI) List(c *gin.Context) {
 	for i, image := range images {
 		imageListResp.Images[i], err = v.getImageResponse(ctx, image)
 		if err != nil {
-			common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+			ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
 			return
 		}
 	}

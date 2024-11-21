@@ -15,9 +15,9 @@ import (
 	"strconv"
 	"strings"
 
-	"web/src/dbs"
 	"web/src/model"
-	"web/src/common"
+	"web/src/dbs"
+	. "web/src/common"
 
 	"github.com/go-macaron/session"
 	"github.com/jinzhu/gorm"
@@ -40,7 +40,7 @@ type FloatingIpView struct{}
 
 func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, types []string, publicIp string) (floatingips []*model.FloatingIp, err error) {
 	memberShip := GetMemberShip(ctx)
-	db := dbs.DB()
+	db := DB()
 	instance := &model.Instance{Model: model.Model{ID: instID}}
 	err = db.Model(instance).Take(instance).Error
 	if err != nil {
@@ -107,7 +107,7 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, typ
 }
 
 func (a *FloatingIpAdmin) Delete(ctx context.Context, id int64) (err error) {
-	db := dbs.DB()
+	db := DB()
 	db = db.Begin()
 	defer func() {
 		if err == nil {
@@ -116,7 +116,7 @@ func (a *FloatingIpAdmin) Delete(ctx context.Context, id int64) (err error) {
 			db.Rollback()
 		}
 	}()
-	ctx = common.SaveTXtoCtx(ctx, db)
+	ctx = SaveTXtoCtx(ctx, db)
 	floatingip := &model.FloatingIp{Model: model.Model{ID: id}}
 	if err = db.Preload("Instance").Find(floatingip).Error; err != nil {
 		log.Println("Failed to query floating ip", err)
@@ -139,7 +139,7 @@ func (a *FloatingIpAdmin) Delete(ctx context.Context, id int64) (err error) {
 
 func (a *FloatingIpAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, floatingips []*model.FloatingIp, err error) {
 	memberShip := GetMemberShip(ctx)
-	db := dbs.DB()
+	db := DB()
 	if limit == 0 {
 		limit = 16
 	}
@@ -270,7 +270,7 @@ func (v *FloatingIpView) New(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	db := dbs.DB()
+	db := DB()
 	where := memberShip.GetWhere()
 	instances := []*model.Instance{}
 	err := db.Where(where).Find(&instances).Error
@@ -368,7 +368,7 @@ func (v *FloatingIpView) Assign(c *macaron.Context, store session.Store) {
 
 func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, router *model.Router, ftype, address string) (fipIface *model.Interface, gateway string, err error) {
 	var db *gorm.DB
-	ctx, db = common.GetCtxDB(ctx)
+	ctx, db = GetCtxDB(ctx)
 	subnet := &model.Subnet{}
 	err = db.Where("type = 'public'").Take(subnet).Error
 	if err != nil {
@@ -376,7 +376,7 @@ func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, router *
 		return
 	}
 	name := ftype + "fip"
-	fipIface, err = common.CreateInterface(ctx, subnet.ID, floatingipID, owner, -1, address, "", name, "floating", nil)
+	fipIface, err = CreateInterface(ctx, subnet.ID, floatingipID, owner, -1, address, "", name, "floating", nil)
 	if err != nil {
 		log.Println("Failed to create fip interface, %v", err)
 		return
@@ -387,8 +387,8 @@ func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, router *
 
 func DeallocateFloatingIp(ctx context.Context, floatingipID int64) (err error) {
 	var db *gorm.DB
-	ctx, db = common.GetCtxDB(ctx)
-	common.DeleteInterfaces(ctx, floatingipID, 0, "floating")
+	ctx, db = GetCtxDB(ctx)
+	DeleteInterfaces(ctx, floatingipID, 0, "floating")
 	floatingip := &model.FloatingIp{Model: model.Model{ID: floatingipID}}
 	err = db.Delete(floatingip).Error
 	if err != nil {
