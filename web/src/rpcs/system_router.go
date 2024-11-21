@@ -45,15 +45,22 @@ func SystemRouter(ctx context.Context, args []string) (status string, err error)
 		log.Println("Hypervisor hostname mismatch", err)
 		return
 	}
-	subnet := &model.Subnet{}
-	err = db.Where("type = 'public'").Take(&subnet).Error
+	subnets := []*model.Subnet{}
+	err = db.Where("type = 'public'").Find(&subnets).Error
 	if err != nil {
 		log.Println("Failed to get public subnet", err)
 		return
 	}
-	sysIface, err := CreateInterface(ctx, subnet.ID, 0, 0, int32(hyperID), "", "", hyperName, "system", nil)
-	if err != nil {
-		log.Printf("Failed to create system router interface for hypervisor %d, %v", hyperID, err)
+	var sysIface *model.Interface
+	for _, subnet := range subnets {
+		sysIface, err = CreateInterface(ctx, subnet.ID, 0, 0, int32(hyperID), "", "", hyperName, "system", nil)
+		if err == nil {
+			break
+		}
+		log.Printf("Failed to create system router interface for hypervisor %d from subnet %d, %v", hyperID, subnet.ID, err)
+	}
+	if sysIface == nil {
+		log.Printf("Failed to allocate public ip for system router of hypervisor %d", hyperID)
 		return
 	}
 	control := fmt.Sprintf("inter=%d", hyperID)
