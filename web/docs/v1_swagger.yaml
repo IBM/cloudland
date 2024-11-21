@@ -564,8 +564,8 @@ definitions:
         maxLength: 32
         minLength: 2
         type: string
-      public_network:
-        $ref: '#/definitions/common.BaseReference'
+      public_link:
+        type: integer
     required:
     - name
     type: object

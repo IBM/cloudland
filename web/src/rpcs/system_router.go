@@ -30,7 +30,7 @@ func SystemRouter(ctx context.Context, args []string) (status string, err error)
 		return
 	}
 	hyperID, err := strconv.Atoi(args[1])
-	if err != nil {
+	if err != nil || hyperID < 0 {
 		log.Println("Invalid hypervisor ID", err)
 		return
 	}
@@ -52,17 +52,42 @@ func SystemRouter(ctx context.Context, args []string) (status string, err error)
 		return
 	}
 	var sysIface *model.Interface
-	for _, subnet := range subnets {
-		sysIface, err = CreateInterface(ctx, subnet.ID, 0, 0, int32(hyperID), "", "", hyperName, "system", nil)
-		if err == nil {
-			break
+	if hyper.HostIP == "" {
+		for _, subnet := range subnets {
+			sysIface, err = CreateInterface(ctx, subnet, 0, 0, int32(hyperID), "", "", hyperName, "system", nil)
+			if err == nil {
+				break
+			}
+			log.Printf("Failed to create system router interface for hypervisor %d from subnet %d, %v", hyperID, subnet.ID, err)
 		}
-		log.Printf("Failed to create system router interface for hypervisor %d from subnet %d, %v", hyperID, subnet.ID, err)
+		hyper.HostIP = sysIface.Address.Address
+		err = db.Save(hyper).Error
+		if err != nil {
+			log.Println("Failed to save hyper address", err)
+			return
+		}
+	} else {
+		address := &model.Address{}
+		err = db.Preload("Subnet").Where("address = ?", hyper.HostIP).Take(address).Error
+		if err != nil {
+			log.Println("Failed to get hyper address", err)
+			return
+		}
+		if address.Allocated {
+			sysIface = &model.Interface{Address: address}
+		} else {
+			sysIface, err = CreateInterface(ctx, address.Subnet, 0, 0, int32(hyperID), hyper.HostIP, "", hyperName, "system", nil)
+			if err != nil {
+				log.Printf("Failed to create interface with address %s, %v", hyper.HostIP, err)
+				return
+			}
+		}
 	}
 	if sysIface == nil {
 		log.Printf("Failed to allocate public ip for system router of hypervisor %d", hyperID)
 		return
 	}
+	subnet := sysIface.Address.Subnet
 	control := fmt.Sprintf("inter=%d", hyperID)
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/system_router.sh '%d' '%s' '%s'", subnet.Vlan, sysIface.Address.Address, subnet.Gateway)
 	err = HyperExecute(ctx, control, command)

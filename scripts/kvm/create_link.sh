@@ -10,18 +10,15 @@ vm_br=br$vlan
 interface=$2
 
 cat /proc/net/dev | grep -q "\<$vm_br\>:"
-if [ $? -eq 0 ]; then
-    [ "$vlan" = "$external_vlan" ] && exit 0
-else
-    nmcli connection add con-name $vm_br type bridge ifname $vm_br ipv4.method static ipv4.addresses 169.254.169.254/32
-    nmcli connection up $vm_br
-    apply_bridge -I $vm_br
-fi
+[ $? -eq 0 ] && exit 0
+nmcli connection add con-name $vm_br type bridge ifname $vm_br ipv4.method static ipv4.addresses 169.254.169.254/32
+nmcli connection up $vm_br
+apply_bridge -I $vm_br
 cat /proc/net/dev | grep -q "\<v-$vlan\>:"
 if [ $? -ne 0 ]; then
     if [ $vlan -ge 4095 ]; then
         [ -z "$interface" ] && interface=$vxlan_interface
-        nmcli connection add con-name v-$vlan type vxlan id $vlan vxlan.proxy $proxy_mode ifname v-$vlan remote $vxlan_mcast_addr dev $interface ipv4.method disabled master $vm_br
+        nmcli connection add con-name v-$vlan type vxlan id $vlan vxlan.proxy $proxy_mode ifname v-$vlan dev $interface ipv4.method disabled master $vm_br
     else
         [ -z "$interface" ] && interface=$vlan_interface
         nmcli connection add con-name v-$vlan type vlan id $vlan ifname v-$vlan dev $interface ipv4.method disabled master $vm_br

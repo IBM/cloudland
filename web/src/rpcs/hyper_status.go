@@ -71,14 +71,7 @@ func HyperStatus(ctx context.Context, args []string) (status string, err error) 
 		log.Println("Invalid hypervisor status", err)
 		hyperStatus = 1
 	}
-	virtType := "kvm-x86_64"
-	zoneName := ""
-	hostIP := ""
-	if argn > 11 {
-		virtType = args[10]
-		zoneName = args[11]
-		hostIP = args[12]
-	}
+	zoneName := args[10]
 	zone := &model.Zone{Name: zoneName}
 	if zoneName != "" {
 		err = db.Where("name = ?", zoneName).FirstOrCreate(zone).Error
@@ -107,9 +100,8 @@ func HyperStatus(ctx context.Context, args []string) (status string, err error) 
 		return
 	}
 	hyper.Status = int32(hyperStatus)
-	hyper.VirtType = virtType
+	hyper.VirtType = "kvm-x86_64"
 	hyper.Zone = zone
-	hyper.HostIP = hostIP
 	err = db.Save(hyper).Error
 	if err != nil {
 		log.Println("Failed to save hypervisor", err)

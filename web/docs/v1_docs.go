@@ -3419,8 +3419,8 @@ const docTemplatev1 = `{
                     "maxLength": 32,
                     "minLength": 2
                 },
-                "public_network": {
-                    "$ref": "#/definitions/common.BaseReference"
+                "public_link": {
+                    "type": "integer"
                 }
             }
         },

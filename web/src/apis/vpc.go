@@ -38,7 +38,7 @@ type VPCListResponse struct {
 
 type VPCPayload struct {
 	Name          string                `json:"name" binding:"required,min=2,max=32"`
-	PublicNetwork *BaseReference `json:"public_network" binding:"omitempty"`
+	PublicLink    int32 `json:"public_link" binding:"omitempty"`
 }
 
 type VPCPatchPayload struct {
@@ -131,19 +131,7 @@ func (v *VPCAPI) Create(c *gin.Context) {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
 		return
 	}
-	var publicSubnet *model.Subnet
-	if payload.PublicNetwork != nil {
-		publicSubnet, err = subnetAdmin.GetSubnet(ctx, payload.PublicNetwork)
-		if err != nil {
-			ErrorResponse(c, http.StatusBadRequest, "Not able to get subnet", err)
-			return
-		}
-	}
-	if publicSubnet != nil && publicSubnet.Type != "public" {
-		ErrorResponse(c, http.StatusBadRequest, "Invalid public network type", err)
-		return
-	}
-	router, err := routerAdmin.Create(ctx, payload.Name, publicSubnet)
+	router, err := routerAdmin.Create(ctx, payload.Name, payload.PublicLink)
 	if err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Failed to create vpc", err)
 		return

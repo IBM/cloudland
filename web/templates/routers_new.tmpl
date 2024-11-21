@@ -27,8 +27,8 @@
 									  <div class="menu">
 										{{ range .Subnets }}
 										{{ if eq .Type "public" }}
-										<div class="item" data-value={{.ID}} data-text={{.Name}}>
-										  {{.Name}}-{{.Network}}/{{.Netmask}}
+										<div class="item" data-value={{.Vlan}} data-text={{.Vlan}}>
+										  {{.Vlan}}
 										</div>
 										{{ end }}
 										{{ end }}

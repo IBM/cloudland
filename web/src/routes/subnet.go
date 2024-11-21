@@ -311,7 +311,7 @@ func setRouting(ctx context.Context, routerID int64, subnet *model.Subnet, route
 		log.Println("DB failed to query router", err)
 		return
 	}
-	_, err = CreateInterface(ctx, subnet.ID, routerID, router.Owner, router.Hyper, subnet.Gateway, "", "subnet-gw", "gateway", nil)
+	_, err = CreateInterface(ctx, subnet, routerID, router.Owner, router.Hyper, subnet.Gateway, "", "subnet-gw", "gateway", nil)
 	if err != nil {
 		log.Println("Failed to create gateway subnet interface", err)
 		return

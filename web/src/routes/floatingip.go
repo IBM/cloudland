@@ -369,19 +369,20 @@ func (v *FloatingIpView) Assign(c *macaron.Context, store session.Store) {
 func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, router *model.Router, ftype, address string) (fipIface *model.Interface, gateway string, err error) {
 	var db *gorm.DB
 	ctx, db = GetCtxDB(ctx)
-	subnet := &model.Subnet{}
-	err = db.Where("type = 'public'").Take(subnet).Error
+	subnets := []*model.Subnet{}
+	err = db.Where("type = 'public'").Take(subnets).Error
 	if err != nil {
-		log.Println("Failed to query subnet, %v", err)
+		log.Println("Failed to query subnets ", err)
 		return
 	}
 	name := ftype + "fip"
-	fipIface, err = CreateInterface(ctx, subnet.ID, floatingipID, owner, -1, address, "", name, "floating", nil)
-	if err != nil {
-		log.Println("Failed to create fip interface, %v", err)
-		return
+	for _, subnet := range subnets {
+		fipIface, err = CreateInterface(ctx, subnet, floatingipID, owner, -1, address, "", name, "floating", nil)
+		if err == nil {
+			gateway = subnet.Gateway
+			return
+		}
 	}
-	gateway = subnet.Gateway
 	return
 }
 

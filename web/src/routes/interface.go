@@ -196,16 +196,15 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 	ctx := c.Req.Context()
 	memberShip := GetMemberShip(ctx)
 	subnetID := c.QueryInt64("subnet")
-	permit, err := memberShip.CheckOwner(model.Writer, "subnets", int64(subnetID))
-	if !permit {
-		log.Println("Not authorized to access subnet")
-		c.Data["ErrorMsg"] = "Not authorized to access subnet"
-		c.HTML(http.StatusBadRequest, "error")
+	subnet, err := subnetAdmin.Get(ctx, subnetID)
+	if err != nil {
+		log.Println("Get subnet failed", err)
+		c.HTML(http.StatusBadRequest, err.Error())
 		return
 	}
 	instID := c.QueryInt64("instance")
 	if instID > 0 {
-		permit, err = memberShip.CheckOwner(model.Writer, "instances", int64(instID))
+		permit, _ := memberShip.CheckOwner(model.Writer, "instances", int64(instID))
 		if !permit {
 			log.Println("Not authorized to access instance")
 			c.Data["ErrorMsg"] = "Not authorized to access instance"
@@ -226,7 +225,7 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 				log.Println("Invalid security group ID", err)
 				continue
 			}
-			permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
+			permit, _ := memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
 			if !permit {
 				log.Println("Not authorized to access security group")
 				c.Data["ErrorMsg"] = "Not authorized to access security group"
@@ -237,7 +236,7 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 		}
 	} else {
 		sgID := store.Get("defsg").(int64)
-		permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
+		permit, _ := memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
 		if !permit {
 			log.Println("Not authorized to access security group")
 			c.Data["ErrorMsg"] = "Not authorized to access security group"
@@ -251,7 +250,7 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 		log.Println("Security group query failed", err)
 		return
 	}
-	iface, err := CreateInterface(ctx, subnetID, instID, memberShip.OrgID, -1, address, mac, ifname, "instance", secGroups)
+	iface, err := CreateInterface(ctx, subnet, instID, memberShip.OrgID, -1, address, mac, ifname, "instance", secGroups)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
 			"error": err.Error(),

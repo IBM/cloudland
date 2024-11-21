@@ -50,6 +50,7 @@ func AllocateAddress(ctx context.Context, subnetID, ifaceID int64, ipaddr, addrT
 		log.Println("Failed to Update address, %v", err)
 		return nil, err
 	}
+	address.Subnet = subnet
 	return address, nil
 }
 
@@ -82,15 +83,9 @@ func genMacaddr() (mac string, err error) {
 	return mac, nil
 }
 
-func CreateInterface(ctx context.Context, subnetID, ID, owner int64, hyper int32, address, mac, ifaceName, ifType string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
+func CreateInterface(ctx context.Context, subnet *model.Subnet, ID, owner int64, hyper int32, address, mac, ifaceName, ifType string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
 	var db *gorm.DB
 	ctx, db = GetCtxDB(ctx)
-	subnet := &model.Subnet{Model: model.Model{ID: subnetID}}
-	err = db.Take(subnet).Error
-	if err != nil {
-		log.Println("DB failed to query subnet, %v", err)
-		return
-	}
 	primary := false
 	if ifaceName == "eth0" {
 		primary = true
@@ -107,7 +102,7 @@ func CreateInterface(ctx context.Context, subnetID, ID, owner int64, hyper int32
 		Name:      ifaceName,
 		MacAddr:   mac,
 		PrimaryIf: primary,
-		Subnet:    subnetID,
+		Subnet:    subnet.ID,
 		Hyper:     hyper,
 		Type:      ifType,
 		Mtu:       1450,
@@ -128,7 +123,7 @@ func CreateInterface(ctx context.Context, subnetID, ID, owner int64, hyper int32
 		log.Println("Failed to create interface, ", err)
 		return
 	}
-	iface.Address, err = AllocateAddress(ctx, subnetID, iface.ID, address, "native")
+	iface.Address, err = AllocateAddress(ctx, subnet.ID, iface.ID, address, "native")
 	if err != nil {
 		log.Println("Failed to allocate address", err)
 		err2 := db.Delete(iface).Error
