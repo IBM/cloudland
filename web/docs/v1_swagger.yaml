@@ -172,11 +172,10 @@ definitions:
         maxLength: 32
         minLength: 1
         type: string
-      host:
-        minimum: 0
-        type: integer
       hostname:
         type: string
+      hypervisor:
+        type: integer
       image:
         $ref: '#/definitions/common.BaseReference'
       keys:

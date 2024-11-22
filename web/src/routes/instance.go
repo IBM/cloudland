@@ -537,6 +537,13 @@ func (a *InstanceAdmin) GetInstanceByUUID(ctx context.Context, uuID string) (ins
 }
 
 func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, instances []*model.Instance, err error) {
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
 	db := DB()
 	if limit == 0 {
 		limit = 16
@@ -549,7 +556,6 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 	if query != "" {
 		query = fmt.Sprintf("hostname like '%%%s%%'", query)
 	}
-	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	instances = []*model.Instance{}
 	if err = db.Model(&model.Instance{}).Where(where).Where(query).Count(&total).Error; err != nil {
@@ -584,14 +590,6 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 }
 
 func (v *InstanceView) List(c *macaron.Context, store session.Store) {
-	memberShip := GetMemberShip(c.Req.Context())
-	permit := memberShip.CheckPermission(model.Reader)
-	if !permit {
-		log.Println("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
 	hostname := c.QueryTrim("hostname")

@@ -2842,12 +2842,11 @@ const docTemplatev1 = `{
                     "maxLength": 32,
                     "minLength": 1
                 },
-                "host": {
-                    "type": "integer",
-                    "minimum": 0
-                },
                 "hostname": {
                     "type": "string"
+                },
+                "hypervisor": {
+                    "type": "integer"
                 },
                 "image": {
                     "$ref": "#/definitions/common.BaseReference"

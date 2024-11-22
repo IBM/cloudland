@@ -39,7 +39,7 @@ type InstancePatchPayload struct {
 
 type InstancePayload struct {
 	Count               int                     `json:"count" binding:"omitempty,gte=1,lte=16"`
-	Host                int                     `json:"host" binding:"omitempty,gte=0"`
+	Hypervisor                int                     `json:"hypervisor,default=-1" binding:"omitempty"`
 	Hostname            string                  `json:"hostname" binding:"required,hostname|fqdn"`
 	Keys                []*BaseReference `json:"keys" binding:"required,gte=1,lte=16"`
 	Flavor              string                  `json:"flavor" binding:"required,min=1,max=32"`
@@ -245,7 +245,7 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 		key, err = keyAdmin.GetKey(ctx, ky)
 		keys = append(keys, key)
 	}
-	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, router.ID, primaryIface, secondaryIfaces, keys, -1)
+	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, router.ID, primaryIface, secondaryIfaces, keys, payload.Hypervisor)
 	if err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Failed to create instances", err)
 		return
@@ -314,12 +314,18 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 		ID:       instance.UUID,
 		Hostname: instance.Hostname,
 		Status:   instance.Status,
-		Flavor:   instance.Flavor.Name,
-		Image: &BaseReference{
+	}
+	if instance.Image != nil {
+		instanceResp.Image = &BaseReference{
 			ID:   instance.Image.UUID,
 			Name: instance.Image.Name,
-		},
-		Zone: instance.Zone.Name,
+		}
+	}
+	if instance.Flavor != nil {
+		instanceResp.Flavor = instance.Flavor.Name
+	}
+	if instance.Zone != nil {
+		instanceResp.Zone = instance.Zone.Name
 	}
 	keys := make([]*BaseReference, len(instance.Keys))
 	for i, key := range instance.Keys {
