@@ -12,7 +12,7 @@ import (
 	"log"
 	"strconv"
 
-	"web/src/dbs"
+	. "web/src/common"
 	"web/src/model"
 )
 
@@ -22,7 +22,7 @@ func init() {
 
 func ReplaceVncPasswd(ctx context.Context, args []string) (status string, err error) {
 	//|:-COMMAND-:| enable_vm_vnc.sh 6 5909 password 192.168.10.100
-	db := dbs.DB()
+	db := DB()
 	argn := len(args)
 	if argn < 5 {
 		err = fmt.Errorf("Wrong params")

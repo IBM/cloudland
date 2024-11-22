@@ -11,7 +11,7 @@ import (
 	"log"
 	"net/http"
 
-	"web/src/common"
+	. "web/src/common"
 	"web/src/routes"
 
 	"github.com/gin-gonic/gin"
@@ -26,19 +26,19 @@ func Authorize() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenStr := c.Request.Header.Get("Authorization")
 		if tokenStr == "" {
-			common.ErrorResponse(c, http.StatusUnauthorized, "Invalid Token", nil)
+			ErrorResponse(c, http.StatusUnauthorized, "Invalid Token", nil)
 			c.Abort()
 			return
 		}
 		tokenStr = tokenStr[len(TokenType)+1:]
 		_, claims, err := routes.ParseToken(tokenStr)
 		if err != nil {
-			common.ErrorResponse(c, http.StatusUnauthorized, "Invalid Token", err)
+			ErrorResponse(c, http.StatusUnauthorized, "Invalid Token", err)
 			c.Abort()
 			return
 		}
 		if claims.Issuer != AppName {
-			common.ErrorResponse(c, http.StatusUnauthorized, "Invalid Token", nil)
+			ErrorResponse(c, http.StatusUnauthorized, "Invalid Token", nil)
 			c.Abort()
 			return
 		}
@@ -49,7 +49,7 @@ func Authorize() gin.HandlerFunc {
 		realOrg := c.Request.Header.Get("X-Resource-Org")
 		if realUser != "" || realOrg != "" {
 			if reqUser != "admin" {
-				common.ErrorResponse(c, http.StatusUnauthorized, "Not authorized to change resource owner", nil)
+				ErrorResponse(c, http.StatusUnauthorized, "Not authorized to change resource owner", nil)
 				c.Abort()
 				return
 			}
@@ -60,7 +60,7 @@ func Authorize() gin.HandlerFunc {
 		}
 		user, err := userAdmin.GetUserByName(realUser)
 		if err != nil {
-			common.ErrorResponse(c, http.StatusBadRequest, "Invalid resource user", err)
+			ErrorResponse(c, http.StatusBadRequest, "Invalid resource user", err)
 			c.Abort()
 			return
 		}
@@ -69,13 +69,13 @@ func Authorize() gin.HandlerFunc {
 		}
 		org, err := orgAdmin.GetOrgByName(realOrg)
 		if err != nil {
-			common.ErrorResponse(c, http.StatusBadRequest, "Invalid resource org", err)
+			ErrorResponse(c, http.StatusBadRequest, "Invalid resource org", err)
 			c.Abort()
 			return
 		}
 		memberShip, err := routes.GetDBMemberShip(user.ID, org.ID)
 		if err != nil {
-			common.ErrorResponse(c, http.StatusBadRequest, "Invalid resource user with org membership", err)
+			ErrorResponse(c, http.StatusBadRequest, "Invalid resource user with org membership", err)
 			c.Abort()
 			return
 		}

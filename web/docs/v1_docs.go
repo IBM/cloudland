@@ -2614,16 +2614,11 @@ const docTemplatev1 = `{
                 "disk": {
                     "type": "integer"
                 },
-                "id": {
-                    "type": "string"
-                },
                 "memory": {
                     "type": "integer"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
+                    "type": "string"
                 }
             }
         },
@@ -2753,22 +2748,25 @@ const docTemplatev1 = `{
         "apis.ImageResponse": {
             "type": "object",
             "properties": {
-                "cpu": {
-                    "type": "integer"
+                "architecture": {
+                    "type": "string"
                 },
-                "disk": {
-                    "type": "integer"
+                "format": {
+                    "type": "string"
                 },
                 "id": {
                     "type": "string"
-                },
-                "memory": {
-                    "type": "integer"
                 },
                 "name": {
                     "type": "string",
                     "maxLength": 32,
                     "minLength": 2
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         },
@@ -2844,12 +2842,11 @@ const docTemplatev1 = `{
                     "maxLength": 32,
                     "minLength": 1
                 },
-                "host": {
-                    "type": "integer",
-                    "minimum": 0
-                },
                 "hostname": {
                     "type": "string"
+                },
+                "hypervisor": {
+                    "type": "integer"
                 },
                 "image": {
                     "$ref": "#/definitions/common.BaseReference"
@@ -3421,8 +3418,8 @@ const docTemplatev1 = `{
                     "maxLength": 32,
                     "minLength": 2
                 },
-                "public_network": {
-                    "$ref": "#/definitions/common.BaseReference"
+                "public_link": {
+                    "type": "integer"
                 }
             }
         },

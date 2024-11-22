@@ -12,7 +12,7 @@ import (
 	"log"
 	"strconv"
 
-	"web/src/dbs"
+	. "web/src/common"
 	"web/src/model"
 )
 
@@ -22,7 +22,7 @@ func init() {
 
 func AttachVolume(ctx context.Context, args []string) (status string, err error) {
 	//|:-COMMAND-:| attach_volume.sh 5 7 vdb
-	db := dbs.DB()
+	db := DB()
 	argn := len(args)
 	if argn < 4 {
 		err = fmt.Errorf("Wrong params")

@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 
+	. "web/src/common"
 	"web/src/dbs"
 	"web/src/model"
 
@@ -157,7 +158,7 @@ func (a *SecruleAdmin) Create(ctx context.Context, sgID, owner int64, remoteIp, 
 	}
 	secrule = &model.SecurityRule{
 		Model:     model.Model{Creater: memberShip.UserID},
-		Owner: owner,
+		Owner:     owner,
 		Secgroup:  sgID,
 		RemoteIp:  remoteIp,
 		Direction: direction,

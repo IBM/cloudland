@@ -17,7 +17,7 @@ import (
 	"strconv"
 	"testing"
 
-	"web/src/dbs"
+	. "web/src/common"
 	"web/src/model"
 )
 
@@ -51,7 +51,7 @@ func TestOrgCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 	orgID := org.ID
-	db := dbs.DB()
+	db := DB()
 	org = &model.Organization{Model: model.Model{ID: orgID}}
 	if err = db.Preload("Members.User").Take(org).Error; err != nil {
 		t.Fatal(err)

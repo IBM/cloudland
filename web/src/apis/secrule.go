@@ -10,7 +10,7 @@ package apis
 import (
 	"net/http"
 
-	"web/src/common"
+	. "web/src/common"
 	"web/src/routes"
 
 	"github.com/gin-gonic/gin"
@@ -22,7 +22,7 @@ var secruleAdmin = &routes.SecruleAdmin{}
 type SecruleAPI struct{}
 
 type SecruleResponse struct {
-	*common.BaseReference
+	*BaseReference
 	Cpu    int32 `json:"cpu"`
 	Memory int32 `json:"memory"`
 	Disk   int32

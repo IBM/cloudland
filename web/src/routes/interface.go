@@ -9,19 +9,17 @@ package routes
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"strconv"
 	"strings"
 
+	. "web/src/common"
 	"web/src/model"
 
 	"github.com/go-macaron/session"
-	"github.com/jinzhu/gorm"
 	macaron "gopkg.in/macaron.v1"
 )
 
@@ -198,16 +196,15 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 	ctx := c.Req.Context()
 	memberShip := GetMemberShip(ctx)
 	subnetID := c.QueryInt64("subnet")
-	permit, err := memberShip.CheckOwner(model.Writer, "subnets", int64(subnetID))
-	if !permit {
-		log.Println("Not authorized to access subnet")
-		c.Data["ErrorMsg"] = "Not authorized to access subnet"
-		c.HTML(http.StatusBadRequest, "error")
+	subnet, err := subnetAdmin.Get(ctx, subnetID)
+	if err != nil {
+		log.Println("Get subnet failed", err)
+		c.HTML(http.StatusBadRequest, err.Error())
 		return
 	}
 	instID := c.QueryInt64("instance")
 	if instID > 0 {
-		permit, err = memberShip.CheckOwner(model.Writer, "instances", int64(instID))
+		permit, _ := memberShip.CheckOwner(model.Writer, "instances", int64(instID))
 		if !permit {
 			log.Println("Not authorized to access instance")
 			c.Data["ErrorMsg"] = "Not authorized to access instance"
@@ -228,7 +225,7 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 				log.Println("Invalid security group ID", err)
 				continue
 			}
-			permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
+			permit, _ := memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
 			if !permit {
 				log.Println("Not authorized to access security group")
 				c.Data["ErrorMsg"] = "Not authorized to access security group"
@@ -239,7 +236,7 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 		}
 	} else {
 		sgID := store.Get("defsg").(int64)
-		permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
+		permit, _ := memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
 		if !permit {
 			log.Println("Not authorized to access security group")
 			c.Data["ErrorMsg"] = "Not authorized to access security group"
@@ -253,7 +250,7 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 		log.Println("Security group query failed", err)
 		return
 	}
-	iface, err := CreateInterface(ctx, subnetID, instID, memberShip.OrgID, -1, address, mac, ifname, "instance", secGroups)
+	iface, err := CreateInterface(ctx, subnet, instID, memberShip.OrgID, -1, address, mac, ifname, "instance", secGroups)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
 			"error": err.Error(),
@@ -359,225 +356,4 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 		return
 	}
 	c.Redirect(redirectTo)
-}
-
-func AllocateAddress(ctx context.Context, subnetID, ifaceID int64, ipaddr, addrType string) (address *model.Address, err error) {
-	var db *gorm.DB
-	ctx, db = getCtxDB(ctx)
-	subnet := &model.Subnet{Model: model.Model{ID: subnetID}}
-	err = db.Take(subnet).Error
-	if err != nil {
-		log.Println("Failed to query subnet", err)
-		return
-	}
-	address = &model.Address{Subnet: subnet}
-	if ipaddr == "" {
-		err = db.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ? and address != ?", subnetID, false, subnet.Gateway).Take(address).Error
-	} else {
-		if !strings.Contains(ipaddr, "/") {
-			preSize, _ := net.IPMask(net.ParseIP(subnet.Netmask).To4()).Size()
-			ipaddr = fmt.Sprintf("%s/%d", ipaddr, preSize)
-		}
-		err = db.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ? and address = ?", subnetID, false, ipaddr).Take(address).Error
-	}
-	if err != nil {
-		log.Println("Failed to query address, %v", err)
-		return nil, err
-	}
-	address.Allocated = true
-	address.Type = addrType
-	address.Interface = ifaceID
-	if err = db.Model(address).Update(address).Error; err != nil {
-		log.Println("Failed to Update address, %v", err)
-		return nil, err
-	}
-	return address, nil
-}
-
-func DeallocateAddress(ctx context.Context, ifaces []*model.Interface) (err error) {
-	var db *gorm.DB
-	ctx, db = getCtxDB(ctx)
-	where := ""
-	for i, iface := range ifaces {
-		if i == 0 {
-			where = fmt.Sprintf("interface='%d'", iface.ID)
-		} else {
-			where = fmt.Sprintf("%s or interface='%d'", where, iface.ID)
-		}
-	}
-	if err = db.Model(&model.Address{}).Where(where).Update(map[string]interface{}{"allocated": false, "interface": 0}).Error; err != nil {
-		log.Println("Failed to Update addresses, %v", err)
-		return
-	}
-	return
-}
-
-func SetGateway(ctx context.Context, subnetID, zoneID, owner int64, router *model.Router) (subnet *model.Subnet, iface *model.Interface, err error) {
-	var db *gorm.DB
-	ctx, db = getCtxDB(ctx)
-	subnet = &model.Subnet{
-		Model: model.Model{ID: subnetID},
-	}
-	err = db.Model(subnet).Preload("Routers").Take(subnet).Error
-	if err != nil {
-		log.Println("Failed to get subnet, %v", err)
-		return
-	}
-	if subnet.Type != "internal" {
-		log.Println("Only internal gateway can be set gateway")
-		err = fmt.Errorf("Only internal gateway can be set gateway")
-		return
-	}
-	iface, err = CreateInterface(ctx, subnetID, router.ID, owner, -1, subnet.Gateway, "", "subnet-gw", "gateway", nil)
-	if err != nil {
-		log.Println("Failed to create gateway subnet interface", err)
-		return
-	}
-	subnet.RouterID = router.ID
-	err = db.Model(subnet).Save(subnet).Error
-	if err != nil {
-		log.Println("Failed to set gateway, %v", err)
-		return
-	}
-	return
-}
-
-func UnsetGateway(ctx context.Context, subnet *model.Subnet) (err error) {
-	var db *gorm.DB
-	ctx, db = getCtxDB(ctx)
-	subnet.RouterID = 0
-	err = db.Save(subnet).Error
-	if err != nil {
-		log.Println("Failed to unset gateway, %v", err)
-		return
-	}
-	return
-}
-
-func genMacaddr() (mac string, err error) {
-	buf := make([]byte, 4)
-	_, err = rand.Read(buf)
-	if err != nil {
-		log.Println("Failed to generate random numbers, %v", err)
-		return
-	}
-	mac = fmt.Sprintf("52:54:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3])
-	return mac, nil
-}
-
-func CreateInterface(ctx context.Context, subnetID, ID, owner int64, hyper int32, address, mac, ifaceName, ifType string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
-	var db *gorm.DB
-	ctx, db = getCtxDB(ctx)
-	subnet := &model.Subnet{Model: model.Model{ID: subnetID}}
-	err = db.Take(subnet).Error
-	if err != nil {
-		log.Println("DB failed to query subnet, %v", err)
-		return
-	}
-	primary := false
-	if ifaceName == "eth0" {
-		primary = true
-	}
-	if mac == "" {
-		mac, err = genMacaddr()
-		if err != nil {
-			log.Println("Failed to generate random Mac address, %v", err)
-			return
-		}
-	}
-	iface = &model.Interface{
-		Owner:     owner,
-		Name:      ifaceName,
-		MacAddr:   mac,
-		PrimaryIf: primary,
-		Subnet:    subnetID,
-		Hyper:     hyper,
-		Type:      ifType,
-		Mtu:       1450,
-		RouterID:  subnet.RouterID,
-		Secgroups: secGroups,
-	}
-	if ifType == "instance" {
-		iface.Instance = ID
-	} else if ifType == "floating" {
-		iface.FloatingIp = ID
-	} else if ifType == "dhcp" {
-		iface.Dhcp = ID
-	} else if strings.Contains(ifType, "gateway") {
-		iface.Device = ID
-	}
-	err = db.Create(iface).Error
-	if err != nil {
-		log.Println("Failed to create interface, ", err)
-		return
-	}
-	iface.Address, err = AllocateAddress(ctx, subnetID, iface.ID, address, "native")
-	if err != nil {
-		log.Println("Failed to allocate address", err)
-		err2 := db.Delete(iface).Error
-		if err2 != nil {
-			log.Println("Failed to delete interface, ", err)
-		}
-		return
-	}
-	return
-}
-
-func DeleteInterfaces(ctx context.Context, masterID, subnetID int64, ifType string) (err error) {
-	var db *gorm.DB
-	ctx, db = getCtxDB(ctx)
-	ifaces := []*model.Interface{}
-	where := ""
-	if subnetID > 0 {
-		where = fmt.Sprintf("subnet = %d", subnetID)
-	}
-	if ifType == "instance" {
-		err = db.Where("instance = ? and type = ?", masterID, "instance").Where(where).Find(&ifaces).Error
-	} else if ifType == "floating" {
-		err = db.Where("floating_ip = ? and type = ?", masterID, "floating").Where(where).Find(&ifaces).Error
-	} else if ifType == "dhcp" {
-		err = db.Where("dhcp = ? and type = ?", masterID, "dhcp").Where(where).Find(&ifaces).Error
-	} else {
-		err = db.Where("device = ? and type like ?", masterID, "%gateway%").Where(where).Find(&ifaces).Error
-	}
-	if err != nil {
-		log.Println("Failed to query interfaces, %v", err)
-		return
-	}
-	if len(ifaces) > 0 {
-		err = DeallocateAddress(ctx, ifaces)
-		if err != nil {
-			log.Println("Failed to deallocate address, %v", err)
-			return
-		}
-		if ifType == "instance" {
-			err = db.Where("instance = ? and type = ?", masterID, "instance").Where(where).Delete(&model.Interface{}).Error
-		} else if ifType == "floating" {
-			err = db.Where("floating_ip = ? and type = ?", masterID, "floating").Where(where).Delete(&model.Interface{}).Error
-		} else if ifType == "gateway" {
-			err = db.Where("device = ? and type like ?", masterID, "%gateway%").Where(where).Delete(&model.Interface{}).Error
-		} else if ifType == "dhcp" {
-			err = db.Where("dhcp = ? and type = ?", masterID, "dhcp").Where(where).Delete(&model.Interface{}).Error
-		}
-		if err != nil {
-			log.Println("Failed to delete interface, %v", err)
-			return
-		}
-	}
-	return
-}
-
-func DeleteInterface(ctx context.Context, iface *model.Interface) (err error) {
-	var db *gorm.DB
-	ctx, db = getCtxDB(ctx)
-	if err = db.Model(&model.Address{}).Where("interface = ?", iface.ID).Update(map[string]interface{}{"allocated": false, "interface": 0}).Error; err != nil {
-		log.Println("Failed to Update addresses, %v", err)
-		return
-	}
-	err = db.Delete(iface).Error
-	if err != nil {
-		log.Println("Failed to delete interface", err)
-		return
-	}
-	return
 }

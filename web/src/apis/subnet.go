@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"web/src/common"
+	. "web/src/common"
 	"web/src/model"
 	"web/src/routes"
 
@@ -25,13 +25,13 @@ var subnetAdmin = &routes.SubnetAdmin{}
 type SubnetAPI struct{}
 
 type SubnetResponse struct {
-	*common.BaseReference
+	*BaseReference
 	Network    string                `json:"network"`
 	Netmask    string                `json:"netmask"`
 	Gateway    string                `json:"gateway"`
 	NameServer string                `json:"dns,omitempty"`
-	VPC        *common.BaseReference `json:"vpc,omitempty"`
-	Type       common.SubnetType `json:"type"`
+	VPC        *BaseReference `json:"vpc,omitempty"`
+	Type       SubnetType `json:"type"`
 }
 
 type SubnetListResponse struct {
@@ -50,9 +50,9 @@ type SubnetPayload struct {
 	NameServer  string                `json:"dns" binding:"omitempty"`
 	BaseDomain  string                `json:"base_domain" binding:"omitempty"`
 	Dhcp        bool                  `json:"dhcp" binding:"omitempty"`
-	VPC         *common.BaseReference `json:"vpc" binding:"omitempty"`
+	VPC         *BaseReference `json:"vpc" binding:"omitempty"`
 	Vlan        int `json:"vlan" binding:"omitempty,gte=1,lte=16777215"`
-	Type        common.SubnetType `json:"type" binding:"omitempty,oneof=public internal"`
+	Type        SubnetType `json:"type" binding:"omitempty,oneof=public internal"`
 }
 
 type SubnetPatchPayload struct {
@@ -72,12 +72,12 @@ func (v *SubnetAPI) Get(c *gin.Context) {
 	uuID := c.Param("id")
 	subnet, err := subnetAdmin.GetSubnetByUUID(ctx, uuID)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid subnet query", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid subnet query", err)
 		return
 	}
 	subnetResp, err := v.getSubnetResponse(ctx, subnet)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+		ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
 		return
 	}
 	c.JSON(http.StatusOK, subnetResp)
@@ -112,12 +112,12 @@ func (v *SubnetAPI) Delete(c *gin.Context) {
 	uuID := c.Param("id")
 	subnet, err := subnetAdmin.GetSubnetByUUID(ctx, uuID)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
 		return
 	}
 	err = subnetAdmin.Delete(ctx, subnet)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Not able to delete", err)
+		ErrorResponse(c, http.StatusBadRequest, "Not able to delete", err)
 		return
 	}
 	c.JSON(http.StatusNoContent, nil)
@@ -138,29 +138,29 @@ func (v *SubnetAPI) Create(c *gin.Context) {
 	payload := &SubnetPayload{}
 	err := c.ShouldBindJSON(payload)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
 		return
 	}
-	if payload.VPC == nil && payload.Type != common.Public {
-		common.ErrorResponse(c, http.StatusBadRequest, "VPC must be specified if network type not public", err)
+	if payload.VPC == nil && payload.Type != Public {
+		ErrorResponse(c, http.StatusBadRequest, "VPC must be specified if network type not public", err)
 		return
 	}
 	var router *model.Router
 	if payload.VPC != nil {
 		router, err = routerAdmin.GetRouter(ctx, payload.VPC)
 		if err != nil {
-			common.ErrorResponse(c, http.StatusBadRequest, "Failed to get router", err)
+			ErrorResponse(c, http.StatusBadRequest, "Failed to get router", err)
 			return
 		}
 	}
 	subnet, err := subnetAdmin.Create(ctx, payload.Vlan, payload.Name, payload.NetworkCIDR, payload.Gateway, payload.StartIP, payload.EndIP, string(payload.Type), payload.NameServer, payload.BaseDomain, payload.Dhcp, router)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Failed to create subnet", err)
+		ErrorResponse(c, http.StatusBadRequest, "Failed to create subnet", err)
 		return
 	}
 	subnetResp, err := v.getSubnetResponse(ctx, subnet)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+		ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
 		return
 	}
 	c.JSON(http.StatusOK, subnetResp)
@@ -168,7 +168,7 @@ func (v *SubnetAPI) Create(c *gin.Context) {
 
 func (v *SubnetAPI) getSubnetResponse(ctx context.Context, subnet *model.Subnet) (subnetResp *SubnetResponse, err error) {
 	subnetResp = &SubnetResponse{
-		BaseReference: &common.BaseReference{
+		BaseReference: &BaseReference{
 			ID:   subnet.UUID,
 			Name: subnet.Name,
 		},
@@ -176,10 +176,10 @@ func (v *SubnetAPI) getSubnetResponse(ctx context.Context, subnet *model.Subnet)
 		Netmask:    subnet.Netmask,
 		Gateway:    subnet.Gateway,
 		NameServer: subnet.NameServer,
-		Type:       common.SubnetType(subnet.Type),
+		Type:       SubnetType(subnet.Type),
 	}
 	if subnet.Router != nil {
-		subnetResp.VPC = &common.BaseReference{
+		subnetResp.VPC = &BaseReference{
 			ID:   subnet.Router.UUID,
 			Name: subnet.Router.Name,
 		}
@@ -201,21 +201,21 @@ func (v *SubnetAPI) List(c *gin.Context) {
 	limitStr := c.DefaultQuery("limit", "50")
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query offset: "+offsetStr, err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset: "+offsetStr, err)
 		return
 	}
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query limit: "+limitStr, err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query limit: "+limitStr, err)
 		return
 	}
 	if offset < 0 || limit < 0 {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", err)
 		return
 	}
 	total, subnets, err := subnetAdmin.List(ctx, int64(offset), int64(limit), "-created_at", "")
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Failed to list subnets", err)
+		ErrorResponse(c, http.StatusBadRequest, "Failed to list subnets", err)
 		return
 	}
 	subnetListResp := &SubnetListResponse{
@@ -227,7 +227,7 @@ func (v *SubnetAPI) List(c *gin.Context) {
 	for i, subnet := range subnets {
 		subnetListResp.Subnets[i], err = v.getSubnetResponse(ctx, subnet)
 		if err != nil {
-			common.ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+			ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
 			return
 		}
 	}

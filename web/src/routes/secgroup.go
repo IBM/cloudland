@@ -13,7 +13,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"web/src/common"
+	. "web/src/common"
 	"web/src/dbs"
 	"web/src/model"
 
@@ -126,7 +126,7 @@ func (a *SecgroupAdmin) GetSecgroupByName(ctx context.Context, name string, rout
 	return
 }
 
-func (a *SecgroupAdmin) GetSecurityGroup(ctx context.Context, reference *common.BaseReference, routerID int64) (subnet *model.SecurityGroup, err error) {
+func (a *SecgroupAdmin) GetSecurityGroup(ctx context.Context, reference *BaseReference, routerID int64) (subnet *model.SecurityGroup, err error) {
 	if reference == nil || (reference.ID == "" && reference.Name == "") {
 		err = fmt.Errorf("Security group base reference must be provided with either uuid or name")
 		return

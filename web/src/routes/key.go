@@ -18,7 +18,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
-	"web/src/common"
+	. "web/src/common"
 	"web/src/dbs"
 	"web/src/model"
 
@@ -151,7 +151,7 @@ func (a *KeyAdmin) GetKeyByName(ctx context.Context, name string) (key *model.Ke
 	return
 }
 
-func (a *KeyAdmin) GetKey(ctx context.Context, reference *common.BaseReference) (key *model.Key, err error) {
+func (a *KeyAdmin) GetKey(ctx context.Context, reference *BaseReference) (key *model.Key, err error) {
 	if reference == nil || (reference.ID == "" && reference.Name == "") {
 		err = fmt.Errorf("Key base reference must be provided with either uuid or name")
 		return

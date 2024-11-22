@@ -14,7 +14,7 @@ import (
 	"strconv"
 	"strings"
 
-	"web/src/dbs"
+	. "web/src/common"
 	"web/src/model"
 
 	"github.com/jinzhu/gorm"
@@ -37,7 +37,7 @@ type SecurityData struct {
 
 func InstanceStatus(ctx context.Context, args []string) (status string, err error) {
 	//|:-COMMAND-:| launch_vm.sh '3' '5 running 7 running 9 shut_off'
-	db := dbs.DB()
+	db := DB()
 	argn := len(args)
 	if argn < 2 {
 		err = fmt.Errorf("Wrong params")
@@ -116,7 +116,7 @@ func InstanceStatus(ctx context.Context, args []string) (status string, err erro
 }
 
 func ApplySecgroups(ctx context.Context, instance *model.Instance) (err error) {
-	db := dbs.DB()
+	db := DB()
 	var ifaces []*model.Interface
 	if err = db.Set("gorm:auto_preload", true).Where("instance = ?", instance.ID).Find(&ifaces).Error; err != nil {
 		log.Println("Interfaces query failed", err)

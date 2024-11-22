@@ -12,7 +12,7 @@ import (
 	"log"
 	"strconv"
 
-	"web/src/dbs"
+	. "web/src/common"
 	"web/src/model"
 )
 
@@ -22,9 +22,9 @@ func init() {
 
 func HyperStatus(ctx context.Context, args []string) (status string, err error) {
 	//|:-COMMAND-:| hyper_status.sh '127' 'hyper-0' '0' '64' '26684376' '263662552' '1561731870272' '3086445260864' '1'
-	db := dbs.DB()
+	db := DB()
 	argn := len(args)
-	if argn < 10 {
+	if argn < 11 {
 		err = fmt.Errorf("Wrong params")
 		log.Println("Invalid args", err)
 		return
@@ -71,14 +71,8 @@ func HyperStatus(ctx context.Context, args []string) (status string, err error) 
 		log.Println("Invalid hypervisor status", err)
 		hyperStatus = 1
 	}
-	virtType := "kvm-x86_64"
-	zoneName := ""
-	hostIP := ""
-	if argn > 11 {
-		virtType = args[10]
-		zoneName = args[11]
-		hostIP = args[12]
-	}
+	hostIP := args[10]
+	zoneName := args[11]
 	zone := &model.Zone{Name: zoneName}
 	if zoneName != "" {
 		err = db.Where("name = ?", zoneName).FirstOrCreate(zone).Error
@@ -107,7 +101,7 @@ func HyperStatus(ctx context.Context, args []string) (status string, err error) 
 		return
 	}
 	hyper.Status = int32(hyperStatus)
-	hyper.VirtType = virtType
+	hyper.VirtType = "kvm-x86_64"
 	hyper.Zone = zone
 	hyper.HostIP = hostIP
 	err = db.Save(hyper).Error

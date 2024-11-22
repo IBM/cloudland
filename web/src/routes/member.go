@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"log"
 
-	"web/src/dbs"
+	. "web/src/common"
 	"web/src/model"
 )
 
@@ -134,7 +134,7 @@ func GetMemberShip(ctx context.Context) *MemberShip {
 }
 
 func GetDBMemberShip(userID, orgID int64) (m *MemberShip, err error) {
-	db := dbs.DB()
+	db := DB()
 	m = &MemberShip{
 		UserID: userID,
 		OrgID:  orgID,

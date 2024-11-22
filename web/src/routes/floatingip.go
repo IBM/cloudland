@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 
+	. "web/src/common"
 	"web/src/dbs"
 	"web/src/model"
 
@@ -115,7 +116,7 @@ func (a *FloatingIpAdmin) Delete(ctx context.Context, id int64) (err error) {
 			db.Rollback()
 		}
 	}()
-	ctx = saveTXtoCtx(ctx, db)
+	ctx = SaveTXtoCtx(ctx, db)
 	floatingip := &model.FloatingIp{Model: model.Model{ID: id}}
 	if err = db.Preload("Instance").Find(floatingip).Error; err != nil {
 		log.Println("Failed to query floating ip", err)
@@ -367,26 +368,29 @@ func (v *FloatingIpView) Assign(c *macaron.Context, store session.Store) {
 
 func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, router *model.Router, ftype, address string) (fipIface *model.Interface, gateway string, err error) {
 	var db *gorm.DB
-	ctx, db = getCtxDB(ctx)
-	subnet := &model.Subnet{}
-	err = db.Where("type = 'public'").Take(subnet).Error
+	ctx, db = GetCtxDB(ctx)
+	subnets := []*model.Subnet{}
+	err = db.Where("type = 'public' and vlan = ?", router.PublicLink).Find(&subnets).Error
 	if err != nil {
-		log.Println("Failed to query subnet, %v", err)
+		log.Println("Failed to query subnets ", err)
 		return
 	}
 	name := ftype + "fip"
-	fipIface, err = CreateInterface(ctx, subnet.ID, floatingipID, owner, -1, address, "", name, "floating", nil)
-	if err != nil {
-		log.Println("Failed to create fip interface, %v", err)
-		return
+	log.Printf("Subnets: %v\n", subnets)
+	for _, subnet := range subnets {
+		fipIface, err = CreateInterface(ctx, subnet, floatingipID, owner, -1, address, "", name, "floating", nil)
+		if err == nil {
+			log.Printf("FipIface: %v\n", fipIface)
+			gateway = subnet.Gateway
+			return
+		}
 	}
-	gateway = subnet.Gateway
 	return
 }
 
 func DeallocateFloatingIp(ctx context.Context, floatingipID int64) (err error) {
 	var db *gorm.DB
-	ctx, db = getCtxDB(ctx)
+	ctx, db = GetCtxDB(ctx)
 	DeleteInterfaces(ctx, floatingipID, 0, "floating")
 	floatingip := &model.FloatingIp{Model: model.Model{ID: floatingipID}}
 	err = db.Delete(floatingip).Error

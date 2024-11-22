@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	"web/src/dbs"
+	. "web/src/common"
 	"web/src/model"
 )
 
@@ -65,7 +65,7 @@ func ReportRC(ctx context.Context, args []string) (status string, err error) {
 			log.Println("Failed to get value", err)
 		}
 	}
-	db := dbs.DB()
+	db := DB()
 	resource := &model.Resource{
 		Hostid:      id,
 		Cpu:         cpu,

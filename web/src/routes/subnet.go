@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"web/src/common"
+	. "web/src/common"
 	"web/src/dbs"
 	"web/src/model"
 
@@ -98,8 +98,8 @@ func generateIPAddresses(subnet *model.Subnet, start net.IP, end net.IP, preSize
 			}
 		}
 		address := &model.Address{
-			Model: model.Model{ Creater: subnet.Creater},
-			Owner:   subnet.Owner,
+			Model:    model.Model{Creater: subnet.Creater},
+			Owner:    subnet.Owner,
 			Address:  ipstr,
 			Netmask:  subnet.Netmask,
 			Type:     "ipv4",
@@ -128,7 +128,7 @@ func (a *SubnetAdmin) Get(ctx context.Context, id int64) (subnet *model.Subnet, 
 	db := DB()
 	where := memberShip.GetWhere()
 	subnet = &model.Subnet{Model: model.Model{ID: id}}
-	err = db.Where(where).Take(subnet).Error
+	err = db.Preload("Router").Where(where).Take(subnet).Error
 	if err != nil {
 		log.Println("DB failed to query subnet ", err)
 		return
@@ -149,7 +149,7 @@ func (a *SubnetAdmin) GetSubnetByUUID(ctx context.Context, uuID string) (subnet 
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	subnet = &model.Subnet{}
-	err = db.Where(where).Where("uuid = ?", uuID).Take(subnet).Error
+	err = db.Preload("Router").Where(where).Where("uuid = ?", uuID).Take(subnet).Error
 	if err != nil {
 		log.Println("Failed to query subnet, %v", err)
 		return
@@ -170,7 +170,7 @@ func (a *SubnetAdmin) GetSubnetByName(ctx context.Context, name string) (subnet 
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	subnet = &model.Subnet{}
-	err = db.Where(where).Where("name = ?", name).Take(subnet).Error
+	err = db.Preload("Router").Where(where).Where("name = ?", name).Take(subnet).Error
 	if err != nil {
 		log.Println("Failed to query subnet, %v", err)
 		return
@@ -186,7 +186,7 @@ func (a *SubnetAdmin) GetSubnetByName(ctx context.Context, name string) (subnet 
 	return
 }
 
-func (a *SubnetAdmin) GetSubnet(ctx context.Context, reference *common.BaseReference) (subnet *model.Subnet, err error) {
+func (a *SubnetAdmin) GetSubnet(ctx context.Context, reference *BaseReference) (subnet *model.Subnet, err error) {
 	if reference == nil || (reference.ID == "" && reference.Name == "") {
 		err = fmt.Errorf("Subnet base reference must be provided with either uuid or name")
 		return
@@ -311,7 +311,7 @@ func setRouting(ctx context.Context, routerID int64, subnet *model.Subnet, route
 		log.Println("DB failed to query router", err)
 		return
 	}
-	_, err = CreateInterface(ctx, subnet.ID, routerID, router.Owner, router.Hyper, subnet.Gateway, "", "subnet-gw", "gateway", nil)
+	_, err = CreateInterface(ctx, subnet, routerID, router.Owner, router.Hyper, subnet.Gateway, "", "subnet-gw", "gateway", nil)
 	if err != nil {
 		log.Println("Failed to create gateway subnet interface", err)
 		return
@@ -381,7 +381,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, vlan int, name, network, gatew
 	netmask := net.IP(net.CIDRMask(preSize, 32)).String()
 	subnet = &model.Subnet{
 		Model:        model.Model{Creater: memberShip.UserID},
-		Owner: owner,
+		Owner:        owner,
 		Name:         name,
 		Network:      network,
 		Netmask:      netmask,
@@ -442,7 +442,7 @@ func (a *SubnetAdmin) Delete(ctx context.Context, subnet *model.Subnet) (err err
 			db.Rollback()
 		}
 	}()
-	ctx = saveTXtoCtx(ctx, db)
+	ctx = SaveTXtoCtx(ctx, db)
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.ValidateOwner(model.Writer, subnet.Owner)
 	if !permit {

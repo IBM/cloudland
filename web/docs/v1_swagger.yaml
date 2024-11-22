@@ -23,13 +23,9 @@ definitions:
         type: integer
       disk:
         type: integer
-      id:
-        type: string
       memory:
         type: integer
       name:
-        maxLength: 32
-        minLength: 2
         type: string
     type: object
   apis.FloatingIpInfo:
@@ -116,17 +112,19 @@ definitions:
     type: object
   apis.ImageResponse:
     properties:
-      cpu:
-        type: integer
-      disk:
-        type: integer
+      architecture:
+        type: string
+      format:
+        type: string
       id:
         type: string
-      memory:
-        type: integer
       name:
         maxLength: 32
         minLength: 2
+        type: string
+      size:
+        type: integer
+      username:
         type: string
     type: object
   apis.InstanceListResponse:
@@ -174,11 +172,10 @@ definitions:
         maxLength: 32
         minLength: 1
         type: string
-      host:
-        minimum: 0
-        type: integer
       hostname:
         type: string
+      hypervisor:
+        type: integer
       image:
         $ref: '#/definitions/common.BaseReference'
       keys:
@@ -566,8 +563,8 @@ definitions:
         maxLength: 32
         minLength: 2
         type: string
-      public_network:
-        $ref: '#/definitions/common.BaseReference'
+      public_link:
+        type: integer
     required:
     - name
     type: object

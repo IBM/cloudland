@@ -32,6 +32,7 @@ type Hyper struct {
 	Children  int32
 	Duration  int64
 	HostIP    string
+	RouteIP   string
 	VirtType  string
 	ZoneID    int64
 	Zone      *Zone     `gorm:"foreignkey:ZoneID"`

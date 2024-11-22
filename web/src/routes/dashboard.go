@@ -13,6 +13,7 @@ import (
 	"log"
 	"net/http"
 
+	. "web/src/common"
 	"web/src/model"
 
 	"github.com/go-macaron/session"

@@ -14,7 +14,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"web/src/common"
+	. "web/src/common"
 	"web/src/dbs"
 	"web/src/model"
 
@@ -62,7 +62,7 @@ func createRouterIface(ctx context.Context, rtype string, router *model.Router, 
 		} else {
 			continue
 		}
-		iface, err = CreateInterface(ctx, subnet.ID, router.ID, owner, router.Hyper, "", "", name, ifType, nil)
+		iface, err = CreateInterface(ctx, subnet, router.ID, owner, router.Hyper, "", "", name, ifType, nil)
 		if err == nil {
 			log.Println("Created gateway interface from subnet")
 			break
@@ -71,7 +71,7 @@ func createRouterIface(ctx context.Context, rtype string, router *model.Router, 
 	return
 }
 
-func (a *RouterAdmin) Create(ctx context.Context, name string, pubSubnet *model.Subnet) (router *model.Router, err error) {
+func (a *RouterAdmin) Create(ctx context.Context, name string, publicLink int32) (router *model.Router, err error) {
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -87,15 +87,17 @@ func (a *RouterAdmin) Create(ctx context.Context, name string, pubSubnet *model.
 		log.Println("DB failed to create router ", err)
 		return
 	}
-	if pubSubnet == nil {
-		pubSubnet = &model.Subnet{}
-		err = db.Where("type = 'public'").Take(pubSubnet).Error
-		if err != nil {
-			log.Println("DB failed to query public subnet ", err)
-			return
-		}
+	pubSubnet := &model.Subnet{}
+	where := "type = 'public'"
+	if publicLink > 0 {
+		where = fmt.Sprintf("%s and vlan = %d", where, publicLink)
 	}
-	router.PublicID = pubSubnet.ID
+	err = db.Where(where).Take(pubSubnet).Error
+	if err != nil {
+		log.Println("DB failed to query public subnet ", err)
+		return
+	}
+	router.PublicLink = pubSubnet.Vlan
 	secGroup, err := secgroupAdmin.Create(ctx, name+"-default", true, router.ID, owner)
 	if err != nil {
 		log.Println("Failed to create security group", err)
@@ -164,7 +166,7 @@ func (a *RouterAdmin) GetRouterByName(ctx context.Context, name string) (router 
 	return
 }
 
-func (a *RouterAdmin) GetRouter(ctx context.Context, reference *common.BaseReference) (router *model.Router, err error) {
+func (a *RouterAdmin) GetRouter(ctx context.Context, reference *BaseReference) (router *model.Router, err error) {
 	if reference == nil || (reference.ID == "" && reference.Name == "") {
 		err = fmt.Errorf("Router base reference must be provided with either uuid or name")
 		return
@@ -207,7 +209,7 @@ func (a *RouterAdmin) Delete(ctx context.Context, router *model.Router) (err err
 			db.Rollback()
 		}
 	}()
-	ctx = saveTXtoCtx(ctx, db)
+	ctx = SaveTXtoCtx(ctx, db)
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.ValidateOwner(model.Writer, router.Owner)
 	if !permit {
@@ -415,7 +417,7 @@ func (v *RouterView) New(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	db := dbs.DB()
+	db := DB()
 	subnets := []*model.Subnet{}
 	if err := db.Model(&model.Subnet{}).Where("type = 'public'").Find(&subnets).Error; err != nil {
 		return
@@ -426,7 +428,7 @@ func (v *RouterView) New(c *macaron.Context, store session.Store) {
 
 func (v *RouterView) Edit(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
-	db := dbs.DB()
+	db := DB()
 	id := c.Params("id")
 	routerID, err := strconv.Atoi(id)
 	if err != nil {
@@ -496,22 +498,10 @@ func (v *RouterView) Patch(c *macaron.Context, store session.Store) {
 }
 
 func (v *RouterView) Create(c *macaron.Context, store session.Store) {
-	ctx := c.Req.Context()
 	redirectTo := "../routers"
 	name := c.QueryTrim("name")
-	pubID := c.QueryInt64("public")
-	var pubSubnet *model.Subnet
-	var err error
-	if pubID > 0 {
-		pubSubnet, err = subnetAdmin.Get(ctx, pubID)
-		if err != nil {
-			log.Println("Failed to get public subnet ", err)
-			c.Data["ErrorMsg"] = err.Error()
-			c.HTML(http.StatusBadRequest, "error")
-			return
-		}
-	}
-	_, err = routerAdmin.Create(c.Req.Context(), name, pubSubnet)
+	pubLink := c.QueryInt("public")
+	_, err := routerAdmin.Create(c.Req.Context(), name, int32(pubLink))
 	if err != nil {
 		log.Println("Failed to create router, %v", err)
 		c.Data["ErrorMsg"] = err.Error()

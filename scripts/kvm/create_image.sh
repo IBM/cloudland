@@ -22,6 +22,7 @@ format=$(qemu-img info $image | grep 'file format' | cut -d' ' -f3)
 
 if [ -z "$wds_address" ]; then
     mv $image ${image}.$format
+    state=available
     #sync_target /opt/cloudland/cache/image
 else
     qemu-img convert -f $format -O raw ${image} ${image}.raw
@@ -37,7 +38,6 @@ else
     done
     rm -f ${image}.raw
     volume_id=$(wds_curl GET "api/v2/sync/block/volumes" | jq --arg image image-$ID -r '.volumes | .[] | select(.name == $image) | .id')
-    ret_code=$(wds_curl POST "api/v2/sync/block/snaps" "{\"name\": \"image-$ID\", \"description\": \"image-ID\", \"volume_id\": \"$volume_id\"}" | jq -r .ret_code)
-    [ "$ret_code" = "0" ] && state=available
+    [ -n "$volume_id" ] && state=available
 fi
 echo "|:-COMMAND-:| $(basename $0) '$ID' '$state' '$format'"

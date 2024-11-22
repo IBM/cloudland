@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"time"
 
-	"web/src/dbs"
+	. "web/src/common"
 	"web/src/model"
 )
 
@@ -23,7 +23,7 @@ func init() {
 
 func EnableVncPortmap(ctx context.Context, args []string) (status string, err error) {
 	//|:-COMMAND-:| enable_vnc_portmap.sh 6 192.168.71.110 18000
-	db := dbs.DB()
+	db := DB()
 	argn := len(args)
 	if argn < 2 {
 		err = fmt.Errorf("Wrong params")

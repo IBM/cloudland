@@ -3,14 +3,15 @@
 cd `dirname $0`
 source ../cloudrc
 
-[ $# -lt 3 ] && echo "$0 <router> <vlan> <gateway>" && exit -1
+[ $# -lt 4 ] && echo "$0 <router> <vlan> <gateway> <ext_vlan>" && exit -1
 
 router=$1
 [ "${router/router-/}" = "$router" ] && router=router-$1
 vlan=$2
 gateway=$3
+ext_vlan=$4
 
-./create_local_router.sh $router
+./create_local_router.sh $router $ext_vlan
 cat /proc/net/dev | grep -q "^\<ln-$vni\>"
 if [ $? -ne 0 ]; then
     ./create_veth.sh $router ln-$vlan ns-$vlan

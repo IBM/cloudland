@@ -15,7 +15,7 @@ import (
 	"os"
 	"strconv"
 
-	"web/src/common"
+	. "web/src/common"
 	"web/src/dbs"
 	"web/src/model"
 
@@ -66,10 +66,8 @@ func (a *ImageAdmin) Create(ctx context.Context, osVersion, diskType, virtType, 
 
 func (a *ImageAdmin) GetImageByUUID(ctx context.Context, uuID string) (image *model.Image, err error) {
 	db := DB()
-	memberShip := GetMemberShip(ctx)
-	where := memberShip.GetWhere()
 	image = &model.Image{}
-	err = db.Where(where).Where("uuid = ?", uuID).Take(image).Error
+	err = db.Where("uuid = ?", uuID).Take(image).Error
 	if err != nil {
 		log.Println("Failed to query image, %v", err)
 		return
@@ -79,10 +77,8 @@ func (a *ImageAdmin) GetImageByUUID(ctx context.Context, uuID string) (image *mo
 
 func (a *ImageAdmin) GetImageByName(ctx context.Context, name string) (image *model.Image, err error) {
 	db := DB()
-	memberShip := GetMemberShip(ctx)
-	where := memberShip.GetWhere()
 	image = &model.Image{}
-	err = db.Where(where).Where("name = ?", name).Take(image).Error
+	err = db.Where("name = ?", name).Take(image).Error
 	if err != nil {
 		log.Println("Failed to query image, %v", err)
 		return
@@ -96,11 +92,9 @@ func (a *ImageAdmin) Get(ctx context.Context, id int64) (image *model.Image, err
 		log.Println(err)
 		return
 	}
-	memberShip := GetMemberShip(ctx)
 	db := DB()
-	where := memberShip.GetWhere()
 	image = &model.Image{Model: model.Model{ID: id}}
-	err = db.Where(where).Take(image).Error
+	err = db.Take(image).Error
 	if err != nil {
 		log.Println("DB failed to query image, %v", err)
 		return
@@ -108,7 +102,7 @@ func (a *ImageAdmin) Get(ctx context.Context, id int64) (image *model.Image, err
 	return
 }
 
-func (a *ImageAdmin) GetImage(ctx context.Context, reference *common.BaseReference) (image *model.Image, err error) {
+func (a *ImageAdmin) GetImage(ctx context.Context, reference *BaseReference) (image *model.Image, err error) {
 	if reference == nil || (reference.ID == "" && reference.Name == "") {
 		err = fmt.Errorf("Image base reference must be provided with either uuid or name")
 		return

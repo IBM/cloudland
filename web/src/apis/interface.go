@@ -10,7 +10,7 @@ package apis
 import (
 	"net/http"
 
-	"web/src/common"
+	. "web/src/common"
 	"web/src/routes"
 
 	"github.com/gin-gonic/gin"
@@ -22,21 +22,21 @@ var interfaceAdmin = &routes.InterfaceAdmin{}
 type InterfaceAPI struct{}
 
 type InterfaceResponse struct {
-	*common.BaseReference
-	Subnet         *common.BaseReference   `json:"subnet"`
+	*BaseReference
+	Subnet         *BaseReference   `json:"subnet"`
 	MacAddress     string                  `json:"mac_address"`
 	IPAddress      string                  `json:"ip_address"`
 	IsPrimary      bool                    `json:"is_primary"`
 	FloatingIps    []*FloatingIpInfo       `json:"floating_ips,omitempty"`
-	SecurityGroups []*common.BaseReference `json:"security_groups,omitempty"`
+	SecurityGroups []*BaseReference `json:"security_groups,omitempty"`
 }
 
 type InterfacePayload struct {
-	Subnet         *common.BaseReference   `json:"subnet" binding:"required"`
+	Subnet         *BaseReference   `json:"subnet" binding:"required"`
 	IpAddress      string                  `json:"ip_address", binding:"omitempty,ipv4"`
 	MacAddress     string                  `json:"mac_address" binding:"omitempty,mac"`
 	Name           string                  `json:"name" binding:"omitempty,min=2,max=32"`
-	SecurityGroups []*common.BaseReference `json:"security_group" binding:"omitempty"`
+	SecurityGroups []*BaseReference `json:"security_group" binding:"omitempty"`
 }
 
 type InterfacePatchPayload struct {

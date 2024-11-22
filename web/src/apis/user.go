@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"web/src/common"
+	. "web/src/common"
 	"web/src/routes"
 	"web/src/model"
 
@@ -26,7 +26,7 @@ type UserAPI struct{}
 type UserPayload struct {
 	Username string                `json:"username,required" binding:"required,min=2"`
 	Password string                `json:"password,required" binding:"required,min=8,max=32"`
-	Org      *common.BaseReference `json:"org,omitempty" binding:"omitempty"`
+	Org      *BaseReference `json:"org,omitempty" binding:"omitempty"`
 }
 
 type UserPatchPayload struct {
@@ -34,8 +34,8 @@ type UserPatchPayload struct {
 }
 
 type UserResponse struct {
-	UserInfo    *common.BaseReference `json:"user"`
-	OrgInfo     *common.BaseReference `json:"org,omitempty"`
+	UserInfo    *BaseReference `json:"user"`
+	OrgInfo     *BaseReference `json:"org,omitempty"`
 	AccessToken string                `json:"token,omitempty"`
 	Role        string                `json:"role,omitempty"`
 }
@@ -62,11 +62,11 @@ func (v *UserAPI) Get(c *gin.Context) {
 	uuID := c.Param("id")
 	user, err := userAdmin.GetUserByUUID(ctx, uuID)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
 		return
 	}
 	userResp := &UserResponse{
-		UserInfo: &common.BaseReference{
+		UserInfo: &BaseReference{
 			ID:   user.UUID,
 			Name: user.Username,
 		},
@@ -91,21 +91,21 @@ func (v *UserAPI) Patch(c *gin.Context) {
 	payload := &UserPatchPayload{}
 	err := c.ShouldBindJSON(payload)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
 		return
 	}
 	user, err := userAdmin.GetUserByUUID(ctx, uuID)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
 		return
 	}
 	user, err = userAdmin.Update(ctx, user.ID, payload.Password, nil)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
 		return
 	}
 	userResp := &UserResponse{
-		UserInfo: &common.BaseReference{
+		UserInfo: &BaseReference{
 			ID:   user.UUID,
 			Name: user.Username,
 		},
@@ -128,12 +128,12 @@ func (v *UserAPI) Delete(c *gin.Context) {
 	uuID := c.Param("id")
 	user, err := userAdmin.GetUserByUUID(ctx, uuID)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
 		return
 	}
 	err = userAdmin.Delete(ctx, user)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Not able to delete", err)
+		ErrorResponse(c, http.StatusBadRequest, "Not able to delete", err)
 		return
 	}
 	c.JSON(http.StatusNoContent, nil)
@@ -155,27 +155,27 @@ func (v *UserAPI) Create(c *gin.Context) {
 	payload := &UserPayload{}
 	err := c.ShouldBindJSON(payload)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
 		return
 	}
 	username := payload.Username
 	password := payload.Password
 	user, err := userAdmin.Create(ctx, username, password)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Failed to create user", err)
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to create user", err)
 		return
 	}
 	org, err := orgAdmin.Create(ctx, username, username)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusInternalServerError, "Failed to create org", err)
+		ErrorResponse(c, http.StatusInternalServerError, "Failed to create org", err)
 		return
 	}
 	userResp := &UserResponse{
-		UserInfo: &common.BaseReference{
+		UserInfo: &BaseReference{
 			ID:   user.UUID,
 			Name: username,
 		},
-		OrgInfo: &common.BaseReference{
+		OrgInfo: &BaseReference{
 			ID:   org.UUID,
 			Name: username,
 		},
@@ -199,21 +199,21 @@ func (v *UserAPI) List(c *gin.Context) {
 	limitStr := c.DefaultQuery("limit", "50")
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query offset: "+offsetStr, err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset: "+offsetStr, err)
 		return
 	}
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query limit: "+limitStr, err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query limit: "+limitStr, err)
 		return
 	}
 	if offset < 0 || limit < 0 {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", err)
 		return
 	}
 	total, users, err := userAdmin.List(ctx, int64(offset), int64(limit), "-created_at", "")
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Failed to list vpcs", err)
+		ErrorResponse(c, http.StatusBadRequest, "Failed to list vpcs", err)
 		return
 	}
 	userListResp := &UserListResponse{
@@ -224,7 +224,7 @@ func (v *UserAPI) List(c *gin.Context) {
 	userListResp.Users = make([]*UserResponse, userListResp.Limit)
 	for i, user := range users {
 		userListResp.Users[i] = &UserResponse{
-			UserInfo: &common.BaseReference{
+			UserInfo: &BaseReference{
 				ID:   user.UUID,
 				Name: user.Username,
 			},
@@ -247,14 +247,14 @@ func (v *UserAPI) LoginPost(c *gin.Context) {
 	payload := &UserPayload{}
 	err := c.ShouldBindJSON(payload)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Input JSON format error", err)
+		ErrorResponse(c, http.StatusBadRequest, "Input JSON format error", err)
 		return
 	}
 	username := payload.Username
 	password := payload.Password
 	user, err := userAdmin.Validate(c.Request.Context(), username, password)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid username or password", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid username or password", err)
 		return
 	}
 	orgName := username
@@ -263,20 +263,20 @@ func (v *UserAPI) LoginPost(c *gin.Context) {
 	}
 	org, err := orgAdmin.GetOrgByName(orgName)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid organization", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid organization", err)
 		return
 	}
 	_, role, token, _, _, err := userAdmin.AccessToken(user.ID, username, orgName)
 	if err != nil {
-		common.ErrorResponse(c, http.StatusBadRequest, "Invalid organization with username", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid organization with username", err)
 		return
 	}
 	userResp := &UserResponse{
-		UserInfo: &common.BaseReference{
+		UserInfo: &BaseReference{
 			Name: username,
 			ID:   user.UUID,
 		},
-		OrgInfo: &common.BaseReference{
+		OrgInfo: &BaseReference{
 			Name: orgName,
 			ID:   org.UUID,
 		},

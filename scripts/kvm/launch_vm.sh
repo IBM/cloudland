@@ -3,15 +3,16 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 6 ] && die "$0 <vm_ID> <image> <name> <cpu> <memory> <disk_size>"
+[ $# -lt 6 ] && die "$0 <vm_ID> <image> <snapshot> <name> <cpu> <memory> <disk_size>"
 
 ID=$1
 vm_ID=inst-$1
 img_name=$2
-vm_name=$3
-vm_cpu=$4
-vm_mem=$5
-disk_size=$6
+snapshot=$3
+vm_name=$4
+vm_cpu=$5
+vm_mem=$6
+disk_size=$7
 vm_stat=error
 vm_vnc=""
 
@@ -45,11 +46,20 @@ if [ -z "$wds_address" ]; then
         fi
         qemu-img resize -q $vm_img "${disk_size}G" &> /dev/null
     fi
-    [ $(uname -m) = s390x ] && template=$template_dir/linuxone.xml
 else
     image=$(basename $img_name .raw)
     vhost_name=instance-$ID-boot
-    snapshot_id=$(wds_curl GET "api/v2/sync/block/snaps" | jq --arg snap $image -r '.snaps | .[] | select(.name == $snap) | .id')
+    snapshot_name=${image}-${snapshot}
+    snapshot_id=$(wds_curl GET "api/v2/sync/block/snaps" | jq --arg snap $snapshot_name -r '.snaps | .[] | select(.name == $snap) | .id')
+    if [ -z "$snapshot_id" ]; then
+	image_volume_id=$(wds_curl GET "api/v2/sync/block/volumes" | jq --arg image $image -r '.volumes | .[] | select(.name == $image) | .id')
+	wds_curl POST "api/v2/sync/block/snaps" "{\"name\": \"$snapshot_name\", \"description\": \"$snapshot_name\", \"volume_id\": \"$image_volume_id\"}"
+        snapshot_id=$(wds_curl GET "api/v2/sync/block/snaps" | jq --arg snap $snapshot_name -r '.snaps | .[] | select(.name == $snap) | .id')
+        if [ -z "$snapshot_id" ]; then
+            echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' 'failed to create image snapshot'"
+            exit -1
+        fi
+    fi
     volume_id=$(wds_curl POST "api/v2/sync/block/snaps/$snapshot_id/clone" "{\"name\": \"$vhost_name\"}" | jq -r .id)
     rest_code=$(wds_curl PUT "api/v2/sync/block/volumes/$volume_id/expand" "{\"size\": $fsize}" | jq -r .ret_code)
     if [ "$rest_code" != "0" ]; then
@@ -86,7 +96,8 @@ while [ $i -lt $nvlan ]; do
     mac=$(jq -r .[$i].mac_address <<< $vlans)
     gateway=$(jq -r .[$i].gateway <<< $vlans)
     router=$(jq -r .[$i].router <<< $vlans)
-    jq -r .[$i].security <<< $vlans | ./attach_nic.sh "$ID" "$vlan" "$ip" "$mac" "$gateway" "$router"
+    ext_vlan=$(jq -r .[$i].public_link <<< $vlans)
+    jq -r .[$i].security <<< $vlans | ./attach_nic.sh "$ID" "$vlan" "$ip" "$mac" "$gateway" "$router" "$ext_vlan"
     let i=$i+1
 done
 virsh start $vm_ID
