@@ -8,7 +8,7 @@ source ../cloudrc
 ID=$1
 router=router-$ID
 
-[ -z "$router" ] && exit 1
+[ -z "$router" -o "$router" = "router-0" ] && exit 1
 
 ns_links=$(ip netns exec $router ip link show | grep ns- | awk '{print $2}' | cut -d'@' -f1)
 for link in $ns_links; do

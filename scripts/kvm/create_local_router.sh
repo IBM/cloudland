@@ -7,8 +7,9 @@ source ../cloudrc
 
 router=$1
 ext_vlan=$2
+
 [ "${router/router-/}" = "$router" ] && router=router-$1
-[ -z "$router" ] && exit 1
+[ -z "$router" -o "$router" = "router-0" ] && exit 1
 [ -f "/var/run/netns/$router" ] && exit 0
 
 ip netns add $router

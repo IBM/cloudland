@@ -128,10 +128,18 @@ func (a *SubnetAdmin) Get(ctx context.Context, id int64) (subnet *model.Subnet, 
 	db := DB()
 	where := memberShip.GetWhere()
 	subnet = &model.Subnet{Model: model.Model{ID: id}}
-	err = db.Preload("Router").Where(where).Take(subnet).Error
+	err = db.Where(where).Take(subnet).Error
 	if err != nil {
 		log.Println("DB failed to query subnet ", err)
 		return
+	}
+	if subnet.RouterID > 0 {
+		subnet.Router = &model.Router{Model: model.Model{ID: subnet.RouterID}}
+		err = db.Take(subnet.Router).Error
+		if err != nil {
+			log.Println("Failed to query router ", err)
+			return
+		}
 	}
 	if subnet.Type != "public" {
 		permit := memberShip.ValidateOwner(model.Reader, subnet.Owner)
@@ -149,10 +157,18 @@ func (a *SubnetAdmin) GetSubnetByUUID(ctx context.Context, uuID string) (subnet 
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	subnet = &model.Subnet{}
-	err = db.Preload("Router").Where(where).Where("uuid = ?", uuID).Take(subnet).Error
+	err = db.Where(where).Where("uuid = ?", uuID).Take(subnet).Error
 	if err != nil {
 		log.Println("Failed to query subnet, %v", err)
 		return
+	}
+	if subnet.RouterID > 0 {
+		subnet.Router = &model.Router{Model: model.Model{ID: subnet.RouterID}}
+		err = db.Take(subnet.Router).Error
+		if err != nil {
+			log.Println("Failed to query router ", err)
+			return
+		}
 	}
 	if subnet.Type != "public" {
 		permit := memberShip.ValidateOwner(model.Reader, subnet.Owner)
@@ -170,10 +186,18 @@ func (a *SubnetAdmin) GetSubnetByName(ctx context.Context, name string) (subnet 
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	subnet = &model.Subnet{}
-	err = db.Preload("Router").Where(where).Where("name = ?", name).Take(subnet).Error
+	err = db.Where(where).Where("name = ?", name).Take(subnet).Error
 	if err != nil {
-		log.Println("Failed to query subnet, %v", err)
+		log.Println("Failed to query subnet ", err)
 		return
+	}
+	if subnet.RouterID > 0 {
+		subnet.Router = &model.Router{Model: model.Model{ID: subnet.RouterID}}
+		err = db.Take(subnet.Router).Error
+		if err != nil {
+			log.Println("Failed to query router ", err)
+			return
+		}
 	}
 	if subnet.Type != "public" {
 		permit := memberShip.ValidateOwner(model.Reader, subnet.Owner)

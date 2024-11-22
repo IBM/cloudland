@@ -379,7 +379,11 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 		log.Println("Get security data for primary interface failed, %v", err)
 		return
 	}
-	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, Gateway: primary.Gateway, Router: primary.RouterID, PublicLink: primary.Router.PublicLink, IpAddr: address, MacAddr: iface.MacAddr, SecRules: securityData})
+	publicLink := primary.Vlan
+	if primary.Router != nil {
+		publicLink = primary.Router.PublicLink
+	}
+	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, Gateway: primary.Gateway, Router: primary.RouterID, PublicLink: publicLink, IpAddr: address, MacAddr: iface.MacAddr, SecRules: securityData})
 	for i, ifaceInfo := range secondaryIfaces {
 		subnet := ifaceInfo.Subnet
 		ifname := fmt.Sprintf("eth%d", i+1)
@@ -402,8 +406,12 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 			log.Println("Get security data for secondary interface failed, %v", err)
 			return
 		}
+		publicLink = subnet.Vlan
+		if subnet.Router != nil {
+			publicLink = subnet.Router.PublicLink
+		}
 		instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Gateway: subnet.Gateway, Router: subnet.RouterID, PublicLink: subnet.Router.PublicLink, IpAddr: address, MacAddr: iface.MacAddr, SecRules: securityData})
+		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Gateway: subnet.Gateway, Router: subnet.RouterID, PublicLink: publicLink, IpAddr: address, MacAddr: iface.MacAddr, SecRules: securityData})
 	}
 	var instKeys []string
 	for _, key := range keys {
