@@ -11,11 +11,13 @@ vlan=$2
 gateway=$3
 ext_vlan=$4
 
+[ "$router" = "router-0" -o "$vlan" = "$ext_vlan" ] && exit 0
+
 ./create_local_router.sh $router $ext_vlan
-cat /proc/net/dev | grep -q "^\<ln-$vni\>"
+cat /proc/net/dev | grep -q "^\<ln-$vlan\>"
 if [ $? -ne 0 ]; then
     ./create_veth.sh $router ln-$vlan ns-$vlan
-    apply_vnic -I ln-$vni
+    apply_vnic -I ln-$vlan
 fi
 brctl addif br$vlan ln-$vlan
 ip_net=$(ipcalc -b $gateway | grep Network | awk '{print $2}')

@@ -18,6 +18,7 @@ import (
 
 	"web/src/dbs"
 	"web/src/model"
+	. "web/src/common"
 
 	"github.com/jinzhu/gorm"
 	"github.com/spf13/viper"
@@ -33,20 +34,23 @@ func adminPassword() (password string) {
 }
 
 func adminInit(ctx context.Context) {
-	username := "admin"
-	dbs.AutoUpgrade("01-admin-upgrade", func(db *gorm.DB) (err error) {
-		if err = db.Take(&model.User{}, "username = ?", username).Error; err != nil {
-			//replace DB function to avoid AutoUpgrade loop
-			password := adminPassword()
-			_, err = userAdmin.Create(ctx, username, password)
-			if err != nil {
-				return
-			}
-			_, err = orgAdmin.Create(ctx, username, username)
-			if err != nil {
-				return
-			}
-		}
-		return
-	})
+        username := "admin"
+        dbs.AutoUpgrade("01-admin-upgrade", func(db *gorm.DB) (err error) {
+                if err = db.Take(&model.User{}, "username = ?", username).Error; err != nil {
+                        //replace DB function to avoid AutoUpgrade loop
+                        dbFunc := DB
+                        defer func() { DB = dbFunc }()
+                        DB = func() *gorm.DB { return db }
+                        password := adminPassword()
+                        _, err = userAdmin.Create(ctx, username, password)
+                        if err != nil {
+                                return
+                        }
+                        _, err = orgAdmin.Create(ctx, username, username)
+                        if err != nil {
+                                return
+                        }
+                }
+                return
+        })
 }
