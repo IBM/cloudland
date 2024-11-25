@@ -318,16 +318,18 @@ func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interf
 
 func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subnet, address, mac string, instance *model.Instance, ifname string, secGroups []*model.SecurityGroup, zoneID int64) (iface *model.Interface, err error) {
 	memberShip := GetMemberShip(ctx)
+	if subnet.Type == "public" {
+		permit := memberShip.CheckPermission(model.Admin)
+		if !permit {
+			log.Println("Not authorized to create interface in public subnet")
+			err = fmt.Errorf("Not authorized")
+			return
+		}
+	}
 	iface, err = CreateInterface(ctx, subnet, instance.ID, memberShip.OrgID, instance.Hyper, address, mac, ifname, "instance", secGroups)
 	if err != nil {
 		log.Println("Failed to create interface")
 		return
-	}
-	control := ""
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_host.sh '%d' '%s' '%s' '%s' '%s'", subnet.Vlan, iface.MacAddr, instance.Hostname, iface.Address.Address, subnet.DomainSearch)
-	err = hyperExecute(ctx, control, command)
-	if err != nil {
-		log.Println("Delete slave failed")
 	}
 	return
 }
@@ -495,12 +497,13 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh '%d' '%d'", instance.ID, instance.RouterID)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
-		log.Println("Delete vm command execution failed, %v", err)
+		log.Println("Delete vm command execution failed ", err)
 		return
 	}
-	err = db.Model(instance).Update("status", "deleting").Error
+	instance.Status = "deleting"
+	err = db.Save(instance).Error
 	if err != nil {
-		log.Println("Mark vm as deleting failed, %v", err)
+		log.Println("Failed to mark vm as deleting ", err)
 		return
 	}
 	return
