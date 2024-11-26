@@ -1,13 +1,13 @@
 - name: install common packages
   apt:
-    name: ['sqlite3', 'jq', 'wget', 'mkisofs', 'network-manager', 'net-tools', 'python3-pip']
+    name: ['jq', 'wget', 'mkisofs', 'network-manager', 'net-tools', 'python3-pip']
     state: present
   ignore_errors: yes
   tags: [be_pkg]
 
 - name: install packages for kvm
   apt:
-    name: ['qemu-system-x86', 'qemu-utils', 'bridge-utils', 'ipcalc', 'ipset', 'keepalived', 'iputils-arping', 'libvirt-daemon', 'libvirt-daemon-system', 'libvirt-daemon-system-systemd', 'libvirt-clients', 'dnsmasq', 'keepalived', 'dnsmasq-utils', 'conntrack']
+    name: ['qemu-system-x86', 'qemu-utils', 'bridge-utils', 'ipcalc', 'ipset', 'keepalived', 'iputils-arping', 'libvirt-daemon', 'libvirt-daemon-system', 'libvirt-daemon-system-systemd', 'libvirt-clients', 'dnsmasq', 'dnsmasq-utils', 'conntrack']
     state: present
   ignore_errors: yes
   tags: [be_pkg]
