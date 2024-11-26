@@ -7,6 +7,7 @@ version:
 
 setup:
 	go install github.com/swaggo/swag/cmd/swag@latest
+	go install golang.org/x/tools/cmd/goimports@latest
 
 docs:
 	swag i -g routes.go -dir src/apis,src/common --instanceName v1

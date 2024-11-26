@@ -41,7 +41,6 @@ type SecurityGroupPayload struct {
 type SecurityGroupPatchPayload struct {
 }
 
-//
 // @Summary get a secgroup
 // @Description get a secgroup
 // @tags Network
@@ -56,7 +55,6 @@ func (v *SecgroupAPI) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, secgroupResp)
 }
 
-//
 // @Summary patch a secgroup
 // @Description patch a secgroup
 // @tags Network
@@ -72,7 +70,6 @@ func (v *SecgroupAPI) Patch(c *gin.Context) {
 	c.JSON(http.StatusOK, secgroupResp)
 }
 
-//
 // @Summary delete a secgroup
 // @Description delete a secgroup
 // @tags Network
@@ -86,7 +83,6 @@ func (v *SecgroupAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }
 
-//
 // @Summary create a secgroup
 // @Description create a secgroup
 // @tags Network
@@ -102,7 +98,6 @@ func (v *SecgroupAPI) Create(c *gin.Context) {
 	c.JSON(http.StatusOK, secgroupResp)
 }
 
-//
 // @Summary list secgroups
 // @Description list secgroups
 // @tags Network

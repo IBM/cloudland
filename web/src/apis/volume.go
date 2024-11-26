@@ -41,7 +41,6 @@ type VolumePayload struct {
 type VolumePatchPayload struct {
 }
 
-//
 // @Summary get a volume
 // @Description get a volume
 // @tags Compute
@@ -56,7 +55,6 @@ func (v *VolumeAPI) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, volumeResp)
 }
 
-//
 // @Summary patch a volume
 // @Description patch a volume
 // @tags Compute
@@ -72,7 +70,6 @@ func (v *VolumeAPI) Patch(c *gin.Context) {
 	c.JSON(http.StatusOK, volumeResp)
 }
 
-//
 // @Summary delete a volume
 // @Description delete a volume
 // @tags Compute
@@ -86,7 +83,6 @@ func (v *VolumeAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }
 
-//
 // @Summary create a volume
 // @Description create a volume
 // @tags Compute
@@ -102,7 +98,6 @@ func (v *VolumeAPI) Create(c *gin.Context) {
 	c.JSON(http.StatusOK, volumeResp)
 }
 
-//
 // @Summary list volumes
 // @Description list volumes
 // @tags Compute

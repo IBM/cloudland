@@ -1,0 +1,2 @@
+endpoint=https://127.0.0.1:8255
+token=$(curl -k -XPOST $endpoint/api/v1/login -d "{\"username\": \"admin\", \"password\": \"$admin_pass\"}" | jq -r .token)

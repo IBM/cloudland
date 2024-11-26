@@ -23,26 +23,25 @@ type InterfaceAPI struct{}
 
 type InterfaceResponse struct {
 	*BaseReference
-	Subnet         *BaseReference   `json:"subnet"`
-	MacAddress     string                  `json:"mac_address"`
-	IPAddress      string                  `json:"ip_address"`
-	IsPrimary      bool                    `json:"is_primary"`
-	FloatingIps    []*FloatingIpInfo       `json:"floating_ips,omitempty"`
-	SecurityGroups []*BaseReference `json:"security_groups,omitempty"`
+	Subnet         *BaseReference    `json:"subnet"`
+	MacAddress     string            `json:"mac_address"`
+	IPAddress      string            `json:"ip_address"`
+	IsPrimary      bool              `json:"is_primary"`
+	FloatingIps    []*FloatingIpInfo `json:"floating_ips,omitempty"`
+	SecurityGroups []*BaseReference  `json:"security_groups,omitempty"`
 }
 
 type InterfacePayload struct {
 	Subnet         *BaseReference   `json:"subnet" binding:"required"`
-	IpAddress      string                  `json:"ip_address", binding:"omitempty,ipv4"`
-	MacAddress     string                  `json:"mac_address" binding:"omitempty,mac"`
-	Name           string                  `json:"name" binding:"omitempty,min=2,max=32"`
+	IpAddress      string           `json:"ip_address", binding:"omitempty,ipv4"`
+	MacAddress     string           `json:"mac_address" binding:"omitempty,mac"`
+	Name           string           `json:"name" binding:"omitempty,min=2,max=32"`
 	SecurityGroups []*BaseReference `json:"security_group" binding:"omitempty"`
 }
 
 type InterfacePatchPayload struct {
 }
 
-//
 // @Summary get a interface
 // @Description get a interface
 // @tags Network
@@ -57,7 +56,6 @@ func (v *InterfaceAPI) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, interfaceResp)
 }
 
-//
 // @Summary patch a interface
 // @Description patch a interface
 // @tags Network
@@ -73,7 +71,6 @@ func (v *InterfaceAPI) Patch(c *gin.Context) {
 	c.JSON(http.StatusOK, interfaceResp)
 }
 
-//
 // @Summary delete a interface
 // @Description delete a interface
 // @tags Network
@@ -87,7 +84,6 @@ func (v *InterfaceAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }
 
-//
 // @Summary create a interface
 // @Description create a interface
 // @tags Network
@@ -103,7 +99,6 @@ func (v *InterfaceAPI) Create(c *gin.Context) {
 	c.JSON(http.StatusOK, interfaceResp)
 }
 
-//
 // @Summary list interfaces
 // @Description list interfaces
 // @tags Network

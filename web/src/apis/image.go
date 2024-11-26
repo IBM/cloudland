@@ -45,7 +45,6 @@ type ImagePayload struct {
 type ImagePatchPayload struct {
 }
 
-//
 // @Summary get a image
 // @Description get a image
 // @tags Compute
@@ -60,7 +59,6 @@ func (v *ImageAPI) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, imageResp)
 }
 
-//
 // @Summary patch a image
 // @Description patch a image
 // @tags Compute
@@ -76,7 +74,6 @@ func (v *ImageAPI) Patch(c *gin.Context) {
 	c.JSON(http.StatusOK, imageResp)
 }
 
-//
 // @Summary delete a image
 // @Description delete a image
 // @tags Compute
@@ -90,7 +87,6 @@ func (v *ImageAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }
 
-//
 // @Summary create a image
 // @Description create a image
 // @tags Compute
@@ -120,7 +116,6 @@ func (v *ImageAPI) getImageResponse(ctx context.Context, image *model.Image) (im
 	return
 }
 
-//
 // @Summary list images
 // @Description list images
 // @tags Compute

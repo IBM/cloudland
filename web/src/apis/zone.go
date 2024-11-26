@@ -35,7 +35,6 @@ type ZoneListResponse struct {
 	Zones  []*ZoneResponse `json:"zones"`
 }
 
-//
 // @Summary get a zonevisor
 // @Description get a zonevisor
 // @tags Zone
@@ -50,7 +49,6 @@ func (v *ZoneAPI) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, zoneResp)
 }
 
-//
 // @Summary list zonevisors
 // @Description list zonevisors
 // @tags Zone

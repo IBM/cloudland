@@ -470,7 +470,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 	}
 	if instance.FloatingIps != nil {
 		for _, fip := range instance.FloatingIps {
-			err = floatingipAdmin.Delete(ctx, fip.ID)
+			err = floatingipAdmin.Delete(ctx, fip)
 			if err != nil {
 				log.Println("Failed to delete floating ip, %v", err)
 				return
@@ -883,19 +883,14 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 	c.Redirect(redirectTo)
 }
 
-func (v *InstanceView) checkNetparam(subnetID int64, IP, mac string) (macAddr string, err error) {
-	subnet := &model.Subnet{Model: model.Model{ID: subnetID}}
-	err = DB().Take(subnet).Error
+func (v *InstanceView) checkNetparam(subnet *model.Subnet, IP, mac string) (macAddr string, err error) {
+	_, inNet, err := net.ParseCIDR(subnet.Network)
 	if err != nil {
-		log.Println("DB failed to query subnet ", err)
+		log.Println("CIDR parsing failed ", err)
 		return
 	}
-	inNet := &net.IPNet{
-		IP:   net.ParseIP(subnet.Network),
-		Mask: net.IPMask(net.ParseIP(subnet.Netmask).To4()),
-	}
 	if IP != "" && !inNet.Contains(net.ParseIP(IP)) {
-		log.Println("Primary IP not belonging to subnet")
+		log.Printf("Primary IP %s not belonging to subnet %v\n", IP, subnet)
 		err = fmt.Errorf("Primary IP not belonging to subnet")
 		return
 	}
@@ -998,16 +993,16 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	primaryIP := c.QueryTrim("primaryip")
 	ipAddr := strings.Split(primaryIP, "/")[0]
 	primaryMac := c.QueryTrim("primarymac")
-	macAddr, err := v.checkNetparam(int64(primaryID), ipAddr, primaryMac)
-	if err != nil {
-		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
 	primarySubnet, err := subnetAdmin.Get(ctx, int64(primaryID))
 	if err != nil {
 		log.Println("Get primary subnet failed", err)
 		c.HTML(http.StatusBadRequest, err.Error())
+		return
+	}
+	macAddr, err := v.checkNetparam(primarySubnet, ipAddr, primaryMac)
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	secgroups := c.QueryTrim("secgroups")

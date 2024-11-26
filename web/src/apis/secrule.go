@@ -41,7 +41,6 @@ type SecrulePayload struct {
 type SecrulePatchPayload struct {
 }
 
-//
 // @Summary get a secrule
 // @Description get a secrule
 // @tags Network
@@ -56,7 +55,6 @@ func (v *SecruleAPI) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, secruleResp)
 }
 
-//
 // @Summary patch a secrule
 // @Description patch a secrule
 // @tags Network
@@ -72,7 +70,6 @@ func (v *SecruleAPI) Patch(c *gin.Context) {
 	c.JSON(http.StatusOK, secruleResp)
 }
 
-//
 // @Summary delete a secrule
 // @Description delete a secrule
 // @tags Network
@@ -86,7 +83,6 @@ func (v *SecruleAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }
 
-//
 // @Summary create a secrule
 // @Description create a secrule
 // @tags Network
@@ -102,7 +98,6 @@ func (v *SecruleAPI) Create(c *gin.Context) {
 	c.JSON(http.StatusOK, secruleResp)
 }
 
-//
 // @Summary list secrules
 // @Description list secrules
 // @tags Network

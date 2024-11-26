@@ -81,7 +81,7 @@ func HyperStatus(ctx context.Context, args []string) (status string, err error) 
 			return
 		}
 	}
-	err = db.Where("hostid = ?", hyperID).FirstOrCreate(hyper).Error
+	err = db.Where("hostid = ?", hyperID).Assign(hyper).FirstOrCreate(hyper).Error
 	if err != nil {
 		log.Println("Failed to create resource", err)
 		return

@@ -37,14 +37,13 @@ type VPCListResponse struct {
 }
 
 type VPCPayload struct {
-	Name          string                `json:"name" binding:"required,min=2,max=32"`
-	PublicLink    int32 `json:"public_link" binding:"omitempty"`
+	Name       string `json:"name" binding:"required,min=2,max=32"`
+	PublicLink int64  `json:"public_link" binding:"omitempty"`
 }
 
 type VPCPatchPayload struct {
 }
 
-//
 // @Summary get a vpc
 // @Description get a vpc
 // @tags Network
@@ -70,7 +69,6 @@ func (v *VPCAPI) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, vpcResp)
 }
 
-//
 // @Summary patch a vpc
 // @Description patch a vpc
 // @tags Network
@@ -86,7 +84,6 @@ func (v *VPCAPI) Patch(c *gin.Context) {
 	c.JSON(http.StatusOK, vpcResp)
 }
 
-//
 // @Summary delete a vpc
 // @Description delete a vpc
 // @tags Network
@@ -112,7 +109,6 @@ func (v *VPCAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }
 
-//
 // @Summary create a vpc
 // @Description create a vpc
 // @tags Network
@@ -161,7 +157,6 @@ func (v *VPCAPI) getVPCResponse(ctx context.Context, router *model.Router) (vpcR
 	return
 }
 
-//
 // @Summary list vpcs
 // @Description list vpcs
 // @tags Network

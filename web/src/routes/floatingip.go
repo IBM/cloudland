@@ -38,75 +38,143 @@ type FloatingIps struct {
 type FloatingIpAdmin struct{}
 type FloatingIpView struct{}
 
-func (a *FloatingIpAdmin) Create(ctx context.Context, instID, ifaceID int64, types []string, publicIp string) (floatingips []*model.FloatingIp, err error) {
+func (a *FloatingIpAdmin) Create(ctx context.Context, instance *model.Instance, publicIp string, publicLink int64) (floatingips []*model.FloatingIp, err error) {
 	memberShip := GetMemberShip(ctx)
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		err = fmt.Errorf("Not authorized for this operation")
+		return
+	}
 	db := DB()
-	instance := &model.Instance{Model: model.Model{ID: instID}}
-	err = db.Model(instance).Take(instance).Error
+	floatingip := &model.FloatingIp{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, InstanceID: 0, RouterID: 0}
+	err = db.Create(floatingip).Error
 	if err != nil {
-		log.Println("DB failed to query instance, %v", err)
+		log.Println("DB failed to create floating ip", err)
 		return
 	}
-	err = db.Preload("Address").Preload("Address.Subnet").Where("instance = ? and primary_if = ?", instID, true).Find(&instance.Interfaces).Error
+	var router *model.Router
+	if instance != nil {
+		router = &model.Router{Model: model.Model{ID: instance.RouterID}}
+		err = db.Take(router).Error
+		if err != nil {
+			log.Println("DB failed to query floatingIp ", err)
+			return
+		}
+		if publicLink > 0 && publicLink != router.PublicLink {
+			log.Println("Public link mismatch")
+			err = fmt.Errorf("Public link mismatch")
+			return
+		}
+		publicLink = router.PublicLink
+	}
+	fipIface, pubSubnet, err := AllocateFloatingIp(ctx, floatingip.ID, memberShip.OrgID, publicIp, publicLink)
 	if err != nil {
-		log.Println("DB failed to query interfaces, %v", err)
+		log.Println("DB failed to allocate floating ip", err)
 		return
 	}
-	err = db.Where("instance_id = ?", instID).Find(&instance.FloatingIps).Error
-	if err == nil && instance.FloatingIps != nil && len(instance.FloatingIps) > 0 {
-		log.Println("DB failed to query instance, %v", err)
-		floatingips = instance.FloatingIps
-		return
+	floatingip.FipAddress = fipIface.Address.Address
+	floatingip.IPAddress = strings.Split(floatingip.FipAddress, "/")[0]
+	floatingip.PublicLink = pubSubnet.Vlan
+	floatingip.Gateway = pubSubnet.Gateway
+	if instance != nil {
+		err = a.Update(ctx, floatingip, instance, router)
+		if err != nil {
+			log.Println("Execute floating ip failed", err)
+			return
+		}
 	}
-	iface := instance.Interfaces[0]
-	routerID := iface.Address.Subnet.RouterID
-	if routerID <= 0 {
-		err = fmt.Errorf("Floating IP can not be created without a router")
-		log.Println("Floating IP can not be created without a router")
-		return
-	}
-	router := &model.Router{Model: model.Model{ID: routerID}}
-	err = db.Model(router).Take(router).Error
+	err = db.Save(floatingip).Error
 	if err != nil {
-		log.Println("DB failed to query router, %v", err)
+		log.Println("DB failed to update floating ip", err)
 		return
-	}
-	for _, ftype := range types {
-		floatingip := &model.FloatingIp{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, InstanceID: instID, RouterID: router.ID, Type: ftype}
-		err = db.Create(floatingip).Error
-		if err != nil {
-			log.Println("DB failed to create floating ip", err)
-			return
-		}
-		address := publicIp
-		var fipIface *model.Interface
-		var gateway string
-		fipIface, gateway, err = AllocateFloatingIp(ctx, floatingip.ID, memberShip.OrgID, router, ftype, address)
-		if err != nil {
-			log.Println("DB failed to allocate floating ip", err)
-			return
-		}
-		floatingip.FipAddress = fipIface.Address.Address
-		floatingip.IntAddress = iface.Address.Address
-		floatingip.IPAddress = strings.Split(floatingip.FipAddress, "/")[0]
-		err = db.Save(floatingip).Error
-		if err != nil {
-			log.Println("DB failed to update floating ip", err)
-			return
-		}
-		floatingips = append(floatingips, floatingip)
-		control := fmt.Sprintf("inter=%d", instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_floating.sh '%d' '%s' '%s' '%s'", router.ID, floatingip.FipAddress, iface.Address.Address, gateway)
-		err = hyperExecute(ctx, control, command)
-		if err != nil {
-			log.Println("Create floating ip failed", err)
-			return
-		}
 	}
 	return
 }
 
-func (a *FloatingIpAdmin) Delete(ctx context.Context, id int64) (err error) {
+func (a *FloatingIpAdmin) Update(ctx context.Context, floatingip *model.FloatingIp, instance *model.Instance, router *model.Router) (err error) {
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		err = fmt.Errorf("Not authorized for this operation")
+		return
+	}
+	instID := instance.ID
+	routerID := instance.RouterID
+	db := DB()
+	if router == nil {
+		router := &model.Router{Model: model.Model{ID: routerID}}
+		err = db.Take(router).Error
+		if err != nil {
+			log.Println("DB failed to query floatingIp ", err)
+			return
+		}
+	}
+	if floatingip.PublicLink != router.PublicLink {
+		log.Println("Public link mismatch")
+		err = fmt.Errorf("Public link mismatch")
+		return
+	}
+	var primaryIface *model.Interface
+	for i, iface := range instance.Interfaces {
+		if iface.PrimaryIf {
+			primaryIface = instance.Interfaces[i]
+			break
+		}
+	}
+	if primaryIface == nil {
+		err = fmt.Errorf("No primary interface for the instance, %d", instID)
+		return
+	}
+	floatingip.IntAddress = primaryIface.Address.Address
+	err = db.Save(floatingip).Error
+	if err != nil {
+		log.Println("DB failed to update floating ip", err)
+		return
+	}
+	control := fmt.Sprintf("inter=%d", instance.Hyper)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_floating.sh '%d' '%s' '%s' '%s'", router.ID, floatingip.FipAddress, primaryIface.Address.Address, floatingip.Gateway)
+	err = hyperExecute(ctx, control, command)
+	if err != nil {
+		log.Println("Execute floating ip failed", err)
+		return
+	}
+	return
+}
+
+func (a *FloatingIpAdmin) Get(ctx context.Context, id int64) (floatingIp *model.FloatingIp, err error) {
+	if id <= 0 {
+		err = fmt.Errorf("Invalid floatingIp ID: %d", id)
+		log.Println(err)
+		return
+	}
+	memberShip := GetMemberShip(ctx)
+	db := DB()
+	where := memberShip.GetWhere()
+	floatingIp = &model.FloatingIp{Model: model.Model{ID: id}}
+	err = db.Preload("Router").Preload("Instance").Preload("Interface").Where(where).Take(floatingIp).Error
+	if err != nil {
+		log.Println("DB failed to query floatingIp ", err)
+		return
+	}
+	return
+}
+
+func (a *FloatingIpAdmin) GetFloatingIpByUUID(ctx context.Context, uuID string) (floatingIp *model.FloatingIp, err error) {
+	db := DB()
+	memberShip := GetMemberShip(ctx)
+	where := memberShip.GetWhere()
+	floatingIp = &model.FloatingIp{}
+	err = db.Preload("Router").Preload("Instance").Preload("Interface").Where(where).Where("uuid = ?", uuID).Take(floatingIp).Error
+	if err != nil {
+		log.Println("Failed to query floatingIp, %v", err)
+		return
+	}
+	return
+}
+
+func (a *FloatingIpAdmin) Delete(ctx context.Context, floatingIp *model.FloatingIp) (err error) {
 	db := DB()
 	db = db.Begin()
 	defer func() {
@@ -117,19 +185,14 @@ func (a *FloatingIpAdmin) Delete(ctx context.Context, id int64) (err error) {
 		}
 	}()
 	ctx = SaveTXtoCtx(ctx, db)
-	floatingip := &model.FloatingIp{Model: model.Model{ID: id}}
-	if err = db.Preload("Instance").Find(floatingip).Error; err != nil {
-		log.Println("Failed to query floating ip", err)
-		return
-	}
-	control := fmt.Sprintf("inter=%d", floatingip.Instance.Hyper)
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_floating.sh '%d' '%s' '%s'", floatingip.RouterID, floatingip.FipAddress, floatingip.IntAddress)
+	control := fmt.Sprintf("inter=%d", floatingIp.Instance.Hyper)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_floating.sh '%d' '%s' '%s'", floatingIp.RouterID, floatingIp.FipAddress, floatingIp.IntAddress)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Create floating ip failed", err)
 		return
 	}
-	err = DeallocateFloatingIp(ctx, id)
+	err = DeallocateFloatingIp(ctx, floatingIp.ID)
 	if err != nil {
 		log.Println("DB failed to deallocate floating ip", err)
 		return
@@ -227,7 +290,7 @@ func (v *FloatingIpView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *FloatingIpView) Delete(c *macaron.Context, store session.Store) (err error) {
-	memberShip := GetMemberShip(c.Req.Context())
+	ctx := c.Req.Context()
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "id does not exist"
@@ -236,19 +299,19 @@ func (v *FloatingIpView) Delete(c *macaron.Context, store session.Store) (err er
 	}
 	floatingipID, err := strconv.Atoi(id)
 	if err != nil {
-		log.Println("Invalid floating ip ID, %v", err)
+		log.Println("Invalid floating ip ID ", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	permit, err := memberShip.CheckOwner(model.Writer, "floating_ips", int64(floatingipID))
-	if !permit {
-		log.Println("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
+	floatingIp, err := floatingipAdmin.Get(ctx, int64(floatingipID))
+	if err != nil {
+		log.Println("Failed to get floating ip ", err)
+		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	err = floatingipAdmin.Delete(c.Req.Context(), int64(floatingipID))
+	err = floatingipAdmin.Delete(ctx, floatingIp)
 	if err != nil {
 		log.Println("Failed to delete floating ip, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
@@ -289,100 +352,49 @@ func (v *FloatingIpView) New(c *macaron.Context, store session.Store) {
 }
 
 func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
-	memberShip := GetMemberShip(c.Req.Context())
-	permit := memberShip.CheckPermission(model.Writer)
-	if !permit {
-		log.Println("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
+	ctx := c.Req.Context()
 	redirectTo := "../floatingips"
 	instID := c.QueryInt64("instance")
-	ftype := c.QueryTrim("ftype")
-	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instID))
-	if !permit {
-		log.Println("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
-	if ftype == "" {
-		ftype = "public"
-	}
+	pubLink := c.QueryInt64("public")
 	publicIp := c.QueryTrim("publicip")
-	types := strings.Split(ftype, ",")
-	floatingips, err := floatingipAdmin.Create(c.Req.Context(), int64(instID), 0, types, publicIp)
+	instance, err := instanceAdmin.Get(ctx, int64(instID))
 	if err != nil {
-		log.Println("Failed to create floating ip", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
+		log.Println("Failed to get instance ", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
-	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, floatingips)
+		return
+	}
+	_, err = floatingipAdmin.Create(c.Req.Context(), instance, publicIp, pubLink)
+	if err != nil {
+		log.Println("Failed to create floating ip", err)
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(500, "500")
 		return
 	}
 	c.Redirect(redirectTo)
 }
 
-func (v *FloatingIpView) Assign(c *macaron.Context, store session.Store) {
-	memberShip := GetMemberShip(c.Req.Context())
-	permit := memberShip.CheckPermission(model.Writer)
-	if !permit {
-		log.Println("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
-	instID := c.QueryInt64("instance")
-	floatingIP := c.QueryTrim("floatingIP")
-	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instID))
-	if !permit {
-		log.Println("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
-	types := []string{"public"}
-	fipsData := &FloatingIps{Instance: instID}
-	floatingips, err := floatingipAdmin.Create(c.Req.Context(), int64(instID), 0, types, floatingIP)
-	if err != nil {
-		log.Println("Failed to create floating ip", err)
-		fipsData.PublicIp = ""
-	} else {
-		for _, fip := range floatingips {
-			if fip.Type == "public" {
-				fipsData.PublicIp = fip.FipAddress
-			} else if fip.Type == "private" {
-				fipsData.PrivateIp = fip.FipAddress
-			}
-		}
-	}
-	c.JSON(200, fipsData)
-}
-
-func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, router *model.Router, ftype, address string) (fipIface *model.Interface, gateway string, err error) {
+func AllocateFloatingIp(ctx context.Context, floatingipID, owner int64, address string, publicLink int64) (fipIface *model.Interface, publicSubnet *model.Subnet, err error) {
 	var db *gorm.DB
 	ctx, db = GetCtxDB(ctx)
 	subnets := []*model.Subnet{}
-	err = db.Where("type = 'public' and vlan = ?", router.PublicLink).Find(&subnets).Error
-	if err != nil {
+	where := "type = 'public'"
+	if publicLink > 0 {
+		where = fmt.Sprintf("%s and vlan = ?", where, publicLink)
+	}
+	err = db.Where(where).Find(&subnets).Error
+	if err != nil || len(subnets) == 0 {
 		log.Println("Failed to query subnets ", err)
 		return
 	}
-	name := ftype + "fip"
+	name := "fip"
 	log.Printf("Subnets: %v\n", subnets)
-	for _, subnet := range subnets {
+	for i, subnet := range subnets {
 		fipIface, err = CreateInterface(ctx, subnet, floatingipID, owner, -1, address, "", name, "floating", nil)
 		if err == nil {
 			log.Printf("FipIface: %v\n", fipIface)
-			gateway = subnet.Gateway
-			return
+			publicSubnet = subnets[i]
+			break
 		}
 	}
 	return

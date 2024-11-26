@@ -41,7 +41,6 @@ type HyperPayload struct {
 type HyperPatchPayload struct {
 }
 
-//
 // @Summary get a hypervisor
 // @Description get a hypervisor
 // @tags Administration
@@ -56,7 +55,6 @@ func (v *HyperAPI) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, hyperResp)
 }
 
-//
 // @Summary list hypervisors
 // @Description list hypervisors
 // @tags Administration

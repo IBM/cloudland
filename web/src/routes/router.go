@@ -71,7 +71,7 @@ func createRouterIface(ctx context.Context, rtype string, router *model.Router, 
 	return
 }
 
-func (a *RouterAdmin) Create(ctx context.Context, name string, publicLink int32) (router *model.Router, err error) {
+func (a *RouterAdmin) Create(ctx context.Context, name string, publicLink int64) (router *model.Router, err error) {
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -500,8 +500,8 @@ func (v *RouterView) Patch(c *macaron.Context, store session.Store) {
 func (v *RouterView) Create(c *macaron.Context, store session.Store) {
 	redirectTo := "../routers"
 	name := c.QueryTrim("name")
-	pubLink := c.QueryInt("public")
-	_, err := routerAdmin.Create(c.Req.Context(), name, int32(pubLink))
+	pubLink := c.QueryInt64("public")
+	_, err := routerAdmin.Create(c.Req.Context(), name, pubLink)
 	if err != nil {
 		log.Println("Failed to create router, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
