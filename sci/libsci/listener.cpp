@@ -53,10 +53,10 @@
 Listener:: Listener(int hndl)
         : Thread(hndl), bindPort(-1)
 {
-	char tmp[256] = {0};
+    char tmp[256] = {0};
     socket = new Socket();
-	::gethostname(tmp, sizeof(tmp));
-	bindName = SysUtil::get_hostname(tmp);
+    ::gethostname(tmp, sizeof(tmp));
+    bindName = SysUtil::get_hostname(tmp);
     if (bindName == "") {
         bindName = tmp;
     }

@@ -8,25 +8,25 @@
   hosts: hyper
   become_user: root
   roles:
-    - {role: hyper, become: yes, tags: [hyper]}
-    - {role: imgrepo, become: yes, tags: [nginx]}
+    - {role: hyper, become: yes}
+    - {role: nginx, become: yes}
 
 # deploy root node
 - name: install cland
   hosts: cland
   roles:
-    - {role: cland, become: yes, tags: [cland]}
+    - {role: cland, become: yes}
 
 # deploy web
 - name: install web
   hosts: web
   become_user: root
   roles:
-    - {role: web, become: yes, tags: [web]}
+    - {role: web, become: yes}
 
 # deploy database
 - name: install database
   hosts: database
   become_user: root
   roles:
-    - {role: database, become: yes, tags: [database]}
+    - {role: database, become: yes}

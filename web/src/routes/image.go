@@ -291,7 +291,7 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	instance := c.QueryInt64("instance")
 	osVersion := c.QueryTrim("osVersion")
 	diskType := c.QueryTrim("diskType")
-	virtType := c.QueryTrim("virtType")
+	virtType := "kvm-x86_64"
 	userName := c.QueryTrim("userName")
 	isOcpLB := c.QueryTrim("ocpLB")
 	isLB := false

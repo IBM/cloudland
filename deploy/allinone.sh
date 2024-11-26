@@ -132,11 +132,11 @@ diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 
 gen_hosts
 cd $cland_root_dir/deploy
-ansible-playbook cloudland.yml -e @$net_conf --tags hosts,selinux,be_pkg,be_conf,firewall
+ansible-playbook cloudland.yml -e @$net_conf --skip-tags fe_bin,sci,sync,firewall #--tags hosts,be_pkg,be_conf,be_srv
 #allinone_firewall
 inst_web
 #inst_console_proxy
-ansible-playbook cloudland.yml -e @$net_conf --tags be_srv,fe_srv,console,imgrepo
-sudo chown -R cland.cland $cland_root_dir
+#ansible-playbook cloudland.yml -e @$net_conf --tags fe_srv,console,nginx
+#sudo chown -R cland.cland $cland_root_dir
 
 echo "Installation completes. Log file is /tmp/allinone-deploy-2021-01-10-10:42:09.log"

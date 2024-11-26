@@ -26,7 +26,7 @@ var (
 
 var (
 	clientCmd = &cobra.Command{
-		Use: "hypercube",
+		Use: "clapi",
 	}
 )
 

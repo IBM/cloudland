@@ -42,32 +42,6 @@
                                     <label for="osVersion">{{.i18n.Tr "OS Version"}}</label>
                                     <input id="osVersion" name="osVersion" autocomplete="off">
                                 </div>
-                                <div class="inline field">
-                                    <label for="diskType">{{.i18n.Tr "Disk Type"}}</label>
-                                    <input id="diskType" name="diskType" autocomplete="off">
-                                </div>
-                                <div class="required inline field">
-                                    <label for="virtType">{{.i18n.Tr "Virtualization Type"}}</label>
-                                    <select name="virtType" id="virtType" class="ui selection dropdown">
-                                         <option value="kvm-x86_64" selected>{{.i18n.Tr "KVM on x86_64"}}</option>
-                                         <option value="kvm-s390x" selected>{{.i18n.Tr "KVM on Z"}}</option>
-                                         <option value="zvm">{{.i18n.Tr "z/VM"}}</option>
-                                    </select>
-                                </div>
-                                {{ if .IsAdmin }}
-								<div class="inline field">
-									<label for="ocpLB">{{.i18n.Tr "OpenShift_LB"}}</label>
-									<div class="ui selection dropdown">
-									  <input id="ocpLB" name="ocpLB" type="hidden">
-									  <i class="dropdown icon"></i>
-									  <div data-value="no" class="default text">{{.i18n.Tr "no"}}</div>
-									  <div class="menu">
-										<div class="item" data-value="yes" data-text="yes">{{.i18n.Tr "yes"}}</div>
-										<div class="item" data-value="no" data-text="no">{{.i18n.Tr "no"}}</div>
-									  </div>
-									</div>
-								</div>
-                                {{ end }}
                                 <div class="required inline field">
                                     <label for="userName">{{.i18n.Tr "Default Username"}}</label>
                                     <input id="userName" name="userName" autocomplete="off">

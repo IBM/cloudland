@@ -28,7 +28,7 @@ var (
 
 var (
 	clientCmd = &cobra.Command{
-		Use: "CloudlandBase",
+		Use: "clbase",
 	}
 )
 
@@ -43,7 +43,7 @@ func RootCmd() (cmd *cobra.Command) {
 	for _, arg := range os.Args {
 		if arg == "--daemon" {
 			daemonCmd := &cobra.Command{
-				Use:  "hypercube",
+				Use:  "CloudlandBase",
 				RunE: RunDaemon,
 			}
 			daemonCmd.Flags().Bool("daemon", false, "daemon")

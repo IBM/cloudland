@@ -1,36 +1,33 @@
 [base]
 listen = "127.0.0.1:5443"
-endpoint = "https://142.0.129.162:443"
 key = "/etc/ssl/private/cland-selfsigned.key"
 cert = "/etc/ssl/certs/cland-selfsigned.crt"
 
 [console]
-host = "142.0.129.162"
+host = "10.9.8.204"
 port = 443
 
 [rest]
 listen = "127.0.0.1:8255"
-endpoint = "https://142.0.129.162:8255"
 key = "/etc/ssl/private/cland-selfsigned.key"
 cert = "/etc/ssl/certs/cland-selfsigned.crt"
 
 [internal]
-listen = "server-2:5005"
-endpoint = "142.0.129.162:5005"
+listen = "127.0.0.1:5005"
 
 [sci]
-endpoint = "http://server-2:5006"
+endpoint = "http://127.0.0.1:5006"
 
 [db]
 type = "postgres"
-uri = "host=127.0.0.1 port=5432 user=postgres password=Wish-Y0u-Happy dbname=hypercube sslmode=disable"
+uri = "host=127.0.0.1 port=5432 user=postgres password=Wish-Y0u-Happy dbname=cloudland sslmode=disable"
 debug = true
 open = 50
 lifetime = 30
 idle = 1
 
 [admin]
-password = "passw0rd"
+password = "Wish-Y0u-Happy"
 
 [key]
 private = """-----BEGIN RSA PRIVATE KEY-----
