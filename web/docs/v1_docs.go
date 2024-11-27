@@ -2659,10 +2659,29 @@ const docTemplatev1 = `{
             }
         },
         "apis.FloatingIpPatchPayload": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "instance": {
+                    "$ref": "#/definitions/common.BaseID"
+                }
+            }
         },
         "apis.FloatingIpPayload": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "bandwidth": {
+                    "type": "integer"
+                },
+                "instance": {
+                    "$ref": "#/definitions/common.BaseID"
+                },
+                "public_ip": {
+                    "type": "string"
+                },
+                "public_subnet": {
+                    "$ref": "#/definitions/common.BaseReference"
+                }
+            }
         },
         "apis.FloatingIpResponse": {
             "type": "object",
@@ -2670,10 +2689,25 @@ const docTemplatev1 = `{
                 "id": {
                     "type": "string"
                 },
+                "instance": {
+                    "$ref": "#/definitions/common.BaseReference"
+                },
+                "interface": {
+                    "$ref": "#/definitions/common.BaseReference"
+                },
                 "name": {
                     "type": "string",
                     "maxLength": 32,
                     "minLength": 2
+                },
+                "private_ip": {
+                    "type": "string"
+                },
+                "public_ip": {
+                    "type": "string"
+                },
+                "vpc": {
+                    "$ref": "#/definitions/common.BaseReference"
                 }
             }
         },
@@ -3417,9 +3451,6 @@ const docTemplatev1 = `{
                     "type": "string",
                     "maxLength": 32,
                     "minLength": 2
-                },
-                "public_link": {
-                    "type": "integer"
                 }
             }
         },
@@ -3537,6 +3568,17 @@ const docTemplatev1 = `{
             "properties": {
                 "error_message": {
                     "description": "InternalErr error\n\tErrorCode int ` + "`" + `json:\"error_code\"` + "`" + `",
+                    "type": "string"
+                }
+            }
+        },
+        "common.BaseID": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
                     "type": "string"
                 }
             }

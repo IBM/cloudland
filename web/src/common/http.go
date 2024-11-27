@@ -19,7 +19,7 @@ type BaseReference struct {
 }
 
 type BaseID struct {
-	ID   string `json:"id" binding:"omitempty,uuid"`
+	ID   string `json:"id" binding:"required,uuid"`
 }
 
 type APIError struct {

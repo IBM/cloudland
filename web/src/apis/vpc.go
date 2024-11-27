@@ -38,7 +38,6 @@ type VPCListResponse struct {
 
 type VPCPayload struct {
 	Name       string `json:"name" binding:"required,min=2,max=32"`
-	PublicLink int64  `json:"public_link" binding:"omitempty"`
 }
 
 type VPCPatchPayload struct {
@@ -127,7 +126,7 @@ func (v *VPCAPI) Create(c *gin.Context) {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
 		return
 	}
-	router, err := routerAdmin.Create(ctx, payload.Name, payload.PublicLink)
+	router, err := routerAdmin.Create(ctx, payload.Name)
 	if err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Failed to create vpc", err)
 		return

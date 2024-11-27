@@ -46,11 +46,14 @@ type FloatingIpListResponse struct {
 }
 
 type FloatingIpPayload struct {
-	PublicIP string  `json:"public_ip" binding:"omitempty"`
+	PublicSubnet *BaseReference `json:"public_subnet" binding:"omitempty"`
+	PublicIP string  `json:"public_ip" binding:"omitempty,ipv4"`
 	Instance *BaseID `json:"instance" binding:"omitempty"`
+	Bandwidth int64  `json:"bandwidth" binding:"omitempty"`
 }
 
 type FloatingIpPatchPayload struct {
+	Instance *BaseID `json:"instance" binding:"omitempty"`
 }
 
 // @Summary get a floating ip
@@ -129,7 +132,39 @@ func (v *FloatingIpAPI) Delete(c *gin.Context) {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /floating_ips [post]
 func (v *FloatingIpAPI) Create(c *gin.Context) {
-	floatingIpResp := &FloatingIpResponse{}
+	ctx := c.Request.Context()
+	payload := &FloatingIpPayload{}
+	err := c.ShouldBindJSON(payload)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
+		return
+	}
+	var publicSubnet *model.Subnet
+	if payload.PublicSubnet != nil {
+		publicSubnet, err = subnetAdmin.GetSubnet(ctx, payload.PublicSubnet)
+		if err != nil {
+			ErrorResponse(c, http.StatusBadRequest, "Failed to get public subnet", err)
+			return
+		}
+	}
+	var instance *model.Instance
+	if payload.Instance != nil {
+		instance, err = instanceAdmin.GetInstanceByUUID(ctx, payload.Instance.ID)
+		if err != nil {
+			ErrorResponse(c, http.StatusBadRequest, "Failed to get instance", err)
+			return
+		}
+	}
+	floatingIp, err := floatingIpAdmin.Create(ctx, instance, publicSubnet, payload.PublicIP)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Failed to create floating ip", err)
+		return
+	}
+	floatingIpResp, err := v.getFloatingIpResponse(ctx, floatingIp)
+	if err != nil {
+		ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+		return
+	}
 	c.JSON(http.StatusOK, floatingIpResp)
 }
 

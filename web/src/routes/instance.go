@@ -381,11 +381,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 		log.Println("Get security data for primary interface failed, %v", err)
 		return
 	}
-	publicLink := primary.Vlan
-	if primary.Router != nil {
-		publicLink = primary.Router.PublicLink
-	}
-	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, Gateway: primary.Gateway, Router: primary.RouterID, PublicLink: publicLink, IpAddr: address, MacAddr: iface.MacAddr, SecRules: securityData})
+	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, Gateway: primary.Gateway, Router: primary.RouterID, IpAddr: address, MacAddr: iface.MacAddr, SecRules: securityData})
 	for i, ifaceInfo := range secondaryIfaces {
 		subnet := ifaceInfo.Subnet
 		ifname := fmt.Sprintf("eth%d", i+1)
@@ -408,12 +404,8 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 			log.Println("Get security data for secondary interface failed, %v", err)
 			return
 		}
-		publicLink = subnet.Vlan
-		if subnet.Router != nil {
-			publicLink = subnet.Router.PublicLink
-		}
 		instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Gateway: subnet.Gateway, Router: subnet.RouterID, PublicLink: publicLink, IpAddr: address, MacAddr: iface.MacAddr, SecRules: securityData})
+		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: address, MacAddr: iface.MacAddr, SecRules: securityData})
 	}
 	var instKeys []string
 	for _, key := range keys {
@@ -514,8 +506,22 @@ func (a *InstanceAdmin) Get(ctx context.Context, id int64) (instance *model.Inst
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	instance = &model.Instance{Model: model.Model{ID: id}}
-	if err = db.Where(where).Take(instance).Error; err != nil {
-		log.Println("Failed to query instance", err)
+	if err = db.Preload("Image").Preload("Zone").Preload("Flavor").Preload("Keys").Where(where).Take(instance).Error; err != nil {
+		log.Println("Failed to query instance, %v", err)
+		return
+	}
+	if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
+		log.Println("Failed to query floating ip(s), %v", err)
+		return
+	}
+	if err = db.Preload("Secgroups").Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
+		log.Println("Failed to query interfaces %v", err)
+		return
+	}
+	permit := memberShip.ValidateOwner(model.Reader, instance.Owner)
+	if !permit {
+		log.Println("Not authorized to read the instance")
+		err = fmt.Errorf("Not authorized")
 		return
 	}
 	return

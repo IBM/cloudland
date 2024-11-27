@@ -21,8 +21,6 @@ type FloatingIp struct {
 	RouterID   int64
 	Router     *Router `gorm:"foreignkey:RouterID"`
 	IPAddress  string
-	Gateway    string
-	PublicLink int64
 }
 
 func init() {

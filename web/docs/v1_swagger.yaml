@@ -53,17 +53,39 @@ definitions:
         type: integer
     type: object
   apis.FloatingIpPatchPayload:
+    properties:
+      instance:
+        $ref: '#/definitions/common.BaseID'
     type: object
   apis.FloatingIpPayload:
+    properties:
+      bandwidth:
+        type: integer
+      instance:
+        $ref: '#/definitions/common.BaseID'
+      public_ip:
+        type: string
+      public_subnet:
+        $ref: '#/definitions/common.BaseReference'
     type: object
   apis.FloatingIpResponse:
     properties:
       id:
         type: string
+      instance:
+        $ref: '#/definitions/common.BaseReference'
+      interface:
+        $ref: '#/definitions/common.BaseReference'
       name:
         maxLength: 32
         minLength: 2
         type: string
+      private_ip:
+        type: string
+      public_ip:
+        type: string
+      vpc:
+        $ref: '#/definitions/common.BaseReference'
     type: object
   apis.HyperListResponse:
     properties:
@@ -563,8 +585,6 @@ definitions:
         maxLength: 32
         minLength: 2
         type: string
-      public_link:
-        type: integer
     required:
     - name
     type: object
@@ -646,6 +666,13 @@ definitions:
       error_message:
         description: "InternalErr error\n\tErrorCode int `json:\"error_code\"`"
         type: string
+    type: object
+  common.BaseID:
+    properties:
+      id:
+        type: string
+    required:
+    - id
     type: object
   common.BaseReference:
     properties:
