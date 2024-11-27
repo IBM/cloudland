@@ -67,7 +67,7 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instance *model.Instance, 
 	floatingip.IPAddress = strings.Split(floatingip.FipAddress, "/")[0]
 	floatingip.Interface = fipIface
 	if instance != nil {
-		err = a.Update(ctx, floatingip, instance)
+		err = a.Attach(ctx, floatingip, instance)
 		if err != nil {
 			log.Println("Execute floating ip failed", err)
 			return
@@ -81,7 +81,7 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instance *model.Instance, 
 	return
 }
 
-func (a *FloatingIpAdmin) Update(ctx context.Context, floatingip *model.FloatingIp, instance *model.Instance) (err error) {
+func (a *FloatingIpAdmin) Attach(ctx context.Context, floatingip *model.FloatingIp, instance *model.Instance) (err error) {
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -180,7 +180,7 @@ func (a *FloatingIpAdmin) GetFloatingIpByUUID(ctx context.Context, uuID string) 
 	return
 }
 
-func (a *FloatingIpAdmin) Delete(ctx context.Context, floatingIp *model.FloatingIp) (err error) {
+func (a *FloatingIpAdmin) Detach(ctx context.Context, floatingIp *model.FloatingIp) (err error) {
 	db := DB()
 	db = db.Begin()
 	defer func() {
@@ -197,6 +197,33 @@ func (a *FloatingIpAdmin) Delete(ctx context.Context, floatingIp *model.Floating
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Create floating ip failed", err)
+			return
+		}
+	}
+	floatingIp.InstanceID = 0
+	err = db.Save(floatingIp).Error
+	if err != nil {
+		log.Println("Failed to update instance ID for floating ip", err)
+		return
+	}
+	return
+}
+
+func (a *FloatingIpAdmin) Delete(ctx context.Context, floatingIp *model.FloatingIp) (err error) {
+	db := DB()
+	db = db.Begin()
+	defer func() {
+		if err == nil {
+			db.Commit()
+		} else {
+			db.Rollback()
+		}
+	}()
+	ctx = SaveTXtoCtx(ctx, db)
+	if floatingIp.Instance != nil {
+		err = a.Detach(ctx, floatingIp)
+		if err != nil {
+			log.Println("Failed to detach floating ip", err)
 			return
 		}
 	}

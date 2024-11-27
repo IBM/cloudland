@@ -92,7 +92,43 @@ func (v *FloatingIpAPI) Get(c *gin.Context) {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /floating_ips/{id} [patch]
 func (v *FloatingIpAPI) Patch(c *gin.Context) {
-	floatingIpResp := &FloatingIpResponse{}
+	ctx := c.Request.Context()
+	uuID := c.Param("id")
+	floatingIp, err := floatingIpAdmin.GetFloatingIpByUUID(ctx, uuID)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid floating ip query", err)
+		return
+	}
+	payload := &FloatingIpPatchPayload{}
+	err = c.ShouldBindJSON(payload)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
+		return
+	}
+	if payload.Instance == nil {
+		err = floatingIpAdmin.Detach(ctx, floatingIp)
+		if err != nil {
+			ErrorResponse(c, http.StatusBadRequest, "Failed to detach floating ip", err)
+			return
+		}
+	} else {
+		var instance *model.Instance
+		instance, err = instanceAdmin.GetInstanceByUUID(ctx, payload.Instance.ID)
+		if err != nil {
+			ErrorResponse(c, http.StatusBadRequest, "Failed to get instance", err)
+			return
+		}
+		err = floatingIpAdmin.Attach(ctx, floatingIp, instance)
+		if err != nil {
+			ErrorResponse(c, http.StatusBadRequest, "Failed to attach floating ip", err)
+			return
+		}
+	}
+	floatingIpResp, err := v.getFloatingIpResponse(ctx, floatingIp)
+	if err != nil {
+		ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+		return
+	}
 	c.JSON(http.StatusOK, floatingIpResp)
 }
 

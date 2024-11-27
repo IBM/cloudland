@@ -462,7 +462,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 	}
 	if instance.FloatingIps != nil {
 		for _, fip := range instance.FloatingIps {
-			err = floatingipAdmin.Delete(ctx, fip)
+			err = floatingipAdmin.Detach(ctx, fip)
 			if err != nil {
 				log.Println("Failed to delete floating ip, %v", err)
 				return
