@@ -13,8 +13,8 @@ router=router-0
 ip netns add $router
 ip netns exec $router ip link set lo up
 
-./create_veth.sh $router ext-sys link-sys $ext_vlan
-ip netns exec $router ip addr add $ext_ip dev link-sys
+./create_veth.sh $router ext-$ext_vlan link-$ext_vlan
+ip netns exec $router ip addr add $ext_ip dev link-$ext_vlan
 ip netns exec $router ip route add default via $gateway
 route_ip=${ext_ip%/*}
 ip netns exec $router iptables -t nat -S | grep "source $ext_ip\>"

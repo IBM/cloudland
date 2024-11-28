@@ -15,9 +15,8 @@ while [ $i -lt $len ]; do
     if [ $? -ne 0 ]; then
         ./create_link.sh $vni
         router=$(jq -r .router <<< $rule)
-        ext_vlan=$(jq -r .public_link <<< $rule)
         gateway=$(jq -r .gateway <<< $rule)
-        ./set_subnet_gw.sh $router $vni $gateway $ext_vlan
+        ./set_subnet_gw.sh $router $vni $gateway
     fi
     outer_ip=$(jq -r .outer_ip <<< $rule)
     if [ "$outer_ip" != "$vtep_ip" ]; then

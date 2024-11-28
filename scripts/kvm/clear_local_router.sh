@@ -27,7 +27,6 @@ done
 
 ip netns exec $router ip link set lo down
 suffix=$ID
-ip link del ext-$suffix
 ip link del int-$suffix
 ip netns del $router
 
