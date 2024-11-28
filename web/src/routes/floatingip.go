@@ -437,7 +437,7 @@ func (v *FloatingIpView) New(c *macaron.Context, store session.Store) {
 		}
 	}
 	c.Data["Instances"] = instances
-	c.HTML(200, "floatingIps_new")
+	c.HTML(200, "floatingips_new")
 }
 
 func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
