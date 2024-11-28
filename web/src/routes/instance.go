@@ -462,12 +462,14 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 	}
 	if instance.FloatingIps != nil {
 		for _, fip := range instance.FloatingIps {
-			err = floatingipAdmin.Detach(ctx, fip)
+			fip.Instance = instance
+			err = floatingIpAdmin.Detach(ctx, fip)
 			if err != nil {
-				log.Println("Failed to delete floating ip, %v", err)
+				log.Println("Failed to detach floating ip, %v", err)
 				return
 			}
 		}
+		instance.FloatingIps = nil
 	}
 	if err = db.Where("instance_id = ?", instance.ID).Find(&instance.Volumes).Error; err != nil {
 		log.Println("Failed to query floating ip(s), %v", err)

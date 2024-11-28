@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
         } while (true);
         pclose(fp);
         rc = SCI_Query(HEALTH_STATUS, &status);
-        sleep(random() % 5 + 1);
+        sleep(random() % 20 + 1);
     }
     SCI_Terminate();
 

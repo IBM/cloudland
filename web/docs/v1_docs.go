@@ -2641,7 +2641,7 @@ const docTemplatev1 = `{
         "apis.FloatingIpListResponse": {
             "type": "object",
             "properties": {
-                "floatingIps": {
+                "floating_ips": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/apis.FloatingIpResponse"
@@ -2685,26 +2685,18 @@ const docTemplatev1 = `{
         },
         "apis.FloatingIpResponse": {
             "type": "object",
+            "required": [
+                "id"
+            ],
             "properties": {
                 "id": {
                     "type": "string"
                 },
-                "instance": {
-                    "$ref": "#/definitions/common.BaseReference"
-                },
-                "interface": {
-                    "$ref": "#/definitions/common.BaseReference"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
-                },
-                "private_ip": {
-                    "type": "string"
-                },
                 "public_ip": {
                     "type": "string"
+                },
+                "target_interface": {
+                    "$ref": "#/definitions/apis.TargetInterface"
                 },
                 "vpc": {
                     "$ref": "#/definitions/common.BaseReference"
@@ -2800,6 +2792,20 @@ const docTemplatev1 = `{
                     "type": "integer"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "apis.InstanceInfo": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "hostname": {
+                    "type": "string"
+                },
+                "id": {
                     "type": "string"
                 }
             }
@@ -3345,6 +3351,23 @@ const docTemplatev1 = `{
                 },
                 "vpc": {
                     "$ref": "#/definitions/common.BaseReference"
+                }
+            }
+        },
+        "apis.TargetInterface": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "from_instance": {
+                    "$ref": "#/definitions/apis.InstanceInfo"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ip_address": {
+                    "type": "string"
                 }
             }
         },

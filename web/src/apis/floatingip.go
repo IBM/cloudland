@@ -11,6 +11,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"strings"
 
 	. "web/src/common"
 	"web/src/model"
@@ -29,27 +30,36 @@ type FloatingIpInfo struct {
 	IpAddress string `json:"ip_address"`
 }
 
+type TargetInterface struct {
+	*BaseID
+	IPAddress    string        `json:"ip_address"`
+	FromInstance *InstanceInfo `json:"from_instance"`
+}
+
+type InstanceInfo struct {
+	*BaseID
+	Hostname string `json:"hostname"`
+}
+
 type FloatingIpResponse struct {
-	*BaseReference
-	PublicIP  string         `json:"public_ip"`
-	PrivateIP string         `json:"private_ip"`
-	Instance  *BaseReference `json:"instance"`
-	Interface *BaseReference `json:"interface"`
-	VPC       *BaseReference `json:"vpc"`
+	*BaseID
+	PublicIP        string           `json:"public_ip"`
+	TargetInterface *TargetInterface `json:"target_interface,omitempty"`
+	VPC             *BaseReference   `json:"vpc,omitempty"`
 }
 
 type FloatingIpListResponse struct {
 	Offset      int                   `json:"offset"`
 	Total       int                   `json:"total"`
 	Limit       int                   `json:"limit"`
-	FloatingIps []*FloatingIpResponse `json:"floatingIps"`
+	FloatingIps []*FloatingIpResponse `json:"floating_ips"`
 }
 
 type FloatingIpPayload struct {
 	PublicSubnet *BaseReference `json:"public_subnet" binding:"omitempty"`
-	PublicIP string  `json:"public_ip" binding:"omitempty,ipv4"`
-	Instance *BaseID `json:"instance" binding:"omitempty"`
-	Bandwidth int64  `json:"bandwidth" binding:"omitempty"`
+	PublicIP     string         `json:"public_ip" binding:"omitempty,ipv4"`
+	Instance     *BaseID        `json:"instance" binding:"omitempty"`
+	Bandwidth    int64          `json:"bandwidth" binding:"omitempty"`
 }
 
 type FloatingIpPatchPayload struct {
@@ -206,11 +216,10 @@ func (v *FloatingIpAPI) Create(c *gin.Context) {
 
 func (v *FloatingIpAPI) getFloatingIpResponse(ctx context.Context, floatingIp *model.FloatingIp) (floatingIpResp *FloatingIpResponse, err error) {
 	floatingIpResp = &FloatingIpResponse{
-		BaseReference: &BaseReference{
+		BaseID: &BaseID{
 			ID: floatingIp.UUID,
 		},
-		PublicIP:  floatingIp.IPAddress,
-		PrivateIP: floatingIp.IntAddress,
+		PublicIP: floatingIp.IPAddress,
 	}
 	if floatingIp.Router != nil {
 		floatingIpResp.VPC = &BaseReference{
@@ -218,15 +227,20 @@ func (v *FloatingIpAPI) getFloatingIpResponse(ctx context.Context, floatingIp *m
 			Name: floatingIp.Router.Name,
 		}
 	}
-	if floatingIp.Instance != nil {
-		floatingIpResp.Instance = &BaseReference{
-			ID: floatingIp.Instance.UUID,
-		}
-	}
-	if floatingIp.Interface != nil {
-		floatingIpResp.Interface = &BaseReference{
-			ID:   floatingIp.Interface.UUID,
-			Name: floatingIp.Interface.Name,
+	if floatingIp.Instance != nil && len(floatingIp.Instance.Interfaces) > 0 {
+		instance := floatingIp.Instance
+		interIp := strings.Split(floatingIp.IntAddress, "/")[0]
+		floatingIpResp.TargetInterface = &TargetInterface{
+			BaseID: &BaseID{
+				ID:   instance.Interfaces[0].UUID,
+			},
+			IPAddress: interIp,
+			FromInstance: &InstanceInfo{
+				BaseID: &BaseID{
+					ID: instance.UUID,
+				},
+				Hostname: instance.Hostname,
+			},
 		}
 	}
 	return

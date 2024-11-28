@@ -88,22 +88,24 @@ function calc_resource()
         let virtual_cpu=$virtual_cpu+$vcpu
         let virtual_memory=$virtual_memory+$vmem
     done
-    used_disk=$(sudo du -s $image_dir | awk '{print $1}')
-    for disk in $(ls $image_dir/* 2>/dev/null); do
-        if [[ "$disk" = "/opt/cloudland/cache/instance/old_inst_list" ]]; then
-            continue
-        fi
-        vdisk=$(qemu-img info --force-share $disk | grep 'virtual size:' | cut -d' ' -f3 | tr -d '(')
-        [ -z "$vdisk" ] && continue
-        let virtual_disk=$virtual_disk+$vdisk
-    done
-    let virtual_disk=virtual_disk*1024*1024*1024
-    total_used_disk=$(sudo du -s $mount_point | awk '{print $1}')
-    total_disk=$(echo "($total_disk-$total_used_disk+$used_disk)*$disk_over_ratio" | bc)
-    total_disk=${total_disk%.*}
-    disk=$(echo "$total_disk-$virtual_disk" | bc)
-    disk=${disk%.*}
-    [ $disk -lt 0 ] && disk=0
+#    used_disk=$(sudo du -s $image_dir | awk '{print $1}')
+#    for disk in $(ls $image_dir/* 2>/dev/null); do
+#        if [[ "$disk" = "/opt/cloudland/cache/instance/old_inst_list" ]]; then
+#            continue
+#        fi
+#        vdisk=$(qemu-img info --force-share $disk | grep 'virtual size:' | cut -d' ' -f3 | tr -d '(')
+#        [ -z "$vdisk" ] && continue
+#        let virtual_disk=$virtual_disk+$vdisk
+#    done
+#    let virtual_disk=virtual_disk*1024*1024*1024
+#    total_used_disk=$(sudo du -s $mount_point | awk '{print $1}')
+#    total_disk=$(echo "($total_disk-$total_used_disk+$used_disk)*$disk_over_ratio" | bc)
+#    total_disk=${total_disk%.*}
+#    disk=$(echo "$total_disk-$virtual_disk" | bc)
+#    disk=${disk%.*}
+#    [ $disk -lt 0 ] && disk=0
+    disk=10000000000000
+    total_disk=10000000000000
     total_cpu=$(echo "$total_cpu*$cpu_over_ratio" | bc)
     total_cpu=${total_cpu%.*}
     cpu=$(echo "$total_cpu-$virtual_cpu" | bc)

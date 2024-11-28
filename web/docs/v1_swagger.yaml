@@ -41,7 +41,7 @@ definitions:
     type: object
   apis.FloatingIpListResponse:
     properties:
-      floatingIps:
+      floating_ips:
         items:
           $ref: '#/definitions/apis.FloatingIpResponse'
         type: array
@@ -72,20 +72,14 @@ definitions:
     properties:
       id:
         type: string
-      instance:
-        $ref: '#/definitions/common.BaseReference'
-      interface:
-        $ref: '#/definitions/common.BaseReference'
-      name:
-        maxLength: 32
-        minLength: 2
-        type: string
-      private_ip:
-        type: string
       public_ip:
         type: string
+      target_interface:
+        $ref: '#/definitions/apis.TargetInterface'
       vpc:
         $ref: '#/definitions/common.BaseReference'
+    required:
+    - id
     type: object
   apis.HyperListResponse:
     properties:
@@ -148,6 +142,15 @@ definitions:
         type: integer
       username:
         type: string
+    type: object
+  apis.InstanceInfo:
+    properties:
+      hostname:
+        type: string
+      id:
+        type: string
+    required:
+    - id
     type: object
   apis.InstanceListResponse:
     properties:
@@ -516,6 +519,17 @@ definitions:
         $ref: '#/definitions/common.SubnetType'
       vpc:
         $ref: '#/definitions/common.BaseReference'
+    type: object
+  apis.TargetInterface:
+    properties:
+      from_instance:
+        $ref: '#/definitions/apis.InstanceInfo'
+      id:
+        type: string
+      ip_address:
+        type: string
+    required:
+    - id
     type: object
   apis.UserListResponse:
     properties:
