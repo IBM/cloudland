@@ -2,11 +2,7 @@ network_device: eth0
 vnc_device: eth0
 admin_passwd: passw0rd
 db_passwd: passw0rd
-network_external_vlan: 5000
-network_internal_vlan: 5010
-zlayer2_iface:
 dns_server: 8.8.8.8
-multicast_group: 225.10.10.1
 cpu_ratio: 1
 mem_ratio: 1
 disk_ratio: 1

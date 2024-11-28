@@ -41,7 +41,7 @@ definitions:
     type: object
   apis.FloatingIpListResponse:
     properties:
-      floatingIps:
+      floating_ips:
         items:
           $ref: '#/definitions/apis.FloatingIpResponse'
         type: array
@@ -53,17 +53,33 @@ definitions:
         type: integer
     type: object
   apis.FloatingIpPatchPayload:
+    properties:
+      instance:
+        $ref: '#/definitions/common.BaseID'
     type: object
   apis.FloatingIpPayload:
+    properties:
+      bandwidth:
+        type: integer
+      instance:
+        $ref: '#/definitions/common.BaseID'
+      public_ip:
+        type: string
+      public_subnet:
+        $ref: '#/definitions/common.BaseReference'
     type: object
   apis.FloatingIpResponse:
     properties:
       id:
         type: string
-      name:
-        maxLength: 32
-        minLength: 2
+      public_ip:
         type: string
+      target_interface:
+        $ref: '#/definitions/apis.TargetInterface'
+      vpc:
+        $ref: '#/definitions/common.BaseReference'
+    required:
+    - id
     type: object
   apis.HyperListResponse:
     properties:
@@ -126,6 +142,15 @@ definitions:
         type: integer
       username:
         type: string
+    type: object
+  apis.InstanceInfo:
+    properties:
+      hostname:
+        type: string
+      id:
+        type: string
+    required:
+    - id
     type: object
   apis.InstanceListResponse:
     properties:
@@ -495,6 +520,17 @@ definitions:
       vpc:
         $ref: '#/definitions/common.BaseReference'
     type: object
+  apis.TargetInterface:
+    properties:
+      from_instance:
+        $ref: '#/definitions/apis.InstanceInfo'
+      id:
+        type: string
+      ip_address:
+        type: string
+    required:
+    - id
+    type: object
   apis.UserListResponse:
     properties:
       limit:
@@ -563,8 +599,6 @@ definitions:
         maxLength: 32
         minLength: 2
         type: string
-      public_link:
-        type: integer
     required:
     - name
     type: object
@@ -646,6 +680,13 @@ definitions:
       error_message:
         description: "InternalErr error\n\tErrorCode int `json:\"error_code\"`"
         type: string
+    type: object
+  common.BaseID:
+    properties:
+      id:
+        type: string
+    required:
+    - id
     type: object
   common.BaseReference:
     properties:

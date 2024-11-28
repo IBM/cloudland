@@ -1,6 +1,5 @@
-[api]
+[base]
 listen = "127.0.0.1:5443"
-endpoint = "https://{{ hostvars[groups['web'][0]]['ansible_host'] }}:443"
 key = "/etc/ssl/private/cland-selfsigned.key"
 cert = "/etc/ssl/certs/cland-selfsigned.crt"
 
@@ -9,19 +8,19 @@ host = "{{ hostvars[groups['web'][0]]['ansible_host'] }}"
 port = 443
 
 [rest]
-listen = "{{ hostvars[groups['web'][0]]['inventory_hostname'] }}:4001"
-endpoint = "{{ hostvars[groups['web'][0]]['ansible_host'] }}:4001"
+listen = "127.0.0.1:8255"
+key = "/etc/ssl/private/cland-selfsigned.key"
+cert = "/etc/ssl/certs/cland-selfsigned.crt"
 
-[grpc]
-listen = "{{ hostvars[groups['web'][0]]['inventory_hostname'] }}:5000"
-endpoint = "{{ hostvars[groups['web'][0]]['ansible_host'] }}:5000"
+[internal]
+listen = "127.0.0.1:5005"
 
 [sci]
-endpoint = "{{ hostvars[groups['cland'][0]]['inventory_hostname'] }}:50051"
+endpoint = "http://127.0.0.1:5006"
 
 [db]
 type = "postgres"
-uri = "host={{ hostvars[groups['database'][0]]['inventory_hostname'] }} port=5432 user=postgres password={{ db_passwd }} dbname=hypercube sslmode=disable"
+uri = "host=127.0.0.1 port=5432 user=postgres password={{ db_passwd }} dbname=cloudland sslmode=disable"
 debug = true
 open = 50
 lifetime = 30

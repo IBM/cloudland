@@ -105,21 +105,9 @@
                                         {{ range .Images }}
 
                                         {{ if eq .Status "available" }}
-
-                                          {{ if eq .VirtType "zvm" }}
                                                <div class="item" data-value={{.ID}} data-text={{.Name}}>
-                                               {{.Name}} for z/VM
+                                               {{.Name}}
                                                </div>
-                                          {{ else if eq .VirtType "kvm-s390x" }}
-                                               <div class="item" data-value={{.ID}} data-text={{.Name}}>
-                                               {{.Name}} for KVM on Z
-                                               </div>
-                                          {{ else if eq .VirtType "kvm-x86_64" }}
-                                               <div class="item" data-value={{.ID}} data-text={{.Name}}>
-                                               {{.Name}} for KVM on x86_64
-                                               </div>
-                                          {{ end }}
-
                                         {{ end }}
 
                                         {{ end }}

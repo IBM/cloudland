@@ -34,8 +34,7 @@ func HyperStatus(ctx context.Context, args []string) (status string, err error) 
 		log.Println("Invalid hypervisor ID", err)
 		return
 	}
-	hyper := &model.Hyper{Hostid: int32(hyperID)}
-	hyper.Hostname = args[2]
+	hyperName := args[2]
 	availCpu, err := strconv.Atoi(args[3])
 	if err != nil {
 		log.Println("Invalid available cpu", err)
@@ -81,9 +80,30 @@ func HyperStatus(ctx context.Context, args []string) (status string, err error) 
 			return
 		}
 	}
-	err = db.Where("hostid = ?", hyperID).FirstOrCreate(hyper).Error
+	hyper := &model.Hyper{Hostid: int32(hyperID)}
+	err = db.Where("hostid = ?", hyperID).Take(hyper).Error
 	if err != nil {
-		log.Println("Failed to create resource", err)
+		log.Println("Failed to take hyper", err)
+		err = db.Create(hyper).Error
+		if err != nil {
+			log.Println("Failed to create hyper", err)
+			return
+		}
+	}
+	if hyper.RouteIP == "" {
+		_, err = SystemRouter(ctx, []string{args[1], args[2]})
+		if err != nil {
+			log.Println("Failed to create system router", err)
+		}
+	}
+	hyper.Hostname = hyperName
+	hyper.Status = int32(hyperStatus)
+	hyper.VirtType = "kvm-x86_64"
+	hyper.Zone = zone
+	hyper.HostIP = hostIP
+	err = db.Save(hyper).Error
+	if err != nil {
+		log.Println("Failed to save hypervisor", err)
 		return
 	}
 	resource := &model.Resource{
@@ -98,15 +118,6 @@ func HyperStatus(ctx context.Context, args []string) (status string, err error) 
 	err = db.Where("hostid = ?", hyperID).Assign(resource).FirstOrCreate(&model.Resource{}).Error
 	if err != nil {
 		log.Println("Failed to create or update hyper resource", err)
-		return
-	}
-	hyper.Status = int32(hyperStatus)
-	hyper.VirtType = "kvm-x86_64"
-	hyper.Zone = zone
-	hyper.HostIP = hostIP
-	err = db.Save(hyper).Error
-	if err != nil {
-		log.Println("Failed to save hypervisor", err)
 		return
 	}
 	return

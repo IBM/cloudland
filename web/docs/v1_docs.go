@@ -2641,7 +2641,7 @@ const docTemplatev1 = `{
         "apis.FloatingIpListResponse": {
             "type": "object",
             "properties": {
-                "floatingIps": {
+                "floating_ips": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/apis.FloatingIpResponse"
@@ -2659,21 +2659,47 @@ const docTemplatev1 = `{
             }
         },
         "apis.FloatingIpPatchPayload": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "instance": {
+                    "$ref": "#/definitions/common.BaseID"
+                }
+            }
         },
         "apis.FloatingIpPayload": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "bandwidth": {
+                    "type": "integer"
+                },
+                "instance": {
+                    "$ref": "#/definitions/common.BaseID"
+                },
+                "public_ip": {
+                    "type": "string"
+                },
+                "public_subnet": {
+                    "$ref": "#/definitions/common.BaseReference"
+                }
+            }
         },
         "apis.FloatingIpResponse": {
             "type": "object",
+            "required": [
+                "id"
+            ],
             "properties": {
                 "id": {
                     "type": "string"
                 },
-                "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
+                "public_ip": {
+                    "type": "string"
+                },
+                "target_interface": {
+                    "$ref": "#/definitions/apis.TargetInterface"
+                },
+                "vpc": {
+                    "$ref": "#/definitions/common.BaseReference"
                 }
             }
         },
@@ -2766,6 +2792,20 @@ const docTemplatev1 = `{
                     "type": "integer"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "apis.InstanceInfo": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "hostname": {
+                    "type": "string"
+                },
+                "id": {
                     "type": "string"
                 }
             }
@@ -3314,6 +3354,23 @@ const docTemplatev1 = `{
                 }
             }
         },
+        "apis.TargetInterface": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "from_instance": {
+                    "$ref": "#/definitions/apis.InstanceInfo"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ip_address": {
+                    "type": "string"
+                }
+            }
+        },
         "apis.UserListResponse": {
             "type": "object",
             "properties": {
@@ -3417,9 +3474,6 @@ const docTemplatev1 = `{
                     "type": "string",
                     "maxLength": 32,
                     "minLength": 2
-                },
-                "public_link": {
-                    "type": "integer"
                 }
             }
         },
@@ -3537,6 +3591,17 @@ const docTemplatev1 = `{
             "properties": {
                 "error_message": {
                     "description": "InternalErr error\n\tErrorCode int ` + "`" + `json:\"error_code\"` + "`" + `",
+                    "type": "string"
+                }
+            }
+        },
+        "common.BaseID": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
                     "type": "string"
                 }
             }

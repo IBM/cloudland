@@ -20,7 +20,6 @@ type Router struct {
 	DefaultSG  int64
 	Interfaces []*Interface `gorm:"foreignkey:Device"`
 	Subnets    []*Subnet    `gorm:"foreignkey:RouterID"`
-	PublicLink int64
 }
 
 func init() {

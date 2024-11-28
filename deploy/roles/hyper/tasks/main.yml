@@ -1,13 +1,13 @@
 - name: install common packages
   apt:
-    name: ['sqlite3', 'jq', 'wget', 'mkisofs', 'network-manager', 'net-tools', 'python3-pip']
+    name: ['jq', 'wget', 'mkisofs', 'network-manager', 'net-tools', 'python3-pip']
     state: present
   ignore_errors: yes
   tags: [be_pkg]
 
 - name: install packages for kvm
   apt:
-    name: ['qemu-system-x86', 'qemu-utils', 'bridge-utils', 'ipcalc', 'ipset', 'keepalived', 'iputils-arping', 'libvirt-daemon', 'libvirt-daemon-system', 'libvirt-daemon-system-systemd', 'libvirt-clients', 'dnsmasq', 'keepalived', 'dnsmasq-utils', 'conntrack']
+    name: ['qemu-system-x86', 'qemu-utils', 'bridge-utils', 'ipcalc', 'ipset', 'keepalived', 'iputils-arping', 'libvirt-daemon', 'libvirt-daemon-system', 'libvirt-daemon-system-systemd', 'libvirt-clients', 'dnsmasq', 'dnsmasq-utils', 'conntrack']
     state: present
   ignore_errors: yes
   tags: [be_pkg]
@@ -38,6 +38,14 @@
     - /opt/cloudland/cache/dnsmasq
     - /opt/cloudland/cache/xml
   tags: [sync]
+
+- name: create sysconfig directory
+  file:
+    path: "/etc/sysconfig"
+    state: directory
+    owner: root
+    group: root
+  tags: [be_srv, cloudlet]
 
 # - name: synchronize cloudland and grpc
 #   synchronize:
@@ -72,17 +80,6 @@
     - { src: "/opt/cloudland/scripts", dest: "/opt/cloudland", owner: 'cland', group: 'cland' }
   tags: [sync, scripts, scripts_only]
 
-- name: link backend to zvm
-  file:
-    src: /opt/cloudland/scripts/zvm
-    dest: /opt/cloudland/scripts/backend
-    state: link
-    force: yes
-    owner: 'cland'
-    group: 'cland'
-  when: virt_type == 'zvm'
-  tags: [be_conf, scripts, scripts_only]
-
 - name: link backend to kvm
   file:
     src: /opt/cloudland/scripts/kvm
@@ -93,44 +90,15 @@
     group: 'cland'
   tags: [be_conf, scripts, scripts_only]
 
-- name: create cloudrc local file for zvm
-  template:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    owner: "{{ item.owner }}"
-    group: "{{ item.owner }}"
-  with_items:
-    - {src: 'cloudrc.local.zvm.j2', dest: '/opt/cloudland/scripts/cloudrc.local', owner: 'cland', group: 'cland'}
-  when: virt_type == 'zvm'
-  tags: [be_conf, scripts]
-
 - name: register network_device
   script: get_netdev.sh "{{ hostvars[inventory_hostname]['ansible_env'].SSH_CONNECTION.split(' ')[2] }}"
   register: netdev
 
-- name: create cloudrc local file for kvm on Z
-  vars:
-    network_device: "{{ netdev.stdout_lines[0] }}"
-    zlayer2_interface: "{{ netdev.stdout_lines[0] }}"
-    layer3_device: br5000
-    vnc_device: br5000
-    vxlan_device: br5000
-  template:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    owner: "{{ item.owner }}"
-    group: "{{ item.owner }}"
-  with_items:
-    - {src: 'cloudrc.local.kvm-s390x.j2', dest: '/opt/cloudland/scripts/cloudrc.local', owner: 'cland', group: 'cland'}
-  when: virt_type == 'kvm-s390x'
-  tags: [be_conf, scripts]
-
 - name: create cloudrc local file for kvm
   vars:
     network_device: "{{ netdev.stdout_lines[0] }}"
-    vxlan_device: br5000
-    layer3_device: br5000
-    vnc_device: br5000
+    vxlan_device: "{{ network_device }}"
+    vnc_device: "{{ network_device }}"
   template:
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
@@ -175,7 +143,6 @@
   with_items:
     - {src: 'recover_onboot.service', dest: '/lib/systemd/system', owner: 'root'}
     - {src: 'kvm-nested.conf', dest: '/etc/modprobe.d', owner: 'root'}
-  when: virt_type != 'zvm'
   tags: [be_srv]
 
 - name: start scid services
@@ -196,7 +163,7 @@
     state: restarted
   with_items:
     - 'cloudlet'
-  tags: [start_cloudlet]
+  tags: [be_srv, cloudlet]
 
 - name: set compute libvirt service
   systemd: 
@@ -226,16 +193,16 @@
     state: stopped
   tags: [be_srv]
 
-- name: mask firewalld service
+- name: mask firewall service
   systemd:
-    service: firewalld
+    service: ufw
     masked: yes
     state: stopped
   tags: [firewall]
   ignore_errors: yes
 
 - name: Allow necessary ports for KVM
-  script: firewall.sh {{ hostvars[groups['web'][0]]['ansible_host'] }} {{ network_external_vlan }}
+  script: firewall.sh {{ hostvars[groups['web'][0]]['ansible_host'] }}
   tags: [firewall]
   ignore_errors: yes
 
@@ -276,7 +243,3 @@
     value: '6553600'
     reload: yes
   tags: [sysctl]
-
-- name: Bridge the external network
-  script: bridge_ext.sh 
-  tags: [bridge_ext]

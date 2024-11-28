@@ -126,9 +126,8 @@ func (a *SubnetAdmin) Get(ctx context.Context, id int64) (subnet *model.Subnet, 
 	}
 	memberShip := GetMemberShip(ctx)
 	db := DB()
-	where := memberShip.GetWhere()
 	subnet = &model.Subnet{Model: model.Model{ID: id}}
-	err = db.Where(where).Take(subnet).Error
+	err = db.Take(subnet).Error
 	if err != nil {
 		log.Println("DB failed to query subnet ", err)
 		return
@@ -155,9 +154,8 @@ func (a *SubnetAdmin) Get(ctx context.Context, id int64) (subnet *model.Subnet, 
 func (a *SubnetAdmin) GetSubnetByUUID(ctx context.Context, uuID string) (subnet *model.Subnet, err error) {
 	db := DB()
 	memberShip := GetMemberShip(ctx)
-	where := memberShip.GetWhere()
 	subnet = &model.Subnet{}
-	err = db.Where(where).Where("uuid = ?", uuID).Take(subnet).Error
+	err = db.Where("uuid = ?", uuID).Take(subnet).Error
 	if err != nil {
 		log.Println("Failed to query subnet, %v", err)
 		return
@@ -184,9 +182,8 @@ func (a *SubnetAdmin) GetSubnetByUUID(ctx context.Context, uuID string) (subnet 
 func (a *SubnetAdmin) GetSubnetByName(ctx context.Context, name string) (subnet *model.Subnet, err error) {
 	db := DB()
 	memberShip := GetMemberShip(ctx)
-	where := memberShip.GetWhere()
 	subnet = &model.Subnet{}
-	err = db.Where(where).Where("name = ?", name).Take(subnet).Error
+	err = db.Where("name = ?", name).Take(subnet).Error
 	if err != nil {
 		log.Println("Failed to query subnet ", err)
 		return

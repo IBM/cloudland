@@ -3,23 +3,11 @@
     name: ['postgresql-all']
     state: present
 
-- name: init database
-  command: postgresql-setup initdb
-  args: 
-    creates: /var/lib/pgsql/initdb_postgresql.log
-  ignore_errors: yes
-
 - name: pg hba config
   template:
     src: pg_hba.conf.j2
-    dest: /var/lib/pgsql/data/pg_hba.conf
+    dest: /etc/postgresql/14/main/pg_hba.conf
   tags: [db_conf]
-
-- name: copy pg config file
-  copy: 
-    src: postgresql.conf
-    dest: /var/lib/pgsql/data
-    mode: preserve
 
 - name: start postgresql service
   systemd: 

@@ -44,7 +44,6 @@ type FlavorPayload struct {
 type FlavorPatchPayload struct {
 }
 
-//
 // @Summary get a flavor
 // @Description get a flavor
 // @tags Compute
@@ -59,7 +58,6 @@ func (v *FlavorAPI) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, flavorResp)
 }
 
-//
 // @Summary patch a flavor
 // @Description patch a flavor
 // @tags Compute
@@ -75,7 +73,6 @@ func (v *FlavorAPI) Patch(c *gin.Context) {
 	c.JSON(http.StatusOK, flavorResp)
 }
 
-//
 // @Summary delete a flavor
 // @Description delete a flavor
 // @tags Compute
@@ -89,7 +86,6 @@ func (v *FlavorAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }
 
-//
 // @Summary create a flavor
 // @Description create a flavor
 // @tags Compute
@@ -107,7 +103,7 @@ func (v *FlavorAPI) Create(c *gin.Context) {
 
 func (v *FlavorAPI) getFlavorResponse(ctx context.Context, flavor *model.Flavor) (flavorResp *FlavorResponse, err error) {
 	flavorResp = &FlavorResponse{
-		Name: flavor.Name,
+		Name:   flavor.Name,
 		Cpu:    flavor.Cpu,
 		Memory: flavor.Memory,
 		Disk:   flavor.Disk,
@@ -115,7 +111,6 @@ func (v *FlavorAPI) getFlavorResponse(ctx context.Context, flavor *model.Flavor)
 	return
 }
 
-//
 // @Summary list flavors
 // @Description list flavors
 // @tags Compute

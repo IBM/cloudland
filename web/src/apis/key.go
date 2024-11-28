@@ -44,7 +44,6 @@ type KeyPayload struct {
 type KeyPatchPayload struct {
 }
 
-//
 // @Summary get a key
 // @Description get a key
 // @tags Authorization
@@ -70,7 +69,6 @@ func (v *KeyAPI) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, keyResp)
 }
 
-//
 // @Summary patch a key
 // @Description patch a key
 // @tags Authorization
@@ -86,7 +84,6 @@ func (v *KeyAPI) Patch(c *gin.Context) {
 	c.JSON(http.StatusOK, keyResp)
 }
 
-//
 // @Summary delete a key
 // @Description delete a key
 // @tags Authorization
@@ -112,7 +109,6 @@ func (v *KeyAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }
 
-//
 // @Summary create a key
 // @Description create a key
 // @tags Authorization
@@ -147,15 +143,14 @@ func (v *KeyAPI) Create(c *gin.Context) {
 func (v *KeyAPI) getKeyResponse(ctx context.Context, key *model.Key) (keyResp *KeyResponse, err error) {
 	keyResp = &KeyResponse{
 		BaseReference: &BaseReference{
-			ID:          key.UUID,
-			Name:        key.Name,
+			ID:   key.UUID,
+			Name: key.Name,
 		},
 		FingerPrint: key.FingerPrint,
 	}
 	return
 }
 
-//
 // @Summary list keys
 // @Description list keys
 // @tags Authorization

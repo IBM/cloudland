@@ -3,10 +3,9 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 2 ] && echo "$0 <router> <ext_vlan>" && exit -1
+[ $# -lt 1 ] && echo "$0 <router>" && exit -1
 
 router=$1
-ext_vlan=$2
 
 [ "${router/router-/}" = "$router" ] && router=router-$1
 [ -z "$router" -o "$router" = "router-0" ] && exit 1
@@ -17,7 +16,11 @@ ip netns add $router
 ip netns exec $router ip link set lo up
 suffix=${router/router-/}
 
-./create_veth.sh $router ext-$suffix te-$suffix $ext_vlan
+route_ip=$(ip netns exec router-0 ifconfig link-sys | grep 'inet ' | awk '{print $2}')
+if [ -z "$route_ip" ]; then
+    echo "|:-COMMAND-:| system_router.sh '$SCI_CLIENT_ID' '$HOSTNAME'"
+fi
+
 ./create_veth.sh $router int-$suffix ti-$suffix
 local_ip=169.$(($SCI_CLIENT_ID % 234)).$(($suffix % 234)).3
 peer_ip=169.$(($SCI_CLIENT_ID % 234)).$(($suffix % 234)).2
@@ -30,12 +33,7 @@ ip netns exec router-0 ip link set int-$suffix up
 ip netns exec router-0 ip addr add ${peer_ip}/31 dev int-$suffix
 
 ip netns exec $router ipset create nonat nethash
-route_ip=$(ip netns exec router-0 ifconfig link-sys | grep 'inet ' | awk '{print $2}')
-if [ -z "$route_ip" ]; then
-    echo "|:-COMMAND-:| system_router.sh '$SCI_CLIENT_ID' '$HOSTNAME'"
-fi
 ip netns exec $router iptables -t nat -A POSTROUTING -m set --match-set nonat src -m set ! --match-set nonat dst -j SNAT --to-source $local_ip
-apply_vnic -I ext-$suffix
 apply_vnic -I int-$suffix
 
 router_dir=$cache_dir/router/$router

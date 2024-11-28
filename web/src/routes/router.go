@@ -71,7 +71,7 @@ func createRouterIface(ctx context.Context, rtype string, router *model.Router, 
 	return
 }
 
-func (a *RouterAdmin) Create(ctx context.Context, name string, publicLink int32) (router *model.Router, err error) {
+func (a *RouterAdmin) Create(ctx context.Context, name string) (router *model.Router, err error) {
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -87,17 +87,6 @@ func (a *RouterAdmin) Create(ctx context.Context, name string, publicLink int32)
 		log.Println("DB failed to create router ", err)
 		return
 	}
-	pubSubnet := &model.Subnet{}
-	where := "type = 'public'"
-	if publicLink > 0 {
-		where = fmt.Sprintf("%s and vlan = %d", where, publicLink)
-	}
-	err = db.Where(where).Take(pubSubnet).Error
-	if err != nil {
-		log.Println("DB failed to query public subnet ", err)
-		return
-	}
-	router.PublicLink = pubSubnet.Vlan
 	secGroup, err := secgroupAdmin.Create(ctx, name+"-default", true, router.ID, owner)
 	if err != nil {
 		log.Println("Failed to create security group", err)
@@ -417,12 +406,6 @@ func (v *RouterView) New(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	db := DB()
-	subnets := []*model.Subnet{}
-	if err := db.Model(&model.Subnet{}).Where("type = 'public'").Find(&subnets).Error; err != nil {
-		return
-	}
-	c.Data["Subnets"] = subnets
 	c.HTML(200, "routers_new")
 }
 
@@ -500,8 +483,7 @@ func (v *RouterView) Patch(c *macaron.Context, store session.Store) {
 func (v *RouterView) Create(c *macaron.Context, store session.Store) {
 	redirectTo := "../routers"
 	name := c.QueryTrim("name")
-	pubLink := c.QueryInt("public")
-	_, err := routerAdmin.Create(c.Req.Context(), name, int32(pubLink))
+	_, err := routerAdmin.Create(c.Req.Context(), name)
 	if err != nil {
 		log.Println("Failed to create router, %v", err)
 		c.Data["ErrorMsg"] = err.Error()

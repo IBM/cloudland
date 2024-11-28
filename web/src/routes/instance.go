@@ -381,11 +381,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 		log.Println("Get security data for primary interface failed, %v", err)
 		return
 	}
-	publicLink := primary.Vlan
-	if primary.Router != nil {
-		publicLink = primary.Router.PublicLink
-	}
-	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, Gateway: primary.Gateway, Router: primary.RouterID, PublicLink: publicLink, IpAddr: address, MacAddr: iface.MacAddr, SecRules: securityData})
+	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, Gateway: primary.Gateway, Router: primary.RouterID, IpAddr: address, MacAddr: iface.MacAddr, SecRules: securityData})
 	for i, ifaceInfo := range secondaryIfaces {
 		subnet := ifaceInfo.Subnet
 		ifname := fmt.Sprintf("eth%d", i+1)
@@ -408,12 +404,8 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 			log.Println("Get security data for secondary interface failed, %v", err)
 			return
 		}
-		publicLink = subnet.Vlan
-		if subnet.Router != nil {
-			publicLink = subnet.Router.PublicLink
-		}
 		instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Gateway: subnet.Gateway, Router: subnet.RouterID, PublicLink: publicLink, IpAddr: address, MacAddr: iface.MacAddr, SecRules: securityData})
+		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: address, MacAddr: iface.MacAddr, SecRules: securityData})
 	}
 	var instKeys []string
 	for _, key := range keys {
@@ -470,12 +462,14 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 	}
 	if instance.FloatingIps != nil {
 		for _, fip := range instance.FloatingIps {
-			err = floatingipAdmin.Delete(ctx, fip.ID)
+			fip.Instance = instance
+			err = floatingIpAdmin.Detach(ctx, fip)
 			if err != nil {
-				log.Println("Failed to delete floating ip, %v", err)
+				log.Println("Failed to detach floating ip, %v", err)
 				return
 			}
 		}
+		instance.FloatingIps = nil
 	}
 	if err = db.Where("instance_id = ?", instance.ID).Find(&instance.Volumes).Error; err != nil {
 		log.Println("Failed to query floating ip(s), %v", err)
@@ -514,8 +508,22 @@ func (a *InstanceAdmin) Get(ctx context.Context, id int64) (instance *model.Inst
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	instance = &model.Instance{Model: model.Model{ID: id}}
-	if err = db.Where(where).Take(instance).Error; err != nil {
-		log.Println("Failed to query instance", err)
+	if err = db.Preload("Image").Preload("Zone").Preload("Flavor").Preload("Keys").Where(where).Take(instance).Error; err != nil {
+		log.Println("Failed to query instance, %v", err)
+		return
+	}
+	if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
+		log.Println("Failed to query floating ip(s), %v", err)
+		return
+	}
+	if err = db.Preload("Secgroups").Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
+		log.Println("Failed to query interfaces %v", err)
+		return
+	}
+	permit := memberShip.ValidateOwner(model.Reader, instance.Owner)
+	if !permit {
+		log.Println("Not authorized to read the instance")
+		err = fmt.Errorf("Not authorized")
 		return
 	}
 	return
@@ -883,19 +891,14 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 	c.Redirect(redirectTo)
 }
 
-func (v *InstanceView) checkNetparam(subnetID int64, IP, mac string) (macAddr string, err error) {
-	subnet := &model.Subnet{Model: model.Model{ID: subnetID}}
-	err = DB().Take(subnet).Error
+func (v *InstanceView) checkNetparam(subnet *model.Subnet, IP, mac string) (macAddr string, err error) {
+	_, inNet, err := net.ParseCIDR(subnet.Network)
 	if err != nil {
-		log.Println("DB failed to query subnet ", err)
+		log.Println("CIDR parsing failed ", err)
 		return
 	}
-	inNet := &net.IPNet{
-		IP:   net.ParseIP(subnet.Network),
-		Mask: net.IPMask(net.ParseIP(subnet.Netmask).To4()),
-	}
 	if IP != "" && !inNet.Contains(net.ParseIP(IP)) {
-		log.Println("Primary IP not belonging to subnet")
+		log.Printf("Primary IP %s not belonging to subnet %v\n", IP, subnet)
 		err = fmt.Errorf("Primary IP not belonging to subnet")
 		return
 	}
@@ -998,16 +1001,16 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	primaryIP := c.QueryTrim("primaryip")
 	ipAddr := strings.Split(primaryIP, "/")[0]
 	primaryMac := c.QueryTrim("primarymac")
-	macAddr, err := v.checkNetparam(int64(primaryID), ipAddr, primaryMac)
-	if err != nil {
-		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
 	primarySubnet, err := subnetAdmin.Get(ctx, int64(primaryID))
 	if err != nil {
 		log.Println("Get primary subnet failed", err)
 		c.HTML(http.StatusBadRequest, err.Error())
+		return
+	}
+	macAddr, err := v.checkNetparam(primarySubnet, ipAddr, primaryMac)
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	secgroups := c.QueryTrim("secgroups")

@@ -18,6 +18,10 @@ type BaseReference struct {
 	Name string `json:"name" binding:"omitempty,min=2,max=32"`
 }
 
+type BaseID struct {
+	ID   string `json:"id" binding:"required,uuid"`
+}
+
 type APIError struct {
 	//	InternalErr error
 	//	ErrorCode int `json:"error_code"`

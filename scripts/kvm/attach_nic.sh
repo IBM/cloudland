@@ -3,7 +3,7 @@
 cd `dirname $0`
 source ../cloudrc
 
-[ $# -lt 7 ] && echo "$0 <vm_ID> <vlan> <vm_ip> <vm_mac> <gateway> <router> <ext_vlan>" && exit -1
+[ $# -lt 6 ] && echo "$0 <vm_ID> <vlan> <vm_ip> <vm_mac> <gateway> <router>" && exit -1
 
 vm_ID=inst-$1
 vlan=$2
@@ -11,7 +11,6 @@ vm_ip=$3
 vm_mac=$4
 gateway=$5
 router=$6
-ext_vlan=$7
 nic_name=tap$(echo $vm_mac | cut -d: -f4- | tr -d :)
 vm_br=br$vlan
 ./create_link.sh $vlan

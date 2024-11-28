@@ -41,7 +41,6 @@ type OrgPayload struct {
 type OrgPatchPayload struct {
 }
 
-//
 // @Summary get a org
 // @Description get a org
 // @tags Authorization
@@ -56,7 +55,6 @@ func (v *OrgAPI) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, orgResp)
 }
 
-//
 // @Summary patch a org
 // @Description patch a org
 // @tags Authorization
@@ -72,7 +70,6 @@ func (v *OrgAPI) Patch(c *gin.Context) {
 	c.JSON(http.StatusOK, orgResp)
 }
 
-//
 // @Summary delete a org
 // @Description delete a org
 // @tags Authorization
@@ -86,7 +83,6 @@ func (v *OrgAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }
 
-//
 // @Summary create a org
 // @Description create a org
 // @tags Authorization
@@ -102,7 +98,6 @@ func (v *OrgAPI) Create(c *gin.Context) {
 	c.JSON(http.StatusOK, orgResp)
 }
 
-//
 // @Summary list orgs
 // @Description list orgs
 // @tags Authorization

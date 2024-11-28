@@ -31,37 +31,37 @@ type MigrateAction struct {
 }
 
 type InstancePatchPayload struct {
-	Hostname      string             `json:"hostname" binding:"omitempty,hostname|fqdn"`
-	PowerAction   PowerAction `json:"power_action" binding:"omitempty,oneof=stop hard_stop start restart hard_restart pause resume"`
-	MigrateAction MigrateAction      `json:"migrate_action" binding:"omitempty"`
-	Flavor        string             `json:"flavor" binding:"omitempty,min=1,max=32"`
+	Hostname      string        `json:"hostname" binding:"omitempty,hostname|fqdn"`
+	PowerAction   PowerAction   `json:"power_action" binding:"omitempty,oneof=stop hard_stop start restart hard_restart pause resume"`
+	MigrateAction MigrateAction `json:"migrate_action" binding:"omitempty"`
+	Flavor        string        `json:"flavor" binding:"omitempty,min=1,max=32"`
 }
 
 type InstancePayload struct {
-	Count               int                     `json:"count" binding:"omitempty,gte=1,lte=16"`
-	Hypervisor                int                     `json:"hypervisor,default=-1" binding:"omitempty"`
-	Hostname            string                  `json:"hostname" binding:"required,hostname|fqdn"`
-	Keys                []*BaseReference `json:"keys" binding:"required,gte=1,lte=16"`
-	Flavor              string                  `json:"flavor" binding:"required,min=1,max=32"`
-	Image               *BaseReference   `json:"image" binding:"required"`
-	PrimaryInterface    *InterfacePayload       `json:"primary_interface", binding:"required"`
-	SecondaryInterfaces []*InterfacePayload     `json:"secondary_interfaces" binding:"omitempty"`
-	Zone                string                  `json:"zone" binding:"required,min=1,max=32"`
-	VPC                 *BaseReference   `json:"vpc" binding:"omitempty"`
-	Userdata            string                  `json:"userdata,omitempty"`
+	Count               int                 `json:"count" binding:"omitempty,gte=1,lte=16"`
+	Hypervisor          int                 `json:"hypervisor,default=-1" binding:"omitempty"`
+	Hostname            string              `json:"hostname" binding:"required,hostname|fqdn"`
+	Keys                []*BaseReference    `json:"keys" binding:"required,gte=1,lte=16"`
+	Flavor              string              `json:"flavor" binding:"required,min=1,max=32"`
+	Image               *BaseReference      `json:"image" binding:"required"`
+	PrimaryInterface    *InterfacePayload   `json:"primary_interface", binding:"required"`
+	SecondaryInterfaces []*InterfacePayload `json:"secondary_interfaces" binding:"omitempty"`
+	Zone                string              `json:"zone" binding:"required,min=1,max=32"`
+	VPC                 *BaseReference      `json:"vpc" binding:"omitempty"`
+	Userdata            string              `json:"userdata,omitempty"`
 }
 
 type InstanceResponse struct {
-	ID         string                  `json:"id"`
-	Hostname   string                  `json:"hostname"`
-	Status     string                  `json:"status"`
-	Interfaces []*InterfaceResponse    `json:"interfaces"`
-	Flavor     string                  `json:"flavor"`
-	Image      *BaseReference   `json:"image"`
-	Keys       []*BaseReference `json:"keys"`
-	Zone       string                  `json:"zone"`
-	VPC        *BaseReference   `json:"vpc,omitempty"`
-	Hypervisor string                  `json:"hypervisor,omitempty"`
+	ID         string               `json:"id"`
+	Hostname   string               `json:"hostname"`
+	Status     string               `json:"status"`
+	Interfaces []*InterfaceResponse `json:"interfaces"`
+	Flavor     string               `json:"flavor"`
+	Image      *BaseReference       `json:"image"`
+	Keys       []*BaseReference     `json:"keys"`
+	Zone       string               `json:"zone"`
+	VPC        *BaseReference       `json:"vpc,omitempty"`
+	Hypervisor string               `json:"hypervisor,omitempty"`
 }
 
 type InstanceListResponse struct {
@@ -71,7 +71,6 @@ type InstanceListResponse struct {
 	Instances []*InstanceResponse `json:"instances"`
 }
 
-//
 // @Summary get a instance
 // @Description get a instance
 // @tags Compute
@@ -99,7 +98,6 @@ func (v *InstanceAPI) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, instanceResp)
 }
 
-//
 // @Summary patch a instance
 // @Description patch a instance
 // @tags Compute
@@ -149,7 +147,6 @@ func (v *InstanceAPI) Patch(c *gin.Context) {
 	c.JSON(http.StatusOK, instanceResp)
 }
 
-//
 // @Summary delete a instance
 // @Description delete a instance
 // @tags Compute
@@ -176,7 +173,6 @@ func (v *InstanceAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }
 
-//
 // @Summary create a instance
 // @Description create a instance
 // @tags Compute
@@ -387,7 +383,6 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 	return
 }
 
-//
 // @Summary list instances
 // @Description list instances
 // @tags Compute

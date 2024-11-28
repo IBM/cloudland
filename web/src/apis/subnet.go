@@ -26,12 +26,12 @@ type SubnetAPI struct{}
 
 type SubnetResponse struct {
 	*BaseReference
-	Network    string                `json:"network"`
-	Netmask    string                `json:"netmask"`
-	Gateway    string                `json:"gateway"`
-	NameServer string                `json:"dns,omitempty"`
+	Network    string         `json:"network"`
+	Netmask    string         `json:"netmask"`
+	Gateway    string         `json:"gateway"`
+	NameServer string         `json:"dns,omitempty"`
 	VPC        *BaseReference `json:"vpc,omitempty"`
-	Type       SubnetType `json:"type"`
+	Type       SubnetType     `json:"type"`
 }
 
 type SubnetListResponse struct {
@@ -42,17 +42,17 @@ type SubnetListResponse struct {
 }
 
 type SubnetPayload struct {
-	Name        string                `json:"name" binding:"required,min=2,max=32"`
-	NetworkCIDR string                `json:"network_cidr" binding:"required,cidrv4"`
-	Gateway     string                `json:"gateway" binding:"omitempty,ipv4"`
-	StartIP     string                `json:"start_ip" binding:"omitempty,ipv4"`
-	EndIP       string                `json:"end_ip" binding:"omitempty",ipv4`
-	NameServer  string                `json:"dns" binding:"omitempty"`
-	BaseDomain  string                `json:"base_domain" binding:"omitempty"`
-	Dhcp        bool                  `json:"dhcp" binding:"omitempty"`
+	Name        string         `json:"name" binding:"required,min=2,max=32"`
+	NetworkCIDR string         `json:"network_cidr" binding:"required,cidrv4"`
+	Gateway     string         `json:"gateway" binding:"omitempty,ipv4"`
+	StartIP     string         `json:"start_ip" binding:"omitempty,ipv4"`
+	EndIP       string         `json:"end_ip" binding:"omitempty",ipv4`
+	NameServer  string         `json:"dns" binding:"omitempty"`
+	BaseDomain  string         `json:"base_domain" binding:"omitempty"`
+	Dhcp        bool           `json:"dhcp" binding:"omitempty"`
 	VPC         *BaseReference `json:"vpc" binding:"omitempty"`
-	Vlan        int `json:"vlan" binding:"omitempty,gte=1,lte=16777215"`
-	Type        SubnetType `json:"type" binding:"omitempty,oneof=public internal"`
+	Vlan        int            `json:"vlan" binding:"omitempty,gte=1,lte=16777215"`
+	Type        SubnetType     `json:"type" binding:"omitempty,oneof=public internal"`
 }
 
 type SubnetPatchPayload struct {

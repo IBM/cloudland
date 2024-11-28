@@ -12,8 +12,8 @@ import (
 	"strconv"
 
 	. "web/src/common"
-	"web/src/routes"
 	"web/src/model"
+	"web/src/routes"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,8 +24,8 @@ var userAdmin = &routes.UserAdmin{}
 type UserAPI struct{}
 
 type UserPayload struct {
-	Username string                `json:"username,required" binding:"required,min=2"`
-	Password string                `json:"password,required" binding:"required,min=8,max=32"`
+	Username string         `json:"username,required" binding:"required,min=2"`
+	Password string         `json:"password,required" binding:"required,min=8,max=32"`
 	Org      *BaseReference `json:"org,omitempty" binding:"omitempty"`
 }
 
@@ -36,18 +36,17 @@ type UserPatchPayload struct {
 type UserResponse struct {
 	UserInfo    *BaseReference `json:"user"`
 	OrgInfo     *BaseReference `json:"org,omitempty"`
-	AccessToken string                `json:"token,omitempty"`
-	Role        string                `json:"role,omitempty"`
+	AccessToken string         `json:"token,omitempty"`
+	Role        string         `json:"role,omitempty"`
 }
 
 type UserListResponse struct {
-	Offset int            `json:"offset"`
-	Total  int            `json:"total"`
-	Limit  int            `json:"limit"`
+	Offset int             `json:"offset"`
+	Total  int             `json:"total"`
+	Limit  int             `json:"limit"`
 	Users  []*UserResponse `json:"users"`
 }
 
-//
 // @Summary get a user
 // @Description get a user
 // @tags Authorization
@@ -74,7 +73,6 @@ func (v *UserAPI) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, userResp)
 }
 
-//
 // @Summary patch a user
 // @Description patch a user
 // @tags Authorization
@@ -113,7 +111,6 @@ func (v *UserAPI) Patch(c *gin.Context) {
 	c.JSON(http.StatusOK, userResp)
 }
 
-//
 // @Summary delete a user
 // @Description delete a user
 // @tags Authorization
@@ -139,7 +136,6 @@ func (v *UserAPI) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }
 
-//
 // @Summary create a user
 // @Description create a user
 // @tags Authorization
@@ -179,12 +175,11 @@ func (v *UserAPI) Create(c *gin.Context) {
 			ID:   org.UUID,
 			Name: username,
 		},
-		Role:  model.Owner.String(),
+		Role: model.Owner.String(),
 	}
 	c.JSON(http.StatusOK, userResp)
 }
 
-//
 // @Summary list users
 // @Description list users
 // @tags Authorization
@@ -233,7 +228,6 @@ func (v *UserAPI) List(c *gin.Context) {
 	c.JSON(http.StatusOK, userListResp)
 }
 
-//
 // @Summary login to get the access token
 // @Description get token by user name
 // @tags Authorization
