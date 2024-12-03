@@ -18,6 +18,7 @@ import (
 	"web/src/model"
 
 	"github.com/go-macaron/session"
+	"github.com/spf13/viper"
 	macaron "gopkg.in/macaron.v1"
 )
 
@@ -29,23 +30,108 @@ var (
 type VolumeAdmin struct{}
 type VolumeView struct{}
 
-func (a *VolumeAdmin) Create(ctx context.Context, name string, size int) (volume *model.Volume, err error) {
+func GetVolumeDriver() (driver string) {
+	if viper.IsSet("volume_driver") {
+		driver = viper.GetString("volume_driver")
+	} else {
+		driver = "local"
+	}
+	return
+}
+
+func (a *VolumeAdmin) Get(ctx context.Context, id int64) (volume *model.Volume, err error) {
+	db := DB()
+	memberShip := GetMemberShip(ctx)
+	where := memberShip.GetWhere()
+	volume = &model.Volume{Model: model.Model{ID: id}}
+	if err = db.Preload("Instance").Where(where).Take(volume).Error; err != nil {
+		log.Println("Failed to query volume, %v", err)
+		return
+	}
+	permit := memberShip.ValidateOwner(model.Reader, volume.Owner)
+	if !permit {
+		log.Println("Not authorized to read the volume")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
+	return
+}
+
+func (a *VolumeAdmin) GetVolumeByUUID(ctx context.Context, uuID string) (volume *model.Volume, err error) {
+	db := DB()
+	memberShip := GetMemberShip(ctx)
+	volume = &model.Volume{}
+	where := memberShip.GetWhere()
+	err = db.Preload("Instance").Where(where).Where("uuid = ?", uuID).Take(volume).Error
+	if err != nil {
+		log.Println("DB: query volume failed", err)
+		return
+	}
+	permit := memberShip.ValidateOwner(model.Reader, volume.Owner)
+	if !permit {
+		log.Println("Not authorized to read the volume")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
+	return
+}
+
+func (a *VolumeAdmin) Create(ctx context.Context, name string, size int32,
+	iopsLimit int32, iopsBurst int32, bpsLimit int32, bpsBurst int32, poolID string) (volume *model.Volume, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
-	volume = &model.Volume{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, Name: name, Format: "raw", Size: int32(size), Status: "pending"}
+	if iopsLimit == 0 {
+		iopsLimit = viper.GetInt32("default_iops_limit")
+	}
+	if iopsBurst == 0 {
+		iopsBurst = viper.GetInt32("default_iops_burst")
+	}
+	if bpsLimit == 0 {
+		bpsLimit = viper.GetInt32("default_bps_limit")
+	}
+	if bpsBurst == 0 {
+		bpsBurst = viper.GetInt32("default_bps_burst")
+	}
+	if poolID == "" {
+		poolID = viper.GetString("wds_pool_id")
+	}
+	volume = &model.Volume{
+		Model:     model.Model{Creater: memberShip.UserID},
+		Owner:     memberShip.OrgID,
+		Name:      name,
+		Format:    "raw",
+		Size:      int32(size),
+		IopsLimit: iopsLimit,
+		IopsBurst: iopsBurst,
+		BpsLimit:  bpsLimit,
+		BpsBurst:  bpsBurst,
+		Status:    "pending",
+	}
 	err = db.Create(volume).Error
 	if err != nil {
 		log.Println("DB failed to create volume", err)
 		return
 	}
 	control := fmt.Sprintf("inter=")
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_volume.sh '%d' '%d'", volume.ID, volume.Size)
+	// RN-156: append the volume UUID to the command
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_volume_%s.sh '%d' '%d' '%s' '%d' '%d' '%d' '%d' '%s'",
+		GetVolumeDriver(), volume.ID, volume.Size, volume.UUID, iopsLimit, iopsBurst, bpsLimit, bpsBurst, poolID)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Create volume execution failed", err)
 		return
 	}
 	return
+}
+
+func (a *VolumeAdmin) UpdateByUUID(ctx context.Context, uuid string, name string, instID int64) (volume *model.Volume, err error) {
+	db := DB()
+	volume = &model.Volume{}
+	if err = db.Where("uuid = ?", uuid).Take(volume).Error; err != nil {
+		log.Println("DB: query volume failed", err)
+		return
+	}
+	return a.Update(ctx, volume.ID, name, instID)
 }
 
 func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID int64) (volume *model.Volume, err error) {
@@ -62,9 +148,10 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 	if name != "" {
 		volume.Name = name
 	}
+	// RN-156: append the volume UUID to the command
 	if volume.InstanceID > 0 && instID == 0 && volume.Status == "attached" {
 		control := fmt.Sprintf("inter=%d", volume.Instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/detach_volume.sh '%d' '%d'", volume.Instance.ID, volume.ID)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/detach_volume_%s.sh '%d' '%d' '%s'", GetVolumeDriver(), volume.Instance.ID, volume.ID, volume.UUID)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Detach volume execution failed", err)
@@ -79,7 +166,8 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 			return
 		}
 		control := fmt.Sprintf("inter=%d", instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/attach_volume.sh '%d' '%d' '%s'", instance.ID, volume.ID, volume.Path)
+		// RN-156: append the volume UUID to the command
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/attach_volume_%s.sh '%d' '%d' '%s' '%s'", GetVolumeDriver(), instance.ID, volume.ID, volume.Path, volume.UUID)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Create volume execution failed", err)
@@ -89,7 +177,7 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 		volume.Instance = nil
 	}
 	if err = db.Model(volume).Save(volume).Error; err != nil {
-		log.Println("DB: query volume failed", err)
+		log.Println("DB: update volume failed", err)
 		return
 	}
 	return
@@ -111,18 +199,51 @@ func (a *VolumeAdmin) Delete(ctx context.Context, id int64) (err error) {
 		return
 	}
 	if err = db.Model(volume).Delete(volume).Error; err != nil {
-		log.Println("DB: update volume failed", err)
+		log.Println("DB: delete volume failed", err)
 		return
 	}
 	control := fmt.Sprintf("inter=")
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_volume.sh '%d' '%d'", volume.ID, volume.Path)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_volume_%s.sh '%d' '%s'", GetVolumeDriver(), volume.ID, volume.Path)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Delete volume execution failed", err)
 		return
 	}
 	if err = db.Delete(volume).Error; err != nil {
-		log.Println("DB: update volume failed", err)
+		log.Println("DB: delete volume failed", err)
+		return
+	}
+	return
+}
+
+func (a *VolumeAdmin) DeleteVolumeByUUID(ctx context.Context, uuID string) (err error) {
+	db := DB()
+	db = db.Begin()
+	defer func() {
+		if err == nil {
+			db.Commit()
+		} else {
+			db.Rollback()
+		}
+	}()
+	volume := &model.Volume{}
+	if err = db.Where("uuid = ?", uuID).Take(volume).Error; err != nil {
+		log.Println("DB: query volume failed", err)
+		return
+	}
+	if err = db.Delete(volume).Error; err != nil {
+		log.Println("DB: delete volume failed", err)
+		return
+	}
+	control := fmt.Sprintf("inter=")
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_volume_%s.sh '%d' '%s'", GetVolumeDriver(), volume.ID, volume.Path)
+	err = hyperExecute(ctx, control, command)
+	if err != nil {
+		log.Println("Delete volume execution failed", err)
+		return
+	}
+	if err = db.Delete(volume).Error; err != nil {
+		log.Println("DB: delete volume failed", err)
 		return
 	}
 	return

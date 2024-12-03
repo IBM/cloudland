@@ -76,7 +76,7 @@ type InstanceListResponse struct {
 // @tags Compute
 // @Accept  json
 // @Produce json
-// @Param   id  path  int  true  "Instance ID"
+// @Param   id  path  string  true  "Instance UUID"
 // @Success 200 {object} InstanceResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"

@@ -3,10 +3,11 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 2 ] && echo "$0 <vm_ID> <volume_ID>" && exit -1
+[ $# -lt 3 ] && echo "$0 <vm_ID> <volume_ID> <volume_UUID>" && exit -1
 
 vm_ID=inst-$1
 vol_ID=$2
+vol_UUID=$3
 vol_xml=$xml_dir/$vm_ID/disk-${vol_ID}.xml
 virsh detach-device $vm_ID $vol_xml --config --persistent
 if [ $? -eq 0 ]; then
