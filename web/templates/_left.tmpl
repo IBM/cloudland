@@ -14,6 +14,9 @@
         <a {{ if eq .Link "/instances" }} class="active item" {{ else }} class="item" {{ end }} href="/instances">
             {{.i18n.Tr "Instances"}}
         </a>
+        <a {{ if eq .Link "/volumes" }} class="active item" {{ else }} class="item" {{ end }} href="/volumes">
+            {{.i18n.Tr "Volumes"}}
+        </a>
         <a {{ if eq .Link "/flavors" }} class="active item" {{ else }} class="item" {{ end }} href="/flavors">
             {{.i18n.Tr "Flavors"}}
         </a>

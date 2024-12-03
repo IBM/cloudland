@@ -23,7 +23,7 @@ type Model struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt *time.Time    `gorm:"index"`
-	UUID      string        `gorm:"type:varchar(64)"`
+	UUID      string        `gorm:"type:varchar(64)","index"`
 	Creater   int64         `gorm:"default:1"` /* The user ID of the resource */
 	OwnerInfo *Organization `gorm:"PRELOAD:false","foreignkey:Owner"`
 }
