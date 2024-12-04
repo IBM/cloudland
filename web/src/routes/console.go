@@ -71,6 +71,18 @@ func MakeToken(ctx context.Context, instance *model.Instance) (token string, err
 	data := sha3.NewShake256()
 	data.Write([]byte(secret))
 	data.Read(tokenHash)
+	hashSecret := fmt.Sprintf("%x", tokenHash)
+	db := DB()
+	console := &model.Console{
+		Instance:   instance.ID,
+		Type:       "vnc",
+		HashSecret: hashSecret,
+	}
+	err = db.Where("instance = ?", instance.ID).Assign(console).FirstOrCreate(&model.Console{}).Error
+	if err != nil {
+		log.Println("Failed to make console record ", err)
+		return
+	}
 	tokenClaim := jwt.NewWithClaims(jwt.SigningMethodHS256, tkClaim)
 	token, err = tokenClaim.SignedString(SignedSeret)
 	return

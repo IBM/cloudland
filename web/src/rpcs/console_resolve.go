@@ -95,7 +95,7 @@ func (a *ConsoleAdmin) ConsoleResolve(c *macaron.Context) {
 		return
 	}
 
-	accessPass, err := password.Generate(64, 10, 10, false, false)
+	accessPass, err := password.Generate(24, 5, 5, false, false)
 	if err != nil {
 		log.Println("Failed to generate password")
 		code := http.StatusInternalServerError
@@ -108,7 +108,7 @@ func (a *ConsoleAdmin) ConsoleResolve(c *macaron.Context) {
 		log.Println("VNC record deletion failed", err)
 	}
 	control := fmt.Sprintf("inter=%d", instance.Hyper)
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_vnc_passwd.sh '%d' '%d'", instance.ID, accessPass)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_vnc_passwd.sh '%d' '%s'", instance.ID, accessPass)
 	err = HyperExecute(c.Req.Context(), control, command)
 	if err != nil {
 		log.Println("Set vnc password execution failed", err)
@@ -119,7 +119,7 @@ func (a *ConsoleAdmin) ConsoleResolve(c *macaron.Context) {
 		time.Sleep(time.Duration(i) * time.Second)
 		err = db.Where(vnc).Take(vnc).Error
 		if err == nil {
-			log.Println("get VNC record successfully", err)
+			log.Println("get VNC record successfully, i = ", i)
 			break
 		}
 	}

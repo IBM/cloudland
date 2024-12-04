@@ -15,7 +15,6 @@ import (
 	"web/src/routes"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
 )
 
 var consoleAPI = &ConsoleAPI{}
@@ -51,9 +50,7 @@ func (v *ConsoleAPI) Create(c *gin.Context) {
 		ErrorResponse(c, http.StatusBadRequest, "Not able to create", err)
 		return
 	}
-	accessAddr := viper.GetString("console.host")
-	accessPort := viper.GetInt("console.port")
-	consoleURL := fmt.Sprintf("/novnc/vnc.html?host=%s&port=%d&autoconnect=true&encrypt=true&path=websockify?token=%s", accessAddr, accessPort, token)
+	consoleURL := fmt.Sprintf("wss://%s/websockify?token=%s", c.Request.Host, token)
 	consoleResp := &ConsoleResponse{
 		Instance: &BaseReference{
 			ID:   instance.UUID,
