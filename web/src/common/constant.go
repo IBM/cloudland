@@ -22,3 +22,6 @@ const (
 	Public   SubnetType = "public"
 	Internal SubnetType = "internal"
 )
+
+var SignedSeret = []byte("Red B")
+

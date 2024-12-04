@@ -8,6 +8,7 @@ SPDX-License-Identifier: Apache-2.0
 package routes
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -27,35 +28,16 @@ import (
 )
 
 var (
-	consoleAdmin = &ConsoleAdmin{}
-	consoleView  = &ConsoleView{}
+	consoleView = &ConsoleView{}
 )
 
-type ConsoleAdmin struct{}
 type ConsoleView struct{}
-
-type ConsoleInfo struct {
-	Type      string `json:"type"`
-	Address   string `json:"address"`
-	Insecure  bool   `json:"insecure"`
-	TLSTunnel bool   `json:"tlsTunnel"`
-	Password  string `json:"password"`
-}
-type TokenClaim struct {
-	OrgID      int64
-	Role       model.Role
-	InstanceID int    `json:"instanceID"`
-	Secret     string `json:"secret"`
-	jwt.StandardClaims
-}
 
 const (
 	TokenExpireDuration = time.Hour * 2
 )
 
-var SignedSeret = []byte("Red B")
-
-//Randomly generate a string of length 10
+// Randomly generate a string of length 10
 func RandomStr() string {
 	str := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	bytes := []byte(str)
@@ -67,11 +49,19 @@ func RandomStr() string {
 	return string(result)
 }
 
-func MakeToken(instanceID int, secret string, memberShip *MemberShip) (string, error) {
+func MakeToken(ctx context.Context, instance *model.Instance) (token string, err error) {
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized to create interface in public subnet")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
+	secret := RandomStr()
 	tkClaim := TokenClaim{
 		OrgID:      memberShip.OrgID,
 		Role:       memberShip.Role,
-		InstanceID: instanceID,
+		InstanceID: int(instance.ID),
 		Secret:     secret,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(TokenExpireDuration).Unix(),
@@ -81,23 +71,9 @@ func MakeToken(instanceID int, secret string, memberShip *MemberShip) (string, e
 	data := sha3.NewShake256()
 	data.Write([]byte(secret))
 	data.Read(tokenHash)
-	hashSecret := fmt.Sprintf("%x", tokenHash)
-	db := DB()
-	console := &model.Console{
-		Instance:   int64(instanceID),
-		Type:       "vnc",
-		HashSecret: hashSecret,
-	}
-	err := db.Where("instance = ?", instanceID).Assign(console).FirstOrCreate(&model.Console{}).Error
-	if err != nil {
-		return "", err
-	}
 	tokenClaim := jwt.NewWithClaims(jwt.SigningMethodHS256, tkClaim)
-	token, err := tokenClaim.SignedString(SignedSeret)
-	if err != nil {
-		return "", err
-	}
-	return token, nil
+	token, err = tokenClaim.SignedString(SignedSeret)
+	return
 }
 
 func ResolveToken(tokenString string) (int, *MemberShip, error) {
@@ -133,7 +109,7 @@ func ResolveToken(tokenString string) (int, *MemberShip, error) {
 }
 
 func (a *ConsoleView) ConsoleURL(c *macaron.Context, store session.Store) {
-	memberShip := GetMemberShip(c.Req.Context())
+	ctx := c.Req.Context()
 	id := c.Params("id")
 	if id == "" {
 		code := http.StatusBadRequest
@@ -146,67 +122,23 @@ func (a *ConsoleView) ConsoleURL(c *macaron.Context, store session.Store) {
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	permit, err := memberShip.CheckOwner(model.Reader, "instances", int64(instanceID))
-	if !permit {
-		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
+	instance, err := instanceAdmin.Get(ctx, int64(instanceID))
+	if err != nil {
+		code := http.StatusBadRequest
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	tokenString, err := MakeToken(instanceID, RandomStr(), memberShip)
+	tokenString, err := MakeToken(ctx, instance)
 	if err != nil {
 		log.Println("failed to make token", err)
 		code := http.StatusInternalServerError
 		c.Error(code, http.StatusText(code))
 		return
 	}
-	endpoint := viper.GetString("api.endpoint")
 	accessAddr := viper.GetString("console.host")
 	accessPort := viper.GetInt("console.port")
-	consoleURL := fmt.Sprintf("%s/novnc/vnc.html?host=%s&port=%d&autoconnect=true&encrypt=true&path=websockify?token=%s", endpoint, accessAddr, accessPort, tokenString)
+	consoleURL := fmt.Sprintf("/novnc/vnc.html?host=%s&port=%d&autoconnect=true&encrypt=true&path=websockify?token=%s", accessAddr, accessPort, tokenString)
 	c.Resp.Header().Set("Location", consoleURL)
 	c.JSON(301, nil)
-	return
-}
-
-func (a *ConsoleView) ConsoleResolve(c *macaron.Context, store session.Store) {
-	token := c.Params("token")
-	log.Println("Get JWT token", token)
-	instanceID, memberShip, err := ResolveToken(token)
-	if err != nil {
-		log.Println("Unable to resolve token", err)
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
-		return
-	}
-	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instanceID))
-	if !permit {
-		log.Println("Not authorized for this operation")
-		code := http.StatusUnauthorized
-		c.Error(code, http.StatusText(code))
-		return
-	}
-
-	db := DB()
-	vnc := &model.Vnc{InstanceID: int64(instanceID)}
-	err = db.Where(vnc).Take(vnc).Error
-	if err != nil {
-		log.Println("VNC query failed", err)
-		code := http.StatusInternalServerError
-		c.Error(code, http.StatusText(code))
-		return
-	}
-
-	accessPass := vnc.Passwd
-	address := fmt.Sprintf("%s:%d", vnc.LocalAddress, vnc.LocalPort)
-	consoleInfo := &ConsoleInfo{
-		Type:      "vnc",
-		Address:   address,
-		Insecure:  true,
-		TLSTunnel: false,
-		Password:  accessPass,
-	}
-
-	c.JSON(200, consoleInfo)
 	return
 }

@@ -241,7 +241,11 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 		key, err = keyAdmin.GetKey(ctx, ky)
 		keys = append(keys, key)
 	}
-	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, router.ID, primaryIface, secondaryIfaces, keys, payload.Hypervisor)
+	var routerID int64
+	if router != nil {
+		routerID = router.ID
+	}
+	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, routerID, primaryIface, secondaryIfaces, keys, payload.Hypervisor)
 	if err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Failed to create instances", err)
 		return
@@ -271,7 +275,7 @@ func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, vpc *model.Router, i
 		err = fmt.Errorf("VPC of subnet must be the same with VPC of instance")
 		return
 	}
-	if router == nil {
+	if router == nil && subnet.RouterID > 0 {
 		router, err = routerAdmin.Get(ctx, subnet.RouterID)
 		if err != nil {
 			return
@@ -287,7 +291,7 @@ func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, vpc *model.Router, i
 		ifaceInfo.MacAddress = ifacePayload.MacAddress
 	}
 	var secGroup *model.SecurityGroup
-	if len(ifacePayload.SecurityGroups) == 0 {
+	if len(ifacePayload.SecurityGroups) == 0 && router != nil {
 		secGroup, err = secgroupAdmin.Get(ctx, router.DefaultSG, router.ID)
 		if err != nil {
 			return

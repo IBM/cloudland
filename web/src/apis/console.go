@@ -6,3 +6,61 @@ SPDX-License-Identifier: Apache-2.0
 */
 
 package apis
+
+import (
+	"fmt"
+	"net/http"
+
+	. "web/src/common"
+	"web/src/routes"
+
+	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
+)
+
+var consoleAPI = &ConsoleAPI{}
+
+type ConsoleAPI struct{}
+
+type ConsoleResponse struct {
+	Instance   *BaseReference `json:"instance"`
+	Token      string         `json:"token"`
+	ConsoleURL string         `json:"console_url"`
+}
+
+// @Summary create a console
+// @Description create a console
+// @tags Authorization
+// @Accept  json
+// @Produce json
+// @Param   id  path  int  true  "Instance ID"
+// @Success 200 {object} ConsoleResponse
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
+// @Router /instances/:id/console [post]
+func (v *ConsoleAPI) Create(c *gin.Context) {
+	ctx := c.Request.Context()
+	uuID := c.Param("id")
+	instance, err := instanceAdmin.GetInstanceByUUID(ctx, uuID)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid instance query", err)
+		return
+	}
+	token, err := routes.MakeToken(ctx, instance)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Not able to create", err)
+		return
+	}
+	accessAddr := viper.GetString("console.host")
+	accessPort := viper.GetInt("console.port")
+	consoleURL := fmt.Sprintf("/novnc/vnc.html?host=%s&port=%d&autoconnect=true&encrypt=true&path=websockify?token=%s", accessAddr, accessPort, token)
+	consoleResp := &ConsoleResponse{
+		Instance: &BaseReference{
+			ID:   instance.UUID,
+			Name: instance.Hostname,
+		},
+		Token:      token,
+		ConsoleURL: consoleURL,
+	}
+	c.JSON(http.StatusOK, consoleResp)
+}

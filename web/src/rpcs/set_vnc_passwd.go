@@ -17,14 +17,14 @@ import (
 )
 
 func init() {
-	Add("replace_vnc_passwd", ReplaceVncPasswd)
+	Add("set_vnc_passwd", SetVncPasswd)
 }
 
-func ReplaceVncPasswd(ctx context.Context, args []string) (status string, err error) {
+func SetVncPasswd(ctx context.Context, args []string) (status string, err error) {
 	//|:-COMMAND-:| enable_vm_vnc.sh 6 5909 password 192.168.10.100
 	db := DB()
 	argn := len(args)
-	if argn < 5 {
+	if argn < 3 {
 		err = fmt.Errorf("Wrong params")
 		log.Println("Invalid args", err)
 		return
@@ -39,13 +39,11 @@ func ReplaceVncPasswd(ctx context.Context, args []string) (status string, err er
 		log.Println("Invalid port number", err)
 		return
 	}
-	passwd := args[3]
-	hyperip := args[4]
+	hyperip := args[3]
 	vnc := &model.Vnc{
 		InstanceID:   int64(instID),
 		LocalAddress: hyperip,
 		LocalPort:    int32(portN),
-		Passwd:       passwd,
 	}
 	err = db.Where("instance_id = ?", int64(instID)).Assign(vnc).FirstOrCreate(&model.Vnc{}).Error
 	if err != nil {

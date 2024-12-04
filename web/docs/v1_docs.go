@@ -3051,7 +3051,17 @@ const docTemplatev1 = `{
             }
         },
         "apis.KeyPatchPayload": {
-            "type": "object"
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                }
+            }
         },
         "apis.KeyPayload": {
             "type": "object",
@@ -3085,6 +3095,9 @@ const docTemplatev1 = `{
                     "type": "string",
                     "maxLength": 32,
                     "minLength": 2
+                },
+                "public_key": {
+                    "type": "string"
                 }
             }
         },

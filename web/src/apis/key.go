@@ -27,6 +27,7 @@ type KeyAPI struct{}
 type KeyResponse struct {
 	*BaseReference
 	FingerPrint string `json:"finger_print"`
+	PublicKey   string `json:"public_key"`
 }
 
 type KeyListResponse struct {
@@ -42,6 +43,7 @@ type KeyPayload struct {
 }
 
 type KeyPatchPayload struct {
+	Name string `json:"name" binding:"required,min=2,max=32"`
 }
 
 // @Summary get a key
@@ -147,6 +149,7 @@ func (v *KeyAPI) getKeyResponse(ctx context.Context, key *model.Key) (keyResp *K
 			Name: key.Name,
 		},
 		FingerPrint: key.FingerPrint,
+		PublicKey:   key.PublicKey,
 	}
 	return
 }

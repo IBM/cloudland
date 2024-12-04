@@ -4,14 +4,13 @@ Copyright <holder> All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-package routes
+package common
 
 import (
 	"context"
 	"fmt"
 	"log"
 
-	. "web/src/common"
 	"web/src/model"
 )
 

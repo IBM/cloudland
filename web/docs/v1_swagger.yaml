@@ -317,6 +317,13 @@ definitions:
         type: integer
     type: object
   apis.KeyPatchPayload:
+    properties:
+      name:
+        maxLength: 32
+        minLength: 2
+        type: string
+    required:
+    - name
     type: object
   apis.KeyPayload:
     properties:
@@ -341,6 +348,8 @@ definitions:
       name:
         maxLength: 32
         minLength: 2
+        type: string
+      public_key:
         type: string
     type: object
   apis.MigrateAction:
