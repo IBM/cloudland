@@ -36,10 +36,10 @@ func FileExist(filename string) bool {
 	return !os.IsNotExist(err)
 }
 
-func (a *ImageAdmin) Create(ctx context.Context, osVersion, diskType, virtType, userName, name, url, format, architecture string, instID int64, isLB bool) (image *model.Image, err error) {
+func (a *ImageAdmin) Create(ctx context.Context, name, osVersion, virtType, userName, url, architecture string, instID int64) (image *model.Image, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
-	image = &model.Image{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, OsVersion: osVersion, DiskType: diskType, VirtType: virtType, UserName: userName, Name: name, OSCode: name, Format: format, Status: "creating", Architecture: architecture, OpenShiftLB: isLB}
+	image = &model.Image{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, OsVersion: osVersion, VirtType: virtType, UserName: userName, Name: name, OSCode: name, Status: "creating", Architecture: architecture}
 	err = db.Create(image).Error
 	if err != nil {
 		log.Println("DB create image failed, %v", err)
@@ -285,41 +285,15 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	redirectTo := "../images"
 	name := c.QueryTrim("name")
 	url := c.QueryTrim("url")
-	format := c.QueryTrim("format")
-	architectureType := c.QueryInt64("architecture")
-	architecture := ""
 	instance := c.QueryInt64("instance")
 	osVersion := c.QueryTrim("osVersion")
-	diskType := c.QueryTrim("diskType")
 	virtType := "kvm-x86_64"
 	userName := c.QueryTrim("userName")
-	isOcpLB := c.QueryTrim("ocpLB")
-	isLB := false
-	if isOcpLB == "" || isOcpLB == "no" {
-		isLB = false
-	} else if isOcpLB == "yes" {
-		isLB = true
-	}
-
-	if architectureType == 0 {
-		architecture = "x86_64"
-	} else {
-		architecture = "s390x"
-	}
-
-	image, err := imageAdmin.Create(c.Req.Context(), osVersion, diskType, virtType, userName, name, url, format, architecture, instance, isLB)
+	architecture := "x86_64"
+	_, err := imageAdmin.Create(c.Req.Context(), name, osVersion, virtType, userName, url, architecture, instance)
 	if err != nil {
 		log.Println("Create instance failed", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.HTML(http.StatusBadRequest, err.Error())
-		return
-	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, image)
 		return
 	}
 	c.Redirect(redirectTo)

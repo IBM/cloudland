@@ -232,7 +232,7 @@ func (v *FloatingIpAPI) getFloatingIpResponse(ctx context.Context, floatingIp *m
 		interIp := strings.Split(floatingIp.IntAddress, "/")[0]
 		floatingIpResp.TargetInterface = &TargetInterface{
 			BaseID: &BaseID{
-				ID:   instance.Interfaces[0].UUID,
+				ID: instance.Interfaces[0].UUID,
 			},
 			IPAddress: interIp,
 			FromInstance: &InstanceInfo{

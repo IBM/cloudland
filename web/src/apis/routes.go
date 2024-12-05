@@ -13,7 +13,6 @@ import (
 	_ "web/docs"
 
 	"github.com/gin-gonic/gin"
-	_ "github.com/go-macaron/session/postgres"
 	"github.com/spf13/viper"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -98,9 +97,8 @@ func Register() (r *gin.Engine) {
 
 		authGroup.GET("/api/v1/flavors", flavorAPI.List)
 		authGroup.POST("/api/v1/flavors", flavorAPI.Create)
-		authGroup.GET("/api/v1/flavors/:id", flavorAPI.Get)
-		authGroup.DELETE("/api/v1/flavors/:id", flavorAPI.Delete)
-		authGroup.PATCH("/api/v1/flavors/:id", flavorAPI.Patch)
+		authGroup.GET("/api/v1/flavors/:name", flavorAPI.Get)
+		authGroup.DELETE("/api/v1/flavors/:name", flavorAPI.Delete)
 
 		authGroup.GET("/api/v1/images", imageAPI.List)
 		authGroup.POST("/api/v1/images", imageAPI.Create)

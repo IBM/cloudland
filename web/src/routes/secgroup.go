@@ -83,7 +83,7 @@ func (a *SecgroupAdmin) Update(ctx context.Context, sgID int64, name string, isD
 }
 
 func (a *SecgroupAdmin) Get(ctx context.Context, id, routerID int64) (secgroup *model.SecurityGroup, err error) {
-	if id <= 0 {
+	if id < 0 {
 		err = fmt.Errorf("Invalid secgroup ID: %d", id)
 		log.Println(err)
 		return

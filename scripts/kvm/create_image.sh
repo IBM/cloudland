@@ -19,6 +19,7 @@ fi
 
 format=$(qemu-img info $image | grep 'file format' | cut -d' ' -f3)
 [ "$format" = "qcow2" -o "$format" = "raw" ] && state=downloaded
+image_size=$(qemu-img info ${image} | grep 'virtual size:' | cut -d' ' -f5 | tr -d '(')
 
 if [ -z "$wds_address" ]; then
     mv $image ${image}.$format
@@ -27,7 +28,6 @@ if [ -z "$wds_address" ]; then
 else
     qemu-img convert -f $format -O raw ${image} ${image}.raw
     format=raw
-    image_size=$(qemu-img info ${image}.raw | grep 'virtual size:' | cut -d' ' -f5 | tr -d '(')
     uss_id=$(wds_curl GET "api/v2/wds/uss" | jq --arg hname $(hostname -s) -r '.uss_gateways | .[] | select(.server_name == $hname) | .id')
     task_id=$(wds_curl "PUT" "api/v2/sync/block/volumes/import" "{\"volname\": \"image-$ID\", \"path\": \"${image}.raw\", \"ussid\": \"$uss_id\", \"start_blockid\": 0, \"volsize\": $image_size, \"poolid\": \"$wds_pool_id\", \"num_block\": 0, \"speed\": 8}" | jq -r .task_id)
     state=uploading
@@ -40,4 +40,4 @@ else
     volume_id=$(wds_curl GET "api/v2/sync/block/volumes" | jq --arg image image-$ID -r '.volumes | .[] | select(.name == $image) | .id')
     [ -n "$volume_id" ] && state=available
 fi
-echo "|:-COMMAND-:| $(basename $0) '$ID' '$state' '$format'"
+echo "|:-COMMAND-:| $(basename $0) '$ID' '$state' '$format' '$image_size'"

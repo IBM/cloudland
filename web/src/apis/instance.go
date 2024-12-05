@@ -290,15 +290,21 @@ func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, vpc *model.Router, i
 	if ifacePayload.MacAddress != "" {
 		ifaceInfo.MacAddress = ifacePayload.MacAddress
 	}
-	var secGroup *model.SecurityGroup
-	if len(ifacePayload.SecurityGroups) == 0 && router != nil {
-		secGroup, err = secgroupAdmin.Get(ctx, router.DefaultSG, router.ID)
+	if len(ifacePayload.SecurityGroups) == 0 {
+		var routerID, sgID int64
+		if router != nil {
+			routerID = router.ID
+			sgID = router.DefaultSG
+		}
+		var secGroup *model.SecurityGroup
+		secGroup, err = secgroupAdmin.Get(ctx, sgID, routerID)
 		if err != nil {
 			return
 		}
 		ifaceInfo.SecurityGroups = append(ifaceInfo.SecurityGroups, secGroup)
 	} else {
 		for _, sg := range ifacePayload.SecurityGroups {
+			var secGroup *model.SecurityGroup
 			secGroup, err = secgroupAdmin.GetSecurityGroup(ctx, sg, subnet.RouterID)
 			if err != nil {
 				return

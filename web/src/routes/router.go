@@ -90,6 +90,7 @@ func (a *RouterAdmin) Create(ctx context.Context, name string) (router *model.Ro
 	secGroup, err := secgroupAdmin.Create(ctx, name+"-default", true, router.ID, owner)
 	if err != nil {
 		log.Println("Failed to create security group", err)
+		return
 	}
 	router.DefaultSG = secGroup.ID
 	if err = db.Save(router).Error; err != nil {
