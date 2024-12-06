@@ -32,7 +32,7 @@ type FloatingIpInfo struct {
 
 type TargetInterface struct {
 	*BaseID
-	IPAddress    string        `json:"ip_address"`
+	IpAddress    string        `json:"ip_address"`
 	FromInstance *InstanceInfo `json:"from_instance"`
 }
 
@@ -43,7 +43,7 @@ type InstanceInfo struct {
 
 type FloatingIpResponse struct {
 	*BaseID
-	PublicIP        string           `json:"public_ip"`
+	PublicIp        string           `json:"public_ip"`
 	TargetInterface *TargetInterface `json:"target_interface,omitempty"`
 	VPC             *BaseReference   `json:"vpc,omitempty"`
 }
@@ -57,7 +57,7 @@ type FloatingIpListResponse struct {
 
 type FloatingIpPayload struct {
 	PublicSubnet *BaseReference `json:"public_subnet" binding:"omitempty"`
-	PublicIP     string         `json:"public_ip" binding:"omitempty,ipv4"`
+	PublicIp     string         `json:"public_ip" binding:"omitempty,ipv4"`
 	Instance     *BaseID        `json:"instance" binding:"omitempty"`
 	Bandwidth    int64          `json:"bandwidth" binding:"omitempty"`
 }
@@ -201,7 +201,7 @@ func (v *FloatingIpAPI) Create(c *gin.Context) {
 			return
 		}
 	}
-	floatingIp, err := floatingIpAdmin.Create(ctx, instance, publicSubnet, payload.PublicIP)
+	floatingIp, err := floatingIpAdmin.Create(ctx, instance, publicSubnet, payload.PublicIp)
 	if err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Failed to create floating ip", err)
 		return
@@ -219,7 +219,7 @@ func (v *FloatingIpAPI) getFloatingIpResponse(ctx context.Context, floatingIp *m
 		BaseID: &BaseID{
 			ID: floatingIp.UUID,
 		},
-		PublicIP: floatingIp.IPAddress,
+		PublicIp: floatingIp.FipAddress,
 	}
 	if floatingIp.Router != nil {
 		floatingIpResp.VPC = &BaseReference{
@@ -234,7 +234,7 @@ func (v *FloatingIpAPI) getFloatingIpResponse(ctx context.Context, floatingIp *m
 			BaseID: &BaseID{
 				ID: instance.Interfaces[0].UUID,
 			},
-			IPAddress: interIp,
+			IpAddress: interIp,
 			FromInstance: &InstanceInfo{
 				BaseID: &BaseID{
 					ID: instance.UUID,

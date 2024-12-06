@@ -20,6 +20,17 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+type SecurityData struct {
+	Secgroup    int64
+	RemoteIp    string `json:"remote_ip"`
+	RemoteGroup int64  `json:"remote_group"`
+	Direction   string `json:"direction"`
+	IpVersion   string `json:"ip_version"`
+	Protocol    string `json:"protocol"`
+	PortMin     int32  `json:"port_min"`
+	PortMax     int32  `json:"port_max"`
+}
+
 func AllocateAddress(ctx context.Context, subnetID, ifaceID int64, ipaddr, addrType string) (address *model.Address, err error) {
 	var db *gorm.DB
 	ctx, db = GetCtxDB(ctx)

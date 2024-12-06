@@ -87,7 +87,7 @@ func (a *RouterAdmin) Create(ctx context.Context, name string) (router *model.Ro
 		log.Println("DB failed to create router ", err)
 		return
 	}
-	secGroup, err := secgroupAdmin.Create(ctx, name+"-default", true, router.ID, owner)
+	secGroup, err := secgroupAdmin.Create(ctx, name+"-default", true, router)
 	if err != nil {
 		log.Println("Failed to create security group", err)
 		return
@@ -248,7 +248,7 @@ func (a *RouterAdmin) Delete(ctx context.Context, router *model.Router) (err err
 		return
 	}
 	for _, sg := range secgroups {
-		err = secgroupAdmin.Delete(sg.ID)
+		err = secgroupAdmin.Delete(ctx, sg)
 		if err != nil {
 			log.Println("Can not delete security group", err)
 			return

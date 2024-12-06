@@ -43,21 +43,31 @@ func adminInit(ctx context.Context) {
 			defer func() { DB = dbFunc }()
 			DB = func() *gorm.DB { return db }
 			password := adminPassword()
-			_, err = userAdmin.Create(ctx, username, password)
+			var user *model.User
+			user, err = userAdmin.Create(ctx, username, password)
 			if err != nil {
 				return
 			}
-			_, err = orgAdmin.Create(ctx, username, username)
+			var org *model.Organization
+			org, err = orgAdmin.Create(ctx, username, username)
 			if err != nil {
 				return
+			}
+			var memberShip *MemberShip
+			memberShip, err = GetDBMemberShip(user.ID, org.ID)
+			if err != nil {
+				return
+			}
+			_, err := secgroupAdmin.GetSecgroupByName(ctx, SystemDefaultName)
+			if err != nil {
+				ctx1 := memberShip.SetContext(ctx)
+				_, err = secgroupAdmin.Create(ctx1, SystemDefaultName, true, nil)
+				if err != nil {
+					log.Println("Failed to create system default security group", err)
+				}
 			}
 		}
 		return
 	})
-	_, err := secgroupAdmin.Create(ctx, "system-default", true, 0, 1)
-	if err != nil {
-		log.Println("Failed to create system default security group", err)
-		return
-	}
 	return
 }

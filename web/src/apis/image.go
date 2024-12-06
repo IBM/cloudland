@@ -64,7 +64,7 @@ func (v *ImageAPI) Get(c *gin.Context) {
 	uuID := c.Param("id")
 	image, err := imageAdmin.GetImageByUUID(ctx, uuID)
 	if err != nil {
-		ErrorResponse(c, http.StatusBadRequest, "Invalid vpc query", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid image query", err)
 		return
 	}
 	imageResp, err := v.getImageResponse(ctx, image)
@@ -100,6 +100,18 @@ func (v *ImageAPI) Patch(c *gin.Context) {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /images/{id} [delete]
 func (v *ImageAPI) Delete(c *gin.Context) {
+	ctx := c.Request.Context()
+	uuID := c.Param("id")
+	image, err := imageAdmin.GetImageByUUID(ctx, uuID)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
+		return
+	}
+	err = imageAdmin.Delete(ctx, image)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Not able to delete", err)
+		return
+	}
 	c.JSON(http.StatusNoContent, nil)
 }
 

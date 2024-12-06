@@ -1,5 +1,14 @@
 basePath: /api/v1
 definitions:
+  apis.ConsoleResponse:
+    properties:
+      console_url:
+        type: string
+      instance:
+        $ref: '#/definitions/common.BaseReference'
+      token:
+        type: string
+    type: object
   apis.FlavorListResponse:
     properties:
       flavors:
@@ -13,9 +22,26 @@ definitions:
       total:
         type: integer
     type: object
-  apis.FlavorPatchPayload:
-    type: object
   apis.FlavorPayload:
+    properties:
+      cpu:
+        minimum: 1
+        type: integer
+      disk:
+        minimum: 1
+        type: integer
+      memory:
+        minimum: 16
+        type: integer
+      name:
+        maxLength: 32
+        minLength: 2
+        type: string
+    required:
+    - cpu
+    - disk
+    - memory
+    - name
     type: object
   apis.FlavorResponse:
     properties:
@@ -125,6 +151,26 @@ definitions:
   apis.ImagePatchPayload:
     type: object
   apis.ImagePayload:
+    properties:
+      download_url:
+        type: string
+      name:
+        maxLength: 32
+        minLength: 2
+        type: string
+      os_version:
+        maxLength: 32
+        minLength: 2
+        type: string
+      user:
+        maxLength: 32
+        minLength: 2
+        type: string
+    required:
+    - download_url
+    - name
+    - os_version
+    - user
     type: object
   apis.ImageResponse:
     properties:
@@ -140,7 +186,9 @@ definitions:
         type: string
       size:
         type: integer
-      username:
+      status:
+        type: string
+      user:
         type: string
     type: object
   apis.InstanceInfo:
@@ -399,31 +447,33 @@ definitions:
         type: integer
       offset:
         type: integer
-      secrules:
+      security_rules:
         items:
-          $ref: '#/definitions/apis.VPCResponse'
+          $ref: '#/definitions/apis.SecruleResponse'
         type: array
       total:
         type: integer
     type: object
-  apis.SecrulePatchPayload:
-    type: object
-  apis.SecrulePayload:
-    type: object
   apis.SecruleResponse:
     properties:
-      cpu:
-        type: integer
-      disk:
-        type: integer
+      direction:
+        type: string
       id:
         type: string
-      memory:
-        type: integer
-      name:
-        maxLength: 32
-        minLength: 2
+      ip_version:
         type: string
+      port_max:
+        type: integer
+      port_min:
+        type: integer
+      protocol:
+        type: string
+      remote_cidr:
+        type: string
+      remote_group:
+        $ref: '#/definitions/common.BaseReference'
+    required:
+    - id
     type: object
   apis.SecurityGroupListResponse:
     properties:
@@ -439,23 +489,69 @@ definitions:
         type: integer
     type: object
   apis.SecurityGroupPatchPayload:
-    type: object
-  apis.SecurityGroupPayload:
-    type: object
-  apis.SecurityGroupResponse:
     properties:
-      cpu:
-        type: integer
-      disk:
-        type: integer
-      id:
-        type: string
-      memory:
-        type: integer
+      is_default:
+        type: boolean
       name:
         maxLength: 32
         minLength: 2
         type: string
+    required:
+    - name
+    type: object
+  apis.SecurityGroupPayload:
+    properties:
+      is_default:
+        type: boolean
+      name:
+        maxLength: 32
+        minLength: 2
+        type: string
+      vpc:
+        $ref: '#/definitions/common.BaseReference'
+    required:
+    - name
+    type: object
+  apis.SecurityGroupResponse:
+    properties:
+      id:
+        type: string
+      is_default:
+        type: boolean
+      name:
+        maxLength: 32
+        minLength: 2
+        type: string
+      target_interfaces:
+        items:
+          $ref: '#/definitions/apis.TargetInterface'
+        type: array
+      vpc:
+        $ref: '#/definitions/common.BaseReference'
+    type: object
+  apis.SecurityRulePayload:
+    properties:
+      direction:
+        type: string
+      port_max:
+        maximum: 65535
+        minimum: 1
+        type: integer
+      port_min:
+        maximum: 65535
+        minimum: 1
+        type: integer
+      protocol:
+        enum:
+        - ingress
+        - egress
+        type: string
+      remote_group:
+        $ref: '#/definitions/common.BaseReference'
+      remote_ip:
+        type: string
+    required:
+    - protocol
     type: object
   apis.SubnetListResponse:
     properties:
@@ -789,7 +885,7 @@ paths:
       summary: create a flavor
       tags:
       - Compute
-  /flavors/{id}:
+  /flavors/{name}:
     delete:
       consumes:
       - application/json
@@ -830,35 +926,6 @@ paths:
           schema:
             $ref: '#/definitions/common.APIError'
       summary: get a flavor
-      tags:
-      - Compute
-    patch:
-      consumes:
-      - application/json
-      description: patch a flavor
-      parameters:
-      - description: Flavor patch payload
-        in: body
-        name: message
-        required: true
-        schema:
-          $ref: '#/definitions/apis.FlavorPatchPayload'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/apis.FlavorResponse'
-        "400":
-          description: Bad request
-          schema:
-            $ref: '#/definitions/common.APIError'
-        "401":
-          description: Not authorized
-          schema:
-            $ref: '#/definitions/common.APIError'
-      summary: patch a flavor
       tags:
       - Compute
   /floating_ips:
@@ -1143,6 +1210,56 @@ paths:
       summary: patch a image
       tags:
       - Compute
+  /instance/{id}/interfaces:
+    get:
+      consumes:
+      - application/json
+      description: list interfaces
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/apis.InterfaceResponse'
+            type: array
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/common.APIError'
+      summary: list interfaces
+      tags:
+      - Network
+    post:
+      consumes:
+      - application/json
+      description: create a interface
+      parameters:
+      - description: Interface create payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.InterfacePayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.InterfaceResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/common.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/common.APIError'
+      summary: create a interface
+      tags:
+      - Network
   /instances:
     get:
       consumes:
@@ -1193,6 +1310,35 @@ paths:
       summary: create a instance
       tags:
       - Compute
+  /instances/:id/console:
+    post:
+      consumes:
+      - application/json
+      description: create a console
+      parameters:
+      - description: Instance ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.ConsoleResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/common.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/common.APIError'
+      summary: create a console
+      tags:
+      - Authorization
   /instances/{id}:
     delete:
       consumes:
@@ -1277,56 +1423,6 @@ paths:
       summary: patch a instance
       tags:
       - Compute
-  /interfaces:
-    get:
-      consumes:
-      - application/json
-      description: list interfaces
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/apis.InterfaceResponse'
-            type: array
-        "401":
-          description: Not authorized
-          schema:
-            $ref: '#/definitions/common.APIError'
-      summary: list interfaces
-      tags:
-      - Network
-    post:
-      consumes:
-      - application/json
-      description: create a interface
-      parameters:
-      - description: Interface create payload
-        in: body
-        name: message
-        required: true
-        schema:
-          $ref: '#/definitions/apis.InterfacePayload'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/apis.InterfaceResponse'
-        "400":
-          description: Bad request
-          schema:
-            $ref: '#/definitions/common.APIError'
-        "401":
-          description: Not authorized
-          schema:
-            $ref: '#/definitions/common.APIError'
-      summary: create a interface
-      tags:
-      - Network
   /interfaces/{id}:
     delete:
       consumes:
@@ -1814,7 +1910,7 @@ paths:
         name: message
         required: true
         schema:
-          $ref: '#/definitions/apis.SecrulePayload'
+          $ref: '#/definitions/apis.SecurityRulePayload'
       produces:
       - application/json
       responses:
@@ -1874,35 +1970,6 @@ paths:
           schema:
             $ref: '#/definitions/common.APIError'
       summary: get a secrule
-      tags:
-      - Network
-    patch:
-      consumes:
-      - application/json
-      description: patch a secrule
-      parameters:
-      - description: Secrule patch payload
-        in: body
-        name: message
-        required: true
-        schema:
-          $ref: '#/definitions/apis.SecrulePatchPayload'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/apis.SecruleResponse'
-        "400":
-          description: Bad request
-          schema:
-            $ref: '#/definitions/common.APIError'
-        "401":
-          description: Not authorized
-          schema:
-            $ref: '#/definitions/common.APIError'
-      summary: patch a secrule
       tags:
       - Network
   /subnets:

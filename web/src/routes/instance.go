@@ -71,17 +71,6 @@ type VlanInfo struct {
 	SecRules   []*SecurityData `json:"security"`
 }
 
-type SecurityData struct {
-	Secgroup    int64
-	RemoteIp    string `json:"remote_ip"`
-	RemoteGroup string `json:"remote_group"`
-	Direction   string `json:"direction"`
-	IpVersion   string `json:"ip_version"`
-	Protocol    string `json:"protocol"`
-	PortMin     int32  `json:"port_min"`
-	PortMax     int32  `json:"port_max"`
-}
-
 type InstanceData struct {
 	Userdata string             `json:"userdata"`
 	VirtType string             `json:"virt_type"`
@@ -344,7 +333,7 @@ func (a *InstanceAdmin) getSecurityData(ctx context.Context, secGroups []*model.
 		sgr := &SecurityData{
 			Secgroup:    rule.Secgroup,
 			RemoteIp:    rule.RemoteIp,
-			RemoteGroup: rule.RemoteGroup,
+			RemoteGroup: rule.RemoteGroupID,
 			Direction:   rule.Direction,
 			IpVersion:   rule.IpVersion,
 			Protocol:    rule.Protocol,
@@ -1022,15 +1011,21 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			if err != nil {
 				continue
 			}
-			var secGroup *model.SecurityGroup
-			secGroup, err = secgroupAdmin.Get(ctx, int64(sgID), primarySubnet.RouterID)
+			var secgroup *model.SecurityGroup
+			secgroup, err = secgroupAdmin.Get(ctx, int64(sgID))
 			if err != nil {
 				log.Println("Get security groups failed", err)
 				c.Data["ErrorMsg"] = "Get security groups failed"
 				c.HTML(http.StatusBadRequest, err.Error())
 				return
 			}
-			securityGroups = append(securityGroups, secGroup)
+			if secgroup.RouterID != primarySubnet.RouterID {
+				log.Println("Security group is not the same router with subnet")
+				c.Data["ErrorMsg"] = "Security group is not in subnet vpc"
+				c.HTML(http.StatusBadRequest, "Security group not in subnet vpc")
+				return
+			}
+			securityGroups = append(securityGroups, secgroup)
 		}
 	} else {
 		var sgID int64
@@ -1047,7 +1042,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			sgID = router.DefaultSG
 		}
 		var secGroup *model.SecurityGroup
-		secGroup, err = secgroupAdmin.Get(ctx, int64(sgID), routerID)
+		secGroup, err = secgroupAdmin.Get(ctx, int64(sgID))
 		if err != nil {
 			log.Println("Get security groups failed", err)
 			c.Data["ErrorMsg"] = "Get security groups failed"

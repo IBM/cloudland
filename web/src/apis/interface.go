@@ -93,7 +93,7 @@ func (v *InterfaceAPI) Delete(c *gin.Context) {
 // @Success 200 {object} InterfaceResponse
 // @Failure 400 {object} common.APIError "Bad request"
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /interfaces [post]
+// @Router /instance/{id}/interfaces [post]
 func (v *InterfaceAPI) Create(c *gin.Context) {
 	interfaceResp := &InterfaceResponse{}
 	c.JSON(http.StatusOK, interfaceResp)
@@ -106,7 +106,7 @@ func (v *InterfaceAPI) Create(c *gin.Context) {
 // @Produce json
 // @Success 200 {array} InterfaceResponse
 // @Failure 401 {object} common.APIError "Not authorized"
-// @Router /interfaces [get]
+// @Router /instance/{id}/interfaces [get]
 func (v *InterfaceAPI) List(c *gin.Context) {
 	interfaceListResp := []*InterfaceResponse{}
 	c.JSON(http.StatusOK, interfaceListResp)

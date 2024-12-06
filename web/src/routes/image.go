@@ -72,6 +72,13 @@ func (a *ImageAdmin) GetImageByUUID(ctx context.Context, uuID string) (image *mo
 		log.Println("Failed to query image, %v", err)
 		return
 	}
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized to get image")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
 	return
 }
 
@@ -81,6 +88,13 @@ func (a *ImageAdmin) GetImageByName(ctx context.Context, name string) (image *mo
 	err = db.Where("name = ?", name).Take(image).Error
 	if err != nil {
 		log.Println("Failed to query image, %v", err)
+		return
+	}
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized to get image")
+		err = fmt.Errorf("Not authorized")
 		return
 	}
 	return
@@ -97,6 +111,13 @@ func (a *ImageAdmin) Get(ctx context.Context, id int64) (image *model.Image, err
 	err = db.Take(image).Error
 	if err != nil {
 		log.Println("DB failed to query image, %v", err)
+		return
+	}
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized to get image")
+		err = fmt.Errorf("Not authorized")
 		return
 	}
 	return
@@ -118,7 +139,7 @@ func (a *ImageAdmin) GetImage(ctx context.Context, reference *BaseReference) (im
 	return
 }
 
-func (a *ImageAdmin) Delete(ctx context.Context, id int64) (err error) {
+func (a *ImageAdmin) Delete(ctx context.Context, image *model.Image) (err error) {
 	db := DB()
 	db = db.Begin()
 	defer func() {
@@ -128,21 +149,23 @@ func (a *ImageAdmin) Delete(ctx context.Context, id int64) (err error) {
 			db.Rollback()
 		}
 	}()
-	image := &model.Image{Model: model.Model{ID: id}}
-	if err = db.Take(image).Error; err != nil {
-		log.Println("Image query failed, %v", err)
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.ValidateOwner(model.Writer, image.Owner)
+	if !permit {
+		log.Println("Not authorized to delete image")
+		err = fmt.Errorf("Not authorized")
 		return
 	}
 	if image.Status == "available" {
 		control := "inter="
-		command := "/opt/cloudland/scripts/backend/clear_image.sh " + strconv.Itoa(int(image.ID)) + " " + image.Format
+		command := fmt.Sprint("/opt/cloudland/scripts/backend/clear_image.sh %d %s", image.ID, image.Format)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Clear image command execution failed", err)
 			return
 		}
 	}
-	if err = db.Delete(&model.Image{Model: model.Model{ID: id}}).Error; err != nil {
+	if err = db.Delete(image).Error; err != nil {
 		return
 	}
 	return
@@ -222,7 +245,7 @@ func (v *ImageView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *ImageView) Delete(c *macaron.Context, store session.Store) (err error) {
-	memberShip := GetMemberShip(c.Req.Context())
+	ctx := c.Req.Context()
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is empty"
@@ -235,14 +258,13 @@ func (v *ImageView) Delete(c *macaron.Context, store session.Store) (err error) 
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	permit, err := memberShip.CheckOwner(model.Writer, "images", int64(imageID))
-	if !permit {
-		log.Println("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
+	image, err := imageAdmin.Get(ctx, int64(imageID))
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	err = imageAdmin.Delete(c.Req.Context(), int64(imageID))
+	err = imageAdmin.Delete(ctx, image)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")

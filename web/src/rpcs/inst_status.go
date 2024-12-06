@@ -24,17 +24,6 @@ func init() {
 	Add("inst_status", InstanceStatus)
 }
 
-type SecurityData struct {
-	Secgroup    int64
-	RemoteIp    string `json:"remote_ip"`
-	RemoteGroup string `json:"remote_group"`
-	Direction   string `json:"direction"`
-	IpVersion   string `json:"ip_version"`
-	Protocol    string `json:"protocol"`
-	PortMin     int32  `json:"port_min"`
-	PortMax     int32  `json:"port_max"`
-}
-
 func InstanceStatus(ctx context.Context, args []string) (status string, err error) {
 	//|:-COMMAND-:| launch_vm.sh '3' '5 running 7 running 9 shut_off'
 	db := DB()
@@ -134,7 +123,7 @@ func ApplySecgroups(ctx context.Context, instance *model.Instance) (err error) {
 			sgr := &SecurityData{
 				Secgroup:    rule.Secgroup,
 				RemoteIp:    rule.RemoteIp,
-				RemoteGroup: rule.RemoteGroup,
+				RemoteGroup: rule.RemoteGroupID,
 				Direction:   rule.Direction,
 				IpVersion:   rule.IpVersion,
 				Protocol:    rule.Protocol,

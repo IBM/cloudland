@@ -18,8 +18,8 @@ func init() {
 
 type SecurityGroup struct {
 	Model
-	Owner      int64        `gorm:"default:1"` /* The organization ID of the resource */
-	Name       string       `gorm:"type:varchar(32)"`
+	Owner      int64        `gorm:"dunique_index:idx_account_secgroup;efault:1"` /* The organization ID of the resource */
+	Name       string       `gorm:"unique_index:idx_account_secgroup;type:varchar(32)"`
 	IsDefault  bool         `gorm:"default:false"`
 	Interfaces []*Interface `gorm:"many2many:secgroup_ifaces;"`
 	RouterID   int64
@@ -31,7 +31,8 @@ type SecurityRule struct {
 	Owner       int64 `gorm:"default:1"` /* The organization ID of the resource */
 	Secgroup    int64
 	RemoteIp    string `gorm:"type:varchar(32)"`
-	RemoteGroup string `gorm:"type:varchar(36)"`
+	RemoteGroupID int64  
+	RemoteGroup *SecurityGroup`gorm:"foreignkey:RemoteGroupID"`
 	Direction   string `gorm:"type:varchar(16)"`
 	IpVersion   string `gorm:"type:varchar(12)"`
 	Protocol    string `gorm:"type:varchar(20)"`

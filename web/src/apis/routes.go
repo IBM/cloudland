@@ -81,7 +81,6 @@ func Register() (r *gin.Engine) {
 		authGroup.POST("/api/v1/security_groups/:id/rules", secruleAPI.Create)
 		authGroup.GET("/api/v1/security_groups/:id/rules/:rule_id", secruleAPI.Get)
 		authGroup.DELETE("/api/v1/security_groups/:id/rules/:rule_id", secruleAPI.Delete)
-		authGroup.PATCH("/api/v1/security_groups/:id/rules/:rule_id", secruleAPI.Patch)
 
 		authGroup.GET("/api/v1/floating_ips", floatingIpAPI.List)
 		authGroup.POST("/api/v1/floating_ips", floatingIpAPI.Create)
