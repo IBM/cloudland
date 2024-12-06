@@ -131,23 +131,8 @@ function calc_resource()
     echo "'$cpu' '$total_cpu' '$memory' '$total_memory' '$disk' '$total_disk' '$state'" >/opt/cloudland/run/old_resource_list
 }
 
-function replace_vnc_passwd()
-{
-    old_timestamp=/opt/cloudland/run/last_vnc_update
-    [ ! -f $old_timestamp ] && touch $old_timestamp && return
-    time_stamp=$(stat -c %X $old_timestamp)
-    let duration=$(date +%s)-$time_stamp
-    if [ "$duration" -gt 300 ]; then 
-        for inst in $(sudo virsh list --all | grep inst | awk '{print $2}'); do
-            sudo ./replace_vnc_passwd.sh $inst
-        done
-        touch $old_timestamp
-    fi
-}
-
-#replace_vnc_passwd
 calc_resource
-probe_arp >/dev/null 2>&1
+#probe_arp >/dev/null 2>&1
 #inst_status
 #vlan_status
 #router_status

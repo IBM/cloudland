@@ -92,7 +92,7 @@ const docTemplatev1 = `{
                 }
             }
         },
-        "/flavors/{id}": {
+        "/flavors/{name}": {
             "get": {
                 "description": "get a flavor",
                 "consumes": [
@@ -141,50 +141,6 @@ const docTemplatev1 = `{
                 "responses": {
                     "200": {
                         "description": "OK"
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "$ref": "#/definitions/common.APIError"
-                        }
-                    },
-                    "401": {
-                        "description": "Not authorized",
-                        "schema": {
-                            "$ref": "#/definitions/common.APIError"
-                        }
-                    }
-                }
-            },
-            "patch": {
-                "description": "patch a flavor",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Compute"
-                ],
-                "summary": "patch a flavor",
-                "parameters": [
-                    {
-                        "description": "Flavor patch payload",
-                        "name": "message",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/apis.FlavorPatchPayload"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/apis.FlavorResponse"
-                        }
                     },
                     "400": {
                         "description": "Bad request",
@@ -629,6 +585,82 @@ const docTemplatev1 = `{
                 }
             }
         },
+        "/instance/{id}/interfaces": {
+            "get": {
+                "description": "list interfaces",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Network"
+                ],
+                "summary": "list interfaces",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/apis.InterfaceResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Not authorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "create a interface",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Network"
+                ],
+                "summary": "create a interface",
+                "parameters": [
+                    {
+                        "description": "Interface create payload",
+                        "name": "message",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/apis.InterfacePayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/apis.InterfaceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    }
+                }
+            }
+        },
         "/instances": {
             "get": {
                 "description": "list instances",
@@ -688,6 +720,50 @@ const docTemplatev1 = `{
                             "items": {
                                 "$ref": "#/definitions/apis.InstanceResponse"
                             }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/instances/:id/console": {
+            "post": {
+                "description": "create a console",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authorization"
+                ],
+                "summary": "create a console",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Instance ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/apis.ConsoleResponse"
                         }
                     },
                     "400": {
@@ -815,82 +891,6 @@ const docTemplatev1 = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/apis.InstanceResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "$ref": "#/definitions/common.APIError"
-                        }
-                    },
-                    "401": {
-                        "description": "Not authorized",
-                        "schema": {
-                            "$ref": "#/definitions/common.APIError"
-                        }
-                    }
-                }
-            }
-        },
-        "/interfaces": {
-            "get": {
-                "description": "list interfaces",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Network"
-                ],
-                "summary": "list interfaces",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/apis.InterfaceResponse"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Not authorized",
-                        "schema": {
-                            "$ref": "#/definitions/common.APIError"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "create a interface",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Network"
-                ],
-                "summary": "create a interface",
-                "parameters": [
-                    {
-                        "description": "Interface create payload",
-                        "name": "message",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/apis.InterfacePayload"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/apis.InterfaceResponse"
                         }
                     },
                     "400": {
@@ -1650,7 +1650,7 @@ const docTemplatev1 = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/apis.SecrulePayload"
+                            "$ref": "#/definitions/apis.SecurityRulePayload"
                         }
                     }
                 ],
@@ -1725,50 +1725,6 @@ const docTemplatev1 = `{
                 "responses": {
                     "204": {
                         "description": "No Content"
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "$ref": "#/definitions/common.APIError"
-                        }
-                    },
-                    "401": {
-                        "description": "Not authorized",
-                        "schema": {
-                            "$ref": "#/definitions/common.APIError"
-                        }
-                    }
-                }
-            },
-            "patch": {
-                "description": "patch a secrule",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Network"
-                ],
-                "summary": "patch a secrule",
-                "parameters": [
-                    {
-                        "description": "Secrule patch payload",
-                        "name": "message",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/apis.SecrulePatchPayload"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/apis.SecruleResponse"
-                        }
                     },
                     "400": {
                         "description": "Bad request",
@@ -2579,6 +2535,20 @@ const docTemplatev1 = `{
         }
     },
     "definitions": {
+        "apis.ConsoleResponse": {
+            "type": "object",
+            "properties": {
+                "console_url": {
+                    "type": "string"
+                },
+                "instance": {
+                    "$ref": "#/definitions/common.BaseReference"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
         "apis.FlavorListResponse": {
             "type": "object",
             "properties": {
@@ -2599,11 +2569,33 @@ const docTemplatev1 = `{
                 }
             }
         },
-        "apis.FlavorPatchPayload": {
-            "type": "object"
-        },
         "apis.FlavorPayload": {
-            "type": "object"
+            "type": "object",
+            "required": [
+                "cpu",
+                "disk",
+                "memory",
+                "name"
+            ],
+            "properties": {
+                "cpu": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "disk": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "memory": {
+                    "type": "integer",
+                    "minimum": 16
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                }
+            }
         },
         "apis.FlavorResponse": {
             "type": "object",
@@ -2769,7 +2761,33 @@ const docTemplatev1 = `{
             "type": "object"
         },
         "apis.ImagePayload": {
-            "type": "object"
+            "type": "object",
+            "required": [
+                "download_url",
+                "name",
+                "os_version",
+                "user"
+            ],
+            "properties": {
+                "download_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                },
+                "os_version": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                },
+                "user": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                }
+            }
         },
         "apis.ImageResponse": {
             "type": "object",
@@ -2791,7 +2809,10 @@ const docTemplatev1 = `{
                 "size": {
                     "type": "integer"
                 },
-                "username": {
+                "status": {
+                    "type": "string"
+                },
+                "user": {
                     "type": "string"
                 }
             }
@@ -3051,7 +3072,17 @@ const docTemplatev1 = `{
             }
         },
         "apis.KeyPatchPayload": {
-            "type": "object"
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                }
+            }
         },
         "apis.KeyPayload": {
             "type": "object",
@@ -3085,6 +3116,9 @@ const docTemplatev1 = `{
                     "type": "string",
                     "maxLength": 32,
                     "minLength": 2
+                },
+                "public_key": {
+                    "type": "string"
                 }
             }
         },
@@ -3159,10 +3193,10 @@ const docTemplatev1 = `{
                 "offset": {
                     "type": "integer"
                 },
-                "secrules": {
+                "security_rules": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/apis.VPCResponse"
+                        "$ref": "#/definitions/apis.SecruleResponse"
                     }
                 },
                 "total": {
@@ -3170,31 +3204,35 @@ const docTemplatev1 = `{
                 }
             }
         },
-        "apis.SecrulePatchPayload": {
-            "type": "object"
-        },
-        "apis.SecrulePayload": {
-            "type": "object"
-        },
         "apis.SecruleResponse": {
             "type": "object",
+            "required": [
+                "id"
+            ],
             "properties": {
-                "cpu": {
-                    "type": "integer"
-                },
-                "disk": {
-                    "type": "integer"
+                "direction": {
+                    "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "memory": {
+                "ip_version": {
+                    "type": "string"
+                },
+                "port_max": {
                     "type": "integer"
                 },
-                "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
+                "port_min": {
+                    "type": "integer"
+                },
+                "protocol": {
+                    "type": "string"
+                },
+                "remote_cidr": {
+                    "type": "string"
+                },
+                "remote_group": {
+                    "$ref": "#/definitions/common.BaseReference"
                 }
             }
         },
@@ -3219,30 +3257,96 @@ const docTemplatev1 = `{
             }
         },
         "apis.SecurityGroupPatchPayload": {
-            "type": "object"
-        },
-        "apis.SecurityGroupPayload": {
-            "type": "object"
-        },
-        "apis.SecurityGroupResponse": {
             "type": "object",
+            "required": [
+                "name"
+            ],
             "properties": {
-                "cpu": {
-                    "type": "integer"
-                },
-                "disk": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "memory": {
-                    "type": "integer"
+                "is_default": {
+                    "type": "boolean"
                 },
                 "name": {
                     "type": "string",
                     "maxLength": 32,
                     "minLength": 2
+                }
+            }
+        },
+        "apis.SecurityGroupPayload": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "is_default": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                },
+                "vpc": {
+                    "$ref": "#/definitions/common.BaseReference"
+                }
+            }
+        },
+        "apis.SecurityGroupResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "is_default": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                },
+                "target_interfaces": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/apis.TargetInterface"
+                    }
+                },
+                "vpc": {
+                    "$ref": "#/definitions/common.BaseReference"
+                }
+            }
+        },
+        "apis.SecurityRulePayload": {
+            "type": "object",
+            "required": [
+                "protocol"
+            ],
+            "properties": {
+                "direction": {
+                    "type": "string"
+                },
+                "port_max": {
+                    "type": "integer",
+                    "maximum": 65535,
+                    "minimum": 1
+                },
+                "port_min": {
+                    "type": "integer",
+                    "maximum": 65535,
+                    "minimum": 1
+                },
+                "protocol": {
+                    "type": "string",
+                    "enum": [
+                        "ingress",
+                        "egress"
+                    ]
+                },
+                "remote_group": {
+                    "$ref": "#/definitions/common.BaseReference"
+                },
+                "remote_ip": {
+                    "type": "string"
                 }
             }
         },

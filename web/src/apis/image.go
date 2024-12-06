@@ -29,7 +29,8 @@ type ImageResponse struct {
 	Size         int64  `json:"size"`
 	Format       string `json:"format"`
 	Architecture string `json:"architecture"`
-	Username     string `json:"username"`
+	User         string `json:"user"`
+	Status       string `json:"status"`
 }
 
 type ImageListResponse struct {
@@ -40,6 +41,10 @@ type ImageListResponse struct {
 }
 
 type ImagePayload struct {
+	Name        string `json:"name" binding:"required,min=2,max=32"`
+	DownloadURL string `json:"download_url" binding:"required,http_url"`
+	OSVersion   string `json:"os_version" binding:"required,min=2,max=32"`
+	User        string `json:"user" binding:"required,min=2,max=32"`
 }
 
 type ImagePatchPayload struct {
@@ -55,7 +60,18 @@ type ImagePatchPayload struct {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /images/{id} [get]
 func (v *ImageAPI) Get(c *gin.Context) {
-	imageResp := &ImageResponse{}
+	ctx := c.Request.Context()
+	uuID := c.Param("id")
+	image, err := imageAdmin.GetImageByUUID(ctx, uuID)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid image query", err)
+		return
+	}
+	imageResp, err := v.getImageResponse(ctx, image)
+	if err != nil {
+		ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+		return
+	}
 	c.JSON(http.StatusOK, imageResp)
 }
 
@@ -84,6 +100,18 @@ func (v *ImageAPI) Patch(c *gin.Context) {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /images/{id} [delete]
 func (v *ImageAPI) Delete(c *gin.Context) {
+	ctx := c.Request.Context()
+	uuID := c.Param("id")
+	image, err := imageAdmin.GetImageByUUID(ctx, uuID)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
+		return
+	}
+	err = imageAdmin.Delete(ctx, image)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Not able to delete", err)
+		return
+	}
 	c.JSON(http.StatusNoContent, nil)
 }
 
@@ -98,7 +126,23 @@ func (v *ImageAPI) Delete(c *gin.Context) {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /images [post]
 func (v *ImageAPI) Create(c *gin.Context) {
-	imageResp := &ImageResponse{}
+	ctx := c.Request.Context()
+	payload := &ImagePayload{}
+	err := c.ShouldBindJSON(payload)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
+		return
+	}
+	image, err := imageAdmin.Create(ctx, payload.Name, payload.OSVersion, "kvm-x86_64", payload.User, payload.DownloadURL, "x86_64", 0)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Not able to create", err)
+		return
+	}
+	imageResp, err := v.getImageResponse(ctx, image)
+	if err != nil {
+		ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+		return
+	}
 	c.JSON(http.StatusOK, imageResp)
 }
 
@@ -111,7 +155,8 @@ func (v *ImageAPI) getImageResponse(ctx context.Context, image *model.Image) (im
 		Size:         image.Size,
 		Format:       image.Format,
 		Architecture: image.Architecture,
-		Username:     image.UserName,
+		User:         image.UserName,
+		Status:       image.Status,
 	}
 	return
 }

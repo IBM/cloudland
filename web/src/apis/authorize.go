@@ -73,7 +73,7 @@ func Authorize() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		memberShip, err := routes.GetDBMemberShip(user.ID, org.ID)
+		memberShip, err := GetDBMemberShip(user.ID, org.ID)
 		if err != nil {
 			ErrorResponse(c, http.StatusBadRequest, "Invalid resource user with org membership", err)
 			c.Abort()

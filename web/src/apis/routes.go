@@ -13,7 +13,6 @@ import (
 	_ "web/docs"
 
 	"github.com/gin-gonic/gin"
-	_ "github.com/go-macaron/session/postgres"
 	"github.com/spf13/viper"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -82,7 +81,6 @@ func Register() (r *gin.Engine) {
 		authGroup.POST("/api/v1/security_groups/:id/rules", secruleAPI.Create)
 		authGroup.GET("/api/v1/security_groups/:id/rules/:rule_id", secruleAPI.Get)
 		authGroup.DELETE("/api/v1/security_groups/:id/rules/:rule_id", secruleAPI.Delete)
-		authGroup.PATCH("/api/v1/security_groups/:id/rules/:rule_id", secruleAPI.Patch)
 
 		authGroup.GET("/api/v1/floating_ips", floatingIpAPI.List)
 		authGroup.POST("/api/v1/floating_ips", floatingIpAPI.Create)
@@ -98,9 +96,8 @@ func Register() (r *gin.Engine) {
 
 		authGroup.GET("/api/v1/flavors", flavorAPI.List)
 		authGroup.POST("/api/v1/flavors", flavorAPI.Create)
-		authGroup.GET("/api/v1/flavors/:id", flavorAPI.Get)
-		authGroup.DELETE("/api/v1/flavors/:id", flavorAPI.Delete)
-		authGroup.PATCH("/api/v1/flavors/:id", flavorAPI.Patch)
+		authGroup.GET("/api/v1/flavors/:name", flavorAPI.Get)
+		authGroup.DELETE("/api/v1/flavors/:name", flavorAPI.Delete)
 
 		authGroup.GET("/api/v1/images", imageAPI.List)
 		authGroup.POST("/api/v1/images", imageAPI.Create)
@@ -119,6 +116,8 @@ func Register() (r *gin.Engine) {
 		authGroup.GET("/api/v1/instances/:id", instanceAPI.Get)
 		authGroup.DELETE("/api/v1/instances/:id", instanceAPI.Delete)
 		authGroup.PATCH("/api/v1/instances/:id", instanceAPI.Patch)
+
+		authGroup.POST("/api/v1/instances/:id/console", consoleAPI.Create)
 
 		authGroup.GET("/api/v1/instances/:id/interfaces", interfaceAPI.List)
 		authGroup.POST("/api/v1/instances/:id/interfaces", interfaceAPI.Create)

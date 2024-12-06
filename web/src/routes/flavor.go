@@ -30,7 +30,14 @@ var (
 type FlavorAdmin struct{}
 type FlavorView struct{}
 
-func (a *FlavorAdmin) Create(name string, cpu, memory, disk int32) (flavor *model.Flavor, err error) {
+func (a *FlavorAdmin) Create(ctx context.Context, name string, cpu, memory, disk int32) (flavor *model.Flavor, err error) {
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
 	db := DB()
 	flavor = &model.Flavor{
 		Name:   name,
@@ -69,9 +76,15 @@ func (a *FlavorAdmin) Get(ctx context.Context, id int64) (flavor *model.Flavor, 
 	return
 }
 
-func (a *FlavorAdmin) Delete(id int64) (err error) {
+func (a *FlavorAdmin) Delete(ctx context.Context, flavor *model.Flavor) (err error) {
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
 	db := DB()
-	db = db.Begin()
 	defer func() {
 		if err == nil {
 			db.Commit()
@@ -79,7 +92,7 @@ func (a *FlavorAdmin) Delete(id int64) (err error) {
 			db.Rollback()
 		}
 	}()
-	if err = db.Delete(&model.Flavor{Model: model.Model{ID: id}}).Error; err != nil {
+	if err = db.Delete(flavor).Error; err != nil {
 		log.Println("Failed to delete flavor", err)
 		return
 	}
@@ -152,21 +165,20 @@ func (v *FlavorView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *FlavorView) Delete(c *macaron.Context, store session.Store) (err error) {
-	memberShip := GetMemberShip(c.Req.Context())
-	permit := memberShip.CheckPermission(model.Admin)
-	if !permit {
-		log.Println("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
+	ctx := c.Req.Context()
 	id := c.ParamsInt64("id")
 	if id <= 0 {
 		c.Data["ErrorMsg"] = "id <= 0"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	err = flavorAdmin.Delete(id)
+	flavor, err := flavorAdmin.Get(ctx, id)
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	err = flavorAdmin.Delete(ctx, flavor)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
@@ -191,14 +203,6 @@ func (v *FlavorView) New(c *macaron.Context, store session.Store) {
 }
 
 func (v *FlavorView) Create(c *macaron.Context, store session.Store) {
-	memberShip := GetMemberShip(c.Req.Context())
-	permit := memberShip.CheckPermission(model.Admin)
-	if !permit {
-		log.Println("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
 	redirectTo := "../flavors"
 	name := c.Query("name")
 	cores := c.Query("cpu")
@@ -221,19 +225,10 @@ func (v *FlavorView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	flavor, err := flavorAdmin.Create(name, int32(cpu), int32(memory), int32(disk))
+	_, err = flavorAdmin.Create(c.Req.Context(), name, int32(cpu), int32(memory), int32(disk))
 	if err != nil {
 		log.Println("Create flavor failed", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.HTML(500, "500")
-		return
-	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, flavor)
 		return
 	}
 	c.Redirect(redirectTo)

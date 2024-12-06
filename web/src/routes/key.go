@@ -105,6 +105,12 @@ func (a *KeyAdmin) Delete(ctx context.Context, key *model.Key) (err error) {
 		err = fmt.Errorf("Not authorized")
 		return
 	}
+	key.Name = fmt.Sprintf("%s-%d", key.Name, key.CreatedAt.Unix())
+	err = db.Save(key).Error
+	if err != nil {
+		log.Println("DB failed to update key name", err)
+		return
+	}
 	if err = db.Delete(key).Error; err != nil {
 		log.Println("DB failed to delete key ", err)
 		return

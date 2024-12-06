@@ -129,7 +129,7 @@ func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name, pairs strin
 			sgr := &SecurityData{
 				Secgroup:    rule.Secgroup,
 				RemoteIp:    rule.RemoteIp,
-				RemoteGroup: rule.RemoteGroup,
+				RemoteGroup: rule.RemoteGroupID,
 				Direction:   rule.Direction,
 				IpVersion:   rule.IpVersion,
 				Protocol:    rule.Protocol,

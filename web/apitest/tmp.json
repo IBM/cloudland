@@ -1,3 +1,6 @@
 {
-  "public_ip": "10.0.100.100"
+  "name": "ubuntu2204-31791",
+  "os_version": "2204",
+  "download_url": "https://cloud-images.ubuntu.com/jammy/20241004/jammy-server-cloudimg-amd64.img",
+  "user": "ubuntu"
 }

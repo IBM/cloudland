@@ -36,10 +36,10 @@ func FileExist(filename string) bool {
 	return !os.IsNotExist(err)
 }
 
-func (a *ImageAdmin) Create(ctx context.Context, osVersion, diskType, virtType, userName, name, url, format, architecture string, instID int64, isLB bool) (image *model.Image, err error) {
+func (a *ImageAdmin) Create(ctx context.Context, name, osVersion, virtType, userName, url, architecture string, instID int64) (image *model.Image, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
-	image = &model.Image{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, OsVersion: osVersion, DiskType: diskType, VirtType: virtType, UserName: userName, Name: name, OSCode: name, Format: format, Status: "creating", Architecture: architecture, OpenShiftLB: isLB}
+	image = &model.Image{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, OsVersion: osVersion, VirtType: virtType, UserName: userName, Name: name, OSCode: name, Status: "creating", Architecture: architecture}
 	err = db.Create(image).Error
 	if err != nil {
 		log.Println("DB create image failed, %v", err)
@@ -72,6 +72,13 @@ func (a *ImageAdmin) GetImageByUUID(ctx context.Context, uuID string) (image *mo
 		log.Println("Failed to query image, %v", err)
 		return
 	}
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized to get image")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
 	return
 }
 
@@ -81,6 +88,13 @@ func (a *ImageAdmin) GetImageByName(ctx context.Context, name string) (image *mo
 	err = db.Where("name = ?", name).Take(image).Error
 	if err != nil {
 		log.Println("Failed to query image, %v", err)
+		return
+	}
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized to get image")
+		err = fmt.Errorf("Not authorized")
 		return
 	}
 	return
@@ -97,6 +111,13 @@ func (a *ImageAdmin) Get(ctx context.Context, id int64) (image *model.Image, err
 	err = db.Take(image).Error
 	if err != nil {
 		log.Println("DB failed to query image, %v", err)
+		return
+	}
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized to get image")
+		err = fmt.Errorf("Not authorized")
 		return
 	}
 	return
@@ -118,7 +139,7 @@ func (a *ImageAdmin) GetImage(ctx context.Context, reference *BaseReference) (im
 	return
 }
 
-func (a *ImageAdmin) Delete(ctx context.Context, id int64) (err error) {
+func (a *ImageAdmin) Delete(ctx context.Context, image *model.Image) (err error) {
 	db := DB()
 	db = db.Begin()
 	defer func() {
@@ -128,21 +149,23 @@ func (a *ImageAdmin) Delete(ctx context.Context, id int64) (err error) {
 			db.Rollback()
 		}
 	}()
-	image := &model.Image{Model: model.Model{ID: id}}
-	if err = db.Take(image).Error; err != nil {
-		log.Println("Image query failed, %v", err)
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.ValidateOwner(model.Writer, image.Owner)
+	if !permit {
+		log.Println("Not authorized to delete image")
+		err = fmt.Errorf("Not authorized")
 		return
 	}
 	if image.Status == "available" {
 		control := "inter="
-		command := "/opt/cloudland/scripts/backend/clear_image.sh " + strconv.Itoa(int(image.ID)) + " " + image.Format
+		command := fmt.Sprint("/opt/cloudland/scripts/backend/clear_image.sh %d %s", image.ID, image.Format)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Clear image command execution failed", err)
 			return
 		}
 	}
-	if err = db.Delete(&model.Image{Model: model.Model{ID: id}}).Error; err != nil {
+	if err = db.Delete(image).Error; err != nil {
 		return
 	}
 	return
@@ -222,7 +245,7 @@ func (v *ImageView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *ImageView) Delete(c *macaron.Context, store session.Store) (err error) {
-	memberShip := GetMemberShip(c.Req.Context())
+	ctx := c.Req.Context()
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is empty"
@@ -235,14 +258,13 @@ func (v *ImageView) Delete(c *macaron.Context, store session.Store) (err error) 
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	permit, err := memberShip.CheckOwner(model.Writer, "images", int64(imageID))
-	if !permit {
-		log.Println("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
+	image, err := imageAdmin.Get(ctx, int64(imageID))
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	err = imageAdmin.Delete(c.Req.Context(), int64(imageID))
+	err = imageAdmin.Delete(ctx, image)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
@@ -285,41 +307,15 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	redirectTo := "../images"
 	name := c.QueryTrim("name")
 	url := c.QueryTrim("url")
-	format := c.QueryTrim("format")
-	architectureType := c.QueryInt64("architecture")
-	architecture := ""
 	instance := c.QueryInt64("instance")
 	osVersion := c.QueryTrim("osVersion")
-	diskType := c.QueryTrim("diskType")
 	virtType := "kvm-x86_64"
 	userName := c.QueryTrim("userName")
-	isOcpLB := c.QueryTrim("ocpLB")
-	isLB := false
-	if isOcpLB == "" || isOcpLB == "no" {
-		isLB = false
-	} else if isOcpLB == "yes" {
-		isLB = true
-	}
-
-	if architectureType == 0 {
-		architecture = "x86_64"
-	} else {
-		architecture = "s390x"
-	}
-
-	image, err := imageAdmin.Create(c.Req.Context(), osVersion, diskType, virtType, userName, name, url, format, architecture, instance, isLB)
+	architecture := "x86_64"
+	_, err := imageAdmin.Create(c.Req.Context(), name, osVersion, virtType, userName, url, architecture, instance)
 	if err != nil {
 		log.Println("Create instance failed", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.HTML(http.StatusBadRequest, err.Error())
-		return
-	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, image)
 		return
 	}
 	c.Redirect(redirectTo)

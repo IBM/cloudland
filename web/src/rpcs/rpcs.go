@@ -60,5 +60,6 @@ func New() (m *macaron.Macaron) {
 		},
 	))
 	m.Post("/internal/execute", frontbackService.Execute)
+	m.Get("/consoleresolver/token/:token", consoleAdmin.ConsoleResolve)
 	return
 }
