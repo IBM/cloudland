@@ -28,16 +28,16 @@ type SecurityGroup struct {
 
 type SecurityRule struct {
 	Model
-	Owner       int64 `gorm:"default:1"` /* The organization ID of the resource */
-	Secgroup    int64
-	RemoteIp    string `gorm:"type:varchar(32)"`
-	RemoteGroupID int64  
-	RemoteGroup *SecurityGroup`gorm:"foreignkey:RemoteGroupID"`
-	Direction   string `gorm:"type:varchar(16)"`
-	IpVersion   string `gorm:"type:varchar(12)"`
-	Protocol    string `gorm:"type:varchar(20)"`
-	PortMin     int32  `gorm:"default:-1"`
-	PortMax     int32  `gorm:"default:-1"`
+	Owner         int64 `gorm:"default:1"` /* The organization ID of the resource */
+	Secgroup      int64
+	RemoteIp      string `gorm:"type:varchar(32)"`
+	RemoteGroupID int64
+	RemoteGroup   *SecurityGroup `gorm:"foreignkey:RemoteGroupID"`
+	Direction     string         `gorm:"type:varchar(16)"`
+	IpVersion     string         `gorm:"type:varchar(12)"`
+	Protocol      string         `gorm:"type:varchar(20)"`
+	PortMin       int32          `gorm:"default:-1"`
+	PortMax       int32          `gorm:"default:-1"`
 }
 
 func init() {

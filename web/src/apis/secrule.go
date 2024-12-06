@@ -95,6 +95,24 @@ func (v *SecruleAPI) Get(c *gin.Context) {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /security_groups/{id}/rules/{rule_id} [delete]
 func (v *SecruleAPI) Delete(c *gin.Context) {
+	ctx := c.Request.Context()
+	sgID := c.Param("id")
+	secgroup, err := secgroupAdmin.GetSecgroupByUUID(ctx, sgID)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid security group query", err)
+		return
+	}
+	ruleID := c.Param("rule_id")
+	secrule, err := secruleAdmin.GetSecruleByUUID(ctx, ruleID, secgroup)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
+		return
+	}
+	err = secruleAdmin.Delete(ctx, secrule, secgroup)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Not able to delete", err)
+		return
+	}
 	c.JSON(http.StatusNoContent, nil)
 }
 
