@@ -232,6 +232,26 @@ func (a *SecgroupAdmin) Create(ctx context.Context, name string, isDefault bool,
 		log.Println("Failed to create security rule", err)
 		return
 	}
+	if router != nil {
+		var subnets []*model.Subnet
+		err = db.Where("router_id = ?", router.ID).Find(&subnets).Error
+		if err != nil {
+			log.Println("Failed to create security rule", err)
+			return
+		}
+		for _, subnet := range subnets {
+			_, err = secruleAdmin.Create(ctx, subnet.Network, "ingress", "tcp", 1, 65535, secgroup)
+			if err != nil {
+				log.Println("Failed to create security rule", err)
+				return
+			}
+			_, err = secruleAdmin.Create(ctx, subnet.Network, "ingress", "udp", 1, 65535, secgroup)
+			if err != nil {
+				log.Println("Failed to create security rule", err)
+				return
+			}
+		}
+	}
 	return
 }
 
