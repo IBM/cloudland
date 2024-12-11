@@ -4,7 +4,12 @@ source tokenrc
 
 cat >tmp.json <<EOF
 {
-  "public_ip": "10.0.100.100"
+  "public_subnet": {
+    "id": "36ee20ac-1680-4473-8c66-cf79b31c663f"
+  },
+  "instance": {
+    "id": "4f9c35f2-517e-4d76-97ab-8893b6835e6e"
+  }
 }
 EOF
 
