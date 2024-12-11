@@ -85,6 +85,7 @@ func (a *FlavorAdmin) Delete(ctx context.Context, flavor *model.Flavor) (err err
 		return
 	}
 	db := DB()
+	db = db.Begin()
 	defer func() {
 		if err == nil {
 			db.Commit()

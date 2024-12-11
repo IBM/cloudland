@@ -88,24 +88,26 @@ function calc_resource()
         let virtual_cpu=$virtual_cpu+$vcpu
         let virtual_memory=$virtual_memory+$vmem
     done
-#    used_disk=$(sudo du -s $image_dir | awk '{print $1}')
-#    for disk in $(ls $image_dir/* 2>/dev/null); do
-#        if [[ "$disk" = "/opt/cloudland/cache/instance/old_inst_list" ]]; then
-#            continue
-#        fi
-#        vdisk=$(qemu-img info --force-share $disk | grep 'virtual size:' | cut -d' ' -f3 | tr -d '(')
-#        [ -z "$vdisk" ] && continue
-#        let virtual_disk=$virtual_disk+$vdisk
-#    done
-#    let virtual_disk=virtual_disk*1024*1024*1024
-#    total_used_disk=$(sudo du -s $mount_point | awk '{print $1}')
-#    total_disk=$(echo "($total_disk-$total_used_disk+$used_disk)*$disk_over_ratio" | bc)
-#    total_disk=${total_disk%.*}
-#    disk=$(echo "$total_disk-$virtual_disk" | bc)
-#    disk=${disk%.*}
-#    [ $disk -lt 0 ] && disk=0
     disk=10000000000000
     total_disk=10000000000000
+    if [ -z "$wds_address" ]; then
+        used_disk=$(sudo du -s $image_dir | awk '{print $1}')
+        for disk in $(ls $image_dir/* 2>/dev/null); do
+            if [[ "$disk" = "/opt/cloudland/cache/instance/old_inst_list" ]]; then
+                continue
+            fi
+            vdisk=$(qemu-img info --force-share $disk | grep 'virtual size:' | cut -d' ' -f3 | tr -d '(')
+            [ -z "$vdisk" ] && continue
+            let virtual_disk=$virtual_disk+$vdisk
+        done
+        let virtual_disk=virtual_disk*1024*1024*1024
+        total_used_disk=$(sudo du -s $mount_point | awk '{print $1}')
+        total_disk=$(echo "($total_disk-$total_used_disk+$used_disk)*$disk_over_ratio" | bc)
+        total_disk=${total_disk%.*}
+        disk=$(echo "$total_disk-$virtual_disk" | bc)
+        disk=${disk%.*}
+        [ $disk -lt 0 ] && disk=0
+    fi
     total_cpu=$(echo "$total_cpu*$cpu_over_ratio" | bc)
     total_cpu=${total_cpu%.*}
     cpu=$(echo "$total_cpu-$virtual_cpu" | bc)
@@ -124,11 +126,13 @@ function calc_resource()
         echo "cpu=$cpu/$total_cpu memory=$memory/$total_memory disk=$disk/$total_disk network=$network/$total_network load=$load/$total_load"
     fi
     cd /opt/cloudland/run
+    let disk=$disk/1000*1000
+    let total_disk=$total_disk/1000*1000
     old_resource_list=$(cat old_resource_list 2>/dev/null)
     resource_list="'$cpu' '$total_cpu' '$memory' '$total_memory' '$disk' '$total_disk' '$state'"
+    echo "'$cpu' '$total_cpu' '$memory' '$total_memory' '$disk' '$total_disk' '$state'" >/opt/cloudland/run/old_resource_list
     [ "$resource_list" = "$old_resource_list" ] && return
     echo "|:-COMMAND-:| hyper_status.sh '$SCI_CLIENT_ID' '$HOSTNAME' '$cpu' '$total_cpu' '$memory' '$total_memory' '$disk' '$total_disk' '$state' '$vtep_ip' '$ZONE_NAME'"
-    echo "'$cpu' '$total_cpu' '$memory' '$total_memory' '$disk' '$total_disk' '$state'" >/opt/cloudland/run/old_resource_list
 }
 
 calc_resource

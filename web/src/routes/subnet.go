@@ -8,7 +8,6 @@ SPDX-License-Identifier: Apache-2.0
 package routes
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -224,77 +223,6 @@ func (a *SubnetAdmin) GetSubnet(ctx context.Context, reference *BaseReference) (
 }
 
 func (a *SubnetAdmin) Update(ctx context.Context, id int64, name, gateway, start, end, dns, routes string) (subnet *model.Subnet, err error) {
-	db := DB()
-	subnet = &model.Subnet{Model: model.Model{ID: id}}
-	err = db.Take(subnet).Error
-	if err != nil {
-		log.Println("DB failed to query subnet ", err)
-		return
-	}
-	if name != "" {
-		subnet.Name = name
-	}
-	preSize, _ := net.IPMask(net.ParseIP(subnet.Netmask).To4()).Size()
-	if gateway != "" {
-		subnet.Gateway = fmt.Sprintf("%s/%d", gateway, preSize)
-	}
-	if (start != "" && subnet.Start != start) || (end != "" && subnet.End != end) {
-		if start == "" {
-			start = subnet.Start
-		}
-		if end == "" {
-			end = subnet.End
-		}
-		if bytes.Compare(net.ParseIP(start), net.ParseIP(subnet.Start)) > 0 || bytes.Compare(net.ParseIP(end), net.ParseIP(subnet.End)) < 0 {
-			log.Println("Subnet Update failed: only allow expansion of IP address range")
-			err = fmt.Errorf("Update_subnet_reduce_ip_range")
-			return
-		}
-		if bytes.Compare(net.ParseIP(start), net.ParseIP(subnet.Start)) < 0 {
-			err = generateIPAddresses(subnet, net.ParseIP(start), cidr.Dec(net.ParseIP(subnet.Start)), preSize)
-			if err != nil {
-				return
-			}
-			subnet.Start = start
-		}
-		if bytes.Compare(net.ParseIP(end), net.ParseIP(subnet.End)) > 0 {
-			err = generateIPAddresses(subnet, cidr.Inc(net.ParseIP(subnet.End)), net.ParseIP(end), preSize)
-			if err != nil {
-				return
-			}
-			subnet.End = end
-		}
-	}
-	if dns != "" {
-		subnet.NameServer = dns
-	}
-	subnet.Routes = routes
-	err = db.Save(subnet).Error
-	if err != nil {
-		log.Println("DB failed to save subnet ", err)
-		return
-	}
-	if subnet.RouterID > 0 {
-		err = setRouting(ctx, subnet.RouterID, subnet, false)
-		if err != nil {
-			log.Println("Failed to set routing for subnet")
-			return
-		}
-	} else if subnet.Type != "internal" {
-		var ifaces []*model.Interface
-		ifType := fmt.Sprintf("gateway_%s", subnet.Type)
-		err = db.Where("type = ? and subnet = ?", ifType, subnet.ID).Find(&ifaces).Error
-		if err != nil {
-			log.Println("DB failed to query interfaces")
-			return
-		}
-		for _, iface := range ifaces {
-			err = setRouting(ctx, iface.Device, subnet, true)
-			if err != nil {
-				log.Println("Failed to set routing for subnet")
-			}
-		}
-	}
 	return
 }
 
@@ -324,15 +252,31 @@ func clearRouting(ctx context.Context, routerID int64, subnet *model.Subnet) (er
 	return
 }
 
-func setRouting(ctx context.Context, routerID int64, subnet *model.Subnet, routeOnly bool) (err error) {
+func setRouting(ctx context.Context, subnet *model.Subnet, routeOnly bool) (err error) {
 	db := DB()
-	router := &model.Router{Model: model.Model{ID: routerID}}
+	router := &model.Router{Model: model.Model{ID: subnet.RouterID}}
 	err = db.Take(router).Error
 	if err != nil {
 		log.Println("DB failed to query router", err)
 		return
 	}
-	_, err = CreateInterface(ctx, subnet, routerID, router.Owner, router.Hyper, subnet.Gateway, "", "subnet-gw", "gateway", nil)
+	secgroup := &model.SecurityGroup{Model: model.Model{ID: router.DefaultSG}}
+	err = db.Take(secgroup).Error
+	if err != nil {
+		log.Println("DB failed to query router", err)
+		return
+	}
+	_, err = secruleAdmin.Create(ctx, subnet.Network, "ingress", "tcp", 1, 65535, secgroup)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
+	_, err = secruleAdmin.Create(ctx, subnet.Network, "ingress", "udp", 1, 65535, secgroup)
+	if err != nil {
+		log.Println("Failed to create security rule", err)
+		return
+	}
+	_, err = CreateInterface(ctx, subnet, router.ID, router.Owner, router.Hyper, subnet.Gateway, "", "subnet-gw", "gateway", nil)
 	if err != nil {
 		log.Println("Failed to create gateway subnet interface", err)
 		return
@@ -444,7 +388,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, vlan int, name, network, gatew
 		log.Println("Database create address for gateway failed, %v", err)
 	}
 	if subnet.RouterID > 0 {
-		err = setRouting(ctx, subnet.RouterID, subnet, false)
+		err = setRouting(ctx, subnet, false)
 		if err != nil {
 			log.Println("Failed to set routing for subnet")
 			return
