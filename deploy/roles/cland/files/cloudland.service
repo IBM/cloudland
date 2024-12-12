@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 User=cland
 EnvironmentFile=/etc/sysconfig/cloudland
-ExecStart=/opt/cloudland/bin/cloudland
+ExecStart=/usr/local/bin/cloudland.sh
 KillMode=process
 Restart=on-failure
 

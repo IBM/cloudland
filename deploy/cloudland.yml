@@ -30,3 +30,10 @@
   become_user: root
   roles:
     - {role: database, become: yes}
+
+# deploy wds storage
+- name: install wds
+  hosts: wds
+  become_user: root
+  roles:
+    - {role: wds, become: yes}

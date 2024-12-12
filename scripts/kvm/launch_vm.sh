@@ -100,5 +100,5 @@ while [ $i -lt $nvlan ]; do
     let i=$i+1
 done
 virsh start $vm_ID
-[ $? -eq 0 ] && state=running && ./replace_vnc_passwd.sh $ID
-echo "|:-COMMAND-:| $(basename $0) '$ID' '$state' '$SCI_CLIENT_ID' 'unknown'"
+[ $? -eq 0 ] && state=running
+echo "|:-COMMAND-:| $(basename $0) '$ID' '$state' '$SCI_CLIENT_ID' 'init'"

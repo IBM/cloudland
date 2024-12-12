@@ -1,0 +1,46 @@
+- name: copy wds required qemu.conf
+  copy: 
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: preserve
+  with_items:
+    - {src: 'qemu.conf', dest: '/etc/libvirt', owner: 'root'}
+  tags: [storage]
+
+- name: set compute libvirt service
+  systemd: 
+    name: "{{ item }}"
+    enabled: yes
+    daemon_reload: yes
+    state: restarted
+  with_items:
+    - 'libvirtd'
+  tags: [storage]
+
+- name: register hugepage
+  script: calc_hugepage.sh
+  register: hugepage
+  tags: [sysctl, storage]
+
+- name: Apply sysctl vm.nr_hugepages
+  sysctl:
+    name: vm.nr_hugepages
+    state: present
+    value: "{{ hugepage.stdout_lines[0] }}"
+    reload: yes
+  tags: [sysctl, storage]
+
+- name: execute preinstall.sh
+  vars:
+    ansible_command_timeout: 1800
+  script: computingnode/preinstall.sh computingnode
+  tags: [storage,wds]
+
+- name: reboot compute node
+  ansible.builtin.reboot:
+  tags: [reboot,storage]
+
+- name: execute preconfig.sh
+  script: computingnode/preconfig.sh computingnode
+  tags: [storage]
+  ignore_errors: yes

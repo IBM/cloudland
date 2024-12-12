@@ -76,6 +76,17 @@ function router_status()
     echo "$router_list" >old_router_list
 }
 
+function sync_inst_fdb()
+{
+    flag_file=$run_dir/need_to_sync_fdb
+    [ ! -f "$flag_file" ] && return
+    inst_ids=$(virsh list | grep running | awk '{print $2}' | cut -d- -f2)
+    for inst_id in $inst_ids; do
+        echo "|:-COMMAND-:| launch_vm.sh '$inst_id' 'running' '$SCI_CLIENT_ID' 'sync'"
+    done
+    rm -f $flag_file
+}
+
 function calc_resource()
 {
     virtual_cpu=0
@@ -136,6 +147,7 @@ function calc_resource()
 }
 
 calc_resource
+sync_inst_fdb
 #probe_arp >/dev/null 2>&1
 #inst_status
 #vlan_status
