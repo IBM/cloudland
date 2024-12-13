@@ -1,0 +1,5 @@
+<disk type='vhostuser' device='disk'>
+  <driver name='qemu' type='raw'/>
+  <source type='unix' path='VM_UNIX_SOCK'/>
+  <target dev='VOLUME_TARGET' bus='virtio'/>
+</disk>

@@ -17,11 +17,13 @@ import (
 )
 
 func init() {
-	Add("detach_volume", DetachVolume)
+	Add("detach_volume_local", DetachVolume)
+	Add("detach_volume_wds_vhost", DetachVolume)
 }
 
 func DetachVolume(ctx context.Context, args []string) (status string, err error) {
-	//|:-COMMAND-:| detach_volume.sh 5 7
+	//|:-COMMAND-:| detach_volume.sh_local 5 7
+	//|:-COMMAND-:| detach_volume.sh_wds_vhost 5 7
 	db := DB()
 	argn := len(args)
 	if argn < 3 {

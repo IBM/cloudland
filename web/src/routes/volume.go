@@ -18,6 +18,7 @@ import (
 	"web/src/model"
 
 	"github.com/go-macaron/session"
+	"github.com/spf13/viper"
 	macaron "gopkg.in/macaron.v1"
 )
 
@@ -29,23 +30,116 @@ var (
 type VolumeAdmin struct{}
 type VolumeView struct{}
 
-func (a *VolumeAdmin) Create(ctx context.Context, name string, size int) (volume *model.Volume, err error) {
-	memberShip := GetMemberShip(ctx)
+func GetVolumeDriver() (driver string) {
+	if viper.IsSet("volume.driver") {
+		driver = viper.GetString("volume.driver")
+	} else {
+		driver = "local"
+	}
+	return
+}
+
+func (a *VolumeAdmin) Get(ctx context.Context, id int64) (volume *model.Volume, err error) {
 	db := DB()
-	volume = &model.Volume{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, Name: name, Format: "raw", Size: int32(size), Status: "pending"}
+	memberShip := GetMemberShip(ctx)
+	where := memberShip.GetWhere()
+	volume = &model.Volume{Model: model.Model{ID: id}}
+	if err = db.Preload("Instance").Where(where).Take(volume).Error; err != nil {
+		log.Println("Failed to query volume, %v", err)
+		return
+	}
+	permit := memberShip.ValidateOwner(model.Reader, volume.Owner)
+	if !permit {
+		log.Println("Not authorized to read the volume")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
+	return
+}
+
+func (a *VolumeAdmin) GetVolumeByUUID(ctx context.Context, uuID string) (volume *model.Volume, err error) {
+	db := DB()
+	memberShip := GetMemberShip(ctx)
+	volume = &model.Volume{}
+	where := memberShip.GetWhere()
+	err = db.Preload("Instance").Where(where).Where("uuid = ?", uuID).Take(volume).Error
+	if err != nil {
+		log.Println("DB: query volume failed", err)
+		return
+	}
+	permit := memberShip.ValidateOwner(model.Reader, volume.Owner)
+	if !permit {
+		log.Println("Not authorized to read the volume")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
+	return
+}
+
+func (a *VolumeAdmin) Create(ctx context.Context, name string, size int32,
+	iopsLimit int32, iopsBurst int32, bpsLimit int32, bpsBurst int32, poolID string) (volume *model.Volume, err error) {
+	memberShip := GetMemberShip(ctx)
+	// check the permission
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized to create volume")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
+
+	db := DB()
+	if iopsLimit == 0 {
+		iopsLimit = viper.GetInt32("volume.default_iops_limit")
+	}
+	if iopsBurst == 0 {
+		iopsBurst = viper.GetInt32("volume.default_iops_burst")
+	}
+	if bpsLimit == 0 {
+		bpsLimit = viper.GetInt32("volume.default_bps_limit")
+	}
+	if bpsBurst == 0 {
+		bpsBurst = viper.GetInt32("volume.default_bps_burst")
+	}
+	if poolID == "" {
+		poolID = viper.GetString("volume.default_wds_pool_id")
+	}
+	volume = &model.Volume{
+		Model:     model.Model{Creater: memberShip.UserID},
+		Owner:     memberShip.OrgID,
+		Name:      name,
+		Format:    "raw",
+		Size:      int32(size),
+		IopsLimit: iopsLimit,
+		IopsBurst: iopsBurst,
+		BpsLimit:  bpsLimit,
+		BpsBurst:  bpsBurst,
+		Status:    "pending",
+	}
 	err = db.Create(volume).Error
 	if err != nil {
 		log.Println("DB failed to create volume", err)
 		return
 	}
 	control := fmt.Sprintf("inter=")
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_volume.sh '%d' '%d'", volume.ID, volume.Size)
+	// RN-156: append the volume UUID to the command
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_volume_%s.sh '%d' '%d' '%s' '%d' '%d' '%d' '%d' '%s'",
+		GetVolumeDriver(), volume.ID, volume.Size, volume.UUID, iopsLimit, iopsBurst, bpsLimit, bpsBurst, poolID)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Create volume execution failed", err)
 		return
 	}
 	return
+}
+
+func (a *VolumeAdmin) UpdateByUUID(ctx context.Context, uuid string, name string, instID int64) (volume *model.Volume, err error) {
+	db := DB()
+	volume = &model.Volume{}
+	if err = db.Where("uuid = ?", uuid).Take(volume).Error; err != nil {
+		log.Println("DB: query volume failed", err)
+		return
+	}
+	return a.Update(ctx, volume.ID, name, instID)
 }
 
 func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID int64) (volume *model.Volume, err error) {
@@ -55,6 +149,15 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 		log.Println("DB: query volume failed", err)
 		return
 	}
+	// check the permission
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.ValidateOwner(model.Writer, volume.Owner)
+	if !permit {
+		log.Println("Not authorized to update the volume")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
+
 	if volume.InstanceID > 0 && instID > 0 && volume.InstanceID != instID {
 		err = fmt.Errorf("Pease detach volume before attach it to new instance")
 		return
@@ -62,9 +165,15 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 	if name != "" {
 		volume.Name = name
 	}
+	vol_driver := GetVolumeDriver()
+	uuid := volume.UUID
+	if vol_driver != "local" {
+		uuid = volume.GetOriginVolumeID()
+	}
+	// RN-156: append the volume UUID to the command
 	if volume.InstanceID > 0 && instID == 0 && volume.Status == "attached" {
 		control := fmt.Sprintf("inter=%d", volume.Instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/detach_volume.sh '%d' '%d'", volume.Instance.ID, volume.ID)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/detach_volume_%s.sh '%d' '%d' '%s'", vol_driver, volume.Instance.ID, volume.ID, uuid)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Detach volume execution failed", err)
@@ -79,7 +188,8 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 			return
 		}
 		control := fmt.Sprintf("inter=%d", instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/attach_volume.sh '%d' '%d' '%s'", instance.ID, volume.ID, volume.Path)
+		// RN-156: append the volume UUID to the command
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/attach_volume_%s.sh '%d' '%d' '%s' '%s'", vol_driver, instance.ID, volume.ID, volume.GetVolumePath(), uuid)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Create volume execution failed", err)
@@ -89,7 +199,7 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 		volume.Instance = nil
 	}
 	if err = db.Model(volume).Save(volume).Error; err != nil {
-		log.Println("DB: query volume failed", err)
+		log.Println("DB: update volume failed", err)
 		return
 	}
 	return
@@ -110,22 +220,47 @@ func (a *VolumeAdmin) Delete(ctx context.Context, id int64) (err error) {
 		log.Println("DB: query volume failed", err)
 		return
 	}
+	// check the permission
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.ValidateOwner(model.Writer, volume.Owner)
+	if !permit {
+		log.Println("Not authorized to delete the volume")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
+
 	if err = db.Model(volume).Delete(volume).Error; err != nil {
-		log.Println("DB: update volume failed", err)
+		log.Println("DB: delete volume failed", err)
 		return
 	}
 	control := fmt.Sprintf("inter=")
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_volume.sh '%d' '%d'", volume.ID, volume.Path)
+	vol_driver := GetVolumeDriver()
+	uuid := volume.UUID
+	if vol_driver != "local" {
+		uuid = volume.GetOriginVolumeID()
+	}
+	log.Println("Delete volume", vol_driver, volume.ID, uuid, volume.GetVolumePath())
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_volume_%s.sh '%d' '%s' '%s'", vol_driver, volume.ID, uuid, volume.GetVolumePath())
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Delete volume execution failed", err)
 		return
 	}
 	if err = db.Delete(volume).Error; err != nil {
-		log.Println("DB: update volume failed", err)
+		log.Println("DB: delete volume failed", err)
 		return
 	}
 	return
+}
+
+func (a *VolumeAdmin) DeleteVolumeByUUID(ctx context.Context, uuID string) (err error) {
+	db := DB()
+	volume := &model.Volume{}
+	if err = db.Where("uuid = ?", uuID).Take(volume).Error; err != nil {
+		log.Println("DB: query volume failed", err)
+		return
+	}
+	return a.Delete(ctx, volume.ID)
 }
 
 func (a *VolumeAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, volumes []*model.Volume, err error) {
@@ -270,6 +405,12 @@ func (v *VolumeView) Edit(c *macaron.Context, store session.Store) {
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "volumes", int64(volID))
+	if err != nil {
+		log.Println("Failed to check permission", err)
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
 	if !permit {
 		log.Println("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
@@ -306,28 +447,46 @@ func (v *VolumeView) Patch(c *macaron.Context, store session.Store) {
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "volumes", int64(volID))
+	if err != nil {
+		log.Println("Failed to check permission", err)
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+
 	if !permit {
 		log.Println("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
+	log.Printf("Patch volume(%s) to instance(%s)", id, instance)
 	instID, err := strconv.Atoi(instance)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	permit, err = memberShip.CheckOwner(model.Writer, "instances", int64(instID))
-	if !permit {
-		log.Println("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
-		return
+	if instID > 0 {
+		// have to check the instance permission
+		permit, err = memberShip.CheckOwner(model.Writer, "instances", int64(instID))
+		if err != nil {
+			log.Println("Failed to check permission", err)
+			c.Data["ErrorMsg"] = err.Error()
+			c.HTML(http.StatusBadRequest, "error")
+			return
+		}
+
+		if !permit {
+			log.Println("Not authorized for this operation")
+			c.Data["ErrorMsg"] = "Not authorized for this operation"
+			c.HTML(http.StatusBadRequest, "error")
+			return
+		}
 	}
 	volume, err := volumeAdmin.Update(c.Req.Context(), int64(volID), name, int64(instID))
 	if err != nil {
-		log.Println("Failed to create volume", err)
+		log.Println("Failed to update volume", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
 				"error": err.Error(),
@@ -363,7 +522,7 @@ func (v *VolumeView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	volume, err := volumeAdmin.Create(c.Req.Context(), name, vsize)
+	volume, err := volumeAdmin.Create(c.Req.Context(), name, int32(vsize), 0, 0, 0, 0, "")
 	if err != nil {
 		log.Println("Create volume failed", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {

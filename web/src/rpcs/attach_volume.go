@@ -17,7 +17,8 @@ import (
 )
 
 func init() {
-	Add("attach_volume", AttachVolume)
+	Add("attach_volume_local", AttachVolume)
+	Add("attach_volume_wds_vhost", AttachVolume)
 }
 
 func AttachVolume(ctx context.Context, args []string) (status string, err error) {
