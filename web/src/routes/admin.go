@@ -35,6 +35,8 @@ func adminPassword() (password string) {
 }
 
 func adminInit(ctx context.Context) {
+	var user *model.User
+	var org *model.Organization
 	username := "admin"
 	dbs.AutoUpgrade("01-admin-upgrade", func(db *gorm.DB) (err error) {
 		if err = db.Take(&model.User{}, "username = ?", username).Error; err != nil {
@@ -43,31 +45,41 @@ func adminInit(ctx context.Context) {
 			defer func() { DB = dbFunc }()
 			DB = func() *gorm.DB { return db }
 			password := adminPassword()
-			var user *model.User
 			user, err = userAdmin.Create(ctx, username, password)
 			if err != nil {
 				return
 			}
-			var org *model.Organization
 			org, err = orgAdmin.Create(ctx, username, username)
 			if err != nil {
 				return
 			}
-			var memberShip *MemberShip
-			memberShip, err = GetDBMemberShip(user.ID, org.ID)
-			if err != nil {
-				return
-			}
-			_, err := secgroupAdmin.GetSecgroupByName(ctx, SystemDefaultName)
-			if err != nil {
-				ctx1 := memberShip.SetContext(ctx)
-				_, err = secgroupAdmin.Create(ctx1, SystemDefaultName, true, nil)
-				if err != nil {
-					log.Println("Failed to create system default security group", err)
-				}
-			}
 		}
 		return
 	})
+	_, err := secgroupAdmin.GetSecgroupByName(ctx, SystemDefaultSGName)
+	if err != nil {
+		if user == nil {
+			user, err = userAdmin.GetUserByName(username)
+			if err != nil {
+				log.Println("Failed to get user", err)
+				return
+			}
+		}
+		if org == nil {
+			org, err = orgAdmin.GetOrgByName(username)
+			if err != nil {
+				log.Println("Failed to get org", err)
+				return
+			}
+		}
+		memberShip, err := GetDBMemberShip(user.ID, org.ID)
+		if err != nil {
+			log.Println("Failed to get membership", err)
+			return
+		}
+		memberShip.Role = model.Admin
+		ctx1 := memberShip.SetContext(ctx)
+		_, _ = secgroupAdmin.Create(ctx1, SystemDefaultSGName, true, nil)
+	}
 	return
 }

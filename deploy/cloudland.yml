@@ -9,7 +9,6 @@
   become_user: root
   roles:
     - {role: hyper, become: yes}
-    - {role: nginx, become: yes}
 
 # deploy root node
 - name: install cland
@@ -30,3 +29,10 @@
   become_user: root
   roles:
     - {role: database, become: yes}
+
+# deploy wds storage
+- name: install wds
+  hosts: wds
+  become_user: root
+  roles:
+    - {role: wds, become: yes}

@@ -83,10 +83,8 @@ func (a *SecgroupAdmin) Update(ctx context.Context, sgID int64, name string, isD
 }
 
 func (a *SecgroupAdmin) Get(ctx context.Context, id int64) (secgroup *model.SecurityGroup, err error) {
-	if id <= 0 {
-		err = fmt.Errorf("Invalid secgroup ID: %d", id)
-		log.Println(err)
-		return
+	if id < 0 {
+		return a.GetSecgroupByName(ctx, SystemDefaultSGName)
 	}
 	memberShip := GetMemberShip(ctx)
 	db := DB()
@@ -130,10 +128,17 @@ func (a *SecgroupAdmin) GetSecgroupByName(ctx context.Context, name string) (sec
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	secgroup = &model.SecurityGroup{}
-	err = db.Preload("Router").Where(where).Where("name = ?", name).Take(secgroup).Error
+	err = db.Where(where).Where("name = ?", name).Take(secgroup).Error
 	if err != nil {
 		log.Println("Failed to query secgroup ", err)
 		return
+	}
+	if secgroup.RouterID > 0 {
+		err = db.Where("router_id = ?", secgroup.ID).Take(secgroup.Router).Error
+		if err != nil {
+			log.Println("Failed to query router ", err)
+			return
+		}
 	}
 	permit := memberShip.ValidateOwner(model.Reader, secgroup.Owner)
 	if !permit {
@@ -189,11 +194,6 @@ func (a *SecgroupAdmin) Create(ctx context.Context, name string, isDefault bool,
 			err = fmt.Errorf("Not authorized")
 			return
 		}
-	}
-	if name == SystemDefaultName {
-		log.Println("Not authorized for this operation")
-		err = fmt.Errorf("Not authorized")
-		return
 	}
 	db := DB()
 	secgroup = &model.SecurityGroup{Model: model.Model{Creater: memberShip.UserID}, Owner: owner, Name: name, IsDefault: isDefault, RouterID: routerID}
