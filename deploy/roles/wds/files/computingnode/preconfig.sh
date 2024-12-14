@@ -58,6 +58,7 @@ log "Reloading NVMe modules..."
 sudo rmmod nvme &>> "$LOG_FILE"
 sudo rmmod nvme-core &>> "$LOG_FILE"
 sudo modprobe nvme && sudo modprobe nvme-rdma &>> "$LOG_FILE"
+sudo modprobe br_netfilter &>> "$LOG_FILE"
 check_status
 
 # List NVMe modules
@@ -67,6 +68,8 @@ check_status
 
 
 if [ "$1" == "computingnode" ]; then
+    touch /etc/selinux/config
+    setenforce 0
     # modify os configure for computing node.
     log "Modify os configure for computing node...."
     sudo ln -sf /usr/bin/bash /bin/sh
@@ -79,12 +82,6 @@ if [ "$1" == "computingnode" ]; then
     sudo rm -f /etc/systemd/system/chronyd.service
     sudo systemctl daemon-reload
     sudo systemctl start chronyd
-
-    sudo sed -i "s/#PermitRootLogin prohibit-password/PermitRootLogin yes/g" /etc/ssh/sshd_config
-    sudo cat /etc/ssh/sshd_config | grep "PermitRootLogin yes" &>> "$LOG_FILE"
-    sudo systemctl restart sshd
-
-    sudo echo 'root:root123' | sudo chpasswd root
 fi
 
 log "Pre-configuration completed successfully."

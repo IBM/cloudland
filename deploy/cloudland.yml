@@ -9,7 +9,6 @@
   become_user: root
   roles:
     - {role: hyper, become: yes}
-    - {role: nginx, become: yes}
 
 # deploy root node
 - name: install cland

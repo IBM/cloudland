@@ -9,7 +9,7 @@
 - name: change system max open files
   copy:
     src: files/limits.conf
-    dest: /etc/security/limits.d/hypercube.conf
+    dest: /etc/security/limits.d/cloudland.conf
   tags: [sysfd]
 
 - name: install ntp service
@@ -26,4 +26,17 @@
   apt: 
     name: '*'
     state: latest
-  tags: upgrade
+  tags: [upgrade]
+
+- name: create cland user
+  user:
+    name: cland
+    create_home: yes
+    shell: '/bin/bash'
+
+- name: config cland user sudoer
+  lineinfile: 
+    dest: /etc/sudoers.d/cland
+    state: present
+    create: true
+    line: 'cland ALL=(ALL) NOPASSWD:ALL'

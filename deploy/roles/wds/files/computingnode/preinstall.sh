@@ -29,19 +29,6 @@ safe_cd() {
 # Log start
 log "Starting installation process..."
 
-
-if [ "$1" == "computingnode" ]; then
-    # remove systemd-timesyncd initramfs-tools
-    log "remove systemd-timesyncd initramfs-tools..."
-    sudo apt -y autoremove
-    sudo apt remove -y systemd-timesyncd &>> "$LOG_FILE"
-    sudo apt remove -y initramfs-tools &>> "$LOG_FILE"
-    check_status
-    apt -y install selinux-utils
-    touch /etc/selinux/config
-    setenforce 0
-fi
-
 # Extract tar file
 PEG_PKG=PEG_Ubuntu_22.04_mlnxDriver_deps.tar.gz
 wget https://dev-repo.raksmart.com/packages/WDS/computingnode/$PEG_PKG

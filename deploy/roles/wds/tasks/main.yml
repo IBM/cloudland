@@ -1,3 +1,18 @@
+- name: remove wds unused packages
+  apt:
+    name: ['systemd-timesyncd', 'initramfs-tools']
+    autoremove: yes
+    purge: true
+    state: absent
+  tags: [storage]
+
+- name: install wds required packages
+  apt:
+    name: ['selinux-utils', 'docker', 'docker.io']
+    update_cache: yes
+    state: present
+  tags: [storage]
+
 - name: copy wds required qemu.conf
   copy: 
     src: "{{ item.src }}"
@@ -43,4 +58,3 @@
 - name: execute preconfig.sh
   script: computingnode/preconfig.sh computingnode
   tags: [storage]
-  ignore_errors: yes

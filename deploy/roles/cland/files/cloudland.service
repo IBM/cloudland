@@ -7,7 +7,6 @@ Type=simple
 User=cland
 EnvironmentFile=/etc/sysconfig/cloudland
 ExecStart=/usr/local/bin/cloudland.sh
-KillMode=process
 Restart=on-failure
 
 [Install]

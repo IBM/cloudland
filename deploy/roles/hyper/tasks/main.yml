@@ -1,6 +1,7 @@
 - name: install common packages
   apt:
     name: ['jq', 'wget', 'mkisofs', 'network-manager', 'net-tools', 'python3-pip']
+    update_cache: yes
     state: present
   ignore_errors: yes
   tags: [be_pkg]
