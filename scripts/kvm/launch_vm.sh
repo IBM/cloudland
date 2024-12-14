@@ -3,7 +3,7 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 6 ] && die "$0 <vm_ID> <image> <snapshot> <name> <cpu> <memory> <disk_size>"
+[ $# -lt 6 ] && die "$0 <vm_ID> <image> <snapshot> <name> <cpu> <memory> <disk_size> <volume_id>"
 
 ID=$1
 vm_ID=inst-$1
@@ -13,6 +13,7 @@ vm_name=$4
 vm_cpu=$5
 vm_mem=$6
 disk_size=$7
+vol_ID=$8
 vm_stat=error
 vm_vnc=""
 
@@ -45,10 +46,11 @@ if [ -z "$wds_address" ]; then
             exit -1
         fi
         qemu-img resize -q $vm_img "${disk_size}G" &> /dev/null
+        echo "|:-COMMAND-:| $(basename $0) '$vol_ID' 'volume-${vol_ID}.disk' 'available'"
     fi
 else
     image=$(basename $img_name .raw)
-    vhost_name=instance-$ID-boot
+    vhost_name=instance-$ID-boot-volume-$vol_ID
     snapshot_name=${image}-${snapshot}
     snapshot_id=$(wds_curl GET "api/v2/sync/block/snaps" | jq --arg snap $snapshot_name -r '.snaps | .[] | select(.name == $snap) | .id')
     if [ -z "$snapshot_id" ]; then
@@ -73,6 +75,7 @@ else
         echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' 'failed to create wds vhost for boot volume!'"
         exit -1
     fi
+    echo "|:-COMMAND-:| create_volume_wds_vhost '$vol_ID' 'available' 'wds_vhost://$wds_pool_id/$volume_id'"
     ux_sock=/var/run/wds/$vhost_name
     template=$template_dir/wds_template.xml
 fi

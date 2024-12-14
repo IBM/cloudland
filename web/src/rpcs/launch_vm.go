@@ -173,5 +173,40 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 		log.Println("Failed to send fdb rules", err)
 		return
 	}
+	if reason == "sync" {
+		err = syncFloatingIp(ctx, instance)
+		if err != nil {
+			log.Println("Failed to sync floating ip", err)
+			return
+		}
+	}
+	return
+}
+
+func syncFloatingIp(ctx context.Context, instance *model.Instance) (err error) {
+	db := DB()
+	var primaryIface *model.Interface
+	for i, iface := range instance.Interfaces {
+		if iface.PrimaryIf {
+			primaryIface = instance.Interfaces[i]
+			break
+		}
+	}
+	if primaryIface != nil {
+		floatingIp := &model.FloatingIp{}
+		err = db.Preload("Interface").Preload("Address").Preload("Subnet").Where("instance_id = ?", instance.ID).Take(floatingIp).Error
+		if err != nil {
+			log.Println("Failed to get floating ip", err)
+			return
+		}
+		pubSubnet := floatingIp.Interface.Address.Subnet
+		control := fmt.Sprintf("inter=%d", instance.Hyper)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_floating.sh '%d' '%s' '%s' '%d' '%s' '%d'", floatingIp.RouterID, floatingIp.FipAddress, pubSubnet.Gateway, pubSubnet.Vlan, primaryIface.Address.Address, primaryIface.Address.Subnet.Vlan)
+		err = HyperExecute(ctx, control, command)
+		if err != nil {
+			log.Println("Execute floating ip failed", err)
+			return
+		}
+	}
 	return
 }
