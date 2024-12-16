@@ -11,7 +11,6 @@ router=$2
 vm_xml=$(virsh dumpxml $vm_ID)
 virsh undefine $vm_ID
 cmd="virsh destroy $vm_ID"
-#sidecar span log $span "Internal: $cmd" "result: $result"
 result=$(eval "$cmd")
 count=$(echo $vm_xml | xmllint --xpath 'count(/domain/devices/interface)' -)
 for (( i=1; i <= $count; i++ )); do
@@ -21,12 +20,10 @@ for (( i=1; i <= $count; i++ )); do
     if [ "$use_lb" = "false" ]; then
         br_name=br$SCI_CLIENT_ID
         result=$(icp-tower --ovs-bridge=$br_name gate remove --interface $vif_dev)
-        sidecar span log $span "Internal: $vif_dev is deleted" "result: $result"
     else
         vni=${br_name#br}
         ./clear_sg_chain.sh $vif_dev
     fi
-    sidecar span log $span "Callback: clear_vnic.sh '$vif_dev'"
 done
 ./clear_local_router.sh $router
 
@@ -43,5 +40,4 @@ else
     volume_id=$(wds_curl GET "api/v2/sync/block/volumes" | jq --arg volume $vhost_name -r '.volumes | .[] | select(.name == $volume) | .id')
     wds_curl DELETE "api/v2/sync/block/volumes/$volume_id?force=false"
 fi
-sidecar span log $span "Callback: `basename $0` '$vm_ID'"
 echo "|:-COMMAND-:| $(basename $0) '$ID'"

@@ -734,22 +734,77 @@ definitions:
         type: array
     type: object
   apis.VolumePatchPayload:
+    properties:
+      bps_burst:
+        type: integer
+      bps_limit:
+        type: integer
+      instance:
+        $ref: '#/definitions/common.BaseID'
+      iops_burst:
+        type: integer
+      iops_limit:
+        type: integer
+      name:
+        type: string
+      size:
+        type: integer
     type: object
   apis.VolumePayload:
+    properties:
+      bps_burst:
+        minimum: 0
+        type: integer
+      bps_limit:
+        minimum: 0
+        type: integer
+      count:
+        maximum: 16
+        minimum: 1
+        type: integer
+      iops_burst:
+        minimum: 0
+        type: integer
+      iops_limit:
+        minimum: 0
+        type: integer
+      name:
+        type: string
+      pool_id:
+        type: string
+      size:
+        type: integer
+    required:
+    - name
+    - size
     type: object
   apis.VolumeResponse:
     properties:
-      cpu:
+      bps_burst:
         type: integer
-      disk:
+      bps_limit:
         type: integer
+      format:
+        type: string
+      href:
+        type: string
       id:
         type: string
-      memory:
+      instance:
+        $ref: '#/definitions/common.BaseReference'
+      iops_burst:
+        type: integer
+      iops_limit:
         type: integer
       name:
-        maxLength: 32
-        minLength: 2
+        type: string
+      path:
+        type: string
+      size:
+        type: integer
+      status:
+        type: string
+      target:
         type: string
     type: object
   apis.ZoneListResponse:
@@ -1371,11 +1426,11 @@ paths:
       - application/json
       description: get a instance
       parameters:
-      - description: Instance ID
+      - description: Instance UUID
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -2285,6 +2340,12 @@ paths:
       consumes:
       - application/json
       description: get a volume
+      parameters:
+      - description: Volume UUID
+        in: path
+        name: id
+        required: true
+        type: string
       produces:
       - application/json
       responses:

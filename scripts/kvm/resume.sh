@@ -10,7 +10,6 @@ vm_ID=$1
 working_dir=/tmp/$vm_ID
 mkisofs -quiet -R -V config-2 -o ${cache_dir}/meta/${vm_ID}.iso $working_dir &> /dev/null
 #rm -rf $working_dir
-sidecar span log $span "Internal: virsh resume $vm_ID" "Result: $result"
 virsh start $vm_ID
 if [ $? -eq 0 ]; then
     virsh autostart $vm_ID

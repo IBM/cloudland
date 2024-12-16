@@ -796,8 +796,8 @@ const docTemplatev1 = `{
                 "summary": "get a instance",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Instance ID",
+                        "type": "string",
+                        "description": "Instance UUID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2191,6 +2191,15 @@ const docTemplatev1 = `{
                     "Compute"
                 ],
                 "summary": "get a volume",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Volume UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -3621,30 +3630,111 @@ const docTemplatev1 = `{
             }
         },
         "apis.VolumePatchPayload": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "bps_burst": {
+                    "type": "integer"
+                },
+                "bps_limit": {
+                    "type": "integer"
+                },
+                "instance": {
+                    "$ref": "#/definitions/common.BaseID"
+                },
+                "iops_burst": {
+                    "type": "integer"
+                },
+                "iops_limit": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                }
+            }
         },
         "apis.VolumePayload": {
-            "type": "object"
+            "type": "object",
+            "required": [
+                "name",
+                "size"
+            ],
+            "properties": {
+                "bps_burst": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "bps_limit": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "count": {
+                    "type": "integer",
+                    "maximum": 16,
+                    "minimum": 1
+                },
+                "iops_burst": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "iops_limit": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pool_id": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                }
+            }
         },
         "apis.VolumeResponse": {
             "type": "object",
             "properties": {
-                "cpu": {
+                "bps_burst": {
                     "type": "integer"
                 },
-                "disk": {
+                "bps_limit": {
                     "type": "integer"
+                },
+                "format": {
+                    "type": "string"
+                },
+                "href": {
+                    "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "memory": {
+                "instance": {
+                    "$ref": "#/definitions/common.BaseReference"
+                },
+                "iops_burst": {
+                    "type": "integer"
+                },
+                "iops_limit": {
                     "type": "integer"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "target": {
+                    "type": "string"
                 }
             }
         },

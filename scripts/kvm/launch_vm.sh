@@ -39,7 +39,6 @@ if [ -z "$wds_address" ]; then
         format=$(qemu-img info $image_cache/$img_name | grep 'file format' | cut -d' ' -f3)
         cmd="qemu-img convert -f $format -O qcow2 $image_cache/$img_name $vm_img"
         result=$(eval "$cmd")
-        sidecar span log $span "Internal: $cmd, result: $result"
         vsize=$(qemu-img info $vm_img | grep 'virtual size:' | cut -d' ' -f5 | tr -d '(')
         if [ "$vsize" -gt "$fsize" ]; then
             echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' 'flavor is smaller than image size'"

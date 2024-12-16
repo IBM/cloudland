@@ -179,7 +179,8 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		if i == 0 && hyperID >= 0 {
 			control = fmt.Sprintf("inter=%d %s", hyperID, rcNeeded)
 		}
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' 'image-%d.%s' '%d' '%s' '%d' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, image.ID, image.Format, snapshot, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, bootVolume.ID, base64.StdEncoding.EncodeToString([]byte(metadata)))
+		imagePrefix := strings.Split(image.UUID, "-")[0]
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' 'image-%d-%s.%s' '%d' '%s' '%d' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, image.ID, imagePrefix, image.Format, snapshot, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, bootVolume.ID, base64.StdEncoding.EncodeToString([]byte(metadata)))
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Launch vm command execution failed", err)

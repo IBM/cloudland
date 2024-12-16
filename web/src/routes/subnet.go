@@ -431,6 +431,12 @@ func (a *SubnetAdmin) Delete(ctx context.Context, subnet *model.Subnet) (err err
 		log.Println("Database failed to count subnet", err)
 		return
 	}
+	subnet.Name = fmt.Sprintf("%s-%d", subnet.Name, subnet.CreatedAt.Unix())
+	err = db.Save(subnet).Error
+	if err != nil {
+		log.Println("DB failed to update subnet name", err)
+		return
+	}
 	err = db.Delete(subnet).Error
 	if err != nil {
 		log.Println("Database delete subnet failed, %v", err)

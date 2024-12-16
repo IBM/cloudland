@@ -23,6 +23,13 @@
   roles:
     - {role: web, become: yes}
 
+# deploy nginx
+- name: install nginx
+  hosts: web
+  become_user: root
+  roles:
+    - {role: nginx, become: yes}
+
 # deploy database
 - name: install database
   hosts: database

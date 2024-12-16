@@ -16,8 +16,6 @@ if [ -n "$vm_nic" ]; then
     ip link del $vs_nic
     ip netns del $instance
     rm -f $cache_dir/meta/$vm_ID.sh
-#    sidecar span log $span "Internal: namespace $instance and vnic $vs_nic is deleted" "result: $result" "Callback: clear_vnic.sh '$vif_dev'"
     echo "|:-COMMAND-:| clear_vnic.sh '$vs_nic'"
 fi
-#sidecar span log $span "Callback: `basename $0` '$instance'"
 echo "|:-COMMAND-:| `basename $0` '$instance'"

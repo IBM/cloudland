@@ -149,7 +149,7 @@ func (a *ConsoleView) ConsoleURL(c *macaron.Context, store session.Store) {
 	}
 	accessAddr := viper.GetString("console.host")
 	accessPort := viper.GetInt("console.port")
-	consoleURL := fmt.Sprintf("/novnc/vnc.html?host=%s&port=%d&autoconnect=true&encrypt=true&path=websockify?token=%s", accessAddr, accessPort, tokenString)
+	consoleURL := fmt.Sprintf("https://novnc.com/noVNC/vnc.html?host=%s&port=%d&autoconnect=true&encrypt=true&path=websockify?token=%s", accessAddr, accessPort, tokenString)
 	c.Resp.Header().Set("Location", consoleURL)
 	c.JSON(301, nil)
 	return
