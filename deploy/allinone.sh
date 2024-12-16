@@ -17,7 +17,8 @@ mkdir $cland_root_dir/{bin,deploy,etc,lib6,log,run,sci,scripts,src,web,cache} $c
 [ ! -s "$net_conf" ] && sudo cp ${net_conf}.example $net_conf
 
 # Install packages
-apt install -y make g++ libssl-dev libjsoncpp-dev ansible jq wget mkisofs network-manager net-tools python3-pip qemu-system-x86 qemu-utils bridge-utils ipcalc ipset iputils-arping libvirt-daemon libvirt-daemon-system libvirt-daemon-system-systemd libvirt-clients dnsmasq keepalived dnsmasq-utils conntrack
+apt -y update
+apt install -y make g++ libssl-dev libjsoncpp-dev ansible jq wget mkisofs network-manager net-tools python3-pip qemu-system-x86 qemu-utils bridge-utils ipcalc ipset iputils-arping libvirt-daemon libvirt-daemon-system libvirt-daemon-system-systemd libvirt-clients dnsmasq-base keepalived dnsmasq-utils conntrack
 go version
 if [ $? -ne 0 ]; then
     cd /tmp
@@ -62,7 +63,6 @@ function inst_cland()
 # Install libvirt console proxy
 function inst_console_proxy()
 {
-    sudo yum -y install libvirt-devel
     cd /opt
     sudo git clone https://github.com/libvirt/libvirt-console-proxy.git
     sudo chown cland.cland libvirt-console-proxy
@@ -132,11 +132,11 @@ diff $cland_root_dir/bin/cloudland $cland_root_dir/src/cloudland
 
 gen_hosts
 cd $cland_root_dir/deploy
-ansible-playbook cloudland.yml -e @$net_conf --skip-tags fe_bin,sci,sync,firewall #--tags hosts,be_pkg,be_conf,be_srv
 #allinone_firewall
 inst_web
-#inst_console_proxy
+inst_console_proxy
+ansible-playbook cloudland.yml -e @$net_conf --skip-tags fe_bin,sci,sync,firewall #--tags hosts,be_pkg,be_conf,be_srv
 #ansible-playbook cloudland.yml -e @$net_conf --tags fe_srv,console,nginx
-#sudo chown -R cland.cland $cland_root_dir
+sudo chown -R cland.cland $cland_root_dir
 
 echo "Installation completes. Log file is /tmp/allinone-deploy-2021-01-10-10:42:09.log"

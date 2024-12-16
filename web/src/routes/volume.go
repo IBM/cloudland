@@ -76,17 +76,8 @@ func (a *VolumeAdmin) GetVolumeByUUID(ctx context.Context, uuID string) (volume 
 	return
 }
 
-func (a *VolumeAdmin) Create(ctx context.Context, name string, size int32,
+func (a *VolumeAdmin) CreateVolume(ctx context.Context, name string, size int32, instanceID int64,
 	iopsLimit int32, iopsBurst int32, bpsLimit int32, bpsBurst int32, poolID string) (volume *model.Volume, err error) {
-	memberShip := GetMemberShip(ctx)
-	// check the permission
-	permit := memberShip.CheckPermission(model.Writer)
-	if !permit {
-		log.Println("Not authorized to create volume")
-		err = fmt.Errorf("Not authorized")
-		return
-	}
-
 	db := DB()
 	if iopsLimit == 0 {
 		iopsLimit = viper.GetInt32("volume.default_iops_limit")
@@ -103,6 +94,7 @@ func (a *VolumeAdmin) Create(ctx context.Context, name string, size int32,
 	if poolID == "" {
 		poolID = viper.GetString("volume.default_wds_pool_id")
 	}
+	memberShip := GetMemberShip(ctx)
 	volume = &model.Volume{
 		Model:     model.Model{Creater: memberShip.UserID},
 		Owner:     memberShip.OrgID,
@@ -120,6 +112,26 @@ func (a *VolumeAdmin) Create(ctx context.Context, name string, size int32,
 		log.Println("DB failed to create volume", err)
 		return
 	}
+	return
+}
+
+func (a *VolumeAdmin) Create(ctx context.Context, name string, size int32,
+	iopsLimit int32, iopsBurst int32, bpsLimit int32, bpsBurst int32, poolID string) (volume *model.Volume, err error) {
+	memberShip := GetMemberShip(ctx)
+	// check the permission
+	permit := memberShip.CheckPermission(model.Writer)
+	if !permit {
+		log.Println("Not authorized to create volume")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
+
+	volume, err = a.CreateVolume(ctx, name, size, 0, iopsLimit, iopsBurst, bpsLimit, bpsBurst, poolID)
+	if err != nil {
+		log.Println("DB create volume failed", err)
+		return
+	}
+
 	control := fmt.Sprintf("inter=")
 	// RN-156: append the volume UUID to the command
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_volume_%s.sh '%d' '%d' '%s' '%d' '%d' '%d' '%d' '%s'",

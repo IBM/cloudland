@@ -19,7 +19,6 @@ deploy_dir=/opt/cloudland/deploy
 vxlan_db=/opt/cloudland/db/cloudland.db
 cland_private_key=$deploy_dir/.ssh/cland.key
 export JAEGER_SERVICE_NAME="SCI-Backend"
-span=$(basename $0 .sh)
 function die()
 {
     echo $1
@@ -80,16 +79,6 @@ function apply_bridge()
     iptables-save >/etc/network/iptables.up.rules
 }
 
-function sidecar()
-{
-    [ -x /usr/local/bin/sidecar ] && /usr/local/bin/sidecar $@
-}
-
-function end_span()
-{
-    sidecar span finish $span
-}
-
 function sync_target()
 {
     target=$1
@@ -143,9 +132,3 @@ function wds_curl()
     token="bearer $(curl -L -XPOST -k "$wds_address/api/v1/login" -H "Content-Type: application/json" -d "{\"name\": \"$wds_admin\",\"password\": \"$wds_pass\"}" | jq -r .access_token)"
     curl -s -L -X$action -H 'Content-Type: application/json' -H "Authorization: $token" -k "$wds_address/$path" -d "$data"
 }
-
-if [ "$span" != "report_rc" ]; then
-    sidecar span start $span
-    trap end_span EXIT
-fi
-

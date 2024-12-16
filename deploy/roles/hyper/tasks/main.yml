@@ -179,12 +179,25 @@
 - name: set compute services NetworkManager
   systemd: 
     name: "{{ item }}"
-    enabled: yes
-    daemon_reload: yes
-    state: restarted
+    enabled: true
+    state: started
   with_items:
     - 'NetworkManager'
-  tags: [be_srv]
+  tags: [be_srv, netplan]
+
+- name: change netplan renderer
+  script: change_netplan_renderer.sh
+  tags: [be_srv, netplan]
+
+- name: stop and mask networkd
+  systemd: 
+    name: "{{ item }}"
+    enabled: false
+    masked: yes
+    state: stopped 
+  with_items:
+    - 'systemd-networkd'
+  tags: [be_srv, netplan]
 
 - name: start recover_onboot services
   systemd: 

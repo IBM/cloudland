@@ -3,14 +3,16 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 2 ] && die "$0 <ID> <url>"
+[ $# -lt 3 ] && die "$0 <ID> <prefix> <url>"
 
 ID=$1
-url=$2
+prefix=$2
+url=$3
 
+image_name=image-$ID-$prefix
 state=error
 mkdir -p $image_cache
-image=$image_cache/image-$1
+image=$image_cache/$image_name
 curl -s $url -o $image
 if [ ! -s "$image" ]; then
     echo "|:-COMMAND-:| $(basename $0) '$ID' '$state' '$format'"
@@ -29,15 +31,22 @@ else
     qemu-img convert -f $format -O raw ${image} ${image}.raw
     format=raw
     uss_id=$(wds_curl GET "api/v2/wds/uss" | jq --arg hname $(hostname -s) -r '.uss_gateways | .[] | select(.server_name == $hname) | .id')
-    task_id=$(wds_curl "PUT" "api/v2/sync/block/volumes/import" "{\"volname\": \"image-$ID\", \"path\": \"${image}.raw\", \"ussid\": \"$uss_id\", \"start_blockid\": 0, \"volsize\": $image_size, \"poolid\": \"$wds_pool_id\", \"num_block\": 0, \"speed\": 8}" | jq -r .task_id)
+    uss_service=$(systemctl -a | grep uss | awk '{print $1}')
+    cat /etc/systemd/system/$uss_service | grep cloudland
+    if [ $? -ne 0 ]; then
+        wds_curl PUT "api/v2/sync/wds/uss/$uss_id" '{"action":"add","mount_path":"/opt/cloudland/cache/image"}'
+	systemctl restart $uss_service
+    fi
+    task_id=$(wds_curl "PUT" "api/v2/sync/block/volumes/import" "{\"volname\": \"$image_name\", \"path\": \"${image}.raw\", \"ussid\": \"$uss_id\", \"start_blockid\": 0, \"volsize\": $image_size, \"poolid\": \"$wds_pool_id\", \"num_block\": 0, \"speed\": 8}" | jq -r .task_id)
     state=uploading
     for i in {1..100}; do
         st=$(wds_curl GET "api/v2/sync/block/volumes/tasks/$task_id" | jq -r .task.state)
 	[ "$st" = "TASK_COMPLETE" ] && state=uploaded && break
+	[ "$st" = "TASK_FAILED" ] && state=failed && break
 	sleep 5
     done
-    rm -f ${image}.raw
-    volume_id=$(wds_curl GET "api/v2/sync/block/volumes" | jq --arg image image-$ID -r '.volumes | .[] | select(.name == $image) | .id')
+    rm -f ${image}
+    volume_id=$(wds_curl GET "api/v2/sync/block/volumes" | jq --arg image $image_name -r '.volumes | .[] | select(.name == $image) | .id')
     [ -n "$volume_id" ] && state=available
 fi
 echo "|:-COMMAND-:| $(basename $0) '$ID' '$state' '$format' '$image_size'"
