@@ -3,11 +3,12 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 1 ] && die "$0 <vm_ID> <router>"
+[ $# -lt 3 ] && die "$0 <vm_ID> <boot_volume> <router>"
 
 ID=$1
-vm_ID=inst-$1
-router=$2
+vm_ID=inst-$ID
+boot_volume=$2
+router=$3
 vm_xml=$(virsh dumpxml $vm_ID)
 virsh undefine $vm_ID
 cmd="virsh destroy $vm_ID"
@@ -32,12 +33,15 @@ rm -rf $xml_dir/$vm_ID
 if [ -z "$wds_address" ]; then	
     rm -f ${image_dir}/${vm_ID}.*
 else
-    vhost_name=instance-$ID-boot
-    vhost_id=$(wds_curl GET "api/v2/sync/block/vhost" | jq --arg vhost $vhost_name -r '.vhosts | .[] | select(.name == $vhost) | .id')
-    uss_id=$(wds_curl GET "api/v2/wds/uss" | jq --arg hname $(hostname -s) -r '.uss_gateways | .[] | select(.server_name == $hname) | .id')
-    wds_curl PUT "api/v2/sync/block/vhost/unbind_uss" "{\"vhost_id\": \"$vhost_id\", \"uss_gw_id\": \"$uss_id\", \"is_snapshot\": false}"
-    wds_curl DELETE "api/v2/sync/block/vhost/$vhost_id"
-    volume_id=$(wds_curl GET "api/v2/sync/block/volumes" | jq --arg volume $vhost_name -r '.volumes | .[] | select(.name == $volume) | .id')
-    wds_curl DELETE "api/v2/sync/block/volumes/$volume_id?force=false"
+    [ -z "$boot_volume" ] && boot_volume=instance-$ID-boot
+    vhost_name=$boot_volume
+    if [ -S "/var/run/wds/$vhost_name" ]; then
+        vhost_id=$(wds_curl GET "api/v2/sync/block/vhost" | jq --arg vhost $vhost_name -r '.vhosts | .[] | select(.name == $vhost) | .id')
+        uss_id=$(wds_curl GET "api/v2/wds/uss" | jq --arg hname $(hostname -s) -r '.uss_gateways | .[] | select(.server_name == $hname) | .id')
+        wds_curl PUT "api/v2/sync/block/vhost/unbind_uss" "{\"vhost_id\": \"$vhost_id\", \"uss_gw_id\": \"$uss_id\", \"is_snapshot\": false}"
+        wds_curl DELETE "api/v2/sync/block/vhost/$vhost_id"
+        volume_id=$(wds_curl GET "api/v2/sync/block/volumes" | jq --arg volume $vhost_name -r '.volumes | .[] | select(.name == $volume) | .id')
+        wds_curl DELETE "api/v2/sync/block/volumes/$volume_id?force=false"
+    fi
 fi
 echo "|:-COMMAND-:| $(basename $0) '$ID'"

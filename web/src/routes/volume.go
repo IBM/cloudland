@@ -76,7 +76,7 @@ func (a *VolumeAdmin) GetVolumeByUUID(ctx context.Context, uuID string) (volume 
 	return
 }
 
-func (a *VolumeAdmin) CreateVolume(ctx context.Context, name string, size int32, instanceID int64,
+func (a *VolumeAdmin) CreateVolume(ctx context.Context, name string, size int32, instanceID int64, booting bool,
 	iopsLimit int32, iopsBurst int32, bpsLimit int32, bpsBurst int32, poolID string) (volume *model.Volume, err error) {
 	db := DB()
 	if iopsLimit == 0 {
@@ -99,6 +99,8 @@ func (a *VolumeAdmin) CreateVolume(ctx context.Context, name string, size int32,
 		Model:     model.Model{Creater: memberShip.UserID},
 		Owner:     memberShip.OrgID,
 		Name:      name,
+		InstanceID: instanceID,
+		Booting: booting,
 		Format:    "raw",
 		Size:      int32(size),
 		IopsLimit: iopsLimit,
@@ -126,7 +128,7 @@ func (a *VolumeAdmin) Create(ctx context.Context, name string, size int32,
 		return
 	}
 
-	volume, err = a.CreateVolume(ctx, name, size, 0, iopsLimit, iopsBurst, bpsLimit, bpsBurst, poolID)
+	volume, err = a.CreateVolume(ctx, name, size, 0, false, iopsLimit, iopsBurst, bpsLimit, bpsBurst, poolID)
 	if err != nil {
 		log.Println("DB create volume failed", err)
 		return
@@ -217,7 +219,7 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 	return
 }
 
-func (a *VolumeAdmin) Delete(ctx context.Context, id int64) (err error) {
+func (a *VolumeAdmin) Delete(ctx context.Context, volume *model.Volume) (err error) {
 	db := DB()
 	db = db.Begin()
 	defer func() {
@@ -227,11 +229,6 @@ func (a *VolumeAdmin) Delete(ctx context.Context, id int64) (err error) {
 			db.Rollback()
 		}
 	}()
-	volume := &model.Volume{Model: model.Model{ID: id}}
-	if err = db.Model(volume).Take(volume).Error; err != nil {
-		log.Println("DB: query volume failed", err)
-		return
-	}
 	// check the permission
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.ValidateOwner(model.Writer, volume.Owner)
@@ -272,7 +269,7 @@ func (a *VolumeAdmin) DeleteVolumeByUUID(ctx context.Context, uuID string) (err 
 		log.Println("DB: query volume failed", err)
 		return
 	}
-	return a.Delete(ctx, volume.ID)
+	return a.Delete(ctx, volume)
 }
 
 func (a *VolumeAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, volumes []*model.Volume, err error) {
@@ -362,7 +359,7 @@ func (v *VolumeView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *VolumeView) Delete(c *macaron.Context, store session.Store) (err error) {
-	memberShip := GetMemberShip(c.Req.Context())
+	ctx := c.Req.Context()
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is Empty"
@@ -375,14 +372,13 @@ func (v *VolumeView) Delete(c *macaron.Context, store session.Store) (err error)
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	permit, err := memberShip.CheckOwner(model.Writer, "volumes", int64(volumeID))
-	if !permit {
-		log.Println("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
+	volume, err := volumeAdmin.Get(ctx, int64(volumeID))
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	err = volumeAdmin.Delete(c.Req.Context(), int64(volumeID))
+	err = volumeAdmin.Delete(c.Req.Context(), volume)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
