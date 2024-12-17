@@ -14,7 +14,7 @@ vm_cpu=$5
 vm_mem=$6
 disk_size=$7
 vol_ID=$8
-vm_stat=error
+state=error
 vm_vnc=""
 
 md=$(cat)
@@ -33,7 +33,7 @@ if [ -z "$wds_address" ]; then
         is_vol="false"
         if [ ! -s "$image_cache/$img_name" ]; then
             echo "Image is not available!"
-            echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' 'image $img_name not available!'"
+            echo "|:-COMMAND-:| `basename $0` '$ID' '$state' '$SCI_CLIENT_ID' 'image $img_name not available!'"
             exit -1
         fi
         format=$(qemu-img info $image_cache/$img_name | grep 'file format' | cut -d' ' -f3)
@@ -45,7 +45,7 @@ if [ -z "$wds_address" ]; then
             exit -1
         fi
         qemu-img resize -q $vm_img "${disk_size}G" &> /dev/null
-        echo "|:-COMMAND-:| $(basename $0) '$vol_ID' 'volume-${vol_ID}.disk' 'available'"
+        echo "|:-COMMAND-:| create_volume_local.sh '$vol_ID' 'volume-${vol_ID}.disk' 'available'"
     fi
 else
     image=$(basename $img_name .raw)
@@ -57,21 +57,21 @@ else
 	wds_curl POST "api/v2/sync/block/snaps" "{\"name\": \"$snapshot_name\", \"description\": \"$snapshot_name\", \"volume_id\": \"$image_volume_id\"}"
         snapshot_id=$(wds_curl GET "api/v2/sync/block/snaps" | jq --arg snap $snapshot_name -r '.snaps | .[] | select(.name == $snap) | .id')
         if [ -z "$snapshot_id" ]; then
-            echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' 'failed to create image snapshot'"
+            echo "|:-COMMAND-:| `basename $0` '$ID' '$state' '$SCI_CLIENT_ID' 'failed to create image snapshot'"
             exit -1
         fi
     fi
     volume_id=$(wds_curl POST "api/v2/sync/block/snaps/$snapshot_id/clone" "{\"name\": \"$vhost_name\"}" | jq -r .id)
     rest_code=$(wds_curl PUT "api/v2/sync/block/volumes/$volume_id/expand" "{\"size\": $fsize}" | jq -r .ret_code)
     if [ "$rest_code" != "0" ]; then
-        echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' 'failed to create boot volume!'"
+        echo "|:-COMMAND-:| `basename $0` '$ID' '$state' '$SCI_CLIENT_ID' 'failed to create boot volume!'"
         exit -1
     fi
     uss_id=$(wds_curl GET "api/v2/wds/uss" | jq --arg hname $(hostname -s) -r '.uss_gateways | .[] | select(.server_name == $hname) | .id')
     vhost_id=$(wds_curl POST "api/v2/sync/block/vhost" "{\"name\": \"$vhost_name\"}" | jq -r .id)
     ret_code=$(wds_curl PUT "api/v2/sync/block/vhost/bind_uss" "{\"vhost_id\": \"$vhost_id\", \"uss_gw_id\": \"$uss_id\", \"lun_id\": \"$volume_id\", \"is_snapshot\": false}" | jq -r .ret_code)
     if [ "$rest_code" != "0" ]; then
-        echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' 'failed to create wds vhost for boot volume!'"
+        echo "|:-COMMAND-:| `basename $0` '$ID' '$state' '$SCI_CLIENT_ID' 'failed to create wds vhost for boot volume!'"
         exit -1
     fi
     echo "|:-COMMAND-:| create_volume_wds_vhost '$vol_ID' 'available' 'wds_vhost://$wds_pool_id/$volume_id'"
@@ -86,21 +86,9 @@ mkdir -p $xml_dir/$vm_ID
 vm_xml=$xml_dir/$vm_ID/${vm_ID}.xml
 cp $template $vm_xml
 sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_img#g; s#VM_UNIX_SOCK#$ux_sock#g; s#VM_META#$vm_meta#g;" $vm_xml
-state=error
 virsh define $vm_xml
 virsh autostart $vm_ID
-vlans=$(jq .vlans <<< $metadata)
-nvlan=$(jq length <<< $vlans)
-i=0
-while [ $i -lt $nvlan ]; do
-    vlan=$(jq -r .[$i].vlan <<< $vlans)
-    ip=$(jq -r .[$i].ip_address <<< $vlans)
-    mac=$(jq -r .[$i].mac_address <<< $vlans)
-    gateway=$(jq -r .[$i].gateway <<< $vlans)
-    router=$(jq -r .[$i].router <<< $vlans)
-    jq -r .[$i].security <<< $vlans | ./attach_nic.sh "$ID" "$vlan" "$ip" "$mac" "$gateway" "$router"
-    let i=$i+1
-done
+jq .vlans <<< $metadata | ./sync_nic_info.sh "$ID"
 virsh start $vm_ID
 [ $? -eq 0 ] && state=running
 echo "|:-COMMAND-:| $(basename $0) '$ID' '$state' '$SCI_CLIENT_ID' 'init'"

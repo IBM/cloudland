@@ -60,17 +60,6 @@ type NetworkLink struct {
 	Type    string `json:"type,omitempty"`
 }
 
-type VlanInfo struct {
-	Device     string          `json:"device"`
-	Vlan       int64           `json:"vlan"`
-	Gateway    string          `json:"gateway"`
-	Router     int64           `json:"router"`
-	PublicLink int64           `json:"public_link"`
-	IpAddr     string          `json:"ip_address"`
-	MacAddr    string          `json:"mac_address"`
-	SecRules   []*SecurityData `json:"security"`
-}
-
 type InstanceData struct {
 	Userdata string             `json:"userdata"`
 	VirtType string             `json:"virt_type"`
@@ -331,28 +320,6 @@ func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subne
 	return
 }
 
-func (a *InstanceAdmin) getSecurityData(ctx context.Context, secGroups []*model.SecurityGroup) (securityData []*SecurityData, err error) {
-	secRules, err := model.GetSecurityRules(secGroups)
-	if err != nil {
-		log.Println("Failed to get security rules", err)
-		return
-	}
-	for _, rule := range secRules {
-		sgr := &SecurityData{
-			Secgroup:    rule.Secgroup,
-			RemoteIp:    rule.RemoteIp,
-			RemoteGroup: rule.RemoteGroupID,
-			Direction:   rule.Direction,
-			IpVersion:   rule.IpVersion,
-			Protocol:    rule.Protocol,
-			PortMin:     rule.PortMin,
-			PortMax:     rule.PortMax,
-		}
-		securityData = append(securityData, sgr)
-	}
-	return
-}
-
 func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo, keys []*model.Key, instance *model.Instance, userdata string, routerID, zoneID int64, service string) (interfaces []*model.Interface, metadata string, err error) {
 	vlans := []*VlanInfo{}
 	instNetworks := []*InstanceNetwork{}
@@ -373,7 +340,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 	instNetwork.Routes = append(instNetwork.Routes, instRoute)
 	instNetworks = append(instNetworks, instNetwork)
 	instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-	securityData, err := a.getSecurityData(ctx, primaryIface.SecurityGroups)
+	securityData, err := GetSecurityData(ctx, primaryIface.SecurityGroups)
 	if err != nil {
 		log.Println("Get security data for primary interface failed, %v", err)
 		return
@@ -396,7 +363,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 			Link:    iface.Name,
 			ID:      fmt.Sprintf("network%d", i+1),
 		})
-		securityData, err = a.getSecurityData(ctx, ifaceInfo.SecurityGroups)
+		securityData, err = GetSecurityData(ctx, ifaceInfo.SecurityGroups)
 		if err != nil {
 			log.Println("Get security data for secondary interface failed, %v", err)
 			return
@@ -528,7 +495,7 @@ func (a *InstanceAdmin) Get(ctx context.Context, id int64) (instance *model.Inst
 		log.Println("Failed to query floating ip(s), %v", err)
 		return
 	}
-	if err = db.Preload("Secgroups").Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
+	if err = db.Preload("SecurityGroups").Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
 		log.Println("Failed to query interfaces %v", err)
 		return
 	}
@@ -554,7 +521,7 @@ func (a *InstanceAdmin) GetInstanceByUUID(ctx context.Context, uuID string) (ins
 		log.Println("Failed to query floating ip(s), %v", err)
 		return
 	}
-	if err = db.Preload("Secgroups").Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
+	if err = db.Preload("SecurityGroups").Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
 		log.Println("Failed to query interfaces %v", err)
 		return
 	}
@@ -599,7 +566,7 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 	}
 	db = db.Offset(0).Limit(-1)
 	for _, instance := range instances {
-		if err = db.Preload("Secgroups").Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
+		if err = db.Preload("SecurityGroups").Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
 			log.Println("Failed to query interfaces %v", err)
 			return
 		}
@@ -773,7 +740,7 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 	c.Data["Images"] = images
 	c.Data["Flavors"] = flavors
 	c.Data["Subnets"] = subnets
-	c.Data["Secgroups"] = secgroups
+	c.Data["SecurityGroups"] = secgroups
 	c.Data["Keys"] = keys
 	c.Data["Hypers"] = hypers
 	c.Data["Zones"] = zones
