@@ -9,7 +9,14 @@
   script: gencert.sh
   tags: [web_conf]
 
+- name: register public_ip
+  command: bash -c "ifconfig {{ vnc_device }} | grep 'inet ' | awk '{print $2}'"
+  register: public_ip
+  tags: [web_conf]
+
 - name: cloudland base config file
+  vars:
+    public_addr: "{{ public_ip.stdout_lines[0] }}"
   template:
     src: config.toml.j2
     dest: /opt/cloudland/web/conf/config.toml

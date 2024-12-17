@@ -4,7 +4,7 @@ key = "/etc/ssl/private/cland-selfsigned.key"
 cert = "/etc/ssl/certs/cland-selfsigned.crt"
 
 [console]
-host = "{{ hostvars[groups['web'][0]]['ansible_host'] }}"
+host = "{{ public_addr }}"
 port = 443
 
 [rest]

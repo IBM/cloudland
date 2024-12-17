@@ -49,7 +49,7 @@ if [ -z "$wds_address" ]; then
     fi
 else
     image=$(basename $img_name .raw)
-    vhost_name=instance-$ID-boot-volume-$vol_ID
+    vhost_name=instance-$ID-$image-boot-volume-$vol_ID
     snapshot_name=${image}-${snapshot}
     snapshot_id=$(wds_curl GET "api/v2/sync/block/snaps" | jq --arg snap $snapshot_name -r '.snaps | .[] | select(.name == $snap) | .id')
     if [ -z "$snapshot_id" ]; then

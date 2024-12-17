@@ -161,7 +161,9 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		instance.Flavor = flavor
 		instance.Zone = zone
 		var bootVolume *model.Volume
-		bootVolume, err = volumeAdmin.CreateVolume(ctx, fmt.Sprintf("instance-%d-boot", instance.ID), flavor.Disk, instance.ID, 0, 0, 0, 0, "")
+		imagePrefix := fmt.Sprintf("image-%d-%s", image.ID, strings.Split(image.UUID, "-")[0])
+		// boot volume name format: instance-15-image-2-3c0cca59-boot-volume-10 
+		bootVolume, err = volumeAdmin.CreateVolume(ctx, fmt.Sprintf("instance-%d-%s-boot-volume", instance.ID, imagePrefix), flavor.Disk, instance.ID, true, 0, 0, 0, 0, "")
 		if err != nil {
 			log.Println("Failed to create boot volume", err)
 			return
@@ -179,8 +181,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		if i == 0 && hyperID >= 0 {
 			control = fmt.Sprintf("inter=%d %s", hyperID, rcNeeded)
 		}
-		imagePrefix := strings.Split(image.UUID, "-")[0]
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' 'image-%d-%s.%s' '%d' '%s' '%d' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, image.ID, imagePrefix, image.Format, snapshot, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, bootVolume.ID, base64.StdEncoding.EncodeToString([]byte(metadata)))
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' '%s.%s' '%d' '%s' '%d' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, imagePrefix, image.Format, snapshot, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, bootVolume.ID, base64.StdEncoding.EncodeToString([]byte(metadata)))
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			log.Println("Launch vm command execution failed", err)
@@ -471,20 +472,35 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 		log.Println("Failed to query floating ip(s), %v", err)
 		return
 	}
+	var bootVolume *model.Volume
 	if instance.Volumes != nil {
-		for _, vol := range instance.Volumes {
+		for i, vol := range instance.Volumes {
+			if vol.Booting {
+				bootVolume = instance.Volumes[i]
+				continue
+			}
 			_, err = volumeAdmin.Update(ctx, vol.ID, "", 0)
 			if err != nil {
-				log.Println("Failed to delete floating ip, %v", err)
+				log.Println("Failed to detach volume, %v", err)
 				return
 			}
 		}
+		instance.Volumes = nil
 	}
 	control := fmt.Sprintf("inter=%d", instance.Hyper)
 	if instance.Hyper == -1 {
 		control = "toall="
 	}
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh '%d' '%d'", instance.ID, instance.RouterID)
+	bootName := ""
+	if bootVolume != nil {
+		bootName = fmt.Sprintf("%s-%d", bootVolume.Name, bootVolume.ID)
+		err = volumeAdmin.Delete(ctx, bootVolume)
+		if err != nil {
+			log.Println("Failed to delete volume, %v", err)
+			return
+		}
+	}
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh '%d' '%s' '%d'", instance.ID, bootName, instance.RouterID)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		log.Println("Delete vm command execution failed ", err)

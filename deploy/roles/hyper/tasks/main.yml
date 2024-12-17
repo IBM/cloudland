@@ -99,7 +99,6 @@
   vars:
     network_device: "{{ netdev.stdout_lines[0] }}"
     vxlan_device: "{{ network_device }}"
-    vnc_device: "{{ network_device }}"
   template:
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
