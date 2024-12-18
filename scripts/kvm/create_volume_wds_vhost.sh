@@ -22,6 +22,14 @@ if [ -z "$wds_address" ]; then
     exit -1
 fi
 
+if [ -z "$pool_ID" ]; then
+    pool_ID=$wds_pool_id
+fi
+if [ -z "$pool_ID" ]; then
+    echo "|:-COMMAND-:| $(basename $0) '$vol_ID' '$state' 'pool_ID is not set'"
+    exit -1
+fi
+
 state="creating"
 let size=$size*1024*1024*1024 # GB to Bytes
 # fix wds said: "The volume name cannot start with a number"
