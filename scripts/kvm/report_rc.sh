@@ -76,15 +76,23 @@ function router_status()
     echo "$router_list" >old_router_list
 }
 
-function sync_inst_fdb()
+function sync_instance()
 {
-    flag_file=$run_dir/need_to_sync_fdb
-    [ ! -f "$flag_file" ] && return
-    inst_ids=$(virsh list | grep running | awk '{print $2}' | cut -d- -f2)
+    flag_file=$run_dir/need_to_sync
+    boot_file=/proc/sys/kernel/random/boot_id
+    diff $flag_file $boot_file
+    [ $? -eq 0 ] && return
+    inst_ids=$(sudo virsh list --all | grep inst- | awk '{print $2}' | cut -d- -f2)
     for inst_id in $inst_ids; do
+        for i in {1..10}; do
+            ls /var/run/wds/instance-${inst_id}*
+            [ $? -eq 0 ] && break
+            sleep 2
+        done
+        sudo virsh start inst-$inst_id
         echo "|:-COMMAND-:| launch_vm.sh '$inst_id' 'running' '$SCI_CLIENT_ID' 'sync'"
     done
-    rm -f $flag_file
+    cp /proc/sys/kernel/random/boot_id $flag_file
 }
 
 function calc_resource()
@@ -147,7 +155,7 @@ function calc_resource()
 }
 
 calc_resource
-sync_inst_fdb
+sync_instance
 #probe_arp >/dev/null 2>&1
 #inst_status
 #vlan_status

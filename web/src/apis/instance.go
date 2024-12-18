@@ -380,7 +380,7 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 			}
 			interfaces[i].FloatingIps = floatingIps
 		}
-		for _, sg := range iface.Secgroups {
+		for _, sg := range iface.SecurityGroups {
 			interfaces[i].SecurityGroups = append(interfaces[i].SecurityGroups, &BaseReference{
 				ID:   sg.UUID,
 				Name: sg.Name,

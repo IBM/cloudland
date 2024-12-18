@@ -143,17 +143,13 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 		return
 	}
 	serverStatus := args[2]
-	hyperID := -1
-	if serverStatus == "running" {
-		hyperID, err = strconv.Atoi(args[3])
-		if err != nil {
-			log.Println("Invalid hyper ID", err)
-			reason = err.Error()
-			return
-		}
-	} else if argn >= 4 {
-		reason = args[4]
+	hyperID, err := strconv.Atoi(args[3])
+	if err != nil {
+		log.Println("Invalid hyper ID", err)
+		reason = err.Error()
+		return
 	}
+	reason = args[4]
 	instance.Hyper = int32(hyperID)
 	err = db.Model(&instance).Updates(map[string]interface{}{
 		"status": serverStatus,
@@ -168,17 +164,52 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 		log.Println("Failed to update interface", err)
 		return
 	}
-	err = sendFdbRules(ctx, instance, "/opt/cloudland/scripts/backend/add_fwrule.sh")
-	if err != nil {
-		log.Println("Failed to send fdb rules", err)
-		return
-	}
-	if reason == "sync" {
-		err = syncFloatingIp(ctx, instance)
-		if err != nil {
-			log.Println("Failed to sync floating ip", err)
-			return
+	if serverStatus == "running" {
+		if reason == "init" {
+			err = sendFdbRules(ctx, instance, "/opt/cloudland/scripts/backend/add_fwrule.sh")
+			if err != nil {
+				log.Println("Failed to send fdb rules", err)
+				return
+			}
+		} else if reason == "sync" {
+			err = syncNicInfo(ctx, instance)
+			if err != nil {
+				log.Println("Failed to sync floating ip", err)
+				return
+			}
+			err = syncFloatingIp(ctx, instance)
+			if err != nil {
+				log.Println("Failed to sync floating ip", err)
+				return
+			}
 		}
+	}
+	return
+}
+
+func syncNicInfo(ctx context.Context, instance *model.Instance) (err error) {
+	vlans := []*VlanInfo{}
+	var securityData []*SecurityData
+	for _, iface := range instance.Interfaces {
+		securityData, err = GetSecurityData(ctx, iface.SecurityGroups)
+                if err != nil {
+                        log.Println("Get security data for interface failed", err)
+                        return
+                }
+		subnet := iface.Address.Subnet
+		vlans = append(vlans, &VlanInfo{Device: iface.Name, Vlan: subnet.Vlan, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: iface.Address.Address, MacAddr: iface.MacAddr, SecRules: securityData})
+	}
+	jsonData, err := json.Marshal(vlans)
+        if err != nil {
+                log.Println("Failed to marshal instance json data", err)
+                return
+        }
+	control := fmt.Sprintf("inter=%d", instance.Hyper)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/sync_nic_info.sh '%d'<<EOF\n%s\nEOF", instance.ID, jsonData)
+	err = HyperExecute(ctx, control, command)
+	if err != nil {
+		log.Println("Execute floating ip failed", err)
+		return
 	}
 	return
 }
@@ -194,7 +225,7 @@ func syncFloatingIp(ctx context.Context, instance *model.Instance) (err error) {
 	}
 	if primaryIface != nil {
 		floatingIp := &model.FloatingIp{}
-		err = db.Preload("Interface").Preload("Address").Preload("Subnet").Where("instance_id = ?", instance.ID).Take(floatingIp).Error
+		err = db.Preload("Interface").Preload("Interface.Address").Preload("Interface.Address.Subnet").Where("instance_id = ?", instance.ID).Take(floatingIp).Error
 		if err != nil {
 			log.Println("Failed to get floating ip", err)
 			return

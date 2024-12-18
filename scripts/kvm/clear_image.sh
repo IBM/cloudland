@@ -9,9 +9,9 @@ ID=$1
 prefix=$2
 format=$3
 
-image_name=image-${ID}-${prefix}.${format}
+image_name=image-${ID}-${prefix}
 if [ -z "$wds_address" ]; then
-    image=$image_cache/$iname_name
+    image=$image_cache/$iname_name.${format}
     rm -f $image
 else
     volume_id=$(wds_curl GET "api/v2/sync/block/volumes" | jq --arg name $image_name -r '.volumes | .[] | select(.name == $name) | .id')

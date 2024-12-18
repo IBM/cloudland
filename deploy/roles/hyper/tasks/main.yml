@@ -141,7 +141,6 @@
     dest: "{{ item.dest }}"
     mode: preserve
   with_items:
-    - {src: 'recover_onboot.service', dest: '/lib/systemd/system', owner: 'root'}
     - {src: 'kvm-nested.conf', dest: '/etc/modprobe.d', owner: 'root'}
   tags: [be_srv]
 
@@ -175,6 +174,11 @@
     - 'libvirtd'
   tags: [be_srv]
 
+- name: undefine default libvirt network
+  command: bash -c "virsh net-destroy default; virsh net-undefine default" 
+  ignore_errors: yes
+  tags: [be_srv]
+
 - name: set compute services NetworkManager
   systemd: 
     name: "{{ item }}"
@@ -197,14 +201,6 @@
   with_items:
     - 'systemd-networkd'
   tags: [be_srv, netplan]
-
-- name: start recover_onboot services
-  systemd: 
-    name: recover_onboot
-    enabled: yes
-    daemon_reload: yes
-    state: stopped
-  tags: [be_srv]
 
 - name: mask firewall service
   systemd:

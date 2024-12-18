@@ -76,7 +76,7 @@ func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name, pairs strin
 		return
 	}
 	sgChanged := false
-	for _, esg := range iface.Secgroups {
+	for _, esg := range iface.SecurityGroups {
 		found := false
 		for _, sgID := range sgIDs {
 			if sgID == esg.ID {
@@ -92,7 +92,7 @@ func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name, pairs strin
 	if !sgChanged {
 		for _, sgID := range sgIDs {
 			found := false
-			for _, esg := range iface.Secgroups {
+			for _, esg := range iface.SecurityGroups {
 				if sgID == esg.ID {
 					found = true
 					break
@@ -107,19 +107,19 @@ func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name, pairs strin
 	log.Println("$$$$ start to sgChanged = ", sgChanged, name)
 	if sgChanged == true {
 		log.Println("$$$$ start to change security group")
-		secGroups := []*model.SecurityGroup{}
-		if err = db.Where(sgIDs).Find(&secGroups).Error; err != nil {
+		secgroups := []*model.SecurityGroup{}
+		if err = db.Where(sgIDs).Find(&secgroups).Error; err != nil {
 			log.Println("Security group query failed", err)
 			return
 		}
-		db.Model(iface).Association("Secgroups").Clear()
-		iface.Secgroups = secGroups
+		db.Model(iface).Association("SecurityGroups").Clear()
+		iface.SecurityGroups = secgroups
 		if err = db.Save(iface).Error; err != nil {
 			log.Println("Failed to save security groups", err)
 			return
 		}
 		var secRules []*model.SecurityRule
-		secRules, err = model.GetSecurityRules(secGroups)
+		secRules, err = model.GetSecurityRules(secgroups)
 		if err != nil {
 			log.Println("Failed to get security rules", err)
 			return
@@ -215,10 +215,10 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 	address := c.QueryTrim("address")
 	mac := c.QueryTrim("mac")
 	ifname := c.QueryTrim("ifname")
-	secgroups := c.QueryTrim("secgroups")
+	sgList := c.QueryTrim("secgroups")
 	var sgIDs []int64
-	if secgroups != "" {
-		sg := strings.Split(secgroups, ",")
+	if sgList != "" {
+		sg := strings.Split(sgList, ",")
 		for i := 0; i < len(sg); i++ {
 			sgID, err := strconv.Atoi(sg[i])
 			if err != nil {
@@ -245,12 +245,12 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 		}
 		sgIDs = append(sgIDs, sgID)
 	}
-	secGroups := []*model.SecurityGroup{}
-	if err = DB().Where(sgIDs).Find(&secGroups).Error; err != nil {
+	secgroups := []*model.SecurityGroup{}
+	if err = DB().Where(sgIDs).Find(&secgroups).Error; err != nil {
 		log.Println("Security group query failed", err)
 		return
 	}
-	iface, err := CreateInterface(ctx, subnet, instID, memberShip.OrgID, -1, address, mac, ifname, "instance", secGroups)
+	iface, err := CreateInterface(ctx, subnet, instID, memberShip.OrgID, -1, address, mac, ifname, "instance", secgroups)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
 			"error": err.Error(),

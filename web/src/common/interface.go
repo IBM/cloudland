@@ -31,6 +31,17 @@ type SecurityData struct {
 	PortMax     int32  `json:"port_max"`
 }
 
+type VlanInfo struct {
+	Device     string          `json:"device"`
+	Vlan       int64           `json:"vlan"`
+	Gateway    string          `json:"gateway"`
+	Router     int64           `json:"router"`
+	PublicLink int64           `json:"public_link"`
+	IpAddr     string          `json:"ip_address"`
+	MacAddr    string          `json:"mac_address"`
+	SecRules   []*SecurityData `json:"security"`
+}
+
 func AllocateAddress(ctx context.Context, subnetID, ifaceID int64, ipaddr, addrType string) (address *model.Address, err error) {
 	var db *gorm.DB
 	ctx, db = GetCtxDB(ctx)
@@ -94,7 +105,7 @@ func genMacaddr() (mac string, err error) {
 	return mac, nil
 }
 
-func CreateInterface(ctx context.Context, subnet *model.Subnet, ID, owner int64, hyper int32, address, mac, ifaceName, ifType string, secGroups []*model.SecurityGroup) (iface *model.Interface, err error) {
+func CreateInterface(ctx context.Context, subnet *model.Subnet, ID, owner int64, hyper int32, address, mac, ifaceName, ifType string, secgroups []*model.SecurityGroup) (iface *model.Interface, err error) {
 	var db *gorm.DB
 	ctx, db = GetCtxDB(ctx)
 	primary := false
@@ -118,7 +129,7 @@ func CreateInterface(ctx context.Context, subnet *model.Subnet, ID, owner int64,
 		Type:      ifType,
 		Mtu:       1450,
 		RouterID:  subnet.RouterID,
-		Secgroups: secGroups,
+		SecurityGroups: secgroups,
 	}
 	if ifType == "instance" {
 		iface.Instance = ID
@@ -204,3 +215,26 @@ func DeleteInterface(ctx context.Context, iface *model.Interface) (err error) {
 	}
 	return
 }
+
+func GetSecurityData(ctx context.Context, secgroups []*model.SecurityGroup) (securityData []*SecurityData, err error) {
+	secRules, err := model.GetSecurityRules(secgroups)
+	if err != nil {
+		log.Println("Failed to get security rules", err)
+		return
+	}
+	for _, rule := range secRules {
+		sgr := &SecurityData{
+			Secgroup:    rule.Secgroup,
+			RemoteIp:    rule.RemoteIp,
+			RemoteGroup: rule.RemoteGroupID,
+			Direction:   rule.Direction,
+			IpVersion:   rule.IpVersion,
+			Protocol:    rule.Protocol,
+			PortMin:     rule.PortMin,
+			PortMax:     rule.PortMax,
+		}
+		securityData = append(securityData, sgr)
+	}
+	return
+}
+
