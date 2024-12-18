@@ -135,7 +135,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			hostname = fmt.Sprintf("%s-%d", prefix, i+1)
 		}
 		total := 0
-		if err = db.Model(&model.Instance{}).Where("image_id = ?", image.ID).Count(&total).Error; err != nil {
+		if err = db.Unscoped().Model(&model.Instance{}).Where("image_id = ?", image.ID).Count(&total).Error; err != nil {
 			log.Println("Failed to query total instances with the image", err)
 			return
 		}
