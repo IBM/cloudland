@@ -90,6 +90,11 @@ func (a *FloatingIpAdmin) Attach(ctx context.Context, floatingIp *model.Floating
 		return
 	}
 	db := DB()
+	if instance == nil || instance.Status != "running" {
+		log.Println("Instance is not running")
+		err = fmt.Errorf("Instance must be running")
+		return
+	}
 	instID := instance.ID
 	routerID := instance.RouterID
 	if routerID == 0 {
