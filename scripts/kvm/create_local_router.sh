@@ -33,11 +33,7 @@ ip netns exec router-0 ip link set int-$suffix up
 ip netns exec router-0 ip addr add ${peer_ip}/31 dev int-$suffix
 
 ip netns exec $router ipset create nonat nethash
-ip netns exec $router iptables -t nat -A POSTROUTING -m set --match-set nonat src -m set ! --match-set nonat dst -j SNAT --to-source $local_ip
-apply_vnic -I int-$suffix
+ip netns exec $router iptables -t nat -S | grep "to-source $local_ip\>"
+[ $? -ne 0 ] && ip netns exec $router iptables -t nat -A POSTROUTING -m set --match-set nonat src -m set ! --match-set nonat dst -j SNAT --to-source $local_ip
 
-router_dir=$cache_dir/router/$router
-mkdir -p $router_dir
-ip netns exec $router iptables-save > $router_dir/iptables.save
-ip netns exec $router ipset save > $router_dir/ipset.save
 ip netns exec $router bash -c "echo 1 >/proc/sys/net/ipv4/ip_forward"

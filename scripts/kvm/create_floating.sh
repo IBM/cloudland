@@ -42,9 +42,8 @@ ip_net=$(ipcalc -b $int_addr | grep Network | awk '{print $2}')
 ip netns exec $router ip route add $ip_net dev ns-$int_vlan table $table
 ip netns exec $router ip rule add from $int_ip lookup $table
 ip netns exec $router ip rule add to $int_ip lookup $table
-ip netns exec $router iptables -t nat -I POSTROUTING -s $int_ip -m set ! --match-set nonat dst -j SNAT --to-source $ext_ip
-ip netns exec $router iptables -t nat -I PREROUTING -d $ext_ip -j DNAT --to-destination $int_ip
+ip netns exec $router iptables -t nat -S | grep "to-source $ext_ip\>"
+[ $? -ne 0 ] && ip netns exec $router iptables -t nat -I POSTROUTING -s $int_ip -m set ! --match-set nonat dst -j SNAT --to-source $ext_ip
+ip netns exec $router iptables -t nat -S | grep "to-destination $int_ip\>"
+[ $? -ne 0 ] && ip netns exec $router iptables -t nat -I PREROUTING -d $ext_ip -j DNAT --to-destination $int_ip
 ip netns exec $router arping -c 3 -I $ext_dev -s $ext_ip $ext_ip
-
-router_dir=/opt/cloudland/cache/router/$router
-ip netns exec $router iptables-save > $router_dir/iptables.save

@@ -59,7 +59,8 @@ function apply_fw()
     elif [ "$action" = '-N' ]; then
         iptables -S $chain || iptables -N $chain
     fi
-    iptables $action $chain $rule
+    sudo iptables $action $chain $rule
+    iptables-save >$run_dir/iptables.rules
 }
 
 function apply_vnic()
@@ -68,7 +69,6 @@ function apply_vnic()
     vnic=$2
     apply_fw $action FORWARD -m physdev --physdev-in $vnic --physdev-is-bridged -j ACCEPT
     apply_fw $action FORWARD -m physdev --physdev-out $vnic --physdev-is-bridged -j ACCEPT
-    iptables-save >/etc/network/iptables.up.rules
 }
 
 function apply_bridge()
@@ -76,7 +76,6 @@ function apply_bridge()
     action=$1
     mybr=$2
     apply_fw $action FORWARD -i $mybr -o $mybr -j ACCEPT
-    iptables-save >/etc/network/iptables.up.rules
 }
 
 function sync_target()

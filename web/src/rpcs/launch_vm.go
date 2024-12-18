@@ -190,7 +190,13 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 func syncNicInfo(ctx context.Context, instance *model.Instance) (err error) {
 	vlans := []*VlanInfo{}
 	var securityData []*SecurityData
+	db := DB()
 	for _, iface := range instance.Interfaces {
+		err = db.Model(iface).Related(&iface.SecurityGroups, "SecurityGroups").Error
+                if err != nil {
+                        log.Println("Get security groups for interface failed", err)
+                        return
+                }
 		securityData, err = GetSecurityData(ctx, iface.SecurityGroups)
                 if err != nil {
                         log.Println("Get security data for interface failed", err)

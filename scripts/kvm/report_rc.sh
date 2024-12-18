@@ -82,6 +82,7 @@ function sync_instance()
     boot_file=/proc/sys/kernel/random/boot_id
     diff $flag_file $boot_file
     [ $? -eq 0 ] && return
+    iptables-restore <$run_dir/iptables.rules
     inst_ids=$(sudo virsh list --all | grep inst- | awk '{print $2}' | cut -d- -f2)
     for inst_id in $inst_ids; do
         for i in {1..10}; do
@@ -91,6 +92,10 @@ function sync_instance()
         done
         sudo virsh start inst-$inst_id
         echo "|:-COMMAND-:| launch_vm.sh '$inst_id' 'running' '$SCI_CLIENT_ID' 'sync'"
+    done
+    bridges=$(cat /proc/net/dev | grep br | awk -F: '{print $1}')
+    for bridge in $bridges; do
+        apply_bridge -I $bridge
     done
     cp /proc/sys/kernel/random/boot_id $flag_file
 }

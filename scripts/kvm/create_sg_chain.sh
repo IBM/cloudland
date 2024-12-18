@@ -32,5 +32,3 @@ apply_fw -A $chain_out -j $chain_as
 apply_fw -A $chain_out -m state --state RELATED,ESTABLISHED -j RETURN
 apply_fw -A $chain_out -m state --state INVALID -j DROP
 apply_fw -A $chain_out -j DROP
-
-iptables-save >/etc/network/iptables.up.rules

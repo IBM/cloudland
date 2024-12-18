@@ -76,5 +76,3 @@ while [ $i -lt $len ]; do
     esac
     let i=$i+1
 done
-
-iptables-save >/etc/network/iptables.up.rules

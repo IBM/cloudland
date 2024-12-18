@@ -22,5 +22,3 @@ apply_fw -F $chain_out
 apply_fw -X $chain_in
 apply_fw -X $chain_as
 apply_fw -X $chain_out
-
-iptables-save >/etc/network/iptables.up.rules

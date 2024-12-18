@@ -23,11 +23,12 @@ done
 for link in $ns_links; do
     vlan=${link/ns-/}
     ./clear_link.sh $vlan
+    apply_vnic -D ln-$vlan
 done
 
 ip netns exec $router ip link set lo down
 suffix=$ID
-ip link del int-$suffix
+ip netns exec router-0 ip link del int-$suffix
 ip netns del $router
 
 nat_ip=169.$(($SCI_CLIENT_ID % 234)).$(($suffix % 234)).3

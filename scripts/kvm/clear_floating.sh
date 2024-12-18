@@ -20,6 +20,3 @@ ip netns exec $router ip rule del to $int_ip lookup $table
 ip netns exec $router ip addr del $ext_addr dev $ext_dev
 ip netns exec $router iptables -t nat -D POSTROUTING -s $int_ip -m set ! --match-set nonat dst -j SNAT --to-source $ext_ip
 ip netns exec $router iptables -t nat -D PREROUTING -d $ext_ip -j DNAT --to-destination $int_ip
-
-router_dir=/opt/cloudland/cache/router/$router
-ip netns exec $router iptables-save > $router_dir/iptables.save
