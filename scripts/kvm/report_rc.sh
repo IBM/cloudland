@@ -78,8 +78,10 @@ function router_status()
 
 function sync_instance()
 {
-    flag_file=$run_dir/need_to_sync_fdb
-    [ ! -f "$flag_file" ] && return
+    flag_file=$run_dir/need_to_sync
+    boot_file=/proc/sys/kernel/random/boot_id
+    diff $flag_file $boot_file
+    [ $? -eq 0 ] && return
     inst_ids=$(sudo virsh list --all | grep inst- | awk '{print $2}' | cut -d- -f2)
     for inst_id in $inst_ids; do
         for i in {1..10}; do
@@ -90,7 +92,7 @@ function sync_instance()
         sudo virsh start inst-$inst_id
         echo "|:-COMMAND-:| launch_vm.sh '$inst_id' 'running' '$SCI_CLIENT_ID' 'sync'"
     done
-    rm -f $flag_file
+    cp /proc/sys/kernel/random/boot_id $flag_file
 }
 
 function calc_resource()

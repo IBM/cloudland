@@ -3,4 +3,4 @@
 cd $(dirname $0)
 source ../cloudrc
 
-touch $run_dir/need_to_sync_fdb
+rm -f $run_dir/need_to_sync
