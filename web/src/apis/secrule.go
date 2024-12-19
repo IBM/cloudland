@@ -43,10 +43,9 @@ type SecruleListResponse struct {
 }
 
 type SecurityRulePayload struct {
-	RemoteCIDR  string         `json:"remote_ip" binding:"omitempty,cidrv4"`
-	RemoteGroup *BaseReference `json:"remote_group" binding:"omitempty"`
-	Direction   string         `json:"direction"`
-	Protocol    string         `json:"protocol" binding:"required,oneof=ingress egress"`
+	RemoteCIDR  string         `json:"remote_cidr" binding:"cidrv4"`
+	Direction   string         `json:"direction" binding:"required,oneof=ingress egress"`
+	Protocol    string         `json:"protocol" binding:"required,oneof=tcp udp icmp"`
 	PortMin     int32          `json:"port_min" binding:"omitempty,gte=1,lte=65535"`
 	PortMax     int32          `json:"port_max" binding:"omitempty,gte=1,lte=65535"`
 }

@@ -1,8 +1,7 @@
 {
-  "public_subnet": {
-    "id": "36ee20ac-1680-4473-8c66-cf79b31c663f"
-  },
-  "instance": {
-    "id": "36ee20ac-1680-4473-8c66-cf79b31c663f"
-  }
+  "remote_cidr": "192.168.10.0/24",
+  "direction": "ingress",
+  "protocol": "tcp",
+  "port_min": 443,
+  "port_max": 443
 }

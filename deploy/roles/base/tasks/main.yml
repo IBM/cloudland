@@ -40,3 +40,15 @@
     state: present
     create: true
     line: 'cland ALL=(ALL) NOPASSWD:ALL'
+
+- name: mask firewall service
+  systemd:
+    service: ufw
+    masked: yes
+    state: stopped
+  tags: [firewall]
+  ignore_errors: yes
+
+- name: allow basic firewall rules
+  script: firewall.sh
+  tags: [firewall]
