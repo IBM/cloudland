@@ -59,8 +59,7 @@ function apply_fw()
     elif [ "$action" = '-N' ]; then
         iptables -S $chain || iptables -N $chain
     fi
-    sudo iptables $action $chain $rule
-    iptables-save >$run_dir/iptables.rules
+    iptables $action $chain $rule
 }
 
 function apply_vnic()

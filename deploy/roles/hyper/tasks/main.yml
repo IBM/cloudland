@@ -202,19 +202,10 @@
     - 'systemd-networkd'
   tags: [be_srv, netplan]
 
-- name: mask firewall service
-  systemd:
-    service: ufw
-    masked: yes
-    state: stopped
+- name: allow necessary ports for hypervisor
+  script: firewall.sh
   tags: [firewall]
-  ignore_errors: yes
-
-- name: Allow necessary ports for KVM
-  script: firewall.sh {{ hostvars[groups['web'][0]]['ansible_host'] }}
-  tags: [firewall]
-  ignore_errors: yes
-
+ 
 - name: Load nr_bridge kernel module
   modprobe:
     name: br_netfilter
