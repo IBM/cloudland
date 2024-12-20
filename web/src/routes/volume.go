@@ -277,7 +277,12 @@ func (a *VolumeAdmin) DeleteVolumeByUUID(ctx context.Context, uuID string) (err 
 	return a.Delete(ctx, volume)
 }
 
+// list data volumes
 func (a *VolumeAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, volumes []*model.Volume, err error) {
+	return a.ListVolume(ctx, offset, limit, order, query, "all")
+}
+
+func (a *VolumeAdmin) ListVolume(ctx context.Context, offset, limit int64, order, query string, volume_type string) (total int64, volumes []*model.Volume, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
 	if limit == 0 {
@@ -292,9 +297,27 @@ func (a *VolumeAdmin) List(ctx context.Context, offset, limit int64, order, quer
 		query = fmt.Sprintf("name like '%%%s%%'", query)
 	}
 	where := memberShip.GetWhere()
-	volumes = []*model.Volume{}
-	if err = db.Model(&model.Volume{}).Where(where).Where(query).Count(&total).Error; err != nil {
+	booting_where := ""
+	if volume_type == "data" {
+		booting_where = fmt.Sprintf("booting=%t", false)
+	} else if volume_type == "boot" {
+		booting_where = fmt.Sprintf("booting=%t", true)
+	} else if volume_type == "all" {
+		booting_where = ""
+	} else {
+		err = fmt.Errorf("Invalid volume type %s", volume_type)
 		return
+	}
+
+	volumes = []*model.Volume{}
+	if booting_where != "" {
+		if err = db.Model(&model.Volume{}).Where(where).Where(query).Where(booting_where).Count(&total).Error; err != nil {
+			return
+		}
+	} else {
+		if err = db.Model(&model.Volume{}).Where(where).Where(query).Count(&total).Error; err != nil {
+			return
+		}
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
 	if err = db.Preload("Instance").Where(where).Where(query).Find(&volumes).Error; err != nil {
@@ -334,7 +357,7 @@ func (v *VolumeView) List(c *macaron.Context, store session.Store) {
 		order = "-created_at"
 	}
 	query := c.QueryTrim("q")
-	total, volumes, err := volumeAdmin.List(c.Req.Context(), offset, limit, order, query)
+	total, volumes, err := volumeAdmin.ListVolume(c.Req.Context(), offset, limit, order, query, "all")
 	if err != nil {
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{

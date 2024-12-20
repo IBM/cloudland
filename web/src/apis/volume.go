@@ -55,6 +55,7 @@ type VolumeResponse struct {
 	Status    string         `json:"status"`
 	Target    string         `json:"target"`
 	Href      string         `json:"href"`
+	Booting   bool           `json:"booting"`
 	Instance  *BaseReference `json:"instance"`
 	IopsLimit int32          `json:"iops_limit"`
 	IopsBurst int32          `json:"iops_burst"`
@@ -203,6 +204,10 @@ func (v *VolumeAPI) List(c *gin.Context) {
 	ctx := c.Request.Context()
 	offsetStr := c.DefaultQuery("offset", "0")
 	limitStr := c.DefaultQuery("limit", "50")
+	nameStr := c.DefaultQuery("name", "")
+	// type: all, data, boot
+	// default data
+	typeStr := c.DefaultQuery("type", "data")
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset: "+offsetStr, err)
@@ -217,7 +222,7 @@ func (v *VolumeAPI) List(c *gin.Context) {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", err)
 		return
 	}
-	total, volumes, err := volumeAdmin.List(ctx, int64(offset), int64(limit), "-created_at", "")
+	total, volumes, err := volumeAdmin.ListVolume(ctx, int64(offset), int64(limit), "-created_at", nameStr, typeStr)
 	if err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Failed to list volumes", err)
 		return
