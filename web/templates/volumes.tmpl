@@ -29,6 +29,7 @@
 			                        <th>{{.i18n.Tr "UUID"}}</th>
 			                        <th>{{.i18n.Tr "Size"}} (G)</th>
 			                        <th>{{.i18n.Tr "Status"}}</th>
+									<th>{{.i18n.Tr "Bootable"}}</th>
 			                        <th>{{.i18n.Tr "Attached_as"}}</th>
 						{{ if $.IsAdmin }}
 			                        <th>{{.i18n.Tr "Owner"}}</th>
@@ -47,6 +48,7 @@
 			                        <td><a href="{{$Link}}/{{.ID}}">{{.UUID}}</a></td>
 			                        <td>{{.Size}}</td>
 			                        <td>{{.Status}}</td>
+									<td>{{.Booting}}</td>
 			                        <td>{{ if .Instance }} {{.Instance.ID}}-{{.Instance.Hostname}}:{{.Target}} {{ end }}</td>
 						{{ if $.IsAdmin }}
 			                        <td>{{.OwnerInfo.Name}}</td>
