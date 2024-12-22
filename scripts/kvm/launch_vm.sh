@@ -53,13 +53,14 @@ else
     snapshot_name=${image}-${snapshot}
     snapshot_id=$(wds_curl GET "api/v2/sync/block/snaps" | jq --arg snap $snapshot_name -r '.snaps | .[] | select(.name == $snap) | .id')
     if [ -z "$snapshot_id" ]; then
-	image_volume_id=$(wds_curl GET "api/v2/sync/block/volumes" | jq --arg image $image -r '.volumes | .[] | select(.name == $image) | .id')
+	image_volume_id=$(wds_curl GET "api/v2/sync/block/volumes?name=$image" | jq -r '.volumes[0].id')
 	wds_curl POST "api/v2/sync/block/snaps" "{\"name\": \"$snapshot_name\", \"description\": \"$snapshot_name\", \"volume_id\": \"$image_volume_id\"}"
-        snapshot_id=$(wds_curl GET "api/v2/sync/block/snaps" | jq --arg snap $snapshot_name -r '.snaps | .[] | select(.name == $snap) | .id')
+        snapshot_id=$(wds_curl GET "api/v2/sync/block/snaps?name=$snapshot_name" | jq -r '.snaps[0].id')
         if [ -z "$snapshot_id" ]; then
             echo "|:-COMMAND-:| `basename $0` '$ID' '$state' '$SCI_CLIENT_ID' 'failed to create image snapshot'"
             exit -1
         fi
+        wds_curl DELETE "api/v2/sync/block/snaps/$image-$(($snapshot-1))?force=false"
     fi
     volume_id=$(wds_curl POST "api/v2/sync/block/snaps/$snapshot_id/clone" "{\"name\": \"$vhost_name\"}" | jq -r .id)
     rest_code=$(wds_curl PUT "api/v2/sync/block/volumes/$volume_id/expand" "{\"size\": $fsize}" | jq -r .ret_code)
