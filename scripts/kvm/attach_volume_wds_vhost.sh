@@ -13,7 +13,7 @@ wds_volume_id=$4
 count=$(virsh dumpxml $vm_ID | grep -c "<disk type='vhostuser' device='disk'")
 let letter=98+$count
 vhost_name=instance-$vm_ID-vol-$vol_ID
-uss_id=$(wds_curl GET "api/v2/wds/uss" | jq --arg hname $(hostname -s) -r '.uss_gateways | .[] | select(.server_name == $hname) | .id')
+uss_id=$(get_uss_gateway)
 vhost_id=$(wds_curl POST "api/v2/sync/block/vhost" "{\"name\": \"$vhost_name\"}" | jq -r .id)
 ret_code=$(wds_curl PUT "api/v2/sync/block/vhost/bind_uss" "{\"vhost_id\": \"$vhost_id\", \"uss_gw_id\": \"$uss_id\", \"lun_id\": \"$wds_volume_id\", \"is_snapshot\": false}" | jq -r .ret_code)
 if [ "$ret_code" != "0" ]; then

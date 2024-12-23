@@ -30,7 +30,7 @@ if [ -z "$wds_address" ]; then
 else
     qemu-img convert -f $format -O raw ${image} ${image}.raw
     format=raw
-    uss_id=$(wds_curl GET "api/v2/wds/uss" | jq --arg hname $(hostname -s) -r '.uss_gateways | .[] | select(.server_name == $hname) | .id')
+    uss_id=$(get_uss_gateway)
     uss_service=$(systemctl -a | grep uss | awk '{print $1}')
     cat /etc/systemd/system/$uss_service | grep cloudland
     if [ $? -ne 0 ]; then
@@ -46,7 +46,7 @@ else
 	sleep 5
     done
     rm -f ${image}
-    volume_id=$(wds_curl GET "api/v2/sync/block/volumes" | jq --arg image $image_name -r '.volumes | .[] | select(.name == $image) | .id')
+    volume_id=$(wds_curl GET "api/v2/sync/block/volumes?name=$image_name" | jq -r '.volumes[0].id')
     [ -n "$volume_id" ] && state=available
 fi
 echo "|:-COMMAND-:| $(basename $0) '$ID' '$state' '$format' '$image_size'"

@@ -34,10 +34,11 @@ func adminPassword() (password string) {
 	return
 }
 
-func adminInit(ctx context.Context) {
+func init() {
 	var user *model.User
 	var org *model.Organization
 	username := "admin"
+	ctx := context.Background()
 	dbs.AutoUpgrade("01-admin-upgrade", func(db *gorm.DB) (err error) {
 		if err = db.Take(&model.User{}, "username = ?", username).Error; err != nil {
 			//replace DB function to avoid AutoUpgrade loop
@@ -78,8 +79,8 @@ func adminInit(ctx context.Context) {
 			return
 		}
 		memberShip.Role = model.Admin
-		ctx1 := memberShip.SetContext(ctx)
-		_, _ = secgroupAdmin.Create(ctx1, SystemDefaultSGName, true, nil)
+		ctx = memberShip.SetContext(ctx)
+		_, _ = secgroupAdmin.Create(ctx, SystemDefaultSGName, true, nil)
 	}
 	return
 }

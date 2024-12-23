@@ -41,6 +41,14 @@ type UserView struct{}
 func (a *UserAdmin) Create(ctx context.Context, username, password string) (user *model.User, err error) {
 	memberShip := GetMemberShip(ctx)
 	db := DB()
+	db = db.Begin()
+	defer func() {
+		if err == nil {
+			db.Commit()
+		} else {
+			db.Rollback()
+		}
+	}()
 	if password, err = a.GenerateFromPassword(password); err != nil {
 		return
 	}
@@ -283,7 +291,6 @@ func (a *UserAdmin) CompareHashAndPassword(hash, password string) (err error) {
 }
 
 func (v *UserView) LoginGet(c *macaron.Context, store session.Store) {
-	adminInit(c.Req.Context())
 	logout := c.QueryTrim("logout")
 	if logout == "" {
 		c.Data["PageIsSignIn"] = true

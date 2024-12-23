@@ -20,7 +20,6 @@ import (
 	"web/src/model"
 
 	"github.com/go-macaron/session"
-	"github.com/jinzhu/gorm"
 	macaron "gopkg.in/macaron.v1"
 )
 
@@ -51,7 +50,15 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instance *model.Instance, 
 		err = fmt.Errorf("Subnet must be public")
 		return
 	}
-	db := DB()
+	ctx, db := GetContextDB(ctx)
+	db = db.Begin()
+	defer func() {
+		if err == nil {
+			db.Commit()
+		} else {
+			db.Rollback()
+		}
+	}()
 	floatingIp = &model.FloatingIp{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID}
 	err = db.Create(floatingIp).Error
 	if err != nil {
@@ -73,7 +80,7 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instance *model.Instance, 
 			return
 		}
 	}
-	err = db.Save(floatingIp).Error
+	err = db.Model(floatingIp).Updates(floatingIp).Error
 	if err != nil {
 		log.Println("DB failed to update floating ip", err)
 		return
@@ -89,7 +96,7 @@ func (a *FloatingIpAdmin) Attach(ctx context.Context, floatingIp *model.Floating
 		err = fmt.Errorf("Not authorized for this operation")
 		return
 	}
-	db := DB()
+	ctx, db := GetContextDB(ctx)
 	if instance == nil || instance.Status != "running" {
 		log.Println("Instance is not running")
 		err = fmt.Errorf("Instance must be running")
@@ -122,7 +129,7 @@ func (a *FloatingIpAdmin) Attach(ctx context.Context, floatingIp *model.Floating
 	floatingIp.IntAddress = primaryIface.Address.Address
 	floatingIp.InstanceID = instance.ID
 	floatingIp.RouterID = instance.RouterID
-	err = db.Save(floatingIp).Error
+	err = db.Model(floatingIp).Updates(floatingIp).Error
 	if err != nil {
 		log.Println("DB failed to update floating ip", err)
 		return
@@ -214,7 +221,7 @@ func (a *FloatingIpAdmin) GetFloatingIpByUUID(ctx context.Context, uuID string) 
 }
 
 func (a *FloatingIpAdmin) Detach(ctx context.Context, floatingIp *model.FloatingIp) (err error) {
-	db := DB()
+	ctx, db := GetContextDB(ctx)
 	db = db.Begin()
 	defer func() {
 		if err == nil {
@@ -223,7 +230,6 @@ func (a *FloatingIpAdmin) Detach(ctx context.Context, floatingIp *model.Floating
 			db.Rollback()
 		}
 	}()
-	ctx = SaveTXtoCtx(ctx, db)
 	if floatingIp.Instance != nil {
 		control := fmt.Sprintf("inter=%d", floatingIp.Instance.Hyper)
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_floating.sh '%d' '%s' '%s'", floatingIp.RouterID, floatingIp.FipAddress, floatingIp.IntAddress)
@@ -245,7 +251,7 @@ func (a *FloatingIpAdmin) Detach(ctx context.Context, floatingIp *model.Floating
 }
 
 func (a *FloatingIpAdmin) Delete(ctx context.Context, floatingIp *model.FloatingIp) (err error) {
-	db := DB()
+	ctx, db := GetContextDB(ctx)
 	db = db.Begin()
 	defer func() {
 		if err == nil {
@@ -254,7 +260,6 @@ func (a *FloatingIpAdmin) Delete(ctx context.Context, floatingIp *model.Floating
 			db.Rollback()
 		}
 	}()
-	ctx = SaveTXtoCtx(ctx, db)
 	if floatingIp.Instance != nil {
 		err = a.Detach(ctx, floatingIp)
 		if err != nil {
@@ -272,7 +277,6 @@ func (a *FloatingIpAdmin) Delete(ctx context.Context, floatingIp *model.Floating
 
 func (a *FloatingIpAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, floatingIps []*model.FloatingIp, err error) {
 	memberShip := GetMemberShip(ctx)
-	db := DB()
 	if limit == 0 {
 		limit = 16
 	}
@@ -284,6 +288,7 @@ func (a *FloatingIpAdmin) List(ctx context.Context, offset, limit int64, order, 
 		query = fmt.Sprintf("fip_address like '%%%s%%' or int_address like '%%%s%%'", query, query)
 	}
 
+	db := DB()
 	where := memberShip.GetWhere()
 	floatingIps = []*model.FloatingIp{}
 	if err = db.Model(&model.FloatingIp{}).Where(where).Where(query).Count(&total).Error; err != nil {
@@ -468,8 +473,7 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 }
 
 func AllocateFloatingIp(ctx context.Context, floatingIpID, owner int64, pubSubnet *model.Subnet, address string) (fipIface *model.Interface, err error) {
-	var db *gorm.DB
-	ctx, db = GetCtxDB(ctx)
+	ctx, db := GetContextDB(ctx)
 	subnets := []*model.Subnet{}
 	if pubSubnet != nil {
 		subnets = append(subnets, pubSubnet)
@@ -494,8 +498,7 @@ func AllocateFloatingIp(ctx context.Context, floatingIpID, owner int64, pubSubne
 }
 
 func DeallocateFloatingIp(ctx context.Context, floatingIpID int64) (err error) {
-	var db *gorm.DB
-	ctx, db = GetCtxDB(ctx)
+	ctx, db := GetContextDB(ctx)
 	DeleteInterfaces(ctx, floatingIpID, 0, "floating")
 	floatingIp := &model.FloatingIp{Model: model.Model{ID: floatingIpID}}
 	err = db.Delete(floatingIp).Error

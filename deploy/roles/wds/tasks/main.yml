@@ -20,7 +20,7 @@
     mode: preserve
   with_items:
     - {src: 'qemu.conf', dest: '/etc/libvirt', owner: 'root'}
-  tags: [storage]
+  tags: [storage, libvirt]
 
 - name: set compute libvirt service
   systemd: 
@@ -30,7 +30,7 @@
     state: restarted
   with_items:
     - 'libvirtd'
-  tags: [storage]
+  tags: [storage, libvirt]
 
 - name: register hugepage
   script: calc_hugepage.sh

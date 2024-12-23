@@ -293,7 +293,15 @@ func (a *SubnetAdmin) Create(ctx context.Context, vlan int, name, network, gatew
 		return
 	}
 	owner := memberShip.OrgID
-	db := DB()
+	ctx, db := GetContextDB(ctx)
+	db = db.Begin()
+	defer func() {
+		if err == nil {
+			db.Commit()
+		} else {
+			db.Rollback()
+		}
+	}()
 	if vlan <= 0 {
 		vlan, err = getValidVni()
 		if err != nil {
@@ -398,7 +406,7 @@ func (a *SubnetAdmin) Create(ctx context.Context, vlan int, name, network, gatew
 }
 
 func (a *SubnetAdmin) Delete(ctx context.Context, subnet *model.Subnet) (err error) {
-	db := DB()
+	ctx, db := GetContextDB(ctx)
 	db = db.Begin()
 	defer func() {
 		if err == nil {
@@ -407,7 +415,6 @@ func (a *SubnetAdmin) Delete(ctx context.Context, subnet *model.Subnet) (err err
 			db.Rollback()
 		}
 	}()
-	ctx = SaveTXtoCtx(ctx, db)
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.ValidateOwner(model.Writer, subnet.Owner)
 	if !permit {
@@ -432,7 +439,7 @@ func (a *SubnetAdmin) Delete(ctx context.Context, subnet *model.Subnet) (err err
 		return
 	}
 	subnet.Name = fmt.Sprintf("%s-%d", subnet.Name, subnet.CreatedAt.Unix())
-	err = db.Save(subnet).Error
+	err = db.Model(subnet).Update("name", subnet.Name).Error
 	if err != nil {
 		log.Println("DB failed to update subnet name", err)
 		return

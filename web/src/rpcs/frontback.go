@@ -107,13 +107,20 @@ func (fb *FrontbackService) Execute(c *macaron.Context) {
 	err := json.Unmarshal(request, execReq)
 	if err != nil {
 		log.Println("Json unmarshal error:", err)
-		c.JSON(404, &ExecuteReply{Status: "Bad request"})
+		c.JSON(400, &ExecuteReply{Status: "Bad request"})
 	}
 	id := execReq.Id
 	extra := execReq.Extra
 	command := execReq.Command
 	control := execReq.Control
-	reply, err := fb.doExecute(ctx, id, extra, command, control)
+	reply := &ExecuteReply{Status: "ok"}
+	if control != "error" {
+		reply, err = fb.doExecute(ctx, id, extra, command, control)
+		if err != nil {
+			log.Println("Json unmarshal error:", err)
+			c.JSON(400, &ExecuteReply{Status: "Bad request"})
+		}
+	}
 	c.JSON(200, reply)
 	return
 }

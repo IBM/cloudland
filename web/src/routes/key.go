@@ -78,7 +78,15 @@ func (a *KeyAdmin) Create(ctx context.Context, name, publicKey string) (key *mod
 		return
 	}
 	fingerPrint := ssh.FingerprintLegacyMD5(pub)
-	db := DB()
+	ctx, db := GetContextDB(ctx)
+	db = db.Begin()
+	defer func() {
+		if err == nil {
+			db.Commit()
+		} else {
+			db.Rollback()
+		}
+	}()
 	key = &model.Key{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, Name: name, PublicKey: publicKey, FingerPrint: fingerPrint}
 	err = db.Create(key).Error
 	if err != nil {
@@ -89,7 +97,7 @@ func (a *KeyAdmin) Create(ctx context.Context, name, publicKey string) (key *mod
 }
 
 func (a *KeyAdmin) Delete(ctx context.Context, key *model.Key) (err error) {
-	db := DB()
+	ctx, db := GetContextDB(ctx)
 	db = db.Begin()
 	defer func() {
 		if err == nil {
@@ -106,7 +114,7 @@ func (a *KeyAdmin) Delete(ctx context.Context, key *model.Key) (err error) {
 		return
 	}
 	key.Name = fmt.Sprintf("%s-%d", key.Name, key.CreatedAt.Unix())
-	err = db.Save(key).Error
+	err = db.Model(key).Update("name", key.Name).Error
 	if err != nil {
 		log.Println("DB failed to update key name", err)
 		return

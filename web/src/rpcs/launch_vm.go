@@ -19,7 +19,6 @@ import (
 
 func init() {
 	Add("launch_vm", LaunchVM)
-	Add("oc_vm", LaunchVM)
 }
 
 type FdbRule struct {

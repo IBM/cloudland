@@ -51,7 +51,7 @@ else
     image=$(basename $img_name .raw)
     vhost_name=instance-$ID-$image-boot-volume-$vol_ID
     snapshot_name=${image}-${snapshot}
-    snapshot_id=$(wds_curl GET "api/v2/sync/block/snaps" | jq --arg snap $snapshot_name -r '.snaps | .[] | select(.name == $snap) | .id')
+    snapshot_id=$(wds_curl GET "api/v2/sync/block/snaps?name=$snapshot_name" | jq -r '.snaps[0].id')
     if [ -z "$snapshot_id" ]; then
 	image_volume_id=$(wds_curl GET "api/v2/sync/block/volumes?name=$image" | jq -r '.volumes[0].id')
 	wds_curl POST "api/v2/sync/block/snaps" "{\"name\": \"$snapshot_name\", \"description\": \"$snapshot_name\", \"volume_id\": \"$image_volume_id\"}"
@@ -68,7 +68,7 @@ else
         echo "|:-COMMAND-:| `basename $0` '$ID' '$state' '$SCI_CLIENT_ID' 'failed to create boot volume!'"
         exit -1
     fi
-    uss_id=$(wds_curl GET "api/v2/wds/uss" | jq --arg hname $(hostname -s) -r '.uss_gateways | .[] | select(.server_name == $hname) | .id')
+    uss_id=$(get_uss_gateway)
     vhost_id=$(wds_curl POST "api/v2/sync/block/vhost" "{\"name\": \"$vhost_name\"}" | jq -r .id)
     ret_code=$(wds_curl PUT "api/v2/sync/block/vhost/bind_uss" "{\"vhost_id\": \"$vhost_id\", \"uss_gw_id\": \"$uss_id\", \"lun_id\": \"$volume_id\", \"is_snapshot\": false}" | jq -r .ret_code)
     if [ "$rest_code" != "0" ]; then

@@ -36,12 +36,12 @@ else
     [ -z "$boot_volume" ] && boot_volume=instance-$ID-boot
     vhost_name=$boot_volume
     if [ -S "/var/run/wds/$vhost_name" ]; then
-        vhost_id=$(wds_curl GET "api/v2/sync/block/vhost" | jq --arg vhost $vhost_name -r '.vhosts | .[] | select(.name == $vhost) | .id')
-        uss_id=$(wds_curl GET "api/v2/wds/uss" | jq --arg hname $(hostname -s) -r '.uss_gateways | .[] | select(.server_name == $hname) | .id')
-        wds_curl PUT "api/v2/sync/block/vhost/unbind_uss" "{\"vhost_id\": \"$vhost_id\", \"uss_gw_id\": \"$uss_id\", \"is_snapshot\": false}"
-        wds_curl DELETE "api/v2/sync/block/vhost/$vhost_id"
-        volume_id=$(wds_curl GET "api/v2/sync/block/volumes?name=$vhost_name" | jq -r '.volumes[0].id')
-        wds_curl DELETE "api/v2/sync/block/volumes/$volume_id?force=false"
+       vhost_id=$(wds_curl GET "api/v2/sync/block/vhost?name=$vhost_name" | jq -r '.vhosts[0].id')
+       uss_id=$(get_uss_gateway)
+       wds_curl PUT "api/v2/sync/block/vhost/unbind_uss" "{\"vhost_id\": \"$vhost_id\", \"uss_gw_id\": \"$uss_id\", \"is_snapshot\": false}"
+       wds_curl DELETE "api/v2/sync/block/vhost/$vhost_id"
+       volume_id=$(wds_curl GET "api/v2/sync/block/volumes?name=$vhost_name" | jq -r '.volumes[0].id')
+       wds_curl DELETE "api/v2/sync/block/volumes/$volume_id?force=false"
     fi
 fi
 echo "|:-COMMAND-:| $(basename $0) '$ID'"

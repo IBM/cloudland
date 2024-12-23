@@ -130,3 +130,10 @@ function wds_curl()
     token="bearer $(curl -L -XPOST -k "$wds_address/api/v1/login" -H "Content-Type: application/json" -d "{\"name\": \"$wds_admin\",\"password\": \"$wds_pass\"}" | jq -r .access_token)"
     curl -s -L -X$action -H 'Content-Type: application/json' -H "Authorization: $token" -k "$wds_address/$path" -d "$data"
 }
+
+function get_uss_gateway()
+{
+    uss_name=$(hostname -s | tr -s '-' '_')
+    uss_id=$(wds_curl GET "api/v2/wds/uss?name=$uss_name" | jq -r '.uss_gateways[0].id')
+    [ -z "$uss_id" ] && uss_id=$(wds_curl GET "api/v2/wds/uss" | jq --arg hname $(hostname -s) -r '.uss_gateways | .[] | select(.server_name == $hname) | .id')
+}

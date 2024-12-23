@@ -138,7 +138,7 @@ func (a *SecruleAdmin) Update(ctx context.Context, id int64, remoteIp, direction
 		err = fmt.Errorf("PortMax should be greater than PortMin")
 		return
 	}
-	err = db.Save(secrules).Error
+	err = db.Model(secrule).Updates(secrules).Error
 	if err != nil {
 		log.Println("DB failed to save sucurity rule ", err)
 		return
@@ -155,7 +155,15 @@ func (a *SecruleAdmin) Create(ctx context.Context, remoteIp, direction, protocol
 		err = fmt.Errorf("Not authorized")
 		return
 	}
-	db := DB()
+	ctx, db := GetContextDB(ctx)
+	db = db.Begin()
+	defer func() {
+		if err == nil {
+			db.Commit()
+		} else {
+			db.Rollback()
+		}
+	}()
 	secrule = &model.SecurityRule{
 		Model:     model.Model{Creater: memberShip.UserID},
 		Owner:     memberShip.OrgID,
@@ -181,7 +189,7 @@ func (a *SecruleAdmin) Create(ctx context.Context, remoteIp, direction, protocol
 }
 
 func (a *SecruleAdmin) Delete(ctx context.Context, secrule *model.SecurityRule, secgroup *model.SecurityGroup) (err error) {
-	db := DB()
+	ctx, db := GetContextDB(ctx)
 	db = db.Begin()
 	defer func() {
 		if err == nil {
