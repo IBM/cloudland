@@ -15,6 +15,10 @@
 							</h3>
 							<div class="ui attached segment">
 								<div class="required inline field">
+									<label for="name">{{.i18n.Tr "Name"}}</label>
+									<input id="name" name="name" placeholder="{{.i18n.Tr "Name"}}">
+								</div>
+								<div class="required inline field">
 									<label for="instance">{{.i18n.Tr "Instance Address"}}</label>
 									<div class="ui selection dropdown">
 									  <input id="instance" name="instance" type="hidden">

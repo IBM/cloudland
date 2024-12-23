@@ -37,7 +37,7 @@ type FloatingIps struct {
 type FloatingIpAdmin struct{}
 type FloatingIpView struct{}
 
-func (a *FloatingIpAdmin) Create(ctx context.Context, instance *model.Instance, pubSubnet *model.Subnet, publicIp string) (floatingIp *model.FloatingIp, err error) {
+func (a *FloatingIpAdmin) Create(ctx context.Context, instance *model.Instance, pubSubnet *model.Subnet, publicIp string, name string) (floatingIp *model.FloatingIp, err error) {
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -59,7 +59,7 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instance *model.Instance, 
 			db.Rollback()
 		}
 	}()
-	floatingIp = &model.FloatingIp{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID}
+	floatingIp = &model.FloatingIp{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, Name: name}
 	err = db.Create(floatingIp).Error
 	if err != nil {
 		log.Println("DB failed to create floating ip", err)
@@ -285,7 +285,7 @@ func (a *FloatingIpAdmin) List(ctx context.Context, offset, limit int64, order, 
 		order = "created_at"
 	}
 	if query != "" {
-		query = fmt.Sprintf("fip_address like '%%%s%%' or int_address like '%%%s%%'", query, query)
+		query = fmt.Sprintf("fip_address like '%%%s%%' or int_address like '%%%s%%' or name like '%%%s%%'", query, query)
 	}
 
 	db := DB()
@@ -455,6 +455,7 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 	redirectTo := "../floatingips"
 	instID := c.QueryInt64("instance")
 	publicIp := c.QueryTrim("publicip")
+	name := c.QueryTrim("name")
 	instance, err := instanceAdmin.Get(ctx, int64(instID))
 	if err != nil {
 		log.Println("Failed to get instance ", err)
@@ -462,7 +463,7 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
-	_, err = floatingIpAdmin.Create(c.Req.Context(), instance, nil, publicIp)
+	_, err = floatingIpAdmin.Create(c.Req.Context(), instance, nil, publicIp, name)
 	if err != nil {
 		log.Println("Failed to create floating ip", err)
 		c.Data["ErrorMsg"] = err.Error()
