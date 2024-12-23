@@ -151,7 +151,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		instance.Zone = zone
 		var bootVolume *model.Volume
 		imagePrefix := fmt.Sprintf("image-%d-%s", image.ID, strings.Split(image.UUID, "-")[0])
-		// boot volume name format: instance-15-image-2-3c0cca59-boot-volume-10 
+		// boot volume name format: instance-15-image-2-3c0cca59-boot-volume-10
 		bootVolume, err = volumeAdmin.CreateVolume(ctx, fmt.Sprintf("instance-%d-%s-boot-volume", instance.ID, imagePrefix), flavor.Disk, instance.ID, true, 0, 0, 0, 0, "")
 		if err != nil {
 			log.Println("Failed to create boot volume", err)
@@ -505,6 +505,15 @@ func (a *InstanceAdmin) Get(ctx context.Context, id int64) (instance *model.Inst
 		err = fmt.Errorf("Not authorized")
 		return
 	}
+	permit = memberShip.CheckPermission(model.Admin)
+	if permit {
+		instance.OwnerInfo = &model.Organization{Model: model.Model{ID: instance.Owner}}
+		if err = db.Take(instance.OwnerInfo).Error; err != nil {
+			log.Println("Failed to query owner info", err)
+			return
+		}
+	}
+
 	return
 }
 
@@ -647,6 +656,40 @@ func (v *InstanceView) UpdateTable(c *macaron.Context, store session.Store) {
 
 	c.JSON(200, jsonData)
 	return
+}
+
+func (v *InstanceView) Status(c *macaron.Context, store session.Store) {
+	memberShip := GetMemberShip(c.Req.Context())
+	permit := memberShip.CheckPermission(model.Reader)
+	if !permit {
+		log.Println("Not authorized for this operation")
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+
+	ctx := c.Req.Context()
+	id := c.Params("id")
+	if id == "" {
+		c.Data["ErrorMsg"] = "Id is empty"
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	instanceID, err := strconv.Atoi(id)
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	instance, err := instanceAdmin.Get(ctx, int64(instanceID))
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	c.Data["Instance"] = instance
+	log.Printf("Instance status %+v", instance)
+	c.HTML(200, "instances_status")
 }
 
 func (v *InstanceView) Delete(c *macaron.Context, store session.Store) (err error) {

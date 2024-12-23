@@ -20,8 +20,8 @@ import (
 	"strconv"
 	"strings"
 
-	"web/src/model"
 	. "web/src/common"
+	"web/src/model"
 
 	"github.com/go-macaron/i18n"
 	"github.com/go-macaron/session"
@@ -108,6 +108,7 @@ func New() (m *macaron.Macaron) {
 	m.Get("/orgs/new", orgView.New)
 	m.Post("/orgs/new", orgView.Create)
 	m.Get("/instances", instanceView.List)
+	m.Get("/instances/:id", instanceView.Status)
 	m.Get("/UpdateTable", instanceView.UpdateTable)
 	m.Get("/instances/new", instanceView.New)
 	m.Post("/instances/new", instanceView.Create)
