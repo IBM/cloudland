@@ -77,6 +77,7 @@ func New() (m *macaron.Macaron) {
 		Provider:       "postgres",
 		ProviderConfig: viper.GetString("db.uri"),
 	}))
+	adminInit()
 	m.Use(macaron.Renderer(
 		macaron.RenderOptions{
 			Funcs: []template.FuncMap{
