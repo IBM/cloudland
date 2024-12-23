@@ -177,7 +177,7 @@ func (v *InterfaceView) Edit(c *macaron.Context, store session.Store) {
 		return
 	}
 	iface := &model.Interface{Model: model.Model{ID: int64(ifaceID)}}
-	if err = db.Set("gorm:auto_preload", true).Take(iface).Error; err != nil {
+	if err = db.Preload("Address").Preload("SecurityGroups").Take(iface).Error; err != nil {
 		log.Println("Image query failed", err)
 		return
 	}
@@ -189,6 +189,9 @@ func (v *InterfaceView) Edit(c *macaron.Context, store session.Store) {
 	}
 	c.Data["Interface"] = iface
 	c.Data["Secgroups"] = secgroups
+	if len(iface.SecurityGroups) > 0 {
+		c.Data["SecgroupID"] = iface.SecurityGroups[0].ID
+	}
 	c.HTML(200, "interfaces_patch")
 }
 
