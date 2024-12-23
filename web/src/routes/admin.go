@@ -34,7 +34,7 @@ func adminPassword() (password string) {
 	return
 }
 
-func init() {
+func adminInit() {
 	var user *model.User
 	var org *model.Organization
 	username := "admin"
