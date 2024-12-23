@@ -48,14 +48,14 @@ func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name, pairs strin
 	}
 	if iface.Name != name {
 		iface.Name = name
-		if err = db.Save(iface).Error; err != nil {
+		if err = db.Model(iface).Updates(iface).Error; err != nil {
 			log.Println("Failed to save interface", err)
 			return
 		}
 	}
 	if iface.AddrPairs != pairs {
 		iface.AddrPairs = pairs
-		if err = db.Save(iface).Error; err != nil {
+		if err = db.Model(iface).Updates(iface).Error; err != nil {
 			log.Println("Failed to save interface", err)
 			return
 		}
@@ -114,7 +114,7 @@ func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name, pairs strin
 		}
 		db.Model(iface).Association("SecurityGroups").Clear()
 		iface.SecurityGroups = secgroups
-		if err = db.Save(iface).Error; err != nil {
+		if err = db.Model(iface).Updates(iface).Error; err != nil {
 			log.Println("Failed to save security groups", err)
 			return
 		}

@@ -42,18 +42,18 @@ func (a *SecgroupAdmin) Switch(ctx context.Context, newSg *model.SecurityGroup, 
 		log.Println("Failed to query default security group", err)
 	}
 	oldSg.IsDefault = false
-	err = db.Save(oldSg).Error
+	err = db.Model(oldSg).Update("is_default", oldSg.IsDefault).Error
 	if err != nil {
 		log.Println("Failed to save new security group", err)
 	}
 	return
 	router.DefaultSG = newSg.ID
-	err = db.Save(router).Error
+	err = db.Model(router).Update("default_sg", router.DefaultSG).Error
 	if err != nil {
 		log.Println("Failed to save router", err)
 	}
 	newSg.IsDefault = true
-	err = db.Save(newSg).Error
+	err = db.Model(newSg).Update("is_default", newSg.IsDefault).Error
 	if err != nil {
 		log.Println("Failed to save new security group", err)
 	}
@@ -74,7 +74,7 @@ func (a *SecgroupAdmin) Update(ctx context.Context, sgID int64, name string, isD
 	if isDefault && secgroup.IsDefault != isDefault {
 		secgroup.IsDefault = isDefault
 	}
-	err = db.Save(secgroup).Error
+	err = db.Model(secgroup).Updates(secgroup).Error
 	if err != nil {
 		log.Println("Failed to save security group", err)
 		return
@@ -83,7 +83,7 @@ func (a *SecgroupAdmin) Update(ctx context.Context, sgID int64, name string, isD
 }
 
 func (a *SecgroupAdmin) Get(ctx context.Context, id int64) (secgroup *model.SecurityGroup, err error) {
-	if id < 0 {
+	if id <= 0 {
 		return a.GetSecgroupByName(ctx, SystemDefaultSGName)
 	}
 	memberShip := GetMemberShip(ctx)
@@ -195,7 +195,15 @@ func (a *SecgroupAdmin) Create(ctx context.Context, name string, isDefault bool,
 			return
 		}
 	}
-	db := DB()
+	ctx, db := GetContextDB(ctx)
+	db = db.Begin()
+	defer func() {
+		if err == nil {
+			db.Commit()
+		} else {
+			db.Rollback()
+		}
+	}()
 	secgroup = &model.SecurityGroup{Model: model.Model{Creater: memberShip.UserID}, Owner: owner, Name: name, IsDefault: isDefault, RouterID: routerID}
 	err = db.Create(secgroup).Error
 	if err != nil {
@@ -263,7 +271,7 @@ func (a *SecgroupAdmin) Create(ctx context.Context, name string, isDefault bool,
 }
 
 func (a *SecgroupAdmin) Delete(ctx context.Context, secgroup *model.SecurityGroup) (err error) {
-	db := DB()
+	ctx, db := GetContextDB(ctx)
 	db = db.Begin()
 	defer func() {
 		if err == nil {
@@ -290,7 +298,7 @@ func (a *SecgroupAdmin) Delete(ctx context.Context, secgroup *model.SecurityGrou
 		return
 	}
 	secgroup.Name = fmt.Sprintf("%s-%d", secgroup.Name, secgroup.CreatedAt.Unix())
-	err = db.Save(secgroup).Error
+	err = db.Model(secgroup).Update("name", secgroup.Name).Error
 	if err != nil {
 		log.Println("DB failed to update security group name", err)
 		return

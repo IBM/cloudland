@@ -44,7 +44,7 @@ type VlanInfo struct {
 
 func AllocateAddress(ctx context.Context, subnetID, ifaceID int64, ipaddr, addrType string) (address *model.Address, err error) {
 	var db *gorm.DB
-	ctx, db = GetCtxDB(ctx)
+	ctx, db = GetContextDB(ctx)
 	subnet := &model.Subnet{Model: model.Model{ID: subnetID}}
 	err = db.Take(subnet).Error
 	if err != nil {
@@ -78,7 +78,7 @@ func AllocateAddress(ctx context.Context, subnetID, ifaceID int64, ipaddr, addrT
 
 func DeallocateAddress(ctx context.Context, ifaces []*model.Interface) (err error) {
 	var db *gorm.DB
-	ctx, db = GetCtxDB(ctx)
+	ctx, db = GetContextDB(ctx)
 	where := ""
 	for i, iface := range ifaces {
 		if i == 0 {
@@ -106,8 +106,7 @@ func genMacaddr() (mac string, err error) {
 }
 
 func CreateInterface(ctx context.Context, subnet *model.Subnet, ID, owner int64, hyper int32, address, mac, ifaceName, ifType string, secgroups []*model.SecurityGroup) (iface *model.Interface, err error) {
-	var db *gorm.DB
-	ctx, db = GetCtxDB(ctx)
+	ctx, db := GetContextDB(ctx)
 	primary := false
 	if ifaceName == "eth0" {
 		primary = true
@@ -159,7 +158,7 @@ func CreateInterface(ctx context.Context, subnet *model.Subnet, ID, owner int64,
 
 func DeleteInterfaces(ctx context.Context, masterID, subnetID int64, ifType string) (err error) {
 	var db *gorm.DB
-	ctx, db = GetCtxDB(ctx)
+	ctx, db = GetContextDB(ctx)
 	ifaces := []*model.Interface{}
 	where := ""
 	if subnetID > 0 {
@@ -203,7 +202,7 @@ func DeleteInterfaces(ctx context.Context, masterID, subnetID int64, ifType stri
 
 func DeleteInterface(ctx context.Context, iface *model.Interface) (err error) {
 	var db *gorm.DB
-	ctx, db = GetCtxDB(ctx)
+	ctx, db = GetContextDB(ctx)
 	if err = db.Model(&model.Address{}).Where("interface = ?", iface.ID).Update(map[string]interface{}{"allocated": false, "interface": 0}).Error; err != nil {
 		log.Println("Failed to Update addresses, %v", err)
 		return

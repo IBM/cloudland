@@ -20,8 +20,8 @@ import (
 	"strconv"
 	"strings"
 
-	"web/src/model"
 	. "web/src/common"
+	"web/src/model"
 
 	"github.com/go-macaron/i18n"
 	"github.com/go-macaron/session"

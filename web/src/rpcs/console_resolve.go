@@ -95,7 +95,7 @@ func (a *ConsoleAdmin) ConsoleResolve(c *macaron.Context) {
 		return
 	}
 
-	accessPass, err := password.Generate(24, 5, 5, false, false)
+	accessPass, err := password.Generate(8, 2, 0, false, false)
 	if err != nil {
 		log.Println("Failed to generate password")
 		code := http.StatusInternalServerError

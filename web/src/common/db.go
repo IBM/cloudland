@@ -28,16 +28,12 @@ const (
 	contextDBKey = "dbs"
 )
 
-func GetCtxDB(c context.Context) (context.Context, *gorm.DB) {
-	tx := c.Value(contextDBKey)
+func GetContextDB(ctx context.Context) (context.Context, *gorm.DB) {
+	tx := ctx.Value(contextDBKey)
 	if tx != nil {
-		return c, tx.(*gorm.DB)
+		return ctx, tx.(*gorm.DB)
 	}
-	db := dbs.DB()
-	c = context.WithValue(c, contextDBKey, db)
-	return c, db
-}
-
-func SaveTXtoCtx(c context.Context, db *gorm.DB) context.Context {
-	return context.WithValue(c, contextDBKey, db)
+	db := DB()
+	ctx = context.WithValue(ctx, contextDBKey, db)
+	return ctx, db
 }

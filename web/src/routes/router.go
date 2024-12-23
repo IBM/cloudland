@@ -80,7 +80,15 @@ func (a *RouterAdmin) Create(ctx context.Context, name string) (router *model.Ro
 		return
 	}
 	owner := memberShip.OrgID
-	db := DB()
+	ctx, db := GetContextDB(ctx)
+	db = db.Begin()
+	defer func() {
+		if err == nil {
+			db.Commit()
+		} else {
+			db.Rollback()
+		}
+	}()
 	router = &model.Router{Model: model.Model{Creater: memberShip.UserID}, Owner: owner, Name: name, Status: "available"}
 	err = db.Create(router).Error
 	if err != nil {
@@ -93,7 +101,7 @@ func (a *RouterAdmin) Create(ctx context.Context, name string) (router *model.Ro
 		return
 	}
 	router.DefaultSG = secGroup.ID
-	if err = db.Save(router).Error; err != nil {
+	if err = db.Model(router).Update("default_sg", router.DefaultSG).Error; err != nil {
 		log.Println("Failed to save router", err)
 		return
 	}
@@ -181,7 +189,7 @@ func (a *RouterAdmin) Update(ctx context.Context, id int64, name string, pubID i
 	}
 	if router.Name != name {
 		router.Name = name
-		if err = db.Save(router).Error; err != nil {
+		if err = db.Model(router).Update("name", router.Name).Error; err != nil {
 			log.Println("Failed to save router", err)
 			return
 		}
@@ -190,7 +198,7 @@ func (a *RouterAdmin) Update(ctx context.Context, id int64, name string, pubID i
 }
 
 func (a *RouterAdmin) Delete(ctx context.Context, router *model.Router) (err error) {
-	db := DB()
+	ctx, db := GetContextDB(ctx)
 	db = db.Begin()
 	defer func() {
 		if err == nil {
@@ -199,7 +207,6 @@ func (a *RouterAdmin) Delete(ctx context.Context, router *model.Router) (err err
 			db.Rollback()
 		}
 	}()
-	ctx = SaveTXtoCtx(ctx, db)
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.ValidateOwner(model.Writer, router.Owner)
 	if !permit {
@@ -262,7 +269,7 @@ func (a *RouterAdmin) Delete(ctx context.Context, router *model.Router) (err err
 		return
 	}
 	router.Name = fmt.Sprintf("%s-%d", router.Name, router.CreatedAt.Unix())
-	err = db.Save(router).Error
+	err = db.Model(router).Update("name", router.Name).Error
 	if err != nil {
 		log.Println("DB failed to update router name", err)
 		return

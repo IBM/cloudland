@@ -78,7 +78,7 @@ func (a *VolumeAdmin) GetVolumeByUUID(ctx context.Context, uuID string) (volume 
 
 func (a *VolumeAdmin) CreateVolume(ctx context.Context, name string, size int32, instanceID int64, booting bool,
 	iopsLimit int32, iopsBurst int32, bpsLimit int32, bpsBurst int32, poolID string) (volume *model.Volume, err error) {
-	db := DB()
+	_, db := GetContextDB(ctx)
 	if iopsLimit == 0 {
 		iopsLimit = viper.GetInt32("volume.default_iops_limit")
 	}
@@ -212,7 +212,7 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 		volume.InstanceID = instID
 		volume.Instance = nil
 	}
-	if err = db.Model(volume).Save(volume).Error; err != nil {
+	if err = db.Model(volume).Updates(volume).Error; err != nil {
 		log.Println("DB: update volume failed", err)
 		return
 	}
@@ -220,7 +220,7 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 }
 
 func (a *VolumeAdmin) Delete(ctx context.Context, volume *model.Volume) (err error) {
-	db := DB()
+	ctx, db := GetContextDB(ctx)
 	db = db.Begin()
 	defer func() {
 		if err == nil {

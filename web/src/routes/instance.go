@@ -44,6 +44,11 @@ type NetworkRoute struct {
 	Gateway string `json:"gateway"`
 }
 
+type ExecutionCommand struct{
+	Control string
+	Command string
+}
+
 type InstanceNetwork struct {
 	Type    string          `json:"type,omitempty"`
 	Address string          `json:"ip_address"`
@@ -75,8 +80,8 @@ type InstancesData struct {
 	IsAdmin   bool              `json:"is_admin"`
 }
 
-func (a *InstanceAdmin) getHyperGroup(imageType string, zoneID int64) (hyperGroup string, err error) {
-	db := DB()
+func (a *InstanceAdmin) getHyperGroup(ctx context.Context, imageType string, zoneID int64) (hyperGroup string, err error) {
+	ctx, db := GetContextDB(ctx)
 	hypers := []*model.Hyper{}
 	where := fmt.Sprintf("zone_id = %d and status = 1", zoneID)
 	if imageType != "" {
@@ -103,7 +108,15 @@ func (a *InstanceAdmin) getHyperGroup(imageType string, zoneID int64) (hyperGrou
 
 func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, image *model.Image, flavor *model.Flavor, zone *model.Zone, routerID int64, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo, keys []*model.Key, hyperID int) (instances []*model.Instance, err error) {
 	memberShip := GetMemberShip(ctx)
-	db := DB()
+	ctx, db := GetContextDB(ctx)
+	db = db.Begin()
+	defer func() {
+		if err == nil {
+			db.Commit()
+		} else {
+			db.Rollback()
+		}
+	}()
 	if image.Status != "available" {
 		err = fmt.Errorf("Image status not available")
 		log.Println("Image status not available")
@@ -123,11 +136,12 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			return
 		}
 	}
-	hyperGroup, err := instanceAdmin.getHyperGroup(image.VirtType, zoneID)
+	hyperGroup, err := a.getHyperGroup(ctx, image.VirtType, zoneID)
 	if err != nil {
 		log.Println("No valid hypervisor", err)
 		return
 	}
+	execCommands := []*ExecutionCommand{}
 	i := 0
 	hostname := prefix
 	for i < count {
@@ -151,7 +165,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		instance.Zone = zone
 		var bootVolume *model.Volume
 		imagePrefix := fmt.Sprintf("image-%d-%s", image.ID, strings.Split(image.UUID, "-")[0])
-		// boot volume name format: instance-15-image-2-3c0cca59-boot-volume-10 
+		// boot volume name format: instance-15-image-2-3c0cca59-boot-volume-10
 		bootVolume, err = volumeAdmin.CreateVolume(ctx, fmt.Sprintf("instance-%d-%s-boot-volume", instance.ID, imagePrefix), flavor.Disk, instance.ID, true, 0, 0, 0, 0, "")
 		if err != nil {
 			log.Println("Failed to create boot volume", err)
@@ -171,19 +185,30 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			control = fmt.Sprintf("inter=%d %s", hyperID, rcNeeded)
 		}
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' '%s.%s' '%d' '%s' '%d' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, imagePrefix, image.Format, snapshot, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, bootVolume.ID, base64.StdEncoding.EncodeToString([]byte(metadata)))
-		err = hyperExecute(ctx, control, command)
-		if err != nil {
-			log.Println("Launch vm command execution failed", err)
-			return
-		}
+		execCommands = append(execCommands, &ExecutionCommand{
+			Control: control,
+			Command: command,
+		})
 		instances = append(instances, instance)
 		i++
+	}
+	a.executeCommandList(ctx, execCommands)
+	return
+}
+
+func (a *InstanceAdmin) executeCommandList(ctx context.Context, cmdList []*ExecutionCommand) {
+	var err error
+	for _, cmd := range cmdList {
+		err = hyperExecute(ctx, cmd.Control, cmd.Command)
+		if err != nil {
+			log.Println("Command execution failed", err)
+		}
 	}
 	return
 }
 
 func (a *InstanceAdmin) ChangeInstanceStatus(ctx context.Context, id int64, action string) (instance *model.Instance, err error) {
-	db := DB()
+	ctx, db := GetContextDB(ctx)
 	instance = &model.Instance{Model: model.Model{ID: id}}
 	if err = db.Take(instance).Error; err != nil {
 		log.Println("Failed to query instance ", err)
@@ -212,7 +237,15 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 		return
 	}
 
-	db := DB()
+	ctx, db := GetContextDB(ctx)
+	db = db.Begin()
+	defer func() {
+		if err == nil {
+			db.Commit()
+		} else {
+			db.Rollback()
+		}
+	}()
 	if hyperID != int(instance.Hyper) {
 		permit, err = memberShip.CheckAdmin(model.Admin, "instances", instance.ID)
 		if !permit {
@@ -254,7 +287,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 	if instance.Hostname != hostname {
 		instance.Hostname = hostname
 	}
-	if err = db.Save(instance).Error; err != nil {
+	if err = db.Model(instance).Updates(instance).Error; err != nil {
 		log.Println("Failed to save instance", err)
 		return
 	}
@@ -404,7 +437,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 }
 
 func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (err error) {
-	db := DB()
+	ctx, db := GetContextDB(ctx)
 	db = db.Begin()
 	defer func() {
 		if err == nil {
@@ -474,7 +507,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 		return
 	}
 	instance.Status = "deleting"
-	err = db.Save(instance).Error
+	err = db.Model(instance).Updates(instance).Error
 	if err != nil {
 		log.Println("Failed to mark vm as deleting ", err)
 		return
@@ -682,6 +715,7 @@ func (v *InstanceView) Delete(c *macaron.Context, store session.Store) (err erro
 }
 
 func (v *InstanceView) New(c *macaron.Context, store session.Store) {
+	ctx := c.Req.Context()
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -703,7 +737,6 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
-	ctx := c.Req.Context()
 	_, subnets, err := subnetAdmin.List(ctx, 0, -1, "", "")
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
@@ -862,7 +895,7 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 	}
 	err = instanceAdmin.Update(c.Req.Context(), instance, flavor, hostname, PowerAction(action), hyperID)
 	if err != nil {
-		log.Println("Create instance failed, %v", err)
+		log.Println("update instance failed, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -1061,6 +1094,12 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		if err != nil {
 			log.Println("Get secondary subnet failed", err)
 			c.HTML(http.StatusBadRequest, err.Error())
+			return
+		}
+		if subnet.RouterID != primarySubnet.RouterID {
+			log.Println("All subnets must be in the same vpc", err)
+			c.Data["ErrorMsg"] = "All subnets must be in the same vpc"
+			c.HTML(http.StatusBadRequest, "All subnets must be in the same vpc")
 			return
 		}
 		secondaryIfaces = append(secondaryIfaces, &InterfaceInfo{

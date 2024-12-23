@@ -188,10 +188,6 @@
     - 'NetworkManager'
   tags: [be_srv, netplan]
 
-- name: change netplan renderer
-  script: change_netplan_renderer.sh
-  tags: [be_srv, netplan]
-
 - name: stop and mask networkd
   systemd: 
     name: "{{ item }}"
@@ -201,6 +197,18 @@
   with_items:
     - 'systemd-networkd'
   tags: [be_srv, netplan]
+
+- name: change netplan renderer
+  script: change_netplan_renderer.sh
+  register: need_to_reboot
+  tags: [be_srv, netplan]
+
+- name: reboot compute node if needed
+  vars:
+    need_reboot: "{{ need_to_reboot.stdout_lines[0] }}"
+  ansible.builtin.reboot:
+  when: need_reboot == 'need_to_reboot'
+  tags: [netplan]
 
 - name: allow necessary ports for hypervisor
   script: firewall.sh

@@ -19,7 +19,7 @@ vm_xml=$xml_dir/$vm_ID/$vm_ID.xml
 virsh dumpxml --security-info $vm_ID 2>/dev/null | sed "s/autoport='yes'/autoport='no'/g" > $vm_xml.dump && mv -f $vm_xml.dump $vm_xml
 
 vhost_name=instance-$vm_ID-vol-$vol_ID
-vhost_id=$(wds_curl GET "api/v2/sync/block/vhost" | jq --arg vhost $vhost_name -r '.vhosts | .[] | select(.name == $vhost) | .id')
-uss_id=$(wds_curl GET "api/v2/wds/uss" | jq --arg hname $(hostname -s) -r '.uss_gateways | .[] | select(.server_name == $hname) | .id')
+vhost_id=$(wds_curl GET "api/v2/sync/block/vhost?name=$vhost_name" | jq -r '.vhosts[0].id')
+uss_id=$(get_uss_gateway)
 wds_curl PUT "api/v2/sync/block/vhost/unbind_uss" "{\"vhost_id\": \"$vhost_id\", \"uss_gw_id\": \"$uss_id\", \"is_snapshot\": false}"
 wds_curl DELETE "api/v2/sync/block/vhost/$vhost_id"

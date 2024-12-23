@@ -40,7 +40,15 @@ type OrgView struct{}
 
 func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.Organization, err error) {
 	memberShip := GetMemberShip(ctx)
-	db := DB()
+	ctx, db := GetContextDB(ctx)
+	db = db.Begin()
+	defer func() {
+		if err == nil {
+			db.Commit()
+		} else {
+			db.Rollback()
+		}
+	}()
 	user := &model.User{Username: owner}
 	err = db.Where(user).Take(user).Error
 	if err != nil {
@@ -64,14 +72,9 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 		return
 	}
 	user.Owner = org.ID
-	err = db.Save(user).Error
+	err = db.Model(user).Updates(user).Error
 	if err != nil {
 		log.Println("DB failed to update user owner", err)
-		return
-	}
-	err = db.Save(org).Error
-	if err != nil {
-		log.Println("DB failed to update orgabization default security group", err)
 		return
 	}
 	return
@@ -165,7 +168,7 @@ func (a *OrgAdmin) GetOrgByName(name string) (org *model.Organization, err error
 }
 
 func (a *OrgAdmin) Delete(ctx context.Context, id int64) (err error) {
-	db := DB()
+	ctx, db := GetContextDB(ctx)
 	db = db.Begin()
 	defer func() {
 		if err != nil {
