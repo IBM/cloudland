@@ -78,13 +78,10 @@ func (a *KeyAdmin) Create(ctx context.Context, name, publicKey string) (key *mod
 		return
 	}
 	fingerPrint := ssh.FingerprintLegacyMD5(pub)
-	ctx, db := GetContextDB(ctx)
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
 	key = &model.Key{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, Name: name, PublicKey: publicKey, FingerPrint: fingerPrint}
@@ -97,13 +94,10 @@ func (a *KeyAdmin) Create(ctx context.Context, name, publicKey string) (key *mod
 }
 
 func (a *KeyAdmin) Delete(ctx context.Context, key *model.Key) (err error) {
-	ctx, db := GetContextDB(ctx)
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
 	memberShip := GetMemberShip(ctx)

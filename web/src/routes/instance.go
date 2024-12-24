@@ -107,16 +107,13 @@ func (a *InstanceAdmin) getHyperGroup(ctx context.Context, imageType string, zon
 }
 
 func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, image *model.Image, flavor *model.Flavor, zone *model.Zone, routerID int64, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo, keys []*model.Key, hyperID int) (instances []*model.Instance, err error) {
-	memberShip := GetMemberShip(ctx)
-	ctx, db := GetContextDB(ctx)
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
+	memberShip := GetMemberShip(ctx)
 	if image.Status != "available" {
 		err = fmt.Errorf("Image status not available")
 		log.Println("Image status not available")
@@ -237,13 +234,10 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 		return
 	}
 
-	ctx, db := GetContextDB(ctx)
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
 	if hyperID != int(instance.Hyper) {
@@ -437,13 +431,10 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 }
 
 func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (err error) {
-	ctx, db := GetContextDB(ctx)
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
 	memberShip := GetMemberShip(ctx)

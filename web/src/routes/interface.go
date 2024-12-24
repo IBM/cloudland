@@ -40,7 +40,12 @@ type InterfaceAdmin struct{}
 type InterfaceView struct{}
 
 func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name, pairs string, sgIDs []int64) (iface *model.Interface, err error) {
-	db := DB()
+	ctx, db, newTransaction := StartTransaction(ctx)
+	defer func() {
+		if newTransaction {
+			EndTransaction(ctx, err)
+		}
+	}()
 	iface = &model.Interface{Model: model.Model{ID: id}}
 	if err = db.Set("gorm:auto_preload", true).Take(iface).Error; err != nil {
 		log.Println("Failed to query interface ", err)

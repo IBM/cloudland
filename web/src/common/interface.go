@@ -42,24 +42,18 @@ type VlanInfo struct {
 	SecRules   []*SecurityData `json:"security"`
 }
 
-func AllocateAddress(ctx context.Context, subnetID, ifaceID int64, ipaddr, addrType string) (address *model.Address, err error) {
+func AllocateAddress(ctx context.Context, subnet *model.Subnet, ifaceID int64, ipaddr, addrType string) (address *model.Address, err error) {
 	var db *gorm.DB
 	ctx, db = GetContextDB(ctx)
-	subnet := &model.Subnet{Model: model.Model{ID: subnetID}}
-	err = db.Take(subnet).Error
-	if err != nil {
-		log.Println("Failed to query subnet", err)
-		return
-	}
-	address = &model.Address{Subnet: subnet}
+	address = &model.Address{}
 	if ipaddr == "" {
-		err = db.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ? and address != ?", subnetID, false, subnet.Gateway).Take(address).Error
+		err = db.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ? and address != ?", subnet.ID, false, subnet.Gateway).Take(address).Error
 	} else {
 		if !strings.Contains(ipaddr, "/") {
 			preSize, _ := net.IPMask(net.ParseIP(subnet.Netmask).To4()).Size()
 			ipaddr = fmt.Sprintf("%s/%d", ipaddr, preSize)
 		}
-		err = db.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ? and address = ?", subnetID, false, ipaddr).Take(address).Error
+		err = db.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ? and address = ?", subnet.ID, false, ipaddr).Take(address).Error
 	}
 	if err != nil {
 		log.Println("Failed to query address, %v", err)
@@ -77,8 +71,7 @@ func AllocateAddress(ctx context.Context, subnetID, ifaceID int64, ipaddr, addrT
 }
 
 func DeallocateAddress(ctx context.Context, ifaces []*model.Interface) (err error) {
-	var db *gorm.DB
-	ctx, db = GetContextDB(ctx)
+	ctx, db := GetContextDB(ctx)
 	where := ""
 	for i, iface := range ifaces {
 		if i == 0 {
@@ -144,7 +137,7 @@ func CreateInterface(ctx context.Context, subnet *model.Subnet, ID, owner int64,
 		log.Println("Failed to create interface, ", err)
 		return
 	}
-	iface.Address, err = AllocateAddress(ctx, subnet.ID, iface.ID, address, "native")
+	iface.Address, err = AllocateAddress(ctx, subnet, iface.ID, address, "native")
 	if err != nil {
 		log.Println("Failed to allocate address", err)
 		err2 := db.Delete(iface).Error
@@ -157,8 +150,7 @@ func CreateInterface(ctx context.Context, subnet *model.Subnet, ID, owner int64,
 }
 
 func DeleteInterfaces(ctx context.Context, masterID, subnetID int64, ifType string) (err error) {
-	var db *gorm.DB
-	ctx, db = GetContextDB(ctx)
+	ctx, db := GetContextDB(ctx)
 	ifaces := []*model.Interface{}
 	where := ""
 	if subnetID > 0 {

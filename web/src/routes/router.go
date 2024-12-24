@@ -80,13 +80,10 @@ func (a *RouterAdmin) Create(ctx context.Context, name string) (router *model.Ro
 		return
 	}
 	owner := memberShip.OrgID
-	ctx, db := GetContextDB(ctx)
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
 	router = &model.Router{Model: model.Model{Creater: memberShip.UserID}, Owner: owner, Name: name, Status: "available"}
@@ -198,13 +195,10 @@ func (a *RouterAdmin) Update(ctx context.Context, id int64, name string, pubID i
 }
 
 func (a *RouterAdmin) Delete(ctx context.Context, router *model.Router) (err error) {
-	ctx, db := GetContextDB(ctx)
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
 	memberShip := GetMemberShip(ctx)

@@ -31,7 +31,6 @@ type FlavorAdmin struct{}
 type FlavorView struct{}
 
 func (a *FlavorAdmin) Create(ctx context.Context, name string, cpu, memory, disk int32) (flavor *model.Flavor, err error) {
-	ctx, db := GetContextDB(ctx)
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
@@ -39,12 +38,10 @@ func (a *FlavorAdmin) Create(ctx context.Context, name string, cpu, memory, disk
 		err = fmt.Errorf("Not authorized")
 		return
 	}
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
 	flavor = &model.Flavor{
@@ -92,13 +89,10 @@ func (a *FlavorAdmin) Delete(ctx context.Context, flavor *model.Flavor) (err err
 		err = fmt.Errorf("Not authorized")
 		return
 	}
-	ctx, db := GetContextDB(ctx)
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
 	if err = db.Delete(flavor).Error; err != nil {

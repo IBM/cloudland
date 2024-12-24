@@ -78,7 +78,12 @@ func (a *VolumeAdmin) GetVolumeByUUID(ctx context.Context, uuID string) (volume 
 
 func (a *VolumeAdmin) CreateVolume(ctx context.Context, name string, size int32, instanceID int64, booting bool,
 	iopsLimit int32, iopsBurst int32, bpsLimit int32, bpsBurst int32, poolID string) (volume *model.Volume, err error) {
-	_, db := GetContextDB(ctx)
+	ctx, db, newTransaction := StartTransaction(ctx)
+	defer func() {
+		if newTransaction {
+			EndTransaction(ctx, err)
+		}
+	}()
 	if iopsLimit == 0 {
 		iopsLimit = viper.GetInt32("volume.default_iops_limit")
 	}
@@ -157,7 +162,12 @@ func (a *VolumeAdmin) UpdateByUUID(ctx context.Context, uuid string, name string
 }
 
 func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID int64) (volume *model.Volume, err error) {
-	db := DB()
+	ctx, db, newTransaction := StartTransaction(ctx)
+	defer func() {
+		if newTransaction {
+			EndTransaction(ctx, err)
+		}
+	}()
 	volume = &model.Volume{Model: model.Model{ID: id}}
 	if err = db.Preload("Instance").Take(volume).Error; err != nil {
 		log.Println("DB: query volume failed", err)
@@ -220,13 +230,10 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 }
 
 func (a *VolumeAdmin) Delete(ctx context.Context, volume *model.Volume) (err error) {
-	ctx, db := GetContextDB(ctx)
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
 	// check the permission
