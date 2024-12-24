@@ -26,14 +26,16 @@
                     <div class="inline field">
                         <label for="secgroups">{{.i18n.Tr "Security Groups"}}</label>
                         <select name="secgroups" id="secgroups" multiple="" class="ui multiple selection dropdown">
-			   {{ range .Interface.Secgroups }}
-                              <option value="{{ .ID }}" selected>{{ .ID }}-{{ .Name }}</option>
-                           {{ end }}
-			   {{ range .Secgroups }}
-                              <option value="{{ .ID }}">{{ .ID }}-{{ .Name }}</option>
-                           {{ end }}
+                            {{ $sgID := .SecgroupID }}
+            			    {{ range .Secgroups }}
+                                {{ if eq .ID $sgID }}
+                                    <option value="{{ .ID }}" selected>{{ .ID }}-{{ .Name }}</option>
+                                {{ else }}
+                                    <option value="{{ .ID }}">{{ .ID }}-{{ .Name }}</option>
+                                {{ end }}
+                            {{ end }}
                         </select>
-		    </div>
+		            </div>
                     <div class="inline field">
                         <label></label>
                         <button class="ui green button">{{.i18n.Tr "Update Interface"}}</button>
