@@ -39,13 +39,10 @@ func FileExist(filename string) bool {
 
 func (a *ImageAdmin) Create(ctx context.Context, name, osVersion, virtType, userName, url, architecture string, instID int64) (image *model.Image, err error) {
 	memberShip := GetMemberShip(ctx)
-	ctx, db := GetContextDB(ctx)
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
 	image = &model.Image{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, OsVersion: osVersion, VirtType: virtType, UserName: userName, Name: name, OSCode: name, Status: "creating", Architecture: architecture}
@@ -150,13 +147,10 @@ func (a *ImageAdmin) GetImage(ctx context.Context, reference *BaseReference) (im
 }
 
 func (a *ImageAdmin) Delete(ctx context.Context, image *model.Image) (err error) {
-	ctx, db := GetContextDB(ctx)
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
 	memberShip := GetMemberShip(ctx)

@@ -82,6 +82,7 @@ function sync_instance()
     boot_file=/proc/sys/kernel/random/boot_id
     diff $flag_file $boot_file
     [ $? -eq 0 ] && return
+    sudo iptables-restore </etc/iptables.rules
     bridges=$(cat /proc/net/dev | grep br | awk -F: '{print $1}')
     sudo iptables -N secgroup-chain && sudo iptables -A secgroup-chain -j ACCEPT
     for bridge in $bridges; do
@@ -163,6 +164,6 @@ function calc_resource()
 calc_resource
 sync_instance
 #probe_arp >/dev/null 2>&1
-#inst_status
+inst_status
 #vlan_status
 #router_status

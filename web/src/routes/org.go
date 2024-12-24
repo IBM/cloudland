@@ -39,16 +39,13 @@ type OrgAdmin struct {
 type OrgView struct{}
 
 func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.Organization, err error) {
-	memberShip := GetMemberShip(ctx)
-	ctx, db := GetContextDB(ctx)
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
+	memberShip := GetMemberShip(ctx)
 	user := &model.User{Username: owner}
 	err = db.Where(user).Take(user).Error
 	if err != nil {
@@ -168,13 +165,10 @@ func (a *OrgAdmin) GetOrgByName(name string) (org *model.Organization, err error
 }
 
 func (a *OrgAdmin) Delete(ctx context.Context, id int64) (err error) {
-	ctx, db := GetContextDB(ctx)
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err != nil {
-			db.Rollback()
-		} else {
-			db.Commit()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
 

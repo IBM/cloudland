@@ -39,19 +39,16 @@ type UserAdmin struct{}
 type UserView struct{}
 
 func (a *UserAdmin) Create(ctx context.Context, username, password string) (user *model.User, err error) {
-	memberShip := GetMemberShip(ctx)
-	db := DB()
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
 	if password, err = a.GenerateFromPassword(password); err != nil {
 		return
 	}
+	memberShip := GetMemberShip(ctx)
 	user = &model.User{Model: model.Model{Creater: memberShip.UserID}, Username: username, Password: password}
 	err = db.Create(user).Error
 	if err != nil {
@@ -124,13 +121,10 @@ func (a *UserAdmin) Delete(ctx context.Context, user *model.User) (err error) {
 		err = fmt.Errorf("Not authorized")
 		return
 	}
-	db := DB()
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
 	if err = db.Where("user_id = ?", user.ID).Delete(&model.Member{}).Error; err != nil {

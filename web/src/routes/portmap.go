@@ -87,13 +87,10 @@ func (a *PortmapAdmin) Create(ctx context.Context, instID int64, port int) (port
 }
 
 func (a *PortmapAdmin) Delete(ctx context.Context, id int64) (err error) {
-	db := DB()
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
 	portmap := &model.Portmap{Model: model.Model{ID: id}}

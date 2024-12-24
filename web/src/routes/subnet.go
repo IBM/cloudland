@@ -253,7 +253,7 @@ func clearRouting(ctx context.Context, routerID int64, subnet *model.Subnet) (er
 }
 
 func setRouting(ctx context.Context, subnet *model.Subnet, routeOnly bool) (err error) {
-	db := DB()
+	ctx, db := GetContextDB(ctx)
 	router := &model.Router{Model: model.Model{ID: subnet.RouterID}}
 	err = db.Take(router).Error
 	if err != nil {
@@ -292,16 +292,6 @@ func (a *SubnetAdmin) Create(ctx context.Context, vlan int, name, network, gatew
 		err = fmt.Errorf("Not authorized for this operation")
 		return
 	}
-	owner := memberShip.OrgID
-	ctx, db := GetContextDB(ctx)
-	db = db.Begin()
-	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
-		}
-	}()
 	if vlan <= 0 {
 		vlan, err = getValidVni()
 		if err != nil {
@@ -309,6 +299,13 @@ func (a *SubnetAdmin) Create(ctx context.Context, vlan int, name, network, gatew
 			return
 		}
 	}
+	owner := memberShip.OrgID
+	ctx, db, newTransaction := StartTransaction(ctx)
+	defer func() {
+		if newTransaction {
+			EndTransaction(ctx, err)
+		}
+	}()
 	count := 0
 	err = db.Model(&model.Subnet{}).Where("vlan = ?", vlan).Count(&count).Error
 	if err != nil {
@@ -406,13 +403,10 @@ func (a *SubnetAdmin) Create(ctx context.Context, vlan int, name, network, gatew
 }
 
 func (a *SubnetAdmin) Delete(ctx context.Context, subnet *model.Subnet) (err error) {
-	ctx, db := GetContextDB(ctx)
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
 	memberShip := GetMemberShip(ctx)

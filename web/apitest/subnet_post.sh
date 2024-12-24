@@ -9,6 +9,7 @@ cat >tmp.json <<EOF
 EOF
 
 vpc_id=$(curl -k -XPOST -H "Authorization: bearer $token" -H "X-Resource-User: cathy" -H "X-Resource-Org: cathy" "$endpoint/api/v1/vpcs" -d @./tmp.json | jq -r .id)
+echo vpc $vpc_id created
 
 cat >tmp.json <<EOF
 {

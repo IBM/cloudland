@@ -32,7 +32,7 @@ type SecruleAdmin struct{}
 type SecruleView struct{}
 
 func (a *SecruleAdmin) ApplySecgroup(ctx context.Context, secgroup *model.SecurityGroup, ruleID int64) (err error) {
-	db := DB()
+	ctx, db := GetContextDB(ctx)
 	if len(secgroup.Interfaces) <= 0 {
 		return
 	}
@@ -155,13 +155,10 @@ func (a *SecruleAdmin) Create(ctx context.Context, remoteIp, direction, protocol
 		err = fmt.Errorf("Not authorized")
 		return
 	}
-	ctx, db := GetContextDB(ctx)
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
 	secrule = &model.SecurityRule{
@@ -189,13 +186,10 @@ func (a *SecruleAdmin) Create(ctx context.Context, remoteIp, direction, protocol
 }
 
 func (a *SecruleAdmin) Delete(ctx context.Context, secrule *model.SecurityRule, secgroup *model.SecurityGroup) (err error) {
-	ctx, db := GetContextDB(ctx)
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
 	memberShip := GetMemberShip(ctx)

@@ -50,13 +50,10 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instance *model.Instance, 
 		err = fmt.Errorf("Subnet must be public")
 		return
 	}
-	ctx, db := GetContextDB(ctx)
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
 	floatingIp = &model.FloatingIp{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, Name: name}
@@ -221,13 +218,10 @@ func (a *FloatingIpAdmin) GetFloatingIpByUUID(ctx context.Context, uuID string) 
 }
 
 func (a *FloatingIpAdmin) Detach(ctx context.Context, floatingIp *model.FloatingIp) (err error) {
-	ctx, db := GetContextDB(ctx)
-	db = db.Begin()
+	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
 	if floatingIp.Instance != nil {
@@ -251,13 +245,10 @@ func (a *FloatingIpAdmin) Detach(ctx context.Context, floatingIp *model.Floating
 }
 
 func (a *FloatingIpAdmin) Delete(ctx context.Context, floatingIp *model.FloatingIp) (err error) {
-	ctx, db := GetContextDB(ctx)
-	db = db.Begin()
+	ctx, _, newTransaction := StartTransaction(ctx)
 	defer func() {
-		if err == nil {
-			db.Commit()
-		} else {
-			db.Rollback()
+		if newTransaction {
+			EndTransaction(ctx, err)
 		}
 	}()
 	if floatingIp.Instance != nil {
