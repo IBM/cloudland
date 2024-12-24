@@ -26,7 +26,7 @@ var secgroupAdmin = &routes.SecgroupAdmin{}
 type SecgroupAPI struct{}
 
 type SecurityGroupResponse struct {
-	*BaseReference
+	*ResourceReference
 	IsDefault        bool               `json:"is_default"`
 	VPC              *BaseReference     `json:"vpc,omitempty"`
 	TargetInterfaces []*TargetInterface `json:"target_interfaces,omitempty"`
@@ -155,10 +155,14 @@ func (v *SecgroupAPI) Create(c *gin.Context) {
 }
 
 func (v *SecgroupAPI) getSecgroupResponse(ctx context.Context, secgroup *model.SecurityGroup) (secgroupResp *SecurityGroupResponse, err error) {
+	owner := orgAdmin.GetOrgName(secgroup.Owner)
 	secgroupResp = &SecurityGroupResponse{
-		BaseReference: &BaseReference{
-			ID:   secgroup.UUID,
-			Name: secgroup.Name,
+		ResourceReference: &ResourceReference{
+			ID:    secgroup.UUID,
+			Name:  secgroup.Name,
+			Owner: owner,
+			CreatedAt: secgroup.CreatedAt.Format(TimeStringForMat),
+			UpdatedAt: secgroup.UpdatedAt.Format(TimeStringForMat),
 		},
 		IsDefault: secgroup.IsDefault,
 	}
@@ -174,7 +178,7 @@ func (v *SecgroupAPI) getSecgroupResponse(ctx context.Context, secgroup *model.S
 	}
 	for _, iface := range secgroup.Interfaces {
 		targetIface := &TargetInterface{
-			BaseID: &BaseID{
+			ResourceReference: &ResourceReference{
 				ID: iface.UUID,
 			},
 		}
@@ -185,11 +189,13 @@ func (v *SecgroupAPI) getSecgroupResponse(ctx context.Context, secgroup *model.S
 			var instance *model.Instance
 			instance, err = instanceAdmin.Get(ctx, iface.Instance)
 			if err != nil {
-				return
+				continue
 			}
+			owner := orgAdmin.GetOrgName(instance.Owner)
 			targetIface.FromInstance = &InstanceInfo{
-				BaseID: &BaseID{
-					ID: instance.UUID,
+				ResourceReference: &ResourceReference{
+					ID:    instance.UUID,
+					Owner: owner,
 				},
 				Hostname: instance.Hostname,
 			}

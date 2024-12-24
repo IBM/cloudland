@@ -47,8 +47,7 @@ type VolumePatchPayload struct {
 }
 
 type VolumeResponse struct {
-	ID        string         `json:"id"`
-	Name      string         `json:"name"`
+	*ResourceReference
 	Path      string         `json:"path"`
 	Size      int32          `json:"size"`
 	Format    string         `json:"format"`
@@ -248,9 +247,15 @@ func (v *VolumeAPI) List(c *gin.Context) {
 }
 
 func (v *VolumeAPI) getVolumeResponse(ctx context.Context, volume *model.Volume) (*VolumeResponse, error) {
+	owner := orgAdmin.GetOrgName(volume.Owner)
 	volumeResp := &VolumeResponse{
-		ID:        volume.UUID,
-		Name:      volume.Name,
+		ResourceReference: &ResourceReference{
+			ID:    volume.UUID,
+			Name:  volume.Name,
+			Owner: owner,
+			CreatedAt: volume.CreatedAt.Format(TimeStringForMat),
+			UpdatedAt: volume.UpdatedAt.Format(TimeStringForMat),
+		},
 		Path:      volume.Path,
 		Size:      volume.Size,
 		Status:    volume.Status,

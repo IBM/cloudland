@@ -25,7 +25,7 @@ var keyAdmin = &routes.KeyAdmin{}
 type KeyAPI struct{}
 
 type KeyResponse struct {
-	*BaseReference
+	*ResourceReference
 	FingerPrint string `json:"finger_print"`
 	PublicKey   string `json:"public_key"`
 }
@@ -143,10 +143,14 @@ func (v *KeyAPI) Create(c *gin.Context) {
 }
 
 func (v *KeyAPI) getKeyResponse(ctx context.Context, key *model.Key) (keyResp *KeyResponse, err error) {
+	owner := orgAdmin.GetOrgName(key.Owner)
 	keyResp = &KeyResponse{
-		BaseReference: &BaseReference{
-			ID:   key.UUID,
-			Name: key.Name,
+		ResourceReference: &ResourceReference{
+			ID:    key.UUID,
+			Name:  key.Name,
+			Owner: owner,
+			CreatedAt: key.CreatedAt.Format(TimeStringForMat),
+			UpdatedAt: key.UpdatedAt.Format(TimeStringForMat),
 		},
 		FingerPrint: key.FingerPrint,
 		PublicKey:   key.PublicKey,

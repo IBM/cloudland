@@ -22,7 +22,7 @@ var orgAdmin = &routes.OrgAdmin{}
 type OrgAPI struct{}
 
 type OrgResponse struct {
-	*BaseReference
+	*ResourceReference
 	Cpu    int32 `json:"cpu"`
 	Memory int32 `json:"memory"`
 	Disk   int32

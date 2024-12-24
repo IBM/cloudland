@@ -22,9 +22,9 @@ var consoleAPI = &ConsoleAPI{}
 type ConsoleAPI struct{}
 
 type ConsoleResponse struct {
-	Instance   *BaseReference `json:"instance"`
-	Token      string         `json:"token"`
-	ConsoleURL string         `json:"console_url"`
+	Instance   *ResourceReference `json:"instance"`
+	Token      string             `json:"token"`
+	ConsoleURL string             `json:"console_url"`
 }
 
 // @Summary create a console
@@ -51,10 +51,11 @@ func (v *ConsoleAPI) Create(c *gin.Context) {
 		return
 	}
 	consoleURL := fmt.Sprintf("wss://%s/websockify?token=%s", c.Request.Host, token)
+	owner := orgAdmin.GetOrgName(instance.Owner)
 	consoleResp := &ConsoleResponse{
-		Instance: &BaseReference{
-			ID:   instance.UUID,
-			Name: instance.Hostname,
+		Instance: &ResourceReference{
+			ID:    instance.UUID,
+			Owner: owner,
 		},
 		Token:      token,
 		ConsoleURL: consoleURL,

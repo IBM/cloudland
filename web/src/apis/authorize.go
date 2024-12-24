@@ -12,6 +12,7 @@ import (
 	"net/http"
 
 	. "web/src/common"
+	"web/src/model"
 	"web/src/routes"
 
 	"github.com/gin-gonic/gin"
@@ -79,11 +80,9 @@ func Authorize() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		/*
-			if realUser == "admin" {
-				memberShip.Role = model.Admin
-			}
-		*/
+		if realUser == "admin" {
+			memberShip.Role = model.Admin
+		}
 		log.Printf("MemberShip: %v\n", memberShip)
 		ctx := memberShip.SetContext(c.Request.Context())
 		c.Request = c.Request.WithContext(ctx)

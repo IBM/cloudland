@@ -371,9 +371,12 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 		if iface.PrimaryIf && len(instance.FloatingIps) > 0 {
 			floatingIps := make([]*FloatingIpInfo, len(instance.FloatingIps))
 			for i, floatingip := range instance.FloatingIps {
+				owner := orgAdmin.GetOrgName(floatingip.Owner)
 				floatingIps[i] = &FloatingIpInfo{
-					BaseReference: &BaseReference{
-						ID: floatingip.UUID,
+					ResourceReference: &ResourceReference{
+						ID:    floatingip.UUID,
+						Name:  floatingip.Name,
+						Owner: owner,
 					},
 					IpAddress: floatingip.FipAddress,
 				}

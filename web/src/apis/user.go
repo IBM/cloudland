@@ -34,10 +34,10 @@ type UserPatchPayload struct {
 }
 
 type UserResponse struct {
-	UserInfo    *BaseReference `json:"user"`
-	OrgInfo     *BaseReference `json:"org,omitempty"`
-	AccessToken string         `json:"token,omitempty"`
-	Role        string         `json:"role,omitempty"`
+	UserInfo    *ResourceReference `json:"user"`
+	OrgInfo     *ResourceReference `json:"org,omitempty"`
+	AccessToken string             `json:"token,omitempty"`
+	Role        string             `json:"role,omitempty"`
 }
 
 type UserListResponse struct {
@@ -65,7 +65,7 @@ func (v *UserAPI) Get(c *gin.Context) {
 		return
 	}
 	userResp := &UserResponse{
-		UserInfo: &BaseReference{
+		UserInfo: &ResourceReference{
 			ID:   user.UUID,
 			Name: user.Username,
 		},
@@ -103,9 +103,11 @@ func (v *UserAPI) Patch(c *gin.Context) {
 		return
 	}
 	userResp := &UserResponse{
-		UserInfo: &BaseReference{
+		UserInfo: &ResourceReference{
 			ID:   user.UUID,
 			Name: user.Username,
+			CreatedAt: user.CreatedAt.Format(TimeStringForMat),
+			UpdatedAt: user.UpdatedAt.Format(TimeStringForMat),
 		},
 	}
 	c.JSON(http.StatusOK, userResp)
@@ -167,13 +169,17 @@ func (v *UserAPI) Create(c *gin.Context) {
 		return
 	}
 	userResp := &UserResponse{
-		UserInfo: &BaseReference{
+		UserInfo: &ResourceReference{
 			ID:   user.UUID,
 			Name: username,
+			CreatedAt: user.CreatedAt.Format(TimeStringForMat),
+			UpdatedAt: user.UpdatedAt.Format(TimeStringForMat),
 		},
-		OrgInfo: &BaseReference{
+		OrgInfo: &ResourceReference{
 			ID:   org.UUID,
 			Name: username,
+			CreatedAt: org.CreatedAt.Format(TimeStringForMat),
+			UpdatedAt: org.UpdatedAt.Format(TimeStringForMat),
 		},
 		Role: model.Owner.String(),
 	}
@@ -219,9 +225,11 @@ func (v *UserAPI) List(c *gin.Context) {
 	userListResp.Users = make([]*UserResponse, userListResp.Limit)
 	for i, user := range users {
 		userListResp.Users[i] = &UserResponse{
-			UserInfo: &BaseReference{
+			UserInfo: &ResourceReference{
 				ID:   user.UUID,
 				Name: user.Username,
+				CreatedAt: user.CreatedAt.Format(TimeStringForMat),
+				UpdatedAt: user.UpdatedAt.Format(TimeStringForMat),
 			},
 		}
 	}
@@ -266,11 +274,11 @@ func (v *UserAPI) LoginPost(c *gin.Context) {
 		return
 	}
 	userResp := &UserResponse{
-		UserInfo: &BaseReference{
+		UserInfo: &ResourceReference{
 			Name: username,
 			ID:   user.UUID,
 		},
-		OrgInfo: &BaseReference{
+		OrgInfo: &ResourceReference{
 			Name: orgName,
 			ID:   org.UUID,
 		},
