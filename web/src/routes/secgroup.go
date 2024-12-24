@@ -35,7 +35,7 @@ func (a *SecgroupAdmin) Switch(ctx context.Context, newSg *model.SecurityGroup, 
 		err = fmt.Errorf("Not authorized")
 		return
 	}
-	db := DB()
+	ctx, db := GetContextDB(ctx)
 	oldSg := &model.SecurityGroup{Model: model.Model{ID: router.DefaultSG}}
 	err = db.Take(oldSg).Error
 	if err != nil {
@@ -46,7 +46,6 @@ func (a *SecgroupAdmin) Switch(ctx context.Context, newSg *model.SecurityGroup, 
 	if err != nil {
 		log.Println("Failed to save new security group", err)
 	}
-	return
 	router.DefaultSG = newSg.ID
 	err = db.Model(router).Update("default_sg", router.DefaultSG).Error
 	if err != nil {
@@ -280,6 +279,15 @@ func (a *SecgroupAdmin) Delete(ctx context.Context, secgroup *model.SecurityGrou
 		log.Println("Not authorized to delete the router")
 		err = fmt.Errorf("Not authorized")
 		return
+	}
+	if secgroup.IsDefault == true && secgroup.Name != SystemDefaultSGName {
+		router := &model.Router{}
+		err = db.Where("default_sg = ?", secgroup.ID).Take(&router).Error
+		if err == nil {
+			log.Println("Default security group can not be deleted", err)
+			err = fmt.Errorf("Default security group can not be deleted")
+			return
+		}
 	}
 	if len(secgroup.Interfaces) > 0 {
 		log.Println("Security group has associated interfaces")

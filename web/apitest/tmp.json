@@ -1,3 +1,7 @@
 {
-  "power_action": "start"
+  "name": "secgroup-29247",
+  "vpc": {
+    "id": "b13cacf2-de2b-4152-adbb-fad2ca366f8f"
+  },
+  "is_default": true
 }
