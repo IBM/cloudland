@@ -25,7 +25,7 @@ var routerAdmin = &routes.RouterAdmin{}
 type VPCAPI struct{}
 
 type VPCResponse struct {
-	*BaseReference
+	*ResourceReference
 	Subnets []*SubnetResponse `json:"subnets,omitempty"`
 }
 
@@ -140,10 +140,14 @@ func (v *VPCAPI) Create(c *gin.Context) {
 }
 
 func (v *VPCAPI) getVPCResponse(ctx context.Context, router *model.Router) (vpcResp *VPCResponse, err error) {
+	owner := orgAdmin.GetOrgName(router.Owner)
 	vpcResp = &VPCResponse{
-		BaseReference: &BaseReference{
-			ID:   router.UUID,
-			Name: router.Name,
+		ResourceReference: &ResourceReference{
+			ID:    router.UUID,
+			Name:  router.Name,
+			Owner: owner,
+			CreatedAt: router.CreatedAt.Format(TimeStringForMat),
+			UpdatedAt: router.UpdatedAt.Format(TimeStringForMat),
 		},
 	}
 	vpcResp.Subnets = make([]*SubnetResponse, len(router.Subnets))

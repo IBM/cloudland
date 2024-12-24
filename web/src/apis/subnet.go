@@ -25,13 +25,13 @@ var subnetAdmin = &routes.SubnetAdmin{}
 type SubnetAPI struct{}
 
 type SubnetResponse struct {
-	*BaseReference
-	Network    string         `json:"network"`
-	Netmask    string         `json:"netmask"`
-	Gateway    string         `json:"gateway"`
-	NameServer string         `json:"dns,omitempty"`
-	VPC        *BaseReference `json:"vpc,omitempty"`
-	Type       SubnetType     `json:"type"`
+	*ResourceReference
+	Network    string             `json:"network"`
+	Netmask    string             `json:"netmask"`
+	Gateway    string             `json:"gateway"`
+	NameServer string             `json:"dns,omitempty"`
+	VPC        *ResourceReference `json:"vpc,omitempty"`
+	Type       SubnetType         `json:"type"`
 }
 
 type SubnetListResponse struct {
@@ -167,10 +167,14 @@ func (v *SubnetAPI) Create(c *gin.Context) {
 }
 
 func (v *SubnetAPI) getSubnetResponse(ctx context.Context, subnet *model.Subnet) (subnetResp *SubnetResponse, err error) {
+	owner := orgAdmin.GetOrgName(subnet.Owner)
 	subnetResp = &SubnetResponse{
-		BaseReference: &BaseReference{
-			ID:   subnet.UUID,
-			Name: subnet.Name,
+		ResourceReference: &ResourceReference{
+			ID:        subnet.UUID,
+			Name:      subnet.Name,
+			Owner:     owner,
+			CreatedAt: subnet.CreatedAt.Format(TimeStringForMat),
+			UpdatedAt: subnet.UpdatedAt.Format(TimeStringForMat),
 		},
 		Network:    subnet.Network,
 		Netmask:    subnet.Netmask,
@@ -179,9 +183,12 @@ func (v *SubnetAPI) getSubnetResponse(ctx context.Context, subnet *model.Subnet)
 		Type:       SubnetType(subnet.Type),
 	}
 	if subnet.Router != nil {
-		subnetResp.VPC = &BaseReference{
-			ID:   subnet.Router.UUID,
-			Name: subnet.Router.Name,
+		router := subnet.Router
+		owner := orgAdmin.GetOrgName(router.Owner)
+		subnetResp.VPC = &ResourceReference{
+			ID:    router.UUID,
+			Name:  router.Name,
+			Owner: owner,
 		}
 	}
 	return

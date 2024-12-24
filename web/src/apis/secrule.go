@@ -13,8 +13,8 @@ import (
 	"strconv"
 
 	. "web/src/common"
-	"web/src/routes"
 	"web/src/model"
+	"web/src/routes"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,8 +25,8 @@ var secruleAdmin = &routes.SecruleAdmin{}
 type SecruleAPI struct{}
 
 type SecruleResponse struct {
-	*BaseID
-	RemoteCIDR    string         `json:"remote_cidr,omitempty"`
+	*ResourceReference
+	RemoteCIDR  string         `json:"remote_cidr,omitempty"`
 	RemoteGroup *BaseReference `json:"remote_group,omitempty"`
 	Direction   string         `json:"direction"`
 	IpVersion   string         `json:"ip_version"`
@@ -43,11 +43,11 @@ type SecruleListResponse struct {
 }
 
 type SecurityRulePayload struct {
-	RemoteCIDR  string         `json:"remote_cidr" binding:"cidrv4"`
-	Direction   string         `json:"direction" binding:"required,oneof=ingress egress"`
-	Protocol    string         `json:"protocol" binding:"required,oneof=tcp udp icmp"`
-	PortMin     int32          `json:"port_min" binding:"omitempty,gte=1,lte=65535"`
-	PortMax     int32          `json:"port_max" binding:"omitempty,gte=1,lte=65535"`
+	RemoteCIDR string `json:"remote_cidr" binding:"cidrv4"`
+	Direction  string `json:"direction" binding:"required,oneof=ingress egress"`
+	Protocol   string `json:"protocol" binding:"required,oneof=tcp udp icmp"`
+	PortMin    int32  `json:"port_min" binding:"omitempty,gte=1,lte=65535"`
+	PortMax    int32  `json:"port_max" binding:"omitempty,gte=1,lte=65535"`
 }
 
 type SecrulePatchPayload struct {
@@ -154,8 +154,10 @@ func (v *SecruleAPI) Create(c *gin.Context) {
 
 func (v *SecruleAPI) getSecruleResponse(ctx context.Context, secrule *model.SecurityRule) (secruleResp *SecruleResponse, err error) {
 	secruleResp = &SecruleResponse{
-		BaseID: &BaseID{
+		ResourceReference: &ResourceReference{
 			ID: secrule.UUID,
+			CreatedAt: secrule.CreatedAt.Format(TimeStringForMat),
+			UpdatedAt: secrule.UpdatedAt.Format(TimeStringForMat),
 		},
 		PortMin:   secrule.PortMin,
 		PortMax:   secrule.PortMax,

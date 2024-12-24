@@ -13,9 +13,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// type JSONTime time.Time
+
 type BaseReference struct {
 	ID   string `json:"id" binding:"omitempty,uuid"`
 	Name string `json:"name" binding:"omitempty,min=2,max=32"`
+}
+
+type ResourceReference struct {
+	ID   string `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+	Owner string `json:"owner,omitempty"`
+	CreatedAt string `json:"created_at,omitempty"`
+	UpdatedAt string `json:"updated_at,omitempty"`
 }
 
 type BaseID struct {
@@ -36,3 +46,15 @@ func ErrorResponse(c *gin.Context, code int, errorMsg string, err error) {
 	c.JSON(code, &APIError{ErrorMessage: errorMsg})
 	return
 }
+
+/*
+type Marshaler interface {
+    MarshalJSON() ([]byte, error)
+}
+
+func (t JSONTime)MarshalJSON() ([]byte, error) {
+    //do your serializing here
+    stamp := fmt.Sprintf("\"%s\"", time.Time(t).Format("Mon Jan _2"))
+    return []byte(stamp), nil
+}
+*/

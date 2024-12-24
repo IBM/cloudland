@@ -25,7 +25,7 @@ var imageAdmin = &routes.ImageAdmin{}
 type ImageAPI struct{}
 
 type ImageResponse struct {
-	*BaseReference
+	*ResourceReference
 	Size         int64  `json:"size"`
 	Format       string `json:"format"`
 	Architecture string `json:"architecture"`
@@ -148,9 +148,11 @@ func (v *ImageAPI) Create(c *gin.Context) {
 
 func (v *ImageAPI) getImageResponse(ctx context.Context, image *model.Image) (imageResp *ImageResponse, err error) {
 	imageResp = &ImageResponse{
-		BaseReference: &BaseReference{
+		ResourceReference: &ResourceReference{
 			ID:   image.UUID,
 			Name: image.Name,
+			CreatedAt: image.CreatedAt.Format(TimeStringForMat),
+			UpdatedAt: image.UpdatedAt.Format(TimeStringForMat),
 		},
 		Size:         image.Size,
 		Format:       image.Format,

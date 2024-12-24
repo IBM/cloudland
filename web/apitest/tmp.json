@@ -1,7 +1,3 @@
 {
-  "name": "subnet-4260",
-  "network_cidr": "10.240.117.0/24",
-  "vpc": {
-    "id": "25c98d0d-6708-4f68-893a-97b318076233"
-  }
+  "power_action": "start"
 }

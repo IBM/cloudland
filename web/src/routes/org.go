@@ -164,6 +164,18 @@ func (a *OrgAdmin) GetOrgByName(name string) (org *model.Organization, err error
 	return
 }
 
+func (a *OrgAdmin) GetOrgName(id int64) (name string) {
+	org := &model.Organization{Model: model.Model{ID: id}}
+	db := DB()
+	err := db.Take(org, &model.Organization{Name: name}).Error
+	if err != nil {
+		log.Println("DB failed to query org", err)
+		return
+	}
+	name = org.Name
+	return
+}
+
 func (a *OrgAdmin) Delete(ctx context.Context, id int64) (err error) {
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {

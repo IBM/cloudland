@@ -26,26 +26,25 @@ var floatingIpAdmin = &routes.FloatingIpAdmin{}
 type FloatingIpAPI struct{}
 
 type FloatingIpInfo struct {
-	*BaseReference
+	*ResourceReference
 	IpAddress string `json:"ip_address"`
 	Name      string `json:"name"`
 }
 
 type TargetInterface struct {
-	*BaseID
+	*ResourceReference
 	IpAddress    string        `json:"ip_address"`
 	FromInstance *InstanceInfo `json:"from_instance"`
 }
 
 type InstanceInfo struct {
-	*BaseID
+	*ResourceReference
 	Hostname string `json:"hostname"`
 }
 
 type FloatingIpResponse struct {
-	*BaseID
+	*ResourceReference
 	PublicIp        string           `json:"public_ip"`
-	Name            string           `json:"name"`
 	TargetInterface *TargetInterface `json:"target_interface,omitempty"`
 	VPC             *BaseReference   `json:"vpc,omitempty"`
 }
@@ -60,7 +59,7 @@ type FloatingIpListResponse struct {
 type FloatingIpPayload struct {
 	PublicSubnet *BaseReference `json:"public_subnet" binding:"omitempty"`
 	PublicIp     string         `json:"public_ip" binding:"omitempty,ipv4"`
-	Name         string         `json:"name" binding:"omitempty"`
+	Name         string         `json:"name" binding:"omitempty,min=2,max=32"`
 	Instance     *BaseID        `json:"instance" binding:"omitempty"`
 	Bandwidth    int64          `json:"bandwidth" binding:"omitempty"`
 }
@@ -219,11 +218,11 @@ func (v *FloatingIpAPI) Create(c *gin.Context) {
 
 func (v *FloatingIpAPI) getFloatingIpResponse(ctx context.Context, floatingIp *model.FloatingIp) (floatingIpResp *FloatingIpResponse, err error) {
 	floatingIpResp = &FloatingIpResponse{
-		BaseID: &BaseID{
-			ID: floatingIp.UUID,
+		ResourceReference: &ResourceReference{
+			ID:   floatingIp.UUID,
+			Name: floatingIp.Name,
 		},
 		PublicIp: floatingIp.FipAddress,
-		Name:     floatingIp.Name,
 	}
 	if floatingIp.Router != nil {
 		floatingIpResp.VPC = &BaseReference{
@@ -234,14 +233,16 @@ func (v *FloatingIpAPI) getFloatingIpResponse(ctx context.Context, floatingIp *m
 	if floatingIp.Instance != nil && len(floatingIp.Instance.Interfaces) > 0 {
 		instance := floatingIp.Instance
 		interIp := strings.Split(floatingIp.IntAddress, "/")[0]
+		owner := orgAdmin.GetOrgName(instance.Owner)
 		floatingIpResp.TargetInterface = &TargetInterface{
-			BaseID: &BaseID{
+			ResourceReference: &ResourceReference{
 				ID: instance.Interfaces[0].UUID,
 			},
 			IpAddress: interIp,
 			FromInstance: &InstanceInfo{
-				BaseID: &BaseID{
-					ID: instance.UUID,
+				ResourceReference: &ResourceReference{
+					ID:    instance.UUID,
+					Owner: owner,
 				},
 				Hostname: instance.Hostname,
 			},
