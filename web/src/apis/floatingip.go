@@ -28,6 +28,7 @@ type FloatingIpAPI struct{}
 type FloatingIpInfo struct {
 	*BaseReference
 	IpAddress string `json:"ip_address"`
+	Name      string `json:"name"`
 }
 
 type TargetInterface struct {
@@ -44,6 +45,7 @@ type InstanceInfo struct {
 type FloatingIpResponse struct {
 	*BaseID
 	PublicIp        string           `json:"public_ip"`
+	Name            string           `json:"name"`
 	TargetInterface *TargetInterface `json:"target_interface,omitempty"`
 	VPC             *BaseReference   `json:"vpc,omitempty"`
 }
@@ -58,6 +60,7 @@ type FloatingIpListResponse struct {
 type FloatingIpPayload struct {
 	PublicSubnet *BaseReference `json:"public_subnet" binding:"omitempty"`
 	PublicIp     string         `json:"public_ip" binding:"omitempty,ipv4"`
+	Name         string         `json:"name" binding:"omitempty"`
 	Instance     *BaseID        `json:"instance" binding:"omitempty"`
 	Bandwidth    int64          `json:"bandwidth" binding:"omitempty"`
 }
@@ -201,7 +204,7 @@ func (v *FloatingIpAPI) Create(c *gin.Context) {
 			return
 		}
 	}
-	floatingIp, err := floatingIpAdmin.Create(ctx, instance, publicSubnet, payload.PublicIp)
+	floatingIp, err := floatingIpAdmin.Create(ctx, instance, publicSubnet, payload.PublicIp, payload.Name)
 	if err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Failed to create floating ip", err)
 		return
@@ -220,6 +223,7 @@ func (v *FloatingIpAPI) getFloatingIpResponse(ctx context.Context, floatingIp *m
 			ID: floatingIp.UUID,
 		},
 		PublicIp: floatingIp.FipAddress,
+		Name:     floatingIp.Name,
 	}
 	if floatingIp.Router != nil {
 		floatingIpResp.VPC = &BaseReference{
@@ -258,6 +262,7 @@ func (v *FloatingIpAPI) List(c *gin.Context) {
 	ctx := c.Request.Context()
 	offsetStr := c.DefaultQuery("offset", "0")
 	limitStr := c.DefaultQuery("limit", "50")
+	queryStr := c.DefaultQuery("query", "")
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset: "+offsetStr, err)
@@ -272,7 +277,7 @@ func (v *FloatingIpAPI) List(c *gin.Context) {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", err)
 		return
 	}
-	total, floatingIps, err := floatingIpAdmin.List(ctx, int64(offset), int64(limit), "-created_at", "")
+	total, floatingIps, err := floatingIpAdmin.List(ctx, int64(offset), int64(limit), "-created_at", queryStr)
 	if err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Failed to list floatingIps", err)
 		return
