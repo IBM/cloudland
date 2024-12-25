@@ -45,6 +45,14 @@
     reload: yes
   tags: [sysctl, storage]
 
+- name: Apply sysctl vm.nr_overcommit_hugepages
+  sysctl:
+    name: vm.nr_hugepages
+    state: present
+    value: "{{ hugepage.stdout_lines[1] }}"
+    reload: yes
+  tags: [sysctl, storage]
+
 - name: execute preinstall.sh
   vars:
     ansible_command_timeout: 1800

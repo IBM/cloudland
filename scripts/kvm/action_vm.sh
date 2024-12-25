@@ -13,9 +13,11 @@ elif [ "$action" = "start" ]; then
     virsh start $vm_ID
 elif [ "$action" = "stop" ]; then
     virsh shutdown $vm_ID
-elif [ "$action" = "force-stop" ]; then
+elif [ "$action" = "hard_stop" ]; then
     virsh destroy $vm_ID
-elif [ "$action" = "force-restart" ]; then
+elif [ "$action" = "restart" ]; then
+    virsh reboot $vm_ID
+elif [ "$action" = "hard_restart" ]; then
     virsh destroy $vm_ID
     sleep 0.5
     virsh start $vm_ID
