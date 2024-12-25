@@ -8,7 +8,7 @@ exec <&-
 cpu=0
 total_cpu=$(cat /proc/cpuinfo | grep -c processor)
 memory=0
-total_memory=$(free | grep 'Mem:' | awk '{print $2}')
+total_memory=$(( $(free | grep 'Mem:' | awk '{print $2}') - 4000000 ))
 disk=0
 disk_info=$(df -B 1 $image_dir | tail -1)
 total_disk=$(echo $disk_info | awk '{print $2}')
@@ -110,9 +110,8 @@ function calc_resource()
     for xml in $(ls $xml_dir/*/*.xml 2>/dev/null); do
         vcpu=$(xmllint --xpath 'string(/domain/vcpu)' $xml)
         vmem=$(xmllint --xpath 'string(/domain/memory)' $xml)
-        [ -z "$vcpu" -o -z "$vmem" ] && continue
-        let virtual_cpu=$virtual_cpu+$vcpu
-        let virtual_memory=$virtual_memory+$vmem
+        [ -n "$vcpu" ] && let virtual_cpu=$virtual_cpu+$vcpu
+        [ -n "$vmem" ] && let virtual_memory=$virtual_memory+$vmem
     done
     disk=10000000000000
     total_disk=10000000000000
