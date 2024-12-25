@@ -1,15 +1,15 @@
 # CloudLand
-Cloudland, a light weight infrastructure as a service project, plus OpenShift 4 platform as a service deployment engine, is a system framework to manage VM instances, software defined networks (SDN), volumes ..., It can handle over 10 thousand hypervisors in one cluster so it can be a base of large scale public cloud. More over, with multi-tenant and OpenShift 4 cluster deployments on demand, it can be a straightforward alternative for private cloud or as a hyper converged infrastructure (HCI) solution.
-
-Cloudland's main distinguishing features are:
-- Able to deploy OpenShift 4 cluster on demand per tenant
-- Compatibility with [Openstack API](https://ibm.github.io/cloudland/) (TBD)
-- Light weight, no tons of components
-- Flat learning curve for both developers and operators
-- Excellent performance for inside messages delivery
-- Based on HPC architecture, so super scalable
-- Self auto fail recovery and stable
-- Easy to customize to implement your own feature
+Cloudland is a lightweight Infrastructure-as-a-Service (IaaS) framework designed to manage virtual machine instances, software-defined networks (SDN), storage volumes, and more. Capable of supporting over 10,000 hypervisors within a single cluster, Cloudland is well-suited to serve as the foundation for large-scale public cloud environments.   
+   
+In addition to its built-in multi-tenant support, Cloudland offers seamless integration with third-party authentication and authorization systems, making it an ideal solution for private cloud deployments or hyper-converged infrastructure (HCI) setups.   
+    
+**Cloudland’s key distinguishing features include:**   
+- Lightweight Architecture: Minimal components for a streamlined, efficient design.
+- Easy Learning Curve: Simple for both developers and operators to get up to speed quickly.
+- High-Performance Messaging: Optimized for fast and reliable internal message delivery.
+- HPC-Based Scalability: Built on a High-Performance Computing (HPC) architecture, ensuring exceptional scalability.
+- Self-Healing and Stable: Automatic failure recovery with robust stability for continuous operation.
+- Customizable: Easily extensible to implement custom features and meet specific needs.
 
 ## Architecture overview
 ![](https://raw.githubusercontent.com/wiki/IBM/cloudland/images/architecture.svg?sanitize=true)   
@@ -30,12 +30,7 @@ Support two ways to install cloudland
 
 ## User Guide
 
-- Launch Virtual Machine
-- Create Openshift Cluster
-- Security Groups
-
-
-For more usage, refer to [User Manual](https://github.com/IBM/cloudland/blob/master/doc/Manual.md)
+Refer to [User Manual](https://github.com/IBM/cloudland/blob/master/doc/Manual.md)
 
 ## Reporting Issues
 
