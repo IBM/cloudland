@@ -52,11 +52,11 @@ else
     vhost_name=instance-$ID-$image-boot-volume-$vol_ID
     snapshot_name=${image}-${snapshot}
     snapshot_id=$(wds_curl GET "api/v2/sync/block/snaps?name=$snapshot_name" | jq -r '.snaps[0].id')
-    if [ -z "$snapshot_id" ]; then
+    if [ -z "$snapshot_id" -o "$snapshot_id" = null ]; then
 	image_volume_id=$(wds_curl GET "api/v2/sync/block/volumes?name=$image" | jq -r '.volumes[0].id')
 	wds_curl POST "api/v2/sync/block/snaps" "{\"name\": \"$snapshot_name\", \"description\": \"$snapshot_name\", \"volume_id\": \"$image_volume_id\"}"
         snapshot_id=$(wds_curl GET "api/v2/sync/block/snaps?name=$snapshot_name" | jq -r '.snaps[0].id')
-        if [ -z "$snapshot_id" ]; then
+        if [ -z "$snapshot_id" -o "$snapshot_id" = null ]; then
             echo "|:-COMMAND-:| `basename $0` '$ID' '$state' '$SCI_CLIENT_ID' 'failed to create image snapshot'"
             exit -1
         fi
