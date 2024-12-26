@@ -59,19 +59,21 @@ func (a *SecgroupAdmin) Switch(ctx context.Context, newSg *model.SecurityGroup, 
 	return
 }
 
-func (a *SecgroupAdmin) Update(ctx context.Context, sgID int64, name string, isDefault bool) (secgroup *model.SecurityGroup, err error) {
-	db := DB()
-	secgroup = &model.SecurityGroup{Model: model.Model{ID: sgID}}
-	err = db.Take(secgroup).Error
-	if err != nil {
-		log.Println("Failed to query security group", err)
-		return
-	}
+func (a *SecgroupAdmin) Update(ctx context.Context, secgroup *model.SecurityGroup, name string, isDefault bool) (err error) {
+	ctx, db, newTransaction := StartTransaction(ctx)
+	defer func() {
+		if newTransaction {
+			EndTransaction(ctx, err)
+		}
+	}()
 	if name != "" && secgroup.Name != name {
 		secgroup.Name = name
 	}
 	if isDefault && secgroup.IsDefault != isDefault {
 		secgroup.IsDefault = isDefault
+		if isDefault {
+			a.Switch(ctx, secgroup, secgroup.Router)
+		}
 	}
 	err = db.Model(secgroup).Updates(secgroup).Error
 	if err != nil {
@@ -89,10 +91,18 @@ func (a *SecgroupAdmin) Get(ctx context.Context, id int64) (secgroup *model.Secu
 	db := DB()
 	where := memberShip.GetWhere()
 	secgroup = &model.SecurityGroup{Model: model.Model{ID: id}}
-	err = db.Preload("Router").Where(where).Take(secgroup).Error
+	err = db.Where(where).Take(secgroup).Error
 	if err != nil {
 		log.Println("DB failed to query secgroup ", err)
 		return
+	}
+	if secgroup.RouterID > 0 {
+		secgroup.Router = &model.Router{Model: model.Model{ID: secgroup.RouterID}}
+		err = db.Take(secgroup.Router).Error
+		if err != nil {
+			log.Println("DB failed to qeury router", err)
+			return
+		}
 	}
 	permit := memberShip.ValidateOwner(model.Reader, secgroup.Owner)
 	if !permit {
@@ -108,10 +118,18 @@ func (a *SecgroupAdmin) GetSecgroupByUUID(ctx context.Context, uuID string) (sec
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	secgroup = &model.SecurityGroup{}
-	err = db.Preload("Router").Where(where).Where("uuid = ?", uuID).Take(secgroup).Error
+	err = db.Where(where).Where("uuid = ?", uuID).Take(secgroup).Error
 	if err != nil {
 		log.Println("Failed to query secgroup ", err)
 		return
+	}
+	if secgroup.RouterID > 0 {
+		secgroup.Router = &model.Router{Model: model.Model{ID: secgroup.RouterID}}
+		err = db.Take(secgroup.Router).Error
+		if err != nil {
+			log.Println("DB failed to qeury router", err)
+			return
+		}
 	}
 	permit := memberShip.ValidateOwner(model.Reader, secgroup.Owner)
 	if !permit {
@@ -133,7 +151,8 @@ func (a *SecgroupAdmin) GetSecgroupByName(ctx context.Context, name string) (sec
 		return
 	}
 	if secgroup.RouterID > 0 {
-		err = db.Where("router_id = ?", secgroup.ID).Take(secgroup.Router).Error
+		secgroup.Router = &model.Router{Model: model.Model{ID: secgroup.RouterID}}
+		err = db.Take(secgroup.Router).Error
 		if err != nil {
 			log.Println("Failed to query router ", err)
 			return
@@ -339,9 +358,19 @@ func (a *SecgroupAdmin) List(ctx context.Context, offset, limit int64, order, qu
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Preload("Router").Where(where).Where(query).Find(&secgroups).Error; err != nil {
+	if err = db.Where(where).Where(query).Find(&secgroups).Error; err != nil {
 		log.Println("DB failed to query security group(s), %v", err)
 		return
+	}
+	for _, secgroup := range secgroups {
+		if secgroup.RouterID > 0 {
+			secgroup.Router = &model.Router{Model: model.Model{ID: secgroup.RouterID}}
+			err = db.Take(secgroup.Router).Error
+			if err != nil {
+				log.Println("DB failed to qeury router", err)
+				return
+			}
+		}
 	}
 	permit = memberShip.CheckPermission(model.Admin)
 	if permit {
@@ -460,6 +489,7 @@ func (v *SecgroupView) Edit(c *macaron.Context, store session.Store) {
 }
 
 func (v *SecgroupView) Patch(c *macaron.Context, store session.Store) {
+	ctx := c.Req.Context()
 	memberShip := GetMemberShip(c.Req.Context())
 	redirectTo := "../secgroups"
 	id := c.Params(":id")
@@ -484,28 +514,16 @@ func (v *SecgroupView) Patch(c *macaron.Context, store session.Store) {
 	} else if isdefStr == "yes" {
 		isDef = true
 	}
-	_, err = secgroupAdmin.Update(c.Req.Context(), int64(sgID), name, isDef)
+	secgroup, err := secgroupAdmin.Get(ctx, int64(sgID))
 	if err != nil {
 		c.HTML(500, err.Error())
 		return
 	}
-	/*
-		if isDef {
-			err = secgroupAdmin.Switch(c.Req.Context(), secgroup, store)
-			if err != nil {
-				log.Println("Failed to switch security group", err)
-				if c.Req.Header.Get("X-Json-Format") == "yes" {
-					c.JSON(500, map[string]interface{}{
-						"error": err.Error(),
-					})
-					return
-				}
-				c.Data["ErrorMsg"] = err.Error()
-				c.HTML(500, "500")
-				return
-			}
-		}
-	*/
+	err = secgroupAdmin.Update(ctx, secgroup, name, isDef)
+	if err != nil {
+		c.HTML(500, err.Error())
+		return
+	}
 	c.Redirect(redirectTo)
 	return
 }

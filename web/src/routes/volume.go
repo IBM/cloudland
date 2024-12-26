@@ -40,6 +40,11 @@ func GetVolumeDriver() (driver string) {
 }
 
 func (a *VolumeAdmin) Get(ctx context.Context, id int64) (volume *model.Volume, err error) {
+	if id <= 0 {
+		err = fmt.Errorf("Invalid subnet ID: %d", id)
+		log.Println(err)
+		return
+	}
 	db := DB()
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
