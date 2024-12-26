@@ -121,6 +121,11 @@ func (a *KeyAdmin) Delete(ctx context.Context, key *model.Key) (err error) {
 }
 
 func (a *KeyAdmin) Get(ctx context.Context, id int64) (key *model.Key, err error) {
+	if id <= 0 {
+		err = fmt.Errorf("Invalid key ID: %d", id)
+		log.Println(err)
+		return
+	}
 	db := DB()
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()

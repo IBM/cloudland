@@ -425,6 +425,11 @@ func (v *SecruleView) Create(c *macaron.Context, store session.Store) {
 }
 
 func (a *SecruleAdmin) Get(ctx context.Context, id int64, secgroup *model.SecurityGroup) (secrule *model.SecurityRule, err error) {
+	if id <= 0 {
+		err = fmt.Errorf("Invalid security rule ID: %d", id)
+		log.Println(err)
+		return
+	}
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	db := DB()

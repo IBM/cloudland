@@ -5,7 +5,7 @@ definitions:
       console_url:
         type: string
       instance:
-        $ref: '#/definitions/common.BaseReference'
+        $ref: '#/definitions/common.ResourceReference'
       token:
         type: string
     type: object
@@ -56,13 +56,17 @@ definitions:
     type: object
   apis.FloatingIpInfo:
     properties:
+      created_at:
+        type: string
       id:
         type: string
       ip_address:
         type: string
       name:
-        maxLength: 32
-        minLength: 2
+        type: string
+      owner:
+        type: string
+      updated_at:
         type: string
     type: object
   apis.FloatingIpListResponse:
@@ -89,6 +93,10 @@ definitions:
         type: integer
       instance:
         $ref: '#/definitions/common.BaseID'
+      name:
+        maxLength: 32
+        minLength: 2
+        type: string
       public_ip:
         type: string
       public_subnet:
@@ -96,16 +104,22 @@ definitions:
     type: object
   apis.FloatingIpResponse:
     properties:
+      created_at:
+        type: string
       id:
+        type: string
+      name:
+        type: string
+      owner:
         type: string
       public_ip:
         type: string
       target_interface:
         $ref: '#/definitions/apis.TargetInterface'
+      updated_at:
+        type: string
       vpc:
         $ref: '#/definitions/common.BaseReference'
-    required:
-    - id
     type: object
   apis.HyperListResponse:
     properties:
@@ -176,29 +190,39 @@ definitions:
     properties:
       architecture:
         type: string
+      created_at:
+        type: string
       format:
         type: string
       id:
         type: string
       name:
-        maxLength: 32
-        minLength: 2
+        type: string
+      owner:
         type: string
       size:
         type: integer
       status:
+        type: string
+      updated_at:
         type: string
       user:
         type: string
     type: object
   apis.InstanceInfo:
     properties:
+      created_at:
+        type: string
       hostname:
         type: string
       id:
         type: string
-    required:
-    - id
+      name:
+        type: string
+      owner:
+        type: string
+      updated_at:
+        type: string
     type: object
   apis.InstanceListResponse:
     properties:
@@ -280,6 +304,8 @@ definitions:
     type: object
   apis.InstanceResponse:
     properties:
+      created_at:
+        type: string
       flavor:
         type: string
       hostname:
@@ -289,19 +315,29 @@ definitions:
       id:
         type: string
       image:
-        $ref: '#/definitions/common.BaseReference'
+        $ref: '#/definitions/common.ResourceReference'
       interfaces:
         items:
           $ref: '#/definitions/apis.InterfaceResponse'
         type: array
       keys:
         items:
-          $ref: '#/definitions/common.BaseReference'
+          $ref: '#/definitions/common.ResourceReference'
         type: array
+      name:
+        type: string
+      owner:
+        type: string
       status:
         type: string
+      updated_at:
+        type: string
+      volumes:
+        items:
+          $ref: '#/definitions/common.ResourceReference'
+        type: array
       vpc:
-        $ref: '#/definitions/common.BaseReference'
+        $ref: '#/definitions/common.ResourceReference'
       zone:
         type: string
     type: object
@@ -389,15 +425,19 @@ definitions:
     type: object
   apis.KeyResponse:
     properties:
+      created_at:
+        type: string
       finger_print:
         type: string
       id:
         type: string
       name:
-        maxLength: 32
-        minLength: 2
+        type: string
+      owner:
         type: string
       public_key:
+        type: string
+      updated_at:
         type: string
     type: object
   apis.MigrateAction:
@@ -430,6 +470,8 @@ definitions:
     properties:
       cpu:
         type: integer
+      created_at:
+        type: string
       disk:
         type: integer
       id:
@@ -437,8 +479,10 @@ definitions:
       memory:
         type: integer
       name:
-        maxLength: 32
-        minLength: 2
+        type: string
+      owner:
+        type: string
+      updated_at:
         type: string
     type: object
   apis.SecruleListResponse:
@@ -456,11 +500,17 @@ definitions:
     type: object
   apis.SecruleResponse:
     properties:
+      created_at:
+        type: string
       direction:
         type: string
       id:
         type: string
       ip_version:
+        type: string
+      name:
+        type: string
+      owner:
         type: string
       port_max:
         type: integer
@@ -472,8 +522,8 @@ definitions:
         type: string
       remote_group:
         $ref: '#/definitions/common.BaseReference'
-    required:
-    - id
+      updated_at:
+        type: string
     type: object
   apis.SecurityGroupListResponse:
     properties:
@@ -502,6 +552,8 @@ definitions:
   apis.SecurityGroupPayload:
     properties:
       is_default:
+        enum:
+        - true
         type: boolean
       name:
         maxLength: 32
@@ -514,24 +566,31 @@ definitions:
     type: object
   apis.SecurityGroupResponse:
     properties:
+      created_at:
+        type: string
       id:
         type: string
       is_default:
         type: boolean
       name:
-        maxLength: 32
-        minLength: 2
+        type: string
+      owner:
         type: string
       target_interfaces:
         items:
           $ref: '#/definitions/apis.TargetInterface'
         type: array
+      updated_at:
+        type: string
       vpc:
         $ref: '#/definitions/common.BaseReference'
     type: object
   apis.SecurityRulePayload:
     properties:
       direction:
+        enum:
+        - ingress
+        - egress
         type: string
       port_max:
         maximum: 65535
@@ -543,14 +602,14 @@ definitions:
         type: integer
       protocol:
         enum:
-        - ingress
-        - egress
+        - tcp
+        - udp
+        - icmp
         type: string
-      remote_group:
-        $ref: '#/definitions/common.BaseReference'
-      remote_ip:
+      remote_cidr:
         type: string
     required:
+    - direction
     - protocol
     type: object
   apis.SubnetListResponse:
@@ -606,6 +665,8 @@ definitions:
     type: object
   apis.SubnetResponse:
     properties:
+      created_at:
+        type: string
       dns:
         type: string
       gateway:
@@ -613,28 +674,36 @@ definitions:
       id:
         type: string
       name:
-        maxLength: 32
-        minLength: 2
         type: string
       netmask:
         type: string
       network:
         type: string
+      owner:
+        type: string
       type:
         $ref: '#/definitions/common.SubnetType'
+      updated_at:
+        type: string
       vpc:
-        $ref: '#/definitions/common.BaseReference'
+        $ref: '#/definitions/common.ResourceReference'
     type: object
   apis.TargetInterface:
     properties:
+      created_at:
+        type: string
       from_instance:
         $ref: '#/definitions/apis.InstanceInfo'
       id:
         type: string
       ip_address:
         type: string
-    required:
-    - id
+      name:
+        type: string
+      owner:
+        type: string
+      updated_at:
+        type: string
     type: object
   apis.UserListResponse:
     properties:
@@ -675,13 +744,13 @@ definitions:
   apis.UserResponse:
     properties:
       org:
-        $ref: '#/definitions/common.BaseReference'
+        $ref: '#/definitions/common.ResourceReference'
       role:
         type: string
       token:
         type: string
       user:
-        $ref: '#/definitions/common.BaseReference'
+        $ref: '#/definitions/common.ResourceReference'
     type: object
   apis.VPCListResponse:
     properties:
@@ -709,16 +778,20 @@ definitions:
     type: object
   apis.VPCResponse:
     properties:
+      created_at:
+        type: string
       id:
         type: string
       name:
-        maxLength: 32
-        minLength: 2
+        type: string
+      owner:
         type: string
       subnets:
         items:
           $ref: '#/definitions/apis.SubnetResponse'
         type: array
+      updated_at:
+        type: string
     type: object
   apis.VolumeListResponse:
     properties:
@@ -780,10 +853,14 @@ definitions:
     type: object
   apis.VolumeResponse:
     properties:
+      booting:
+        type: boolean
       bps_burst:
         type: integer
       bps_limit:
         type: integer
+      created_at:
+        type: string
       format:
         type: string
       href:
@@ -798,6 +875,8 @@ definitions:
         type: integer
       name:
         type: string
+      owner:
+        type: string
       path:
         type: string
       size:
@@ -805,6 +884,8 @@ definitions:
       status:
         type: string
       target:
+        type: string
+      updated_at:
         type: string
     type: object
   apis.ZoneListResponse:
@@ -824,6 +905,8 @@ definitions:
     properties:
       cpu:
         type: integer
+      created_at:
+        type: string
       disk:
         type: integer
       id:
@@ -831,8 +914,10 @@ definitions:
       memory:
         type: integer
       name:
-        maxLength: 32
-        minLength: 2
+        type: string
+      owner:
+        type: string
+      updated_at:
         type: string
     type: object
   common.APIError:
@@ -875,6 +960,19 @@ definitions:
     - HardRestart
     - Pause
     - Resume
+  common.ResourceReference:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      owner:
+        type: string
+      updated_at:
+        type: string
+    type: object
   common.SubnetType:
     enum:
     - public

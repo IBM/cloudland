@@ -2544,7 +2544,7 @@
                     "type": "string"
                 },
                 "instance": {
-                    "$ref": "#/definitions/common.BaseReference"
+                    "$ref": "#/definitions/common.ResourceReference"
                 },
                 "token": {
                     "type": "string"
@@ -2619,6 +2619,9 @@
         "apis.FloatingIpInfo": {
             "type": "object",
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -2626,9 +2629,13 @@
                     "type": "string"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -2669,6 +2676,11 @@
                 "instance": {
                     "$ref": "#/definitions/common.BaseID"
                 },
+                "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                },
                 "public_ip": {
                     "type": "string"
                 },
@@ -2679,11 +2691,17 @@
         },
         "apis.FloatingIpResponse": {
             "type": "object",
-            "required": [
-                "id"
-            ],
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
                     "type": "string"
                 },
                 "public_ip": {
@@ -2691,6 +2709,9 @@
                 },
                 "target_interface": {
                     "$ref": "#/definitions/apis.TargetInterface"
+                },
+                "updated_at": {
+                    "type": "string"
                 },
                 "vpc": {
                     "$ref": "#/definitions/common.BaseReference"
@@ -2797,6 +2818,9 @@
                 "architecture": {
                     "type": "string"
                 },
+                "created_at": {
+                    "type": "string"
+                },
                 "format": {
                     "type": "string"
                 },
@@ -2804,14 +2828,18 @@
                     "type": "string"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
                 },
                 "size": {
                     "type": "integer"
                 },
                 "status": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 },
                 "user": {
@@ -2821,14 +2849,23 @@
         },
         "apis.InstanceInfo": {
             "type": "object",
-            "required": [
-                "id"
-            ],
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "hostname": {
                     "type": "string"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }
@@ -2947,6 +2984,9 @@
         "apis.InstanceResponse": {
             "type": "object",
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "flavor": {
                     "type": "string"
                 },
@@ -2960,7 +3000,7 @@
                     "type": "string"
                 },
                 "image": {
-                    "$ref": "#/definitions/common.BaseReference"
+                    "$ref": "#/definitions/common.ResourceReference"
                 },
                 "interfaces": {
                     "type": "array",
@@ -2971,14 +3011,29 @@
                 "keys": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.BaseReference"
+                        "$ref": "#/definitions/common.ResourceReference"
                     }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
                 },
                 "status": {
                     "type": "string"
                 },
+                "updated_at": {
+                    "type": "string"
+                },
+                "volumes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.ResourceReference"
+                    }
+                },
                 "vpc": {
-                    "$ref": "#/definitions/common.BaseReference"
+                    "$ref": "#/definitions/common.ResourceReference"
                 },
                 "zone": {
                     "type": "string"
@@ -3108,6 +3163,9 @@
         "apis.KeyResponse": {
             "type": "object",
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "finger_print": {
                     "type": "string"
                 },
@@ -3115,11 +3173,15 @@
                     "type": "string"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
                 },
                 "public_key": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }
@@ -3170,6 +3232,9 @@
                 "cpu": {
                     "type": "integer"
                 },
+                "created_at": {
+                    "type": "string"
+                },
                 "disk": {
                     "type": "integer"
                 },
@@ -3180,9 +3245,13 @@
                     "type": "integer"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -3208,10 +3277,10 @@
         },
         "apis.SecruleResponse": {
             "type": "object",
-            "required": [
-                "id"
-            ],
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "direction": {
                     "type": "string"
                 },
@@ -3219,6 +3288,12 @@
                     "type": "string"
                 },
                 "ip_version": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
                     "type": "string"
                 },
                 "port_max": {
@@ -3235,6 +3310,9 @@
                 },
                 "remote_group": {
                     "$ref": "#/definitions/common.BaseReference"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -3281,7 +3359,10 @@
             ],
             "properties": {
                 "is_default": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "enum": [
+                        true
+                    ]
                 },
                 "name": {
                     "type": "string",
@@ -3296,6 +3377,9 @@
         "apis.SecurityGroupResponse": {
             "type": "object",
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -3303,15 +3387,19 @@
                     "type": "boolean"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
                 },
                 "target_interfaces": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/apis.TargetInterface"
                     }
+                },
+                "updated_at": {
+                    "type": "string"
                 },
                 "vpc": {
                     "$ref": "#/definitions/common.BaseReference"
@@ -3321,11 +3409,16 @@
         "apis.SecurityRulePayload": {
             "type": "object",
             "required": [
+                "direction",
                 "protocol"
             ],
             "properties": {
                 "direction": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "ingress",
+                        "egress"
+                    ]
                 },
                 "port_max": {
                     "type": "integer",
@@ -3340,14 +3433,12 @@
                 "protocol": {
                     "type": "string",
                     "enum": [
-                        "ingress",
-                        "egress"
+                        "tcp",
+                        "udp",
+                        "icmp"
                     ]
                 },
-                "remote_group": {
-                    "$ref": "#/definitions/common.BaseReference"
-                },
-                "remote_ip": {
+                "remote_cidr": {
                     "type": "string"
                 }
             }
@@ -3432,6 +3523,9 @@
         "apis.SubnetResponse": {
             "type": "object",
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "dns": {
                     "type": "string"
                 },
@@ -3442,9 +3536,7 @@
                     "type": "string"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
+                    "type": "string"
                 },
                 "netmask": {
                     "type": "string"
@@ -3452,20 +3544,26 @@
                 "network": {
                     "type": "string"
                 },
+                "owner": {
+                    "type": "string"
+                },
                 "type": {
                     "$ref": "#/definitions/common.SubnetType"
                 },
+                "updated_at": {
+                    "type": "string"
+                },
                 "vpc": {
-                    "$ref": "#/definitions/common.BaseReference"
+                    "$ref": "#/definitions/common.ResourceReference"
                 }
             }
         },
         "apis.TargetInterface": {
             "type": "object",
-            "required": [
-                "id"
-            ],
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "from_instance": {
                     "$ref": "#/definitions/apis.InstanceInfo"
                 },
@@ -3473,6 +3571,15 @@
                     "type": "string"
                 },
                 "ip_address": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }
@@ -3534,7 +3641,7 @@
             "type": "object",
             "properties": {
                 "org": {
-                    "$ref": "#/definitions/common.BaseReference"
+                    "$ref": "#/definitions/common.ResourceReference"
                 },
                 "role": {
                     "type": "string"
@@ -3543,7 +3650,7 @@
                     "type": "string"
                 },
                 "user": {
-                    "$ref": "#/definitions/common.BaseReference"
+                    "$ref": "#/definitions/common.ResourceReference"
                 }
             }
         },
@@ -3586,19 +3693,26 @@
         "apis.VPCResponse": {
             "type": "object",
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
                 },
                 "subnets": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/apis.SubnetResponse"
                     }
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -3690,11 +3804,17 @@
         "apis.VolumeResponse": {
             "type": "object",
             "properties": {
+                "booting": {
+                    "type": "boolean"
+                },
                 "bps_burst": {
                     "type": "integer"
                 },
                 "bps_limit": {
                     "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
                 },
                 "format": {
                     "type": "string"
@@ -3717,6 +3837,9 @@
                 "name": {
                     "type": "string"
                 },
+                "owner": {
+                    "type": "string"
+                },
                 "path": {
                     "type": "string"
                 },
@@ -3727,6 +3850,9 @@
                     "type": "string"
                 },
                 "target": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }
@@ -3757,6 +3883,9 @@
                 "cpu": {
                     "type": "integer"
                 },
+                "created_at": {
+                    "type": "string"
+                },
                 "disk": {
                     "type": "integer"
                 },
@@ -3767,9 +3896,13 @@
                     "type": "integer"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -3826,6 +3959,26 @@
                 "Pause",
                 "Resume"
             ]
+        },
+        "common.ResourceReference": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
         },
         "common.SubnetType": {
             "type": "string",

@@ -268,12 +268,6 @@ func (v *OrgView) List(c *macaron.Context, store session.Store) {
 	total, orgs, err := orgAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		log.Println("Failed to list organizations, %v", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -283,15 +277,6 @@ func (v *OrgView) List(c *macaron.Context, store session.Store) {
 	c.Data["Total"] = total
 	c.Data["Pages"] = pages
 	c.Data["Query"] = query
-	if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, map[string]interface{}{
-			"orgs":  orgs,
-			"total": total,
-			"pages": pages,
-			"query": query,
-		})
-		return
-	}
 	c.HTML(200, "orgs")
 }
 
@@ -420,20 +405,11 @@ func (v *OrgView) Patch(c *macaron.Context, store session.Store) {
 		}
 		roleList = append(roleList, model.Role(role))
 	}
-	org, err := orgAdmin.Update(c.Req.Context(), int64(orgID), memberList, userList, roleList)
+	_, err = orgAdmin.Update(c.Req.Context(), int64(orgID), memberList, userList, roleList)
 	if err != nil {
 		log.Println("Failed to update organization, %v", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
-		return
-	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, org)
 		return
 	}
 	c.Redirect(redirectTo)
@@ -451,19 +427,10 @@ func (v *OrgView) Create(c *macaron.Context, store session.Store) {
 	redirectTo := "../orgs"
 	name := c.QueryTrim("orgname")
 	owner := c.QueryTrim("owner")
-	organization, err := orgAdmin.Create(c.Req.Context(), name, owner)
+	_, err := orgAdmin.Create(c.Req.Context(), name, owner)
 	if err != nil {
 		log.Println("Failed to create organization, %v", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.HTML(http.StatusBadRequest, err.Error())
-		return
-	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, organization)
 		return
 	}
 	c.Redirect(redirectTo)

@@ -184,11 +184,9 @@ func (v *SubnetAPI) getSubnetResponse(ctx context.Context, subnet *model.Subnet)
 	}
 	if subnet.Router != nil {
 		router := subnet.Router
-		owner := orgAdmin.GetOrgName(router.Owner)
 		subnetResp.VPC = &ResourceReference{
 			ID:    router.UUID,
 			Name:  router.Name,
-			Owner: owner,
 		}
 	}
 	return

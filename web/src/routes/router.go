@@ -106,6 +106,10 @@ func (a *RouterAdmin) Create(ctx context.Context, name string) (router *model.Ro
 }
 
 func (a *RouterAdmin) Get(ctx context.Context, id int64) (router *model.Router, err error) {
+	if id <= 0 {
+		log.Println("returning nil router")
+		return
+	}
 	db := DB()
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
