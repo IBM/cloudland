@@ -48,21 +48,13 @@
     group: root
   tags: [be_srv, cloudlet]
 
-# - name: synchronize cloudland and grpc
-#   synchronize:
-#     src: "{{ item.src }}"
-#     dest: "{{ item.dest }}"
-#     rsync_opts: "--exclude=cache,--exclude=log,--exclude=db,--exclude=run"
-#   with_items:
-#     - {src: '/opt/cloudland', dest: '/opt', owner: 'cland'}
-#   tags: [sync]
-
 - name: copy sci binaries
   copy: 
     src: /opt/sci
     dest: /opt
     mode: preserve
   tags: [sci]
+  when: inventory_hostname != ansible_hostname
 
 - name: copy sci service file
   copy: 
@@ -80,6 +72,7 @@
   with_items:
     - { src: "/opt/cloudland/scripts", dest: "/opt/cloudland", owner: 'cland', group: 'cland' }
   tags: [sync, scripts, scripts_only]
+  when: inventory_hostname != ansible_hostname
 
 - name: link backend to kvm
   file:
@@ -116,6 +109,7 @@
   with_items:
     - { src: "/opt/cloudland/bin", dest: "/opt/cloudland", owner: 'cland', group: 'cland' }
   tags: [sync, cloudlet]
+  when: inventory_hostname != ansible_hostname
 
 - name: create cloudlet environment file
   template:
@@ -188,16 +182,6 @@
     - 'NetworkManager'
   tags: [be_srv, netplan]
 
-- name: stop and mask networkd
-  systemd: 
-    name: "{{ item }}"
-    enabled: false
-    masked: yes
-    state: stopped 
-  with_items:
-    - 'systemd-networkd'
-  tags: [be_srv, netplan]
-
 - name: change netplan renderer
   script: change_netplan_renderer.sh
   register: need_to_reboot
@@ -207,8 +191,20 @@
   vars:
     need_reboot: "{{ need_to_reboot.stdout_lines[0] }}"
   ansible.builtin.reboot:
-  when: need_reboot == 'need_to_reboot'
+  when: 
+    - need_reboot == 'need_to_reboot'
+    - inventory_hostname != ansible_hostname
   tags: [netplan]
+
+- name: stop and mask networkd
+  systemd:
+    name: "{{ item }}"
+    enabled: false
+    masked: yes
+    state: stopped
+  with_items:
+    - 'systemd-networkd'
+  tags: [be_srv, netplan]
 
 - name: allow necessary ports for hypervisor
   script: firewall.sh

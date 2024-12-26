@@ -14,12 +14,10 @@
 
 - name: install ntp service
   apt: name=ntp state=latest
-  when: ansible_distribution_release == 'Core'
   tags: [ntp]
 
 - name: start ntp service
-  service: name=ntpd state=started enabled=yes
-  when: ansible_distribution_release == 'Core'
+  service: name=ntp state=started enabled=yes
   tags: [ntp]
 
 - name: upgrade all packages
