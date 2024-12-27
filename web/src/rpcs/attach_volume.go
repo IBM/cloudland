@@ -30,7 +30,7 @@ func AttachVolume(ctx context.Context, args []string) (status string, err error)
 		log.Println("Invalid args", err)
 		return
 	}
-	_, err = strconv.Atoi(args[1])
+	instanceID, err := strconv.Atoi(args[1])
 	if err != nil {
 		log.Println("Invalid instance ID", err)
 		return
@@ -47,7 +47,7 @@ func AttachVolume(ctx context.Context, args []string) (status string, err error)
 		log.Println("Failed to query volume", err)
 		return
 	}
-	err = db.Model(&volume).Updates(map[string]interface{}{"target": target, "status": "attached"}).Error
+	err = db.Model(&volume).Updates(map[string]interface{}{"instance_id": instanceID, "target": target, "status": "attached"}).Error
 	if err != nil {
 		log.Println("Update volume status failed", err)
 		return

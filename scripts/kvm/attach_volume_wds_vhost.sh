@@ -11,7 +11,7 @@ vol_PATH=$3
 wds_volume_id=$4
 
 count=$(virsh dumpxml $vm_ID | grep -c "<disk type='vhostuser' device='disk'")
-let letter=98+$count
+let letter=97+$count
 vhost_name=instance-$vm_ID-vol-$vol_ID
 uss_id=$(get_uss_gateway)
 vhost_id=$(wds_curl POST "api/v2/sync/block/vhost" "{\"name\": \"$vhost_name\"}" | jq -r .id)
