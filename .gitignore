@@ -70,3 +70,4 @@ cloudrc.local
 .vscode
 /scripts/backend
 /commitID
+**/.DS_Store

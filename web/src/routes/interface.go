@@ -196,7 +196,9 @@ func (v *InterfaceView) Edit(c *macaron.Context, store session.Store) {
 	c.Data["Secgroups"] = secgroups
 	if len(iface.SecurityGroups) > 0 {
 		c.Data["SecgroupID"] = iface.SecurityGroups[0].ID
-	}
+	} else {
+                c.Data["SecgroupID"] = -1
+        }
 	c.HTML(200, "interfaces_patch")
 }
 
