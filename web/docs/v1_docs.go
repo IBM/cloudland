@@ -2551,7 +2551,7 @@ const docTemplatev1 = `{
                     "type": "string"
                 },
                 "instance": {
-                    "$ref": "#/definitions/common.BaseReference"
+                    "$ref": "#/definitions/common.ResourceReference"
                 },
                 "token": {
                     "type": "string"
@@ -2626,6 +2626,9 @@ const docTemplatev1 = `{
         "apis.FloatingIpInfo": {
             "type": "object",
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -2633,9 +2636,13 @@ const docTemplatev1 = `{
                     "type": "string"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -2676,6 +2683,11 @@ const docTemplatev1 = `{
                 "instance": {
                     "$ref": "#/definitions/common.BaseID"
                 },
+                "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                },
                 "public_ip": {
                     "type": "string"
                 },
@@ -2686,11 +2698,17 @@ const docTemplatev1 = `{
         },
         "apis.FloatingIpResponse": {
             "type": "object",
-            "required": [
-                "id"
-            ],
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
                     "type": "string"
                 },
                 "public_ip": {
@@ -2698,6 +2716,9 @@ const docTemplatev1 = `{
                 },
                 "target_interface": {
                     "$ref": "#/definitions/apis.TargetInterface"
+                },
+                "updated_at": {
+                    "type": "string"
                 },
                 "vpc": {
                     "$ref": "#/definitions/common.BaseReference"
@@ -2804,6 +2825,9 @@ const docTemplatev1 = `{
                 "architecture": {
                     "type": "string"
                 },
+                "created_at": {
+                    "type": "string"
+                },
                 "format": {
                     "type": "string"
                 },
@@ -2811,14 +2835,18 @@ const docTemplatev1 = `{
                     "type": "string"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
                 },
                 "size": {
                     "type": "integer"
                 },
                 "status": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 },
                 "user": {
@@ -2828,14 +2856,23 @@ const docTemplatev1 = `{
         },
         "apis.InstanceInfo": {
             "type": "object",
-            "required": [
-                "id"
-            ],
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "hostname": {
                     "type": "string"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }
@@ -2954,6 +2991,9 @@ const docTemplatev1 = `{
         "apis.InstanceResponse": {
             "type": "object",
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "flavor": {
                     "type": "string"
                 },
@@ -2967,7 +3007,7 @@ const docTemplatev1 = `{
                     "type": "string"
                 },
                 "image": {
-                    "$ref": "#/definitions/common.BaseReference"
+                    "$ref": "#/definitions/common.ResourceReference"
                 },
                 "interfaces": {
                     "type": "array",
@@ -2978,14 +3018,29 @@ const docTemplatev1 = `{
                 "keys": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.BaseReference"
+                        "$ref": "#/definitions/common.ResourceReference"
                     }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
                 },
                 "status": {
                     "type": "string"
                 },
+                "updated_at": {
+                    "type": "string"
+                },
+                "volumes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.ResourceReference"
+                    }
+                },
                 "vpc": {
-                    "$ref": "#/definitions/common.BaseReference"
+                    "$ref": "#/definitions/common.ResourceReference"
                 },
                 "zone": {
                     "type": "string"
@@ -3115,6 +3170,9 @@ const docTemplatev1 = `{
         "apis.KeyResponse": {
             "type": "object",
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "finger_print": {
                     "type": "string"
                 },
@@ -3122,11 +3180,15 @@ const docTemplatev1 = `{
                     "type": "string"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
                 },
                 "public_key": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }
@@ -3177,6 +3239,9 @@ const docTemplatev1 = `{
                 "cpu": {
                     "type": "integer"
                 },
+                "created_at": {
+                    "type": "string"
+                },
                 "disk": {
                     "type": "integer"
                 },
@@ -3187,9 +3252,13 @@ const docTemplatev1 = `{
                     "type": "integer"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -3215,10 +3284,10 @@ const docTemplatev1 = `{
         },
         "apis.SecruleResponse": {
             "type": "object",
-            "required": [
-                "id"
-            ],
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "direction": {
                     "type": "string"
                 },
@@ -3226,6 +3295,12 @@ const docTemplatev1 = `{
                     "type": "string"
                 },
                 "ip_version": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
                     "type": "string"
                 },
                 "port_max": {
@@ -3242,6 +3317,9 @@ const docTemplatev1 = `{
                 },
                 "remote_group": {
                     "$ref": "#/definitions/common.BaseReference"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -3288,7 +3366,10 @@ const docTemplatev1 = `{
             ],
             "properties": {
                 "is_default": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "enum": [
+                        true
+                    ]
                 },
                 "name": {
                     "type": "string",
@@ -3303,6 +3384,9 @@ const docTemplatev1 = `{
         "apis.SecurityGroupResponse": {
             "type": "object",
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -3310,15 +3394,19 @@ const docTemplatev1 = `{
                     "type": "boolean"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
                 },
                 "target_interfaces": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/apis.TargetInterface"
                     }
+                },
+                "updated_at": {
+                    "type": "string"
                 },
                 "vpc": {
                     "$ref": "#/definitions/common.BaseReference"
@@ -3328,11 +3416,16 @@ const docTemplatev1 = `{
         "apis.SecurityRulePayload": {
             "type": "object",
             "required": [
+                "direction",
                 "protocol"
             ],
             "properties": {
                 "direction": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "ingress",
+                        "egress"
+                    ]
                 },
                 "port_max": {
                     "type": "integer",
@@ -3347,14 +3440,12 @@ const docTemplatev1 = `{
                 "protocol": {
                     "type": "string",
                     "enum": [
-                        "ingress",
-                        "egress"
+                        "tcp",
+                        "udp",
+                        "icmp"
                     ]
                 },
-                "remote_group": {
-                    "$ref": "#/definitions/common.BaseReference"
-                },
-                "remote_ip": {
+                "remote_cidr": {
                     "type": "string"
                 }
             }
@@ -3439,6 +3530,9 @@ const docTemplatev1 = `{
         "apis.SubnetResponse": {
             "type": "object",
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "dns": {
                     "type": "string"
                 },
@@ -3449,9 +3543,7 @@ const docTemplatev1 = `{
                     "type": "string"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
+                    "type": "string"
                 },
                 "netmask": {
                     "type": "string"
@@ -3459,20 +3551,26 @@ const docTemplatev1 = `{
                 "network": {
                     "type": "string"
                 },
+                "owner": {
+                    "type": "string"
+                },
                 "type": {
                     "$ref": "#/definitions/common.SubnetType"
                 },
+                "updated_at": {
+                    "type": "string"
+                },
                 "vpc": {
-                    "$ref": "#/definitions/common.BaseReference"
+                    "$ref": "#/definitions/common.ResourceReference"
                 }
             }
         },
         "apis.TargetInterface": {
             "type": "object",
-            "required": [
-                "id"
-            ],
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "from_instance": {
                     "$ref": "#/definitions/apis.InstanceInfo"
                 },
@@ -3480,6 +3578,15 @@ const docTemplatev1 = `{
                     "type": "string"
                 },
                 "ip_address": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }
@@ -3541,7 +3648,7 @@ const docTemplatev1 = `{
             "type": "object",
             "properties": {
                 "org": {
-                    "$ref": "#/definitions/common.BaseReference"
+                    "$ref": "#/definitions/common.ResourceReference"
                 },
                 "role": {
                     "type": "string"
@@ -3550,7 +3657,7 @@ const docTemplatev1 = `{
                     "type": "string"
                 },
                 "user": {
-                    "$ref": "#/definitions/common.BaseReference"
+                    "$ref": "#/definitions/common.ResourceReference"
                 }
             }
         },
@@ -3593,19 +3700,26 @@ const docTemplatev1 = `{
         "apis.VPCResponse": {
             "type": "object",
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
                 },
                 "subnets": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/apis.SubnetResponse"
                     }
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -3697,11 +3811,17 @@ const docTemplatev1 = `{
         "apis.VolumeResponse": {
             "type": "object",
             "properties": {
+                "booting": {
+                    "type": "boolean"
+                },
                 "bps_burst": {
                     "type": "integer"
                 },
                 "bps_limit": {
                     "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
                 },
                 "format": {
                     "type": "string"
@@ -3724,6 +3844,9 @@ const docTemplatev1 = `{
                 "name": {
                     "type": "string"
                 },
+                "owner": {
+                    "type": "string"
+                },
                 "path": {
                     "type": "string"
                 },
@@ -3734,6 +3857,9 @@ const docTemplatev1 = `{
                     "type": "string"
                 },
                 "target": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }
@@ -3764,6 +3890,9 @@ const docTemplatev1 = `{
                 "cpu": {
                     "type": "integer"
                 },
+                "created_at": {
+                    "type": "string"
+                },
                 "disk": {
                     "type": "integer"
                 },
@@ -3774,9 +3903,13 @@ const docTemplatev1 = `{
                     "type": "integer"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 2
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -3833,6 +3966,26 @@ const docTemplatev1 = `{
                 "Pause",
                 "Resume"
             ]
+        },
+        "common.ResourceReference": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
         },
         "common.SubnetType": {
             "type": "string",

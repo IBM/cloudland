@@ -48,6 +48,14 @@
     state: restarted
   tags: [web_srv]
 
+- name: copy sci binaries
+  copy: 
+    src: /opt/libvirt-console-proxy
+    dest: /opt
+    mode: preserve
+  tags: [console]
+  when: inventory_hostname != ansible_hostname
+
 - name: generate console proxy certs
   script: console_cert.sh
   tags: [console]

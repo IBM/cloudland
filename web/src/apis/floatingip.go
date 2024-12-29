@@ -217,10 +217,14 @@ func (v *FloatingIpAPI) Create(c *gin.Context) {
 }
 
 func (v *FloatingIpAPI) getFloatingIpResponse(ctx context.Context, floatingIp *model.FloatingIp) (floatingIpResp *FloatingIpResponse, err error) {
+	owner := orgAdmin.GetOrgName(floatingIp.Owner)
 	floatingIpResp = &FloatingIpResponse{
 		ResourceReference: &ResourceReference{
 			ID:   floatingIp.UUID,
 			Name: floatingIp.Name,
+			Owner:     owner,
+			CreatedAt: floatingIp.CreatedAt.Format(TimeStringForMat),
+			UpdatedAt: floatingIp.UpdatedAt.Format(TimeStringForMat),
 		},
 		PublicIp: floatingIp.FipAddress,
 	}

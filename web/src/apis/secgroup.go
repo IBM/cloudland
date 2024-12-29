@@ -42,7 +42,7 @@ type SecurityGroupListResponse struct {
 type SecurityGroupPayload struct {
 	Name      string         `json:"name" binding:"required,min=2,max=32"`
 	VPC       *BaseReference `json:"vpc" binding:"omitempty"`
-	IsDefault bool           `json:"is_default" binding:"omitempty"`
+	IsDefault bool           `json:"is_default" binding:"omitempty,oneof=true"`
 }
 
 type SecurityGroupPatchPayload struct {
@@ -86,7 +86,29 @@ func (v *SecgroupAPI) Get(c *gin.Context) {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /security_groups/{id} [patch]
 func (v *SecgroupAPI) Patch(c *gin.Context) {
-	secgroupResp := &SecurityGroupResponse{}
+	ctx := c.Request.Context()
+	uuID := c.Param("id")
+	secgroup, err := secgroupAdmin.GetSecgroupByUUID(ctx, uuID)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid vpc query", err)
+		return
+	}
+	payload := &SecurityGroupPatchPayload{}
+	err = c.ShouldBindJSON(payload)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
+		return
+	}
+	err = secgroupAdmin.Update(ctx, secgroup, payload.Name, payload.IsDefault)
+	if err != nil {
+		ErrorResponse(c, http.StatusBadRequest, "Patch security group failed", err)
+		return
+	}
+	secgroupResp, err := v.getSecgroupResponse(ctx, secgroup)
+	if err != nil {
+		ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
+		return
+	}
 	c.JSON(http.StatusOK, secgroupResp)
 }
 
@@ -158,9 +180,9 @@ func (v *SecgroupAPI) getSecgroupResponse(ctx context.Context, secgroup *model.S
 	owner := orgAdmin.GetOrgName(secgroup.Owner)
 	secgroupResp = &SecurityGroupResponse{
 		ResourceReference: &ResourceReference{
-			ID:    secgroup.UUID,
-			Name:  secgroup.Name,
-			Owner: owner,
+			ID:        secgroup.UUID,
+			Name:      secgroup.Name,
+			Owner:     owner,
 			CreatedAt: secgroup.CreatedAt.Format(TimeStringForMat),
 			UpdatedAt: secgroup.UpdatedAt.Format(TimeStringForMat),
 		},

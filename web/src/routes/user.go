@@ -66,6 +66,11 @@ func (a *UserAdmin) Create(ctx context.Context, username, password string) (user
 }
 
 func (a *UserAdmin) Get(ctx context.Context, id int64) (user *model.User, err error) {
+	if id <= 0 {
+		err = fmt.Errorf("Invalid user ID: %d", id)
+		log.Println(err)
+		return
+	}
 	db := DB()
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()

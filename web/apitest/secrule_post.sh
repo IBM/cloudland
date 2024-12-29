@@ -21,7 +21,7 @@ secgroup_id=$(curl -k -XPOST -H "Authorization: bearer $token" -H "X-Resource-Us
 
 cat >tmp.json <<EOF
 {
-  "remote_cidr": "192.168.10.0/24",
+  "remote_cidr": "192.168.10.10/32",
   "direction": "ingress",
   "protocol": "tcp",
   "port_min": 443,

@@ -10,7 +10,6 @@ package apis
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	. "web/src/common"
@@ -52,15 +51,16 @@ type InstancePayload struct {
 }
 
 type InstanceResponse struct {
-	ID         string               `json:"id"`
+	*ResourceReference
 	Hostname   string               `json:"hostname"`
 	Status     string               `json:"status"`
 	Interfaces []*InterfaceResponse `json:"interfaces"`
+	Volumes    []*ResourceReference `json:"volumes"`
 	Flavor     string               `json:"flavor"`
-	Image      *BaseReference       `json:"image"`
-	Keys       []*BaseReference     `json:"keys"`
+	Image      *ResourceReference   `json:"image"`
+	Keys       []*ResourceReference `json:"keys"`
 	Zone       string               `json:"zone"`
-	VPC        *BaseReference       `json:"vpc,omitempty"`
+	VPC        *ResourceReference   `json:"vpc,omitempty"`
 	Hypervisor string               `json:"hypervisor,omitempty"`
 }
 
@@ -136,7 +136,7 @@ func (v *InstanceAPI) Patch(c *gin.Context) {
 	}
 	err = instanceAdmin.Update(ctx, instance, flavor, hostname, payload.PowerAction, int(instance.Hyper))
 	if err != nil {
-		log.Println("Patch instance failed, %v", err)
+		ErrorResponse(c, http.StatusBadRequest, "Patch instance failed", err)
 		return
 	}
 	instanceResp, err := v.getInstanceResponse(ctx, instance)
@@ -324,13 +324,19 @@ func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, vpc *model.Router, i
 }
 
 func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.Instance) (instanceResp *InstanceResponse, err error) {
+	owner := orgAdmin.GetOrgName(instance.Owner)
 	instanceResp = &InstanceResponse{
-		ID:       instance.UUID,
+		ResourceReference: &ResourceReference{
+			ID:        instance.UUID,
+			Owner:     owner,
+			CreatedAt: instance.CreatedAt.Format(TimeStringForMat),
+			UpdatedAt: instance.UpdatedAt.Format(TimeStringForMat),
+		},
 		Hostname: instance.Hostname,
 		Status:   instance.Status,
 	}
 	if instance.Image != nil {
-		instanceResp.Image = &BaseReference{
+		instanceResp.Image = &ResourceReference{
 			ID:   instance.Image.UUID,
 			Name: instance.Image.Name,
 		}
@@ -341,18 +347,26 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 	if instance.Zone != nil {
 		instanceResp.Zone = instance.Zone.Name
 	}
-	keys := make([]*BaseReference, len(instance.Keys))
+	keys := make([]*ResourceReference, len(instance.Keys))
 	for i, key := range instance.Keys {
-		keys[i] = &BaseReference{
+		keys[i] = &ResourceReference{
 			ID:   key.UUID,
 			Name: key.Name,
 		}
 	}
+	instanceResp.Keys = keys
+	volumes := make([]*ResourceReference, len(instance.Volumes))
+	for i, volume := range instance.Volumes {
+		volumes[i] = &ResourceReference{
+			ID:   volume.UUID,
+			Name: volume.Name,
+		}
+	}
+	instanceResp.Volumes = volumes
 	hyper, hyperErr := hyperAdmin.GetHyperByHostid(ctx, instance.Hyper)
 	if hyperErr == nil {
 		instanceResp.Hypervisor = hyper.Hostname
 	}
-	instanceResp.Keys = keys
 	interfaces := make([]*InterfaceResponse, len(instance.Interfaces))
 	for i, iface := range instance.Interfaces {
 		interfaces[i] = &InterfaceResponse{
@@ -371,12 +385,10 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 		if iface.PrimaryIf && len(instance.FloatingIps) > 0 {
 			floatingIps := make([]*FloatingIpInfo, len(instance.FloatingIps))
 			for i, floatingip := range instance.FloatingIps {
-				owner := orgAdmin.GetOrgName(floatingip.Owner)
 				floatingIps[i] = &FloatingIpInfo{
 					ResourceReference: &ResourceReference{
-						ID:    floatingip.UUID,
-						Name:  floatingip.Name,
-						Owner: owner,
+						ID:   floatingip.UUID,
+						Name: floatingip.Name,
 					},
 					IpAddress: floatingip.FipAddress,
 				}
@@ -396,7 +408,7 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 		if err != nil {
 			err = fmt.Errorf("Failed to get VPC")
 		}
-		instanceResp.VPC = &BaseReference{
+		instanceResp.VPC = &ResourceReference{
 			ID:   router.UUID,
 			Name: router.Name,
 		}

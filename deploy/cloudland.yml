@@ -8,38 +8,38 @@
   hosts: hyper
   become_user: root
   roles:
-    - {role: hyper, become: yes}
+    - {role: hyper, become: yes, tags: [hyper]}
 
-# deploy root node
+# deploy cloudland
 - name: install cland
   hosts: cland
   roles:
-    - {role: cland, become: yes}
+    - {role: cland, become: yes, tags: [cland]}
 
 # deploy web
 - name: install web
   hosts: web
   become_user: root
   roles:
-    - {role: web, become: yes}
+    - {role: web, become: yes, tags: [web]}
 
 # deploy nginx
 - name: install nginx
   hosts: web
   become_user: root
   roles:
-    - {role: nginx, become: yes}
+    - {role: nginx, become: yes, tags: [nginx]}
 
 # deploy database
 - name: install database
   hosts: database
   become_user: root
   roles:
-    - {role: database, become: yes}
+    - {role: database, become: yes, tags: [database]}
 
 # deploy wds storage
 - name: install wds
   hosts: wds
   become_user: root
   roles:
-    - {role: wds, become: yes}
+    - {role: wds, become: yes, tags: [wds]}

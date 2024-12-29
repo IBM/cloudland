@@ -47,7 +47,7 @@
 
 - name: Apply sysctl vm.nr_overcommit_hugepages
   sysctl:
-    name: vm.nr_hugepages
+    name: vm.nr_overcommit_hugepages
     state: present
     value: "{{ hugepage.stdout_lines[1] }}"
     reload: yes

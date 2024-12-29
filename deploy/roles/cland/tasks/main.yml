@@ -8,15 +8,15 @@
     - /usr/bin
   tags: [sync]
 
-- name: synchronize cloudland and grpc
+- name: synchronize cloudland
   synchronize:
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
     rsync_opts: "--exclude=cache,--exclude=log,--exclude=db"
   with_items:
     - {src: '/opt/cloudland', dest: '/opt', owner: 'cland'}
-    - {src: '/usr/local', dest: '/usr', owner: 'cland'}
   tags: [sync]
+  when: inventory_hostname != ansible_hostname
 
 - name: copy sci binaries
   copy: 
@@ -24,6 +24,7 @@
     dest: /opt
     mode: preserve
   tags: [sci]
+  when: inventory_hostname != ansible_hostname
 
 - name: create directores
   file:
@@ -59,6 +60,7 @@
     - {src: '/opt/cloudland/scripts', dest: '/opt/cloudland', owner: 'cland'}
     - {src: '/opt/sci', dest: '/opt', owner: 'root'}
   tags: [fe_bin]
+  when: inventory_hostname != ansible_hostname
 
 - name: generate host file
   template:
