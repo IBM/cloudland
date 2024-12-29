@@ -29,7 +29,6 @@
 			                        <th>{{.i18n.Tr "FloatingIP"}}</th>
 			                        <th>{{.i18n.Tr "InternalIP"}}</th>
 			                        <th>{{.i18n.Tr "Instance"}}</th>
-			                        <th>{{.i18n.Tr "Zone"}}</th>
                                     <th>{{.i18n.Tr "Delete"}}</th>
 		                        </tr>
 	                        </thead>
@@ -46,13 +45,6 @@
 			                        <td>
 						{{ if .Instance }}
 						{{.Instance.Hostname}}
-						{{ end }}
-						</td>
-			                        <td>
-						{{ if .Instance }}
-						{{ if .Instance.Zone }}
-						{{.Instance.Zone.Name}}
-						{{ end }}
 						{{ end }}
 						</td>
                                     <td><div class="delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}"><i class="dark purple trash alternate outline icon"></i></div></td>
