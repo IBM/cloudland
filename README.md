@@ -20,7 +20,7 @@ To support ultra-large scale, the hypervisors are organized into a tree hierarch
 For more information, see the [Introduction](https://github.com/IBM/cloudland/wiki/Introduction)
 
 ## Installation
-- Refer to [Installation](https://github.com/IBM/cloudland/wiki/Installation)
+Refer to [Installation](https://github.com/IBM/cloudland/wiki/Installation)
 
 ## User Guide
 Refer to [User Manual](https://github.com/IBM/cloudland/wiki/Manual)
