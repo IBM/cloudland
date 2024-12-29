@@ -14,7 +14,6 @@ package routes
 
 import (
 	"context"
-	"log"
 	"time"
 
 	. "web/src/common"
@@ -62,20 +61,20 @@ func adminInit() {
 		if user == nil {
 			user, err = userAdmin.GetUserByName(username)
 			if err != nil {
-				log.Println("Failed to get user", err)
+				logger.Debug("Failed to get user", err)
 				return
 			}
 		}
 		if org == nil {
 			org, err = orgAdmin.GetOrgByName(username)
 			if err != nil {
-				log.Println("Failed to get org", err)
+				logger.Debug("Failed to get org", err)
 				return
 			}
 		}
 		memberShip, err := GetDBMemberShip(user.ID, org.ID)
 		if err != nil {
-			log.Println("Failed to get membership", err)
+			logger.Debug("Failed to get membership", err)
 			return
 		}
 		memberShip.Role = model.Admin

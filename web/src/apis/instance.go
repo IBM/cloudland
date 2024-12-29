@@ -84,6 +84,7 @@ type InstanceListResponse struct {
 func (v *InstanceAPI) Get(c *gin.Context) {
 	ctx := c.Request.Context()
 	uuID := c.Param("id")
+	logger.Debugf("Get instance %s", uuID)
 	instance, err := instanceAdmin.GetInstanceByUUID(ctx, uuID)
 	if err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid instance query", err)
@@ -111,39 +112,46 @@ func (v *InstanceAPI) Get(c *gin.Context) {
 func (v *InstanceAPI) Patch(c *gin.Context) {
 	ctx := c.Request.Context()
 	uuID := c.Param("id")
+	logger.Debugf("Patch instance %s", uuID)
 	instance, err := instanceAdmin.GetInstanceByUUID(ctx, uuID)
 	if err != nil {
+		logger.Errorf("Failed to get instance %s, %+v", uuID, err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid instance query", err)
 		return
 	}
 	payload := &InstancePatchPayload{}
 	err = c.ShouldBindJSON(payload)
 	if err != nil {
+		logger.Errorf("Failed to bind JSON, %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
 		return
 	}
 	hostname := instance.Hostname
 	if payload.Hostname != "" {
 		hostname = payload.Hostname
+		logger.Debugf("Update hostname to %s", hostname)
 	}
 	var flavor *model.Flavor
 	if payload.Flavor != "" {
 		flavor, err = flavorAdmin.GetFlavorByName(ctx, payload.Flavor)
 		if err != nil {
+			logger.Errorf("Failed to get flavor %+v, %+v", payload.Flavor, err)
 			ErrorResponse(c, http.StatusBadRequest, "Invalid flavor query", err)
 			return
 		}
 	}
 	err = instanceAdmin.Update(ctx, instance, flavor, hostname, payload.PowerAction, int(instance.Hyper))
 	if err != nil {
-		ErrorResponse(c, http.StatusBadRequest, "Patch instance failed", err)
+		logger.Errorf("Patch instance failed, %+v", err)
 		return
 	}
 	instanceResp, err := v.getInstanceResponse(ctx, instance)
 	if err != nil {
+		logger.Errorf("Failed to create instance response, %+v", err)
 		ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
 		return
 	}
+	logger.Debugf("Patch instance %s success, response: %+v", uuID, instanceResp)
 	c.JSON(http.StatusOK, instanceResp)
 }
 
@@ -160,13 +168,16 @@ func (v *InstanceAPI) Patch(c *gin.Context) {
 func (v *InstanceAPI) Delete(c *gin.Context) {
 	ctx := c.Request.Context()
 	uuID := c.Param("id")
+	logger.Debugf("Delete instance %s", uuID)
 	instance, err := instanceAdmin.GetInstanceByUUID(ctx, uuID)
 	if err != nil {
+		logger.Errorf("Failed to get instance %s, %+v", uuID, err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
 		return
 	}
 	err = instanceAdmin.Delete(ctx, instance)
 	if err != nil {
+		logger.Errorf("Failed to delete instance %s, %+v", uuID, err)
 		ErrorResponse(c, http.StatusBadRequest, "Not able to delete", err)
 		return
 	}
@@ -184,27 +195,33 @@ func (v *InstanceAPI) Delete(c *gin.Context) {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /instances [post]
 func (v *InstanceAPI) Create(c *gin.Context) {
+	logger.Debug("Create instance")
 	ctx := c.Request.Context()
 	payload := &InstancePayload{}
 	err := c.ShouldBindJSON(payload)
 	if err != nil {
+		logger.Errorf("Failed to bind instance payload JSON, %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
 		return
 	}
+	logger.Debugf("Creating instance with payload: %+v", payload)
 	hostname := payload.Hostname
 	userdata := payload.Userdata
 	image, err := imageAdmin.GetImage(ctx, payload.Image)
 	if err != nil {
+		logger.Errorf("Failed to get image %+v, %+v", payload.Image, err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid image", err)
 		return
 	}
 	flavor, err := flavorAdmin.GetFlavorByName(ctx, payload.Flavor)
 	if err != nil {
+		logger.Errorf("Failed to get flavor %+v, %+v", payload.Flavor, err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid flavor", err)
 		return
 	}
 	zone, err := zoneAdmin.GetZoneByName(ctx, payload.Zone)
 	if err != nil {
+		logger.Errorf("Failed to get zone %+v, %+v", payload.Zone, err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid zone", err)
 		return
 	}
@@ -212,12 +229,14 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 	if payload.VPC != nil {
 		router, err = routerAdmin.GetRouter(ctx, payload.VPC)
 		if err != nil {
+			logger.Errorf("Failed to get VPC %+v, %+v", payload.VPC, err)
 			ErrorResponse(c, http.StatusBadRequest, "Invalid VPC", nil)
 			return
 		}
 	}
 	router, primaryIface, err := v.getInterfaceInfo(ctx, router, payload.PrimaryInterface)
 	if err != nil {
+		logger.Errorf("Failed to get primary interface %+v, %+v", payload.PrimaryInterface, err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid primary interface", err)
 		return
 	}
@@ -226,6 +245,7 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 		var ifaceInfo *routes.InterfaceInfo
 		_, ifaceInfo, err = v.getInterfaceInfo(ctx, router, ifacePayload)
 		if err != nil {
+			logger.Errorf("Failed to get secondary interface %+v, %+v", ifacePayload, err)
 			ErrorResponse(c, http.StatusBadRequest, "Invalid secondary interfaces", err)
 			return
 		}
@@ -245,15 +265,20 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 	if router != nil {
 		routerID = router.ID
 	}
+	logger.Debugf("Creating %d instances with hostname %s, userdata %s, image %s, flavor %s, zone %s, router %d, primaryIface %v, secondaryIfaces %v, keys %v, hypervisor %d",
+		count, hostname, userdata, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, payload.Hypervisor)
 	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, routerID, primaryIface, secondaryIfaces, keys, payload.Hypervisor)
 	if err != nil {
+		logger.Errorf("Failed to create instances, %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Failed to create instances", err)
 		return
 	}
+	logger.Debugf("Created %d instances, %+v", len(instances), instances)
 	instancesResp := make([]*InstanceResponse, len(instances))
 	for i, instance := range instances {
 		instancesResp[i], err = v.getInstanceResponse(ctx, instance)
 		if err != nil {
+			logger.Errorf("Failed to create instance response, %+v", err)
 			ErrorResponse(c, http.StatusInternalServerError, "Failed to create instances", err)
 			return
 		}
@@ -262,6 +287,7 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 }
 
 func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, vpc *model.Router, ifacePayload *InterfacePayload) (router *model.Router, ifaceInfo *routes.InterfaceInfo, err error) {
+	logger.Debugf("Get interface info with VPC %+v, ifacePayload %+v", vpc, ifacePayload)
 	if ifacePayload == nil || ifacePayload.Subnet == nil {
 		err = fmt.Errorf("Interface with subnet must be provided")
 		return
@@ -320,10 +346,12 @@ func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, vpc *model.Router, i
 			ifaceInfo.SecurityGroups = append(ifaceInfo.SecurityGroups, secgroup)
 		}
 	}
+	logger.Debugf("Get interface info success, router %+v, ifaceInfo %+v", router, ifaceInfo)
 	return
 }
 
 func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.Instance) (instanceResp *InstanceResponse, err error) {
+	logger.Debugf("Create instance response for instance %+v", instance)
 	owner := orgAdmin.GetOrgName(instance.Owner)
 	instanceResp = &InstanceResponse{
 		ResourceReference: &ResourceReference{
@@ -413,6 +441,7 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 			Name: router.Name,
 		}
 	}
+	logger.Debugf("Create instance response success, %+v", instanceResp)
 	return
 }
 
@@ -428,22 +457,28 @@ func (v *InstanceAPI) List(c *gin.Context) {
 	ctx := c.Request.Context()
 	offsetStr := c.DefaultQuery("offset", "0")
 	limitStr := c.DefaultQuery("limit", "50")
+	queryStr := c.DefaultQuery("query", "")
+	logger.Debugf("List instances with offset %s, limit %s, query %s", offsetStr, limitStr, queryStr)
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil {
+		logger.Errorf("Invalid query offset: %s, %+v", offsetStr, err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset: "+offsetStr, err)
 		return
 	}
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
+		logger.Errorf("Invalid query limit: %s, %+v", limitStr, err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid query limit: "+limitStr, err)
 		return
 	}
 	if offset < 0 || limit < 0 {
+		logger.Errorf("Invalid query offset or limit, %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", err)
 		return
 	}
-	total, instances, err := instanceAdmin.List(ctx, int64(offset), int64(limit), "-created_at", "")
+	total, instances, err := instanceAdmin.List(ctx, int64(offset), int64(limit), "-created_at", queryStr)
 	if err != nil {
+		logger.Errorf("Failed to list instances, %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Failed to list instances", err)
 		return
 	}
@@ -456,11 +491,13 @@ func (v *InstanceAPI) List(c *gin.Context) {
 	for i, instance := range instances {
 		instanceList[i], err = v.getInstanceResponse(ctx, instance)
 		if err != nil {
+			logger.Errorf("Failed to create instance response, %+v", err)
 			ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
 			return
 		}
 	}
 	instanceListResp.Instances = instanceList
+	logger.Debugf("List instances success, %+v", instanceListResp)
 	c.JSON(http.StatusOK, instanceListResp)
 	return
 }

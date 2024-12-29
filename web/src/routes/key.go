@@ -12,7 +12,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -38,14 +37,14 @@ func (a *KeyAdmin) CreateKeyPair(ctx context.Context) (publicKey, fingerPrint, p
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
-		log.Println("Not authorized to create keys")
+		logger.Debug("Not authorized to create keys")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
 	// generate key
 	private, er := rsa.GenerateKey(rand.Reader, 1024)
 	if er != nil {
-		log.Println("failed to create privateKey ")
+		logger.Debug("failed to create privateKey ")
 		err = er
 		return
 	}
@@ -53,7 +52,7 @@ func (a *KeyAdmin) CreateKeyPair(ctx context.Context) (publicKey, fingerPrint, p
 	privateKey = string(pem.EncodeToMemory(privateKeyPEM))
 	pub, er := ssh.NewPublicKey(&private.PublicKey)
 	if er != nil {
-		log.Println("failed to create publicKey")
+		logger.Debug("failed to create publicKey")
 		err = er
 		return
 	}
@@ -67,13 +66,13 @@ func (a *KeyAdmin) Create(ctx context.Context, name, publicKey string) (key *mod
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
-		log.Println("Not authorized to create keys")
+		logger.Debug("Not authorized to create keys")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
 	pub, _, _, _, puberr := ssh.ParseAuthorizedKey([]byte(publicKey))
 	if puberr != nil {
-		log.Println("Invalid public key")
+		logger.Debug("Invalid public key")
 		err = puberr
 		return
 	}
@@ -87,7 +86,7 @@ func (a *KeyAdmin) Create(ctx context.Context, name, publicKey string) (key *mod
 	key = &model.Key{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, Name: name, PublicKey: publicKey, FingerPrint: fingerPrint}
 	err = db.Create(key).Error
 	if err != nil {
-		log.Println("DB failed to create key, %v", err)
+		logger.Debug("DB failed to create key, %v", err)
 		return
 	}
 	return
@@ -103,18 +102,18 @@ func (a *KeyAdmin) Delete(ctx context.Context, key *model.Key) (err error) {
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.ValidateOwner(model.Writer, key.Owner)
 	if !permit {
-		log.Println("Not authorized to delete the key")
+		logger.Debug("Not authorized to delete the key")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
 	key.Name = fmt.Sprintf("%s-%d", key.Name, key.CreatedAt.Unix())
 	err = db.Model(key).Update("name", key.Name).Error
 	if err != nil {
-		log.Println("DB failed to update key name", err)
+		logger.Debug("DB failed to update key name", err)
 		return
 	}
 	if err = db.Delete(key).Error; err != nil {
-		log.Println("DB failed to delete key ", err)
+		logger.Debug("DB failed to delete key ", err)
 		return
 	}
 	return
@@ -123,7 +122,7 @@ func (a *KeyAdmin) Delete(ctx context.Context, key *model.Key) (err error) {
 func (a *KeyAdmin) Get(ctx context.Context, id int64) (key *model.Key, err error) {
 	if id <= 0 {
 		err = fmt.Errorf("Invalid key ID: %d", id)
-		log.Println(err)
+		logger.Debug(err)
 		return
 	}
 	db := DB()
@@ -132,7 +131,7 @@ func (a *KeyAdmin) Get(ctx context.Context, id int64) (key *model.Key, err error
 	key = &model.Key{Model: model.Model{ID: id}}
 	err = db.Where(where).Take(key).Error
 	if err != nil {
-		log.Println("Failed to query key, %v", err)
+		logger.Debug("Failed to query key, %v", err)
 		return
 	}
 	return
@@ -145,7 +144,7 @@ func (a *KeyAdmin) GetKeyByUUID(ctx context.Context, uuID string) (key *model.Ke
 	key = &model.Key{}
 	err = db.Where(where).Where("uuid = ?", uuID).Take(key).Error
 	if err != nil {
-		log.Println("Failed to query key, %v", err)
+		logger.Debug("Failed to query key, %v", err)
 		return
 	}
 	return
@@ -158,7 +157,7 @@ func (a *KeyAdmin) GetKeyByName(ctx context.Context, name string) (key *model.Ke
 	key = &model.Key{}
 	err = db.Where(where).Where("name = ?", name).Take(key).Error
 	if err != nil {
-		log.Println("Failed to query key, %v", err)
+		logger.Debug("Failed to query key, %v", err)
 		return
 	}
 	return
@@ -197,12 +196,12 @@ func (a *KeyAdmin) List(ctx context.Context, offset, limit int64, order, query s
 	where := memberShip.GetWhere()
 	keys = []*model.Key{}
 	if err = db.Model(&model.Key{}).Where(where).Where(query).Count(&total).Error; err != nil {
-		log.Println("DB failed to count keys, %v", err)
+		logger.Debug("DB failed to count keys, %v", err)
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
 	if err = db.Where(where).Where(query).Find(&keys).Error; err != nil {
-		log.Println("DB failed to query keys, %v", err)
+		logger.Debug("DB failed to query keys, %v", err)
 		return
 	}
 	permit := memberShip.CheckPermission(model.Admin)
@@ -211,7 +210,7 @@ func (a *KeyAdmin) List(ctx context.Context, offset, limit int64, order, query s
 		for _, key := range keys {
 			key.OwnerInfo = &model.Organization{Model: model.Model{ID: key.Owner}}
 			if err = db.Take(key.OwnerInfo).Error; err != nil {
-				log.Println("Failed to query owner info", err)
+				logger.Debug("Failed to query owner info", err)
 				err = nil
 				continue
 			}
@@ -224,7 +223,7 @@ func (v *KeyView) List(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
-		log.Println("Not authorized for this operation")
+		logger.Debug("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -241,7 +240,7 @@ func (v *KeyView) List(c *macaron.Context, store session.Store) {
 	query := c.QueryTrim("q")
 	total, keys, err := keyAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
-		log.Println("Failed to list keys, %v", err)
+		logger.Debug("Failed to list keys, %v", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
 				"error": err.Error(),
@@ -279,21 +278,21 @@ func (v *KeyView) Delete(c *macaron.Context, store session.Store) (err error) {
 	}
 	keyID, err := strconv.Atoi(id)
 	if err != nil {
-		log.Println("Invalid key id, %v", err)
+		logger.Debug("Invalid key id, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	key, err := keyAdmin.Get(ctx, int64(keyID))
 	if err != nil {
-		log.Println("Failed to get key, %v", err)
+		logger.Debug("Failed to get key, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	err = keyAdmin.Delete(ctx, key)
 	if err != nil {
-		log.Println("Failed to delete key, %v", err)
+		logger.Debug("Failed to delete key, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -308,7 +307,7 @@ func (v *KeyView) New(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
-		log.Println("Not authorized for this operation")
+		logger.Debug("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -322,7 +321,7 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store) {
 	publicKey := c.QueryTrim("pubkey")
 	_, err := keyAdmin.Create(ctx, name, publicKey)
 	if err != nil {
-		log.Println("Failed to create key ", err)
+		logger.Debug("Failed to create key ", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -330,7 +329,7 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store) {
 	if c.QueryTrim("from_instance") != "" {
 		_, _, err := keyAdmin.List(c.Req.Context(), 0, -1, "", "")
 		if err != nil {
-			log.Println("Failed to list keys ", err)
+			logger.Debug("Failed to list keys ", err)
 			c.Data["ErrorMsg"] = err.Error()
 			c.HTML(500, "500")
 			return
@@ -350,7 +349,7 @@ func (v *KeyView) SolvePrintedPublicKeyError(c *macaron.Context, store session.S
 			})
 			return
 		} else {
-			log.Println("Public key is wrong")
+			logger.Debug("Public key is wrong")
 			c.Data["ErrorMsg"] = "Public key is wrong"
 			c.HTML(http.StatusBadRequest, "error")
 			return
@@ -363,7 +362,7 @@ func (v *KeyView) SolvePrintedPublicKeyError(c *macaron.Context, store session.S
 func (v *KeyView) SolvePublicKeyDbError(c *macaron.Context, store session.Store, name, publicKey, fingerPrint string) {
 	key, err := keyAdmin.Create(c.Req.Context(), name, publicKey, fingerPrint)
 	if err != nil {
-		log.Println("Failed, %v", err)
+		logger.Debug("Failed, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -397,7 +396,7 @@ func (v *KeyView) SolveListKeyError(c *macaron.Context, store session.Store) {
 	if c.QueryTrim("from_instance") != "" {
 		_, _, err := keyAdmin.List(c.Req.Context(), 0, -1, "", "")
 		if err != nil {
-			log.Println("Failed to list keys, %v", err)
+			logger.Debug("Failed to list keys, %v", err)
 			c.Data["ErrorMsg"] = err.Error()
 			c.HTML(500, "500")
 			return
@@ -416,7 +415,7 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 		publicKey := c.QueryTrim("pubkey")
 		_, err := keyAdmin.Create(ctx, name, publicKey)
 		if err != nil {
-			log.Println("failed to create key")
+			logger.Debug("failed to create key")
 			c.Data["ErrorMsg"] = err.Error()
 			c.HTML(http.StatusBadRequest, "error")
 		}
@@ -425,7 +424,7 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 	} else {
 		publicKey, fingerPrint, privateKey, err := keyAdmin.CreateKeyPair(ctx)
 		if err != nil {
-			log.Println("failed")
+			logger.Debug("failed")
 			c.Data["ErrorMsg"] = err.Error()
 			c.HTML(http.StatusBadRequest, "error")
 			return

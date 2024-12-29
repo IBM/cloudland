@@ -10,7 +10,6 @@ package rpcs
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -71,17 +70,17 @@ func ResolveToken(tokenString string) (int, *MemberShip, error) {
 
 func (a *ConsoleAdmin) ConsoleResolve(c *macaron.Context) {
 	token := c.Params("token")
-	log.Println("Get JWT token", token)
+	logger.Debug("Get JWT token", token)
 	instanceID, memberShip, err := ResolveToken(token)
 	if err != nil {
-		log.Println("Unable to resolve token", err)
+		logger.Debug("Unable to resolve token", err)
 		code := http.StatusUnauthorized
 		c.Error(code, http.StatusText(code))
 		return
 	}
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
-		log.Println("Not authorized for this operation")
+		logger.Debug("Not authorized for this operation")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -89,7 +88,7 @@ func (a *ConsoleAdmin) ConsoleResolve(c *macaron.Context) {
 	instance := &model.Instance{Model: model.Model{ID: int64(instanceID)}}
 	err = db.Take(instance).Error
 	if err != nil {
-		log.Println("Failed to get instance", err)
+		logger.Debug("Failed to get instance", err)
 		code := http.StatusInternalServerError
 		c.Error(code, http.StatusText(code))
 		return
@@ -97,7 +96,7 @@ func (a *ConsoleAdmin) ConsoleResolve(c *macaron.Context) {
 
 	accessPass, err := password.Generate(8, 2, 0, false, false)
 	if err != nil {
-		log.Println("Failed to generate password")
+		logger.Debug("Failed to generate password")
 		code := http.StatusInternalServerError
 		c.Error(code, http.StatusText(code))
 		return
@@ -105,13 +104,13 @@ func (a *ConsoleAdmin) ConsoleResolve(c *macaron.Context) {
 	vnc := &model.Vnc{InstanceID: int64(instanceID)}
 	err = db.Where(vnc).Delete(vnc).Error
 	if err != nil {
-		log.Println("VNC record deletion failed", err)
+		logger.Debug("VNC record deletion failed", err)
 	}
 	control := fmt.Sprintf("inter=%d", instance.Hyper)
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_vnc_passwd.sh '%d' '%s'", instance.ID, accessPass)
 	err = HyperExecute(c.Req.Context(), control, command)
 	if err != nil {
-		log.Println("Set vnc password execution failed", err)
+		logger.Debug("Set vnc password execution failed", err)
 		return
 	}
 
@@ -119,12 +118,12 @@ func (a *ConsoleAdmin) ConsoleResolve(c *macaron.Context) {
 		time.Sleep(time.Duration(i) * time.Second)
 		err = db.Where(vnc).Take(vnc).Error
 		if err == nil {
-			log.Println("get VNC record successfully, i = ", i)
+			logger.Debug("get VNC record successfully, i = ", i)
 			break
 		}
 	}
 	if vnc.LocalAddress == "" {
-		log.Println("get VNC record successfully", err)
+		logger.Debug("get VNC record successfully", err)
 		c.JSON(http.StatusInternalServerError, &APIError{ErrorMessage: "Internal error"})
 	}
 	address := fmt.Sprintf("%s:%d", vnc.LocalAddress, vnc.LocalPort)

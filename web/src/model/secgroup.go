@@ -7,8 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package model
 
 import (
-	"log"
-
 	"web/src/dbs"
 )
 
@@ -51,7 +49,7 @@ func GetSecurityRules(secGroups []*SecurityGroup) (securityRules []*SecurityRule
 		secrules := []*SecurityRule{}
 		err = db.Model(&SecurityRule{}).Where("secgroup = ?", sg.ID).Find(&secrules).Error
 		if err != nil {
-			log.Println("DB failed to query security rules", err)
+			logger.Debug("DB failed to query security rules", err)
 			return
 		}
 		securityRules = append(securityRules, secrules...)

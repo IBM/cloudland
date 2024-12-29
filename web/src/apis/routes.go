@@ -8,9 +8,8 @@ SPDX-License-Identifier: Apache-2.0
 package apis
 
 import (
-	"log"
-
 	_ "web/docs"
+	"web/src/utils/log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
@@ -18,15 +17,20 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+var logger = log.MustGetLogger("apis")
+
 func Run() (err error) {
+	logger.Info("Start to run cloudland api service")
 	r := Register()
 	cert := viper.GetString("rest.cert")
 	key := viper.GetString("rest.key")
 	listen := viper.GetString("rest.listen")
-	log.Printf("cert: %s, key: %s\n", cert, key)
+	logger.Infof("cert: %s, key: %s\n", cert, key)
 	if cert != "" && key != "" {
+		logger.Infof("Running https service isten on %s\n", listen)
 		r.RunTLS(listen, cert, key)
 	} else {
+		logger.Infof("Running http service on %s\n", listen)
 		r.Run(listen)
 	}
 	return

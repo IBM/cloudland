@@ -10,7 +10,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
 
 	. "web/src/common"
@@ -22,13 +21,13 @@ func init() {
 }
 
 type FdbRule struct {
-	Instance   string `json:"instance"`
-	Vni        int64  `json:"vni"`
-	InnerIP    string `json:"inner_ip"`
-	InnerMac   string `json:"inner_mac"`
-	OuterIP    string `json:"outer_ip"`
-	Gateway    string `json:"gateway"`
-	Router     int64  `json:"router"`
+	Instance string `json:"instance"`
+	Vni      int64  `json:"vni"`
+	InnerIP  string `json:"inner_ip"`
+	InnerMac string `json:"inner_mac"`
+	OuterIP  string `json:"outer_ip"`
+	Gateway  string `json:"gateway"`
+	Router   int64  `json:"router"`
 }
 
 func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript string) (err error) {
@@ -40,7 +39,7 @@ func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript strin
 		hyper := &model.Hyper{}
 		err = db.Where("hostid = ?", hyperNode).Take(hyper).Error
 		if err != nil || hyper.Hostid < 0 {
-			log.Println("Failed to query hypervisor")
+			logger.Debug("Failed to query hypervisor")
 			continue
 		}
 		if iface.Address.Subnet.Type != "public" {
@@ -51,7 +50,7 @@ func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript strin
 	hyperSet := make(map[int32]struct{})
 	err = db.Preload("Address").Preload("Address.Subnet").Preload("Address.Subnet.Router").Where("router_id = ? and instance > 0", instance.RouterID).Find(&allIfaces).Error
 	if err != nil {
-		log.Println("Failed to query all interfaces", err)
+		logger.Debug("Failed to query all interfaces", err)
 		return
 	}
 	if instance.Status != "deleted" {
@@ -62,7 +61,7 @@ func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript strin
 			hyper := &model.Hyper{}
 			hyperErr := db.Where("hostid = ? and hostid != ?", iface.Hyper, hyperNode).Take(hyper).Error
 			if hyperErr != nil {
-				log.Println("Failed to query hypervisor", hyperErr)
+				logger.Debug("Failed to query hypervisor", hyperErr)
 				continue
 			}
 			hyperSet[iface.Hyper] = struct{}{}
@@ -84,7 +83,7 @@ func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript strin
 			command := fmt.Sprintf("%s <<EOF\n%s\nEOF", fdbScript, fdbJson)
 			err = HyperExecute(ctx, control, command)
 			if err != nil {
-				log.Println("Add_fwrule execution failed", err)
+				logger.Debug("Add_fwrule execution failed", err)
 				return
 			}
 		}
@@ -95,7 +94,7 @@ func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript strin
 		command := fmt.Sprintf("%s <<EOF\n%s\nEOF", fdbScript, fdbJson)
 		err = HyperExecute(ctx, control, command)
 		if err != nil {
-			log.Println("Add_fwrule execution failed", err)
+			logger.Debug("Add_fwrule execution failed", err)
 			return
 		}
 	}
@@ -108,12 +107,12 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 	argn := len(args)
 	if argn < 4 {
 		err = fmt.Errorf("Wrong params")
-		log.Println("Invalid args", err)
+		logger.Debug("Invalid args", err)
 		return
 	}
 	instID, err := strconv.Atoi(args[1])
 	if err != nil {
-		log.Println("Invalid instance ID", err)
+		logger.Debug("Invalid instance ID", err)
 		return
 	}
 	instance := &model.Instance{Model: model.Model{ID: int64(instID)}}
@@ -125,26 +124,26 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 			"status": "error",
 			"reason": reason}).Error
 		if err != nil {
-			log.Println("Failed to update instance", err)
+			logger.Debug("Failed to update instance", err)
 		}
 		return
 	}
 	err = db.Take(instance).Error
 	if err != nil {
-		log.Println("Invalid instance ID", err)
+		logger.Debug("Invalid instance ID", err)
 		reason = err.Error()
 		return
 	}
 	err = db.Preload("Address").Preload("Address.Subnet").Preload("Address.Subnet.Router").Where("instance = ?", instID).Find(&instance.Interfaces).Error
 	if err != nil {
-		log.Println("Failed to get interfaces", err)
+		logger.Debug("Failed to get interfaces", err)
 		reason = err.Error()
 		return
 	}
 	serverStatus := args[2]
 	hyperID, err := strconv.Atoi(args[3])
 	if err != nil {
-		log.Println("Invalid hyper ID", err)
+		logger.Debug("Invalid hyper ID", err)
 		reason = err.Error()
 		return
 	}
@@ -155,30 +154,30 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 		"hyper":  int32(hyperID),
 		"reason": reason}).Error
 	if err != nil {
-		log.Println("Failed to update instance", err)
+		logger.Debug("Failed to update instance", err)
 		return
 	}
 	err = db.Model(&model.Interface{}).Where("instance = ?", instance.ID).Update(map[string]interface{}{"hyper": int32(hyperID)}).Error
 	if err != nil {
-		log.Println("Failed to update interface", err)
+		logger.Debug("Failed to update interface", err)
 		return
 	}
 	if serverStatus == "running" {
 		if reason == "init" {
 			err = sendFdbRules(ctx, instance, "/opt/cloudland/scripts/backend/add_fwrule.sh")
 			if err != nil {
-				log.Println("Failed to send fdb rules", err)
+				logger.Debug("Failed to send fdb rules", err)
 				return
 			}
 		} else if reason == "sync" {
 			err = syncNicInfo(ctx, instance)
 			if err != nil {
-				log.Println("Failed to sync floating ip", err)
+				logger.Debug("Failed to sync floating ip", err)
 				return
 			}
 			err = syncFloatingIp(ctx, instance)
 			if err != nil {
-				log.Println("Failed to sync floating ip", err)
+				logger.Debug("Failed to sync floating ip", err)
 				return
 			}
 		}
@@ -192,28 +191,28 @@ func syncNicInfo(ctx context.Context, instance *model.Instance) (err error) {
 	db := DB()
 	for _, iface := range instance.Interfaces {
 		err = db.Model(iface).Related(&iface.SecurityGroups, "SecurityGroups").Error
-                if err != nil {
-                        log.Println("Get security groups for interface failed", err)
-                        return
-                }
+		if err != nil {
+			logger.Debug("Get security groups for interface failed", err)
+			return
+		}
 		securityData, err = GetSecurityData(ctx, iface.SecurityGroups)
-                if err != nil {
-                        log.Println("Get security data for interface failed", err)
-                        return
-                }
+		if err != nil {
+			logger.Debug("Get security data for interface failed", err)
+			return
+		}
 		subnet := iface.Address.Subnet
 		vlans = append(vlans, &VlanInfo{Device: iface.Name, Vlan: subnet.Vlan, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: iface.Address.Address, MacAddr: iface.MacAddr, SecRules: securityData})
 	}
 	jsonData, err := json.Marshal(vlans)
-        if err != nil {
-                log.Println("Failed to marshal instance json data", err)
-                return
-        }
+	if err != nil {
+		logger.Debug("Failed to marshal instance json data", err)
+		return
+	}
 	control := fmt.Sprintf("inter=%d", instance.Hyper)
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/sync_nic_info.sh '%d'<<EOF\n%s\nEOF", instance.ID, jsonData)
 	err = HyperExecute(ctx, control, command)
 	if err != nil {
-		log.Println("Execute floating ip failed", err)
+		logger.Debug("Execute floating ip failed", err)
 		return
 	}
 	return
@@ -232,7 +231,7 @@ func syncFloatingIp(ctx context.Context, instance *model.Instance) (err error) {
 		floatingIp := &model.FloatingIp{}
 		err = db.Preload("Interface").Preload("Interface.Address").Preload("Interface.Address.Subnet").Where("instance_id = ?", instance.ID).Take(floatingIp).Error
 		if err != nil {
-			log.Println("Failed to get floating ip", err)
+			logger.Debug("Failed to get floating ip", err)
 			return
 		}
 		pubSubnet := floatingIp.Interface.Address.Subnet
@@ -240,7 +239,7 @@ func syncFloatingIp(ctx context.Context, instance *model.Instance) (err error) {
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_floating.sh '%d' '%s' '%s' '%d' '%s' '%d'", floatingIp.RouterID, floatingIp.FipAddress, pubSubnet.Gateway, pubSubnet.Vlan, primaryIface.Address.Address, primaryIface.Address.Subnet.Vlan)
 		err = HyperExecute(ctx, control, command)
 		if err != nil {
-			log.Println("Execute floating ip failed", err)
+			logger.Debug("Execute floating ip failed", err)
 			return
 		}
 	}

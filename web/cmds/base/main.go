@@ -8,7 +8,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"os"
 	"runtime"
 	"strings"
@@ -17,6 +17,7 @@ import (
 
 	"web/src/routes"
 	"web/src/rpcs"
+	rlog "web/src/utils/log"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -47,11 +48,6 @@ func RootCmd() (cmd *cobra.Command) {
 				RunE: RunDaemon,
 			}
 			daemonCmd.Flags().Bool("daemon", false, "daemon")
-			viper.SetConfigFile("conf/config.toml")
-			if err := viper.ReadInConfig(); err != nil {
-				daemonCmd.Println(err)
-				return
-			}
 			return daemonCmd
 		}
 	}
@@ -60,14 +56,22 @@ func RootCmd() (cmd *cobra.Command) {
 func init() {
 	viper.Set("AppVersion", Version)
 	viper.Set("GoVersion", strings.Title(runtime.Version()))
-	file := "/opt/cloudland/log/clbase.log"
-	logFile, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0766)
-	if err != nil {
-		panic(err)
+	viper.SetConfigFile("conf/config.toml")
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Printf("Failed to load configuration file %+v", err)
+		os.Exit(1)
 	}
-	log.SetOutput(logFile)
-	log.SetPrefix("[webUILog]")
-	log.SetFlags(log.LstdFlags | log.Lshortfile | log.LUTC)
+	rlog.InitLogger("clbase.log")
+	/*
+		file := "/opt/cloudland/log/clbase_org.log"
+		logFile, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0766)
+		if err != nil {
+			panic(err)
+		}
+		log.SetOutput(logFile)
+		log.SetPrefix("[webUILog]")
+		log.SetFlags(log.LstdFlags | log.Lshortfile | log.LUTC)
+	*/
 }
 
 func main() {

@@ -17,7 +17,6 @@ import (
 	"context"
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/spf13/viper"
@@ -48,21 +47,21 @@ func HyperExecute(ctx context.Context, control, command string) (err error) {
 	if remoteExecPath == "" {
 		remoteExecPath = viper.GetString("sci.endpoint") + "/internal/execute"
 	}
-	log.Printf("remotePath: %s, jsonPayload: %v", remoteExecPath, payload)
+	logger.Debugf("remotePath: %s, jsonPayload: %v", remoteExecPath, payload)
 	resp, err := http.Post(remoteExecPath, "application/json", payload)
 	if err != nil {
-		log.Println("Error posting data:", err)
+		logger.Debug("Error posting data:", err)
 		return
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Error reading response body:", err)
+		logger.Debug("Error reading response body:", err)
 		return
 	}
 
-	log.Println("Response Status:", resp.Status)
-	log.Println("Response Body:", string(body))
+	logger.Debug("Response Status:", resp.Status)
+	logger.Debug("Response Body:", string(body))
 	return
 }

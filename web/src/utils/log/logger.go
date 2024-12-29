@@ -8,13 +8,13 @@ SPDX-License-Identifier: Apache-2.0
 package log
 
 import (
+	"fmt"
 	"io"
 	"os"
-	"regexp"
-	"strings"
 	"sync"
 
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 )
@@ -25,30 +25,66 @@ const (
 )
 
 var (
-	logger        *logrus.Logger
-	defaultOutput *os.File
+	sys_logger, logger *logrus.Logger
+	defaultOutput      *os.File
 
-	moduleLevels map[string]string
-	lock         sync.RWMutex
+	lock sync.RWMutex
 
 	defaultLevel = logrus.DebugLevel
 )
 
+type UTCFormatter struct {
+	logrus.TextFormatter // Embed the default TextFormatter
+}
+
+// Format formats the log entry with UTC timestamp.
+func (f *UTCFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+	entry.Time = entry.Time.UTC()        // Convert time to UTC
+	return f.TextFormatter.Format(entry) // Use the embedded formatter
+}
+
 // Reset sets to logging to the defaults defined in this package.
 func Reset() {
-	moduleLevels = make(map[string]string)
-	lock = sync.RWMutex{}
-
 	defaultOutput = os.Stderr
-	InitBackend(GetDefaultFormater(defaultFormat), defaultOutput)
+	initBackend(GetDefaultFormater(defaultFormat), defaultOutput)
+}
+
+// InitLogger sets up the logging backend based on the provided log file.
+// which will read following configurations from the viper instance.
+// logging.log_dir: log directory
+// logging.log_level: log level: overall log level or module specific log level
+//
+//	(e.g. "debug", "info", "warn", "error", "fatal", "panic")
+//	(e.g. "[<module>[,<module>...]=]<level>[:[<module>[,<module>...]=]<level>...]")
+//
+// logging.max_size: maximum size of log file
+// logging.max_backups: maximum number of old log files to retain
+// logging.max_age: maximum number of days to retain old log files
+func InitLogger(log_file string) {
+	log_file = fmt.Sprintf("%s/%s", viper.GetString("logging.log_dir"), log_file)
+	log_level := viper.GetString("logging.log_level")
+	max_size := viper.GetInt("logging.max_size")
+	max_backups := viper.GetInt("logging.max_backups")
+	max_age := viper.GetInt("logging.max_age")
+	logger.Debugf("initializing logger with log file: %s, log level: %s, max size: %d, max backups: %d, max age: %d",
+		log_file, log_level, max_size, max_backups, max_age)
+	var err error
+	defaultLevel, err = logrus.ParseLevel(log_level)
+	if err != nil {
+		logger.Fatalf("Failed to parse log level: %s", log_level)
+	}
+	InitRollingBackend(log_file, max_size, max_backups, max_age)
 }
 
 // InitBackend sets up the logging backend based on
 // the provided logging formatter and I/O writer.
-func InitBackend(formatter logrus.Formatter, output io.Writer) {
-	logrus.SetOutput(output)
-	logrus.SetFormatter(formatter)
-	logrus.SetLevel(defaultLevel)
+func initBackend(formatter logrus.Formatter, output io.Writer) {
+	if sys_logger == nil {
+		sys_logger = logrus.New()
+	}
+	sys_logger.SetOutput(output)
+	sys_logger.SetFormatter(formatter)
+	sys_logger.SetLevel(defaultLevel)
 }
 
 // InitRollingBackend set rolling log backend
@@ -56,6 +92,8 @@ func InitBackend(formatter logrus.Formatter, output io.Writer) {
 // maxBackups is the maximum number of old log files to retain
 // maxAge is the maximum number of days to retain old log files
 func InitRollingBackend(logfile string, maxSize int, maxBackups int, maxAge int) {
+	logger.Debugf("Initializing rolling log backend with log file: %s, max size: %d, max backups: %d, max age: %d",
+		logfile, maxSize, maxBackups, maxAge)
 	if logfile != "" {
 		output := &lumberjack.Logger{
 			Filename:   logfile,
@@ -63,9 +101,9 @@ func InitRollingBackend(logfile string, maxSize int, maxBackups int, maxAge int)
 			MaxBackups: maxBackups,
 			MaxAge:     maxAge, //days
 		}
-		InitBackend(GetDefaultFormater(defaultFormat), output)
+		initBackend(GetDefaultFormater(defaultFormat), output)
 	} else {
-		InitBackend(GetDefaultFormater(defaultFormat), defaultOutput)
+		initBackend(GetDefaultFormater(defaultFormat), defaultOutput)
 	}
 }
 
@@ -74,18 +112,16 @@ func GetDefaultFormater(formatSpec string) logrus.Formatter {
 	if formatSpec == "" {
 		formatSpec = defaultFormat
 	}
-	return &logrus.TextFormatter{
-		FullTimestamp:          true,
-		TimestampFormat:        "2006-01-02 15:04:05",
-		DisableColors:          false,
-		DisableSorting:         false,
-		DisableLevelTruncation: false,
-		QuoteEmptyFields:       true,
-		FieldMap: logrus.FieldMap{
-			logrus.FieldKeyTime:  "@timestamp",
-			logrus.FieldKeyLevel: "@level",
-			logrus.FieldKeyFunc:  "@caller",
-			logrus.FieldKeyMsg:   "@message",
+	return &UTCFormatter{
+		logrus.TextFormatter{
+			FullTimestamp:          true,
+			DisableColors:          false,
+			DisableSorting:         false,
+			DisableLevelTruncation: false,
+			QuoteEmptyFields:       true,
+			ForceColors:            true,
+			DisableTimestamp:       false,
+			TimestampFormat:        "2006-01-02 15:04:05.000 UTC",
 		},
 	}
 }
@@ -95,112 +131,22 @@ func DefaultLevel() string {
 	return defaultLevel.String()
 }
 
-func GetLogger(module string) *logrus.Logger {
-	return logrus.WithField("module", module).Logger
-}
-
-// GetModuleLevel gets the current logging level for the specified module.
-func GetModuleLevel(module string) string {
-	return moduleLevels[module]
-}
-
-// SetModuleLevel sets the logging level for the modules that match the supplied
-// regular expression. Can be used to dynamically change the log level for the
-// module.
-func SetModuleLevel(moduleRegExp string, level string) error {
-	return setModuleLevel(moduleRegExp, level, true, false)
-}
-
-func setModuleLevel(moduleRegExp string, level string, isRegExp bool, revert bool) error {
-	if !isRegExp || revert {
-		moduleLevels[moduleRegExp] = level
-		logger.Debugf("Module '%s' logger enabled for log level '%s'", moduleRegExp, level)
-	} else {
-		re, err := regexp.Compile(moduleRegExp)
-		if err != nil {
-			logger.Warningf("Invalid regular expression: %s", moduleRegExp)
-			return err
-		}
-		lock.Lock()
-		defer lock.Unlock()
-		for module := range moduleLevels {
-			if re.MatchString(module) {
-				moduleLevels[module] = level
-				logger.Debugf("Module '%s' logger enabled for log level '%s'", module, level)
-			}
-		}
-	}
-	return nil
-}
-
-func setLevel(module string, l *logrus.Logger) {
-	level := GetModuleLevel(module)
-	if level != "" {
-		parsedLevel, err := logrus.ParseLevel(level)
-		if err != nil {
-			l.SetLevel(defaultLevel) // Default to Info level if parsing fails
-		} else {
-			l.SetLevel(parsedLevel)
-		}
-	} else {
-		l.SetLevel(defaultLevel)
-	}
-}
-
 // MustGetLogger is used in place of `logging.MustGetLogger` to allow us to
 // store a map of all modules and submodules that have loggers in the system.
 func MustGetLogger(module string) *logrus.Logger {
-	l := logrus.WithField("module", module).Logger
 	lock.Lock()
 	defer lock.Unlock()
-
-	setLevel(module, l)
+	if sys_logger == nil {
+		InitRollingBackend("", 0, 0, 0)
+	}
+	l := sys_logger.WithField("module", module).Logger
 	return l
 }
 
-// InitFromSpec initializes the logging based on the supplied spec. It is
-// exposed externally so that consumers of the blogging package may parse their
-// own logging specification. The logging specification has the following form:
-//
-//	[<module>[,<module>...]=]<level>[:[<module>[,<module>...]=]<level>...]
-func InitModuleLevelsFromSpec(spec string) {
-	levelAll := defaultLevel
-
-	if spec != "" {
-		if strings.Index(spec, ":") == -1 && strings.Index(spec, "=") == -1 {
-			parsedLevel, err := logrus.ParseLevel(spec)
-			if err != nil {
-				logger.Warningf("Invalid logging override specification '%s' ignored - invalid level", spec)
-			} else {
-				defaultLevel = parsedLevel
-			}
-		}
-		fields := strings.Split(spec, ":")
-		for _, field := range fields {
-			split := strings.Split(field, "=")
-			switch len(split) {
-			case 1:
-				SetModuleLevel(split[0], levelAll.String())
-			case 2:
-				// <module>[,<module>...]=<level>
-				levelSingle := split[1]
-				if split[0] == "" {
-					logger.Warningf("Invalid logging override specification '%s' ignored - no module specified", field)
-				} else {
-					modules := strings.Split(split[0], ",")
-					for _, module := range modules {
-						logger.Debugf("Setting logging level for module '%s' to '%s'", module, levelSingle)
-						SetModuleLevel(module, levelSingle)
-					}
-				}
-			default:
-				logger.Warningf("Invalid logging override '%s' ignored - missing ':'?", field)
-			}
-		}
-	}
-}
-
 func init() {
+	lock = sync.RWMutex{}
 	logger = logrus.New()
-	Reset()
+	logger.SetLevel(defaultLevel)
+	logger.SetOutput(os.Stdout)
+	logger.SetFormatter(GetDefaultFormater(defaultFormat))
 }

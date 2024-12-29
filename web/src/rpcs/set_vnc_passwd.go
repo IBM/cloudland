@@ -9,7 +9,6 @@ package rpcs
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 
 	. "web/src/common"
@@ -26,17 +25,17 @@ func SetVncPasswd(ctx context.Context, args []string) (status string, err error)
 	argn := len(args)
 	if argn < 3 {
 		err = fmt.Errorf("Wrong params")
-		log.Println("Invalid args", err)
+		logger.Debug("Invalid args", err)
 		return
 	}
 	instID, err := strconv.Atoi(args[1])
 	if err != nil {
-		log.Println("Invalid instance ID", err)
+		logger.Debug("Invalid instance ID", err)
 		return
 	}
 	portN, err := strconv.Atoi(args[2])
 	if err != nil {
-		log.Println("Invalid port number", err)
+		logger.Debug("Invalid port number", err)
 		return
 	}
 	hyperip := args[3]
@@ -47,7 +46,7 @@ func SetVncPasswd(ctx context.Context, args []string) (status string, err error)
 	}
 	err = db.Where("instance_id = ?", int64(instID)).Assign(vnc).FirstOrCreate(&model.Vnc{}).Error
 	if err != nil {
-		log.Println("Failed to update vnc", err)
+		logger.Debug("Failed to update vnc", err)
 		return
 	}
 	return

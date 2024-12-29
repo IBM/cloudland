@@ -9,6 +9,7 @@ package apis
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -55,8 +56,10 @@ type VPCPatchPayload struct {
 func (v *VPCAPI) Get(c *gin.Context) {
 	ctx := c.Request.Context()
 	uuID := c.Param("id")
+	logger.Debugf("Get vpc by uuid: %s", uuID)
 	router, err := routerAdmin.GetRouterByUUID(ctx, uuID)
 	if err != nil {
+		logger.Errorf("Failed to get vpc by uuid: %s, %+v", uuID, err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid vpc query", err)
 		return
 	}
@@ -65,6 +68,7 @@ func (v *VPCAPI) Get(c *gin.Context) {
 		ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
 		return
 	}
+	logger.Debugf("Get vpc by uuid: %s, %+v", uuID, vpcResp)
 	c.JSON(http.StatusOK, vpcResp)
 }
 
@@ -95,16 +99,20 @@ func (v *VPCAPI) Patch(c *gin.Context) {
 func (v *VPCAPI) Delete(c *gin.Context) {
 	ctx := c.Request.Context()
 	uuID := c.Param("id")
+	logger.Debugf("Delete vpc by uuid: %s", uuID)
 	router, err := routerAdmin.GetRouterByUUID(ctx, uuID)
 	if err != nil {
+		logger.Errorf("Failed to get vpc by uuid: %s, %+v", uuID, err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
 		return
 	}
 	err = routerAdmin.Delete(ctx, router)
 	if err != nil {
+		logger.Errorf("Failed to delete vpc by uuid: %s, %+v", uuID, err)
 		ErrorResponse(c, http.StatusBadRequest, "Not able to delete", err)
 		return
 	}
+	logger.Debugf("Deleted vpc by uuid: %s", uuID)
 	c.JSON(http.StatusNoContent, nil)
 }
 
@@ -123,11 +131,14 @@ func (v *VPCAPI) Create(c *gin.Context) {
 	payload := &VPCPayload{}
 	err := c.ShouldBindJSON(payload)
 	if err != nil {
+		logger.Errorf("Failed to bind json: %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
 		return
 	}
+	logger.Debugf("Creating vpc with %+v", payload)
 	router, err := routerAdmin.Create(ctx, payload.Name)
 	if err != nil {
+		logger.Errorf("Failed to create vpc: %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Failed to create vpc", err)
 		return
 	}
@@ -136,6 +147,7 @@ func (v *VPCAPI) Create(c *gin.Context) {
 		ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
 		return
 	}
+	logger.Debugf("Create vpc successfully, %+v", vpcResp)
 	c.JSON(http.StatusOK, vpcResp)
 }
 
@@ -143,9 +155,9 @@ func (v *VPCAPI) getVPCResponse(ctx context.Context, router *model.Router) (vpcR
 	owner := orgAdmin.GetOrgName(router.Owner)
 	vpcResp = &VPCResponse{
 		ResourceReference: &ResourceReference{
-			ID:    router.UUID,
-			Name:  router.Name,
-			Owner: owner,
+			ID:        router.UUID,
+			Name:      router.Name,
+			Owner:     owner,
 			CreatedAt: router.CreatedAt.Format(TimeStringForMat),
 			UpdatedAt: router.UpdatedAt.Format(TimeStringForMat),
 		},
@@ -172,22 +184,29 @@ func (v *VPCAPI) List(c *gin.Context) {
 	ctx := c.Request.Context()
 	offsetStr := c.DefaultQuery("offset", "0")
 	limitStr := c.DefaultQuery("limit", "50")
+	queryStr := c.DefaultQuery("query", "")
+	logger.Debugf("List vpcs, offset:%s, limit:%s, query:%s", offsetStr, limitStr, queryStr)
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil {
+		logger.Errorf("Invalid query offset: %s, %+v", offsetStr, err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset: "+offsetStr, err)
 		return
 	}
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
+		logger.Errorf("Invalid query limit: %s, %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid query limit: "+limitStr, err)
 		return
 	}
 	if offset < 0 || limit < 0 {
-		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", err)
+		errStr := "Invalid query offset or limit, cannot be negative"
+		logger.Errorf(errStr)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", errors.New(errStr))
 		return
 	}
-	total, routers, err := routerAdmin.List(ctx, int64(offset), int64(limit), "-created_at", "")
+	total, routers, err := routerAdmin.List(ctx, int64(offset), int64(limit), "-created_at", queryStr)
 	if err != nil {
+		logger.Errorf("Failed to list vpcs, %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Failed to list vpcs", err)
 		return
 	}
@@ -204,5 +223,6 @@ func (v *VPCAPI) List(c *gin.Context) {
 			return
 		}
 	}
+	logger.Debugf("List vpcs successfully, %+v", vpcListResp)
 	c.JSON(http.StatusOK, vpcListResp)
 }

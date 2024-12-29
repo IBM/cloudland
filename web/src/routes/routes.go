@@ -15,13 +15,13 @@ package routes
 import (
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
 
 	. "web/src/common"
 	"web/src/model"
+	rlog "web/src/utils/log"
 
 	"github.com/go-macaron/i18n"
 	"github.com/go-macaron/session"
@@ -31,6 +31,7 @@ import (
 )
 
 var UrlBefore string
+var logger = rlog.MustGetLogger("routes")
 
 func runArgs(cfg string) (args []interface{}) {
 	host := "127.0.0.1"
@@ -52,14 +53,17 @@ func runArgs(cfg string) (args []interface{}) {
 }
 
 func Run() (err error) {
+	logger.Info("Start to run cloudland base service")
 	m := New()
 	cert := viper.GetString("base.cert")
 	key := viper.GetString("base.key")
-	log.Printf("cert: %s, key: %s\n", cert, key)
+	logger.Debugf("cert: %s, key: %s\n", cert, key)
+	listen := viper.GetString("base.listen")
 	if cert != "" && key != "" {
-		listen := viper.GetString("base.listen")
+		logger.Infof("Running https service isten on %s\n", listen)
 		http.ListenAndServeTLS(listen, cert, key, m)
 	} else {
+		logger.Infof("Running http service on %s\n", listen)
 		m.Run(runArgs("base.listen")...)
 	}
 	return
@@ -67,6 +71,7 @@ func Run() (err error) {
 
 func New() (m *macaron.Macaron) {
 	m = macaron.Classic()
+
 	m.Use(i18n.I18n(i18n.Options{
 		Langs:       []string{"en-US", "zh-CN"},
 		Names:       []string{"English", "简体中文"},
@@ -89,6 +94,7 @@ func New() (m *macaron.Macaron) {
 		},
 	))
 	m.Use(LinkHandler)
+
 	m.Get("/", Index)
 	m.Get("/dashboard", dashboard.Show)
 	m.Get("/dashboard/getdata", dashboard.GetData)
@@ -187,10 +193,10 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 		" ", "%20",
 		"?", "%3F").Replace(
 		strings.TrimSuffix(c.Req.URL.Path, "/"))
-	log.Println(link)
+	logger.Debugf("LinkHandler: %s\n", link)
 	c.Data["Link"] = link
 	if login, ok := store.Get("login").(string); ok {
-		// log.Println("$$$$$$$$$$$$$$$$$$", c.Locale.Language())
+		// logger.Debug("$$$$$$$$$$$$$$$$$$", c.Locale.Language())
 		memberShip := &MemberShip{
 			OrgID:    store.Get("oid").(int64),
 			UserID:   store.Get("uid").(int64),

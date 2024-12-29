@@ -8,7 +8,6 @@ SPDX-License-Identifier: Apache-2.0
 package apis
 
 import (
-	"log"
 	"net/http"
 
 	. "web/src/common"
@@ -83,7 +82,7 @@ func Authorize() gin.HandlerFunc {
 		if realUser == "admin" {
 			memberShip.Role = model.Admin
 		}
-		log.Printf("MemberShip: %v\n", memberShip)
+		logger.Infof("MemberShip: %v\n", memberShip)
 		ctx := memberShip.SetContext(c.Request.Context())
 		c.Request = c.Request.WithContext(ctx)
 		c.Next()
