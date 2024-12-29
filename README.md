@@ -3,6 +3,10 @@ Cloudland is a lightweight Infrastructure-as-a-Service (IaaS) framework designed
    
 In addition to its built-in multi-tenant support, Cloudland offers seamless integration with third-party authentication and authorization systems, making it an ideal solution for private cloud deployments or hyper-converged infrastructure (HCI) setups.   
     
+## Architecture overview
+![](https://raw.githubusercontent.com/wiki/IBM/cloudland/images/architecture.svg?sanitize=true)   
+To support ultra-large scale, the hypervisors are organized into a tree hierarchy, the agents (scia are launched on demand)   
+
 **Cloudland’s key distinguishing features include:**   
 - Lightweight Architecture: Minimal components for a streamlined, efficient design.
 - Easy Learning Curve: Simple for both developers and operators to get up to speed quickly.
@@ -10,12 +14,6 @@ In addition to its built-in multi-tenant support, Cloudland offers seamless inte
 - HPC-Based Scalability: Built on a High-Performance Computing (HPC) architecture, ensuring exceptional scalability.
 - Self-Healing and Stable: Automatic failure recovery with robust stability for continuous operation.
 - Customizable: Easily extensible to implement custom features and meet specific needs.
-
-## Architecture overview
-![](https://raw.githubusercontent.com/wiki/IBM/cloudland/images/architecture.svg?sanitize=true)   
-To support ultra-large scale, the hypervisors are organized into a tree hierarchy, the agents (scia are launched on demand)   
-
-![](https://raw.githubusercontent.com/wiki/IBM/cloudland/images/tree.svg?sanitize=true)
 
 For more information, see the [Introduction](https://github.com/IBM/cloudland/wiki/Introduction)
 
