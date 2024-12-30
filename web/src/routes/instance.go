@@ -21,6 +21,7 @@ import (
 	"web/src/dbs"
 	"web/src/model"
 	"web/src/rpcs"
+	"web/src/utils/encrpt"
 
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
@@ -65,13 +66,14 @@ type NetworkLink struct {
 }
 
 type InstanceData struct {
-	Userdata string             `json:"userdata"`
-	VirtType string             `json:"virt_type"`
-	DNS      string             `json:"dns"`
-	Vlans    []*VlanInfo        `json:"vlans"`
-	Networks []*InstanceNetwork `json:"networks"`
-	Links    []*NetworkLink     `json:"links"`
-	Keys     []string           `json:"keys"`
+	Userdata   string             `json:"userdata"`
+	VirtType   string             `json:"virt_type"`
+	DNS        string             `json:"dns"`
+	Vlans      []*VlanInfo        `json:"vlans"`
+	Networks   []*InstanceNetwork `json:"networks"`
+	Links      []*NetworkLink     `json:"links"`
+	Keys       []string           `json:"keys"`
+	RootPasswd string             `json:"root_passwd"`
 }
 
 type InstancesData struct {
@@ -105,7 +107,11 @@ func (a *InstanceAdmin) getHyperGroup(ctx context.Context, imageType string, zon
 	return
 }
 
-func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, image *model.Image, flavor *model.Flavor, zone *model.Zone, routerID int64, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo, keys []*model.Key, hyperID int) (instances []*model.Instance, err error) {
+func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, image *model.Image,
+	flavor *model.Flavor, zone *model.Zone, routerID int64, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo,
+	keys []*model.Key, rootPasswd string, hyperID int) (instances []*model.Instance, err error) {
+	logger.Tracef("Create %d instances with image %s, flavor %s, zone %s, router %d, primary interface %v, secondary interfaces %v, keys %v, root password %s, hyper %d",
+		count, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, rootPasswd, hyperID)
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
 		if newTransaction {
@@ -115,7 +121,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 	memberShip := GetMemberShip(ctx)
 	if image.Status != "available" {
 		err = fmt.Errorf("Image status not available")
-		logger.Debug("Image status not available")
+		logger.Error("Image status not available")
 		return
 	}
 	zoneID := zone.ID
@@ -123,19 +129,24 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		hyper := &model.Hyper{}
 		err = db.Where("hostid = ?", hyperID).Take(hyper).Error
 		if err != nil {
-			logger.Debug("Failed to query hypervisor", err)
+			logger.Error("Failed to query hypervisor", err)
 			return
 		}
 		if hyper.ZoneID != zone.ID {
-			logger.Debugf("Hypervisor %v is not in zone %d, %v", hyper, zoneID, err)
+			logger.Errorf("Hypervisor %v is not in zone %d, %v", hyper, zoneID, err)
 			err = fmt.Errorf("Hypervisor is not in this zone")
 			return
 		}
 	}
 	hyperGroup, err := a.getHyperGroup(ctx, image.VirtType, zoneID)
 	if err != nil {
-		logger.Debug("No valid hypervisor", err)
+		logger.Error("No valid hypervisor", err)
 		return
+	}
+	passwdLogin := false
+	if rootPasswd != "" {
+		passwdLogin = true
+		logger.Debug("Root password login enabled")
 	}
 	execCommands := []*ExecutionCommand{}
 	i := 0
@@ -150,10 +161,23 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			return
 		}
 		snapshot := total/MaxmumSnapshot + 1 // Same snapshot reference can not be over 128, so use 96 here
-		instance := &model.Instance{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, Hostname: hostname, ImageID: image.ID, Snapshot: int64(snapshot), FlavorID: flavor.ID, Keys: keys, Userdata: userdata, Status: "pending", ZoneID: zoneID, RouterID: routerID}
+		instance := &model.Instance{
+			Model:       model.Model{Creater: memberShip.UserID},
+			Owner:       memberShip.OrgID,
+			Hostname:    hostname,
+			ImageID:     image.ID,
+			Snapshot:    int64(snapshot),
+			FlavorID:    flavor.ID,
+			Keys:        keys,
+			PasswdLogin: passwdLogin,
+			Userdata:    userdata,
+			Status:      "pending",
+			ZoneID:      zoneID,
+			RouterID:    routerID,
+		}
 		err = db.Create(instance).Error
 		if err != nil {
-			logger.Debug("DB create instance failed", err)
+			logger.Error("DB create instance failed", err)
 			return
 		}
 		instance.Image = image
@@ -164,14 +188,14 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		// boot volume name format: instance-15-image-2-3c0cca59-boot-volume-10
 		bootVolume, err = volumeAdmin.CreateVolume(ctx, fmt.Sprintf("instance-%d-%s-boot-volume", instance.ID, imagePrefix), flavor.Disk, instance.ID, true, 0, 0, 0, 0, "")
 		if err != nil {
-			logger.Debug("Failed to create boot volume", err)
+			logger.Error("Failed to create boot volume", err)
 			return
 		}
 		metadata := ""
 		var ifaces []*model.Interface
-		ifaces, metadata, err = a.buildMetadata(ctx, primaryIface, secondaryIfaces, keys, instance, userdata, routerID, zoneID, "")
+		ifaces, metadata, err = a.buildMetadata(ctx, primaryIface, secondaryIfaces, rootPasswd, keys, instance, userdata, routerID, zoneID, "")
 		if err != nil {
-			logger.Debug("Build instance metadata failed", err)
+			logger.Error("Build instance metadata failed", err)
 			return
 		}
 		instance.Interfaces = ifaces
@@ -197,7 +221,7 @@ func (a *InstanceAdmin) executeCommandList(ctx context.Context, cmdList []*Execu
 	for _, cmd := range cmdList {
 		err = hyperExecute(ctx, cmd.Control, cmd.Command)
 		if err != nil {
-			logger.Debug("Command execution failed", err)
+			logger.Error("Command execution failed", err)
 		}
 	}
 	return
@@ -207,14 +231,14 @@ func (a *InstanceAdmin) ChangeInstanceStatus(ctx context.Context, id int64, acti
 	ctx, db := GetContextDB(ctx)
 	instance = &model.Instance{Model: model.Model{ID: id}}
 	if err = db.Take(instance).Error; err != nil {
-		logger.Debug("Failed to query instance ", err)
+		logger.Error("Failed to query instance ", err)
 		return
 	}
 	control := fmt.Sprintf("inter=%d", instance.Hyper)
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh '%d' '%s'", instance.ID, action)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
-		logger.Debug("Delete vm command execution failed", err)
+		logger.Error("Delete vm command execution failed", err)
 		return
 	}
 	return
@@ -224,11 +248,11 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 	memberShip := GetMemberShip(ctx)
 	permit, err := memberShip.CheckOwner(model.Writer, "instances", instance.ID)
 	if err != nil {
-		logger.Debug("Failed to check owner")
+		logger.Error("Failed to check owner")
 		return
 	}
 	if !permit {
-		logger.Debug("Not authorized to delete the instance")
+		logger.Error("Not authorized to delete the instance")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -242,7 +266,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 	if hyperID != int(instance.Hyper) {
 		permit, err = memberShip.CheckAdmin(model.Admin, "instances", instance.ID)
 		if !permit {
-			logger.Debug("Not authorized to migrate VM")
+			logger.Error("Not authorized to migrate VM")
 			err = fmt.Errorf("Not authorized to migrate VM")
 			return
 		}
@@ -251,11 +275,12 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 	if flavor != nil && flavor.ID != instance.FlavorID {
 		if instance.Status == "running" {
 			err = fmt.Errorf("Instance must be shutdown first before resize")
-			logger.Debug("Instance must be shutdown first before resize", err)
+			logger.Error("Instance must be shutdown first before resize")
 			return
 		}
 		if flavor.Disk < instance.Flavor.Disk {
 			err = fmt.Errorf("Disk(s) can not be resized to smaller size")
+			logger.Error("Disk(s) can not be resized to smaller size")
 			return
 		}
 		cpu := flavor.Cpu - instance.Flavor.Cpu
@@ -271,7 +296,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/resize_vm.sh '%d' '%d' '%d' '%d' '%d' '%d' '%d'", instance.ID, flavor.Cpu, flavor.Memory, flavor.Disk, flavor.Swap, flavor.Ephemeral, disk)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
-			logger.Debug("Resize vm command execution failed", err)
+			logger.Error("Resize vm command execution failed", err)
 			return
 		}
 		instance.FlavorID = flavor.ID
@@ -281,7 +306,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 		instance.Hostname = hostname
 	}
 	if err = db.Model(instance).Updates(instance).Error; err != nil {
-		logger.Debug("Failed to save instance", err)
+		logger.Error("Failed to save instance", err)
 		return
 	}
 	if string(action) != "" {
@@ -289,7 +314,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh '%d' '%s'", instance.ID, string(action))
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
-			logger.Debug("action vm command execution failed", err)
+			logger.Error("action vm command execution failed", err)
 			return
 		}
 	}
@@ -304,7 +329,7 @@ func (a *InstanceAdmin) deleteInterfaces(ctx context.Context, instance *model.In
 	for _, iface := range instance.Interfaces {
 		err = a.deleteInterface(ctx, iface)
 		if err != nil {
-			logger.Debug("Failed to delete interface", err)
+			logger.Error("Failed to delete interface", err)
 			continue
 		}
 	}
@@ -314,7 +339,7 @@ func (a *InstanceAdmin) deleteInterfaces(ctx context.Context, instance *model.In
 func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interface) (err error) {
 	err = DeleteInterface(ctx, iface)
 	if err != nil {
-		logger.Debug("Failed to create interface")
+		logger.Error("Failed to create interface")
 		return
 	}
 	vlan := iface.Address.Subnet.Vlan
@@ -322,7 +347,7 @@ func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interf
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/del_host.sh '%d' '%s' '%s'", vlan, iface.MacAddr, iface.Address.Address)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
-		logger.Debug("Delete interface failed")
+		logger.Error("Delete interface failed")
 		return
 	}
 	return
@@ -333,20 +358,34 @@ func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subne
 	if subnet.Type == "public" {
 		permit := memberShip.CheckPermission(model.Admin)
 		if !permit {
-			logger.Debug("Not authorized to create interface in public subnet")
+			logger.Error("Not authorized to create interface in public subnet")
 			err = fmt.Errorf("Not authorized")
 			return
 		}
 	}
 	iface, err = CreateInterface(ctx, subnet, instance.ID, memberShip.OrgID, instance.Hyper, address, mac, ifname, "instance", secGroups)
 	if err != nil {
-		logger.Debug("Failed to create interface")
+		logger.Error("Failed to create interface")
 		return
 	}
 	return
 }
 
-func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo, keys []*model.Key, instance *model.Instance, userdata string, routerID, zoneID int64, service string) (interfaces []*model.Interface, metadata string, err error) {
+func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo,
+	rootPasswd string, keys []*model.Key, instance *model.Instance, userdata string, routerID, zoneID int64,
+	service string) (interfaces []*model.Interface, metadata string, err error) {
+	if rootPasswd == "" {
+		logger.Tracef("Build instance metadata with primaryIface: %v, secondaryIfaces: %+v, keys: %+v, instance: %+v, userdata: %s, routerID: %d, zoneID: %d, service: %s",
+			primaryIface, secondaryIfaces, keys, instance, userdata, routerID, zoneID, service)
+	} else {
+		logger.Tracef("Build instance metadata with primaryIface: %v, secondaryIfaces: %+v, keys: %+v, instance: %+v, userdata: %s, routerID: %d, zoneID: %d, service: %s, root password: %s",
+			primaryIface, secondaryIfaces, keys, instance, userdata, routerID, zoneID, service, "******")
+		rootPasswd, err = encrpt.Mkpasswd(rootPasswd, "sha512")
+		if err != nil {
+			logger.Errorf("Failed to encrypt root password, %v", err)
+			return nil, "", err
+		}
+	}
 	vlans := []*VlanInfo{}
 	instNetworks := []*InstanceNetwork{}
 	instLinks := []*NetworkLink{}
@@ -357,7 +396,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 	instRoute := &NetworkRoute{Network: "0.0.0.0", Netmask: "0.0.0.0", Gateway: gateway}
 	iface, err := a.createInterface(ctx, primary, primaryIP, primaryMac, instance, "eth0", primaryIface.SecurityGroups, zoneID)
 	if err != nil {
-		logger.Debug("Allocate address for primary subnet %s--%s/%s failed, %v", primary.Name, primary.Network, primary.Netmask, err)
+		logger.Errorf("Allocate address for primary subnet %s--%s/%s failed, %v", primary.Name, primary.Network, primary.Netmask, err)
 		return
 	}
 	interfaces = append(interfaces, iface)
@@ -368,7 +407,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 	instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
 	securityData, err := GetSecurityData(ctx, primaryIface.SecurityGroups)
 	if err != nil {
-		logger.Debug("Get security data for primary interface failed, %v", err)
+		logger.Errorf("Get security data for primary interface failed, %v", err)
 		return
 	}
 	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, Gateway: primary.Gateway, Router: primary.RouterID, IpAddr: address, MacAddr: iface.MacAddr, SecRules: securityData})
@@ -377,7 +416,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 		ifname := fmt.Sprintf("eth%d", i+1)
 		iface, err = a.createInterface(ctx, subnet, ifaceInfo.IpAddress, ifaceInfo.MacAddress, instance, ifname, ifaceInfo.SecurityGroups, zoneID)
 		if err != nil {
-			logger.Debug("Allocate address for secondary subnet %s--%s/%s failed, %v", subnet.Name, subnet.Network, subnet.Netmask, err)
+			logger.Errorf("Allocate address for secondary subnet %s--%s/%s failed, %v", subnet.Name, subnet.Network, subnet.Netmask, err)
 			return
 		}
 		interfaces = append(interfaces, iface)
@@ -391,7 +430,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 		})
 		securityData, err = GetSecurityData(ctx, ifaceInfo.SecurityGroups)
 		if err != nil {
-			logger.Debug("Get security data for secondary interface failed, %v", err)
+			logger.Errorf("Get security data for secondary interface failed, %v", err)
 			return
 		}
 		instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
@@ -404,7 +443,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 	image := &model.Image{Model: model.Model{ID: instance.ImageID}}
 	err = DB().Take(image).Error
 	if err != nil {
-		logger.Debug("Invalid image ", instance.ImageID)
+		logger.Error("Invalid image ", instance.ImageID)
 		return
 	}
 	virtType := image.VirtType
@@ -413,17 +452,18 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 		dns = ""
 	}
 	instData := &InstanceData{
-		Userdata: userdata,
-		VirtType: virtType,
-		DNS:      dns,
-		Vlans:    vlans,
-		Networks: instNetworks,
-		Links:    instLinks,
-		Keys:     instKeys,
+		Userdata:   userdata,
+		VirtType:   virtType,
+		DNS:        dns,
+		Vlans:      vlans,
+		Networks:   instNetworks,
+		Links:      instLinks,
+		Keys:       instKeys,
+		RootPasswd: rootPasswd,
 	}
 	jsonData, err := json.Marshal(instData)
 	if err != nil {
-		logger.Debug("Failed to marshal instance json data, %v", err)
+		logger.Errorf("Failed to marshal instance json data, %v", err)
 		return
 	}
 	return interfaces, string(jsonData), nil
@@ -439,12 +479,12 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.ValidateOwner(model.Writer, instance.Owner)
 	if !permit {
-		logger.Debug("Not authorized to delete the instance")
+		logger.Error("Not authorized to delete the instance")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
 	if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
-		logger.Debug("Failed to query floating ip(s), %v", err)
+		logger.Errorf("Failed to query floating ip(s), %v", err)
 		return
 	}
 	if instance.FloatingIps != nil {
@@ -452,14 +492,14 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 			fip.Instance = instance
 			err = floatingIpAdmin.Detach(ctx, fip)
 			if err != nil {
-				logger.Debug("Failed to detach floating ip, %v", err)
+				logger.Errorf("Failed to detach floating ip, %v", err)
 				return
 			}
 		}
 		instance.FloatingIps = nil
 	}
 	if err = db.Where("instance_id = ?", instance.ID).Find(&instance.Volumes).Error; err != nil {
-		logger.Debug("Failed to query floating ip(s), %v", err)
+		logger.Errorf("Failed to query floating ip(s), %v", err)
 		return
 	}
 	var bootVolume *model.Volume
@@ -471,7 +511,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 			}
 			_, err = volumeAdmin.Update(ctx, vol.ID, "", 0)
 			if err != nil {
-				logger.Debug("Failed to detach volume, %v", err)
+				logger.Errorf("Failed to detach volume, %v", err)
 				return
 			}
 		}
@@ -486,20 +526,20 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 		bootName = fmt.Sprintf("%s-%d", bootVolume.Name, bootVolume.ID)
 		err = volumeAdmin.Delete(ctx, bootVolume)
 		if err != nil {
-			logger.Debug("Failed to delete volume, %v", err)
+			logger.Errorf("Failed to delete volume, %v", err)
 			return
 		}
 	}
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh '%d' '%s' '%d'", instance.ID, bootName, instance.RouterID)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
-		logger.Debug("Delete vm command execution failed ", err)
+		logger.Errorf("Delete vm command execution failed ", err)
 		return
 	}
 	instance.Status = "deleting"
 	err = db.Model(instance).Updates(instance).Error
 	if err != nil {
-		logger.Debug("Failed to mark vm as deleting ", err)
+		logger.Errorf("Failed to mark vm as deleting ", err)
 		return
 	}
 	return
@@ -508,7 +548,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 func (a *InstanceAdmin) Get(ctx context.Context, id int64) (instance *model.Instance, err error) {
 	if id <= 0 {
 		err = fmt.Errorf("Invalid instance ID: %d", id)
-		logger.Debug(err)
+		logger.Error(err)
 		return
 	}
 	db := DB()
@@ -516,20 +556,20 @@ func (a *InstanceAdmin) Get(ctx context.Context, id int64) (instance *model.Inst
 	where := memberShip.GetWhere()
 	instance = &model.Instance{Model: model.Model{ID: id}}
 	if err = db.Preload("Volumes").Preload("Image").Preload("Zone").Preload("Flavor").Preload("Keys").Where(where).Take(instance).Error; err != nil {
-		logger.Debug("Failed to query instance, %v", err)
+		logger.Errorf("Failed to query instance, %v", err)
 		return
 	}
 	if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
-		logger.Debug("Failed to query floating ip(s), %v", err)
+		logger.Errorf("Failed to query floating ip(s), %v", err)
 		return
 	}
 	if err = db.Preload("SecurityGroups").Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
-		logger.Debug("Failed to query interfaces %v", err)
+		logger.Errorf("Failed to query interfaces %v", err)
 		return
 	}
 	permit := memberShip.ValidateOwner(model.Reader, instance.Owner)
 	if !permit {
-		logger.Debug("Not authorized to read the instance")
+		logger.Error("Not authorized to read the instance")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -537,7 +577,7 @@ func (a *InstanceAdmin) Get(ctx context.Context, id int64) (instance *model.Inst
 	if permit {
 		instance.OwnerInfo = &model.Organization{Model: model.Model{ID: instance.Owner}}
 		if err = db.Take(instance.OwnerInfo).Error; err != nil {
-			logger.Debug("Failed to query owner info", err)
+			logger.Error("Failed to query owner info", err)
 			return
 		}
 	}
@@ -551,20 +591,20 @@ func (a *InstanceAdmin) GetInstanceByUUID(ctx context.Context, uuID string) (ins
 	where := memberShip.GetWhere()
 	instance = &model.Instance{}
 	if err = db.Preload("Volumes").Preload("Image").Preload("Zone").Preload("Flavor").Preload("Keys").Where(where).Where("uuid = ?", uuID).Take(instance).Error; err != nil {
-		logger.Debug("Failed to query instance, %v", err)
+		logger.Errorf("Failed to query instance, %v", err)
 		return
 	}
 	if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
-		logger.Debug("Failed to query floating ip(s), %v", err)
+		logger.Errorf("Failed to query floating ip(s), %v", err)
 		return
 	}
 	if err = db.Preload("SecurityGroups").Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
-		logger.Debug("Failed to query interfaces %v", err)
+		logger.Errorf("Failed to query interfaces %v", err)
 		return
 	}
 	permit := memberShip.ValidateOwner(model.Reader, instance.Owner)
 	if !permit {
-		logger.Debug("Not authorized to read the instance")
+		logger.Error("Not authorized to read the instance")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -575,7 +615,7 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -598,24 +638,24 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
 	if err = db.Preload("Volumes").Preload("Image").Preload("Zone").Preload("Flavor").Preload("Keys").Where(where).Where(query).Find(&instances).Error; err != nil {
-		logger.Debug("Failed to query instance(s), %v", err)
+		logger.Errorf("Failed to query instance(s), %v", err)
 		return
 	}
 	db = db.Offset(0).Limit(-1)
 	for _, instance := range instances {
 		if err = db.Preload("SecurityGroups").Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
-			logger.Debug("Failed to query interfaces %v", err)
+			logger.Errorf("Failed to query interfaces %v", err)
 			return
 		}
 		if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
-			logger.Debug("Failed to query floating ip(s), %v", err)
+			logger.Errorf("Failed to query floating ip(s), %v", err)
 			return
 		}
 		permit := memberShip.CheckPermission(model.Admin)
 		if permit {
 			instance.OwnerInfo = &model.Organization{Model: model.Model{ID: instance.Owner}}
 			if err = db.Take(instance.OwnerInfo).Error; err != nil {
-				logger.Debug("Failed to query owner info", err)
+				logger.Error("Failed to query owner info", err)
 				return
 			}
 		}
@@ -655,7 +695,7 @@ func (v *InstanceView) UpdateTable(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -690,7 +730,7 @@ func (v *InstanceView) Status(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -757,7 +797,7 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -836,18 +876,18 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instanceID))
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	instance := &model.Instance{Model: model.Model{ID: int64(instanceID)}}
 	if err = db.Preload("Interfaces").Take(instance).Error; err != nil {
-		logger.Debug("Image query failed", err)
+		logger.Error("Image query failed", err)
 		return
 	}
 	if err = db.Where("instance_id = ?", instanceID).Find(&instance.FloatingIps).Error; err != nil {
-		logger.Debug("Failed to query floating ip(s), %v", err)
+		logger.Errorf("Failed to query floating ip(s), %v", err)
 		return
 	}
 	_, subnets, err := subnetAdmin.List(c.Req.Context(), 0, -1, "", "")
@@ -884,12 +924,12 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 		if c.QueryTrim("action") != "" {
 			instanceID64, err := strconv.ParseInt(id, 10, 64)
 			if err != nil {
-				logger.Debug("Change String to int64 failed", err)
+				logger.Error("Change String to int64 failed", err)
 				return
 			}
 			_, vmError := instanceAdmin.ChangeInstanceStatus(c.Req.Context(), instanceID64, c.QueryTrim("action"))
 			if vmError != nil {
-				logger.Debug("Launch vm command execution failed", err)
+				logger.Error("Launch vm command execution failed", err)
 				return
 			}
 			redirectTo := "../instances"
@@ -916,7 +956,7 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 	action := c.QueryTrim("action")
 	instance, err := instanceAdmin.Get(ctx, instanceID)
 	if err != nil {
-		logger.Debug("Invalid instance", err)
+		logger.Error("Invalid instance", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -925,7 +965,7 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 	if flavorID > 0 {
 		flavor, err = flavorAdmin.Get(ctx, flavorID)
 		if err != nil {
-			logger.Debug("Invalid flavor", err)
+			logger.Error("Invalid flavor", err)
 			c.Data["ErrorMsg"] = err.Error()
 			c.HTML(http.StatusBadRequest, "error")
 			return
@@ -933,7 +973,7 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 	}
 	err = instanceAdmin.Update(c.Req.Context(), instance, flavor, hostname, PowerAction(action), hyperID)
 	if err != nil {
-		logger.Debug("update instance failed, %v", err)
+		logger.Errorf("update instance failed, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -944,30 +984,30 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 func (v *InstanceView) checkNetparam(subnet *model.Subnet, IP, mac string) (macAddr string, err error) {
 	_, inNet, err := net.ParseCIDR(subnet.Network)
 	if err != nil {
-		logger.Debug("CIDR parsing failed ", err)
+		logger.Error("CIDR parsing failed ", err)
 		return
 	}
 	if IP != "" && !inNet.Contains(net.ParseIP(IP)) {
-		logger.Debugf("Primary IP %s not belonging to subnet %v\n", IP, subnet)
+		logger.Errorf("Primary IP %s not belonging to subnet %v\n", IP, subnet)
 		err = fmt.Errorf("Primary IP not belonging to subnet")
 		return
 	}
 	if mac != "" {
 		macl := strings.Split(mac, ":")
 		if len(macl) != 6 {
-			logger.Debug("Invalid mac address format")
-			err = fmt.Errorf("Invalid mac address format")
+			logger.Errorf("Invalid mac address format: %s", mac)
+			err = fmt.Errorf("Invalid mac address format: %s", mac)
 			return
 		}
 		macAddr = strings.ToLower(mac)
 		var tmp [6]int
 		_, err = fmt.Sscanf(macAddr, "%02x:%02x:%02x:%02x:%02x:%02x", &tmp[0], &tmp[1], &tmp[2], &tmp[3], &tmp[4], &tmp[5])
 		if err != nil {
-			logger.Debug("Failed to parse mac address")
+			logger.Error("Failed to parse mac address")
 			return
 		}
 		if tmp[0]%2 == 1 {
-			logger.Debug("Not a valid unicast mac address")
+			logger.Error("Not a valid unicast mac address")
 			err = fmt.Errorf("Not a valid unicast mac address")
 			return
 		}
@@ -980,17 +1020,18 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
-		logger.Debug("Need Write permissions")
+		logger.Error("Need Write permissions")
 		c.Data["ErrorMsg"] = "Need Write permissions"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	redirectTo := "../instances"
 	hostname := c.QueryTrim("hostname")
+	rootPasswd := c.QueryTrim("rootpasswd")
 	cnt := c.QueryTrim("count")
 	count, err := strconv.Atoi(cnt)
 	if err != nil {
-		logger.Debug("Invalid instance count", err)
+		logger.Error("Invalid instance count", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -999,7 +1040,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	if hyperID >= 0 {
 		permit := memberShip.CheckPermission(model.Admin)
 		if !permit {
-			logger.Debug("Need Admin permissions")
+			logger.Error("Need Admin permissions")
 			c.Data["ErrorMsg"] = "Need Admin permissions"
 			c.HTML(http.StatusBadRequest, "error")
 			return
@@ -1007,7 +1048,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	}
 	imageID := c.QueryInt64("image")
 	if imageID <= 0 {
-		logger.Debug("No valid image ID", imageID)
+		logger.Error("No valid image ID", imageID)
 		c.Data["ErrorMsg"] = "No valid image ID"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -1020,14 +1061,14 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	}
 	flavorID := c.QueryInt64("flavor")
 	if flavorID <= 0 {
-		logger.Debug("Invalid flavor ID", flavorID)
+		logger.Error("Invalid flavor ID", flavorID)
 		c.Data["ErrorMsg"] = "Invalid flavor ID"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	flavor, err := flavorAdmin.Get(ctx, flavorID)
 	if err != nil {
-		logger.Debug("No valid flavor", err)
+		logger.Error("No valid flavor", err)
 		c.Data["ErrorMsg"] = "No valid flavor"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -1035,7 +1076,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	zoneID := c.QueryInt64("zone")
 	zone, err := zoneAdmin.Get(ctx, zoneID)
 	if err != nil {
-		logger.Debug("No valid zone", err)
+		logger.Error("No valid zone", err)
 		c.Data["ErrorMsg"] = "No valid zone"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -1043,7 +1084,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	primary := c.QueryTrim("primary")
 	primaryID, err := strconv.Atoi(primary)
 	if err != nil {
-		logger.Debug("Invalid primary subnet ID, %v", err)
+		logger.Error("Invalid primary subnet ID, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -1053,7 +1094,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	primaryMac := c.QueryTrim("primarymac")
 	primarySubnet, err := subnetAdmin.Get(ctx, int64(primaryID))
 	if err != nil {
-		logger.Debug("Get primary subnet failed", err)
+		logger.Error("Get primary subnet failed", err)
 		c.HTML(http.StatusBadRequest, err.Error())
 		return
 	}
@@ -1075,13 +1116,13 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			var secgroup *model.SecurityGroup
 			secgroup, err = secgroupAdmin.Get(ctx, int64(sgID))
 			if err != nil {
-				logger.Debug("Get security groups failed", err)
+				logger.Error("Get security groups failed", err)
 				c.Data["ErrorMsg"] = "Get security groups failed"
 				c.HTML(http.StatusBadRequest, err.Error())
 				return
 			}
 			if secgroup.RouterID != primarySubnet.RouterID {
-				logger.Debug("Security group is not the same router with subnet")
+				logger.Error("Security group is not the same router with subnet")
 				c.Data["ErrorMsg"] = "Security group is not in subnet vpc"
 				c.HTML(http.StatusBadRequest, "Security group not in subnet vpc")
 				return
@@ -1095,7 +1136,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			var router *model.Router
 			router, err = routerAdmin.Get(ctx, routerID)
 			if err != nil {
-				logger.Debug("Get router failed", err)
+				logger.Error("Get router failed", err)
 				c.Data["ErrorMsg"] = "Get router failed"
 				c.HTML(http.StatusBadRequest, err.Error())
 				return
@@ -1105,7 +1146,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		var secGroup *model.SecurityGroup
 		secGroup, err = secgroupAdmin.Get(ctx, int64(sgID))
 		if err != nil {
-			logger.Debug("Get security groups failed", err)
+			logger.Error("Get security groups failed", err)
 			c.Data["ErrorMsg"] = "Get security groups failed"
 			c.HTML(http.StatusBadRequest, err.Error())
 			return
@@ -1124,18 +1165,18 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	for i := 0; i < len(s); i++ {
 		sID, err := strconv.Atoi(s[i])
 		if err != nil {
-			logger.Debug("Invalid secondary subnet ID", err)
+			logger.Error("Invalid secondary subnet ID", err)
 			continue
 		}
 		var subnet *model.Subnet
 		subnet, err = subnetAdmin.Get(ctx, int64(sID))
 		if err != nil {
-			logger.Debug("Get secondary subnet failed", err)
+			logger.Error("Get secondary subnet failed", err)
 			c.HTML(http.StatusBadRequest, err.Error())
 			return
 		}
 		if subnet.RouterID != primarySubnet.RouterID {
-			logger.Debug("All subnets must be in the same vpc", err)
+			logger.Error("All subnets must be in the same vpc", err)
 			c.Data["ErrorMsg"] = "All subnets must be in the same vpc"
 			c.HTML(http.StatusBadRequest, "All subnets must be in the same vpc")
 			return
@@ -1153,13 +1194,13 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	for i := 0; i < len(k); i++ {
 		kID, err := strconv.Atoi(k[i])
 		if err != nil {
-			logger.Debug("Invalid key ID", err)
+			logger.Error("Invalid key ID", err)
 			continue
 		}
 		var key *model.Key
 		key, err = keyAdmin.Get(ctx, int64(kID))
 		if err != nil {
-			logger.Debug("Failed to access key", err)
+			logger.Error("Failed to access key", err)
 			c.Data["ErrorMsg"] = "Failed to access key"
 			c.HTML(http.StatusBadRequest, "error")
 			return
@@ -1167,9 +1208,9 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		instKeys = append(instKeys, key)
 	}
 	userdata := c.QueryTrim("userdata")
-	_, err = instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, primarySubnet.RouterID, primaryIface, secondaryIfaces, instKeys, hyperID)
+	_, err = instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, primarySubnet.RouterID, primaryIface, secondaryIfaces, instKeys, rootPasswd, hyperID)
 	if err != nil {
-		logger.Debug("Create instance failed", err)
+		logger.Error("Create instance failed", err)
 		c.HTML(http.StatusBadRequest, err.Error())
 		return
 	}

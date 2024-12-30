@@ -27,6 +27,7 @@ type Instance struct {
 	Image       *Image `gorm:"foreignkey:ImageID"`
 	Snapshot    int64
 	Keys        []*Key `gorm:"many2many:instance_keys;"`
+	PasswdLogin bool   `gorm:"default:false"`
 	Userdata    string `gorm:"type:text"`
 	Hyper       int32  `gorm:"default:-1"`
 	ZoneID      int64
