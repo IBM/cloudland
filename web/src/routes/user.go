@@ -41,7 +41,7 @@ func (a *UserAdmin) Create(ctx context.Context, username, password string) (user
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
-		log.Println("Not authorized to delete the user")
+		logger.Debug("Not authorized to delete the user")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -73,7 +73,7 @@ func (a *UserAdmin) Create(ctx context.Context, username, password string) (user
 func (a *UserAdmin) Get(ctx context.Context, id int64) (user *model.User, err error) {
 	if id <= 0 {
 		err = fmt.Errorf("Invalid user ID: %d", id)
-		logger.Debug(err)
+		logger.Debug("%v", err)
 		return
 	}
 	db := DB()
