@@ -38,6 +38,13 @@ type UserAdmin struct{}
 type UserView struct{}
 
 func (a *UserAdmin) Create(ctx context.Context, username, password string) (user *model.User, err error) {
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		log.Println("Not authorized to delete the user")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
 		if newTransaction {
@@ -47,7 +54,6 @@ func (a *UserAdmin) Create(ctx context.Context, username, password string) (user
 	if password, err = a.GenerateFromPassword(password); err != nil {
 		return
 	}
-	memberShip := GetMemberShip(ctx)
 	user = &model.User{Model: model.Model{Creater: memberShip.UserID}, Username: username, Password: password}
 	err = db.Create(user).Error
 	if err != nil {
