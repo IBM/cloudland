@@ -19,6 +19,7 @@ virsh domiflist $vm_ID | grep $vm_mac
 if [ $? -ne 0 ]; then
     virsh attach-interface $vm_ID bridge $vm_br --model virtio --mac $vm_mac --target $nic_name --live
     virsh attach-interface $vm_ID bridge $vm_br --model virtio --mac $vm_mac --target $nic_name --config
+    virsh domiftune $vm_ID $nic_name --inbound 1000000,2000000,2000 --outbound 1000000,2000000,2000
 fi
 ./create_sg_chain.sh $nic_name $vm_ip $vm_mac
 ./apply_sg_rule.sh $nic_name
