@@ -61,13 +61,33 @@ func Reset() {
 // logging.max_backups: maximum number of old log files to retain
 // logging.max_age: maximum number of days to retain old log files
 func InitLogger(log_file string) {
+	if log_file == "" {
+		log_file = "cl.log"
+	}
+	log_dir := viper.GetString("logging.log_dir")
+	if log_dir == "" {
+		log_dir = "/opt/cloudland/log"
+	}
 	log_file = fmt.Sprintf("%s/%s", viper.GetString("logging.log_dir"), log_file)
 	log_level := viper.GetString("logging.log_level")
+	if log_level == "" {
+		log_level = "debug"
+	}
 	max_size := viper.GetInt("logging.max_size")
+	if max_size == 0 {
+		max_size = 100
+	}
 	max_backups := viper.GetInt("logging.max_backups")
+	if max_backups == 0 {
+		max_backups = 10
+	}
 	max_age := viper.GetInt("logging.max_age")
+	if max_age == 0 {
+		max_age = 30
+	}
 	logger.Debugf("initializing logger with log file: %s, log level: %s, max size: %d, max backups: %d, max age: %d",
 		log_file, log_level, max_size, max_backups, max_age)
+
 	var err error
 	defaultLevel, err = logrus.ParseLevel(log_level)
 	if err != nil {
