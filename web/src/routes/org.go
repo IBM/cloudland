@@ -41,7 +41,7 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
-		log.Println("Not authorized to delete the user")
+		logger.Debug("Not authorized to delete the user")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -185,7 +185,7 @@ func (a *OrgAdmin) Delete(ctx context.Context, id int64) (err error) {
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
-		log.Println("Not authorized to delete the user")
+		logger.Debug("Not authorized to delete the user")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
