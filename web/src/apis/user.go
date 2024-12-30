@@ -8,6 +8,7 @@ SPDX-License-Identifier: Apache-2.0
 package apis
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -59,8 +60,10 @@ type UserListResponse struct {
 func (v *UserAPI) Get(c *gin.Context) {
 	ctx := c.Request.Context()
 	uuID := c.Param("id")
+	logger.Debugf("Get user by uuid: %s", uuID)
 	user, err := userAdmin.GetUserByUUID(ctx, uuID)
 	if err != nil {
+		logger.Errorf("Failed to get user by uuid: %s", uuID)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
 		return
 	}
@@ -70,6 +73,7 @@ func (v *UserAPI) Get(c *gin.Context) {
 			Name: user.Username,
 		},
 	}
+	logger.Debugf("Got user : %+v", userResp)
 	c.JSON(http.StatusOK, userResp)
 }
 
@@ -89,14 +93,17 @@ func (v *UserAPI) Patch(c *gin.Context) {
 	payload := &UserPatchPayload{}
 	err := c.ShouldBindJSON(payload)
 	if err != nil {
+		logger.Errorf("Failed to bind json: %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
 		return
 	}
 	user, err := userAdmin.GetUserByUUID(ctx, uuID)
 	if err != nil {
+		logger.Errorf("Failed to get user by uuid: %s", uuID)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
 		return
 	}
+	logger.Debugf("Patch user %s with %+v", uuID, payload)
 	user, err = userAdmin.Update(ctx, user.ID, payload.Password, nil)
 	if err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
@@ -104,12 +111,13 @@ func (v *UserAPI) Patch(c *gin.Context) {
 	}
 	userResp := &UserResponse{
 		UserInfo: &ResourceReference{
-			ID:   user.UUID,
-			Name: user.Username,
+			ID:        user.UUID,
+			Name:      user.Username,
 			CreatedAt: user.CreatedAt.Format(TimeStringForMat),
 			UpdatedAt: user.UpdatedAt.Format(TimeStringForMat),
 		},
 	}
+	logger.Debugf("Patched user %s successfully, %+v", uuID, userResp)
 	c.JSON(http.StatusOK, userResp)
 }
 
@@ -125,13 +133,16 @@ func (v *UserAPI) Patch(c *gin.Context) {
 func (v *UserAPI) Delete(c *gin.Context) {
 	ctx := c.Request.Context()
 	uuID := c.Param("id")
+	logger.Debugf("Deleting user %s", uuID)
 	user, err := userAdmin.GetUserByUUID(ctx, uuID)
 	if err != nil {
+		logger.Errorf("Failed to get user by uuid: %s, %+v", uuID, err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
 		return
 	}
 	err = userAdmin.Delete(ctx, user)
 	if err != nil {
+		logger.Errorf("Failed to delete user %s, %+v", uuID, err)
 		ErrorResponse(c, http.StatusBadRequest, "Not able to delete", err)
 		return
 	}
@@ -153,36 +164,41 @@ func (v *UserAPI) Create(c *gin.Context) {
 	payload := &UserPayload{}
 	err := c.ShouldBindJSON(payload)
 	if err != nil {
+		logger.Errorf("Failed to bind json: %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
 		return
 	}
+	logger.Debugf("Creating user with %+v", payload)
 	username := payload.Username
 	password := payload.Password
 	user, err := userAdmin.Create(ctx, username, password)
 	if err != nil {
+		logger.Errorf("Failed to create user: %+v", err)
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to create user", err)
 		return
 	}
 	org, err := orgAdmin.Create(ctx, username, username)
 	if err != nil {
+		logger.Errorf("Failed to create org: %+v", err)
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to create org", err)
 		return
 	}
 	userResp := &UserResponse{
 		UserInfo: &ResourceReference{
-			ID:   user.UUID,
-			Name: username,
+			ID:        user.UUID,
+			Name:      username,
 			CreatedAt: user.CreatedAt.Format(TimeStringForMat),
 			UpdatedAt: user.UpdatedAt.Format(TimeStringForMat),
 		},
 		OrgInfo: &ResourceReference{
-			ID:   org.UUID,
-			Name: username,
+			ID:        org.UUID,
+			Name:      username,
 			CreatedAt: org.CreatedAt.Format(TimeStringForMat),
 			UpdatedAt: org.UpdatedAt.Format(TimeStringForMat),
 		},
 		Role: model.Owner.String(),
 	}
+	logger.Debugf("Created user successfully, %+v", userResp)
 	c.JSON(http.StatusOK, userResp)
 }
 
@@ -198,22 +214,29 @@ func (v *UserAPI) List(c *gin.Context) {
 	ctx := c.Request.Context()
 	offsetStr := c.DefaultQuery("offset", "0")
 	limitStr := c.DefaultQuery("limit", "50")
+	queryStr := c.DefaultQuery("query", "")
+	logger.Debugf("List users, offset:%s, limit:%s, query:%s", offsetStr, limitStr, queryStr)
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil {
+		logger.Errorf("Invalid query offset: %s, %+v", offsetStr, err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset: "+offsetStr, err)
 		return
 	}
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
+		logger.Errorf("Invalid query limit: %s, %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid query limit: "+limitStr, err)
 		return
 	}
 	if offset < 0 || limit < 0 {
-		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", err)
+		errStr := "Invalid query offset or limit, cannot be negative"
+		logger.Errorf(errStr)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", errors.New(errStr))
 		return
 	}
-	total, users, err := userAdmin.List(ctx, int64(offset), int64(limit), "-created_at", "")
+	total, users, err := userAdmin.List(ctx, int64(offset), int64(limit), "-created_at", queryStr)
 	if err != nil {
+		logger.Errorf("Failed to list vpcs, %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Failed to list vpcs", err)
 		return
 	}
@@ -226,13 +249,14 @@ func (v *UserAPI) List(c *gin.Context) {
 	for i, user := range users {
 		userListResp.Users[i] = &UserResponse{
 			UserInfo: &ResourceReference{
-				ID:   user.UUID,
-				Name: user.Username,
+				ID:        user.UUID,
+				Name:      user.Username,
 				CreatedAt: user.CreatedAt.Format(TimeStringForMat),
 				UpdatedAt: user.UpdatedAt.Format(TimeStringForMat),
 			},
 		}
 	}
+	logger.Debugf("List users successfully, %+v", userListResp)
 	c.JSON(http.StatusOK, userListResp)
 }
 
@@ -254,8 +278,10 @@ func (v *UserAPI) LoginPost(c *gin.Context) {
 	}
 	username := payload.Username
 	password := payload.Password
+	logger.Debugf("Login with username: %s", username)
 	user, err := userAdmin.Validate(c.Request.Context(), username, password)
 	if err != nil {
+		logger.Errorf("Failed to validate user: %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid username or password", err)
 		return
 	}
@@ -265,11 +291,13 @@ func (v *UserAPI) LoginPost(c *gin.Context) {
 	}
 	org, err := orgAdmin.GetOrgByName(orgName)
 	if err != nil {
+		logger.Errorf("Failed to get org: %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid organization", err)
 		return
 	}
 	_, role, token, _, _, err := userAdmin.AccessToken(user.ID, username, orgName)
 	if err != nil {
+		logger.Errorf("Failed to get access token: %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid organization with username", err)
 		return
 	}
@@ -285,6 +313,7 @@ func (v *UserAPI) LoginPost(c *gin.Context) {
 		AccessToken: token,
 		Role:        role.String(),
 	}
+	logger.Debugf("Login successfully, %+v", userResp)
 	c.JSON(http.StatusOK, userResp)
 	return
 }

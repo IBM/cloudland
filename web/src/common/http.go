@@ -8,8 +8,6 @@ SPDX-License-Identifier: Apache-2.0
 package common
 
 import (
-	"log"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,15 +19,15 @@ type BaseReference struct {
 }
 
 type ResourceReference struct {
-	ID   string `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
-	Owner string `json:"owner,omitempty"`
+	ID        string `json:"id,omitempty"`
+	Name      string `json:"name,omitempty"`
+	Owner     string `json:"owner,omitempty"`
 	CreatedAt string `json:"created_at,omitempty"`
 	UpdatedAt string `json:"updated_at,omitempty"`
 }
 
 type BaseID struct {
-	ID   string `json:"id" binding:"required,uuid"`
+	ID string `json:"id" binding:"required,uuid"`
 }
 
 type APIError struct {
@@ -39,7 +37,7 @@ type APIError struct {
 }
 
 func ErrorResponse(c *gin.Context, code int, errorMsg string, err error) {
-	log.Printf("%s, %v\n", errorMsg, err)
+	logger.Debugf("%s, %v\n", errorMsg, err)
 	if err != nil {
 		errorMsg = errorMsg + ": " + err.Error()
 	}

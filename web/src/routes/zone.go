@@ -10,7 +10,6 @@ package routes
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 
 	. "web/src/common"
@@ -58,7 +57,7 @@ func (a *ZoneAdmin) Get(ctx context.Context, id int64) (zone *model.Zone, err er
 	db := DB()
 	zone = &model.Zone{ID: id}
 	if err = db.Take(zone).Error; err != nil {
-		log.Println("Failed to query zone", err)
+		logger.Debug("Failed to query zone", err)
 		return
 	}
 	return
@@ -69,7 +68,7 @@ func (a *ZoneAdmin) GetZoneByName(ctx context.Context, name string) (zone *model
 	zone = &model.Zone{}
 	err = db.Where("name = ?", name).Take(zone).Error
 	if err != nil {
-		log.Println("Failed to query zone, %v", err)
+		logger.Debug("Failed to query zone, %v", err)
 		return
 	}
 	return
@@ -79,7 +78,7 @@ func (v *ZoneView) List(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
-		log.Println("Not authorized for this operation")
+		logger.Debug("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return

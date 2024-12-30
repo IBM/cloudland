@@ -16,7 +16,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"web/src/utils/log"
 )
+
+var logger = log.MustGetLogger("model")
 
 type Model struct {
 	ID        int64 `gorm:"primary_key"`
@@ -31,6 +35,7 @@ type Model struct {
 func (m *Model) BeforeCreate() (err error) {
 	if m.UUID == "" {
 		m.UUID = uuid.New().String()
+		logger.Debugf("Create a new model with uuid: %s", m.UUID)
 	}
 	return
 }

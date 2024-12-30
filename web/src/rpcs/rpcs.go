@@ -18,9 +18,13 @@ import (
 	"strconv"
 	"strings"
 
+	"web/src/utils/log"
+
 	"github.com/spf13/viper"
 	"gopkg.in/macaron.v1"
 )
+
+var logger = log.MustGetLogger("rpcs")
 
 func runArgs(cfg string) (args []interface{}) {
 	host := "127.0.0.1"

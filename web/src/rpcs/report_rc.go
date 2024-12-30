@@ -9,7 +9,6 @@ package rpcs
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
@@ -26,7 +25,7 @@ func ReportRC(ctx context.Context, args []string) (status string, err error) {
 	argn := len(args)
 	if argn < 4 {
 		err = fmt.Errorf("Wrong params")
-		log.Println("Invalid args", err)
+		logger.Debug("Invalid args", err)
 		return
 	}
 	id := ctx.Value("hostid").(int32)
@@ -39,14 +38,14 @@ func ReportRC(ctx context.Context, args []string) (status string, err error) {
 	for _, arg := range args[1:] {
 		kv := strings.Split(arg, "=")
 		if len(kv) != 2 {
-			log.Println("Invalid key value pair", arg)
+			logger.Debug("Invalid key value pair", arg)
 			return
 		}
 		key := kv[0]
 		value := kv[1]
 		vp := strings.Split(value, "/")
 		if len(vp) != 2 {
-			log.Println("Invalid format of value pair", value)
+			logger.Debug("Invalid format of value pair", value)
 			return
 		}
 		if key == "cpu" {
@@ -59,10 +58,10 @@ func ReportRC(ctx context.Context, args []string) (status string, err error) {
 			disk, err = strconv.ParseInt(vp[0], 10, 64)
 			diskTotal, err = strconv.ParseInt(vp[1], 10, 64)
 		} else if key != "network" && key != "load" {
-			log.Println("Undefined resource type")
+			logger.Debug("Undefined resource type")
 		}
 		if err != nil {
-			log.Println("Failed to get value", err)
+			logger.Debug("Failed to get value", err)
 		}
 	}
 	db := DB()
@@ -77,7 +76,7 @@ func ReportRC(ctx context.Context, args []string) (status string, err error) {
 	}
 	err = db.Where("hostid = ?", id).Assign(resource).FirstOrCreate(&model.Resource{}).Error
 	if err != nil {
-		log.Println("Failed to create or update hyper resource", err)
+		logger.Debug("Failed to create or update hyper resource", err)
 		return
 	}
 	return

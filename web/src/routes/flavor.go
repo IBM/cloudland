@@ -10,7 +10,6 @@ package routes
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -34,7 +33,7 @@ func (a *FlavorAdmin) Create(ctx context.Context, name string, cpu, memory, disk
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
-		log.Println("Not authorized for this operation")
+		logger.Debug("Not authorized for this operation")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -59,7 +58,7 @@ func (a *FlavorAdmin) GetFlavorByName(ctx context.Context, name string) (flavor 
 	flavor = &model.Flavor{}
 	err = db.Where("name = ?", name).Take(flavor).Error
 	if err != nil {
-		log.Println("Failed to query flavor, %v", err)
+		logger.Debug("Failed to query flavor, %v", err)
 		return
 	}
 	return
@@ -68,14 +67,14 @@ func (a *FlavorAdmin) GetFlavorByName(ctx context.Context, name string) (flavor 
 func (a *FlavorAdmin) Get(ctx context.Context, id int64) (flavor *model.Flavor, err error) {
 	if id <= 0 {
 		err = fmt.Errorf("Invalid flavor ID: %d", id)
-		log.Println(err)
+		logger.Debug(err)
 		return
 	}
 	db := DB()
 	flavor = &model.Flavor{Model: model.Model{ID: id}}
 	err = db.Take(flavor).Error
 	if err != nil {
-		log.Println("DB failed to query flavor, err", err)
+		logger.Debug("DB failed to query flavor, err", err)
 		return
 	}
 	return
@@ -85,7 +84,7 @@ func (a *FlavorAdmin) Delete(ctx context.Context, flavor *model.Flavor) (err err
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
-		log.Println("Not authorized for this operation")
+		logger.Debug("Not authorized for this operation")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -96,7 +95,7 @@ func (a *FlavorAdmin) Delete(ctx context.Context, flavor *model.Flavor) (err err
 		}
 	}()
 	if err = db.Delete(flavor).Error; err != nil {
-		log.Println("Failed to delete flavor", err)
+		logger.Debug("Failed to delete flavor", err)
 		return
 	}
 	return
@@ -197,7 +196,7 @@ func (v *FlavorView) New(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
-		log.Println("Not authorized for this operation")
+		logger.Debug("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -230,7 +229,7 @@ func (v *FlavorView) Create(c *macaron.Context, store session.Store) {
 	}
 	_, err = flavorAdmin.Create(c.Req.Context(), name, int32(cpu), int32(memory), int32(disk))
 	if err != nil {
-		log.Println("Create flavor failed", err)
+		logger.Debug("Create flavor failed", err)
 		c.HTML(500, "500")
 		return
 	}

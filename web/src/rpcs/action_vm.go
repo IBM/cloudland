@@ -9,7 +9,6 @@ package rpcs
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 
 	. "web/src/common"
@@ -26,18 +25,18 @@ func ActionVM(ctx context.Context, args []string) (status string, err error) {
 	argn := len(args)
 	if argn < 2 {
 		err = fmt.Errorf("Wrong params")
-		log.Println("Invalid args", err)
+		logger.Debug("Invalid args", err)
 		return
 	}
 	instID, err := strconv.Atoi(args[1])
 	if err != nil {
-		log.Println("Invalid instance ID", err)
+		logger.Debug("Invalid instance ID", err)
 		return
 	}
 	instance := &model.Instance{Model: model.Model{ID: int64(instID)}}
 	err = db.Take(instance).Error
 	if err != nil {
-		log.Println("Invalid instance ID", err)
+		logger.Debug("Invalid instance ID", err)
 		return
 	}
 	status = args[2]

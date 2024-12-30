@@ -40,13 +40,16 @@ type ConsoleResponse struct {
 func (v *ConsoleAPI) Create(c *gin.Context) {
 	ctx := c.Request.Context()
 	uuID := c.Param("id")
+	logger.Debugf("Create console for instance %s", uuID)
 	instance, err := instanceAdmin.GetInstanceByUUID(ctx, uuID)
 	if err != nil {
+		logger.Errorf("Not able to get instance %s", uuID)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid instance query", err)
 		return
 	}
 	token, err := routes.MakeToken(ctx, instance)
 	if err != nil {
+		logger.Errorf("Not able to create token for instance %s", uuID)
 		ErrorResponse(c, http.StatusBadRequest, "Not able to create", err)
 		return
 	}
@@ -60,5 +63,6 @@ func (v *ConsoleAPI) Create(c *gin.Context) {
 		Token:      token,
 		ConsoleURL: consoleURL,
 	}
+	logger.Debugf("Console URL for instance %s : %s", uuID, consoleURL)
 	c.JSON(http.StatusOK, consoleResp)
 }

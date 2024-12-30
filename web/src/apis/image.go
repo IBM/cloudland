@@ -62,16 +62,20 @@ type ImagePatchPayload struct {
 func (v *ImageAPI) Get(c *gin.Context) {
 	ctx := c.Request.Context()
 	uuID := c.Param("id")
+	logger.Debugf("Get image %s", uuID)
 	image, err := imageAdmin.GetImageByUUID(ctx, uuID)
 	if err != nil {
+		logger.Errorf("Failed to get image %s, %+v", uuID, err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid image query", err)
 		return
 	}
 	imageResp, err := v.getImageResponse(ctx, image)
 	if err != nil {
+		logger.Errorf("Failed to create image response %s, %+v", uuID, err)
 		ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
 		return
 	}
+	logger.Debugf("Get image %s success, response: %+v", uuID, imageResp)
 	c.JSON(http.StatusOK, imageResp)
 }
 
@@ -102,13 +106,16 @@ func (v *ImageAPI) Patch(c *gin.Context) {
 func (v *ImageAPI) Delete(c *gin.Context) {
 	ctx := c.Request.Context()
 	uuID := c.Param("id")
+	logger.Debugf("Delete image %s", uuID)
 	image, err := imageAdmin.GetImageByUUID(ctx, uuID)
 	if err != nil {
+		logger.Errorf("Failed to get image %s, %+v", uuID, err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
 		return
 	}
 	err = imageAdmin.Delete(ctx, image)
 	if err != nil {
+		logger.Errorf("Failed to delete image %s, %+v", uuID, err)
 		ErrorResponse(c, http.StatusBadRequest, "Not able to delete", err)
 		return
 	}
@@ -126,31 +133,37 @@ func (v *ImageAPI) Delete(c *gin.Context) {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /images [post]
 func (v *ImageAPI) Create(c *gin.Context) {
+	logger.Debugf("Create image")
 	ctx := c.Request.Context()
 	payload := &ImagePayload{}
 	err := c.ShouldBindJSON(payload)
 	if err != nil {
+		logger.Errorf("Invalid input JSON %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
 		return
 	}
+	logger.Debugf("Creating image with payload %+v", payload)
 	image, err := imageAdmin.Create(ctx, payload.Name, payload.OSVersion, "kvm-x86_64", payload.User, payload.DownloadURL, "x86_64", 0)
 	if err != nil {
+		logger.Errorf("Not able to create image %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Not able to create", err)
 		return
 	}
 	imageResp, err := v.getImageResponse(ctx, image)
 	if err != nil {
+		logger.Errorf("Failed to create image response %+v", err)
 		ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
 		return
 	}
+	logger.Debugf("Create image success, response: %+v", imageResp)
 	c.JSON(http.StatusOK, imageResp)
 }
 
 func (v *ImageAPI) getImageResponse(ctx context.Context, image *model.Image) (imageResp *ImageResponse, err error) {
 	imageResp = &ImageResponse{
 		ResourceReference: &ResourceReference{
-			ID:   image.UUID,
-			Name: image.Name,
+			ID:        image.UUID,
+			Name:      image.Name,
 			CreatedAt: image.CreatedAt.Format(TimeStringForMat),
 			UpdatedAt: image.UpdatedAt.Format(TimeStringForMat),
 		},
@@ -175,22 +188,28 @@ func (v *ImageAPI) List(c *gin.Context) {
 	ctx := c.Request.Context()
 	offsetStr := c.DefaultQuery("offset", "0")
 	limitStr := c.DefaultQuery("limit", "50")
+	queryStr := c.DefaultQuery("query", "")
+	logger.Debugf("List images with offset %s, limit %s, query %s", offsetStr, limitStr, queryStr)
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil {
+		logger.Errorf("Invalid query offset %s, %+v", offsetStr, err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset: "+offsetStr, err)
 		return
 	}
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
+		logger.Errorf("Invalid query limit %s, %+v", limitStr, err)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid query limit: "+limitStr, err)
 		return
 	}
 	if offset < 0 || limit < 0 {
+		logger.Errorf("Invalid query offset or limit %d, %d", offset, limit)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid query offset or limit", err)
 		return
 	}
-	total, images, err := imageAdmin.List(int64(offset), int64(limit), "-created_at", "")
+	total, images, err := imageAdmin.List(int64(offset), int64(limit), "-created_at", queryStr)
 	if err != nil {
+		logger.Errorf("Failed to list images %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Failed to list images", err)
 		return
 	}
@@ -203,9 +222,11 @@ func (v *ImageAPI) List(c *gin.Context) {
 	for i, image := range images {
 		imageListResp.Images[i], err = v.getImageResponse(ctx, image)
 		if err != nil {
+			logger.Errorf("Failed to create image response %+v", err)
 			ErrorResponse(c, http.StatusInternalServerError, "Internal error", err)
 			return
 		}
 	}
+	logger.Debugf("List images success, response: %+v", imageListResp)
 	c.JSON(http.StatusOK, imageListResp)
 }
