@@ -208,8 +208,10 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 			log.Println("Detach volume execution failed", err)
 			return
 		}
-		volume.Instance = nil
-		volume.InstanceID = 0
+		// PET-224: we should not set the instance ID to 0 here
+		// the instance ID should be set to 0 after the volume is detached successfully (after script executed successfully)
+		//volume.Instance = nil
+		//volume.InstanceID = 0
 	} else if instID > 0 && volume.InstanceID == 0 && volume.Status == "available" {
 		instance := &model.Instance{Model: model.Model{ID: instID}}
 		if err = db.Model(instance).Take(instance).Error; err != nil {
@@ -224,8 +226,10 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 			log.Println("Create volume execution failed", err)
 			return
 		}
-		volume.InstanceID = instID
-		volume.Instance = nil
+		// PET-224: we should not set the instance ID to instID here
+		// the instance ID should be set to instID after the volume is attached successfully (after script executed successfully)
+		//volume.InstanceID = instID
+		//volume.Instance = nil
 	}
 	if err = db.Model(volume).Updates(volume).Error; err != nil {
 		log.Println("DB: update volume failed", err)
