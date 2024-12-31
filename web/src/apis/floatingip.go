@@ -61,7 +61,8 @@ type FloatingIpPayload struct {
 	PublicIp     string         `json:"public_ip" binding:"omitempty,ipv4"`
 	Name         string         `json:"name" binding:"omitempty,min=2,max=32"`
 	Instance     *BaseID        `json:"instance" binding:"omitempty"`
-	Bandwidth    int64          `json:"bandwidth" binding:"omitempty"`
+	Inbound    int32          `json:"bandwidth" binding:"omitempty,min=1,max=20000"`
+	Outbound    int32          `json:"bandwidth" binding:"omitempty,min=1,max=1000"`
 }
 
 type FloatingIpPatchPayload struct {
@@ -222,7 +223,7 @@ func (v *FloatingIpAPI) Create(c *gin.Context) {
 			return
 		}
 	}
-	floatingIp, err := floatingIpAdmin.Create(ctx, instance, publicSubnet, payload.PublicIp, payload.Name)
+	floatingIp, err := floatingIpAdmin.Create(ctx, instance, publicSubnet, payload.PublicIp, payload.Name, payload.Inbound, payload.Outbound)
 	if err != nil {
 		logger.Errorf("Failed to create floating ip %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Failed to create floating ip", err)
