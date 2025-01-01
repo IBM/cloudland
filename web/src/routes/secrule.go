@@ -197,13 +197,13 @@ func (a *SecruleAdmin) Delete(ctx context.Context, secrule *model.SecurityRule, 
 		logger.Debug("DB failed to query security group", err)
 		return
 	}
+	if err = db.Delete(secrule).Error; err != nil {
+		logger.Debug("DB failed to delete security rule, %v", err)
+		return
+	}
 	err = a.ApplySecgroup(ctx, secgroup)
 	if err != nil {
 		logger.Debug("Failed to apply security rule", err)
-		return
-	}
-	if err = db.Delete(secrule).Error; err != nil {
-		logger.Debug("DB failed to delete security rule, %v", err)
 		return
 	}
 	return
