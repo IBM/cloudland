@@ -51,11 +51,9 @@ ip netns exec $router iptables -t nat -D PREROUTING -d $ext_ip -j DNAT --to-dest
 ip netns exec $router iptables -t nat -I PREROUTING -d $ext_ip -j DNAT --to-destination $int_ip
 ip netns exec $router arping -c 3 -I $ext_dev -s $ext_ip $ext_ip
 
-# mark traffic
-ip netns exec $router iptables -t mangle -A PREROUTING -d $ext_ip -j MARK --set-mark $mark_id
-[ -z "$pkt_rate_limit" ] && pkt_rate_limit=1000000
-[ -z "$pkt_burst_limit" ] && pkt_burst_limit=2000
 if [ "$inbound" -gt 0 ]; then
+    ip netns exec $router iptables -t mangle -D PREROUTING -d $ext_ip -j MARK --set-mark $mark_id
+    ip netns exec $router iptables -t mangle -I PREROUTING -d $ext_ip -j MARK --set-mark $mark_id
     ip netns exec $router iptables -D FORWARD -m mark --mark $mark_id -j DROP
     ip netns exec $router iptables -I FORWARD -m mark --mark $mark_id -j DROP
     pkt_rate_limit=$(( $inbound * 100 ))

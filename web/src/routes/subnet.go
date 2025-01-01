@@ -291,6 +291,19 @@ func (a *SubnetAdmin) Create(ctx context.Context, vlan int, name, network, gatew
 		err = fmt.Errorf("Not authorized for this operation")
 		return
 	}
+	if rtype == "public" {
+		permit = memberShip.CheckPermission(model.Admin)
+		if !permit {
+			logger.Debug("Not authorized for this operation")
+			err = fmt.Errorf("Not authorized for this operation")
+			return
+		}
+		if router != nil {
+			logger.Debug("Public subnet can not be created in a vpc")
+			err = fmt.Errorf("Not able to create public subnet in a vpc")
+			return
+		}
+	}
 	if vlan <= 0 {
 		vlan, err = getValidVni()
 		if err != nil {

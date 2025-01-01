@@ -161,8 +161,8 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		instance.Zone = zone
 		var bootVolume *model.Volume
 		imagePrefix := fmt.Sprintf("image-%d-%s", image.ID, strings.Split(image.UUID, "-")[0])
-		// boot volume name format: instance-15-image-2-3c0cca59-boot-volume-10
-		bootVolume, err = volumeAdmin.CreateVolume(ctx, fmt.Sprintf("instance-%d-%s-boot-volume", instance.ID, imagePrefix), flavor.Disk, instance.ID, true, 0, 0, 0, 0, "")
+		// boot volume name format: instance-15-boot-volume-10
+		bootVolume, err = volumeAdmin.CreateVolume(ctx, fmt.Sprintf("instance-%d-boot-volume", instance.ID), flavor.Disk, instance.ID, true, 0, 0, 0, 0, "")
 		if err != nil {
 			logger.Debug("Failed to create boot volume", err)
 			return
@@ -462,14 +462,9 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 		logger.Debug("Failed to query floating ip(s), %v", err)
 		return
 	}
-	var bootVolume *model.Volume
 	if instance.Volumes != nil {
-		for i, vol := range instance.Volumes {
-			if vol.Booting {
-				bootVolume = instance.Volumes[i]
-				continue
-			}
-			_, err = volumeAdmin.Update(ctx, vol.ID, "", 0)
+		for _, volume := range instance.Volumes {
+			_, err = volumeAdmin.Update(ctx, volume.ID, "", 0)
 			if err != nil {
 				logger.Debug("Failed to detach volume, %v", err)
 				return
@@ -481,16 +476,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 	if instance.Hyper == -1 {
 		control = "toall="
 	}
-	bootName := ""
-	if bootVolume != nil {
-		bootName = fmt.Sprintf("%s-%d", bootVolume.Name, bootVolume.ID)
-		err = volumeAdmin.Delete(ctx, bootVolume)
-		if err != nil {
-			logger.Debug("Failed to delete volume, %v", err)
-			return
-		}
-	}
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh '%d' '%s' '%d'", instance.ID, bootName, instance.RouterID)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh '%d' '%d'", instance.ID, instance.RouterID)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Debug("Delete vm command execution failed ", err)
