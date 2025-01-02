@@ -46,7 +46,7 @@ func createRouterIface(ctx context.Context, rtype string, router *model.Router, 
 	subnets := []*model.Subnet{}
 	err = db.Where("type = ?", rtype).Find(&subnets).Error
 	if err != nil {
-		logger.Debug("Failed to query subnets", err)
+		logger.Error("Failed to query subnets", err)
 		return
 	}
 	name := ""
@@ -63,7 +63,7 @@ func createRouterIface(ctx context.Context, rtype string, router *model.Router, 
 		}
 		iface, err = CreateInterface(ctx, subnet, router.ID, owner, router.Hyper, "", "", name, ifType, nil)
 		if err == nil {
-			logger.Debug("Created gateway interface from subnet")
+			logger.Error("Created gateway interface from subnet")
 			break
 		}
 	}
@@ -74,7 +74,7 @@ func (a *RouterAdmin) Create(ctx context.Context, name string) (router *model.Ro
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
-		logger.Debug("Not authorized to create routers")
+		logger.Error("Not authorized to create routers")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -88,17 +88,17 @@ func (a *RouterAdmin) Create(ctx context.Context, name string) (router *model.Ro
 	router = &model.Router{Model: model.Model{Creater: memberShip.UserID}, Owner: owner, Name: name, Status: "available"}
 	err = db.Create(router).Error
 	if err != nil {
-		logger.Debug("DB failed to create router ", err)
+		logger.Error("DB failed to create router ", err)
 		return
 	}
 	secGroup, err := secgroupAdmin.Create(ctx, name+"-native", true, router)
 	if err != nil {
-		logger.Debug("Failed to create security group", err)
+		logger.Error("Failed to create security group", err)
 		return
 	}
 	router.DefaultSG = secGroup.ID
 	if err = db.Model(router).Update("default_sg", router.DefaultSG).Error; err != nil {
-		logger.Debug("Failed to save router", err)
+		logger.Error("Failed to save router", err)
 		return
 	}
 	return
@@ -106,7 +106,7 @@ func (a *RouterAdmin) Create(ctx context.Context, name string) (router *model.Ro
 
 func (a *RouterAdmin) Get(ctx context.Context, id int64) (router *model.Router, err error) {
 	if id <= 0 {
-		logger.Debug("returning nil router")
+		logger.Error("returning nil router")
 		return
 	}
 	db := DB()
@@ -114,12 +114,12 @@ func (a *RouterAdmin) Get(ctx context.Context, id int64) (router *model.Router, 
 	where := memberShip.GetWhere()
 	router = &model.Router{Model: model.Model{ID: id}}
 	if err = db.Preload("Subnets").Where(where).Take(router).Error; err != nil {
-		logger.Debug("Failed to query router", err)
+		logger.Error("Failed to query router", err)
 		return
 	}
 	permit := memberShip.ValidateOwner(model.Reader, router.Owner)
 	if !permit {
-		logger.Debug("Not authorized to read the router")
+		logger.Error("Not authorized to read the router")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -133,12 +133,12 @@ func (a *RouterAdmin) GetRouterByUUID(ctx context.Context, uuID string) (router 
 	router = &model.Router{}
 	err = db.Preload("Subnets").Where(where).Where("uuid = ?", uuID).Take(router).Error
 	if err != nil {
-		logger.Debug("Failed to query router, %v", err)
+		logger.Error("Failed to query router, %v", err)
 		return
 	}
 	permit := memberShip.ValidateOwner(model.Reader, router.Owner)
 	if !permit {
-		logger.Debug("Not authorized to read the router")
+		logger.Error("Not authorized to read the router")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -152,12 +152,12 @@ func (a *RouterAdmin) GetRouterByName(ctx context.Context, name string) (router 
 	router = &model.Router{}
 	err = db.Preload("Subnets").Where(where).Where("name = ?", name).Take(router).Error
 	if err != nil {
-		logger.Debug("Failed to query router, %v", err)
+		logger.Error("Failed to query router, %v", err)
 		return
 	}
 	permit := memberShip.ValidateOwner(model.Reader, router.Owner)
 	if !permit {
-		logger.Debug("Not authorized to read the router")
+		logger.Error("Not authorized to read the router")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -184,13 +184,13 @@ func (a *RouterAdmin) Update(ctx context.Context, id int64, name string, pubID i
 	db := DB()
 	router = &model.Router{Model: model.Model{ID: id}}
 	if err = db.Find(router).Error; err != nil {
-		logger.Debug("Failed to query router", err)
+		logger.Error("Failed to query router", err)
 		return
 	}
 	if router.Name != name {
 		router.Name = name
 		if err = db.Model(router).Update("name", router.Name).Error; err != nil {
-			logger.Debug("Failed to save router", err)
+			logger.Error("Failed to save router", err)
 			return
 		}
 	}
@@ -207,41 +207,41 @@ func (a *RouterAdmin) Delete(ctx context.Context, router *model.Router) (err err
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.ValidateOwner(model.Writer, router.Owner)
 	if !permit {
-		logger.Debug("Not authorized to delete the router")
+		logger.Error("Not authorized to delete the router")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
 	count := 0
 	err = db.Model(&model.FloatingIp{}).Where("router_id = ?", router.ID).Count(&count).Error
 	if err != nil {
-		logger.Debug("Failed to count floating ip")
+		logger.Error("Failed to count floating ip")
 		err = fmt.Errorf("Failed to count floating ip")
 		return
 	}
 	if count > 0 {
-		logger.Debug("There are floating ips")
+		logger.Error("There are floating ips")
 		err = fmt.Errorf("There areassociated floating ips")
 		return
 	}
 	count = 0
 	err = db.Model(&model.Subnet{}).Where("router_id = ?", router.ID).Count(&count).Error
 	if err != nil {
-		logger.Debug("Failed to count subnet")
+		logger.Error("Failed to count subnet")
 		err = fmt.Errorf("Failed to count subnet")
 		return
 	}
 	if count > 0 {
-		logger.Debug("There are associated subnets")
+		logger.Error("There are associated subnets")
 		err = fmt.Errorf("There are associated subnets")
 		return
 	}
 	err = db.Model(&model.Portmap{}).Where("router_id = ?", router.ID).Count(&count).Error
 	if err != nil {
-		logger.Debug("Failed to count portmap")
+		logger.Error("Failed to count portmap")
 		return
 	}
 	if count > 0 {
-		logger.Debug("There are associated portmaps")
+		logger.Error("There are associated portmaps")
 		err = fmt.Errorf("There are associated portmaps")
 		return
 	}
@@ -249,29 +249,29 @@ func (a *RouterAdmin) Delete(ctx context.Context, router *model.Router) (err err
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_local_router.sh '%d'", router.ID)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
-		logger.Debug("Delete master failed")
+		logger.Error("Delete master failed")
 		return
 	}
 	router.Name = fmt.Sprintf("%s-%d", router.Name, router.CreatedAt.Unix())
 	err = db.Model(router).Update("name", router.Name).Error
 	if err != nil {
-		logger.Debug("DB failed to update router name", err)
+		logger.Error("DB failed to update router name", err)
 		return
 	}
 	if err = db.Delete(router).Error; err != nil {
-		logger.Debug("DB failed to delete router", err)
+		logger.Error("DB failed to delete router", err)
 		return
 	}
 	secgroups := []*model.SecurityGroup{}
 	err = db.Where("router_id = ?", router.ID).Find(&secgroups).Error
 	if err != nil {
-		logger.Debug("DB failed to query security groups", err)
+		logger.Error("DB failed to query security groups", err)
 		return
 	}
 	for _, sg := range secgroups {
 		err = secgroupAdmin.Delete(ctx, sg)
 		if err != nil {
-			logger.Debug("Can not delete security group", err)
+			logger.Error("Can not delete security group", err)
 			return
 		}
 	}
@@ -295,12 +295,12 @@ func (a *RouterAdmin) List(ctx context.Context, offset, limit int64, order, quer
 	where := memberShip.GetWhere()
 	routers = []*model.Router{}
 	if err = db.Model(&model.Router{}).Where(where).Where(query).Count(&total).Error; err != nil {
-		logger.Debug("DB failed to count router, %v", err)
+		logger.Error("DB failed to count router, %v", err)
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
 	if err = db.Preload("Subnets").Where(where).Where(query).Find(&routers).Error; err != nil {
-		logger.Debug("DB failed to query routers, %v", err)
+		logger.Error("DB failed to query routers, %v", err)
 		return
 	}
 	permit := memberShip.CheckPermission(model.Admin)
@@ -309,7 +309,7 @@ func (a *RouterAdmin) List(ctx context.Context, offset, limit int64, order, quer
 		for _, router := range routers {
 			router.OwnerInfo = &model.Organization{Model: model.Model{ID: router.Owner}}
 			if err = db.Take(router.OwnerInfo).Error; err != nil {
-				logger.Debug("Failed to query owner info", err)
+				logger.Error("Failed to query owner info", err)
 				return
 			}
 		}
@@ -321,7 +321,7 @@ func (v *RouterView) List(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -338,7 +338,7 @@ func (v *RouterView) List(c *macaron.Context, store session.Store) {
 	query := c.QueryTrim("q")
 	total, routers, err := routerAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
-		logger.Debug("Failed to list routers, %v", err)
+		logger.Error("Failed to list routers, %v", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
 				"error": err.Error(),
@@ -370,28 +370,28 @@ func (v *RouterView) Delete(c *macaron.Context, store session.Store) (err error)
 	ctx := c.Req.Context()
 	id := c.Params("id")
 	if id == "" {
-		logger.Debug("Id is empty")
+		logger.Error("Id is empty")
 		c.Data["ErrorMsg"] = "Id is empty"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	routerID, err := strconv.Atoi(id)
 	if err != nil {
-		logger.Debug("Invalid router id, %v", err)
+		logger.Error("Invalid router id, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	router, err := routerAdmin.Get(ctx, int64(routerID))
 	if err != nil {
-		logger.Debug("Not able to get vpc")
+		logger.Error("Not able to get vpc")
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	err = routerAdmin.Delete(ctx, router)
 	if err != nil {
-		logger.Debug("Failed to delete router, %v", err)
+		logger.Error("Failed to delete router, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -406,7 +406,7 @@ func (v *RouterView) New(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -420,21 +420,21 @@ func (v *RouterView) Edit(c *macaron.Context, store session.Store) {
 	id := c.Params("id")
 	routerID, err := strconv.Atoi(id)
 	if err != nil {
-		logger.Debug("Invalid router id, %v", err)
+		logger.Error("Invalid router id, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "routers", int64(routerID))
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	router := &model.Router{Model: model.Model{ID: int64(routerID)}}
 	if err = db.Find(router).Error; err != nil {
-		logger.Debug("Failed to query router, %v", err)
+		logger.Error("Failed to query router, %v", err)
 		return
 	}
 	c.Data["Router"] = router
@@ -447,14 +447,14 @@ func (v *RouterView) Patch(c *macaron.Context, store session.Store) {
 	id := c.Params("id")
 	routerID, err := strconv.Atoi(id)
 	if err != nil {
-		logger.Debug("Invalid router id, %v", err)
+		logger.Error("Invalid router id, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "routers", int64(routerID))
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -463,12 +463,12 @@ func (v *RouterView) Patch(c *macaron.Context, store session.Store) {
 	pubSubnet := c.QueryTrim("public")
 	pubID, err := strconv.Atoi(pubSubnet)
 	if err != nil {
-		logger.Debug("Invalid public subnet id, %v", err)
+		logger.Error("Invalid public subnet id, %v", err)
 		pubID = 0
 	}
 	router, err := routerAdmin.Update(c.Req.Context(), int64(routerID), name, int64(pubID))
 	if err != nil {
-		logger.Debug("Failed to create router", err)
+		logger.Error("Failed to create router", err)
 		c.Data["ErrorMsg"] = err.Error()
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
@@ -490,7 +490,7 @@ func (v *RouterView) Create(c *macaron.Context, store session.Store) {
 	name := c.QueryTrim("name")
 	_, err := routerAdmin.Create(c.Req.Context(), name)
 	if err != nil {
-		logger.Debug("Failed to create router, %v", err)
+		logger.Error("Failed to create router, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return

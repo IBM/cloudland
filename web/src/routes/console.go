@@ -52,7 +52,7 @@ func MakeToken(ctx context.Context, instance *model.Instance) (token string, err
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
-		logger.Debug("Not authorized to create interface in public subnet")
+		logger.Error("Not authorized to create interface in public subnet")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -79,7 +79,7 @@ func MakeToken(ctx context.Context, instance *model.Instance) (token string, err
 	}
 	err = db.Where("instance = ?", instance.ID).Assign(console).FirstOrCreate(&model.Console{}).Error
 	if err != nil {
-		logger.Debug("Failed to make console record ", err)
+		logger.Error("Failed to make console record ", err)
 		return
 	}
 	tokenClaim := jwt.NewWithClaims(jwt.SigningMethodHS256, tkClaim)
@@ -141,7 +141,7 @@ func (a *ConsoleView) ConsoleURL(c *macaron.Context, store session.Store) {
 	}
 	tokenString, err := MakeToken(ctx, instance)
 	if err != nil {
-		logger.Debug("failed to make token", err)
+		logger.Error("failed to make token", err)
 		code := http.StatusInternalServerError
 		c.Error(code, http.StatusText(code))
 		return

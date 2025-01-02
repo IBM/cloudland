@@ -34,39 +34,39 @@ func (a *SecruleAdmin) ApplySecgroup(ctx context.Context, secgroup *model.Securi
 	ctx, db := GetContextDB(ctx)
 	err = secgroupAdmin.GetSecgroupInterfaces(ctx, secgroup)
 	if err != nil {
-		logger.Debug("DB failed to get security group related interfaces", err)
+		logger.Error("DB failed to get security group related interfaces", err)
 		return
 	}
 	for _, iface := range secgroup.Interfaces {
 		var securityData []*SecurityData
 		err = secgroupAdmin.GetInterfaceSecgroups(ctx, iface)
 		if err != nil {
-			logger.Debug("DB failed to get interface related security groups, %v", err)
+			logger.Error("DB failed to get interface related security groups, %v", err)
 			continue
 		}
 		securityData, err = GetSecurityData(ctx, iface.SecurityGroups)
 		if err != nil {
-			logger.Debug("DB failed to get security data, %v", err)
+			logger.Error("DB failed to get security data, %v", err)
 			continue
 		}
 		var jsonData []byte
 		jsonData, err = json.Marshal(securityData)
 		if err != nil {
-			logger.Debug("Failed to marshal security json data, %v", err)
+			logger.Error("Failed to marshal security json data, %v", err)
 			continue
 		}
-		logger.Debug("iface: %v", iface)
+		logger.Debugf("iface: %+v", iface)
 		instance := &model.Instance{Model: model.Model{ID: iface.Instance}}
 		err = db.Take(instance).Error
 		if err != nil {
-			logger.Debug("DB failed to get instance, %v", err)
+			logger.Error("DB failed to get instance, %v", err)
 			continue
 		}
 		control := fmt.Sprintf("inter=%d", instance.Hyper)
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/reapply_secgroup.sh '%s' '%s' <<EOF\n%s\nEOF", iface.Address.Address, iface.MacAddr, jsonData)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
-			logger.Debug("Reapply security groups execution failed, %v", err)
+			logger.Error("Reapply security groups execution failed, %v", err)
 			return
 		}
 	}
@@ -79,7 +79,7 @@ func (a *SecruleAdmin) Update(ctx context.Context, id int64, remoteIp, direction
 	secrules := &model.SecurityRule{Model: model.Model{ID: id}}
 	err = db.Take(secrules).Error
 	if err != nil {
-		logger.Debug("DB failed to query security rules ", err)
+		logger.Error("DB failed to query security rules ", err)
 		return
 	}
 	//remoteip
@@ -87,7 +87,7 @@ func (a *SecruleAdmin) Update(ctx context.Context, id int64, remoteIp, direction
 		netLen := strings.Split(remoteIp, "/")
 		NetLen, _ := strconv.Atoi(netLen[1])
 		if NetLen < 0 || NetLen > 32 {
-			logger.Debug("Invalid Netmask,fill in valid one")
+			logger.Error("Invalid Netmask,fill in valid one")
 			err = fmt.Errorf("Invalid Netmask for RemoteIp, please fill a valid one")
 			return
 		}
@@ -106,18 +106,18 @@ func (a *SecruleAdmin) Update(ctx context.Context, id int64, remoteIp, direction
 			if portMax > 0 && portMax < 65536 {
 				secrules.PortMax = int32(portMax)
 			} else if portMax > 65535 {
-				logger.Debug("it's out of range, please input less than 65536")
+				logger.Error("it's out of range, please input less than 65536")
 				err = fmt.Errorf("it's invalid port for PortMax, please fill a valid port")
 				return
 			} else {
 				secrules.PortMax = -1
 			}
 		} else if portMin < -1 || portMin == 0 {
-			logger.Debug("it's out of range,please fill a valid port")
+			logger.Error("it's out of range,please fill a valid port")
 			err = fmt.Errorf("it's invalid port for PortMin, please fill a valid port")
 			return
 		} else if portMin > 65535 {
-			logger.Debug("it's out of range, please input less than 65537")
+			logger.Error("it's out of range, please input less than 65537")
 			err = fmt.Errorf("it's invalid port for PortMin, please fill a valid port")
 			return
 		} else {
@@ -125,13 +125,13 @@ func (a *SecruleAdmin) Update(ctx context.Context, id int64, remoteIp, direction
 		}
 
 	} else {
-		logger.Debug("PortMax should be greater than PortMin")
+		logger.Error("PortMax should be greater than PortMin")
 		err = fmt.Errorf("PortMax should be greater than PortMin")
 		return
 	}
 	err = db.Model(secrule).Updates(secrules).Error
 	if err != nil {
-		logger.Debug("DB failed to save sucurity rule ", err)
+		logger.Error("DB failed to save sucurity rule ", err)
 		return
 	}
 	return
@@ -142,7 +142,7 @@ func (a *SecruleAdmin) Create(ctx context.Context, remoteIp, direction, protocol
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.ValidateOwner(model.Writer, secgroup.Owner)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -165,12 +165,12 @@ func (a *SecruleAdmin) Create(ctx context.Context, remoteIp, direction, protocol
 	}
 	err = db.Create(secrule).Error
 	if err != nil {
-		logger.Debug("DB failed to create security rule", err)
+		logger.Error("DB failed to create security rule", err)
 		return
 	}
 	err = a.ApplySecgroup(ctx, secgroup)
 	if err != nil {
-		logger.Debug("Failed to apply security rule", err)
+		logger.Error("Failed to apply security rule", err)
 		return
 	}
 	return
@@ -186,17 +186,17 @@ func (a *SecruleAdmin) Delete(ctx context.Context, secrule *model.SecurityRule, 
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.ValidateOwner(model.Writer, secrule.Owner)
 	if !permit {
-		logger.Debug("Not authorized to delete the router")
+		logger.Error("Not authorized to delete the router")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
 	if err = db.Delete(secrule).Error; err != nil {
-		logger.Debug("DB failed to delete security rule, %v", err)
+		logger.Error("DB failed to delete security rule, %v", err)
 		return
 	}
 	err = a.ApplySecgroup(ctx, secgroup)
 	if err != nil {
-		logger.Debug("Failed to apply security rule", err)
+		logger.Error("Failed to apply security rule", err)
 		return
 	}
 	return
@@ -206,7 +206,7 @@ func (a *SecruleAdmin) List(ctx context.Context, offset, limit int64, order stri
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.ValidateOwner(model.Reader, secgroup.Owner)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -226,12 +226,12 @@ func (a *SecruleAdmin) List(ctx context.Context, offset, limit int64, order stri
 	}
 	secrules = []*model.SecurityRule{}
 	if err = db.Model(&model.SecurityRule{}).Where(where).Count(&total).Error; err != nil {
-		logger.Debug("DB failed to count security rule(s), %v", err)
+		logger.Error("DB failed to count security rule(s), %v", err)
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
 	if err = db.Where(where).Find(&secrules).Error; err != nil {
-		logger.Debug("DB failed to query security rule(s), %v", err)
+		logger.Error("DB failed to query security rule(s), %v", err)
 		return
 	}
 
@@ -251,28 +251,28 @@ func (v *SecruleView) List(c *macaron.Context, store session.Store) {
 	}
 	sgid := c.Params("sgid")
 	if sgid == "" {
-		logger.Debug("Security group ID is empty")
+		logger.Error("Security group ID is empty")
 		c.Data["ErrorMsg"] = "Security group ID is empty"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	secgroupID, err := strconv.Atoi(sgid)
 	if err != nil {
-		logger.Debug("Invalid security group ID", err)
+		logger.Error("Invalid security group ID", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	secgroup, err := secgroupAdmin.Get(ctx, int64(secgroupID))
 	if err != nil {
-		logger.Debug("Failed to get security group", err)
+		logger.Error("Failed to get security group", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	total, secrules, err := secruleAdmin.List(ctx, offset, limit, order, secgroup)
 	if err != nil {
-		logger.Debug("Failed to list security rule(s)", err)
+		logger.Error("Failed to list security rule(s)", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -296,49 +296,49 @@ func (v *SecruleView) Delete(c *macaron.Context, store session.Store) (err error
 	ctx := c.Req.Context()
 	sgid := c.Params("sgid")
 	if sgid == "" {
-		logger.Debug("Security group ID is empty")
+		logger.Error("Security group ID is empty")
 		c.Data["ErrorMsg"] = "Security group ID is empty"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	secgroupID, err := strconv.Atoi(sgid)
 	if err != nil {
-		logger.Debug("Invalid security group ID", err)
+		logger.Error("Invalid security group ID", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	secgroup, err := secgroupAdmin.Get(ctx, int64(secgroupID))
 	if err != nil {
-		logger.Debug("Failed to get security group", err)
+		logger.Error("Failed to get security group", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	id := c.Params("id")
 	if id == "" {
-		logger.Debug("ID is empty, %v", err)
+		logger.Error("ID is empty, %v", err)
 		c.Data["ErrorMsg"] = "ID is empty"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	secruleID, err := strconv.Atoi(id)
 	if err != nil {
-		logger.Debug("Invalid security rule ID, %v", err)
+		logger.Error("Invalid security rule ID, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	secrule, err := secruleAdmin.Get(ctx, int64(secruleID), secgroup)
 	if err != nil {
-		logger.Debug("Failed to get security rule", err)
+		logger.Error("Failed to get security rule", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	err = secruleAdmin.Delete(c.Req.Context(), secrule, secgroup)
 	if err != nil {
-		logger.Debug("Failed to delete security rule, %v", err)
+		logger.Error("Failed to delete security rule, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -353,7 +353,7 @@ func (v *SecruleView) New(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -367,14 +367,14 @@ func (v *SecruleView) Create(c *macaron.Context, store session.Store) {
 	remoteIp := c.QueryTrim("remoteip")
 	sgid := c.Params("sgid")
 	if sgid == "" {
-		logger.Debug("Security group ID is empty")
+		logger.Error("Security group ID is empty")
 		c.Data["ErrorMsg"] = "Security group ID is empty"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	secgroupID, err := strconv.Atoi(sgid)
 	if err != nil {
-		logger.Debug("Invalid security group ID", err)
+		logger.Error("Invalid security group ID", err)
 		c.Data["Error:Msg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -387,14 +387,14 @@ func (v *SecruleView) Create(c *macaron.Context, store session.Store) {
 	portMax, _ := strconv.Atoi(max)
 	secgroup, err := secgroupAdmin.Get(ctx, int64(secgroupID))
 	if err != nil {
-		logger.Debug("Failed to get security group", err)
+		logger.Error("Failed to get security group", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	secrule, err := secruleAdmin.Create(ctx, remoteIp, direction, protocol, int32(portMin), int32(portMax), secgroup)
 	if err != nil {
-		logger.Debug("Failed to create security rule, %v", err)
+		logger.Error("Failed to create security rule, %v", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
 				"error": err.Error(),
@@ -413,7 +413,7 @@ func (v *SecruleView) Create(c *macaron.Context, store session.Store) {
 func (a *SecruleAdmin) Get(ctx context.Context, id int64, secgroup *model.SecurityGroup) (secrule *model.SecurityRule, err error) {
 	if id <= 0 {
 		err = fmt.Errorf("Invalid security rule ID: %d", id)
-		logger.Debug(err)
+		logger.Error(err)
 		return
 	}
 	memberShip := GetMemberShip(ctx)
@@ -422,12 +422,12 @@ func (a *SecruleAdmin) Get(ctx context.Context, id int64, secgroup *model.Securi
 	secrule = &model.SecurityRule{Model: model.Model{ID: id}}
 	err = db.Where(where).Take(secrule).Error
 	if err != nil {
-		logger.Debug("Failed to query secrule", err)
+		logger.Error("Failed to query secrule", err)
 		return
 	}
 	permit := memberShip.ValidateOwner(model.Reader, secrule.Owner)
 	if !permit {
-		logger.Debug("Not authorized to get security group")
+		logger.Error("Not authorized to get security group")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -441,12 +441,12 @@ func (a *SecruleAdmin) GetSecruleByUUID(ctx context.Context, uuID string, secgro
 	secrule = &model.SecurityRule{}
 	err = db.Where(where).Where("uuid = ? and secgroup = ?", uuID, secgroup.ID).Take(secrule).Error
 	if err != nil {
-		logger.Debug("Failed to query secrule", err)
+		logger.Error("Failed to query secrule", err)
 		return
 	}
 	permit := memberShip.ValidateOwner(model.Reader, secrule.Owner)
 	if !permit {
-		logger.Debug("Not authorized to get security group")
+		logger.Error("Not authorized to get security group")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -458,7 +458,7 @@ func (v *SecruleView) Edit(c *macaron.Context, store session.Store) {
 	id := c.Params("id")
 	secruleID, err := strconv.Atoi(id)
 	if err != nil {
-		logger.Debug("Security Rule ID is empty")
+		logger.Error("Security Rule ID is empty")
 		c.Data["ErrorMsg"] = "Security Rule ID is empty"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -466,19 +466,20 @@ func (v *SecruleView) Edit(c *macaron.Context, store session.Store) {
 	secrules := &model.SecurityRule{Model: model.Model{ID: int64(secruleID)}}
 	err = db.Take(secrules).Error
 	if err != nil {
-		logger.Debug("Database failed to query security rules", err)
+		logger.Error("Database failed to query security rules", err)
 		return
 	}
 	c.Data["Secrules"] = secrules
-	logger.Debug(secrules)
+	logger.Debugf("Edit security rules: %+v", secrules)
 	c.HTML(200, "secrules_patch")
 }
+
 func (v *SecruleView) Patch(c *macaron.Context, store session.Store) {
 	redirectTo := "../secrules"
 	id := c.Params("id")
 	secruleID, err := strconv.Atoi(id)
 	if err != nil {
-		logger.Debug("Invalid secure rule ID, %v", err)
+		logger.Error("Invalid secure rule ID, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -492,7 +493,7 @@ func (v *SecruleView) Patch(c *macaron.Context, store session.Store) {
 	portMax, err := strconv.Atoi(max)
 	secrule, err := secruleAdmin.Update(c.Req.Context(), int64(secruleID), remoteIp, direction, protocol, portMin, portMax)
 	if err != nil {
-		logger.Debug("Create Security Rules failed, %v", err)
+		logger.Error("Create Security Rules failed, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{

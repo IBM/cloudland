@@ -25,18 +25,18 @@ func ActionVM(ctx context.Context, args []string) (status string, err error) {
 	argn := len(args)
 	if argn < 2 {
 		err = fmt.Errorf("Wrong params")
-		logger.Debug("Invalid args", err)
+		logger.Error("Invalid args", err)
 		return
 	}
 	instID, err := strconv.Atoi(args[1])
 	if err != nil {
-		logger.Debug("Invalid instance ID", err)
+		logger.Error("Invalid instance ID", err)
 		return
 	}
 	instance := &model.Instance{Model: model.Model{ID: int64(instID)}}
 	err = db.Take(instance).Error
 	if err != nil {
-		logger.Debug("Invalid instance ID", err)
+		logger.Error("Invalid instance ID", err)
 		return
 	}
 	status = args[2]
