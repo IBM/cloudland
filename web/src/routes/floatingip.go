@@ -224,8 +224,16 @@ func (a *FloatingIpAdmin) Detach(ctx context.Context, floatingIp *model.Floating
 		}
 	}()
 	if floatingIp.Instance != nil {
+		var primaryIface *model.Interface
+		instance := floatingIp.Instance
+		for i, iface := range instance.Interfaces {
+			if iface.PrimaryIf {
+				primaryIface = instance.Interfaces[i]
+				break
+			}
+		}
 		control := fmt.Sprintf("inter=%d", floatingIp.Instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_floating.sh '%d' '%s' '%s'", floatingIp.RouterID, floatingIp.FipAddress, floatingIp.IntAddress)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_floating.sh '%d' '%s' '%s' '%d' '%d'", floatingIp.RouterID, floatingIp.FipAddress, floatingIp.IntAddress, primaryIface.Address.Subnet.Vlan, floatingIp.ID)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
 			logger.Error("Detach floating ip failed", err)

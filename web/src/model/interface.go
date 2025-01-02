@@ -29,6 +29,8 @@ type Interface struct {
 	PrimaryIf  bool     `gorm:"default:false"`
 	Type       string   `gorm:"type:varchar(20)"`
 	Mtu        int32
+	Inbound    int32
+	Outbound   int32
 	SecurityGroups  []*SecurityGroup `gorm:"many2many:secgroup_ifaces;"`
 	AddrPairs  string           `gorm:"type:varchar(256)"`
 }

@@ -661,6 +661,38 @@ const docTemplatev1 = `{
                 }
             }
         },
+        "/instance/{id}/interfaces/{id}": {
+            "delete": {
+                "description": "delete a interface",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Network"
+                ],
+                "summary": "delete a interface",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    }
+                }
+            }
+        },
         "/instances": {
             "get": {
                 "description": "list instances",
@@ -764,6 +796,85 @@ const docTemplatev1 = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/apis.ConsoleResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/instances/id/interfaces/{interface_id}": {
+            "get": {
+                "description": "get a interface",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Network"
+                ],
+                "summary": "get a interface",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/apis.InterfaceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "patch a interface",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Network"
+                ],
+                "summary": "patch a interface",
+                "parameters": [
+                    {
+                        "description": "Interface patch payload",
+                        "name": "message",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/apis.InterfacePatchPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/apis.InterfaceResponse"
                         }
                     },
                     "400": {
@@ -891,115 +1002,6 @@ const docTemplatev1 = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/apis.InstanceResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "$ref": "#/definitions/common.APIError"
-                        }
-                    },
-                    "401": {
-                        "description": "Not authorized",
-                        "schema": {
-                            "$ref": "#/definitions/common.APIError"
-                        }
-                    }
-                }
-            }
-        },
-        "/interfaces/{id}": {
-            "get": {
-                "description": "get a interface",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Network"
-                ],
-                "summary": "get a interface",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/apis.InterfaceResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "$ref": "#/definitions/common.APIError"
-                        }
-                    },
-                    "401": {
-                        "description": "Not authorized",
-                        "schema": {
-                            "$ref": "#/definitions/common.APIError"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "delete a interface",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Network"
-                ],
-                "summary": "delete a interface",
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "$ref": "#/definitions/common.APIError"
-                        }
-                    },
-                    "401": {
-                        "description": "Not authorized",
-                        "schema": {
-                            "$ref": "#/definitions/common.APIError"
-                        }
-                    }
-                }
-            },
-            "patch": {
-                "description": "patch a interface",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Network"
-                ],
-                "summary": "patch a interface",
-                "parameters": [
-                    {
-                        "description": "Interface patch payload",
-                        "name": "message",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/apis.InterfacePatchPayload"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/apis.InterfaceResponse"
                         }
                     },
                     "400": {
@@ -2677,9 +2679,9 @@ const docTemplatev1 = `{
         "apis.FloatingIpPayload": {
             "type": "object",
             "properties": {
-                "bandwidth": {
+                "inbound": {
                     "type": "integer",
-                    "maximum": 1000,
+                    "maximum": 20000,
                     "minimum": 1
                 },
                 "instance": {
@@ -2689,6 +2691,11 @@ const docTemplatev1 = `{
                     "type": "string",
                     "maxLength": 32,
                     "minLength": 2
+                },
+                "outbound": {
+                    "type": "integer",
+                    "maximum": 20000,
+                    "minimum": 1
                 },
                 "public_ip": {
                     "type": "string"
@@ -3050,7 +3057,30 @@ const docTemplatev1 = `{
             }
         },
         "apis.InterfacePatchPayload": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "inbound": {
+                    "type": "integer",
+                    "maximum": 20000,
+                    "minimum": 1
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                },
+                "outbound": {
+                    "type": "integer",
+                    "maximum": 20000,
+                    "minimum": 1
+                },
+                "security_group": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.BaseReference"
+                    }
+                }
+            }
         },
         "apis.InterfacePayload": {
             "type": "object",
@@ -3058,6 +3088,11 @@ const docTemplatev1 = `{
                 "subnet"
             ],
             "properties": {
+                "inbound": {
+                    "type": "integer",
+                    "maximum": 20000,
+                    "minimum": 1
+                },
                 "ip_address": {
                     "type": "string"
                 },
@@ -3068,6 +3103,11 @@ const docTemplatev1 = `{
                     "type": "string",
                     "maxLength": 32,
                     "minLength": 2
+                },
+                "outbound": {
+                    "type": "integer",
+                    "maximum": 20000,
+                    "minimum": 1
                 },
                 "security_group": {
                     "type": "array",
@@ -3092,6 +3132,9 @@ const docTemplatev1 = `{
                 "id": {
                     "type": "string"
                 },
+                "inbound": {
+                    "type": "integer"
+                },
                 "ip_address": {
                     "type": "string"
                 },
@@ -3106,14 +3149,17 @@ const docTemplatev1 = `{
                     "maxLength": 32,
                     "minLength": 2
                 },
+                "outbound": {
+                    "type": "integer"
+                },
                 "security_groups": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.BaseReference"
+                        "$ref": "#/definitions/common.ResourceReference"
                     }
                 },
                 "subnet": {
-                    "$ref": "#/definitions/common.BaseReference"
+                    "$ref": "#/definitions/common.ResourceReference"
                 }
             }
         },

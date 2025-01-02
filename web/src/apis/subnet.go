@@ -185,8 +185,8 @@ func (v *SubnetAPI) getSubnetResponse(ctx context.Context, subnet *model.Subnet)
 	if subnet.Router != nil {
 		router := subnet.Router
 		subnetResp.VPC = &ResourceReference{
-			ID:    router.UUID,
-			Name:  router.Name,
+			ID:   router.UUID,
+			Name: router.Name,
 		}
 	}
 	return

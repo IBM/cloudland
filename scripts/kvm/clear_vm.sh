@@ -32,7 +32,7 @@ rm -rf $xml_dir/$vm_ID
 if [ -z "$wds_address" ]; then	
     rm -f ${image_dir}/${vm_ID}.*
 else
-    vhosts=$(basename $(ls /var/run/wds/instance-${ID}-volume-*))
+    vhosts=$(basename $(ls /var/run/wds/instance-${ID}-*))
     for vhost_name in $vhosts; do
         if [ -S "/var/run/wds/$vhost_name" ]; then
            vhost_id=$(wds_curl GET "api/v2/sync/block/vhost?name=$vhost_name" | jq -r '.vhosts[0].id')
