@@ -177,6 +177,11 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 		logger.Debug("DB: query volume failed", err)
 		return
 	}
+	if volume.Booting {
+		logger.Debug("Boot volume can not be deleted")
+		err = fmt.Errorf("Boot volume can not be deleted")
+		return
+	}
 	// check the permission
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.ValidateOwner(model.Writer, volume.Owner)

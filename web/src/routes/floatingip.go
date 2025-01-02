@@ -36,7 +36,7 @@ type FloatingIps struct {
 type FloatingIpAdmin struct{}
 type FloatingIpView struct{}
 
-func (a *FloatingIpAdmin) Create(ctx context.Context, instance *model.Instance, pubSubnet *model.Subnet, publicIp string, name string) (floatingIp *model.FloatingIp, err error) {
+func (a *FloatingIpAdmin) Create(ctx context.Context, instance *model.Instance, pubSubnet *model.Subnet, publicIp string, name string, inbound, outbound int32) (floatingIp *model.FloatingIp, err error) {
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -55,7 +55,7 @@ func (a *FloatingIpAdmin) Create(ctx context.Context, instance *model.Instance, 
 			EndTransaction(ctx, err)
 		}
 	}()
-	floatingIp = &model.FloatingIp{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, Name: name}
+	floatingIp = &model.FloatingIp{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, Name: name, Inbound: inbound, Outbound: outbound}
 	err = db.Create(floatingIp).Error
 	if err != nil {
 		logger.Debug("DB failed to create floating ip", err)
@@ -132,7 +132,7 @@ func (a *FloatingIpAdmin) Attach(ctx context.Context, floatingIp *model.Floating
 	}
 	pubSubnet := floatingIp.Interface.Address.Subnet
 	control := fmt.Sprintf("inter=%d", instance.Hyper)
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_floating.sh '%d' '%s' '%s' '%d' '%s' '%d'", router.ID, floatingIp.FipAddress, pubSubnet.Gateway, pubSubnet.Vlan, primaryIface.Address.Address, primaryIface.Address.Subnet.Vlan)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_floating.sh '%d' '%s' '%s' '%d' '%s' '%d' '%d' '%d' '%d'", router.ID, floatingIp.FipAddress, pubSubnet.Gateway, pubSubnet.Vlan, primaryIface.Address.Address, primaryIface.Address.Subnet.Vlan, floatingIp.ID, floatingIp.Inbound, floatingIp.Outbound)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Debug("Execute floating ip failed", err)
@@ -453,7 +453,7 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
-	_, err = floatingIpAdmin.Create(c.Req.Context(), instance, nil, publicIp, name)
+	_, err = floatingIpAdmin.Create(c.Req.Context(), instance, nil, publicIp, name, 0, 0)
 	if err != nil {
 		logger.Debug("Failed to create floating ip", err)
 		c.Data["ErrorMsg"] = err.Error()

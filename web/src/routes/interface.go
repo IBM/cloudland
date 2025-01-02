@@ -123,7 +123,7 @@ func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name, pairs strin
 			return
 		}
 		var secRules []*model.SecurityRule
-		secRules, err = model.GetSecurityRules(secgroups)
+		secRules, err = GetSecurityRules(ctx, secgroups)
 		if err != nil {
 			logger.Debug("Failed to get security rules", err)
 			return

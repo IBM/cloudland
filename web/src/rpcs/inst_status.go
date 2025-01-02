@@ -112,7 +112,7 @@ func ApplySecgroups(ctx context.Context, instance *model.Instance) (err error) {
 	}
 	for _, iface := range ifaces {
 		var secRules []*model.SecurityRule
-		secRules, err = model.GetSecurityRules(iface.SecurityGroups)
+		secRules, err = GetSecurityRules(ctx, iface.SecurityGroups)
 		if err != nil {
 			logger.Debug("Failed to get security rules", err)
 			continue

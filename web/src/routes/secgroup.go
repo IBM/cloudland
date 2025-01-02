@@ -183,10 +183,20 @@ func (a *SecgroupAdmin) GetSecurityGroup(ctx context.Context, reference *BaseRef
 }
 
 func (a *SecgroupAdmin) GetSecgroupInterfaces(ctx context.Context, secgroup *model.SecurityGroup) (err error) {
-	db := DB()
+	ctx, db := GetContextDB(ctx)
 	err = db.Model(secgroup).Preload("Address").Related(&secgroup.Interfaces, "Interfaces").Error
 	if err != nil {
 		logger.Debug("Failed to query secgroup, %v", err)
+		return
+	}
+	return
+}
+
+func (a *SecgroupAdmin) GetInterfaceSecgroups(ctx context.Context, iface *model.Interface) (err error) {
+	ctx, db := GetContextDB(ctx)
+	err = db.Model(iface).Related(&iface.SecurityGroups, "Security_Groups").Error
+	if err != nil {
+		logger.Debug("Failed to query interface, %v", err)
 		return
 	}
 	return

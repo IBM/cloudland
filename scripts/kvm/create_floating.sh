@@ -3,7 +3,7 @@
 cd `dirname $0`
 source ../cloudrc
 
-[ $# -lt 6 ] && echo "$0 <router> <ext_ip> <ext_gw> <ext_vlan> <int_ip> <int_vlan>" && exit -1
+[ $# -lt 7 ] && echo "$0 <router> <ext_ip> <ext_gw> <ext_vlan> <int_ip> <int_vlan> <mark_id> <inbound> <outbound>" && exit -1
 
 ID=$1
 router=router-$1
@@ -14,6 +14,9 @@ ext_vlan=$4
 int_addr=$5
 int_ip=${int_addr%/*}
 int_vlan=$6
+mark_id=$(($7 % 4294967295))
+inbound=$8
+outbound=$9
 
 [ -z "$router" -o "$router" = "router-0" -o  -z "$ext_ip" -o -z "$int_ip" ] && exit 1
 ip netns list | grep -q $router
@@ -47,3 +50,22 @@ ip netns exec $router iptables -t nat -S | grep " $int_ip\>.* MASQUERADE"
 ip netns exec $router iptables -t nat -D PREROUTING -d $ext_ip -j DNAT --to-destination $int_ip
 ip netns exec $router iptables -t nat -I PREROUTING -d $ext_ip -j DNAT --to-destination $int_ip
 ip netns exec $router arping -c 3 -I $ext_dev -s $ext_ip $ext_ip
+
+if [ "$inbound" -gt 0 ]; then
+    ip netns exec $router iptables -t mangle -D PREROUTING -d $ext_ip -j MARK --set-mark $mark_id
+    ip netns exec $router iptables -t mangle -I PREROUTING -d $ext_ip -j MARK --set-mark $mark_id
+    ip netns exec $router iptables -D FORWARD -m mark --mark $mark_id -j DROP
+    ip netns exec $router iptables -I FORWARD -m mark --mark $mark_id -j DROP
+    pkt_rate_limit=$(( $inbound * 100 ))
+    pkt_burst_limit=$inbound
+    ip netns exec $router iptables -D FORWARD -m mark --mark $mark_id -m limit --limit $pkt_rate_limit/second --limit-burst $pkt_burst_limit -j ACCEPT
+    ip netns exec $router iptables -I FORWARD -m mark --mark $mark_id -m limit --limit $pkt_rate_limit/second --limit-burst $pkt_burst_limit -j ACCEPT
+    ip netns exec $router tc filter add dev ns-$int_vlan protocol ip parent 1:0 prio 1 handle 1 fw flowid 1:1
+    ip netns exec $router tc class add dev ns-$int_vlan parent 1: classid 1:$mark_id htb rate ${bandwidth}mbit burst 100
+    ip netns exec $router tc filter add dev ns-$int_vlan protocol ip parent 1:0 prio 1 handle $mark_id fw flowid 1:$mark_id
+fi
+if [ "$outbound" -gt 0 ]; then
+    ip netns exec $router tc filter add dev $ext_dev protocol ip parent 1:0 prio 1 handle 1 fw flowid 1:1
+    ip netns exec $router tc class add dev $ext_dev parent 1: classid 1:$mark_id htb rate ${bandwidth}mbit burst 100
+    ip netns exec $router tc filter add dev $ext_dev protocol ip parent 1:0 prio 1 u32 match ip dst $ext_ip/32 flowid 1:$mark_id
+fi

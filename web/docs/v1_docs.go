@@ -2678,7 +2678,9 @@ const docTemplatev1 = `{
             "type": "object",
             "properties": {
                 "bandwidth": {
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
                 },
                 "instance": {
                     "$ref": "#/definitions/common.BaseID"

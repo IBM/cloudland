@@ -30,51 +30,43 @@ var (
 type SecruleAdmin struct{}
 type SecruleView struct{}
 
-func (a *SecruleAdmin) ApplySecgroup(ctx context.Context, secgroup *model.SecurityGroup, ruleID int64) (err error) {
+func (a *SecruleAdmin) ApplySecgroup(ctx context.Context, secgroup *model.SecurityGroup) (err error) {
 	ctx, db := GetContextDB(ctx)
-	if len(secgroup.Interfaces) <= 0 {
-		return
-	}
-	securityData := []*SecurityData{}
-	secrules := []*model.SecurityRule{}
-	err = db.Model(&model.SecurityRule{}).Where("secgroup = ?", secgroup.ID).Find(&secrules).Error
+	err = secgroupAdmin.GetSecgroupInterfaces(ctx, secgroup)
 	if err != nil {
-		logger.Debug("DB failed to query security rules", err)
-		return
-	}
-	for _, rule := range secrules {
-		if rule.ID == ruleID {
-			continue
-		}
-		sgr := &SecurityData{
-			Secgroup:    rule.Secgroup,
-			RemoteIp:    rule.RemoteIp,
-			RemoteGroup: rule.RemoteGroupID,
-			Direction:   rule.Direction,
-			IpVersion:   rule.IpVersion,
-			Protocol:    rule.Protocol,
-			PortMin:     rule.PortMin,
-			PortMax:     rule.PortMax,
-		}
-		securityData = append(securityData, sgr)
-	}
-	jsonData, err := json.Marshal(securityData)
-	if err != nil {
-		logger.Debug("Failed to marshal instance json data, %v", err)
+		logger.Debug("DB failed to get security group related interfaces", err)
 		return
 	}
 	for _, iface := range secgroup.Interfaces {
-		inst := &model.Instance{Model: model.Model{ID: iface.Instance}}
-		err = db.Take(inst).Error
+		var securityData []*SecurityData
+		err = secgroupAdmin.GetInterfaceSecgroups(ctx, iface)
 		if err != nil {
-			logger.Debug("DB failed to create security rule", err)
+			logger.Debug("DB failed to get interface related security groups, %v", err)
 			continue
 		}
-		control := fmt.Sprintf("inter=%d", inst.Hyper)
+		securityData, err = GetSecurityData(ctx, iface.SecurityGroups)
+		if err != nil {
+			logger.Debug("DB failed to get security data, %v", err)
+			continue
+		}
+		var jsonData []byte
+		jsonData, err = json.Marshal(securityData)
+		if err != nil {
+			logger.Debug("Failed to marshal security json data, %v", err)
+			continue
+		}
+		logger.Debug("iface: %v", iface)
+		instance := &model.Instance{Model: model.Model{ID: iface.Instance}}
+		err = db.Take(instance).Error
+		if err != nil {
+			logger.Debug("DB failed to get instance, %v", err)
+			continue
+		}
+		control := fmt.Sprintf("inter=%d", instance.Hyper)
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/reapply_secgroup.sh '%s' '%s' <<EOF\n%s\nEOF", iface.Address.Address, iface.MacAddr, jsonData)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
-			logger.Debug("Launch vm command execution failed", err)
+			logger.Debug("Reapply security groups execution failed, %v", err)
 			return
 		}
 	}
@@ -176,7 +168,7 @@ func (a *SecruleAdmin) Create(ctx context.Context, remoteIp, direction, protocol
 		logger.Debug("DB failed to create security rule", err)
 		return
 	}
-	err = a.ApplySecgroup(ctx, secgroup, 0)
+	err = a.ApplySecgroup(ctx, secgroup)
 	if err != nil {
 		logger.Debug("Failed to apply security rule", err)
 		return
@@ -198,18 +190,13 @@ func (a *SecruleAdmin) Delete(ctx context.Context, secrule *model.SecurityRule, 
 		err = fmt.Errorf("Not authorized")
 		return
 	}
-	err = secgroupAdmin.GetSecgroupInterfaces(ctx, secgroup)
-	if err != nil {
-		logger.Debug("DB failed to query security group", err)
-		return
-	}
-	err = a.ApplySecgroup(ctx, secgroup, secrule.ID)
-	if err != nil {
-		logger.Debug("Failed to apply security rule", err)
-		return
-	}
 	if err = db.Delete(secrule).Error; err != nil {
 		logger.Debug("DB failed to delete security rule, %v", err)
+		return
+	}
+	err = a.ApplySecgroup(ctx, secgroup)
+	if err != nil {
+		logger.Debug("Failed to apply security rule", err)
 		return
 	}
 	return
