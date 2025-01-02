@@ -48,7 +48,7 @@ func (m *MemberShip) CheckCreater(table string, id int64) (isCreater bool, err e
 	var result Result
 	err = db.Table(table).Select("creater").Where("id = ?", id).Scan(&result).Error
 	if err != nil {
-		logger.Debug("Failed to query resource creater", err)
+		logger.Error("Failed to query resource creater", err)
 		return
 	}
 	if m.UserID == result.Creater || (m.OrgName == "admin" && m.Role == model.Admin) {
@@ -63,7 +63,7 @@ func (m *MemberShip) CheckUser(id int64) (permit bool, err error) {
 	user := &model.User{Model: model.Model{ID: id}}
 	err = db.Take(&user).Error
 	if err != nil {
-		logger.Debug("Failed to query user", err)
+		logger.Error("Failed to query user", err)
 		return
 	}
 	if user.ID == m.UserID || (m.OrgName == "admin" && m.Role == model.Admin) {
@@ -87,7 +87,7 @@ func (m *MemberShip) CheckOwner(reqRole model.Role, table string, id int64) (isO
 	db := DB()
 	err = db.Table(table).Select("owner").Where("id = ?", id).Scan(&result).Error
 	if err != nil {
-		logger.Debug("Failed to query resource owner", err)
+		logger.Error("Failed to query resource owner", err)
 		return
 	}
 	if m.OrgID == result.Owner || m.Role == model.Admin {
@@ -141,7 +141,7 @@ func GetDBMemberShip(userID, orgID int64) (m *MemberShip, err error) {
 	member := &model.Member{}
 	err = db.Where("user_id = ? and org_id = ?", userID, orgID).Take(member).Error
 	if err != nil || member.ID == 0 {
-		logger.Debug("Failed to query member", err)
+		logger.Error("Failed to query member", err)
 		return
 	}
 	m.UserName = member.UserName

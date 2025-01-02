@@ -63,13 +63,13 @@ func (a *HyperAdmin) GetHyperByHostid(ctx context.Context, hostid int32) (hyper 
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
 		err = fmt.Errorf("Not authorized for this operation")
-		logger.Debug("Not authorized for this operation", err)
+		logger.Error("Not authorized for this operation", err)
 		return
 	}
 	db := DB()
 	hyper = &model.Hyper{}
 	if err = db.Where("hostid = ?", hostid).Take(hyper).Error; err != nil {
-		logger.Debug("Failed to query hypervisor", err)
+		logger.Error("Failed to query hypervisor", err)
 		return
 	}
 	return
@@ -79,7 +79,7 @@ func (v *HyperView) List(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return

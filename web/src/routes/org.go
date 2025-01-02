@@ -41,7 +41,7 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
-		logger.Debug("Not authorized to delete the user")
+		logger.Error("Not authorized to delete the user")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -54,7 +54,7 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 	user := &model.User{Username: owner}
 	err = db.Where(user).Take(user).Error
 	if err != nil {
-		logger.Debug("Failed to query user", err)
+		logger.Error("Failed to query user", err)
 		return
 	}
 	org = &model.Organization{
@@ -64,19 +64,19 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 	}
 	err = db.Create(org).Error
 	if err != nil {
-		logger.Debug("DB failed to create organization ", err)
+		logger.Error("DB failed to create organization ", err)
 		return
 	}
 	member := &model.Member{UserID: user.ID, UserName: owner, OrgID: org.ID, OrgName: name, Role: model.Owner}
 	err = db.Create(member).Error
 	if err != nil {
-		logger.Debug("DB failed to create organization member ", err)
+		logger.Error("DB failed to create organization member ", err)
 		return
 	}
 	user.Owner = org.ID
 	err = db.Model(user).Updates(user).Error
 	if err != nil {
-		logger.Debug("DB failed to update user owner", err)
+		logger.Error("DB failed to update user owner", err)
 		return
 	}
 	return
@@ -88,7 +88,7 @@ func (a *OrgAdmin) Update(ctx context.Context, orgID int64, members, users []str
 	org = &model.Organization{Model: model.Model{ID: orgID}}
 	err = db.Set("gorm:auto_preload", true).Take(org).Take(org).Error
 	if err != nil {
-		logger.Debug("Failed to query organization", err)
+		logger.Error("Failed to query organization", err)
 		return
 	}
 	for _, name := range members {
@@ -109,7 +109,7 @@ func (a *OrgAdmin) Update(ctx context.Context, orgID int64, members, users []str
 		user := &model.User{Username: name}
 		err = db.Model(user).Where(user).Take(user).Error
 		if err != nil || user.ID <= 0 {
-			logger.Debug("Failed to query user", err)
+			logger.Error("Failed to query user", err)
 			continue
 		}
 		member := &model.Member{
@@ -123,7 +123,7 @@ func (a *OrgAdmin) Update(ctx context.Context, orgID int64, members, users []str
 		}
 		err = db.Create(member).Error
 		if err != nil {
-			logger.Debug("Failed to create member", err)
+			logger.Error("Failed to create member", err)
 			continue
 		}
 	}
@@ -148,14 +148,14 @@ func (a *OrgAdmin) Update(ctx context.Context, orgID int64, members, users []str
 		}
 		err = db.Where(member).Delete(member).Error
 		if err != nil {
-			logger.Debug("Failed to delete member", err)
+			logger.Error("Failed to delete member", err)
 			continue
 		}
 	}
 	for i, user := range users {
 		err = db.Model(&model.Member{}).Where("user_name = ? and org_id = ?", user, orgID).Update("role", roles[i]).Error
 		if err != nil {
-			logger.Debug("Failed to update member", err)
+			logger.Error("Failed to update member", err)
 			continue
 		}
 	}
@@ -174,7 +174,7 @@ func (a *OrgAdmin) GetOrgName(id int64) (name string) {
 	db := DB()
 	err := db.Take(org, &model.Organization{Name: name}).Error
 	if err != nil {
-		logger.Debug("DB failed to query org", err)
+		logger.Error("DB failed to query org", err)
 		return
 	}
 	name = org.Name
@@ -185,7 +185,7 @@ func (a *OrgAdmin) Delete(ctx context.Context, id int64) (err error) {
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
-		logger.Debug("Not authorized to delete the user")
+		logger.Error("Not authorized to delete the user")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -199,35 +199,35 @@ func (a *OrgAdmin) Delete(ctx context.Context, id int64) (err error) {
 	count := 0
 	err = db.Model(&model.Interface{}).Where("owner = ?", id).Count(&count).Error
 	if err != nil {
-		logger.Debug("DB failed to query interfaces, %v", err)
+		logger.Error("DB failed to query interfaces, %v", err)
 		return
 	}
 	if count > 0 {
-		logger.Debug("There are resources in this org", err)
+		logger.Error("There are resources in this org", err)
 		err = fmt.Errorf("There are resources in this org")
 		return
 	}
 	err = db.Delete(&model.Member{}, `org_id = ?`, id).Error
 	if err != nil {
-		logger.Debug("DB failed to delete member, %v", err)
+		logger.Error("DB failed to delete member, %v", err)
 		return
 	}
 	keys := []*model.Key{}
 	err = db.Where("owner = ?", id).Find(&keys).Error
 	if err != nil {
-		logger.Debug("DB failed to query keys", err)
+		logger.Error("DB failed to query keys", err)
 		return
 	}
 	for _, key := range keys {
 		err = keyAdmin.Delete(ctx, key)
 		if err != nil {
-			logger.Debug("Can not delete key", err)
+			logger.Error("Can not delete key", err)
 			return
 		}
 	}
 	err = db.Delete(&model.Organization{Model: model.Model{ID: id}}).Error
 	if err != nil {
-		logger.Debug("DB failed to delete organization, %v", err)
+		logger.Error("DB failed to delete organization, %v", err)
 		return
 	}
 	return
@@ -250,19 +250,19 @@ func (a *OrgAdmin) List(ctx context.Context, offset, limit int64, order, query s
 	user := &model.User{Model: model.Model{ID: memberShip.UserID}}
 	err = db.Take(user).Error
 	if err != nil {
-		logger.Debug("DB failed to query user, %v", err)
+		logger.Error("DB failed to query user, %v", err)
 		return
 	}
 	where := memberShip.GetWhere()
 	orgs = []*model.Organization{}
 	if err = db.Model(&orgs).Where(where).Where(query).Count(&total).Error; err != nil {
-		logger.Debug("DB failed to count organizations, %v", err)
+		logger.Error("DB failed to count organizations, %v", err)
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
 	err = db.Where(where).Where(query).Find(&orgs).Error
 	if err != nil {
-		logger.Debug("DB failed to query organizations, %v", err)
+		logger.Error("DB failed to query organizations, %v", err)
 		return
 	}
 
@@ -279,7 +279,7 @@ func (v *OrgView) List(c *macaron.Context, store session.Store) {
 	query := c.QueryTrim("q")
 	total, orgs, err := orgAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
-		logger.Debug("Failed to list organizations, %v", err)
+		logger.Error("Failed to list organizations, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -296,28 +296,28 @@ func (v *OrgView) Delete(c *macaron.Context, store session.Store) (err error) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	id := c.Params("id")
 	if id == "" {
-		logger.Debug("ID is empty, %v", err)
+		logger.Error("ID is empty, %v", err)
 		c.Data["ErrorMsg"] = "ID is empty"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	orgID, err := strconv.Atoi(id)
 	if err != nil {
-		logger.Debug("Invalid organization ID, %v", err)
+		logger.Error("Invalid organization ID, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	err = orgAdmin.Delete(c.Req.Context(), int64(orgID))
 	if err != nil {
-		logger.Debug("Failed to delete organization, %v", err)
+		logger.Error("Failed to delete organization, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -332,7 +332,7 @@ func (v *OrgView) New(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -356,19 +356,19 @@ func (v *OrgView) Edit(c *macaron.Context, store session.Store) {
 		return
 	}
 	if memberShip.Role != model.Admin && (memberShip.Role < model.Owner || memberShip.OrgID != int64(orgID)) {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	org := &model.Organization{Model: model.Model{ID: int64(orgID)}}
 	if err = db.Preload("Members").Take(org).Error; err != nil {
-		logger.Debug("Organization query failed", err)
+		logger.Error("Organization query failed", err)
 		return
 	}
 	org.OwnerUser = &model.User{Model: model.Model{ID: org.Owner}}
 	if err = db.Take(org.OwnerUser).Error; err != nil {
-		logger.Debug("Owner user query failed", err)
+		logger.Error("Owner user query failed", err)
 		return
 	}
 	c.Data["Org"] = org
@@ -390,7 +390,7 @@ func (v *OrgView) Patch(c *macaron.Context, store session.Store) {
 		return
 	}
 	if memberShip.Role != model.Admin && (memberShip.Role < model.Owner || memberShip.OrgID != int64(orgID)) {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -404,13 +404,13 @@ func (v *OrgView) Patch(c *macaron.Context, store session.Store) {
 	for _, r := range roles {
 		role, err := strconv.Atoi(r)
 		if err != nil {
-			logger.Debug("Failed to convert role", err)
+			logger.Error("Failed to convert role", err)
 			c.Data["ErrorMsg"] = err.Error()
 			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
 		if memberShip.Role < model.Role(role) {
-			logger.Debug("Not authorized for this operation")
+			logger.Error("Not authorized for this operation")
 			c.Data["ErrorMsg"] = "Not authorized for this operation"
 			c.HTML(http.StatusBadRequest, "error")
 			return
@@ -419,7 +419,7 @@ func (v *OrgView) Patch(c *macaron.Context, store session.Store) {
 	}
 	_, err = orgAdmin.Update(c.Req.Context(), int64(orgID), memberList, userList, roleList)
 	if err != nil {
-		logger.Debug("Failed to update organization, %v", err)
+		logger.Error("Failed to update organization, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -431,7 +431,7 @@ func (v *OrgView) Create(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -441,7 +441,7 @@ func (v *OrgView) Create(c *macaron.Context, store session.Store) {
 	owner := c.QueryTrim("owner")
 	_, err := orgAdmin.Create(c.Req.Context(), name, owner)
 	if err != nil {
-		logger.Debug("Failed to create organization, %v", err)
+		logger.Error("Failed to create organization, %v", err)
 		c.HTML(http.StatusBadRequest, err.Error())
 		return
 	}

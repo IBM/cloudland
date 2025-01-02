@@ -47,20 +47,20 @@ func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name, pairs strin
 	}()
 	iface = &model.Interface{Model: model.Model{ID: id}}
 	if err = db.Set("gorm:auto_preload", true).Take(iface).Error; err != nil {
-		logger.Debug("Failed to query interface ", err)
+		logger.Error("Failed to query interface ", err)
 		return
 	}
 	if iface.Name != name {
 		iface.Name = name
 		if err = db.Model(iface).Updates(iface).Error; err != nil {
-			logger.Debug("Failed to save interface", err)
+			logger.Error("Failed to save interface", err)
 			return
 		}
 	}
 	if iface.AddrPairs != pairs {
 		iface.AddrPairs = pairs
 		if err = db.Model(iface).Updates(iface).Error; err != nil {
-			logger.Debug("Failed to save interface", err)
+			logger.Error("Failed to save interface", err)
 			return
 		}
 	}
@@ -68,7 +68,7 @@ func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name, pairs strin
 	if iface.Hyper < 0 {
 		instance := &model.Instance{Model: model.Model{ID: iface.Instance}}
 		if err = db.Take(instance).Error; err != nil {
-			logger.Debug("Failed to query instance ", err)
+			logger.Error("Failed to query instance ", err)
 			return
 		}
 		control = fmt.Sprintf("inter=%d", instance.Hyper)
@@ -76,7 +76,7 @@ func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name, pairs strin
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/allow_as_addr.sh '%s' '%s' <<EOF\n%s\nEOF", iface.Address.Address, iface.MacAddr, pairs)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
-		logger.Debug("Launch vm command execution failed", err)
+		logger.Error("Launch vm command execution failed", err)
 		return
 	}
 	sgChanged := false
@@ -113,19 +113,19 @@ func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name, pairs strin
 		logger.Debug("$$$$ start to change security group")
 		secgroups := []*model.SecurityGroup{}
 		if err = db.Where(sgIDs).Find(&secgroups).Error; err != nil {
-			logger.Debug("Security group query failed", err)
+			logger.Error("Security group query failed", err)
 			return
 		}
 		db.Model(iface).Association("SecurityGroups").Clear()
 		iface.SecurityGroups = secgroups
 		if err = db.Model(iface).Updates(iface).Error; err != nil {
-			logger.Debug("Failed to save security groups", err)
+			logger.Error("Failed to save security groups", err)
 			return
 		}
 		var secRules []*model.SecurityRule
 		secRules, err = GetSecurityRules(ctx, secgroups)
 		if err != nil {
-			logger.Debug("Failed to get security rules", err)
+			logger.Error("Failed to get security rules", err)
 			return
 		}
 		securityData := []*SecurityData{}
@@ -145,13 +145,13 @@ func (a *InterfaceAdmin) Update(ctx context.Context, id int64, name, pairs strin
 		var jsonData []byte
 		jsonData, err = json.Marshal(securityData)
 		if err != nil {
-			logger.Debug("Failed to marshal security json data, %v", err)
+			logger.Error("Failed to marshal security json data, %v", err)
 			return
 		}
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/reapply_secgroup.sh '%s' '%s' <<EOF\n%s\nEOF", iface.Address.Address, iface.MacAddr, jsonData)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
-			logger.Debug("Launch vm command execution failed", err)
+			logger.Error("Launch vm command execution failed", err)
 			return
 		}
 	}
@@ -175,14 +175,14 @@ func (v *InterfaceView) Edit(c *macaron.Context, store session.Store) {
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "interfaces", int64(ifaceID))
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	iface := &model.Interface{Model: model.Model{ID: int64(ifaceID)}}
 	if err = db.Preload("Address").Preload("SecurityGroups").Take(iface).Error; err != nil {
-		logger.Debug("Image query failed", err)
+		logger.Error("Image query failed", err)
 		return
 	}
 	_, secgroups, err := secgroupAdmin.List(c.Req.Context(), 0, -1, "", "")
@@ -207,7 +207,7 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 	subnetID := c.QueryInt64("subnet")
 	subnet, err := subnetAdmin.Get(ctx, subnetID)
 	if err != nil {
-		logger.Debug("Get subnet failed", err)
+		logger.Error("Get subnet failed", err)
 		c.HTML(http.StatusBadRequest, err.Error())
 		return
 	}
@@ -215,7 +215,7 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 	if instID > 0 {
 		permit, _ := memberShip.CheckOwner(model.Writer, "instances", int64(instID))
 		if !permit {
-			logger.Debug("Not authorized to access instance")
+			logger.Error("Not authorized to access instance")
 			c.Data["ErrorMsg"] = "Not authorized to access instance"
 			c.HTML(http.StatusBadRequest, "error")
 			return
@@ -231,12 +231,12 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 		for i := 0; i < len(sg); i++ {
 			sgID, err := strconv.Atoi(sg[i])
 			if err != nil {
-				logger.Debug("Invalid security group ID", err)
+				logger.Error("Invalid security group ID", err)
 				continue
 			}
 			permit, _ := memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
 			if !permit {
-				logger.Debug("Not authorized to access security group")
+				logger.Error("Not authorized to access security group")
 				c.Data["ErrorMsg"] = "Not authorized to access security group"
 				c.HTML(http.StatusBadRequest, "error")
 				return
@@ -247,7 +247,7 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 		sgID := store.Get("defsg").(int64)
 		permit, _ := memberShip.CheckOwner(model.Writer, "security_groups", int64(sgID))
 		if !permit {
-			logger.Debug("Not authorized to access security group")
+			logger.Error("Not authorized to access security group")
 			c.Data["ErrorMsg"] = "Not authorized to access security group"
 			c.HTML(http.StatusBadRequest, "error")
 			return
@@ -256,7 +256,7 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 	}
 	secgroups := []*model.SecurityGroup{}
 	if err = DB().Where(sgIDs).Find(&secgroups).Error; err != nil {
-		logger.Debug("Security group query failed", err)
+		logger.Error("Security group query failed", err)
 		return
 	}
 	iface, err := CreateInterface(ctx, subnet, instID, memberShip.OrgID, -1, address, mac, ifname, "instance", secgroups)
@@ -274,7 +274,7 @@ func (v *InterfaceView) Delete(c *macaron.Context, store session.Store) {
 	id := c.ParamsInt64("id")
 	permit, err := memberShip.CheckOwner(model.Writer, "interfaces", id)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -312,7 +312,7 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "interfaces", int64(ifaceID))
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -326,12 +326,12 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 		for _, s := range secgroups {
 			sID, err := strconv.Atoi(s)
 			if err != nil {
-				logger.Debug("Invalid security group ID", err)
+				logger.Error("Invalid security group ID", err)
 				continue
 			}
 			permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sID))
 			if !permit {
-				logger.Debug("Not authorized for this operation")
+				logger.Error("Not authorized for this operation")
 				c.Data["ErrorMsg"] = "Not authorized for this operation"
 				c.HTML(http.StatusBadRequest, "error")
 				return
@@ -342,7 +342,7 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 		sID := store.Get("defsg").(int64)
 		permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sID))
 		if !permit {
-			logger.Debug("Not authorized for this operation")
+			logger.Error("Not authorized for this operation")
 			c.Data["ErrorMsg"] = "Not authorized for this operation"
 			c.HTML(http.StatusBadRequest, "error")
 			return
@@ -351,7 +351,7 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 	}
 	iface, err := interfaceAdmin.Update(c.Req.Context(), int64(ifaceID), name, pairs, sgIDs)
 	if err != nil {
-		logger.Debug("Failed to update interface", err)
+		logger.Error("Failed to update interface", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
 				"error": err.Error(),

@@ -41,7 +41,7 @@ func GetVolumeDriver() (driver string) {
 func (a *VolumeAdmin) Get(ctx context.Context, id int64) (volume *model.Volume, err error) {
 	if id <= 0 {
 		err = fmt.Errorf("Invalid subnet ID: %d", id)
-		logger.Debug(err)
+		logger.Error(err)
 		return
 	}
 	db := DB()
@@ -49,12 +49,12 @@ func (a *VolumeAdmin) Get(ctx context.Context, id int64) (volume *model.Volume, 
 	where := memberShip.GetWhere()
 	volume = &model.Volume{Model: model.Model{ID: id}}
 	if err = db.Preload("Instance").Where(where).Take(volume).Error; err != nil {
-		logger.Debug("Failed to query volume, %v", err)
+		logger.Error("Failed to query volume, %v", err)
 		return
 	}
 	permit := memberShip.ValidateOwner(model.Reader, volume.Owner)
 	if !permit {
-		logger.Debug("Not authorized to read the volume")
+		logger.Error("Not authorized to read the volume")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -68,12 +68,12 @@ func (a *VolumeAdmin) GetVolumeByUUID(ctx context.Context, uuID string) (volume 
 	where := memberShip.GetWhere()
 	err = db.Preload("Instance").Where(where).Where("uuid = ?", uuID).Take(volume).Error
 	if err != nil {
-		logger.Debug("DB: query volume failed", err)
+		logger.Error("DB: query volume failed", err)
 		return
 	}
 	permit := memberShip.ValidateOwner(model.Reader, volume.Owner)
 	if !permit {
-		logger.Debug("Not authorized to read the volume")
+		logger.Error("Not authorized to read the volume")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -120,7 +120,7 @@ func (a *VolumeAdmin) CreateVolume(ctx context.Context, name string, size int32,
 	}
 	err = db.Create(volume).Error
 	if err != nil {
-		logger.Debug("DB failed to create volume", err)
+		logger.Error("DB failed to create volume", err)
 		return
 	}
 	return
@@ -132,14 +132,14 @@ func (a *VolumeAdmin) Create(ctx context.Context, name string, size int32,
 	// check the permission
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
-		logger.Debug("Not authorized to create volume")
+		logger.Error("Not authorized to create volume")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
 
 	volume, err = a.CreateVolume(ctx, name, size, 0, false, iopsLimit, iopsBurst, bpsLimit, bpsBurst, poolID)
 	if err != nil {
-		logger.Debug("DB create volume failed", err)
+		logger.Error("DB create volume failed", err)
 		return
 	}
 
@@ -149,7 +149,7 @@ func (a *VolumeAdmin) Create(ctx context.Context, name string, size int32,
 		GetVolumeDriver(), volume.ID, volume.Size, volume.UUID, iopsLimit, iopsBurst, bpsLimit, bpsBurst, poolID)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
-		logger.Debug("Create volume execution failed", err)
+		logger.Error("Create volume execution failed", err)
 		return
 	}
 	return
@@ -159,7 +159,7 @@ func (a *VolumeAdmin) UpdateByUUID(ctx context.Context, uuid string, name string
 	db := DB()
 	volume = &model.Volume{}
 	if err = db.Where("uuid = ?", uuid).Take(volume).Error; err != nil {
-		logger.Debug("DB: query volume failed", err)
+		logger.Error("DB: query volume failed", err)
 		return
 	}
 	return a.Update(ctx, volume.ID, name, instID)
@@ -174,11 +174,11 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 	}()
 	volume = &model.Volume{Model: model.Model{ID: id}}
 	if err = db.Preload("Instance").Take(volume).Error; err != nil {
-		logger.Debug("DB: query volume failed", err)
+		logger.Error("DB: query volume failed", err)
 		return
 	}
 	if volume.Booting {
-		logger.Debug("Boot volume can not be deleted")
+		logger.Error("Boot volume can not be deleted")
 		err = fmt.Errorf("Boot volume can not be deleted")
 		return
 	}
@@ -186,7 +186,7 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.ValidateOwner(model.Writer, volume.Owner)
 	if !permit {
-		logger.Debug("Not authorized to update the volume")
+		logger.Error("Not authorized to update the volume")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -209,7 +209,7 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/detach_volume_%s.sh '%d' '%d' '%s'", vol_driver, volume.Instance.ID, volume.ID, uuid)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
-			logger.Debug("Detach volume execution failed", err)
+			logger.Error("Detach volume execution failed", err)
 			return
 		}
 		// PET-224: we should not set the instance ID to 0 here
@@ -219,7 +219,7 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 	} else if instID > 0 && volume.InstanceID == 0 && volume.Status == "available" {
 		instance := &model.Instance{Model: model.Model{ID: instID}}
 		if err = db.Model(instance).Take(instance).Error; err != nil {
-			logger.Debug("DB: query instance failed", err)
+			logger.Error("DB: query instance failed", err)
 			return
 		}
 		control := fmt.Sprintf("inter=%d", instance.Hyper)
@@ -227,7 +227,7 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/attach_volume_%s.sh '%d' '%d' '%s' '%s'", vol_driver, instance.ID, volume.ID, volume.GetVolumePath(), uuid)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
-			logger.Debug("Create volume execution failed", err)
+			logger.Error("Create volume execution failed", err)
 			return
 		}
 		// PET-224: we should not set the instance ID to instID here
@@ -236,7 +236,7 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 		//volume.Instance = nil
 	}
 	if err = db.Model(volume).Updates(volume).Error; err != nil {
-		logger.Debug("DB: update volume failed", err)
+		logger.Error("DB: update volume failed", err)
 		return
 	}
 	return
@@ -253,18 +253,18 @@ func (a *VolumeAdmin) Delete(ctx context.Context, volume *model.Volume) (err err
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.ValidateOwner(model.Writer, volume.Owner)
 	if !permit {
-		logger.Debug("Not authorized to delete the volume")
+		logger.Error("Not authorized to delete the volume")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
 
 	if volume.Status == "attached" {
-		logger.Debug("Please detach volume before delete it")
+		logger.Error("Please detach volume before delete it")
 		err = fmt.Errorf("Please detach volume[%s] before delete it", volume.Name)
 		return
 	}
 	if err = db.Model(volume).Delete(volume).Error; err != nil {
-		logger.Debug("DB: delete volume failed", err)
+		logger.Error("DB: delete volume failed", err)
 		return
 	}
 	control := fmt.Sprintf("inter=")
@@ -277,11 +277,11 @@ func (a *VolumeAdmin) Delete(ctx context.Context, volume *model.Volume) (err err
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_volume_%s.sh '%d' '%s' '%s'", vol_driver, volume.ID, uuid, volume.GetVolumePath())
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
-		logger.Debug("Delete volume execution failed", err)
+		logger.Error("Delete volume execution failed", err)
 		return
 	}
 	if err = db.Delete(volume).Error; err != nil {
-		logger.Debug("DB: delete volume failed", err)
+		logger.Error("DB: delete volume failed", err)
 		return
 	}
 	return
@@ -291,7 +291,7 @@ func (a *VolumeAdmin) DeleteVolumeByUUID(ctx context.Context, uuID string) (err 
 	db := DB()
 	volume := &model.Volume{}
 	if err = db.Where("uuid = ?", uuID).Take(volume).Error; err != nil {
-		logger.Debug("DB: query volume failed", err)
+		logger.Error("DB: query volume failed", err)
 		return
 	}
 	return a.Delete(ctx, volume)
@@ -349,7 +349,7 @@ func (a *VolumeAdmin) ListVolume(ctx context.Context, offset, limit int64, order
 		for _, vol := range volumes {
 			vol.OwnerInfo = &model.Organization{Model: model.Model{ID: vol.Owner}}
 			if err = db.Take(vol.OwnerInfo).Error; err != nil {
-				logger.Debug("Failed to query owner info", err)
+				logger.Error("Failed to query owner info", err)
 				return
 			}
 		}
@@ -362,7 +362,7 @@ func (v *VolumeView) List(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -442,7 +442,7 @@ func (v *VolumeView) New(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -462,13 +462,13 @@ func (v *VolumeView) Edit(c *macaron.Context, store session.Store) {
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "volumes", int64(volID))
 	if err != nil {
-		logger.Debug("Failed to check permission", err)
+		logger.Error("Failed to check permission", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -504,14 +504,14 @@ func (v *VolumeView) Patch(c *macaron.Context, store session.Store) {
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "volumes", int64(volID))
 	if err != nil {
-		logger.Debug("Failed to check permission", err)
+		logger.Error("Failed to check permission", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -527,14 +527,14 @@ func (v *VolumeView) Patch(c *macaron.Context, store session.Store) {
 		// have to check the instance permission
 		permit, err = memberShip.CheckOwner(model.Writer, "instances", int64(instID))
 		if err != nil {
-			logger.Debug("Failed to check permission", err)
+			logger.Error("Failed to check permission", err)
 			c.Data["ErrorMsg"] = err.Error()
 			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
 
 		if !permit {
-			logger.Debug("Not authorized for this operation")
+			logger.Error("Not authorized for this operation")
 			c.Data["ErrorMsg"] = "Not authorized for this operation"
 			c.HTML(http.StatusBadRequest, "error")
 			return
@@ -542,7 +542,7 @@ func (v *VolumeView) Patch(c *macaron.Context, store session.Store) {
 	}
 	volume, err := volumeAdmin.Update(c.Req.Context(), int64(volID), name, int64(instID))
 	if err != nil {
-		logger.Debug("Failed to update volume", err)
+		logger.Error("Failed to update volume", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
 				"error": err.Error(),
@@ -564,7 +564,7 @@ func (v *VolumeView) Create(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -580,7 +580,7 @@ func (v *VolumeView) Create(c *macaron.Context, store session.Store) {
 	}
 	volume, err := volumeAdmin.Create(c.Req.Context(), name, int32(vsize), 0, 0, 0, 0, "")
 	if err != nil {
-		logger.Debug("Create volume failed", err)
+		logger.Error("Create volume failed", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
 				"error": err.Error(),

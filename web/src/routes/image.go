@@ -47,7 +47,7 @@ func (a *ImageAdmin) Create(ctx context.Context, name, osVersion, virtType, user
 	image = &model.Image{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, OsVersion: osVersion, VirtType: virtType, UserName: userName, Name: name, OSCode: name, Status: "creating", Architecture: architecture}
 	err = db.Create(image).Error
 	if err != nil {
-		logger.Debug("DB create image failed, %v", err)
+		logger.Error("DB create image failed, %v", err)
 	}
 	prefix := strings.Split(image.UUID, "-")[0]
 	control := "inter="
@@ -56,7 +56,7 @@ func (a *ImageAdmin) Create(ctx context.Context, name, osVersion, virtType, user
 		instance := &model.Instance{Model: model.Model{ID: instID}}
 		err = db.Take(instance).Error
 		if err != nil {
-			logger.Debug("DB failed to query instance", err)
+			logger.Error("DB failed to query instance", err)
 			return
 		}
 		control = fmt.Sprintf("inter=%d", instance.Hyper)
@@ -64,7 +64,7 @@ func (a *ImageAdmin) Create(ctx context.Context, name, osVersion, virtType, user
 	}
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
-		logger.Debug("Create image command execution failed", err)
+		logger.Error("Create image command execution failed", err)
 		return
 	}
 	return
@@ -75,13 +75,13 @@ func (a *ImageAdmin) GetImageByUUID(ctx context.Context, uuID string) (image *mo
 	image = &model.Image{}
 	err = db.Where("uuid = ?", uuID).Take(image).Error
 	if err != nil {
-		logger.Debug("Failed to query image, %v", err)
+		logger.Error("Failed to query image, %v", err)
 		return
 	}
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
-		logger.Debug("Not authorized to get image")
+		logger.Error("Not authorized to get image")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -93,13 +93,13 @@ func (a *ImageAdmin) GetImageByName(ctx context.Context, name string) (image *mo
 	image = &model.Image{}
 	err = db.Where("name = ?", name).Take(image).Error
 	if err != nil {
-		logger.Debug("Failed to query image, %v", err)
+		logger.Error("Failed to query image, %v", err)
 		return
 	}
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
-		logger.Debug("Not authorized to get image")
+		logger.Error("Not authorized to get image")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -109,20 +109,20 @@ func (a *ImageAdmin) GetImageByName(ctx context.Context, name string) (image *mo
 func (a *ImageAdmin) Get(ctx context.Context, id int64) (image *model.Image, err error) {
 	if id <= 0 {
 		err = fmt.Errorf("Invalid image ID: %d", id)
-		logger.Debug(err)
+		logger.Error(err)
 		return
 	}
 	db := DB()
 	image = &model.Image{Model: model.Model{ID: id}}
 	err = db.Take(image).Error
 	if err != nil {
-		logger.Debug("DB failed to query image, %v", err)
+		logger.Error("DB failed to query image, %v", err)
 		return
 	}
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
-		logger.Debug("Not authorized to get image")
+		logger.Error("Not authorized to get image")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -155,7 +155,7 @@ func (a *ImageAdmin) Delete(ctx context.Context, image *model.Image) (err error)
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.ValidateOwner(model.Writer, image.Owner)
 	if !permit {
-		logger.Debug("Not authorized to delete image")
+		logger.Error("Not authorized to delete image")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -165,7 +165,7 @@ func (a *ImageAdmin) Delete(ctx context.Context, image *model.Image) (err error)
 		command := fmt.Sprint("/opt/cloudland/scripts/backend/clear_image.sh %d %s", image.ID, prefix, image.Format)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
-			logger.Debug("Clear image command execution failed", err)
+			logger.Error("Clear image command execution failed", err)
 			return
 		}
 	}
@@ -204,7 +204,7 @@ func (v *ImageView) List(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -284,7 +284,7 @@ func (v *ImageView) New(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -303,7 +303,7 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -318,7 +318,7 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	architecture := "x86_64"
 	_, err := imageAdmin.Create(c.Req.Context(), name, osVersion, virtType, userName, url, architecture, instance)
 	if err != nil {
-		logger.Debug("Create instance failed", err)
+		logger.Error("Create instance failed", err)
 		c.HTML(http.StatusBadRequest, err.Error())
 		return
 	}

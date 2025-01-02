@@ -58,14 +58,14 @@ func AllocateAddress(ctx context.Context, subnet *model.Subnet, ifaceID int64, i
 		err = db.Set("gorm:query_option", "FOR UPDATE").Where("subnet_id = ? and allocated = ? and address = ?", subnet.ID, false, ipaddr).Take(address).Error
 	}
 	if err != nil {
-		logger.Debug("Failed to query address, %v", err)
+		logger.Error("Failed to query address, %v", err)
 		return nil, err
 	}
 	address.Allocated = true
 	address.Type = addrType
 	address.Interface = ifaceID
 	if err = db.Model(address).Update(address).Error; err != nil {
-		logger.Debug("Failed to Update address, %v", err)
+		logger.Error("Failed to Update address, %v", err)
 		return nil, err
 	}
 	address.Subnet = subnet
@@ -83,7 +83,7 @@ func DeallocateAddress(ctx context.Context, ifaces []*model.Interface) (err erro
 		}
 	}
 	if err = db.Model(&model.Address{}).Where(where).Update(map[string]interface{}{"allocated": false, "interface": 0}).Error; err != nil {
-		logger.Debug("Failed to Update addresses, %v", err)
+		logger.Error("Failed to Update addresses, %v", err)
 		return
 	}
 	return
@@ -93,7 +93,7 @@ func genMacaddr() (mac string, err error) {
 	buf := make([]byte, 4)
 	_, err = rand.Read(buf)
 	if err != nil {
-		logger.Debug("Failed to generate random numbers, %v", err)
+		logger.Error("Failed to generate random numbers, %v", err)
 		return
 	}
 	mac = fmt.Sprintf("52:54:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3])
@@ -109,7 +109,7 @@ func CreateInterface(ctx context.Context, subnet *model.Subnet, ID, owner int64,
 	if mac == "" {
 		mac, err = genMacaddr()
 		if err != nil {
-			logger.Debug("Failed to generate random Mac address, %v", err)
+			logger.Error("Failed to generate random Mac address, %v", err)
 			return
 		}
 	}
@@ -136,15 +136,15 @@ func CreateInterface(ctx context.Context, subnet *model.Subnet, ID, owner int64,
 	}
 	err = db.Create(iface).Error
 	if err != nil {
-		logger.Debug("Failed to create interface, ", err)
+		logger.Error("Failed to create interface, ", err)
 		return
 	}
 	iface.Address, err = AllocateAddress(ctx, subnet, iface.ID, address, "native")
 	if err != nil {
-		logger.Debug("Failed to allocate address", err)
+		logger.Error("Failed to allocate address", err)
 		err2 := db.Delete(iface).Error
 		if err2 != nil {
-			logger.Debug("Failed to delete interface, ", err)
+			logger.Error("Failed to delete interface, ", err)
 		}
 		return
 	}
@@ -168,13 +168,13 @@ func DeleteInterfaces(ctx context.Context, masterID, subnetID int64, ifType stri
 		err = db.Where("device = ? and type like ?", masterID, "%gateway%").Where(where).Find(&ifaces).Error
 	}
 	if err != nil {
-		logger.Debug("Failed to query interfaces, %v", err)
+		logger.Error("Failed to query interfaces, %v", err)
 		return
 	}
 	if len(ifaces) > 0 {
 		err = DeallocateAddress(ctx, ifaces)
 		if err != nil {
-			logger.Debug("Failed to deallocate address, %v", err)
+			logger.Error("Failed to deallocate address, %v", err)
 			return
 		}
 		if ifType == "instance" {
@@ -187,7 +187,7 @@ func DeleteInterfaces(ctx context.Context, masterID, subnetID int64, ifType stri
 			err = db.Where("dhcp = ? and type = ?", masterID, "dhcp").Where(where).Delete(&model.Interface{}).Error
 		}
 		if err != nil {
-			logger.Debug("Failed to delete interface, %v", err)
+			logger.Error("Failed to delete interface, %v", err)
 			return
 		}
 	}
@@ -198,12 +198,12 @@ func DeleteInterface(ctx context.Context, iface *model.Interface) (err error) {
 	var db *gorm.DB
 	ctx, db = GetContextDB(ctx)
 	if err = db.Model(&model.Address{}).Where("interface = ?", iface.ID).Update(map[string]interface{}{"allocated": false, "interface": 0}).Error; err != nil {
-		logger.Debug("Failed to Update addresses, %v", err)
+		logger.Error("Failed to Update addresses, %v", err)
 		return
 	}
 	err = db.Delete(iface).Error
 	if err != nil {
-		logger.Debug("Failed to delete interface", err)
+		logger.Error("Failed to delete interface", err)
 		return
 	}
 	return
@@ -216,7 +216,7 @@ func GetSecurityRules(ctx context.Context, secGroups []*model.SecurityGroup) (se
 		secrules := []*model.SecurityRule{}
 		err = db.Model(&model.SecurityRule{}).Where("secgroup = ?", sg.ID).Find(&secrules).Error
 		if err != nil {
-			logger.Debug("DB failed to query security rules", err)
+			logger.Error("DB failed to query security rules", err)
 			return
 		}
 		logger.Debug("Security rule: %v", secrules)
@@ -228,7 +228,7 @@ func GetSecurityRules(ctx context.Context, secGroups []*model.SecurityGroup) (se
 func GetSecurityData(ctx context.Context, secgroups []*model.SecurityGroup) (securityData []*SecurityData, err error) {
 	secRules, err := GetSecurityRules(ctx, secgroups)
 	if err != nil {
-		logger.Debug("Failed to get security rules", err)
+		logger.Error("Failed to get security rules", err)
 		return
 	}
 	for _, rule := range secRules {
