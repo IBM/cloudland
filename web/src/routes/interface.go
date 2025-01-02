@@ -321,12 +321,6 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-<<<<<<< HEAD
-	permit, err := memberShip.CheckOwner(model.Writer, "interfaces", int64(ifaceID))
-	if !permit {
-		logger.Error("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
-=======
 	iface, err := interfaceAdmin.Get(ctx, int64(ifaceID))
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
@@ -336,7 +330,6 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 	instance, err := instanceAdmin.Get(ctx, iface.Instance)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
->>>>>>> 974ac73 (implement interface list get patch)
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
@@ -347,18 +340,8 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 		for _, sg := range sgs {
 			sgID, err := strconv.Atoi(sg)
 			if err != nil {
-<<<<<<< HEAD
-				logger.Error("Invalid security group ID", err)
-				continue
-			}
-			permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sID))
-			if !permit {
-				logger.Error("Not authorized for this operation")
-				c.Data["ErrorMsg"] = "Not authorized for this operation"
-=======
 				logger.Debug("Invalid security group ID, %v", err)
 				c.Data["ErrorMsg"] = err.Error()
->>>>>>> 974ac73 (implement interface list get patch)
 				c.HTML(http.StatusBadRequest, "error")
 				return
 			}
@@ -371,33 +354,10 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 			}
 			secgroups = append(secgroups, secgroup)
 		}
-<<<<<<< HEAD
-	} else {
-		sID := store.Get("defsg").(int64)
-		permit, err = memberShip.CheckOwner(model.Writer, "security_groups", int64(sID))
-		if !permit {
-			logger.Error("Not authorized for this operation")
-			c.Data["ErrorMsg"] = "Not authorized for this operation"
-			c.HTML(http.StatusBadRequest, "error")
-			return
-		}
-		sgIDs = append(sgIDs, sID)
-=======
->>>>>>> 974ac73 (implement interface list get patch)
 	}
 	err = interfaceAdmin.Update(ctx, instance, iface, name, 1000, 1000, secgroups)
 	if err != nil {
-<<<<<<< HEAD
-		logger.Error("Failed to update interface", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
-=======
 		logger.Debug("Failed to update interface", err)
->>>>>>> 974ac73 (implement interface list get patch)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 	}

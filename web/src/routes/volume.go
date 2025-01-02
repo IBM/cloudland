@@ -177,11 +177,6 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 		logger.Error("DB: query volume failed", err)
 		return
 	}
-	if volume.Booting {
-		logger.Error("Boot volume can not be deleted")
-		err = fmt.Errorf("Boot volume can not be deleted")
-		return
-	}
 	// check the permission
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.ValidateOwner(model.Writer, volume.Owner)
@@ -205,6 +200,11 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 	}
 	// RN-156: append the volume UUID to the command
 	if volume.InstanceID > 0 && instID == 0 && volume.Status == "attached" {
+		if volume.Booting {
+			logger.Error("Boot volume can not be detached")
+			err = fmt.Errorf("Boot volume can not be detached")
+			return
+		}
 		control := fmt.Sprintf("inter=%d", volume.Instance.Hyper)
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/detach_volume_%s.sh '%d' '%d' '%s'", vol_driver, volume.Instance.ID, volume.ID, uuid)
 		err = hyperExecute(ctx, control, command)
