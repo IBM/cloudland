@@ -209,8 +209,24 @@ func DeleteInterface(ctx context.Context, iface *model.Interface) (err error) {
 	return
 }
 
+func GetSecurityRules(ctx context.Context, secGroups []*model.SecurityGroup) (securityRules []*model.SecurityRule, err error) {
+	ctx, db := GetContextDB(ctx)
+	securityRules = []*model.SecurityRule{}
+	for _, sg := range secGroups {
+		secrules := []*model.SecurityRule{}
+		err = db.Model(&model.SecurityRule{}).Where("secgroup = ?", sg.ID).Find(&secrules).Error
+		if err != nil {
+			logger.Debug("DB failed to query security rules", err)
+			return
+		}
+		logger.Debug("Security rule: %v", secrules)
+		securityRules = append(securityRules, secrules...)
+	}
+	return
+}
+
 func GetSecurityData(ctx context.Context, secgroups []*model.SecurityGroup) (securityData []*SecurityData, err error) {
-	secRules, err := model.GetSecurityRules(secgroups)
+	secRules, err := GetSecurityRules(ctx, secgroups)
 	if err != nil {
 		logger.Debug("Failed to get security rules", err)
 		return

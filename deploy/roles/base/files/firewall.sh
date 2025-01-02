@@ -3,6 +3,7 @@
 iptables -P INPUT ACCEPT
 iptables -P FORWARD ACCEPT
 iptables -P OUTPUT ACCEPT
+iptables -F
 iptables -D INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 iptables -I INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 iptables -D INPUT -p icmp -j ACCEPT

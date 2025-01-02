@@ -9,7 +9,5 @@ vm_ip=${1%%/*}
 vm_mac=$2
 nic_name=tap$(echo $vm_mac | cut -d: -f4- | tr -d :)
 ./clear_sg_chain.sh $nic_name
-sleep 10
 ./create_sg_chain.sh $nic_name $vm_ip $vm_mac
-sleep 10
 ./apply_sg_rule.sh $nic_name

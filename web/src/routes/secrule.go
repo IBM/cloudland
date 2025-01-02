@@ -32,9 +32,6 @@ type SecruleView struct{}
 
 func (a *SecruleAdmin) ApplySecgroup(ctx context.Context, secgroup *model.SecurityGroup) (err error) {
 	ctx, db := GetContextDB(ctx)
-	if len(secgroup.Interfaces) <= 0 {
-		return
-	}
 	err = secgroupAdmin.GetSecgroupInterfaces(ctx, secgroup)
 	if err != nil {
 		logger.Debug("DB failed to get security group related interfaces", err)
@@ -44,12 +41,12 @@ func (a *SecruleAdmin) ApplySecgroup(ctx context.Context, secgroup *model.Securi
 		var securityData []*SecurityData
 		err = secgroupAdmin.GetInterfaceSecgroups(ctx, iface)
 		if err != nil {
-			logger.Debug("DB failed to get interface related security groups", err)
-			return
+			logger.Debug("DB failed to get interface related security groups, %v", err)
+			continue
 		}
 		securityData, err = GetSecurityData(ctx, iface.SecurityGroups)
 		if err != nil {
-			logger.Debug("DB failed to get security data", err)
+			logger.Debug("DB failed to get security data, %v", err)
 			continue
 		}
 		var jsonData []byte
@@ -58,17 +55,18 @@ func (a *SecruleAdmin) ApplySecgroup(ctx context.Context, secgroup *model.Securi
 			logger.Debug("Failed to marshal security json data, %v", err)
 			continue
 		}
+		logger.Debug("iface: %v", iface)
 		instance := &model.Instance{Model: model.Model{ID: iface.Instance}}
 		err = db.Take(instance).Error
 		if err != nil {
-			logger.Debug("DB failed to get instance", err)
+			logger.Debug("DB failed to get instance, %v", err)
 			continue
 		}
 		control := fmt.Sprintf("inter=%d", instance.Hyper)
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/reapply_secgroup.sh '%s' '%s' <<EOF\n%s\nEOF", iface.Address.Address, iface.MacAddr, jsonData)
 		err = hyperExecute(ctx, control, command)
 		if err != nil {
-			logger.Debug("Reapply security groups execution failed", err)
+			logger.Debug("Reapply security groups execution failed, %v", err)
 			return
 		}
 	}
@@ -190,11 +188,6 @@ func (a *SecruleAdmin) Delete(ctx context.Context, secrule *model.SecurityRule, 
 	if !permit {
 		logger.Debug("Not authorized to delete the router")
 		err = fmt.Errorf("Not authorized")
-		return
-	}
-	err = secgroupAdmin.GetSecgroupInterfaces(ctx, secgroup)
-	if err != nil {
-		logger.Debug("DB failed to query security group", err)
 		return
 	}
 	if err = db.Delete(secrule).Error; err != nil {

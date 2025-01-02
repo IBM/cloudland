@@ -90,6 +90,8 @@ definitions:
   apis.FloatingIpPayload:
     properties:
       bandwidth:
+        maximum: 1000
+        minimum: 1
         type: integer
       instance:
         $ref: '#/definitions/common.BaseID'
