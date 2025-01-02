@@ -60,7 +60,7 @@ if [ "$inbound" -gt 0 ]; then
     pkt_burst_limit=$inbound
     ip netns exec $router iptables -D FORWARD -m mark --mark $mark_id -m limit --limit $pkt_rate_limit/second --limit-burst $pkt_burst_limit -j ACCEPT
     ip netns exec $router iptables -I FORWARD -m mark --mark $mark_id -m limit --limit $pkt_rate_limit/second --limit-burst $pkt_burst_limit -j ACCEPT
-    ip netns exec $router tc filter add dev ns-$int_vlan protocol ip parent 1:0 prio 1 handle 1 fw flowid 1:1
+    ip netns exec $router tc qdisc add dev ns-$int_vlan root handle 1: htb default 10
     ip netns exec $router tc class add dev ns-$int_vlan parent 1: classid 1:$mark_id htb rate ${bandwidth}mbit burst 100
     ip netns exec $router tc filter add dev ns-$int_vlan protocol ip parent 1:0 prio 1 handle $mark_id fw flowid 1:$mark_id
 fi

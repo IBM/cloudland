@@ -128,10 +128,6 @@ func Register() (r *gin.Engine) {
 		authGroup.GET("/api/v1/instances/:id/interfaces/:interface_id", interfaceAPI.Get)
 		authGroup.DELETE("/api/v1/instances/:id/interfaces/:interface_id", interfaceAPI.Delete)
 		authGroup.PATCH("/api/v1/instances/:id/interfaces/:interface_id", interfaceAPI.Patch)
-		/*
-			authGroup.Post("/api/v1/instances/:id/console", consoleAPI.ConsoleURL)
-			authGroup.Get("/api/v1/consoleresolver/token/:token", consoleAPI.ConsoleResolve)
-		*/
 	}
 	r.GET("/swagger/api/v1/*any", ginSwagger.WrapHandler(swaggerFiles.NewHandler(), ginSwagger.InstanceName("v1")))
 	return

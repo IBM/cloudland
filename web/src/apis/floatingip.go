@@ -28,7 +28,6 @@ type FloatingIpAPI struct{}
 type FloatingIpInfo struct {
 	*ResourceReference
 	IpAddress string `json:"ip_address"`
-	Name      string `json:"name"`
 }
 
 type TargetInterface struct {
@@ -61,8 +60,8 @@ type FloatingIpPayload struct {
 	PublicIp     string         `json:"public_ip" binding:"omitempty,ipv4"`
 	Name         string         `json:"name" binding:"omitempty,min=2,max=32"`
 	Instance     *BaseID        `json:"instance" binding:"omitempty"`
-	Inbound    int32          `json:"bandwidth" binding:"omitempty,min=1,max=20000"`
-	Outbound    int32          `json:"bandwidth" binding:"omitempty,min=1,max=1000"`
+	Inbound      int32          `json:"inbound" binding:"omitempty,min=1,max=20000"`
+	Outbound     int32          `json:"outbound" binding:"omitempty,min=1,max=20000"`
 }
 
 type FloatingIpPatchPayload struct {
