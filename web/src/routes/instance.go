@@ -21,6 +21,7 @@ import (
 	"web/src/dbs"
 	"web/src/model"
 	"web/src/rpcs"
+	"web/src/utils/encrpt"
 
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
@@ -65,13 +66,14 @@ type NetworkLink struct {
 }
 
 type InstanceData struct {
-	Userdata string             `json:"userdata"`
-	VirtType string             `json:"virt_type"`
-	DNS      string             `json:"dns"`
-	Vlans    []*VlanInfo        `json:"vlans"`
-	Networks []*InstanceNetwork `json:"networks"`
-	Links    []*NetworkLink     `json:"links"`
-	Keys     []string           `json:"keys"`
+	Userdata   string             `json:"userdata"`
+	VirtType   string             `json:"virt_type"`
+	DNS        string             `json:"dns"`
+	Vlans      []*VlanInfo        `json:"vlans"`
+	Networks   []*InstanceNetwork `json:"networks"`
+	Links      []*NetworkLink     `json:"links"`
+	Keys       []string           `json:"keys"`
+	RootPasswd string             `json:"root_passwd"`
 }
 
 type InstancesData struct {
@@ -105,7 +107,11 @@ func (a *InstanceAdmin) getHyperGroup(ctx context.Context, imageType string, zon
 	return
 }
 
-func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, image *model.Image, flavor *model.Flavor, zone *model.Zone, routerID int64, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo, keys []*model.Key, hyperID int) (instances []*model.Instance, err error) {
+func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, image *model.Image,
+	flavor *model.Flavor, zone *model.Zone, routerID int64, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo,
+	keys []*model.Key, rootPasswd string, hyperID int) (instances []*model.Instance, err error) {
+	logger.Debugf("Create %d instances with image %s, flavor %s, zone %s, router %d, primary interface %v, secondary interfaces %v, keys %v, root password %s, hyper %d",
+		count, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, rootPasswd, hyperID)
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
 		if newTransaction {
@@ -137,6 +143,11 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		logger.Error("No valid hypervisor", err)
 		return
 	}
+	passwdLogin := false
+	if rootPasswd != "" {
+		passwdLogin = true
+		logger.Debug("Root password login enabled")
+	}
 	execCommands := []*ExecutionCommand{}
 	i := 0
 	hostname := prefix
@@ -150,7 +161,20 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			return
 		}
 		snapshot := total/MaxmumSnapshot + 1 // Same snapshot reference can not be over 128, so use 96 here
-		instance := &model.Instance{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, Hostname: hostname, ImageID: image.ID, Snapshot: int64(snapshot), FlavorID: flavor.ID, Keys: keys, Userdata: userdata, Status: "pending", ZoneID: zoneID, RouterID: routerID}
+		instance := &model.Instance{
+			Model:       model.Model{Creater: memberShip.UserID},
+			Owner:       memberShip.OrgID,
+			Hostname:    hostname,
+			ImageID:     image.ID,
+			Snapshot:    int64(snapshot),
+			FlavorID:    flavor.ID,
+			Keys:        keys,
+			PasswdLogin: passwdLogin,
+			Userdata:    userdata,
+			Status:      "pending",
+			ZoneID:      zoneID,
+			RouterID:    routerID,
+		}
 		err = db.Create(instance).Error
 		if err != nil {
 			logger.Error("DB create instance failed", err)
@@ -169,7 +193,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		}
 		metadata := ""
 		var ifaces []*model.Interface
-		ifaces, metadata, err = a.buildMetadata(ctx, primaryIface, secondaryIfaces, keys, instance, userdata, routerID, zoneID, "")
+		ifaces, metadata, err = a.buildMetadata(ctx, primaryIface, secondaryIfaces, rootPasswd, keys, instance, userdata, routerID, zoneID, "")
 		if err != nil {
 			logger.Error("Build instance metadata failed", err)
 			return
@@ -251,11 +275,12 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 	if flavor != nil && flavor.ID != instance.FlavorID {
 		if instance.Status == "running" {
 			err = fmt.Errorf("Instance must be shutdown first before resize")
-			logger.Error("Instance must be shutdown first before resize", err)
+			logger.Error(err)
 			return
 		}
 		if flavor.Disk < instance.Flavor.Disk {
 			err = fmt.Errorf("Disk(s) can not be resized to smaller size")
+			logger.Error("Disk(s) can not be resized to smaller size")
 			return
 		}
 		cpu := flavor.Cpu - instance.Flavor.Cpu
@@ -346,7 +371,21 @@ func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subne
 	return
 }
 
-func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo, keys []*model.Key, instance *model.Instance, userdata string, routerID, zoneID int64, service string) (interfaces []*model.Interface, metadata string, err error) {
+func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo,
+	rootPasswd string, keys []*model.Key, instance *model.Instance, userdata string, routerID, zoneID int64,
+	service string) (interfaces []*model.Interface, metadata string, err error) {
+	if rootPasswd == "" {
+		logger.Debugf("Build instance metadata with primaryIface: %v, secondaryIfaces: %+v, keys: %+v, instance: %+v, userdata: %s, routerID: %d, zoneID: %d, service: %s",
+			primaryIface, secondaryIfaces, keys, instance, userdata, routerID, zoneID, service)
+	} else {
+		logger.Debugf("Build instance metadata with primaryIface: %v, secondaryIfaces: %+v, keys: %+v, instance: %+v, userdata: %s, routerID: %d, zoneID: %d, service: %s, root password: %s",
+			primaryIface, secondaryIfaces, keys, instance, userdata, routerID, zoneID, service, "******")
+		rootPasswd, err = encrpt.Mkpasswd(rootPasswd, "sha512")
+		if err != nil {
+			logger.Errorf("Failed to encrypt root password, %v", err)
+			return nil, "", err
+		}
+	}
 	vlans := []*VlanInfo{}
 	instNetworks := []*InstanceNetwork{}
 	instLinks := []*NetworkLink{}
@@ -357,7 +396,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 	instRoute := &NetworkRoute{Network: "0.0.0.0", Netmask: "0.0.0.0", Gateway: gateway}
 	iface, err := a.createInterface(ctx, primary, primaryIP, primaryMac, instance, "eth0", primaryIface.SecurityGroups, zoneID)
 	if err != nil {
-		logger.Error("Allocate address for primary subnet %s--%s/%s failed, %v", primary.Name, primary.Network, primary.Netmask, err)
+		logger.Errorf("Allocate address for primary subnet %s--%s/%s failed, %v", primary.Name, primary.Network, primary.Netmask, err)
 		return
 	}
 	interfaces = append(interfaces, iface)
@@ -372,7 +411,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 		ifname := fmt.Sprintf("eth%d", i+1)
 		iface, err = a.createInterface(ctx, subnet, ifaceInfo.IpAddress, ifaceInfo.MacAddress, instance, ifname, ifaceInfo.SecurityGroups, zoneID)
 		if err != nil {
-			logger.Error("Allocate address for secondary subnet %s--%s/%s failed, %v", subnet.Name, subnet.Network, subnet.Netmask, err)
+			logger.Errorf("Allocate address for secondary subnet %s--%s/%s failed, %v", subnet.Name, subnet.Network, subnet.Netmask, err)
 			return
 		}
 		interfaces = append(interfaces, iface)
@@ -403,17 +442,18 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 		dns = ""
 	}
 	instData := &InstanceData{
-		Userdata: userdata,
-		VirtType: virtType,
-		DNS:      dns,
-		Vlans:    vlans,
-		Networks: instNetworks,
-		Links:    instLinks,
-		Keys:     instKeys,
+		Userdata:   userdata,
+		VirtType:   virtType,
+		DNS:        dns,
+		Vlans:      vlans,
+		Networks:   instNetworks,
+		Links:      instLinks,
+		Keys:       instKeys,
+		RootPasswd: rootPasswd,
 	}
 	jsonData, err := json.Marshal(instData)
 	if err != nil {
-		logger.Error("Failed to marshal instance json data, %v", err)
+		logger.Errorf("Failed to marshal instance json data, %v", err)
 		return
 	}
 	return interfaces, string(jsonData), nil
@@ -434,7 +474,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 		return
 	}
 	if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
-		logger.Error("Failed to query floating ip(s), %v", err)
+		logger.Errorf("Failed to query floating ip(s), %v", err)
 		return
 	}
 	if instance.FloatingIps != nil {
@@ -442,14 +482,14 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 			fip.Instance = instance
 			err = floatingIpAdmin.Detach(ctx, fip)
 			if err != nil {
-				logger.Error("Failed to detach floating ip, %v", err)
+				logger.Errorf("Failed to detach floating ip, %v", err)
 				return
 			}
 		}
 		instance.FloatingIps = nil
 	}
 	if err = db.Where("instance_id = ?", instance.ID).Find(&instance.Volumes).Error; err != nil {
-		logger.Error("Failed to query floating ip(s), %v", err)
+		logger.Errorf("Failed to query floating ip(s), %v", err)
 		return
 	}
 	bootVolumeUUID := ""
@@ -485,7 +525,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 	instance.Status = "deleting"
 	err = db.Model(instance).Updates(instance).Error
 	if err != nil {
-		logger.Error("Failed to mark vm as deleting ", err)
+		logger.Errorf("Failed to mark vm as deleting ", err)
 		return
 	}
 	return
@@ -502,15 +542,15 @@ func (a *InstanceAdmin) Get(ctx context.Context, id int64) (instance *model.Inst
 	where := memberShip.GetWhere()
 	instance = &model.Instance{Model: model.Model{ID: id}}
 	if err = db.Preload("Volumes").Preload("Image").Preload("Zone").Preload("Flavor").Preload("Keys").Where(where).Take(instance).Error; err != nil {
-		logger.Error("Failed to query instance, %v", err)
+		logger.Errorf("Failed to query instance, %v", err)
 		return
 	}
 	if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
-		logger.Error("Failed to query floating ip(s), %v", err)
+		logger.Errorf("Failed to query floating ip(s), %v", err)
 		return
 	}
 	if err = db.Preload("SecurityGroups").Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
-		logger.Error("Failed to query interfaces %v", err)
+		logger.Errorf("Failed to query interfaces %v", err)
 		return
 	}
 	permit := memberShip.ValidateOwner(model.Reader, instance.Owner)
@@ -537,15 +577,15 @@ func (a *InstanceAdmin) GetInstanceByUUID(ctx context.Context, uuID string) (ins
 	where := memberShip.GetWhere()
 	instance = &model.Instance{}
 	if err = db.Preload("Volumes").Preload("Image").Preload("Zone").Preload("Flavor").Preload("Keys").Where(where).Where("uuid = ?", uuID).Take(instance).Error; err != nil {
-		logger.Error("Failed to query instance, %v", err)
+		logger.Errorf("Failed to query instance, %v", err)
 		return
 	}
 	if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
-		logger.Error("Failed to query floating ip(s), %v", err)
+		logger.Errorf("Failed to query floating ip(s), %v", err)
 		return
 	}
 	if err = db.Preload("SecurityGroups").Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
-		logger.Error("Failed to query interfaces %v", err)
+		logger.Errorf("Failed to query interfaces %v", err)
 		return
 	}
 	permit := memberShip.ValidateOwner(model.Reader, instance.Owner)
@@ -584,17 +624,17 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
 	if err = db.Preload("Volumes").Preload("Image").Preload("Zone").Preload("Flavor").Preload("Keys").Where(where).Where(query).Find(&instances).Error; err != nil {
-		logger.Error("Failed to query instance(s), %v", err)
+		logger.Errorf("Failed to query instance(s), %v", err)
 		return
 	}
 	db = db.Offset(0).Limit(-1)
 	for _, instance := range instances {
 		if err = db.Preload("SecurityGroups").Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
-			logger.Error("Failed to query interfaces %v", err)
+			logger.Errorf("Failed to query interfaces %v", err)
 			return
 		}
 		if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
-			logger.Error("Failed to query floating ip(s), %v", err)
+			logger.Errorf("Failed to query floating ip(s), %v", err)
 			return
 		}
 		permit := memberShip.CheckPermission(model.Admin)
@@ -833,7 +873,7 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 		return
 	}
 	if err = db.Where("instance_id = ?", instanceID).Find(&instance.FloatingIps).Error; err != nil {
-		logger.Error("Failed to query floating ip(s), %v", err)
+		logger.Errorf("Failed to query floating ip(s), %v", err)
 		return
 	}
 	_, subnets, err := subnetAdmin.List(c.Req.Context(), 0, -1, "", "")
@@ -919,7 +959,7 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 	}
 	err = instanceAdmin.Update(c.Req.Context(), instance, flavor, hostname, PowerAction(action), hyperID)
 	if err != nil {
-		logger.Error("update instance failed, %v", err)
+		logger.Errorf("update instance failed, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -941,8 +981,8 @@ func (v *InstanceView) checkNetparam(subnet *model.Subnet, IP, mac string) (macA
 	if mac != "" {
 		macl := strings.Split(mac, ":")
 		if len(macl) != 6 {
-			logger.Error("Invalid mac address format")
-			err = fmt.Errorf("Invalid mac address format")
+			logger.Errorf("Invalid mac address format: %s", mac)
+			err = fmt.Errorf("Invalid mac address format: %s", mac)
 			return
 		}
 		macAddr = strings.ToLower(mac)
@@ -973,6 +1013,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	}
 	redirectTo := "../instances"
 	hostname := c.QueryTrim("hostname")
+	rootPasswd := c.QueryTrim("rootpasswd")
 	cnt := c.QueryTrim("count")
 	count, err := strconv.Atoi(cnt)
 	if err != nil {
@@ -1153,7 +1194,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		instKeys = append(instKeys, key)
 	}
 	userdata := c.QueryTrim("userdata")
-	_, err = instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, primarySubnet.RouterID, primaryIface, secondaryIfaces, instKeys, hyperID)
+	_, err = instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, primarySubnet.RouterID, primaryIface, secondaryIfaces, instKeys, rootPasswd, hyperID)
 	if err != nil {
 		logger.Error("Create instance failed", err)
 		c.HTML(http.StatusBadRequest, err.Error())
