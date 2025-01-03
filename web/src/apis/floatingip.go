@@ -58,7 +58,7 @@ type FloatingIpListResponse struct {
 type FloatingIpPayload struct {
 	PublicSubnet *BaseReference `json:"public_subnet" binding:"omitempty"`
 	PublicIp     string         `json:"public_ip" binding:"omitempty,ipv4"`
-	Name         string         `json:"name" binding:"omitempty,min=2,max=32"`
+	Name         string         `json:"name" binding:"required,min=2,max=32"`
 	Instance     *BaseID        `json:"instance" binding:"omitempty"`
 	Inbound      int32          `json:"inbound" binding:"omitempty,min=1,max=20000"`
 	Outbound     int32          `json:"outbound" binding:"omitempty,min=1,max=20000"`

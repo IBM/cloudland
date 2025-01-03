@@ -29,7 +29,7 @@ type SecgroupAPI struct{}
 type SecurityGroupResponse struct {
 	*ResourceReference
 	IsDefault        bool               `json:"is_default"`
-	VPC              *BaseReference     `json:"vpc,omitempty"`
+	VPC              *ResourceReference     `json:"vpc,omitempty"`
 	TargetInterfaces []*TargetInterface `json:"target_interfaces,omitempty"`
 }
 
@@ -43,7 +43,7 @@ type SecurityGroupListResponse struct {
 type SecurityGroupPayload struct {
 	Name      string         `json:"name" binding:"required,min=2,max=32"`
 	VPC       *BaseReference `json:"vpc" binding:"omitempty"`
-	IsDefault bool           `json:"is_default" binding:"omitempty,oneof=true"`
+	IsDefault bool           `json:"is_default" binding:"omitempty"`
 }
 
 type SecurityGroupPatchPayload struct {
@@ -208,7 +208,7 @@ func (v *SecgroupAPI) getSecgroupResponse(ctx context.Context, secgroup *model.S
 		IsDefault: secgroup.IsDefault,
 	}
 	if secgroup.Router != nil {
-		secgroupResp.VPC = &BaseReference{
+		secgroupResp.VPC = &ResourceReference{
 			ID:   secgroup.Router.UUID,
 			Name: secgroup.Router.Name,
 		}

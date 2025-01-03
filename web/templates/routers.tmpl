@@ -39,9 +39,9 @@
                                 {{ range .Routers}}
 		                        <tr>
 									{{ if $.IsAdmin }}
-			                        <td><a href="{{$Link}}/{{.ID}}">{{.ID}}</a></td>
+			                        <td>{{.ID}}</td>
 									{{ end }}
-			                        <td><a href="{{$Link}}/{{.ID}}">{{.Name}}</a></td>
+			                        <td>{{.Name}}</td>
 			                        <td>
 										{{ if .Subnets }}
 											{{ range .Subnets }}

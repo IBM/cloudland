@@ -2678,6 +2678,9 @@ const docTemplatev1 = `{
         },
         "apis.FloatingIpPayload": {
             "type": "object",
+            "required": [
+                "name"
+            ],
             "properties": {
                 "inbound": {
                     "type": "integer",
@@ -2978,6 +2981,11 @@ const docTemplatev1 = `{
                 "primary_interface": {
                     "$ref": "#/definitions/apis.InterfacePayload"
                 },
+                "root_passwd": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 8
+                },
                 "secondary_interfaces": {
                     "type": "array",
                     "items": {
@@ -3035,6 +3043,9 @@ const docTemplatev1 = `{
                 },
                 "owner": {
                     "type": "string"
+                },
+                "passwd_login": {
+                    "type": "boolean"
                 },
                 "status": {
                     "type": "string"
@@ -3414,10 +3425,7 @@ const docTemplatev1 = `{
             ],
             "properties": {
                 "is_default": {
-                    "type": "boolean",
-                    "enum": [
-                        true
-                    ]
+                    "type": "boolean"
                 },
                 "name": {
                     "type": "string",
@@ -3457,7 +3465,7 @@ const docTemplatev1 = `{
                     "type": "string"
                 },
                 "vpc": {
-                    "$ref": "#/definitions/common.BaseReference"
+                    "$ref": "#/definitions/common.ResourceReference"
                 }
             }
         },

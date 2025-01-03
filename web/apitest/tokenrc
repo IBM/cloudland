@@ -1,4 +1,4 @@
-#endpoint=https://127.0.0.1:8255
-endpoint=https://test-sv01-ps01.raksmart.com
+endpoint=https://127.0.0.1:8255
+#endpoint=https://test-sv01-ps01.raksmart.com
 #endpoint=https://test-sv01.raksmart.com
 token=$(curl -k -XPOST $endpoint/api/v1/login -d "{\"username\": \"admin\", \"password\": \"$admin_pass\"}" | jq -r .token)

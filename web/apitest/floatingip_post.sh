@@ -4,6 +4,7 @@ source tokenrc
 
 cat >tmp.json <<EOF
 {
+    "name": "fip-$RANDOM"
 }
 EOF
 

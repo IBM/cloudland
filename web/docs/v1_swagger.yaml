@@ -107,6 +107,8 @@ definitions:
         type: string
       public_subnet:
         $ref: '#/definitions/common.BaseReference'
+    required:
+    - name
     type: object
   apis.FloatingIpResponse:
     properties:
@@ -289,6 +291,10 @@ definitions:
         type: array
       primary_interface:
         $ref: '#/definitions/apis.InterfacePayload'
+      root_passwd:
+        maxLength: 32
+        minLength: 8
+        type: string
       secondary_interfaces:
         items:
           $ref: '#/definitions/apis.InterfacePayload'
@@ -334,6 +340,8 @@ definitions:
         type: string
       owner:
         type: string
+      passwd_login:
+        type: boolean
       status:
         type: string
       updated_at:
@@ -587,8 +595,6 @@ definitions:
   apis.SecurityGroupPayload:
     properties:
       is_default:
-        enum:
-        - true
         type: boolean
       name:
         maxLength: 32
@@ -618,7 +624,7 @@ definitions:
       updated_at:
         type: string
       vpc:
-        $ref: '#/definitions/common.BaseReference'
+        $ref: '#/definitions/common.ResourceReference'
     type: object
   apis.SecurityRulePayload:
     properties:
