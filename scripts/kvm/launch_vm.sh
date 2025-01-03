@@ -46,7 +46,6 @@ if [ -z "$wds_address" ]; then
         fi
         qemu-img resize -q $vm_img "${disk_size}G" &> /dev/null
         echo "|:-COMMAND-:| create_volume_local.sh '$vol_ID' 'volume-${vol_ID}.disk' 'attached'"
-        echo "|:-COMMAND-:| attach_volume_local.sh '$ID' '$vol_ID' 'vda'"
     fi
 else
     image=$(basename $img_name .raw)
@@ -77,7 +76,6 @@ else
         exit -1
     fi
     echo "|:-COMMAND-:| create_volume_wds_vhost '$vol_ID' 'attached' 'wds_vhost://$wds_pool_id/$volume_id'"
-    echo "|:-COMMAND-:| attach_volume_wds_vhost.sh '$ID' '$vol_ID' 'vda'"
     ux_sock=/var/run/wds/$vhost_name
     template=$template_dir/wds_template.xml
 fi
