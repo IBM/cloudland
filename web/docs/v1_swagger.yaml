@@ -107,6 +107,8 @@ definitions:
         type: string
       public_subnet:
         $ref: '#/definitions/common.BaseReference'
+    required:
+    - name
     type: object
   apis.FloatingIpResponse:
     properties:

@@ -2678,6 +2678,9 @@ const docTemplatev1 = `{
         },
         "apis.FloatingIpPayload": {
             "type": "object",
+            "required": [
+                "name"
+            ],
             "properties": {
                 "inbound": {
                     "type": "integer",

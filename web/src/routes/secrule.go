@@ -152,6 +152,10 @@ func (a *SecruleAdmin) Create(ctx context.Context, remoteIp, direction, protocol
 			EndTransaction(ctx, err)
 		}
 	}()
+	if protocol == "icmp" {
+		portMin = -1
+		portMax = -1
+	}
 	secrule = &model.SecurityRule{
 		Model:     model.Model{Creater: memberShip.UserID},
 		Owner:     memberShip.OrgID,
@@ -392,19 +396,10 @@ func (v *SecruleView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	secrule, err := secruleAdmin.Create(ctx, remoteIp, direction, protocol, int32(portMin), int32(portMax), secgroup)
+	_, err = secruleAdmin.Create(ctx, remoteIp, direction, protocol, int32(portMin), int32(portMax), secgroup)
 	if err != nil {
 		logger.Error("Failed to create security rule, %v", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.HTML(http.StatusBadRequest, err.Error())
-		return
-	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, secrule)
 		return
 	}
 	c.Redirect(redirectTo)
@@ -491,20 +486,11 @@ func (v *SecruleView) Patch(c *macaron.Context, store session.Store) {
 	max := c.QueryTrim("portmax")
 	portMin, err := strconv.Atoi(min)
 	portMax, err := strconv.Atoi(max)
-	secrule, err := secruleAdmin.Update(c.Req.Context(), int64(secruleID), remoteIp, direction, protocol, portMin, portMax)
+	_, err = secruleAdmin.Update(c.Req.Context(), int64(secruleID), remoteIp, direction, protocol, portMin, portMax)
 	if err != nil {
 		logger.Error("Create Security Rules failed, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.HTML(http.StatusBadRequest, "error")
-		return
-	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, secrule)
 		return
 	}
 	c.Redirect(redirectTo)

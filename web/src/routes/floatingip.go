@@ -164,7 +164,7 @@ func (a *FloatingIpAdmin) Get(ctx context.Context, id int64) (floatingIp *model.
 			return
 		}
 		instance := floatingIp.Instance
-		err = db.Preload("Address").Where("instance = ? and primary_if = true", instance.ID).Find(&instance.Interfaces).Error
+		err = db.Preload("Address").Preload("Address.Subnet").Where("instance = ? and primary_if = true", instance.ID).Find(&instance.Interfaces).Error
 		if err != nil {
 			logger.Error("Failed to query interfaces %v", err)
 			return
