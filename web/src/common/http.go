@@ -37,7 +37,7 @@ type APIError struct {
 }
 
 func ErrorResponse(c *gin.Context, code int, errorMsg string, err error) {
-	logger.Debugf("%s, %v\n", errorMsg, err)
+	logger.Errorf("%s, %v\n", errorMsg, err)
 	if err != nil {
 		errorMsg = errorMsg + ": " + err.Error()
 	}

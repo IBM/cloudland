@@ -50,18 +50,18 @@ func HyperExecute(ctx context.Context, control, command string) (err error) {
 	logger.Debugf("remotePath: %s, jsonPayload: %v", remoteExecPath, payload)
 	resp, err := http.Post(remoteExecPath, "application/json", payload)
 	if err != nil {
-		logger.Debug("Error posting data:", err)
+		logger.Error("Error posting data:", err)
 		return
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		logger.Debug("Error reading response body:", err)
+		logger.Error("Error reading response body:", err)
 		return
 	}
 
-	logger.Debug("Response Status:", resp.Status)
-	logger.Debug("Response Body:", string(body))
+	logger.Error("Response Status:", resp.Status)
+	logger.Error("Response Body:", string(body))
 	return
 }

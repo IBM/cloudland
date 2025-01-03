@@ -55,7 +55,7 @@ func (a *Dashboard) GetData(c *macaron.Context, store session.Store) {
 		resource := &model.Resource{}
 		err := db.Where("hostid = ?", -1).Take(resource).Error
 		if err != nil {
-			logger.Debug("Failed to query system resource")
+			logger.Error("Failed to query system resource")
 			c.Data["ErrorMsg"] = err.Error()
 			c.HTML(http.StatusBadRequest, "error")
 			return
@@ -81,7 +81,7 @@ func (a *Dashboard) GetData(c *macaron.Context, store session.Store) {
 		quota := &model.Quota{}
 		err := db.Where("owner = ?", memberShip.OrgID).Take(quota).Error
 		if err != nil {
-			logger.Debug("Failed to query quota")
+			logger.Error("Failed to query quota")
 			quota.Cpu = 6
 			quota.Memory = 24
 			quota.Disk = 200
@@ -96,7 +96,7 @@ func (a *Dashboard) GetData(c *macaron.Context, store session.Store) {
 			quota.Openshift = 1
 			err = db.Create(quota).Error
 			if err != nil {
-				logger.Debug("Failed to query quota")
+				logger.Error("Failed to query quota")
 				c.Data["ErrorMsg"] = err.Error()
 				c.HTML(http.StatusBadRequest, "error")
 				return
@@ -104,7 +104,7 @@ func (a *Dashboard) GetData(c *macaron.Context, store session.Store) {
 		}
 		rcData, err = a.getOrgUsage(ctx, quota)
 		if err != nil {
-			logger.Debug("Failed to get usage")
+			logger.Error("Failed to get usage")
 			c.Data["ErrorMsg"] = err.Error()
 			c.HTML(http.StatusBadRequest, "error")
 			return
@@ -119,7 +119,7 @@ func (a *Dashboard) getSystemIpUsage(ctx context.Context, ntype string) (ipTotal
 	subnets := []*model.Subnet{}
 	err = db.Where("type = ?", ntype).Find(&subnets).Error
 	if err != nil {
-		logger.Debug("Failed to query subnets")
+		logger.Error("Failed to query subnets")
 		return
 	}
 	where := "subnet_id in ("
@@ -133,12 +133,12 @@ func (a *Dashboard) getSystemIpUsage(ctx context.Context, ntype string) (ipTotal
 	where = where + ")"
 	err = db.Model(&model.Address{}).Where(where).Count(&ipTotal).Error
 	if err != nil {
-		logger.Debug("Failed to count total public ips")
+		logger.Error("Failed to count total public ips")
 		return
 	}
 	err = db.Model(&model.Address{}).Where(where).Where("allocated = ?", true).Count(&ipUsed).Error
 	if err != nil {
-		logger.Debug("Failed to count used public ips")
+		logger.Error("Failed to count used public ips")
 		return
 	}
 	return
@@ -150,7 +150,7 @@ func (a *Dashboard) getOrgIpUsage(ctx context.Context, ntype string) (ipUsed int
 	subnets := []*model.Subnet{}
 	err = db.Where("type = ?", ntype).Find(&subnets).Error
 	if err != nil {
-		logger.Debug("Failed to query subnets")
+		logger.Error("Failed to query subnets")
 		return
 	}
 	where := "subnet in ("
@@ -164,7 +164,7 @@ func (a *Dashboard) getOrgIpUsage(ctx context.Context, ntype string) (ipUsed int
 	where = where + ")"
 	err = db.Model(&model.Interface{}).Where(where).Where("owner = ?", memberShip.OrgID).Count(&ipUsed).Error
 	if err != nil {
-		logger.Debug("Failed to count used ips")
+		logger.Error("Failed to count used ips")
 		return
 	}
 	return

@@ -41,18 +41,3 @@ type SecurityRule struct {
 func init() {
 	dbs.AutoMigrate(&SecurityGroup{}, &SecurityRule{})
 }
-
-func GetSecurityRules(secGroups []*SecurityGroup) (securityRules []*SecurityRule, err error) {
-	db := dbs.DB()
-	securityRules = []*SecurityRule{}
-	for _, sg := range secGroups {
-		secrules := []*SecurityRule{}
-		err = db.Model(&SecurityRule{}).Where("secgroup = ?", sg.ID).Find(&secrules).Error
-		if err != nil {
-			logger.Debug("DB failed to query security rules", err)
-			return
-		}
-		securityRules = append(securityRules, secrules...)
-	}
-	return
-}

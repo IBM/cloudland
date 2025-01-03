@@ -36,7 +36,7 @@ func (fb *FrontbackService) CallbackAgent(ctx context.Context, control, command 
 	values.Duration = int64(duration)
 	values.Status = 1
 	if err = agent.Updates(ctx, values); err != nil {
-		logger.Debug("Update hyper value error: ", err)
+		logger.Error("Update hyper value error: ", err)
 		return
 	}
 	ids = append(ids, agent.Hostid)
@@ -51,7 +51,7 @@ func (fb *FrontbackService) CallbackAgent(ctx context.Context, control, command 
 		v.Parentid = agent.Hostid
 		v.Duration = int64(duration)
 		if err = a.Updates(ctx, v); err != nil {
-			logger.Debug("Update agent error: ", err)
+			logger.Error("Update agent error: ", err)
 			return
 		}
 		ids = append(ids, v.Hostid)
@@ -70,7 +70,7 @@ func (fb *FrontbackService) doExecute(ctx context.Context, id, extra int32, comm
 		var ids []int32
 		ids, err = fb.CallbackAgent(ctx, control, command, 0)
 		if err != nil {
-			logger.Debug("Call back agent error: ", err)
+			logger.Error("Call back agent error: ", err)
 			return
 		}
 		ss := []string{}
@@ -105,7 +105,7 @@ func (fb *FrontbackService) Execute(c *macaron.Context) {
 	execReq := &ExecuteRequest{}
 	err := json.Unmarshal(request, execReq)
 	if err != nil {
-		logger.Debug("Json unmarshal error:", err)
+		logger.Error("Json unmarshal error:", err)
 		c.JSON(400, &ExecuteReply{Status: "Bad request"})
 	}
 	id := execReq.Id
@@ -116,7 +116,7 @@ func (fb *FrontbackService) Execute(c *macaron.Context) {
 	if control != "error" {
 		reply, err = fb.doExecute(ctx, id, extra, command, control)
 		if err != nil {
-			logger.Debug("Json unmarshal error:", err)
+			logger.Error("Json unmarshal error:", err)
 			c.JSON(400, &ExecuteReply{Status: "Bad request"})
 		}
 	}
@@ -129,7 +129,7 @@ func (fb *FrontbackService) dispatchExecute(ctx context.Context, cmd string, arg
 		status, err = command(ctx, args)
 	} else {
 		err = fmt.Errorf("no command %s found", cmd)
-		logger.Debug("Command dispatch error: ", err)
+		logger.Error("Command dispatch error: ", err)
 	}
 	return
 

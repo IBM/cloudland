@@ -146,9 +146,9 @@ func (v *KeyAPI) getKeyResponse(ctx context.Context, key *model.Key) (keyResp *K
 	owner := orgAdmin.GetOrgName(key.Owner)
 	keyResp = &KeyResponse{
 		ResourceReference: &ResourceReference{
-			ID:    key.UUID,
-			Name:  key.Name,
-			Owner: owner,
+			ID:        key.UUID,
+			Name:      key.Name,
+			Owner:     owner,
 			CreatedAt: key.CreatedAt.Format(TimeStringForMat),
 			UpdatedAt: key.UpdatedAt.Format(TimeStringForMat),
 		},

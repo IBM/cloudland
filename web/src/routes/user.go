@@ -41,7 +41,7 @@ func (a *UserAdmin) Create(ctx context.Context, username, password string) (user
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
-		logger.Debug("Not authorized to delete the user")
+		logger.Error("Not authorized to delete the user")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -57,13 +57,13 @@ func (a *UserAdmin) Create(ctx context.Context, username, password string) (user
 	user = &model.User{Model: model.Model{Creater: memberShip.UserID}, Username: username, Password: password}
 	err = db.Create(user).Error
 	if err != nil {
-		logger.Debug("DB failed to create user, %v", err)
+		logger.Error("DB failed to create user, %v", err)
 	}
 	if memberShip.OrgName != "admin" {
 		member := &model.Member{UserID: user.ID, UserName: username, OrgID: memberShip.OrgID, OrgName: memberShip.OrgName, Role: model.Reader}
 		err = db.Create(member).Error
 		if err != nil {
-			logger.Debug("DB failed to create organization member ", err)
+			logger.Error("DB failed to create organization member ", err)
 			return
 		}
 	}
@@ -73,7 +73,7 @@ func (a *UserAdmin) Create(ctx context.Context, username, password string) (user
 func (a *UserAdmin) Get(ctx context.Context, id int64) (user *model.User, err error) {
 	if id <= 0 {
 		err = fmt.Errorf("Invalid user ID: %d", id)
-		logger.Debug("%v", err)
+		logger.Error("%v", err)
 		return
 	}
 	db := DB()
@@ -82,12 +82,12 @@ func (a *UserAdmin) Get(ctx context.Context, id int64) (user *model.User, err er
 	user = &model.User{Model: model.Model{ID: id}}
 	err = db.Where(where).Take(user).Error
 	if err != nil {
-		logger.Debug("Failed to query user, %v", err)
+		logger.Error("Failed to query user, %v", err)
 		return
 	}
 	permit := memberShip.ValidateOwner(model.Reader, user.Owner)
 	if !permit {
-		logger.Debug("Not authorized to read the user")
+		logger.Error("Not authorized to read the user")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -101,12 +101,12 @@ func (a *UserAdmin) GetUserByUUID(ctx context.Context, uuID string) (user *model
 	user = &model.User{}
 	err = db.Where(where).Where("uuid = ?", uuID).Take(user).Error
 	if err != nil {
-		logger.Debug("Failed to query user, %v", err)
+		logger.Error("Failed to query user, %v", err)
 		return
 	}
 	permit := memberShip.ValidateOwner(model.Reader, user.Owner)
 	if !permit {
-		logger.Debug("Not authorized to read the user")
+		logger.Error("Not authorized to read the user")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -117,7 +117,7 @@ func (a *UserAdmin) GetUserByName(name string) (user *model.User, err error) {
 	db := DB()
 	user = &model.User{}
 	if err = db.Where("username = ?", name).Take(user).Error; err != nil {
-		logger.Debug("DB failed to get user", err)
+		logger.Error("DB failed to get user", err)
 		return
 	}
 	return
@@ -127,7 +127,7 @@ func (a *UserAdmin) Delete(ctx context.Context, user *model.User) (err error) {
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
-		logger.Debug("Not authorized to delete the user")
+		logger.Error("Not authorized to delete the user")
 		err = fmt.Errorf("Not authorized")
 		return
 	}
@@ -138,11 +138,11 @@ func (a *UserAdmin) Delete(ctx context.Context, user *model.User) (err error) {
 		}
 	}()
 	if err = db.Where("user_id = ?", user.ID).Delete(&model.Member{}).Error; err != nil {
-		logger.Debug("DB failed to delete members", err)
+		logger.Error("DB failed to delete members", err)
 		return
 	}
 	if err = db.Delete(user).Error; err != nil {
-		logger.Debug("DB failed to delete members", err)
+		logger.Error("DB failed to delete members", err)
 		return
 	}
 	return
@@ -153,7 +153,7 @@ func (a *UserAdmin) Update(ctx context.Context, id int64, password string, membe
 	user = &model.User{Model: model.Model{ID: id}}
 	err = db.Set("gorm:auto_preload", true).Take(user).Error
 	if err != nil {
-		logger.Debug("DB failed to query user", err)
+		logger.Error("DB failed to query user", err)
 		return
 	}
 	password = strings.TrimSpace(password)
@@ -163,7 +163,7 @@ func (a *UserAdmin) Update(ctx context.Context, id int64, password string, membe
 		}
 		err = db.Model(user).Update("password", password).Error
 		if err != nil {
-			logger.Debug("DB failed to update user password", err)
+			logger.Error("DB failed to update user password", err)
 			return
 		}
 	}
@@ -178,7 +178,7 @@ func (a *UserAdmin) Update(ctx context.Context, id int64, password string, membe
 		if found == false {
 			err = db.Where("user_name = ? and org_name = ?", user.Username, em.OrgName).Delete(&model.Member{}).Error
 			if err != nil {
-				logger.Debug("DB failed to delete member", err)
+				logger.Error("DB failed to delete member", err)
 				return
 			}
 		}
@@ -205,7 +205,7 @@ func (a *UserAdmin) List(ctx context.Context, offset, limit int64, order, query 
 	if memberShip.Role != model.Admin {
 		org := &model.Organization{Model: model.Model{ID: memberShip.OrgID}}
 		if err = db.Set("gorm:auto_preload", true).Take(org).Error; err != nil {
-			logger.Debug("Failed to query organization", err)
+			logger.Error("Failed to query organization", err)
 			return
 		}
 		var userIDs []int64
@@ -220,7 +220,7 @@ func (a *UserAdmin) List(ctx context.Context, offset, limit int64, order, query 
 		}
 		db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
 		if err = db.Where(userIDs).Where(query).Find(&users).Error; err != nil {
-			logger.Debug("DB failed to get user list, %v", err)
+			logger.Error("DB failed to get user list, %v", err)
 			return
 		}
 	} else {
@@ -229,7 +229,7 @@ func (a *UserAdmin) List(ctx context.Context, offset, limit int64, order, query 
 		}
 		db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
 		if err = db.Where(query).Find(&users).Error; err != nil {
-			logger.Debug("DB failed to get user list, %v", err)
+			logger.Error("DB failed to get user list, %v", err)
 			return
 		}
 	}
@@ -242,7 +242,7 @@ func (a *UserAdmin) Validate(ctx context.Context, username, password string) (us
 	user = &model.User{}
 	err = db.Take(user, "username = ?", username).Error
 	if err != nil {
-		logger.Debug("DB failed to qeury user", err)
+		logger.Error("DB failed to qeury user", err)
 	}
 	err = a.CompareHashAndPassword(user.Password, password)
 	return
@@ -253,7 +253,7 @@ func (a *UserAdmin) AccessToken(uid int64, username, organization string) (oid i
 	member := &model.Member{}
 	err = db.Take(member, "user_name = ? and org_name = ?", username, organization).Error
 	if err != nil {
-		logger.Debug("DB failed to get membership, %v", err)
+		logger.Error("DB failed to get membership, %v", err)
 		return
 	}
 	if member.Role == model.None {
@@ -315,7 +315,7 @@ func (v *UserView) LoginPost(c *macaron.Context, store session.Store) {
 	uid := user.ID
 	oid, role, token, _, _, err := userAdmin.AccessToken(uid, username, organization)
 	if err != nil {
-		logger.Debug("Failed to get token", err)
+		logger.Error("Failed to get token", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(403, "403")
 		return
@@ -323,7 +323,7 @@ func (v *UserView) LoginPost(c *macaron.Context, store session.Store) {
 	members := []*model.Member{}
 	err = DB().Where("user_name = ?", username).Find(&members).Error
 	if err != nil {
-		logger.Debug("Failed to query organizations, ", err)
+		logger.Error("Failed to query organizations, ", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(403, "403")
 	}
@@ -342,7 +342,7 @@ func (v *UserView) List(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Reader)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -359,7 +359,7 @@ func (v *UserView) List(c *macaron.Context, store session.Store) {
 	query := c.QueryTrim("q")
 	total, users, err := userAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
-		logger.Debug("Failed to list user(s)", err)
+		logger.Error("Failed to list user(s)", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
 				"error": err.Error(),
@@ -397,14 +397,14 @@ func (v *UserView) Edit(c *macaron.Context, store session.Store) {
 	}
 	userID, err := strconv.Atoi(id)
 	if err != nil {
-		logger.Debug("Failed to get input id, %v", err)
+		logger.Error("Failed to get input id, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	permit, err := memberShip.CheckUser(int64(userID))
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -413,7 +413,7 @@ func (v *UserView) Edit(c *macaron.Context, store session.Store) {
 	user := &model.User{Model: model.Model{ID: int64(userID)}}
 	err = db.Set("gorm:auto_preload", true).Take(user).Error
 	if err != nil {
-		logger.Debug("Failed to query user", err)
+		logger.Error("Failed to query user", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -432,7 +432,7 @@ func (v *UserView) Change(c *macaron.Context, store session.Store) {
 	}
 	userID, err := strconv.Atoi(id)
 	if err != nil {
-		logger.Debug("Failed to get input id, %v", err)
+		logger.Error("Failed to get input id, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -442,7 +442,7 @@ func (v *UserView) Change(c *macaron.Context, store session.Store) {
 	user := &model.User{Model: model.Model{ID: int64(userID)}}
 	err = db.Set("gorm:auto_preload", true).Take(user).Error
 	if err != nil {
-		logger.Debug("Failed to query user", err)
+		logger.Error("Failed to query user", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -455,7 +455,7 @@ func (v *UserView) Change(c *macaron.Context, store session.Store) {
 				org := &model.Organization{Model: model.Model{ID: em.OrgID}}
 				err = db.Take(org).Error
 				if err != nil {
-					logger.Debug("Failed to query organization")
+					logger.Error("Failed to query organization")
 				} else {
 					store.Set("oid", org.ID)
 					store.Set("role", em.Role)
@@ -482,14 +482,14 @@ func (v *UserView) Patch(c *macaron.Context, store session.Store) {
 	}
 	userID, err := strconv.Atoi(id)
 	if err != nil {
-		logger.Debug("Failed to get input id, %v", err)
+		logger.Error("Failed to get input id, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	permit, err := memberShip.CheckUser(int64(userID))
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -498,7 +498,7 @@ func (v *UserView) Patch(c *macaron.Context, store session.Store) {
 	members := c.QueryStrings("members")
 	user, err := userAdmin.Update(c.Req.Context(), int64(userID), password, members)
 	if err != nil {
-		logger.Debug("Failed to update password, %v", err)
+		logger.Error("Failed to update password, %v", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
 				"error": err.Error(),
@@ -519,28 +519,28 @@ func (v *UserView) Delete(c *macaron.Context, store session.Store) (err error) {
 	ctx := c.Req.Context()
 	id := c.Params("id")
 	if id == "" {
-		logger.Debug("User id is empty ", err)
+		logger.Error("User id is empty ", err)
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	userID, err := strconv.Atoi(id)
 	if err != nil {
-		logger.Debug("Failed to get user id ", err)
+		logger.Error("Failed to get user id ", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	user, err := userAdmin.Get(ctx, int64(userID))
 	if err != nil {
-		logger.Debug("Failed to get user ", err)
+		logger.Error("Failed to get user ", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	err = userAdmin.Delete(ctx, user)
 	if err != nil {
-		logger.Debug("Failed to delete user ", err)
+		logger.Error("Failed to delete user ", err)
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -555,7 +555,7 @@ func (v *UserView) New(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -567,7 +567,7 @@ func (v *UserView) Create(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
-		logger.Debug("Not authorized for this operation")
+		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
 		c.HTML(http.StatusBadRequest, "error")
 		return
@@ -578,20 +578,20 @@ func (v *UserView) Create(c *macaron.Context, store session.Store) {
 	confirm := c.QueryTrim("confirm")
 
 	if confirm != password {
-		logger.Debug("Passwords do not match")
+		logger.Error("Passwords do not match")
 		c.Data["ErrorMsg"] = "Passwords do not match"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	user, err := userAdmin.Create(c.Req.Context(), username, password)
 	if err != nil {
-		logger.Debug("Failed to create user, %v", err)
+		logger.Error("Failed to create user, %v", err)
 		c.HTML(500, "500")
 		return
 	}
 	_, err = orgAdmin.Create(c.Req.Context(), username, username)
 	if err != nil {
-		logger.Debug("Failed to create organization, %v", err)
+		logger.Error("Failed to create organization, %v", err)
 		if c.Req.Header.Get("X-Json-Format") == "yes" {
 			c.JSON(500, map[string]interface{}{
 				"error": err.Error(),

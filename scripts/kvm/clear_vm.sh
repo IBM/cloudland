@@ -3,12 +3,11 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 3 ] && die "$0 <vm_ID> <boot_volume> <router>"
+[ $# -lt 2 ] && die "$0 <vm_ID> <router>"
 
 ID=$1
 vm_ID=inst-$ID
-boot_volume=$2
-router=$3
+router=$2
 vm_xml=$(virsh dumpxml $vm_ID)
 virsh undefine $vm_ID
 cmd="virsh destroy $vm_ID"
@@ -33,15 +32,14 @@ rm -rf $xml_dir/$vm_ID
 if [ -z "$wds_address" ]; then	
     rm -f ${image_dir}/${vm_ID}.*
 else
-    [ -z "$boot_volume" ] && boot_volume=instance-$ID-boot
-    vhost_name=$boot_volume
-    if [ -S "/var/run/wds/$vhost_name" ]; then
-       vhost_id=$(wds_curl GET "api/v2/sync/block/vhost?name=$vhost_name" | jq -r '.vhosts[0].id')
-       uss_id=$(get_uss_gateway)
-       wds_curl PUT "api/v2/sync/block/vhost/unbind_uss" "{\"vhost_id\": \"$vhost_id\", \"uss_gw_id\": \"$uss_id\", \"is_snapshot\": false}"
-       wds_curl DELETE "api/v2/sync/block/vhost/$vhost_id"
-       volume_id=$(wds_curl GET "api/v2/sync/block/volumes?name=$vhost_name" | jq -r '.volumes[0].id')
-       wds_curl DELETE "api/v2/sync/block/volumes/$volume_id?force=false"
-    fi
+    vhosts=$(basename $(ls /var/run/wds/instance-${ID}-*))
+    for vhost_name in $vhosts; do
+        if [ -S "/var/run/wds/$vhost_name" ]; then
+           vhost_id=$(wds_curl GET "api/v2/sync/block/vhost?name=$vhost_name" | jq -r '.vhosts[0].id')
+           uss_id=$(get_uss_gateway)
+           wds_curl PUT "api/v2/sync/block/vhost/unbind_uss" "{\"vhost_id\": \"$vhost_id\", \"uss_gw_id\": \"$uss_id\", \"is_snapshot\": false}"
+           wds_curl DELETE "api/v2/sync/block/vhost/$vhost_id"
+        fi
+    done
 fi
 echo "|:-COMMAND-:| $(basename $0) '$ID'"

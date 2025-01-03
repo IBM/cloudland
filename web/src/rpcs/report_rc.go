@@ -25,7 +25,7 @@ func ReportRC(ctx context.Context, args []string) (status string, err error) {
 	argn := len(args)
 	if argn < 4 {
 		err = fmt.Errorf("Wrong params")
-		logger.Debug("Invalid args", err)
+		logger.Error("Invalid args", err)
 		return
 	}
 	id := ctx.Value("hostid").(int32)
@@ -38,14 +38,14 @@ func ReportRC(ctx context.Context, args []string) (status string, err error) {
 	for _, arg := range args[1:] {
 		kv := strings.Split(arg, "=")
 		if len(kv) != 2 {
-			logger.Debug("Invalid key value pair", arg)
+			logger.Error("Invalid key value pair", arg)
 			return
 		}
 		key := kv[0]
 		value := kv[1]
 		vp := strings.Split(value, "/")
 		if len(vp) != 2 {
-			logger.Debug("Invalid format of value pair", value)
+			logger.Error("Invalid format of value pair", value)
 			return
 		}
 		if key == "cpu" {
@@ -58,10 +58,10 @@ func ReportRC(ctx context.Context, args []string) (status string, err error) {
 			disk, err = strconv.ParseInt(vp[0], 10, 64)
 			diskTotal, err = strconv.ParseInt(vp[1], 10, 64)
 		} else if key != "network" && key != "load" {
-			logger.Debug("Undefined resource type")
+			logger.Error("Undefined resource type")
 		}
 		if err != nil {
-			logger.Debug("Failed to get value", err)
+			logger.Error("Failed to get value", err)
 		}
 	}
 	db := DB()
@@ -76,7 +76,7 @@ func ReportRC(ctx context.Context, args []string) (status string, err error) {
 	}
 	err = db.Where("hostid = ?", id).Assign(resource).FirstOrCreate(&model.Resource{}).Error
 	if err != nil {
-		logger.Debug("Failed to create or update hyper resource", err)
+		logger.Error("Failed to create or update hyper resource", err)
 		return
 	}
 	return

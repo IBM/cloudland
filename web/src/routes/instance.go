@@ -89,11 +89,11 @@ func (a *InstanceAdmin) getHyperGroup(ctx context.Context, imageType string, zon
 		where = fmt.Sprintf("%s and virt_type = '%s'", where, imageType)
 	}
 	if err = db.Where(where).Find(&hypers).Error; err != nil {
-		logger.Debug("Hypers query failed", err)
+		logger.Error("Hypers query failed", err)
 		return
 	}
 	if len(hypers) == 0 {
-		logger.Debug("No qualified hypervisor")
+		logger.Error("No qualified hypervisor")
 		return
 	}
 	hyperGroup = fmt.Sprintf("group-zone-%d", zoneID)
@@ -110,7 +110,7 @@ func (a *InstanceAdmin) getHyperGroup(ctx context.Context, imageType string, zon
 func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, image *model.Image,
 	flavor *model.Flavor, zone *model.Zone, routerID int64, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo,
 	keys []*model.Key, rootPasswd string, hyperID int) (instances []*model.Instance, err error) {
-	logger.Tracef("Create %d instances with image %s, flavor %s, zone %s, router %d, primary interface %v, secondary interfaces %v, keys %v, root password %s, hyper %d",
+	logger.Debugf("Create %d instances with image %s, flavor %s, zone %s, router %d, primary interface %v, secondary interfaces %v, keys %v, root password %s, hyper %d",
 		count, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, rootPasswd, hyperID)
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
@@ -157,7 +157,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		}
 		total := 0
 		if err = db.Unscoped().Model(&model.Instance{}).Where("image_id = ?", image.ID).Count(&total).Error; err != nil {
-			logger.Debug("Failed to query total instances with the image", err)
+			logger.Error("Failed to query total instances with the image", err)
 			return
 		}
 		snapshot := total/MaxmumSnapshot + 1 // Same snapshot reference can not be over 128, so use 96 here
@@ -185,8 +185,8 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		instance.Zone = zone
 		var bootVolume *model.Volume
 		imagePrefix := fmt.Sprintf("image-%d-%s", image.ID, strings.Split(image.UUID, "-")[0])
-		// boot volume name format: instance-15-image-2-3c0cca59-boot-volume-10
-		bootVolume, err = volumeAdmin.CreateVolume(ctx, fmt.Sprintf("instance-%d-%s-boot-volume", instance.ID, imagePrefix), flavor.Disk, instance.ID, true, 0, 0, 0, 0, "")
+		// boot volume name format: instance-15-boot-volume-10
+		bootVolume, err = volumeAdmin.CreateVolume(ctx, fmt.Sprintf("instance-%d-boot-volume", instance.ID), flavor.Disk, instance.ID, true, 0, 0, 0, 0, "")
 		if err != nil {
 			logger.Error("Failed to create boot volume", err)
 			return
@@ -275,7 +275,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 	if flavor != nil && flavor.ID != instance.FlavorID {
 		if instance.Status == "running" {
 			err = fmt.Errorf("Instance must be shutdown first before resize")
-			logger.Error("Instance must be shutdown first before resize")
+			logger.Error(err)
 			return
 		}
 		if flavor.Disk < instance.Flavor.Disk {
@@ -375,10 +375,10 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 	rootPasswd string, keys []*model.Key, instance *model.Instance, userdata string, routerID, zoneID int64,
 	service string) (interfaces []*model.Interface, metadata string, err error) {
 	if rootPasswd == "" {
-		logger.Tracef("Build instance metadata with primaryIface: %v, secondaryIfaces: %+v, keys: %+v, instance: %+v, userdata: %s, routerID: %d, zoneID: %d, service: %s",
+		logger.Debugf("Build instance metadata with primaryIface: %v, secondaryIfaces: %+v, keys: %+v, instance: %+v, userdata: %s, routerID: %d, zoneID: %d, service: %s",
 			primaryIface, secondaryIfaces, keys, instance, userdata, routerID, zoneID, service)
 	} else {
-		logger.Tracef("Build instance metadata with primaryIface: %v, secondaryIfaces: %+v, keys: %+v, instance: %+v, userdata: %s, routerID: %d, zoneID: %d, service: %s, root password: %s",
+		logger.Debugf("Build instance metadata with primaryIface: %v, secondaryIfaces: %+v, keys: %+v, instance: %+v, userdata: %s, routerID: %d, zoneID: %d, service: %s, root password: %s",
 			primaryIface, secondaryIfaces, keys, instance, userdata, routerID, zoneID, service, "******")
 		rootPasswd, err = encrpt.Mkpasswd(rootPasswd, "sha512")
 		if err != nil {
@@ -434,7 +434,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 			return
 		}
 		instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: address, MacAddr: iface.MacAddr, SecRules: securityData})
+		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: address, MacAddr: iface.MacAddr})
 	}
 	var instKeys []string
 	for _, key := range keys {
@@ -502,14 +502,9 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 		logger.Errorf("Failed to query floating ip(s), %v", err)
 		return
 	}
-	var bootVolume *model.Volume
 	if instance.Volumes != nil {
-		for i, vol := range instance.Volumes {
-			if vol.Booting {
-				bootVolume = instance.Volumes[i]
-				continue
-			}
-			_, err = volumeAdmin.Update(ctx, vol.ID, "", 0)
+		for _, volume := range instance.Volumes {
+			_, err = volumeAdmin.Update(ctx, volume.ID, "", 0)
 			if err != nil {
 				logger.Errorf("Failed to detach volume, %v", err)
 				return
@@ -521,19 +516,10 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 	if instance.Hyper == -1 {
 		control = "toall="
 	}
-	bootName := ""
-	if bootVolume != nil {
-		bootName = fmt.Sprintf("%s-%d", bootVolume.Name, bootVolume.ID)
-		err = volumeAdmin.Delete(ctx, bootVolume)
-		if err != nil {
-			logger.Errorf("Failed to delete volume, %v", err)
-			return
-		}
-	}
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh '%d' '%s' '%d'", instance.ID, bootName, instance.RouterID)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh '%d' '%d'", instance.ID, instance.RouterID)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
-		logger.Errorf("Delete vm command execution failed ", err)
+		logger.Error("Delete vm command execution failed ", err)
 		return
 	}
 	instance.Status = "deleting"

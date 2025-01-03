@@ -145,6 +145,7 @@ func (v *InstanceAPI) Patch(c *gin.Context) {
 	err = instanceAdmin.Update(ctx, instance, flavor, hostname, payload.PowerAction, int(instance.Hyper))
 	if err != nil {
 		logger.Errorf("Patch instance failed, %+v", err)
+		ErrorResponse(c, http.StatusBadRequest, "Patch instance failed", err)
 		return
 	}
 	instanceResp, err := v.getInstanceResponse(ctx, instance)
@@ -401,38 +402,7 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 	}
 	interfaces := make([]*InterfaceResponse, len(instance.Interfaces))
 	for i, iface := range instance.Interfaces {
-		interfaces[i] = &InterfaceResponse{
-			BaseReference: &BaseReference{
-				ID:   iface.UUID,
-				Name: iface.Name,
-			},
-			MacAddress: iface.MacAddr,
-			IPAddress:  iface.Address.Address,
-			IsPrimary:  iface.PrimaryIf,
-			Subnet: &BaseReference{
-				ID:   iface.Address.Subnet.UUID,
-				Name: iface.Address.Subnet.Name,
-			},
-		}
-		if iface.PrimaryIf && len(instance.FloatingIps) > 0 {
-			floatingIps := make([]*FloatingIpInfo, len(instance.FloatingIps))
-			for i, floatingip := range instance.FloatingIps {
-				floatingIps[i] = &FloatingIpInfo{
-					ResourceReference: &ResourceReference{
-						ID:   floatingip.UUID,
-						Name: floatingip.Name,
-					},
-					IpAddress: floatingip.FipAddress,
-				}
-			}
-			interfaces[i].FloatingIps = floatingIps
-		}
-		for _, sg := range iface.SecurityGroups {
-			interfaces[i].SecurityGroups = append(interfaces[i].SecurityGroups, &BaseReference{
-				ID:   sg.UUID,
-				Name: sg.Name,
-			})
-		}
+		interfaces[i], err = interfaceAPI.getInterfaceResponse(ctx, instance, iface)
 	}
 	instanceResp.Interfaces = interfaces
 	if instance.RouterID > 0 {

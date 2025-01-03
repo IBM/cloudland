@@ -46,10 +46,11 @@ if [ -z "$wds_address" ]; then
         fi
         qemu-img resize -q $vm_img "${disk_size}G" &> /dev/null
         echo "|:-COMMAND-:| create_volume_local.sh '$vol_ID' 'volume-${vol_ID}.disk' 'available'"
+        echo "|:-COMMAND-:| attach_volume_local.sh '$ID' '$vol_ID' 'vda'"
     fi
 else
     image=$(basename $img_name .raw)
-    vhost_name=instance-$ID-$image-boot-volume-$vol_ID
+    vhost_name=instance-$ID-volume-$vol_ID
     snapshot_name=${image}-${snapshot}
     snapshot_id=$(wds_curl GET "api/v2/sync/block/snaps?name=$snapshot_name" | jq -r '.snaps[0].id')
     if [ -z "$snapshot_id" -o "$snapshot_id" = null ]; then
@@ -76,6 +77,7 @@ else
         exit -1
     fi
     echo "|:-COMMAND-:| create_volume_wds_vhost '$vol_ID' 'available' 'wds_vhost://$wds_pool_id/$volume_id'"
+    echo "|:-COMMAND-:| attach_volume_wds_vhost.sh '$ID' '$vol_ID' 'vda'"
     ux_sock=/var/run/wds/$vhost_name
     template=$template_dir/wds_template.xml
 fi
