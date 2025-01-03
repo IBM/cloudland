@@ -41,6 +41,7 @@ type InstancePayload struct {
 	Hypervisor          int                 `json:"hypervisor,default=-1" binding:"omitempty"`
 	Hostname            string              `json:"hostname" binding:"required,hostname|fqdn"`
 	Keys                []*BaseReference    `json:"keys" binding:"required,gte=1,lte=16"`
+	RootPasswd          string              `json:"root_passwd" binding:"omitempty,min=8,max=32"`
 	Flavor              string              `json:"flavor" binding:"required,min=1,max=32"`
 	Image               *BaseReference      `json:"image" binding:"required"`
 	PrimaryInterface    *InterfacePayload   `json:"primary_interface", binding:"required"`
@@ -52,16 +53,17 @@ type InstancePayload struct {
 
 type InstanceResponse struct {
 	*ResourceReference
-	Hostname   string               `json:"hostname"`
-	Status     string               `json:"status"`
-	Interfaces []*InterfaceResponse `json:"interfaces"`
-	Volumes    []*ResourceReference `json:"volumes"`
-	Flavor     string               `json:"flavor"`
-	Image      *ResourceReference   `json:"image"`
-	Keys       []*ResourceReference `json:"keys"`
-	Zone       string               `json:"zone"`
-	VPC        *ResourceReference   `json:"vpc,omitempty"`
-	Hypervisor string               `json:"hypervisor,omitempty"`
+	Hostname    string               `json:"hostname"`
+	Status      string               `json:"status"`
+	Interfaces  []*InterfaceResponse `json:"interfaces"`
+	Volumes     []*ResourceReference `json:"volumes"`
+	Flavor      string               `json:"flavor"`
+	Image       *ResourceReference   `json:"image"`
+	Keys        []*ResourceReference `json:"keys"`
+	PasswdLogin bool                 `json:"passwd_login"`
+	Zone        string               `json:"zone"`
+	VPC         *ResourceReference   `json:"vpc,omitempty"`
+	Hypervisor  string               `json:"hypervisor,omitempty"`
 }
 
 type InstanceListResponse struct {
@@ -207,6 +209,7 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 	}
 	logger.Debugf("Creating instance with payload: %+v", payload)
 	hostname := payload.Hostname
+	rootPasswd := payload.RootPasswd
 	userdata := payload.Userdata
 	image, err := imageAdmin.GetImage(ctx, payload.Image)
 	if err != nil {
@@ -268,7 +271,7 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 	}
 	logger.Debugf("Creating %d instances with hostname %s, userdata %s, image %s, flavor %s, zone %s, router %d, primaryIface %v, secondaryIfaces %v, keys %v, hypervisor %d",
 		count, hostname, userdata, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, payload.Hypervisor)
-	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, routerID, primaryIface, secondaryIfaces, keys, payload.Hypervisor)
+	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, routerID, primaryIface, secondaryIfaces, keys, rootPasswd, payload.Hypervisor)
 	if err != nil {
 		logger.Errorf("Failed to create instances, %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Failed to create instances", err)
@@ -284,6 +287,7 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 			return
 		}
 	}
+	logger.Debugf("Create instance success, %+v", instancesResp)
 	c.JSON(http.StatusOK, instancesResp)
 }
 

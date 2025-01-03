@@ -18,6 +18,8 @@ fi
 vm_meta=$(echo $vm_meta | base64 -d)
 
 pub_keys=$(jq -r '.keys' <<< $vm_meta)
+root_passwd=$(jq -r '.root_passwd' <<< $vm_meta)
+
 admin_pass=`openssl rand -base64 12`
 random_seed=`cat /dev/urandom | head -c 512 | base64 -w 0`
 (
@@ -43,6 +45,13 @@ random_seed=`cat /dev/urandom | head -c 512 | base64 -w 0`
     echo '  "random_seed": "'${random_seed}'"'
     echo '}'
 ) > $latest_dir/meta_data.json
+
+if [ -n "${root_passwd}" ]; then
+    random_seed=`cat /dev/urandom | head -c 512 | base64 -w 0`
+    (
+        echo '"#cloud-config\n\nssh_pwauth: true\ndisable_root: false\nchpasswd:\n  expire: false\n  users:\n    - name: root\n      password: '${root_passwd}'\n"'
+    ) > $latest_dir/vendor_data.json
+fi
 
 dns=$(jq -r .dns <<< $vm_meta)
 local_ip=$(jq -r .vlans[0].ip_address <<< $vm_meta)
