@@ -103,6 +103,10 @@ func (a *VolumeAdmin) CreateVolume(ctx context.Context, name string, size int32,
 	if poolID == "" {
 		poolID = viper.GetString("volume.default_wds_pool_id")
 	}
+	target := ""
+	if booting {
+		target = "vda"
+	}
 	memberShip := GetMemberShip(ctx)
 	volume = &model.Volume{
 		Model:      model.Model{Creater: memberShip.UserID},
@@ -111,6 +115,7 @@ func (a *VolumeAdmin) CreateVolume(ctx context.Context, name string, size int32,
 		InstanceID: instanceID,
 		Booting:    booting,
 		Format:     "raw",
+		Target:     target,
 		Size:       int32(size),
 		IopsLimit:  iopsLimit,
 		IopsBurst:  iopsBurst,
