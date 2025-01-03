@@ -198,7 +198,7 @@ func (v *InstanceAPI) Delete(c *gin.Context) {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /instances [post]
 func (v *InstanceAPI) Create(c *gin.Context) {
-	logger.Trace("Create instance")
+	logger.Debug("Create instance")
 	ctx := c.Request.Context()
 	payload := &InstancePayload{}
 	err := c.ShouldBindJSON(payload)
@@ -287,7 +287,7 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 			return
 		}
 	}
-	logger.Tracef("Create instance success, %+v", instancesResp)
+	logger.Debugf("Create instance success, %+v", instancesResp)
 	c.JSON(http.StatusOK, instancesResp)
 }
 

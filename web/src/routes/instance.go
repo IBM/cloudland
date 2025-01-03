@@ -502,12 +502,22 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 		logger.Errorf("Failed to query floating ip(s), %v", err)
 		return
 	}
+	bootVolumeUUID := ""
 	if instance.Volumes != nil {
 		for _, volume := range instance.Volumes {
-			_, err = volumeAdmin.Update(ctx, volume.ID, "", 0)
-			if err != nil {
-				logger.Errorf("Failed to detach volume, %v", err)
-				return
+			if volume.Booting {
+				bootVolumeUUID = volume.UUID
+				// delete the boot volume directly
+				if err = db.Delete(volume).Error; err != nil {
+					logger.Error("DB: delete volume failed", err)
+					return
+				}
+			} else {
+				_, err = volumeAdmin.Update(ctx, volume.ID, "", 0)
+				if err != nil {
+					logger.Error("Failed to detach volume, %v", err)
+					return
+				}
 			}
 		}
 		instance.Volumes = nil
@@ -516,7 +526,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 	if instance.Hyper == -1 {
 		control = "toall="
 	}
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh '%d' '%d'", instance.ID, instance.RouterID)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh '%d' '%d' '%s'", instance.ID, instance.RouterID, bootVolumeUUID)
 	err = hyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Error("Delete vm command execution failed ", err)

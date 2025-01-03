@@ -3,11 +3,12 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 2 ] && die "$0 <vm_ID> <router>"
+[ $# -lt 3 ] && die "$0 <vm_ID> <router> <boot_volume>"
 
 ID=$1
 vm_ID=inst-$ID
 router=$2
+boot_volume=$3
 vm_xml=$(virsh dumpxml $vm_ID)
 virsh undefine $vm_ID
 cmd="virsh destroy $vm_ID"
@@ -41,5 +42,6 @@ else
            wds_curl DELETE "api/v2/sync/block/vhost/$vhost_id"
         fi
     done
+    [ -n "$boot_volume" ] && wds_curl DELETE "api/v2/sync/block/volumes/$boot_volume?force=false"
 fi
 echo "|:-COMMAND-:| $(basename $0) '$ID'"
