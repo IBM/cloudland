@@ -1,4 +1,7 @@
 {
-  "name": "secgroup-new-10026",
+  "name": "secgroup-24600",
+  "vpc": {
+    "id": "8c3b30d8-43ee-405a-8e99-037a6206e19a"
+  },
   "is_default": true
 }
