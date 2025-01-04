@@ -10,6 +10,7 @@ package common
 import (
 	"context"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"net"
 	"strings"
@@ -39,9 +40,35 @@ type VlanInfo struct {
 	Gateway    string          `json:"gateway"`
 	Router     int64           `json:"router"`
 	PublicLink int64           `json:"public_link"`
+	Inbound    int64           `json:"inbound"`
+	Outbound   int64           `json:"outbound"`
 	IpAddr     string          `json:"ip_address"`
 	MacAddr    string          `json:"mac_address"`
 	SecRules   []*SecurityData `json:"security"`
+}
+
+func ApplyInterface(ctx context.Context, instance *model.Instance, iface *model.Interface) (err error) {
+	var securityData []*SecurityData
+	securityData, err = GetSecurityData(ctx, iface.SecurityGroups)
+	if err != nil {
+		logger.Debug("DB failed to get security data, %v", err)
+		return
+	}
+	var jsonData []byte
+	jsonData, err = json.Marshal(securityData)
+	if err != nil {
+		logger.Error("Failed to marshal security json data, %v", err)
+		return
+	}
+	subnet := iface.Address.Subnet
+	control := fmt.Sprintf("inter=%d", instance.Hyper)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/apply_vm_nic.sh '%d' '%d' '%s' '%s' '%s' '%d' '%d' '%d' <<EOF\n%s\nEOF", iface.Instance, subnet.Vlan, iface.Address.Address, iface.MacAddr, subnet.Gateway, subnet.RouterID, iface.Inbound, iface.Outbound, jsonData)
+	err = HyperExecute(ctx, control, command)
+	if err != nil {
+		logger.Error("Update vm nic command execution failed", err)
+		return
+	}
+	return
 }
 
 func AllocateAddress(ctx context.Context, subnet *model.Subnet, ifaceID int64, ipaddr, addrType string) (address *model.Address, err error) {

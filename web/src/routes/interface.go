@@ -9,15 +9,14 @@ package routes
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
 	. "web/src/common"
-	"web/src/model"
 	"web/src/dbs"
+	"web/src/model"
 
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
@@ -32,6 +31,8 @@ type InterfaceInfo struct {
 	Subnet         *model.Subnet
 	MacAddress     string
 	IpAddress      string
+	Inbound        int32
+	Outbound       int32
 	SecurityGroups []*model.SecurityGroup
 }
 
@@ -125,44 +126,34 @@ func (a *InterfaceAdmin) Update(ctx context.Context, instance *model.Instance, i
 		}
 	}()
 	needUpdate := false
+	needRemoteUpdate := false
 	if iface.Name != name {
 		iface.Name = name
 		needUpdate = true
 	}
 	if iface.Inbound != inbound {
 		iface.Inbound = inbound
-		needUpdate = true
+		needRemoteUpdate = true
 	}
 	if iface.Outbound != outbound {
 		iface.Outbound = outbound
 		needUpdate = true
+		needRemoteUpdate = true
 	}
 	if len(secgroups) > 0 {
 		iface.SecurityGroups = secgroups
-		needUpdate = true
-		var securityData []*SecurityData
-		securityData, err = GetSecurityData(ctx, iface.SecurityGroups)
-		if err != nil {
-			logger.Debug("DB failed to get security data, %v", err)
-			return
-		}
-		var jsonData []byte
-		jsonData, err = json.Marshal(securityData)
-		if err != nil {
-			logger.Error("Failed to marshal security json data, %v", err)
-			return
-		}
-		control := fmt.Sprintf("inter=%d", instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/reapply_secgroup.sh '%s' '%s' <<EOF\n%s\nEOF", iface.Address.Address, iface.MacAddr, jsonData)
-		err = hyperExecute(ctx, control, command)
-		if err != nil {
-			logger.Error("Launch vm command execution failed", err)
+		needRemoteUpdate = true
+	}
+	if needUpdate || needRemoteUpdate {
+		if err = db.Model(iface).Save(iface).Error; err != nil {
+			logger.Debug("Failed to save interface", err)
 			return
 		}
 	}
-	if needUpdate {
-		if err = db.Model(iface).Save(iface).Error; err != nil {
-			logger.Debug("Failed to save interface", err)
+	if needRemoteUpdate {
+		err = ApplyInterface(ctx, instance, iface)
+		if err != nil {
+			logger.Error("Update vm nic command execution failed", err)
 			return
 		}
 	}

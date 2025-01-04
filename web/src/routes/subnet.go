@@ -242,7 +242,7 @@ func clearRouting(ctx context.Context, routerID int64, subnet *model.Subnet) (er
 			control = fmt.Sprintf("inter=%d", router.Hyper)
 		}
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_gateway.sh '%d' '%s' '%d'", router.ID, subnet.Gateway, subnet.Vlan)
-		err = hyperExecute(ctx, control, command)
+		err = HyperExecute(ctx, control, command)
 		if err != nil {
 			logger.Error("Set gateway failed")
 			return

@@ -7,7 +7,9 @@ cat >tmp.json <<EOF
   "hostname": "test",
   "primary_interface": {
     "subnet": {
-      "id": "f520c67b-81ad-47b0-b52b-75e593ff1b05"
+      "id": "f520c67b-81ad-47b0-b52b-75e593ff1b05",
+      "inbound": 100,
+      "outbound": 100
     }
   },
   "count": 3,

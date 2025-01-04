@@ -321,6 +321,12 @@ func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, vpc *model.Router, i
 	if ifacePayload.MacAddress != "" {
 		ifaceInfo.MacAddress = ifacePayload.MacAddress
 	}
+	if ifacePayload.Inbound > 0 {
+		ifaceInfo.Inbound = ifacePayload.Inbound
+	}
+	if ifacePayload.Outbound > 0 {
+		ifaceInfo.Outbound = ifacePayload.Outbound
+	}
 	if len(ifacePayload.SecurityGroups) == 0 {
 		var routerID, sgID int64
 		if router != nil {

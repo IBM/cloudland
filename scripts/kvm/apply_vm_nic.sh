@@ -5,7 +5,8 @@ source ../cloudrc
 
 [ $# -lt 6 ] && echo "$0 <vm_ID> <vlan> <vm_ip> <vm_mac> <gateway> <router>" && exit -1
 
-vm_ID=inst-$1
+ID=$1
+vm_ID=inst-$ID
 vlan=$2
 vm_ip=$3
 vm_mac=$4
@@ -19,7 +20,7 @@ virsh domiflist $vm_ID | grep $vm_mac
 if [ $? -ne 0 ]; then
     virsh attach-interface $vm_ID bridge $vm_br --model virtio --mac $vm_mac --target $nic_name --live
     virsh attach-interface $vm_ID bridge $vm_br --model virtio --mac $vm_mac --target $nic_name --config
-    virsh domiftune $vm_ID $nic_name --inbound 1000000,2000000,2000 --outbound 1000000,2000000,2000
+    ./set_nic_speed "$ID" "$nic_name" "$inbound" "$outbound"
 fi
 ./create_sg_chain.sh $nic_name $vm_ip $vm_mac
 ./apply_sg_rule.sh $nic_name

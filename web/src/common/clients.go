@@ -10,7 +10,7 @@ History:
 
 */
 
-package rpcs
+package common
 
 import (
 	"bytes"

@@ -15,6 +15,8 @@ while [ $i -lt $nvlan ]; do
     mac=$(jq -r .[$i].mac_address <<< $vlans)
     gateway=$(jq -r .[$i].gateway <<< $vlans)
     router=$(jq -r .[$i].router <<< $vlans)
-    jq -r .[$i].security <<< $vlans | ./attach_nic.sh "$ID" "$vlan" "$ip" "$mac" "$gateway" "$router"
+    inbound=$(jq -r .[$i].inbound <<< $vlans)
+    outbound=$(jq -r .[$i].outbound <<< $vlans)
+    jq -r .[$i].security <<< $vlans | ./apply_vm_nic.sh "$ID" "$vlan" "$ip" "$mac" "$gateway" "$router" "$inbound" "$outbound"
     let i=$i+1
 done

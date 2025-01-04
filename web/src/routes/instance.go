@@ -20,7 +20,6 @@ import (
 	. "web/src/common"
 	"web/src/dbs"
 	"web/src/model"
-	"web/src/rpcs"
 	"web/src/utils/encrpt"
 
 	"github.com/go-macaron/session"
@@ -219,7 +218,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 func (a *InstanceAdmin) executeCommandList(ctx context.Context, cmdList []*ExecutionCommand) {
 	var err error
 	for _, cmd := range cmdList {
-		err = hyperExecute(ctx, cmd.Control, cmd.Command)
+		err = HyperExecute(ctx, cmd.Control, cmd.Command)
 		if err != nil {
 			logger.Error("Command execution failed", err)
 		}
@@ -236,7 +235,7 @@ func (a *InstanceAdmin) ChangeInstanceStatus(ctx context.Context, id int64, acti
 	}
 	control := fmt.Sprintf("inter=%d", instance.Hyper)
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh '%d' '%s'", instance.ID, action)
-	err = hyperExecute(ctx, control, command)
+	err = HyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Error("Delete vm command execution failed", err)
 		return
@@ -294,7 +293,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 		disk := flavor.Disk - instance.Flavor.Disk + flavor.Ephemeral - instance.Flavor.Ephemeral
 		control := fmt.Sprintf("inter=%d cpu=%d memory=%d disk=%d network=%d", instance.Hyper, cpu, memory, disk, 0)
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/resize_vm.sh '%d' '%d' '%d' '%d' '%d' '%d' '%d'", instance.ID, flavor.Cpu, flavor.Memory, flavor.Disk, flavor.Swap, flavor.Ephemeral, disk)
-		err = hyperExecute(ctx, control, command)
+		err = HyperExecute(ctx, control, command)
 		if err != nil {
 			logger.Error("Resize vm command execution failed", err)
 			return
@@ -312,17 +311,13 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 	if string(action) != "" {
 		control := fmt.Sprintf("inter=%d", instance.Hyper)
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh '%d' '%s'", instance.ID, string(action))
-		err = hyperExecute(ctx, control, command)
+		err = HyperExecute(ctx, control, command)
 		if err != nil {
 			logger.Error("action vm command execution failed", err)
 			return
 		}
 	}
 	return
-}
-
-func hyperExecute(ctx context.Context, control, command string) (err error) {
-	return rpcs.HyperExecute(ctx, control, command)
 }
 
 func (a *InstanceAdmin) deleteInterfaces(ctx context.Context, instance *model.Instance) (err error) {
@@ -345,7 +340,7 @@ func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interf
 	vlan := iface.Address.Subnet.Vlan
 	control := ""
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/del_host.sh '%d' '%s' '%s'", vlan, iface.MacAddr, iface.Address.Address)
-	err = hyperExecute(ctx, control, command)
+	err = HyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Error("Delete interface failed")
 		return
@@ -517,7 +512,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 		control = "toall="
 	}
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh '%d' '%d' '%s'", instance.ID, instance.RouterID, bootVolumeUUID)
-	err = hyperExecute(ctx, control, command)
+	err = HyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Error("Delete vm command execution failed ", err)
 		return

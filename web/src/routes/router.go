@@ -247,7 +247,7 @@ func (a *RouterAdmin) Delete(ctx context.Context, router *model.Router) (err err
 	}
 	control := "toall="
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_local_router.sh '%d'", router.ID)
-	err = hyperExecute(ctx, control, command)
+	err = HyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Error("Delete master failed")
 		return

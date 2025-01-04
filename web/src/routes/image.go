@@ -62,7 +62,7 @@ func (a *ImageAdmin) Create(ctx context.Context, name, osVersion, virtType, user
 		control = fmt.Sprintf("inter=%d", instance.Hyper)
 		command = fmt.Sprintf("/opt/cloudland/scripts/backend/capture_image.sh '%d' '%s' '%d'", image.ID, prefix, instance.ID)
 	}
-	err = hyperExecute(ctx, control, command)
+	err = HyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Error("Create image command execution failed", err)
 		return
@@ -163,7 +163,7 @@ func (a *ImageAdmin) Delete(ctx context.Context, image *model.Image) (err error)
 		prefix := strings.Split(image.UUID, "-")[0]
 		control := "inter="
 		command := fmt.Sprint("/opt/cloudland/scripts/backend/clear_image.sh %d %s", image.ID, prefix, image.Format)
-		err = hyperExecute(ctx, control, command)
+		err = HyperExecute(ctx, control, command)
 		if err != nil {
 			logger.Error("Clear image command execution failed", err)
 			return

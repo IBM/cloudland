@@ -8,7 +8,6 @@ package rpcs
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -105,41 +104,12 @@ func InstanceStatus(ctx context.Context, args []string) (status string, err erro
 
 func ApplySecgroups(ctx context.Context, instance *model.Instance) (err error) {
 	db := DB()
-	var ifaces []*model.Interface
-	if err = db.Set("gorm:auto_preload", true).Where("instance = ?", instance.ID).Find(&ifaces).Error; err != nil {
+	if err = db.Preload("SecurityGroups").Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
 		logger.Error("Interfaces query failed", err)
 		return
 	}
-	for _, iface := range ifaces {
-		var secRules []*model.SecurityRule
-		secRules, err = GetSecurityRules(ctx, iface.SecurityGroups)
-		if err != nil {
-			logger.Error("Failed to get security rules", err)
-			continue
-		}
-		securityData := []*SecurityData{}
-		for _, rule := range secRules {
-			sgr := &SecurityData{
-				Secgroup:    rule.Secgroup,
-				RemoteIp:    rule.RemoteIp,
-				RemoteGroup: rule.RemoteGroupID,
-				Direction:   rule.Direction,
-				IpVersion:   rule.IpVersion,
-				Protocol:    rule.Protocol,
-				PortMin:     rule.PortMin,
-				PortMax:     rule.PortMax,
-			}
-			securityData = append(securityData, sgr)
-		}
-		var jsonData []byte
-		jsonData, err = json.Marshal(securityData)
-		if err != nil {
-			logger.Error("Failed to marshal security json data, %v", err)
-			continue
-		}
-		control := fmt.Sprintf("inter=%d", instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/attach_nic.sh '%d' '%d' '%s' '%s' <<EOF\n%s\nEOF", instance.ID, iface.Address.Subnet.Vlan, iface.Address.Address, iface.MacAddr, jsonData)
-		err = HyperExecute(ctx, control, command)
+	for _, iface := range instance.Interfaces {
+		err = ApplyInterface(ctx, instance, iface)
 		if err != nil {
 			logger.Error("Launch vm command execution failed", err)
 			continue
