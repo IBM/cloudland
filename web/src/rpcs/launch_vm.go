@@ -201,7 +201,7 @@ func syncNicInfo(ctx context.Context, instance *model.Instance) (err error) {
 			return
 		}
 		subnet := iface.Address.Subnet
-		vlans = append(vlans, &VlanInfo{Device: iface.Name, Vlan: subnet.Vlan, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: iface.Address.Address, MacAddr: iface.MacAddr, SecRules: securityData})
+		vlans = append(vlans, &VlanInfo{Device: iface.Name, Vlan: subnet.Vlan, Inbound: iface.Inbound, Outbound: iface.Outbound, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: iface.Address.Address, MacAddr: iface.MacAddr, SecRules: securityData})
 	}
 	jsonData, err := json.Marshal(vlans)
 	if err != nil {

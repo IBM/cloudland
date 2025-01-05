@@ -61,7 +61,7 @@ func createRouterIface(ctx context.Context, rtype string, router *model.Router, 
 		} else {
 			continue
 		}
-		iface, err = CreateInterface(ctx, subnet, router.ID, owner, router.Hyper, "", "", name, ifType, nil)
+		iface, err = CreateInterface(ctx, subnet, router.ID, owner, router.Hyper, 0, 0, "", "", name, ifType, nil)
 		if err == nil {
 			logger.Error("Created gateway interface from subnet")
 			break
@@ -247,7 +247,7 @@ func (a *RouterAdmin) Delete(ctx context.Context, router *model.Router) (err err
 	}
 	control := "toall="
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_local_router.sh '%d'", router.ID)
-	err = hyperExecute(ctx, control, command)
+	err = HyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Error("Delete master failed")
 		return

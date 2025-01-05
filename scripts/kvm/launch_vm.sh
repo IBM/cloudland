@@ -63,9 +63,13 @@ else
         wds_curl DELETE "api/v2/sync/block/snaps/$image-$(($snapshot-1))?force=false"
     fi
     volume_id=$(wds_curl POST "api/v2/sync/block/snaps/$snapshot_id/clone" "{\"name\": \"$vhost_name\"}" | jq -r .id)
+    if [ -z "$volume_id" -o "$volume_id" = null ]; then
+        echo "|:-COMMAND-:| `basename $0` '$ID' '$state' '$SCI_CLIENT_ID' 'failed to create boot volume based on snapshot $snapshot_id!'"
+        exit -1
+    fi
     rest_code=$(wds_curl PUT "api/v2/sync/block/volumes/$volume_id/expand" "{\"size\": $fsize}" | jq -r .ret_code)
     if [ "$rest_code" != "0" ]; then
-        echo "|:-COMMAND-:| `basename $0` '$ID' '$state' '$SCI_CLIENT_ID' 'failed to create boot volume!'"
+        echo "|:-COMMAND-:| `basename $0` '$ID' '$state' '$SCI_CLIENT_ID' 'failed to expand boot volume to size $fsize!'"
         exit -1
     fi
     uss_id=$(get_uss_gateway)

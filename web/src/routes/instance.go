@@ -20,7 +20,6 @@ import (
 	. "web/src/common"
 	"web/src/dbs"
 	"web/src/model"
-	"web/src/rpcs"
 	"web/src/utils/encrpt"
 
 	"github.com/go-macaron/session"
@@ -219,7 +218,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 func (a *InstanceAdmin) executeCommandList(ctx context.Context, cmdList []*ExecutionCommand) {
 	var err error
 	for _, cmd := range cmdList {
-		err = hyperExecute(ctx, cmd.Control, cmd.Command)
+		err = HyperExecute(ctx, cmd.Control, cmd.Command)
 		if err != nil {
 			logger.Error("Command execution failed", err)
 		}
@@ -236,7 +235,7 @@ func (a *InstanceAdmin) ChangeInstanceStatus(ctx context.Context, id int64, acti
 	}
 	control := fmt.Sprintf("inter=%d", instance.Hyper)
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh '%d' '%s'", instance.ID, action)
-	err = hyperExecute(ctx, control, command)
+	err = HyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Error("Delete vm command execution failed", err)
 		return
@@ -294,7 +293,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 		disk := flavor.Disk - instance.Flavor.Disk + flavor.Ephemeral - instance.Flavor.Ephemeral
 		control := fmt.Sprintf("inter=%d cpu=%d memory=%d disk=%d network=%d", instance.Hyper, cpu, memory, disk, 0)
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/resize_vm.sh '%d' '%d' '%d' '%d' '%d' '%d' '%d'", instance.ID, flavor.Cpu, flavor.Memory, flavor.Disk, flavor.Swap, flavor.Ephemeral, disk)
-		err = hyperExecute(ctx, control, command)
+		err = HyperExecute(ctx, control, command)
 		if err != nil {
 			logger.Error("Resize vm command execution failed", err)
 			return
@@ -312,17 +311,13 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 	if string(action) != "" {
 		control := fmt.Sprintf("inter=%d", instance.Hyper)
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh '%d' '%s'", instance.ID, string(action))
-		err = hyperExecute(ctx, control, command)
+		err = HyperExecute(ctx, control, command)
 		if err != nil {
 			logger.Error("action vm command execution failed", err)
 			return
 		}
 	}
 	return
-}
-
-func hyperExecute(ctx context.Context, control, command string) (err error) {
-	return rpcs.HyperExecute(ctx, control, command)
 }
 
 func (a *InstanceAdmin) deleteInterfaces(ctx context.Context, instance *model.Instance) (err error) {
@@ -345,7 +340,7 @@ func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interf
 	vlan := iface.Address.Subnet.Vlan
 	control := ""
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/del_host.sh '%d' '%s' '%s'", vlan, iface.MacAddr, iface.Address.Address)
-	err = hyperExecute(ctx, control, command)
+	err = HyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Error("Delete interface failed")
 		return
@@ -353,7 +348,7 @@ func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interf
 	return
 }
 
-func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subnet, address, mac string, instance *model.Instance, ifname string, secGroups []*model.SecurityGroup, zoneID int64) (iface *model.Interface, err error) {
+func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subnet, address, mac string, instance *model.Instance, ifname string, inbound, outbound int32, secgroups []*model.SecurityGroup, zoneID int64) (iface *model.Interface, err error) {
 	memberShip := GetMemberShip(ctx)
 	if subnet.Type == "public" {
 		permit := memberShip.CheckPermission(model.Admin)
@@ -363,7 +358,7 @@ func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subne
 			return
 		}
 	}
-	iface, err = CreateInterface(ctx, subnet, instance.ID, memberShip.OrgID, instance.Hyper, address, mac, ifname, "instance", secGroups)
+	iface, err = CreateInterface(ctx, subnet, instance.ID, memberShip.OrgID, instance.Hyper, inbound, outbound, address, mac, ifname, "instance", secgroups)
 	if err != nil {
 		logger.Error("Failed to create interface")
 		return
@@ -392,9 +387,11 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 	primary := primaryIface.Subnet
 	primaryIP := primaryIface.IpAddress
 	primaryMac := primaryIface.MacAddress
+	inbound := primaryIface.Inbound
+	outbound := primaryIface.Outbound
 	gateway := strings.Split(primary.Gateway, "/")[0]
 	instRoute := &NetworkRoute{Network: "0.0.0.0", Netmask: "0.0.0.0", Gateway: gateway}
-	iface, err := a.createInterface(ctx, primary, primaryIP, primaryMac, instance, "eth0", primaryIface.SecurityGroups, zoneID)
+	iface, err := a.createInterface(ctx, primary, primaryIP, primaryMac, instance, "eth0", inbound, outbound, primaryIface.SecurityGroups, zoneID)
 	if err != nil {
 		logger.Errorf("Allocate address for primary subnet %s--%s/%s failed, %v", primary.Name, primary.Network, primary.Netmask, err)
 		return
@@ -405,11 +402,13 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 	instNetwork.Routes = append(instNetwork.Routes, instRoute)
 	instNetworks = append(instNetworks, instNetwork)
 	instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, Gateway: primary.Gateway, Router: primary.RouterID, IpAddr: address, MacAddr: iface.MacAddr})
+	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, Inbound: inbound, Outbound: outbound, Gateway: primary.Gateway, Router: primary.RouterID, IpAddr: address, MacAddr: iface.MacAddr})
 	for i, ifaceInfo := range secondaryIfaces {
 		subnet := ifaceInfo.Subnet
 		ifname := fmt.Sprintf("eth%d", i+1)
-		iface, err = a.createInterface(ctx, subnet, ifaceInfo.IpAddress, ifaceInfo.MacAddress, instance, ifname, ifaceInfo.SecurityGroups, zoneID)
+		inbound = ifaceInfo.Inbound
+		outbound = ifaceInfo.Outbound
+		iface, err = a.createInterface(ctx, subnet, ifaceInfo.IpAddress, ifaceInfo.MacAddress, instance, ifname, inbound, outbound, ifaceInfo.SecurityGroups, zoneID)
 		if err != nil {
 			logger.Errorf("Allocate address for secondary subnet %s--%s/%s failed, %v", subnet.Name, subnet.Network, subnet.Netmask, err)
 			return
@@ -424,7 +423,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 			ID:      fmt.Sprintf("network%d", i+1),
 		})
 		instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: address, MacAddr: iface.MacAddr})
+		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Inbound: inbound, Outbound: outbound, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: address, MacAddr: iface.MacAddr})
 	}
 	var instKeys []string
 	for _, key := range keys {
@@ -517,7 +516,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 		control = "toall="
 	}
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_vm.sh '%d' '%d' '%s'", instance.ID, instance.RouterID, bootVolumeUUID)
-	err = hyperExecute(ctx, control, command)
+	err = HyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Error("Delete vm command execution failed ", err)
 		return

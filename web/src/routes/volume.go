@@ -152,7 +152,7 @@ func (a *VolumeAdmin) Create(ctx context.Context, name string, size int32,
 	// RN-156: append the volume UUID to the command
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_volume_%s.sh '%d' '%d' '%s' '%d' '%d' '%d' '%d' '%s'",
 		GetVolumeDriver(), volume.ID, volume.Size, volume.UUID, iopsLimit, iopsBurst, bpsLimit, bpsBurst, poolID)
-	err = hyperExecute(ctx, control, command)
+	err = HyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Error("Create volume execution failed", err)
 		return
@@ -212,7 +212,7 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 		}
 		control := fmt.Sprintf("inter=%d", volume.Instance.Hyper)
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/detach_volume_%s.sh '%d' '%d' '%s'", vol_driver, volume.Instance.ID, volume.ID, uuid)
-		err = hyperExecute(ctx, control, command)
+		err = HyperExecute(ctx, control, command)
 		if err != nil {
 			logger.Error("Detach volume execution failed", err)
 			return
@@ -230,7 +230,7 @@ func (a *VolumeAdmin) Update(ctx context.Context, id int64, name string, instID 
 		control := fmt.Sprintf("inter=%d", instance.Hyper)
 		// RN-156: append the volume UUID to the command
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/attach_volume_%s.sh '%d' '%d' '%s' '%s'", vol_driver, instance.ID, volume.ID, volume.GetVolumePath(), uuid)
-		err = hyperExecute(ctx, control, command)
+		err = HyperExecute(ctx, control, command)
 		if err != nil {
 			logger.Error("Create volume execution failed", err)
 			return
@@ -280,7 +280,7 @@ func (a *VolumeAdmin) Delete(ctx context.Context, volume *model.Volume) (err err
 	}
 	logger.Debug("Delete volume", vol_driver, volume.ID, uuid, volume.GetVolumePath())
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/clear_volume_%s.sh '%d' '%s' '%s'", vol_driver, volume.ID, uuid, volume.GetVolumePath())
-	err = hyperExecute(ctx, control, command)
+	err = HyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Error("Delete volume execution failed", err)
 		return

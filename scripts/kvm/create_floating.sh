@@ -49,7 +49,9 @@ ip netns exec $router iptables -t nat -S | grep " $int_ip\>.* MASQUERADE"
 [ $? -ne 0 ] && ip netns exec $router iptables -t nat -I POSTROUTING -s $int_ip -m set ! --match-set nonat dst -j MASQUERADE
 ip netns exec $router iptables -t nat -D PREROUTING -d $ext_ip -j DNAT --to-destination $int_ip
 ip netns exec $router iptables -t nat -I PREROUTING -d $ext_ip -j DNAT --to-destination $int_ip
-ip netns exec $router arping -c 3 -I $ext_dev -s $ext_ip $ext_ip
+ip netns exec $router iptables -t nat -D POSTROUTING -s $int_ip -d $int_ip -j SNAT --to-source $ext_ip
+ip netns exec $router iptables -t nat -I POSTROUTING -s $int_ip -d $int_ip -j SNAT --to-source $ext_ip
+ip netns exec $router arping -c 3 -I $ext_dev -s $ext_ip $ext_gw
 
 if [ "$inbound" -gt 0 ]; then
     ip netns exec $router iptables -t mangle -D PREROUTING -d $ext_ip -j MARK --set-mark $mark_id

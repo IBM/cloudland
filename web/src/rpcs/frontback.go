@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"web/src/model"
+	. "web/src/common"
 
 	"golang.org/x/net/context"
 	"gopkg.in/macaron.v1"
