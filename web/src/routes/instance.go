@@ -495,7 +495,7 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 	if instance.Volumes != nil {
 		for _, volume := range instance.Volumes {
 			if volume.Booting {
-				bootVolumeUUID = volume.UUID
+				bootVolumeUUID = volume.GetOriginVolumeID()
 				// delete the boot volume directly
 				if err = db.Delete(volume).Error; err != nil {
 					logger.Error("DB: delete volume failed", err)
