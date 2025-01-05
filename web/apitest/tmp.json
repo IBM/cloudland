@@ -2,12 +2,11 @@
   "hostname": "test",
   "primary_interface": {
     "subnet": {
-      "id": "f520c67b-81ad-47b0-b52b-75e593ff1b05",
-      "inbound": 100,
-      "outbound": 100
-    }
+      "id": "69e7af0d-2f0d-4fdc-a874-a69a99012e55"
+    },
+    "inbound": 100,
+    "outbound": 100
   },
-  "count": 3,
   "flavor": "small",
   "image": {
     "id": "3c0cca59-df4f-4daa-bfa1-04d771e1a17c"

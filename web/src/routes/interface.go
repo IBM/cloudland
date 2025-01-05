@@ -261,7 +261,7 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 		logger.Error("Security group query failed", err)
 		return
 	}
-	iface, err := CreateInterface(ctx, subnet, instID, memberShip.OrgID, -1, address, mac, ifname, "instance", secgroups)
+	iface, err := CreateInterface(ctx, subnet, instID, memberShip.OrgID, -1, 0, 0, address, mac, ifname, "instance", secgroups)
 	if err != nil {
 		c.JSON(500, map[string]interface{}{
 			"error": err.Error(),

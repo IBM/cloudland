@@ -275,7 +275,7 @@ func setRouting(ctx context.Context, subnet *model.Subnet, routeOnly bool) (err 
 		logger.Error("Failed to create security rule", err)
 		return
 	}
-	_, err = CreateInterface(ctx, subnet, router.ID, router.Owner, router.Hyper, subnet.Gateway, "", "subnet-gw", "gateway", nil)
+	_, err = CreateInterface(ctx, subnet, router.ID, router.Owner, router.Hyper, 0, 0, subnet.Gateway, "", "subnet-gw", "gateway", nil)
 	if err != nil {
 		logger.Error("Failed to create gateway subnet interface", err)
 		return

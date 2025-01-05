@@ -348,7 +348,7 @@ func (a *InstanceAdmin) deleteInterface(ctx context.Context, iface *model.Interf
 	return
 }
 
-func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subnet, address, mac string, instance *model.Instance, ifname string, secGroups []*model.SecurityGroup, zoneID int64) (iface *model.Interface, err error) {
+func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subnet, address, mac string, instance *model.Instance, ifname string, inbound, outbound int32, secgroups []*model.SecurityGroup, zoneID int64) (iface *model.Interface, err error) {
 	memberShip := GetMemberShip(ctx)
 	if subnet.Type == "public" {
 		permit := memberShip.CheckPermission(model.Admin)
@@ -358,7 +358,7 @@ func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subne
 			return
 		}
 	}
-	iface, err = CreateInterface(ctx, subnet, instance.ID, memberShip.OrgID, instance.Hyper, address, mac, ifname, "instance", secGroups)
+	iface, err = CreateInterface(ctx, subnet, instance.ID, memberShip.OrgID, instance.Hyper, inbound, outbound, address, mac, ifname, "instance", secgroups)
 	if err != nil {
 		logger.Error("Failed to create interface")
 		return
@@ -387,9 +387,11 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 	primary := primaryIface.Subnet
 	primaryIP := primaryIface.IpAddress
 	primaryMac := primaryIface.MacAddress
+	inbound := primaryIface.Inbound
+	outbound := primaryIface.Outbound
 	gateway := strings.Split(primary.Gateway, "/")[0]
 	instRoute := &NetworkRoute{Network: "0.0.0.0", Netmask: "0.0.0.0", Gateway: gateway}
-	iface, err := a.createInterface(ctx, primary, primaryIP, primaryMac, instance, "eth0", primaryIface.SecurityGroups, zoneID)
+	iface, err := a.createInterface(ctx, primary, primaryIP, primaryMac, instance, "eth0", inbound, outbound, primaryIface.SecurityGroups, zoneID)
 	if err != nil {
 		logger.Errorf("Allocate address for primary subnet %s--%s/%s failed, %v", primary.Name, primary.Network, primary.Netmask, err)
 		return
@@ -400,11 +402,13 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 	instNetwork.Routes = append(instNetwork.Routes, instRoute)
 	instNetworks = append(instNetworks, instNetwork)
 	instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, Gateway: primary.Gateway, Router: primary.RouterID, IpAddr: address, MacAddr: iface.MacAddr})
+	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, Inbound: inbound, Outbound: outbound, Gateway: primary.Gateway, Router: primary.RouterID, IpAddr: address, MacAddr: iface.MacAddr})
 	for i, ifaceInfo := range secondaryIfaces {
 		subnet := ifaceInfo.Subnet
 		ifname := fmt.Sprintf("eth%d", i+1)
-		iface, err = a.createInterface(ctx, subnet, ifaceInfo.IpAddress, ifaceInfo.MacAddress, instance, ifname, ifaceInfo.SecurityGroups, zoneID)
+		inbound = ifaceInfo.Inbound
+		outbound = ifaceInfo.Outbound
+		iface, err = a.createInterface(ctx, subnet, ifaceInfo.IpAddress, ifaceInfo.MacAddress, instance, ifname, inbound, outbound, ifaceInfo.SecurityGroups, zoneID)
 		if err != nil {
 			logger.Errorf("Allocate address for secondary subnet %s--%s/%s failed, %v", subnet.Name, subnet.Network, subnet.Netmask, err)
 			return
@@ -419,7 +423,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 			ID:      fmt.Sprintf("network%d", i+1),
 		})
 		instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: address, MacAddr: iface.MacAddr})
+		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Inbound: inbound, Outbound: outbound, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: address, MacAddr: iface.MacAddr})
 	}
 	var instKeys []string
 	for _, key := range keys {

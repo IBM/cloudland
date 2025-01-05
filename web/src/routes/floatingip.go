@@ -487,7 +487,7 @@ func AllocateFloatingIp(ctx context.Context, floatingIpID, owner int64, pubSubne
 	name := "fip"
 	logger.Errorf("Subnets: %v\n", subnets)
 	for _, subnet := range subnets {
-		fipIface, err = CreateInterface(ctx, subnet, floatingIpID, owner, -1, address, "", name, "floating", nil)
+		fipIface, err = CreateInterface(ctx, subnet, floatingIpID, owner, -1, 0, 0, address, "", name, "floating", nil)
 		if err == nil {
 			logger.Errorf("FipIface: %v\n", fipIface)
 			break

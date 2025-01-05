@@ -40,8 +40,8 @@ type VlanInfo struct {
 	Gateway    string          `json:"gateway"`
 	Router     int64           `json:"router"`
 	PublicLink int64           `json:"public_link"`
-	Inbound    int64           `json:"inbound"`
-	Outbound   int64           `json:"outbound"`
+	Inbound    int32           `json:"inbound"`
+	Outbound   int32           `json:"outbound"`
 	IpAddr     string          `json:"ip_address"`
 	MacAddr    string          `json:"mac_address"`
 	SecRules   []*SecurityData `json:"security"`
@@ -127,7 +127,7 @@ func genMacaddr() (mac string, err error) {
 	return mac, nil
 }
 
-func CreateInterface(ctx context.Context, subnet *model.Subnet, ID, owner int64, hyper int32, address, mac, ifaceName, ifType string, secgroups []*model.SecurityGroup) (iface *model.Interface, err error) {
+func CreateInterface(ctx context.Context, subnet *model.Subnet, ID, owner int64, hyper int32, inbound, outbound int32, address, mac, ifaceName, ifType string, secgroups []*model.SecurityGroup) (iface *model.Interface, err error) {
 	ctx, db := GetContextDB(ctx)
 	primary := false
 	if ifaceName == "eth0" {
@@ -145,6 +145,8 @@ func CreateInterface(ctx context.Context, subnet *model.Subnet, ID, owner int64,
 		Name:           ifaceName,
 		MacAddr:        mac,
 		PrimaryIf:      primary,
+		Inbound:        inbound,
+		Outbound:       outbound,
 		Subnet:         subnet.ID,
 		Hyper:          hyper,
 		Type:           ifType,
@@ -152,6 +154,7 @@ func CreateInterface(ctx context.Context, subnet *model.Subnet, ID, owner int64,
 		RouterID:       subnet.RouterID,
 		SecurityGroups: secgroups,
 	}
+	logger.Debugf("Interface: %v", iface)
 	if ifType == "instance" {
 		iface.Instance = ID
 	} else if ifType == "floating" {

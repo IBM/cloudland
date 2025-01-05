@@ -53,7 +53,7 @@ func SystemRouter(ctx context.Context, args []string) (status string, err error)
 	var sysIface *model.Interface
 	if hyper.RouteIP == "" {
 		for _, subnet := range subnets {
-			sysIface, err = CreateInterface(ctx, subnet, 0, 0, int32(hyperID), "", "", hyperName, "system", nil)
+			sysIface, err = CreateInterface(ctx, subnet, 0, 0, int32(hyperID), 0, 0, "", "", hyperName, "system", nil)
 			if err == nil {
 				break
 			}
@@ -75,7 +75,7 @@ func SystemRouter(ctx context.Context, args []string) (status string, err error)
 		if address.Allocated {
 			sysIface = &model.Interface{Address: address}
 		} else {
-			sysIface, err = CreateInterface(ctx, address.Subnet, 0, 0, int32(hyperID), hyper.RouteIP, "", hyperName, "system", nil)
+			sysIface, err = CreateInterface(ctx, address.Subnet, 0, 0, int32(hyperID), 0, 0, hyper.RouteIP, "", hyperName, "system", nil)
 			if err != nil {
 				logger.Errorf("Failed to create interface with address %s, %v", hyper.RouteIP, err)
 				return

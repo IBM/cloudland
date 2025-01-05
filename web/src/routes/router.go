@@ -61,7 +61,7 @@ func createRouterIface(ctx context.Context, rtype string, router *model.Router, 
 		} else {
 			continue
 		}
-		iface, err = CreateInterface(ctx, subnet, router.ID, owner, router.Hyper, "", "", name, ifType, nil)
+		iface, err = CreateInterface(ctx, subnet, router.ID, owner, router.Hyper, 0, 0, "", "", name, ifType, nil)
 		if err == nil {
 			logger.Error("Created gateway interface from subnet")
 			break
