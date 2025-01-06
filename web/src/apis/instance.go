@@ -38,7 +38,7 @@ type InstancePatchPayload struct {
 
 type InstancePayload struct {
 	Count               int                 `json:"count" binding:"omitempty,gte=1,lte=16"`
-	Hypervisor          int                 `json:"hypervisor,default=-1" binding:"omitempty"`
+	Hypervisor          *int                `json:"hypervisor" binding:"omitempty,gte=0,lte=65535"`
 	Hostname            string              `json:"hostname" binding:"required,hostname|fqdn"`
 	Keys                []*BaseReference    `json:"keys" binding:"required,gte=1,lte=16"`
 	RootPasswd          string              `json:"root_passwd" binding:"omitempty,min=8,max=32"`
@@ -269,9 +269,13 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 	if router != nil {
 		routerID = router.ID
 	}
+	hypervisor := -1
+	if payload.Hypervisor != nil {
+		hypervisor = *payload.Hypervisor
+	}
 	logger.Debugf("Creating %d instances with hostname %s, userdata %s, image %s, flavor %s, zone %s, router %d, primaryIface %v, secondaryIfaces %v, keys %v, hypervisor %d",
-		count, hostname, userdata, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, payload.Hypervisor)
-	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, routerID, primaryIface, secondaryIfaces, keys, rootPasswd, payload.Hypervisor)
+		count, hostname, userdata, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, hypervisor)
+	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, routerID, primaryIface, secondaryIfaces, keys, rootPasswd, hypervisor)
 	if err != nil {
 		logger.Errorf("Failed to create instances, %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Failed to create instances", err)

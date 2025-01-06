@@ -20,6 +20,10 @@
   service: name=ntp state=started enabled=yes
   tags: [ntp]
 
+- name: remove unattended-upgrade
+  service: name=unattended-upgrade state=absent
+  tags: [upgrade]
+
 - name: upgrade all packages
   apt: 
     name: '*'

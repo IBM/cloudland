@@ -280,6 +280,8 @@ definitions:
       hostname:
         type: string
       hypervisor:
+        maximum: 65535
+        minimum: 0
         type: integer
       image:
         $ref: '#/definitions/common.BaseReference'

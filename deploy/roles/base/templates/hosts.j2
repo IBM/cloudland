@@ -3,5 +3,5 @@
 
 # each host
 {% for host in groups['all'] %}
-{{ hostvars[inventory_hostname]['ansible_env'].SSH_CONNECTION.split(' ')[2] }} {{ hostvars[host]['inventory_hostname'] }}
+{{ hostvars[host]['ansible_host'] }} {{ hostvars[host]['inventory_hostname'] }}
 {% endfor %}
