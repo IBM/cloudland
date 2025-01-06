@@ -415,11 +415,8 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 		interfaces[i], err = interfaceAPI.getInterfaceResponse(ctx, instance, iface)
 	}
 	instanceResp.Interfaces = interfaces
-	if instance.RouterID > 0 {
-		router, err := routerAdmin.Get(ctx, instance.RouterID)
-		if err != nil {
-			err = fmt.Errorf("Failed to get VPC")
-		}
+	if instance.RouterID > 0 && instance.Router != nil {
+		router := instance.Router
 		instanceResp.VPC = &ResourceReference{
 			ID:   router.UUID,
 			Name: router.Name,
