@@ -84,4 +84,6 @@ if [ "$1" == "computingnode" ]; then
     sudo systemctl start chronyd
 fi
 
+safe_cd $INITIAL_DIR
+rm -rf MLNX_OFED_LINUX* PEG*
 log "Pre-configuration completed successfully."

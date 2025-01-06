@@ -33,6 +33,7 @@ type Instance struct {
 	ZoneID      int64
 	Zone        *Zone `gorm:"foreignkey:ZoneID"`
 	RouterID    int64 `gorm:"unique_index:idx_router_instance"`
+	Router      *Router
 }
 
 func init() {

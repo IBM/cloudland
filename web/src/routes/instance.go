@@ -587,6 +587,13 @@ func (a *InstanceAdmin) GetInstanceByUUID(ctx context.Context, uuID string) (ins
 		logger.Errorf("Failed to query interfaces %v", err)
 		return
 	}
+	if instance.RouterID > 0 {
+		instance.Router = &model.Router{Model: model.Model{ID: instance.RouterID}}
+		if err = db.Take(instance.Router).Error; err != nil {
+			logger.Errorf("Failed to query floating ip(s), %v", err)
+			return
+		}
+	}
 	permit := memberShip.ValidateOwner(model.Reader, instance.Owner)
 	if !permit {
 		logger.Error("Not authorized to read the instance")
@@ -635,6 +642,13 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 		if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
 			logger.Errorf("Failed to query floating ip(s), %v", err)
 			return
+		}
+		if instance.RouterID > 0 {
+			instance.Router = &model.Router{Model: model.Model{ID: instance.RouterID}}
+			if err = db.Take(instance.Router).Error; err != nil {
+				logger.Errorf("Failed to query floating ip(s), %v", err)
+				return
+			}
 		}
 		permit := memberShip.CheckPermission(model.Admin)
 		if permit {

@@ -247,6 +247,7 @@
 			                        <th>{{.i18n.Tr "IP_Address"}}</th>
 			                        <th>{{.i18n.Tr "Status"}}</th>
 			                        <th>{{.i18n.Tr "Console"}}</th>
+			                        <th>{{.i18n.Tr "VPC"}}</th>
 									{{ if .IsAdmin }}
 			                        <th>{{.i18n.Tr "Hyper"}}</th>
 			                        <th>{{.i18n.Tr "Owner"}}</th>
@@ -286,6 +287,11 @@
 							<a href="javascript:document.submitForm{{.ID}}.submit()">VNC</a>
 							</form>
 						</td>
+			                        <td>
+						{{ if .Router }}
+						{{ .Router.Name }}
+						{{ end }}
+                                    		</td>
 						{{ if $.IsAdmin }}
 			                        <td>{{.Hyper}}</td>
 			                        <td>{{.OwnerInfo.Name}}</td>

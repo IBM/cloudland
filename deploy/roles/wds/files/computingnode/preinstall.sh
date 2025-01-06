@@ -55,7 +55,6 @@ if [ "$1" == "computingnode" ]; then
 fi
 
 safe_cd "$INITIAL_DIR"
-rm -rf ${PEG_PKG}*
 
 # Go back to main folder
 log "Changing directory back to $INITIAL_DIR..."
@@ -77,7 +76,6 @@ log "Installing Mellanox OFED drivers, aroud 10 mins..."
 sudo ./mlnxofedinstall --with-nvmf --force &>> "$LOG_FILE"
 check_status
 safe_cd "$INITIAL_DIR"
-rm -rf ${OFED_PKG}*
 
 # Rebuild initramfs
 log "Rebuilding initramfs..."
