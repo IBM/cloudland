@@ -45,8 +45,8 @@ ip_net=$(ipcalc -b $int_addr | grep Network | awk '{print $2}')
 ip netns exec $router ip route add $ip_net dev ns-$int_vlan table $table
 ip netns exec $router ip rule add from $int_ip lookup $table
 ip netns exec $router ip rule add to $int_ip lookup $table
-ip netns exec $router iptables -t nat -S | grep " $int_ip\>.* MASQUERADE"
-[ $? -ne 0 ] && ip netns exec $router iptables -t nat -I POSTROUTING -s $int_ip -m set ! --match-set nonat dst -j MASQUERADE
+ip netns exec $router iptables -t nat -D POSTROUTING -s $int_ip -m set ! --match-set nonat dst -j MASQUERADE
+ip netns exec $router iptables -t nat -I POSTROUTING -s $int_ip -m set ! --match-set nonat dst -j MASQUERADE
 ip netns exec $router iptables -t nat -D PREROUTING -d $ext_ip -j DNAT --to-destination $int_ip
 ip netns exec $router iptables -t nat -I PREROUTING -d $ext_ip -j DNAT --to-destination $int_ip
 ip netns exec $router iptables -t nat -D POSTROUTING -s $int_ip -m set --match-set nonat dst -j SNAT --to-source $ext_ip
