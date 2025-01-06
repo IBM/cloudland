@@ -2965,7 +2965,9 @@ const docTemplatev1 = `{
                     "type": "string"
                 },
                 "hypervisor": {
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 65535,
+                    "minimum": 0
                 },
                 "image": {
                     "$ref": "#/definitions/common.BaseReference"

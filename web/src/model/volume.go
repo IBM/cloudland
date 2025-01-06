@@ -85,7 +85,7 @@ func (v *Volume) GetOriginVolumeID() string {
 	if (parts != nil) && (len(parts) == 3) {
 		return parts[2]
 	}
-	return ""
+	return v.UUID
 }
 
 func init() {
