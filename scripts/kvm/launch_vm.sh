@@ -54,29 +54,33 @@ else
     snapshot_id=$(wds_curl GET "api/v2/sync/block/snaps?name=$snapshot_name" | jq -r '.snaps[0].id')
     if [ -z "$snapshot_id" -o "$snapshot_id" = null ]; then
 	image_volume_id=$(wds_curl GET "api/v2/sync/block/volumes?name=$image" | jq -r '.volumes[0].id')
-	wds_curl POST "api/v2/sync/block/snaps" "{\"name\": \"$snapshot_name\", \"description\": \"$snapshot_name\", \"volume_id\": \"$image_volume_id\"}"
+	snapshot_ret=$(wds_curl POST "api/v2/sync/block/snaps" "{\"name\": \"$snapshot_name\", \"description\": \"$snapshot_name\", \"volume_id\": \"$image_volume_id\"}")
         snapshot_id=$(wds_curl GET "api/v2/sync/block/snaps?name=$snapshot_name" | jq -r '.snaps[0].id')
         if [ -z "$snapshot_id" -o "$snapshot_id" = null ]; then
-            echo "|:-COMMAND-:| `basename $0` '$ID' '$state' '$SCI_CLIENT_ID' 'failed to create image snapshot'"
+            echo "|:-COMMAND-:| `basename $0` '$ID' '$state' '$SCI_CLIENT_ID' 'failed to create image snapshot, $snapshot_ret'"
             exit -1
         fi
         wds_curl DELETE "api/v2/sync/block/snaps/$image-$(($snapshot-1))?force=false"
     fi
-    volume_id=$(wds_curl POST "api/v2/sync/block/snaps/$snapshot_id/clone" "{\"name\": \"$vhost_name\"}" | jq -r .id)
+    volume_ret=$(wds_curl POST "api/v2/sync/block/snaps/$snapshot_id/clone" "{\"name\": \"$vhost_name\"}")
+    volume_id=$(echo $volume_ret | jq -r .id)
     if [ -z "$volume_id" -o "$volume_id" = null ]; then
-        echo "|:-COMMAND-:| `basename $0` '$ID' '$state' '$SCI_CLIENT_ID' 'failed to create boot volume based on snapshot $snapshot_id!'"
+        echo "|:-COMMAND-:| `basename $0` '$ID' '$state' '$SCI_CLIENT_ID' 'failed to create boot volume based on snapshot $snapshot_name, $volume_ret!'"
         exit -1
     fi
-    rest_code=$(wds_curl PUT "api/v2/sync/block/volumes/$volume_id/expand" "{\"size\": $fsize}" | jq -r .ret_code)
+    expand_ret=$(wds_curl PUT "api/v2/sync/block/volumes/$volume_id/expand" "{\"size\": $fsize}")
+    rest_code=$(echo $expand_ret | jq -r .ret_code)
     if [ "$rest_code" != "0" ]; then
-        echo "|:-COMMAND-:| `basename $0` '$ID' '$state' '$SCI_CLIENT_ID' 'failed to expand boot volume to size $fsize!'"
+        echo "|:-COMMAND-:| `basename $0` '$ID' '$state' '$SCI_CLIENT_ID' 'failed to expand boot volume to size $fsize, $expand_ret'"
         exit -1
     fi
     uss_id=$(get_uss_gateway)
-    vhost_id=$(wds_curl POST "api/v2/sync/block/vhost" "{\"name\": \"$vhost_name\"}" | jq -r .id)
-    ret_code=$(wds_curl PUT "api/v2/sync/block/vhost/bind_uss" "{\"vhost_id\": \"$vhost_id\", \"uss_gw_id\": \"$uss_id\", \"lun_id\": \"$volume_id\", \"is_snapshot\": false}" | jq -r .ret_code)
+    vhost_ret=$(wds_curl POST "api/v2/sync/block/vhost" "{\"name\": \"$vhost_name\"}")
+    vhost_id=$(echo $vhost_ret | jq -r .id)
+    uss_ret=$(wds_curl PUT "api/v2/sync/block/vhost/bind_uss" "{\"vhost_id\": \"$vhost_id\", \"uss_gw_id\": \"$uss_id\", \"lun_id\": \"$volume_id\", \"is_snapshot\": false}")
+    ret_code=$(echo $uss_ret | jq -r .ret_code)
     if [ "$rest_code" != "0" ]; then
-        echo "|:-COMMAND-:| `basename $0` '$ID' '$state' '$SCI_CLIENT_ID' 'failed to create wds vhost for boot volume!'"
+        echo "|:-COMMAND-:| `basename $0` '$ID' '$state' '$SCI_CLIENT_ID' 'failed to create wds vhost for boot volume, $vhost_ret, $uss_ret!'"
         exit -1
     fi
     echo "|:-COMMAND-:| create_volume_wds_vhost '$vol_ID' 'attached' 'wds_vhost://$wds_pool_id/$volume_id'"
