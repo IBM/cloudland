@@ -377,7 +377,7 @@ func (a *SecgroupAdmin) List(ctx context.Context, offset, limit int64, order, qu
 			err = db.Take(secgroup.Router).Error
 			if err != nil {
 				logger.Error("DB failed to qeury router", err)
-				return
+				continue
 			}
 		}
 	}
