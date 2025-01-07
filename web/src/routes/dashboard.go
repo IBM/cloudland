@@ -61,7 +61,6 @@ func (a *Dashboard) GetData(c *macaron.Context, store session.Store) {
 			return
 		}
 		pubipTotal, pubipUsed, err := a.getSystemIpUsage(ctx, "public")
-		prvipTotal, prvipUsed, err := a.getSystemIpUsage(ctx, "private")
 		rcData = &ResourceData{
 			Title:       "System Resource Usage Ratio",
 			CpuUsed:     resource.CpuTotal - resource.Cpu,
@@ -74,8 +73,6 @@ func (a *Dashboard) GetData(c *macaron.Context, store session.Store) {
 			VolumeAvail: 1100,
 			PubipUsed:   int64(pubipUsed),
 			PubipAvail:  int64(pubipTotal - pubipUsed),
-			PrvipUsed:   int64(prvipUsed),
-			PrvipAvail:  int64(prvipTotal - prvipUsed),
 		}
 	} else {
 		quota := &model.Quota{}

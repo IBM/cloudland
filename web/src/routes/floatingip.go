@@ -311,14 +311,14 @@ func (a *FloatingIpAdmin) List(ctx context.Context, offset, limit int64, order, 
 		err = db.Preload("Address").Where("instance = ? and primary_if = true", instance.ID).Find(&instance.Interfaces).Error
 		if err != nil {
 			logger.Error("Failed to query interfaces ", err)
-			return
+			continue
 		}
 		if fip.RouterID > 0 {
 			fip.Router = &model.Router{Model: model.Model{ID: fip.RouterID}}
 			err = db.Take(fip.Router).Error
 			if err != nil {
 				logger.Error("DB failed to query instance ", err)
-				return
+				continue
 			}
 		}
 	}

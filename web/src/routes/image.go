@@ -36,8 +36,8 @@ func FileExist(filename string) bool {
 	return !os.IsNotExist(err)
 }
 
-func (a *ImageAdmin) Create(ctx context.Context, name, osVersion, virtType, userName, url, architecture string, instID int64) (image *model.Image, err error) {
-	logger.Debugf("Creating image %s %s %s %s %s %s %d", name, osVersion, virtType, userName, url, architecture, instID)
+func (a *ImageAdmin) Create(ctx context.Context, name, osVersion, virtType, userName, url, architecture string, qaEnabled bool, instID int64) (image *model.Image, err error) {
+	logger.Debugf("Creating image %s %s %s %s %s %s %t %d", name, osVersion, virtType, userName, url, architecture, qaEnabled, instID)
 	memberShip := GetMemberShip(ctx)
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
@@ -76,6 +76,7 @@ func (a *ImageAdmin) Create(ctx context.Context, name, osVersion, virtType, user
 			OSCode:       name,
 			Status:       "creating",
 			Architecture: architecture,
+			QAEnabled:    qaEnabled,
 		}
 	}
 	logger.Debugf("Creating image %+v", image)
@@ -92,6 +93,7 @@ func (a *ImageAdmin) Create(ctx context.Context, name, osVersion, virtType, user
 			for _, volume := range instance.Volumes {
 				if volume.Booting {
 					bootVolumeUUID = volume.GetOriginVolumeID()
+					break
 				}
 			}
 		}
@@ -351,10 +353,11 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	osVersion := c.QueryTrim("osVersion")
 	virtType := "kvm-x86_64"
 	userName := c.QueryTrim("userName")
+	qaEnabled := c.QueryBool("qaEnabled")
 	architecture := "x86_64"
-	_, err := imageAdmin.Create(c.Req.Context(), name, osVersion, virtType, userName, url, architecture, instance)
+	_, err := imageAdmin.Create(c.Req.Context(), name, osVersion, virtType, userName, url, architecture, qaEnabled, instance)
 	if err != nil {
-		logger.Error("Create instance failed", err)
+		logger.Error("Create image failed", err)
 		c.HTML(http.StatusBadRequest, err.Error())
 		return
 	}

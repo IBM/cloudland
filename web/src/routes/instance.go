@@ -203,7 +203,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		if i == 0 && hyperID >= 0 {
 			control = fmt.Sprintf("inter=%d %s", hyperID, rcNeeded)
 		}
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' '%s.%s' '%d' '%s' '%d' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, imagePrefix, image.Format, snapshot, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, bootVolume.ID, base64.StdEncoding.EncodeToString([]byte(metadata)))
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' '%s.%s' '%t' '%d' '%s' '%d' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, imagePrefix, image.Format, image.QAEnabled, snapshot, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, bootVolume.ID, base64.StdEncoding.EncodeToString([]byte(metadata)))
 		execCommands = append(execCommands, &ExecutionCommand{
 			Control: control,
 			Command: command,
@@ -316,6 +316,45 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 			logger.Error("action vm command execution failed", err)
 			return
 		}
+	}
+	return
+}
+
+func (a *InstanceAdmin) SetUserPassword(ctx context.Context, id int64, user, password string) (err error) {
+	logger.Debugf("Set password for user %s of instance %d", user, id)
+	ctx, db := GetContextDB(ctx)
+	instance := &model.Instance{Model: model.Model{ID: id}}
+	if err = db.Preload("Image").Take(instance).Error; err != nil {
+		logger.Error("Failed to get instance ", err)
+		return
+	}
+	memberShip := GetMemberShip(ctx)
+	permit, err := memberShip.CheckOwner(model.Writer, "instances", instance.ID)
+	if err != nil {
+		logger.Error("Failed to check owner")
+		return
+	}
+	if !permit {
+		logger.Error("Not authorized to set password for the instance")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
+	if !instance.Image.QAEnabled {
+		err = fmt.Errorf("Guest Agent is not enabled for the image of instance")
+		logger.Error(err)
+		return
+	}
+	if instance.Status != "running" {
+		err = fmt.Errorf("Instance must be running")
+		logger.Error(err)
+		return
+	}
+	control := fmt.Sprintf("inter=%d", instance.Hyper)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/set_user_passwd.sh '%d' '%s' '%s'", instance.ID, user, password)
+	err = HyperExecute(ctx, control, command)
+	if err != nil {
+		logger.Error("Set password command execution failed", err)
+		return
 	}
 	return
 }
@@ -587,6 +626,13 @@ func (a *InstanceAdmin) GetInstanceByUUID(ctx context.Context, uuID string) (ins
 		logger.Errorf("Failed to query interfaces %v", err)
 		return
 	}
+	if instance.RouterID > 0 {
+		instance.Router = &model.Router{Model: model.Model{ID: instance.RouterID}}
+		if err = db.Take(instance.Router).Error; err != nil {
+			logger.Errorf("Failed to query floating ip(s), %v", err)
+			return
+		}
+	}
 	permit := memberShip.ValidateOwner(model.Reader, instance.Owner)
 	if !permit {
 		logger.Error("Not authorized to read the instance")
@@ -635,6 +681,13 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 		if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
 			logger.Errorf("Failed to query floating ip(s), %v", err)
 			return
+		}
+		if instance.RouterID > 0 {
+			instance.Router = &model.Router{Model: model.Model{ID: instance.RouterID}}
+			if err = db.Take(instance.Router).Error; err != nil {
+				logger.Errorf("Failed to query floating ip(s), %v", err)
+				return
+			}
 		}
 		permit := memberShip.CheckPermission(model.Admin)
 		if permit {
@@ -868,7 +921,7 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 	}
 	instance := &model.Instance{Model: model.Model{ID: int64(instanceID)}}
 	if err = db.Preload("Interfaces").Take(instance).Error; err != nil {
-		logger.Error("Image query failed", err)
+		logger.Error("Instance query failed", err)
 		return
 	}
 	if err = db.Where("instance_id = ?", instanceID).Find(&instance.FloatingIps).Error; err != nil {
@@ -903,6 +956,7 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 	c.Data["Flavors"] = flavors
 
 	flag := c.QueryTrim("flag")
+	logger.Debugf("Edit instance %s with flag %s", id, flag)
 	if flag == "ChangeHostname" {
 		c.HTML(200, "instances_hostname")
 	} else if flag == "ChangeStatus" {
@@ -964,6 +1018,63 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 		return
 	}
 	c.Redirect(redirectTo)
+}
+
+func (v *InstanceView) SetUserPassword(c *macaron.Context, store session.Store) {
+	ctx := c.Req.Context()
+	redirectTo := "/instances"
+	memberShip := GetMemberShip(c.Req.Context())
+	db := DB()
+	id := c.Params("id")
+	if id == "" {
+		c.Data["ErrorMsg"] = "Id is Empty"
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	instanceID, err := strconv.Atoi(id)
+
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instanceID))
+	if !permit {
+		logger.Error("Not authorized for this operation")
+		c.Data["ErrorMsg"] = "Not authorized for this operation"
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	instance := &model.Instance{Model: model.Model{ID: int64(instanceID)}}
+	if err = db.Preload("Image").Take(instance).Error; err != nil {
+		logger.Error("Instance query failed", err)
+		c.Data["ErrorMsg"] = fmt.Sprintf("Instance query failed", err)
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	if c.Req.Method == "GET" {
+		if instance.Image.QAEnabled {
+			c.Data["Instance"] = instance
+			c.Data["Link"] = fmt.Sprintf("/instances/%d/set_user_password", instanceID)
+			c.HTML(200, "instances_user_passwd")
+		} else {
+			c.Data["ErrorMsg"] = "Guest Agent is not enabled for the image of instance"
+			c.HTML(http.StatusBadRequest, "error")
+		}
+		return
+	} else if c.Req.Method == "POST" {
+		user := c.QueryTrim("username")
+		password := c.QueryTrim("password")
+		err := instanceAdmin.SetUserPassword(ctx, int64(instanceID), user, password)
+		if err != nil {
+			logger.Error("Set user password failed", err)
+			c.Data["ErrorMsg"] = err.Error()
+			c.HTML(http.StatusBadRequest, "error")
+			return
+		}
+		c.Redirect(redirectTo)
+
+	}
 }
 
 func (v *InstanceView) checkNetparam(subnet *model.Subnet, IP, mac string) (macAddr string, err error) {

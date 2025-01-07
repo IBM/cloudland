@@ -31,6 +31,7 @@ type ImageResponse struct {
 	Architecture string `json:"architecture"`
 	User         string `json:"user"`
 	Status       string `json:"status"`
+	QAEnabled    bool   `json:"qa_enabled"`
 }
 
 type ImageListResponse struct {
@@ -41,10 +42,12 @@ type ImageListResponse struct {
 }
 
 type ImagePayload struct {
-	Name        string `json:"name" binding:"required,min=2,max=32"`
-	DownloadURL string `json:"download_url" binding:"required,http_url"`
-	OSVersion   string `json:"os_version" binding:"required,min=2,max=32"`
-	User        string `json:"user" binding:"required,min=2,max=32"`
+	Name         string `json:"name" binding:"required,min=2,max=32"`
+	DownloadURL  string `json:"download_url" binding:"required,http_url"`
+	OSVersion    string `json:"os_version" binding:"required,min=2,max=32"`
+	User         string `json:"user" binding:"required,min=2,max=32"`
+	InstanceUUID string `json:"instance_uuid"`
+	QAEnabled    bool   `json:"qa_enabled"`
 }
 
 type ImagePatchPayload struct {
@@ -142,8 +145,18 @@ func (v *ImageAPI) Create(c *gin.Context) {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
 		return
 	}
+	instanceID := int64(0)
+	if payload.InstanceUUID != "" {
+		instance, err := instanceAdmin.GetInstanceByUUID(ctx, payload.InstanceUUID)
+		if err != nil {
+			logger.Errorf("Failed to get instance %s, %+v", payload.InstanceUUID, err)
+			ErrorResponse(c, http.StatusBadRequest, "Invalid input, specified instance does not exist", err)
+			return
+		}
+		instanceID = instance.ID
+	}
 	logger.Debugf("Creating image with payload %+v", payload)
-	image, err := imageAdmin.Create(ctx, payload.Name, payload.OSVersion, "kvm-x86_64", payload.User, payload.DownloadURL, "x86_64", 0)
+	image, err := imageAdmin.Create(ctx, payload.Name, payload.OSVersion, "kvm-x86_64", payload.User, payload.DownloadURL, "x86_64", payload.QAEnabled, instanceID)
 	if err != nil {
 		logger.Errorf("Not able to create image %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Not able to create", err)
@@ -172,6 +185,7 @@ func (v *ImageAPI) getImageResponse(ctx context.Context, image *model.Image) (im
 		Architecture: image.Architecture,
 		User:         image.UserName,
 		Status:       image.Status,
+		QAEnabled:    image.QAEnabled,
 	}
 	return
 }

@@ -122,6 +122,8 @@ func New() (m *macaron.Macaron) {
 	m.Delete("/instances/:id", instanceView.Delete)
 	m.Get("/instances/:id", instanceView.Edit)
 	m.Post("/instances/:id", instanceView.Patch)
+	m.Get("/instances/:id/set_user_password", instanceView.SetUserPassword)
+	m.Post("/instances/:id/set_user_password", instanceView.SetUserPassword)
 	m.Post("/instances/:id/console", consoleView.ConsoleURL)
 	m.Get("/interfaces/:id", interfaceView.Edit)
 	m.Post("/interfaces/:id", interfaceView.Patch)

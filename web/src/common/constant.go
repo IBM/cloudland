@@ -23,8 +23,7 @@ const (
 	Internal SubnetType = "internal"
 
 	SystemDefaultSGName = "system-default"
-	TimeStringForMat = "2006-01-02 15:04:05.000000"
+	TimeStringForMat    = "2006-01-02 15:04:05.000000"
 )
 
 var SignedSeret = []byte("Red B")
-

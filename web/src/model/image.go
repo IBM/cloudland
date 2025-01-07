@@ -31,6 +31,7 @@ type Image struct {
 	OsVersion             string    `gorm:"type:varchar(128)"`
 	VirtType              string    `gorm:"type:varchar(36)"`
 	UserName              string    `gorm:"type:varchar(128)"`
+	QAEnabled             bool      `gorm:"default:false"`
 	CaptureFromInstanceID int64     `gorm:"default:0"`
 	CaptureFromInstance   *Instance `gorm:"foreignkey:InstanceID"`
 }
@@ -60,6 +61,7 @@ func (i *Image) Clone() *Image {
 		OsVersion:             i.OsVersion,
 		VirtType:              i.VirtType,
 		UserName:              i.UserName,
+		QAEnabled:             i.QAEnabled,
 		CaptureFromInstanceID: i.CaptureFromInstanceID,
 		CaptureFromInstance:   i.CaptureFromInstance,
 	}
