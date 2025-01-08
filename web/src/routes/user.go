@@ -40,8 +40,8 @@ type UserView struct{}
 func (a *UserAdmin) Create(ctx context.Context, username, password string) (user *model.User, err error) {
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Admin)
-	if !permit {
-		logger.Error("Not authorized to delete the user")
+	if username != "admin" && !permit {
+		logger.Error("Not authorized to create the user")
 		err = fmt.Errorf("Not authorized")
 		return
 	}

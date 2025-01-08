@@ -40,7 +40,7 @@ type OrgView struct{}
 func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.Organization, err error) {
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Admin)
-	if !permit {
+	if name != "admin" && !permit {
 		logger.Error("Not authorized to delete the user")
 		err = fmt.Errorf("Not authorized")
 		return
