@@ -121,6 +121,8 @@ func Register() (r *gin.Engine) {
 		authGroup.DELETE("/api/v1/instances/:id", instanceAPI.Delete)
 		authGroup.PATCH("/api/v1/instances/:id", instanceAPI.Patch)
 
+		authGroup.POST("/api/v1/instances/:id/set_user_password", instanceAPI.SetUserPassword)
+
 		authGroup.POST("/api/v1/instances/:id/console", consoleAPI.Create)
 
 		authGroup.GET("/api/v1/instances/:id/interfaces", interfaceAPI.List)

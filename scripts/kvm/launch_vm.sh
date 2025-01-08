@@ -3,17 +3,18 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 6 ] && die "$0 <vm_ID> <image> <snapshot> <name> <cpu> <memory> <disk_size> <volume_id>"
+[ $# -lt 7 ] && die "$0 <vm_ID> <image> <qa_enabled> <snapshot> <name> <cpu> <memory> <disk_size> <volume_id>"
 
 ID=$1
 vm_ID=inst-$1
 img_name=$2
-snapshot=$3
-vm_name=$4
-vm_cpu=$5
-vm_mem=$6
-disk_size=$7
-vol_ID=$8
+qa_enabled=$3
+snapshot=$4
+vm_name=$5
+vm_cpu=$6
+vm_mem=$7
+disk_size=$8
+vol_ID=$9
 state=error
 vm_vnc=""
 
@@ -24,7 +25,7 @@ let fsize=$disk_size*1024*1024*1024
 ./build_meta.sh "$vm_ID" "$vm_name" <<< $md >/dev/null 2>&1
 vm_meta=$cache_dir/meta/$vm_ID.iso
 template=$template_dir/template.xml
-
+[ "$qa_enabled" = "true" ] && template=$template_dir/template_with_qa.xml
 if [ -z "$wds_address" ]; then
     vm_img=$volume_dir/$vm_ID.disk
     is_vol="true"
@@ -86,15 +87,18 @@ else
     echo "|:-COMMAND-:| create_volume_wds_vhost '$vol_ID' 'attached' 'wds_vhost://$wds_pool_id/$volume_id'"
     ux_sock=/var/run/wds/$vhost_name
     template=$template_dir/wds_template.xml
+    [ "$qa_enabled" = "true" ] && template=$template_dir/wds_template_with_qa.xml
+
 fi
 
 [ -z "$vm_mem" ] && vm_mem='1024m'
 [ -z "$vm_cpu" ] && vm_cpu=1
 let vm_mem=${vm_mem%[m|M]}*1024
 mkdir -p $xml_dir/$vm_ID
+vm_QA="$qemu_agent_dir/$vm_ID.agent"
 vm_xml=$xml_dir/$vm_ID/${vm_ID}.xml
 cp $template $vm_xml
-sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_img#g; s#VM_UNIX_SOCK#$ux_sock#g; s#VM_META#$vm_meta#g;" $vm_xml
+sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_img#g; s#VM_UNIX_SOCK#$ux_sock#g; s#VM_META#$vm_meta#g; s#VM_AGENT#$vm_QA#g" $vm_xml
 virsh define $vm_xml
 virsh autostart $vm_ID
 jq .vlans <<< $metadata | ./sync_nic_info.sh "$ID"

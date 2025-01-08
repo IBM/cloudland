@@ -36,6 +36,11 @@ type InstancePatchPayload struct {
 	Flavor        string        `json:"flavor" binding:"omitempty,min=1,max=32"`
 }
 
+type InstanceSetUserPasswordPayload struct {
+	Password string `json:"password" binding:"required,min=8,max=64"`
+	UserName string `json:"user_name" binding:"required,min=2,max=32"`
+}
+
 type InstancePayload struct {
 	Count               int                 `json:"count" binding:"omitempty,gte=1,lte=16"`
 	Hypervisor          *int                `json:"hypervisor" binding:"omitempty,gte=0,lte=65535"`
@@ -156,6 +161,43 @@ func (v *InstanceAPI) Patch(c *gin.Context) {
 	}
 	logger.Debugf("Patch instance %s success, response: %+v", uuID, instanceResp)
 	c.JSON(http.StatusOK, instanceResp)
+}
+
+// @Summary set user password for a instance
+// @Description set user password for a instance
+// @tags Compute
+// @Accept  json
+// @Produce json
+// @Param   id  path  string  true  "Instance UUID"
+// @Param   message	body   InstanceSetUserPasswordPayload  true   "Instance set user password payload"
+// @Success 200
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
+// @Router /instances/{id}/set_user_password [post]
+func (v *InstanceAPI) SetUserPassword(c *gin.Context) {
+	ctx := c.Request.Context()
+	uuID := c.Param("id")
+	logger.Debugf("Set user password for instance %s", uuID)
+	instance, err := instanceAdmin.GetInstanceByUUID(ctx, uuID)
+	if err != nil {
+		logger.Errorf("Failed to get instance %s, %+v", uuID, err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid instance query", err)
+		return
+	}
+	payload := &InstanceSetUserPasswordPayload{}
+	err = c.ShouldBindJSON(payload)
+	if err != nil {
+		logger.Errorf("Failed to bind JSON, %+v", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
+		return
+	}
+	err = instanceAdmin.SetUserPassword(ctx, instance.ID, payload.UserName, payload.Password)
+	if err != nil {
+		logger.Errorf("Set user password failed, %+v", err)
+		ErrorResponse(c, http.StatusBadRequest, "Set user password failed", err)
+		return
+	}
+	c.JSON(http.StatusOK, nil)
 }
 
 // @Summary delete a instance

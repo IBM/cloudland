@@ -19,8 +19,8 @@ import (
 	"sync"
 	"time"
 
-	"web/src/model"
 	. "web/src/common"
+	"web/src/model"
 
 	"golang.org/x/net/context"
 	"gopkg.in/macaron.v1"
@@ -126,6 +126,9 @@ func (fb *FrontbackService) Execute(c *macaron.Context) {
 }
 
 func (fb *FrontbackService) dispatchExecute(ctx context.Context, cmd string, args []string) (status string, err error) {
+	if cmd != "report_rc" {
+		logger.Debugf("RPC callback: [%s] %+v", cmd, args)
+	}
 	if command := Get(cmd); command != nil {
 		status, err = command(ctx, args)
 	} else {

@@ -61,7 +61,7 @@ func HyperExecute(ctx context.Context, control, command string) (err error) {
 		return
 	}
 
-	logger.Error("Response Status:", resp.Status)
-	logger.Error("Response Body:", string(body))
+	logger.Debug("Response Status:", resp.Status)
+	logger.Debug("Response Body:", string(body))
 	return
 }

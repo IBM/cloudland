@@ -38,6 +38,7 @@
     - /opt/cloudland/cache/volume
     - /opt/cloudland/cache/dnsmasq
     - /opt/cloudland/cache/xml
+    - /opt/cloudland/cache/qemu_agent
   tags: [sync]
 
 - name: create sysconfig directory

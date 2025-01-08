@@ -36,7 +36,8 @@ func FileExist(filename string) bool {
 	return !os.IsNotExist(err)
 }
 
-func (a *ImageAdmin) Create(ctx context.Context, name, osVersion, virtType, userName, url, architecture string, instID int64) (image *model.Image, err error) {
+func (a *ImageAdmin) Create(ctx context.Context, name, osVersion, virtType, userName, url, architecture string, qaEnabled bool, instID int64) (image *model.Image, err error) {
+	logger.Debugf("Creating image %s %s %s %s %s %s %t %d", name, osVersion, virtType, userName, url, architecture, qaEnabled, instID)
 	memberShip := GetMemberShip(ctx)
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
@@ -44,7 +45,41 @@ func (a *ImageAdmin) Create(ctx context.Context, name, osVersion, virtType, user
 			EndTransaction(ctx, err)
 		}
 	}()
-	image = &model.Image{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, OsVersion: osVersion, VirtType: virtType, UserName: userName, Name: name, OSCode: name, Status: "creating", Architecture: architecture}
+	var instance *model.Instance
+	if instID > 0 {
+		instance = &model.Instance{Model: model.Model{ID: instID}}
+		err = db.Preload("Image").Preload("Volumes").Take(instance).Error
+		if err != nil {
+			logger.Error("DB failed to query instance", err)
+			return
+		}
+		if instance.Status != "shut_off" {
+			err = fmt.Errorf("instance [%s] is running, shut it down first before capturing", instance.Hostname)
+			logger.Error(err)
+			return
+		}
+		image = instance.Image.Clone()
+		image.Model = model.Model{Creater: memberShip.UserID}
+		image.Owner = memberShip.OrgID
+		image.Name = name
+		image.Status = "creating"
+		image.CaptureFromInstanceID = instance.ID
+		image.CaptureFromInstance = instance
+	} else {
+		image = &model.Image{
+			Model:        model.Model{Creater: memberShip.UserID},
+			Owner:        memberShip.OrgID,
+			OsVersion:    osVersion,
+			VirtType:     virtType,
+			UserName:     userName,
+			Name:         name,
+			OSCode:       name,
+			Status:       "creating",
+			Architecture: architecture,
+			QAEnabled:    qaEnabled,
+		}
+	}
+	logger.Debugf("Creating image %+v", image)
 	err = db.Create(image).Error
 	if err != nil {
 		logger.Error("DB create image failed, %v", err)
@@ -53,14 +88,17 @@ func (a *ImageAdmin) Create(ctx context.Context, name, osVersion, virtType, user
 	control := "inter="
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_image.sh '%d' '%s' '%s'", image.ID, prefix, url)
 	if instID > 0 {
-		instance := &model.Instance{Model: model.Model{ID: instID}}
-		err = db.Take(instance).Error
-		if err != nil {
-			logger.Error("DB failed to query instance", err)
-			return
+		bootVolumeUUID := ""
+		if instance.Volumes != nil {
+			for _, volume := range instance.Volumes {
+				if volume.Booting {
+					bootVolumeUUID = volume.GetOriginVolumeID()
+					break
+				}
+			}
 		}
 		control = fmt.Sprintf("inter=%d", instance.Hyper)
-		command = fmt.Sprintf("/opt/cloudland/scripts/backend/capture_image.sh '%d' '%s' '%d'", image.ID, prefix, instance.ID)
+		command = fmt.Sprintf("/opt/cloudland/scripts/backend/capture_image.sh '%d' '%s' '%d' '%s'", image.ID, prefix, instance.ID, bootVolumeUUID)
 	}
 	err = HyperExecute(ctx, control, command)
 	if err != nil {
@@ -315,10 +353,11 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	osVersion := c.QueryTrim("osVersion")
 	virtType := "kvm-x86_64"
 	userName := c.QueryTrim("userName")
+	qaEnabled := c.QueryBool("qaEnabled")
 	architecture := "x86_64"
-	_, err := imageAdmin.Create(c.Req.Context(), name, osVersion, virtType, userName, url, architecture, instance)
+	_, err := imageAdmin.Create(c.Req.Context(), name, osVersion, virtType, userName, url, architecture, qaEnabled, instance)
 	if err != nil {
-		logger.Error("Create instance failed", err)
+		logger.Error("Create image failed", err)
 		c.HTML(http.StatusBadRequest, err.Error())
 		return
 	}

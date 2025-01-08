@@ -11,6 +11,7 @@ image_dir=$cache_dir/instance
 image_cache=$cache_dir/image
 xml_dir=/opt/cloudland/cache/xml
 template_dir=/opt/cloudland/scripts/xml
+qemu_agent_dir=/opt/cloudland/cache/qemu_agent
 container_dir=/var/lib/lxd/containers
 dmasq_dir=/opt/cloudland/cache/dnsmasq
 mudata_dir=/opt/cloudland/mudata
