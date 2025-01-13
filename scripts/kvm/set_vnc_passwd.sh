@@ -17,5 +17,5 @@ tmpxml=/tmp/${vm_ID}.xml
 virsh dumpxml $vm_ID >$tmpxml
 vnc_port=$(xmllint --xpath 'string(/domain/devices/graphics/@port)' $tmpxml)
 rm -f $tmpxml
-local_ip=$(ifconfig $vnc_interface | grep 'inet ' | awk '{print $2}')
+local_ip=$(ifconfig $vxlan_interface | grep 'inet ' | awk '{print $2}')
 echo "|:-COMMAND-:| $(basename $0) '$ID' '$vnc_port' '$local_ip'"
