@@ -46,6 +46,8 @@ type FloatingIpResponse struct {
 	PublicIp        string           `json:"public_ip"`
 	TargetInterface *TargetInterface `json:"target_interface,omitempty"`
 	VPC             *BaseReference   `json:"vpc,omitempty"`
+	Inbound         int32            `json:"inbound"`
+	Outbound        int32            `json:"outbound"`
 }
 
 type FloatingIpListResponse struct {
@@ -66,8 +68,8 @@ type FloatingIpPayload struct {
 
 type FloatingIpPatchPayload struct {
 	Instance *BaseID `json:"instance" binding:"omitempty"`
-	Inbound      int32          `json:"inbound" binding:"omitempty,min=1,max=20000"`
-	Outbound     int32          `json:"outbound" binding:"omitempty,min=1,max=20000"`
+	Inbound  *int32  `json:"inbound" binding:"omitempty,min=1,max=20000"`
+	Outbound *int32  `json:"outbound" binding:"omitempty,min=1,max=20000"`
 }
 
 // @Summary get a floating ip
@@ -147,6 +149,12 @@ func (v *FloatingIpAPI) Patch(c *gin.Context) {
 			return
 		}
 	}
+	if payload.Inbound != nil {
+		floatingIp.Inbound = *payload.Inbound
+	}
+	if payload.Outbound != nil {
+		floatingIp.Outbound = *payload.Outbound
+	}
 	floatingIpResp, err := v.getFloatingIpResponse(ctx, floatingIp)
 	if err != nil {
 		logger.Errorf("Failed to create floating ip response: %+v", err)
@@ -224,7 +232,15 @@ func (v *FloatingIpAPI) Create(c *gin.Context) {
 			return
 		}
 	}
-	floatingIp, err := floatingIpAdmin.Create(ctx, instance, publicSubnet, payload.PublicIp, payload.Name, payload.Inbound, payload.Outbound)
+	inbound := int32(1000)
+	if payload.Inbound > 0 {
+		inbound = payload.Inbound
+	}
+	outbound := int32(1000)
+	if payload.Outbound > 0 {
+		outbound = payload.Outbound
+	}
+	floatingIp, err := floatingIpAdmin.Create(ctx, instance, publicSubnet, payload.PublicIp, payload.Name, inbound, outbound)
 	if err != nil {
 		logger.Errorf("Failed to create floating ip %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Failed to create floating ip", err)
@@ -250,6 +266,8 @@ func (v *FloatingIpAPI) getFloatingIpResponse(ctx context.Context, floatingIp *m
 			UpdatedAt: floatingIp.UpdatedAt.Format(TimeStringForMat),
 		},
 		PublicIp: floatingIp.FipAddress,
+		Inbound:  floatingIp.Inbound,
+		Outbound: floatingIp.Outbound,
 	}
 	if floatingIp.Router != nil {
 		floatingIpResp.VPC = &BaseReference{

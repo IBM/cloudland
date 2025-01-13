@@ -1019,6 +1019,56 @@ const docTemplatev1 = `{
                 }
             }
         },
+        "/instances/{id}/set_user_password": {
+            "post": {
+                "description": "set user password for a instance",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Compute"
+                ],
+                "summary": "set user password for a instance",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Instance UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Instance set user password payload",
+                        "name": "message",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/apis.InstanceSetUserPasswordPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    }
+                }
+            }
+        },
         "/keys": {
             "get": {
                 "description": "list keys",
@@ -2671,8 +2721,18 @@ const docTemplatev1 = `{
         "apis.FloatingIpPatchPayload": {
             "type": "object",
             "properties": {
+                "inbound": {
+                    "type": "integer",
+                    "maximum": 20000,
+                    "minimum": 1
+                },
                 "instance": {
                     "$ref": "#/definitions/common.BaseID"
+                },
+                "outbound": {
+                    "type": "integer",
+                    "maximum": 20000,
+                    "minimum": 1
                 }
             }
         },
@@ -2717,8 +2777,14 @@ const docTemplatev1 = `{
                 "id": {
                     "type": "string"
                 },
+                "inbound": {
+                    "type": "integer"
+                },
                 "name": {
                     "type": "string"
+                },
+                "outbound": {
+                    "type": "integer"
                 },
                 "owner": {
                     "type": "string"
@@ -2814,6 +2880,9 @@ const docTemplatev1 = `{
                 "download_url": {
                     "type": "string"
                 },
+                "instance_uuid": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string",
                     "maxLength": 32,
@@ -2823,6 +2892,9 @@ const docTemplatev1 = `{
                     "type": "string",
                     "maxLength": 32,
                     "minLength": 2
+                },
+                "qa_enabled": {
+                    "type": "boolean"
                 },
                 "user": {
                     "type": "string",
@@ -2851,6 +2923,9 @@ const docTemplatev1 = `{
                 },
                 "owner": {
                     "type": "string"
+                },
+                "qa_enabled": {
+                    "type": "boolean"
                 },
                 "size": {
                     "type": "integer"
@@ -2947,7 +3022,6 @@ const docTemplatev1 = `{
                 "flavor",
                 "hostname",
                 "image",
-                "keys",
                 "zone"
             ],
             "properties": {
@@ -2975,7 +3049,7 @@ const docTemplatev1 = `{
                 "keys": {
                     "type": "array",
                     "maxItems": 16,
-                    "minItems": 1,
+                    "minItems": 0,
                     "items": {
                         "$ref": "#/definitions/common.BaseReference"
                     }
@@ -3066,6 +3140,25 @@ const docTemplatev1 = `{
                 },
                 "zone": {
                     "type": "string"
+                }
+            }
+        },
+        "apis.InstanceSetUserPasswordPayload": {
+            "type": "object",
+            "required": [
+                "password",
+                "user_name"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 8
+                },
+                "user_name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
                 }
             }
         },

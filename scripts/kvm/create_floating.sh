@@ -45,12 +45,10 @@ ip_net=$(ipcalc -b $int_addr | grep Network | awk '{print $2}')
 ip netns exec $router ip route add $ip_net dev ns-$int_vlan table $table
 ip netns exec $router ip rule add from $int_ip lookup $table
 ip netns exec $router ip rule add to $int_ip lookup $table
-ip netns exec $router iptables -t nat -D POSTROUTING -s $int_ip -m set ! --match-set nonat dst -j MASQUERADE
-ip netns exec $router iptables -t nat -I POSTROUTING -s $int_ip -m set ! --match-set nonat dst -j MASQUERADE
 ip netns exec $router iptables -t nat -D PREROUTING -d $ext_ip -j DNAT --to-destination $int_ip
 ip netns exec $router iptables -t nat -I PREROUTING -d $ext_ip -j DNAT --to-destination $int_ip
-ip netns exec $router iptables -t nat -D POSTROUTING -s $int_ip -m set --match-set nonat dst -j SNAT --to-source $ext_ip
-ip netns exec $router iptables -t nat -I POSTROUTING -s $int_ip -m set --match-set nonat dst -j SNAT --to-source $ext_ip
+ip netns exec $router iptables -t nat -D POSTROUTING -s $int_ip -j SNAT --to-source $ext_ip
+ip netns exec $router iptables -t nat -I POSTROUTING -s $int_ip -j SNAT --to-source $ext_ip
 ip netns exec $router arping -c 3 -I $ext_dev -s $ext_ip $ext_gw
 
 if [ "$inbound" -gt 0 ]; then
@@ -58,8 +56,8 @@ if [ "$inbound" -gt 0 ]; then
     ip netns exec $router iptables -t mangle -I PREROUTING -d $ext_ip -j MARK --set-mark $mark_id
     ip netns exec $router iptables -D FORWARD -m mark --mark $mark_id -j DROP
     ip netns exec $router iptables -I FORWARD -m mark --mark $mark_id -j DROP
-    pkt_rate_limit=$(( $inbound * 100 ))
-    pkt_burst_limit=$inbound
+    pkt_rate_limit=$(( $inbound * 1250 ))
+    pkt_burst_limit=$( $pkt_burst_limit * 2 )
     ip netns exec $router iptables -D FORWARD -m mark --mark $mark_id -m limit --limit $pkt_rate_limit/second --limit-burst $pkt_burst_limit -j ACCEPT
     ip netns exec $router iptables -I FORWARD -m mark --mark $mark_id -m limit --limit $pkt_rate_limit/second --limit-burst $pkt_burst_limit -j ACCEPT
     ip netns exec $router tc qdisc add dev ns-$int_vlan root handle 1: htb default 10
@@ -67,7 +65,7 @@ if [ "$inbound" -gt 0 ]; then
     ip netns exec $router tc filter add dev ns-$int_vlan protocol ip parent 1:0 prio 1 handle $mark_id fw flowid 1:$mark_id
 fi
 if [ "$outbound" -gt 0 ]; then
-    ip netns exec $router tc filter add dev $ext_dev protocol ip parent 1:0 prio 1 handle 1 fw flowid 1:1
+    ip netns exec $router tc qdisc add dev $ext_dev root handle 1: htb default 10
     ip netns exec $router tc class add dev $ext_dev parent 1: classid 1:$mark_id htb rate ${bandwidth}mbit burst 100
     ip netns exec $router tc filter add dev $ext_dev protocol ip parent 1:0 prio 1 u32 match ip dst $ext_ip/32 flowid 1:$mark_id
 fi

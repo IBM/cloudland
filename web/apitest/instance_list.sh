@@ -2,4 +2,4 @@
 
 source tokenrc
 
-curl -k -XGET -H "Authorization: bearer $token" "$endpoint/api/v1/instances" | jq .
+curl -k -XGET -H "Authorization: bearer $token" "$endpoint/api/v1/instances?limit=10000" | jq .
