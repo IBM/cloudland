@@ -13,7 +13,7 @@ import (
 )
 
 type Zone struct {
-	ID        int64 `gorm:"primary_key"`
+	ID        int64  `gorm:"primary_key"`
 	Name      string `gorm:"unique_index"`
 	Default   bool
 	CreatedAt time.Time

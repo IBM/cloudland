@@ -38,7 +38,7 @@ func GetContextDB(ctx context.Context) (context.Context, *gorm.DB) {
 	return ctx, db
 }
 
-func SetContextDB(ctx context.Context, db *gorm.DB) (context.Context) {
+func SetContextDB(ctx context.Context, db *gorm.DB) context.Context {
 	ctx = context.WithValue(ctx, contextDBKey, db)
 	return ctx
 }

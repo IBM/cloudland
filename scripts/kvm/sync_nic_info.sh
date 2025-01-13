@@ -17,6 +17,7 @@ while [ $i -lt $nvlan ]; do
     router=$(jq -r .[$i].router <<< $vlans)
     inbound=$(jq -r .[$i].inbound <<< $vlans)
     outbound=$(jq -r .[$i].outbound <<< $vlans)
-    jq -r .[$i].security <<< $vlans | ./apply_vm_nic.sh "$ID" "$vlan" "$ip" "$mac" "$gateway" "$router" "$inbound" "$outbound"
+    allow_spoofing=$(jq -r .[$i].allow_spoofing <<< $vlans)
+    jq -r .[$i].security <<< $vlans | ./apply_vm_nic.sh "$ID" "$vlan" "$ip" "$mac" "$gateway" "$router" "$inbound" "$outbound" "$allow_spoofing"
     let i=$i+1
 done

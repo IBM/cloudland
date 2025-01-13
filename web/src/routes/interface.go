@@ -33,6 +33,7 @@ type InterfaceInfo struct {
 	IpAddress      string
 	Inbound        int32
 	Outbound       int32
+	AllowSpoofing  bool
 	SecurityGroups []*model.SecurityGroup
 }
 

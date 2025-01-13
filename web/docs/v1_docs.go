@@ -3165,6 +3165,9 @@ const docTemplatev1 = `{
         "apis.InterfacePatchPayload": {
             "type": "object",
             "properties": {
+                "allow_spoofing": {
+                    "type": "boolean"
+                },
                 "inbound": {
                     "type": "integer",
                     "maximum": 20000,
@@ -3194,6 +3197,9 @@ const docTemplatev1 = `{
                 "subnet"
             ],
             "properties": {
+                "allow_spoofing": {
+                    "type": "boolean"
+                },
                 "inbound": {
                     "type": "integer",
                     "maximum": 20000,
