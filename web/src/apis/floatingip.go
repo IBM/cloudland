@@ -66,6 +66,8 @@ type FloatingIpPayload struct {
 
 type FloatingIpPatchPayload struct {
 	Instance *BaseID `json:"instance" binding:"omitempty"`
+	Inbound      int32          `json:"inbound" binding:"omitempty,min=1,max=20000"`
+	Outbound     int32          `json:"outbound" binding:"omitempty,min=1,max=20000"`
 }
 
 // @Summary get a floating ip
