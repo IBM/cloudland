@@ -84,8 +84,16 @@ definitions:
     type: object
   apis.FloatingIpPatchPayload:
     properties:
+      inbound:
+        maximum: 20000
+        minimum: 1
+        type: integer
       instance:
         $ref: '#/definitions/common.BaseID'
+      outbound:
+        maximum: 20000
+        minimum: 1
+        type: integer
     type: object
   apis.FloatingIpPayload:
     properties:
@@ -116,8 +124,12 @@ definitions:
         type: string
       id:
         type: string
+      inbound:
+        type: integer
       name:
         type: string
+      outbound:
+        type: integer
       owner:
         type: string
       public_ip:
@@ -176,6 +188,8 @@ definitions:
     properties:
       download_url:
         type: string
+      instance_uuid:
+        type: string
       name:
         maxLength: 32
         minLength: 2
@@ -184,6 +198,8 @@ definitions:
         maxLength: 32
         minLength: 2
         type: string
+      qa_enabled:
+        type: boolean
       user:
         maxLength: 32
         minLength: 2
@@ -208,6 +224,8 @@ definitions:
         type: string
       owner:
         type: string
+      qa_enabled:
+        type: boolean
       size:
         type: integer
       status:
@@ -289,7 +307,7 @@ definitions:
         items:
           $ref: '#/definitions/common.BaseReference'
         maxItems: 16
-        minItems: 1
+        minItems: 0
         type: array
       primary_interface:
         $ref: '#/definitions/apis.InterfacePayload'
@@ -313,7 +331,6 @@ definitions:
     - flavor
     - hostname
     - image
-    - keys
     - zone
     type: object
   apis.InstanceResponse:
@@ -356,6 +373,20 @@ definitions:
         $ref: '#/definitions/common.ResourceReference'
       zone:
         type: string
+    type: object
+  apis.InstanceSetUserPasswordPayload:
+    properties:
+      password:
+        maxLength: 64
+        minLength: 8
+        type: string
+      user_name:
+        maxLength: 32
+        minLength: 2
+        type: string
+    required:
+    - password
+    - user_name
     type: object
   apis.InterfacePatchPayload:
     properties:
@@ -1638,6 +1669,39 @@ paths:
           schema:
             $ref: '#/definitions/common.APIError'
       summary: patch a instance
+      tags:
+      - Compute
+  /instances/{id}/set_user_password:
+    post:
+      consumes:
+      - application/json
+      description: set user password for a instance
+      parameters:
+      - description: Instance UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Instance set user password payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.InstanceSetUserPasswordPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/common.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/common.APIError'
+      summary: set user password for a instance
       tags:
       - Compute
   /instances/id/interfaces/{interface_id}:

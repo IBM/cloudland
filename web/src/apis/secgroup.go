@@ -29,7 +29,7 @@ type SecgroupAPI struct{}
 type SecurityGroupResponse struct {
 	*ResourceReference
 	IsDefault        bool               `json:"is_default"`
-	VPC              *ResourceReference     `json:"vpc,omitempty"`
+	VPC              *ResourceReference `json:"vpc,omitempty"`
 	TargetInterfaces []*TargetInterface `json:"target_interfaces,omitempty"`
 }
 

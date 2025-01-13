@@ -27,22 +27,22 @@ var interfaceAdmin = &routes.InterfaceAdmin{}
 type InterfaceAPI struct{}
 
 type InterfaceListResponse struct {
-	Offset        int                `json:"offset"`
-	Total         int                `json:"total"`
-	Limit         int                `json:"limit"`
+	Offset     int                  `json:"offset"`
+	Total      int                  `json:"total"`
+	Limit      int                  `json:"limit"`
 	Interfaces []*InterfaceResponse `json:"interfaces"`
 }
 
 type InterfaceResponse struct {
 	*BaseReference
-	Subnet         *ResourceReference    `json:"subnet"`
-	MacAddress     string            `json:"mac_address"`
-	IPAddress      string            `json:"ip_address"`
-	IsPrimary      bool              `json:"is_primary"`
-	Inbound        int32             `json:"inbound"`
-	Outbound       int32             `json:"outbound"`
-	FloatingIps    []*FloatingIpInfo `json:"floating_ips,omitempty"`
-	SecurityGroups []*ResourceReference  `json:"security_groups,omitempty"`
+	Subnet         *ResourceReference   `json:"subnet"`
+	MacAddress     string               `json:"mac_address"`
+	IPAddress      string               `json:"ip_address"`
+	IsPrimary      bool                 `json:"is_primary"`
+	Inbound        int32                `json:"inbound"`
+	Outbound       int32                `json:"outbound"`
+	FloatingIps    []*FloatingIpInfo    `json:"floating_ips,omitempty"`
+	SecurityGroups []*ResourceReference `json:"security_groups,omitempty"`
 }
 
 type InterfacePayload struct {

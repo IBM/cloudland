@@ -286,6 +286,7 @@ func (v *VolumeAPI) getVolumeResponse(ctx context.Context, volume *model.Volume)
 		IopsBurst: volume.IopsBurst,
 		BpsLimit:  volume.BpsLimit,
 		BpsBurst:  volume.BpsBurst,
+		Booting:   volume.Booting,
 	}
 	if volume.Instance == nil {
 		volumeResp.Instance = nil
