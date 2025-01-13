@@ -1191,7 +1191,8 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	primarySubnet, err := subnetAdmin.Get(ctx, int64(primaryID))
 	if err != nil {
 		logger.Error("Get primary subnet failed", err)
-		c.HTML(http.StatusBadRequest, err.Error())
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	macAddr, err := v.checkNetparam(primarySubnet, ipAddr, primaryMac)
@@ -1214,13 +1215,13 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			if err != nil {
 				logger.Error("Get security groups failed", err)
 				c.Data["ErrorMsg"] = "Get security groups failed"
-				c.HTML(http.StatusBadRequest, err.Error())
+				c.HTML(http.StatusBadRequest, "error")
 				return
 			}
 			if secgroup.RouterID != primarySubnet.RouterID {
 				logger.Error("Security group is not the same router with subnet")
 				c.Data["ErrorMsg"] = "Security group is not in subnet vpc"
-				c.HTML(http.StatusBadRequest, "Security group not in subnet vpc")
+				c.HTML(http.StatusBadRequest, "error")
 				return
 			}
 			securityGroups = append(securityGroups, secgroup)
@@ -1234,7 +1235,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			if err != nil {
 				logger.Error("Get router failed", err)
 				c.Data["ErrorMsg"] = "Get router failed"
-				c.HTML(http.StatusBadRequest, err.Error())
+				c.HTML(http.StatusBadRequest, "error")
 				return
 			}
 			sgID = router.DefaultSG
@@ -1244,7 +1245,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		if err != nil {
 			logger.Error("Get security groups failed", err)
 			c.Data["ErrorMsg"] = "Get security groups failed"
-			c.HTML(http.StatusBadRequest, err.Error())
+			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
 		securityGroups = append(securityGroups, secGroup)
@@ -1268,13 +1269,14 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		subnet, err = subnetAdmin.Get(ctx, int64(sID))
 		if err != nil {
 			logger.Error("Get secondary subnet failed", err)
-			c.HTML(http.StatusBadRequest, err.Error())
+			c.Data["ErrorMsg"] = err.Error()
+			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
 		if subnet.RouterID != primarySubnet.RouterID {
 			logger.Error("All subnets must be in the same vpc", err)
 			c.Data["ErrorMsg"] = "All subnets must be in the same vpc"
-			c.HTML(http.StatusBadRequest, "All subnets must be in the same vpc")
+			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
 		secondaryIfaces = append(secondaryIfaces, &InterfaceInfo{
@@ -1307,7 +1309,8 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	_, err = instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, primarySubnet.RouterID, primaryIface, secondaryIfaces, instKeys, rootPasswd, hyperID)
 	if err != nil {
 		logger.Error("Create instance failed", err)
-		c.HTML(http.StatusBadRequest, err.Error())
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.Redirect(redirectTo)
