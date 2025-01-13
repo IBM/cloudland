@@ -90,7 +90,7 @@ func HyperStatus(ctx context.Context, args []string) (status string, err error) 
 		}
 	}
 	if hyper.RouteIP == "" {
-		_, err = SystemRouter(ctx, []string{args[1], args[2]})
+		_, err = SystemRouter(ctx, []string{args[0], args[1]})
 		if err != nil {
 			logger.Error("Failed to create system router", err)
 		}
