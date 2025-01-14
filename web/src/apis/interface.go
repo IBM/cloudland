@@ -52,6 +52,7 @@ type InterfacePayload struct {
 	Name           string           `json:"name" binding:"omitempty,min=2,max=32"`
 	Inbound        int32            `json:"inbound" binding:"omitempty,min=1,max=20000"`
 	Outbound       int32            `json:"outbound" binding:"omitempty,min=1,max=20000"`
+	AllowSpoofing  bool             `json:"allow_spoofing" binding:"omitempty"`
 	SecurityGroups []*BaseReference `json:"security_group" binding:"omitempty"`
 }
 
@@ -59,6 +60,7 @@ type InterfacePatchPayload struct {
 	Name           string           `json:"name" binding:"omitempty,min=2,max=32"`
 	Inbound        int32            `json:"inbound" binding:"omitempty,min=1,max=20000"`
 	Outbound       int32            `json:"outbound" binding:"omitempty,min=1,max=20000"`
+	AllowSpoofing  bool             `json:"allow_spoofing" binding:"omitempty"`
 	SecurityGroups []*BaseReference `json:"security_group" binding:"omitempty"`
 }
 

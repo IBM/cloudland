@@ -35,16 +35,17 @@ type SecurityData struct {
 }
 
 type VlanInfo struct {
-	Device     string          `json:"device"`
-	Vlan       int64           `json:"vlan"`
-	Gateway    string          `json:"gateway"`
-	Router     int64           `json:"router"`
-	PublicLink int64           `json:"public_link"`
-	Inbound    int32           `json:"inbound"`
-	Outbound   int32           `json:"outbound"`
-	IpAddr     string          `json:"ip_address"`
-	MacAddr    string          `json:"mac_address"`
-	SecRules   []*SecurityData `json:"security"`
+	Device        string          `json:"device"`
+	Vlan          int64           `json:"vlan"`
+	Gateway       string          `json:"gateway"`
+	Router        int64           `json:"router"`
+	PublicLink    int64           `json:"public_link"`
+	Inbound       int32           `json:"inbound"`
+	Outbound      int32           `json:"outbound"`
+	AllowSpoofing bool            `json:"allow_spoofing"`
+	IpAddr        string          `json:"ip_address"`
+	MacAddr       string          `json:"mac_address"`
+	SecRules      []*SecurityData `json:"security"`
 }
 
 func ApplyInterface(ctx context.Context, instance *model.Instance, iface *model.Interface) (err error) {
@@ -62,7 +63,7 @@ func ApplyInterface(ctx context.Context, instance *model.Instance, iface *model.
 	}
 	subnet := iface.Address.Subnet
 	control := fmt.Sprintf("inter=%d", instance.Hyper)
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/apply_vm_nic.sh '%d' '%d' '%s' '%s' '%s' '%d' '%d' '%d' <<EOF\n%s\nEOF", iface.Instance, subnet.Vlan, iface.Address.Address, iface.MacAddr, subnet.Gateway, subnet.RouterID, iface.Inbound, iface.Outbound, jsonData)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/apply_vm_nic.sh '%d' '%d' '%s' '%s' '%s' '%d' '%d' '%d' '%t'<<EOF\n%s\nEOF", iface.Instance, subnet.Vlan, iface.Address.Address, iface.MacAddr, subnet.Gateway, subnet.RouterID, iface.Inbound, iface.Outbound, iface.AllowSpoofing, jsonData)
 	err = HyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Error("Update vm nic command execution failed", err)

@@ -37,7 +37,6 @@ fi
 suffix=${ID}-${ext_vlan}
 ext_dev=te-$suffix
 ./create_veth.sh $router ext-$suffix te-$suffix
-ip link set te-$suffix netns $router 
 
 ip netns exec $router ip addr add $ext_cidr dev $ext_dev
 ip netns exec $router ip route add default via $ext_gw table $table
@@ -56,8 +55,8 @@ if [ "$inbound" -gt 0 ]; then
     ip netns exec $router iptables -t mangle -I PREROUTING -d $ext_ip -j MARK --set-mark $mark_id
     ip netns exec $router iptables -D FORWARD -m mark --mark $mark_id -j DROP
     ip netns exec $router iptables -I FORWARD -m mark --mark $mark_id -j DROP
-    pkt_rate_limit=$(( $inbound * 1250 ))
-    pkt_burst_limit=$( $pkt_burst_limit * 2 )
+    pkt_rate_limit=$(( $inbound + 1250 ))
+    pkt_burst_limit=$(( $pkt_rate_limit * 2 ))
     ip netns exec $router iptables -D FORWARD -m mark --mark $mark_id -m limit --limit $pkt_rate_limit/second --limit-burst $pkt_burst_limit -j ACCEPT
     ip netns exec $router iptables -I FORWARD -m mark --mark $mark_id -m limit --limit $pkt_rate_limit/second --limit-burst $pkt_burst_limit -j ACCEPT
     ip netns exec $router tc qdisc add dev ns-$int_vlan root handle 1: htb default 10

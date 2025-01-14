@@ -390,6 +390,8 @@ definitions:
     type: object
   apis.InterfacePatchPayload:
     properties:
+      allow_spoofing:
+        type: boolean
       inbound:
         maximum: 20000
         minimum: 1
@@ -409,6 +411,8 @@ definitions:
     type: object
   apis.InterfacePayload:
     properties:
+      allow_spoofing:
+        type: boolean
       inbound:
         maximum: 20000
         minimum: 1

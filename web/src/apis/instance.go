@@ -360,6 +360,7 @@ func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, vpc *model.Router, i
 	}
 	ifaceInfo = &routes.InterfaceInfo{
 		Subnet: subnet,
+		AllowSpoofing: ifacePayload.AllowSpoofing,
 	}
 	if ifacePayload.IpAddress != "" {
 		ifaceInfo.IpAddress = ifacePayload.IpAddress
