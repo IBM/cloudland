@@ -28,6 +28,9 @@ if [ $? -ne 0 ]; then
     ip netns exec $router ip link del $ext_dev
 fi
 ip netns exec $router iptables -t mangle -D PREROUTING -d $ext_ip -j MARK --set-mark $mark_id
+ip netns exec $router iptables -S | grep "mark $(printf "0x%x" $mark_id)" | while read line; do
+    echo $line | cut -d' ' -f2- | xargs ip netns exec $router iptables -D
+done
 ip netns exec $router tc class del dev ns-$int_vlan parent 1: classid 1:$mark_id
 ip netns exec $router tc filter del dev ns-$int_vlan protocol ip parent 1:0 prio 1 handle $mark_id fw flowid 1:$mark_id
 ip netns exec $router tc class del dev $ext_dev parent 1: classid 1:$mark_id
