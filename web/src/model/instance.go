@@ -26,7 +26,6 @@ type Instance struct {
 	ImageID     int64
 	Image       *Image `gorm:"foreignkey:ImageID"`
 	Snapshot    int64
-	Keys        []*Key `gorm:"many2many:instance_keys;"`
 	PasswdLogin bool   `gorm:"default:false"`
 	Userdata    string `gorm:"type:text"`
 	Hyper       int32  `gorm:"default:-1"`
@@ -34,6 +33,8 @@ type Instance struct {
 	Zone        *Zone `gorm:"foreignkey:ZoneID"`
 	RouterID    int64 `gorm:"unique_index:idx_router_instance"`
 	Router      *Router
+	// SSHKeys should not write to the instance table
+	// Keys        []*Key `gorm:"many2many:instance_keys;"`
 }
 
 func init() {

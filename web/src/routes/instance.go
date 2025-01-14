@@ -161,13 +161,13 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		}
 		snapshot := total/MaxmumSnapshot + 1 // Same snapshot reference can not be over 128, so use 96 here
 		instance := &model.Instance{
-			Model:       model.Model{Creater: memberShip.UserID},
-			Owner:       memberShip.OrgID,
-			Hostname:    hostname,
-			ImageID:     image.ID,
-			Snapshot:    int64(snapshot),
-			FlavorID:    flavor.ID,
-			Keys:        keys,
+			Model:    model.Model{Creater: memberShip.UserID},
+			Owner:    memberShip.OrgID,
+			Hostname: hostname,
+			ImageID:  image.ID,
+			Snapshot: int64(snapshot),
+			FlavorID: flavor.ID,
+			//Keys:        keys,
 			PasswdLogin: passwdLogin,
 			Userdata:    userdata,
 			Status:      "pending",
@@ -579,7 +579,8 @@ func (a *InstanceAdmin) Get(ctx context.Context, id int64) (instance *model.Inst
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	instance = &model.Instance{Model: model.Model{ID: id}}
-	if err = db.Preload("Volumes").Preload("Image").Preload("Zone").Preload("Flavor").Preload("Keys").Where(where).Take(instance).Error; err != nil {
+	//if err = db.Preload("Volumes").Preload("Image").Preload("Zone").Preload("Flavor").Preload("Keys").Where(where).Take(instance).Error; err != nil {
+	if err = db.Preload("Volumes").Preload("Image").Preload("Zone").Preload("Flavor").Where(where).Take(instance).Error; err != nil {
 		logger.Errorf("Failed to query instance, %v", err)
 		return
 	}
@@ -614,7 +615,8 @@ func (a *InstanceAdmin) GetInstanceByUUID(ctx context.Context, uuID string) (ins
 	memberShip := GetMemberShip(ctx)
 	where := memberShip.GetWhere()
 	instance = &model.Instance{}
-	if err = db.Preload("Volumes").Preload("Image").Preload("Zone").Preload("Flavor").Preload("Keys").Where(where).Where("uuid = ?", uuID).Take(instance).Error; err != nil {
+	//if err = db.Preload("Volumes").Preload("Image").Preload("Zone").Preload("Flavor").Preload("Keys").Where(where).Where("uuid = ?", uuID).Take(instance).Error; err != nil {
+	if err = db.Preload("Volumes").Preload("Image").Preload("Zone").Preload("Flavor").Where(where).Where("uuid = ?", uuID).Take(instance).Error; err != nil {
 		logger.Errorf("Failed to query instance, %v", err)
 		return
 	}
@@ -668,7 +670,8 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Preload("Volumes").Preload("Image").Preload("Zone").Preload("Flavor").Preload("Keys").Where(where).Where(query).Find(&instances).Error; err != nil {
+	//if err = db.Preload("Volumes").Preload("Image").Preload("Zone").Preload("Flavor").Preload("Keys").Where(where).Where(query).Find(&instances).Error; err != nil {
+	if err = db.Preload("Volumes").Preload("Image").Preload("Zone").Preload("Flavor").Where(where).Where(query).Find(&instances).Error; err != nil {
 		logger.Errorf("Failed to query instance(s), %v", err)
 		return
 	}

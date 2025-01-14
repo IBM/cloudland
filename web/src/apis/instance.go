@@ -64,11 +64,11 @@ type InstanceResponse struct {
 	Volumes     []*ResourceReference `json:"volumes"`
 	Flavor      string               `json:"flavor"`
 	Image       *ResourceReference   `json:"image"`
-	Keys        []*ResourceReference `json:"keys"`
 	PasswdLogin bool                 `json:"passwd_login"`
 	Zone        string               `json:"zone"`
 	VPC         *ResourceReference   `json:"vpc,omitempty"`
 	Hypervisor  string               `json:"hypervisor,omitempty"`
+	// Keys        []*ResourceReference `json:"keys"`
 }
 
 type InstanceListResponse struct {
@@ -359,7 +359,7 @@ func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, vpc *model.Router, i
 		}
 	}
 	ifaceInfo = &routes.InterfaceInfo{
-		Subnet: subnet,
+		Subnet:        subnet,
 		AllowSpoofing: ifacePayload.AllowSpoofing,
 	}
 	if ifacePayload.IpAddress != "" {
@@ -433,14 +433,16 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 	if instance.Zone != nil {
 		instanceResp.Zone = instance.Zone.Name
 	}
-	keys := make([]*ResourceReference, len(instance.Keys))
-	for i, key := range instance.Keys {
-		keys[i] = &ResourceReference{
-			ID:   key.UUID,
-			Name: key.Name,
+	/*
+		keys := make([]*ResourceReference, len(instance.Keys))
+		for i, key := range instance.Keys {
+			keys[i] = &ResourceReference{
+				ID:   key.UUID,
+				Name: key.Name,
+			}
 		}
-	}
-	instanceResp.Keys = keys
+		instanceResp.Keys = keys
+	*/
 	volumes := make([]*ResourceReference, len(instance.Volumes))
 	for i, volume := range instance.Volumes {
 		volumes[i] = &ResourceReference{
