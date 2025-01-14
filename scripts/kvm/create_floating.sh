@@ -55,8 +55,8 @@ if [ "$inbound" -gt 0 ]; then
     ip netns exec $router iptables -t mangle -I PREROUTING -d $ext_ip -j MARK --set-mark $mark_id
     ip netns exec $router iptables -D FORWARD -m mark --mark $mark_id -j DROP
     ip netns exec $router iptables -I FORWARD -m mark --mark $mark_id -j DROP
-    pkt_rate_limit=$(( $inbound + 1250 ))
-    pkt_burst_limit=$(( $pkt_rate_limit * 2 ))
+    pkt_rate_limit=$(( $inbound / 100 + 1000 ))
+    pkt_burst_limit=$(( $inbound / 100 + 500 ))
     ip netns exec $router iptables -D FORWARD -m mark --mark $mark_id -m limit --limit $pkt_rate_limit/second --limit-burst $pkt_burst_limit -j ACCEPT
     ip netns exec $router iptables -I FORWARD -m mark --mark $mark_id -m limit --limit $pkt_rate_limit/second --limit-burst $pkt_burst_limit -j ACCEPT
     ip netns exec $router tc qdisc add dev ns-$int_vlan root handle 1: htb default 10
