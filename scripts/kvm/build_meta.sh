@@ -47,9 +47,34 @@ random_seed=`cat /dev/urandom | head -c 512 | base64 -w 0`
 ) > $latest_dir/meta_data.json
 
 if [ -n "${root_passwd}" ]; then
-    random_seed=`cat /dev/urandom | head -c 512 | base64 -w 0`
     (
-        echo '"#cloud-config\n\nssh_pwauth: true\ndisable_root: false\nchpasswd:\n  expire: false\n  users:\n    - name: root\n      password: '${root_passwd}'\n"'
+        echo \
+'"Content-Type: multipart/mixed; boundary=\"//\"\n'\
+'MIME-Version: 1.0\n'\
+'\n'\
+'--//\n'\
+'Content-Type: text/cloud-config; charset=\"us-ascii\"\n'\
+'MIME-Version: 1.0\n'\
+'Content-Transfer-Encoding: 7bit\n'\
+'Content-Disposition: attachment; filename=\"cloud-config.txt\"\n'\
+'\n'\
+'#cloud-config\n'\
+'ssh_pwauth: true\n'\
+'disable_root: false\n'\
+'chpasswd:\n'\
+'  expire: false\n'\
+'  users:\n'\
+'    - name: root\n'\
+'      password: '${root_passwd}'\n'\
+'  list: |\n'\
+'    root:'${root_passwd}'\n'\
+'\n'\
+'write_files:\n'\
+'  - path: /etc/ssh/sshd_config.d/allow_root.conf\n'\
+'    content: |\n'\
+'      PermitRootLogin yes\n'\
+'      PasswordAuthentication yes\n'\
+'\n--//--"'
     ) > $latest_dir/vendor_data.json
 fi
 
