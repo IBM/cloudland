@@ -60,7 +60,7 @@ type InterfacePatchPayload struct {
 	Name           string           `json:"name" binding:"omitempty,min=2,max=32"`
 	Inbound        int32            `json:"inbound" binding:"omitempty,min=1,max=20000"`
 	Outbound       int32            `json:"outbound" binding:"omitempty,min=1,max=20000"`
-	AllowSpoofing  bool             `json:"allow_spoofing" binding:"omitempty"`
+	AllowSpoofing  *bool             `json:"allow_spoofing" binding:"omitempty"`
 	SecurityGroups []*BaseReference `json:"security_group" binding:"omitempty"`
 }
 
@@ -176,13 +176,17 @@ func (v *InterfaceAPI) Patch(c *gin.Context) {
 		ifaceName = payload.Name
 		logger.Debugf("Update interface name to %s", ifaceName)
 	}
-	inbound := int32(1000)
+	inbound := iface.Inbound
 	if payload.Inbound > 0 {
 		inbound = payload.Inbound
 	}
-	outbound := int32(1000)
+	outbound := iface.Outbound
 	if payload.Outbound > 0 {
 		outbound = payload.Outbound
+	}
+	allowSpoofing := iface.AllowSpoofing
+	if payload.AllowSpoofing != nil {
+		allowSpoofing = *payload.AllowSpoofing
 	}
 	secgroups := []*model.SecurityGroup{}
 	if len(payload.SecurityGroups) == 0 {
@@ -202,7 +206,7 @@ func (v *InterfaceAPI) Patch(c *gin.Context) {
 			secgroups = append(secgroups, secgroup)
 		}
 	}
-	err = interfaceAdmin.Update(ctx, instance, iface, ifaceName, inbound, outbound, secgroups)
+	err = interfaceAdmin.Update(ctx, instance, iface, ifaceName, inbound, outbound, allowSpoofing, secgroups)
 	if err != nil {
 		logger.Errorf("Patch instance failed, %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Patch instance failed", err)

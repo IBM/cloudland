@@ -119,7 +119,7 @@ func (a *InterfaceAdmin) List(ctx context.Context, offset, limit int64, order st
 	return
 }
 
-func (a *InterfaceAdmin) Update(ctx context.Context, instance *model.Instance, iface *model.Interface, name string, inbound, outbound int32, secgroups []*model.SecurityGroup) (err error) {
+func (a *InterfaceAdmin) Update(ctx context.Context, instance *model.Instance, iface *model.Interface, name string, inbound, outbound int32, allowSpoofing bool, secgroups []*model.SecurityGroup) (err error) {
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
 		if newTransaction {
@@ -141,9 +141,17 @@ func (a *InterfaceAdmin) Update(ctx context.Context, instance *model.Instance, i
 		needUpdate = true
 		needRemoteUpdate = true
 	}
+	if iface.AllowSpoofing != allowSpoofing {
+		iface.AllowSpoofing = allowSpoofing
+		needUpdate = true
+		needRemoteUpdate = true
+	}
 	if len(secgroups) > 0 {
 		iface.SecurityGroups = secgroups
 		needRemoteUpdate = true
+	} else {
+		err = fmt.Errorf("At least one security group is needed")
+		return
 	}
 	if needUpdate || needRemoteUpdate {
 		if err = db.Model(iface).Save(iface).Error; err != nil {
@@ -185,10 +193,10 @@ func (v *InterfaceView) Edit(c *macaron.Context, store session.Store) {
 	}
 	iface := &model.Interface{Model: model.Model{ID: int64(ifaceID)}}
 	if err = db.Preload("Address").Preload("SecurityGroups").Take(iface).Error; err != nil {
-		logger.Error("Image query failed", err)
+		logger.Error("Security group query failed", err)
 		return
 	}
-	_, secgroups, err := secgroupAdmin.List(c.Req.Context(), 0, -1, "", "")
+	_, secgroups, err := secgroupAdmin.List(c.Req.Context(), 0, -1, "", fmt.Sprintf("router_id = %d", iface.SecurityGroups[0].RouterID))
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
@@ -326,6 +334,14 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 		return
 	}
 	name := c.QueryTrim("name")
+	inbound := c.QueryInt("inbound")
+	outbound := c.QueryInt("outbound")
+	allowSpoofing := false
+	allowSpf := c.QueryTrim("allow_spoofing")
+	if allowSpf == "yes" {
+		allowSpoofing = true
+	}
+
 	sgs := c.QueryStrings("secgroups")
 	secgroups := []*model.SecurityGroup{}
 	if len(sgs) > 0 {
@@ -347,7 +363,7 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 			secgroups = append(secgroups, secgroup)
 		}
 	}
-	err = interfaceAdmin.Update(ctx, instance, iface, name, 1000, 1000, secgroups)
+	err = interfaceAdmin.Update(ctx, instance, iface, name, int32(inbound), int32(outbound), allowSpoofing, secgroups)
 	if err != nil {
 		logger.Debug("Failed to update interface", err)
 		c.Data["ErrorMsg"] = err.Error()

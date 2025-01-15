@@ -357,9 +357,6 @@ func (a *SecgroupAdmin) List(ctx context.Context, offset, limit int64, order, qu
 		order = "created_at"
 	}
 
-	if query != "" {
-		query = fmt.Sprintf("name like '%%%s%%'", query)
-	}
 	where := memberShip.GetWhere()
 	secgroups = []*model.SecurityGroup{}
 	if err = db.Model(&model.SecurityGroup{}).Where(where).Where(query).Count(&total).Error; err != nil {

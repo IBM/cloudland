@@ -226,13 +226,7 @@ func (a *InstanceAdmin) executeCommandList(ctx context.Context, cmdList []*Execu
 	return
 }
 
-func (a *InstanceAdmin) ChangeInstanceStatus(ctx context.Context, id int64, action string) (instance *model.Instance, err error) {
-	ctx, db := GetContextDB(ctx)
-	instance = &model.Instance{Model: model.Model{ID: id}}
-	if err = db.Take(instance).Error; err != nil {
-		logger.Error("Failed to query instance ", err)
-		return
-	}
+func (a *InstanceAdmin) ChangeInstanceStatus(ctx context.Context, instance *model.Instance, action string) (err error) {
 	control := fmt.Sprintf("inter=%d", instance.Hyper)
 	command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh '%d' '%s'", instance.ID, action)
 	err = HyperExecute(ctx, control, command)
@@ -309,9 +303,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 		return
 	}
 	if string(action) != "" {
-		control := fmt.Sprintf("inter=%d", instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/action_vm.sh '%d' '%s'", instance.ID, string(action))
-		err = HyperExecute(ctx, control, command)
+		err = instanceAdmin.ChangeInstanceStatus(ctx, instance, string(action))
 		if err != nil {
 			logger.Error("action vm command execution failed", err)
 			return
@@ -961,14 +953,20 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 		c.HTML(200, "instances_hostname")
 	} else if flag == "ChangeStatus" {
 		if c.QueryTrim("action") != "" {
-			instanceID64, err := strconv.ParseInt(id, 10, 64)
-			if err != nil {
+			ctx := c.Req.Context()
+			instanceID64, vmError := strconv.ParseInt(id, 10, 64)
+			if vmError != nil {
 				logger.Error("Change String to int64 failed", err)
 				return
 			}
-			_, vmError := instanceAdmin.ChangeInstanceStatus(c.Req.Context(), instanceID64, c.QueryTrim("action"))
+			instance, vmError = instanceAdmin.Get(ctx, instanceID64)
 			if vmError != nil {
-				logger.Error("Launch vm command execution failed", err)
+				logger.Error("Get instance failed", err)
+				return
+			}
+			vmError = instanceAdmin.ChangeInstanceStatus(ctx, instance, c.QueryTrim("action"))
+			if vmError != nil {
+				logger.Error("Instance action command execution failed", err)
 				return
 			}
 			redirectTo := "../instances"
@@ -1255,6 +1253,8 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		IpAddress:      ipAddr,
 		MacAddress:     macAddr,
 		SecurityGroups: securityGroups,
+		Inbound: 1000,
+		Outbound: 1000,
 	}
 	subnets := c.QueryTrim("subnets")
 	var secondaryIfaces []*InterfaceInfo
@@ -1284,6 +1284,8 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			IpAddress:      "",
 			MacAddress:     "",
 			SecurityGroups: securityGroups,
+			Inbound: 1000,
+			Outbound: 1000,
 		})
 	}
 	keys := c.QueryTrim("keys")
