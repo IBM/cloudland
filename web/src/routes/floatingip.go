@@ -454,6 +454,20 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 	instID := c.QueryInt64("instance")
 	publicIp := c.QueryTrim("publicip")
 	name := c.QueryTrim("name")
+	inbound := c.QueryInt("inbound")
+	outbound := c.QueryInt("outbound")
+	if inbound < 0 || inbound > 20000 {
+		logger.Error("Inbound out of range (0-20000)")
+		c.Data["ErrorMsg"] = "Inbound out of range (0-20000)"
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	if outbound < 0 || outbound > 20000 {
+		logger.Error("Outbound out of range (0-20000)")
+		c.Data["ErrorMsg"] = "Outbound out of range (0-20000)"
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
 	instance, err := instanceAdmin.Get(ctx, int64(instID))
 	if err != nil {
 		logger.Error("Failed to get instance ", err)
@@ -461,7 +475,7 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 		c.HTML(500, "500")
 		return
 	}
-	_, err = floatingIpAdmin.Create(c.Req.Context(), instance, nil, publicIp, name, 0, 0)
+	_, err = floatingIpAdmin.Create(c.Req.Context(), instance, nil, publicIp, name, int32(inbound), int32(outbound))
 	if err != nil {
 		logger.Error("Failed to create floating ip", err)
 		c.Data["ErrorMsg"] = err.Error()

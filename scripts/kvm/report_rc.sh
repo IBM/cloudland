@@ -144,6 +144,9 @@ function calc_resource()
     memory=$(echo "$total_memory-$virtual_memory" | bc)
     memory=${memory%.*}
     [ $memory -lt 0 ] && memory=0
+    if [ $(( $(date +"%s") % 10 )) -gt 7 ]; then
+	rm -f $run_dir/old_resource_list
+    fi
     state=1
     if [ -f "$run_dir/disabled" ]; then
         echo "cpu=0/$total_cpu memory=0/$total_memory disk=0/$total_disk network=$network/$total_network load=$load/$total_load"

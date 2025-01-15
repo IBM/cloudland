@@ -19,9 +19,29 @@
                         <label for="macaddr">{{.i18n.Tr "Mac Address"}}</label>
                         <input id="macaddr" name="macaddr" value="{{ .Interface.MacAddr }}" disabled>
                     </div>
-                    <div class="required inline field">
-                        <label for="pairs">{{.i18n.Tr "Allow Address Pairs"}}</label>
-                        <input id="pairs" name="pairs" value="{{ .Interface.AddrPairs }}" placeholder="10.10.10.100-52:54:02:03:04:08">
+                    <div class="inline field">
+                    	<label for="inbound">{{.i18n.Tr "Inbound Bandwidth"}}</label>
+                    	<input id="inbound" name="inbound" value="{{ .Interface.Inbound }}">
+                    </div>
+                    <div class="inline field">
+                    	<label for="outbound">{{.i18n.Tr "Outbound Bandwidth"}}</label>
+                    	<input id="outbound" name="outbound" value="{{ .Interface.Outbound }}">
+                    </div>
+                    <div class="inline field">
+                    	<label for="allow_spoofing">{{.i18n.Tr "Allow Spoofing"}}</label>
+                    	<div class="ui selection dropdown">
+                    	  <input id="allow_spoofing" name="allow_spoofing" type="hidden">
+                    	  <i class="dropdown icon"></i>
+			  {{if .Interface.AllowSpoofing }}
+                    	      <div class="default text">{{.i18n.Tr "yes"}}</div>
+			  {{else}}
+                    	      <div class="default text">{{.i18n.Tr "no"}}</div>
+			  {{end}}
+                    	  <div class="menu">
+                    		<div class="item" data-value="yes" data-text="yes">{{.i18n.Tr "yes"}}</div>
+                    		<div class="item" data-value="no" data-text="no">{{.i18n.Tr "no"}}</div>
+                    	  </div>
+                    	</div>
                     </div>
                     <div class="inline field">
                         <label for="secgroups">{{.i18n.Tr "Security Groups"}}</label>
@@ -35,7 +55,7 @@
                                 {{ end }}
                             {{ end }}
                         </select>
-		            </div>
+		    </div>
                     <div class="inline field">
                         <label></label>
                         <button class="ui green button">{{.i18n.Tr "Update Interface"}}</button>
