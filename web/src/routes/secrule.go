@@ -63,7 +63,7 @@ func (a *SecruleAdmin) ApplySecgroup(ctx context.Context, secgroup *model.Securi
 			continue
 		}
 		control := fmt.Sprintf("inter=%d", instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/reapply_secgroup.sh '%s' '%s' <<EOF\n%s\nEOF", iface.Address.Address, iface.MacAddr, jsonData)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/reapply_secgroup.sh '%s' '%s' '%t'<<EOF\n%s\nEOF", iface.Address.Address, iface.MacAddr, iface.AllowSpoofing, jsonData)
 		err = HyperExecute(ctx, control, command)
 		if err != nil {
 			logger.Error("Reapply security groups execution failed, %v", err)
