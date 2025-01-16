@@ -248,3 +248,19 @@
     value: '6553600'
     reload: yes
   tags: [sysctl]
+
+- name: Apply sysctl net.core.rmem_max
+  sysctl:
+    name: net.core.rmem_max
+    state: present
+    value: '16777216'
+    reload: yes
+  tags: [sysctl]
+
+- name: Apply sysctl net.core.wmem_max
+  sysctl:
+    name: net.core.wmem_max
+    state: present
+    value: '16777216'
+    reload: yes
+  tags: [sysctl]
