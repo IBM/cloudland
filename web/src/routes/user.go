@@ -137,6 +137,12 @@ func (a *UserAdmin) Delete(ctx context.Context, user *model.User) (err error) {
 			EndTransaction(ctx, err)
 		}
 	}()
+	user.Username = fmt.Sprintf("%s-%d", user.Username, user.CreatedAt.Unix())
+	err = db.Model(user).Update("username", user.Username).Error
+	if err != nil {
+		logger.Error("DB failed to update user name", err)
+		return
+	}
 	if err = db.Where("user_id = ?", user.ID).Delete(&model.Member{}).Error; err != nil {
 		logger.Error("DB failed to delete members", err)
 		return
