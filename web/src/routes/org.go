@@ -162,6 +162,49 @@ func (a *OrgAdmin) Update(ctx context.Context, orgID int64, members, users []str
 	return
 }
 
+func (a *OrgAdmin) Get(ctx context.Context, id int64) (org *model.Organization, err error) {
+	if id <= 0 {
+		err = fmt.Errorf("Invalid org ID: %d", id)
+		logger.Error("%v", err)
+		return
+	}
+	db := DB()
+	memberShip := GetMemberShip(ctx)
+	where := memberShip.GetWhere()
+	org = &model.Organization{Model: model.Model{ID: id}}
+	err = db.Where(where).Take(org).Error
+	if err != nil {
+		logger.Error("Failed to query user, %v", err)
+		return
+	}
+	permit := memberShip.ValidateOwner(model.Reader, org.Owner)
+	if !permit {
+		logger.Error("Not authorized to read the org")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
+	return
+}
+
+func (a *OrgAdmin) GetOrgByUUID(ctx context.Context, uuID string) (org *model.Organization, err error) {
+	db := DB()
+	memberShip := GetMemberShip(ctx)
+	where := memberShip.GetWhere()
+	org = &model.Organization{}
+	err = db.Where(where).Where("uuid = ?", uuID).Take(org).Error
+	if err != nil {
+		logger.Error("Failed to query org, %v", err)
+		return
+	}
+	permit := memberShip.ValidateOwner(model.Reader, org.Owner)
+	if !permit {
+		logger.Error("Not authorized to read the org")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
+	return
+}
+
 func (a *OrgAdmin) GetOrgByName(name string) (org *model.Organization, err error) {
 	org = &model.Organization{}
 	db := DB()
@@ -181,7 +224,7 @@ func (a *OrgAdmin) GetOrgName(id int64) (name string) {
 	return
 }
 
-func (a *OrgAdmin) Delete(ctx context.Context, id int64) (err error) {
+func (a *OrgAdmin) Delete(ctx context.Context, org *model.Organization) (err error) {
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
@@ -197,7 +240,7 @@ func (a *OrgAdmin) Delete(ctx context.Context, id int64) (err error) {
 	}()
 
 	count := 0
-	err = db.Model(&model.Interface{}).Where("owner = ?", id).Count(&count).Error
+	err = db.Model(&model.Interface{}).Where("owner = ?", org.ID).Count(&count).Error
 	if err != nil {
 		logger.Error("DB failed to query interfaces, %v", err)
 		return
@@ -207,13 +250,13 @@ func (a *OrgAdmin) Delete(ctx context.Context, id int64) (err error) {
 		err = fmt.Errorf("There are resources in this org")
 		return
 	}
-	err = db.Delete(&model.Member{}, `org_id = ?`, id).Error
+	err = db.Delete(&model.Member{}, `org_id = ?`, org.ID).Error
 	if err != nil {
 		logger.Error("DB failed to delete member, %v", err)
 		return
 	}
 	keys := []*model.Key{}
-	err = db.Where("owner = ?", id).Find(&keys).Error
+	err = db.Where("owner = ?", org.ID).Find(&keys).Error
 	if err != nil {
 		logger.Error("DB failed to query keys", err)
 		return
@@ -225,7 +268,13 @@ func (a *OrgAdmin) Delete(ctx context.Context, id int64) (err error) {
 			return
 		}
 	}
-	err = db.Delete(&model.Organization{Model: model.Model{ID: id}}).Error
+	org.Name = fmt.Sprintf("%s-%d", org.Name, org.CreatedAt.Unix())
+	err = db.Model(org).Update("name", org.Name).Error
+	if err != nil {
+		logger.Error("DB failed to update org name", err)
+		return
+	}
+	err = db.Delete(org).Error
 	if err != nil {
 		logger.Error("DB failed to delete organization, %v", err)
 		return
@@ -293,14 +342,7 @@ func (v *OrgView) List(c *macaron.Context, store session.Store) {
 }
 
 func (v *OrgView) Delete(c *macaron.Context, store session.Store) (err error) {
-	memberShip := GetMemberShip(c.Req.Context())
-	permit := memberShip.CheckPermission(model.Admin)
-	if !permit {
-		logger.Error("Not authorized for this operation")
-		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	}
+	ctx := c.Req.Context()
 	id := c.Params("id")
 	if id == "" {
 		logger.Error("ID is empty, %v", err)
@@ -315,7 +357,14 @@ func (v *OrgView) Delete(c *macaron.Context, store session.Store) (err error) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	err = orgAdmin.Delete(c.Req.Context(), int64(orgID))
+	org, err := orgAdmin.Get(ctx, int64(orgID))
+	if err != nil {
+		logger.Error("Failed to get org ", err)
+		c.Data["ErrorMsg"] = err.Error()
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	err = orgAdmin.Delete(ctx, org)
 	if err != nil {
 		logger.Error("Failed to delete organization, %v", err)
 		c.Data["ErrorMsg"] = err.Error()

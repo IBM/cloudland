@@ -80,6 +80,21 @@ func (v *OrgAPI) Patch(c *gin.Context) {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /orgs/{id} [delete]
 func (v *OrgAPI) Delete(c *gin.Context) {
+	ctx := c.Request.Context()
+	uuID := c.Param("id")
+	logger.Debugf("Deleting org %s", uuID)
+	org, err := orgAdmin.GetOrgByUUID(ctx, uuID)
+	if err != nil {
+		logger.Errorf("Failed to get org by uuid: %s, %+v", uuID, err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid query", err)
+		return
+	}
+	err = orgAdmin.Delete(ctx, org)
+	if err != nil {
+		logger.Errorf("Failed to delete org %s, %+v", uuID, err)
+		ErrorResponse(c, http.StatusBadRequest, "Not able to delete", err)
+		return
+	}
 	c.JSON(http.StatusNoContent, nil)
 }
 
