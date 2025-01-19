@@ -496,7 +496,7 @@ func (v *InstanceAPI) List(c *gin.Context) {
 			return
 		}
 
-		logger.Debugf("The router with vpc_id: %+v\n", router)
+		logger.Debugf("router with vpc_id: %+v\n", router)
 		logger.Debugf("The router_id in vpc is: %d", router.ID)
 		queryStr = fmt.Sprintf("router_id = %d", router.ID)
 	}
