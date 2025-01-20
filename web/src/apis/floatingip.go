@@ -68,8 +68,8 @@ type FloatingIpPayload struct {
 
 type FloatingIpPatchPayload struct {
 	Instance *BaseID `json:"instance" binding:"omitempty"`
-	Inbound  int32  `json:"inbound" binding:"omitempty,min=1,max=20000"`
-	Outbound int32  `json:"outbound" binding:"omitempty,min=1,max=20000"`
+	Inbound  *int32  `json:"inbound" binding:"omitempty,min=1,max=20000"`
+	Outbound *int32  `json:"outbound" binding:"omitempty,min=1,max=20000"`
 }
 
 // @Summary get a floating ip
@@ -127,6 +127,12 @@ func (v *FloatingIpAPI) Patch(c *gin.Context) {
 		return
 	}
 	logger.Debugf("Patching floating ip %s with %+v", uuID, payload)
+	if payload.Inbound != nil {
+		floatingIp.Inbound = *payload.Inbound
+	}
+	if payload.Outbound != nil {
+		floatingIp.Outbound = *payload.Outbound
+	}
 	if payload.Instance == nil {
 		err = floatingIpAdmin.Detach(ctx, floatingIp)
 		if err != nil {
@@ -148,12 +154,6 @@ func (v *FloatingIpAPI) Patch(c *gin.Context) {
 			ErrorResponse(c, http.StatusBadRequest, "Failed to attach floating ip", err)
 			return
 		}
-	}
-	if payload.Inbound > 0 {
-		floatingIp.Inbound = payload.Inbound
-	}
-	if payload.Outbound > 0 {
-		floatingIp.Outbound = payload.Outbound
 	}
 	floatingIpResp, err := v.getFloatingIpResponse(ctx, floatingIp)
 	if err != nil {

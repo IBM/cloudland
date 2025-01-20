@@ -56,9 +56,16 @@ if [ "$inbound" -gt 0 ]; then
     ip netns exec $router tc qdisc add dev ns-$int_vlan root handle 1: htb default 10
     ip netns exec $router tc class add dev ns-$int_vlan parent 1: classid 1:$mark_id htb rate ${inbound}mbit burst ${inbound}kbit
     ip netns exec $router tc filter add dev ns-$int_vlan protocol ip parent 1:0 prio $mark_id handle $mark_id fw flowid 1:$mark_id
+else
+    ip netns exec $router iptables -t mangle -D PREROUTING -d $ext_ip -j MARK --set-mark $mark_id
+    ip netns exec $router tc filter del dev ns-$int_vlan protocol ip parent 1:0 prio $mark_id handle $mark_id fw flowid 1:$mark_id
+    ip netns exec $router tc class del dev ns-$int_vlan parent 1: classid 1:$mark_id
 fi
 if [ "$outbound" -gt 0 ]; then
     ip netns exec $router tc qdisc add dev $ext_dev root handle 1: htb default 10
     ip netns exec $router tc class add dev $ext_dev parent 1: classid 1:$mark_id htb rate ${outbound}mbit burst ${outbound}kbit
     ip netns exec $router tc filter add dev $ext_dev protocol ip parent 1:0 prio $mark_id u32 match ip src $ext_ip/32 flowid 1:$mark_id
+else
+    ip netns exec $router tc filter del dev $ext_dev protocol ip parent 1:0 prio $mark_id u32 match ip src $ext_ip/32 flowid 1:$mark_id
+    ip netns exec $router tc class del dev $ext_dev parent 1: classid 1:$mark_id
 fi

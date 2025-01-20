@@ -39,7 +39,7 @@
 									<select name="action" id="action" class="ui selection dropdown" {{ if or (eq .Instance.Status "migrating") (eq .Instance.Status "updating") }} disabled {{ end }}>
 										<option value="">{{ .i18n.Tr .Instance.Status }}</option>
 										<option value="stop">{{.i18n.Tr "shutdown"}}</option>
-										<option value="destroy">{{.i18n.Tr "destroy"}}</option>
+										<option value="hard_stop">{{.i18n.Tr "destroy"}}</option>
 										<option value="start">{{.i18n.Tr "start"}}</option>
 										<option value="pause">{{.i18n.Tr "suspend"}}</option>
 										<option value="resume">{{.i18n.Tr "resume"}}</option>
