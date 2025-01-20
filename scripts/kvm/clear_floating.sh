@@ -33,6 +33,6 @@ ip netns exec $router iptables -S | grep "mark $(printf "0x%x" $mark_id)" | whil
 done
 ip netns exec $router tc filter del dev ns-$int_vlan protocol ip parent 1:0 prio $mark_id handle $mark_id fw flowid 1:$mark_id
 ip netns exec $router tc class del dev ns-$int_vlan parent 1: classid 1:$mark_id
-ip netns exec $router tc filter del dev $ext_dev protocol ip parent 1:0 prio $mark_id u32 match ip dst $ext_ip/32 flowid 1:$mark_id
+ip netns exec $router tc filter del dev $ext_dev protocol ip parent 1:0 prio $mark_id u32 match ip src $ext_ip/32 flowid 1:$mark_id
 ip netns exec $router tc class del dev $ext_dev parent 1: classid 1:$mark_id
 exit 0
