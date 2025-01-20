@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	. "web/src/common"
 	"web/src/model"
 	"web/src/routes"
@@ -482,7 +483,23 @@ func (v *InstanceAPI) List(c *gin.Context) {
 	offsetStr := c.DefaultQuery("offset", "0")
 	limitStr := c.DefaultQuery("limit", "50")
 	queryStr := c.DefaultQuery("query", "")
-	logger.Debugf("List instances with offset %s, limit %s, query %s", offsetStr, limitStr, queryStr)
+	vpcID := strings.TrimSpace(c.DefaultQuery("vpc_id", "")) // Retrieve vpc_id from query params
+	logger.Debugf("List instances with offset %s, limit %s, query %s, vpc_id %s", offsetStr, limitStr, queryStr, vpcID)
+
+	if vpcID != "" {
+		logger.Debugf("Filtering instances by VPC ID: %s", vpcID)
+		var router *model.Router
+		router, err := routerAdmin.GetRouterByUUID(ctx, vpcID)
+		if err != nil {
+			logger.Errorf("Invalid query vpc_id: %s, %+v", vpcID, err)
+			ErrorResponse(c, http.StatusBadRequest, "Invalid query router by vpc_id UUID: "+vpcID, err)
+			return
+		}
+
+		logger.Debugf("The router with vpc_id: %+v\n", router)
+		logger.Debugf("The router_id in vpc is: %d", router.ID)
+		queryStr = fmt.Sprintf("router_id = %d", router.ID)
+	}
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil {
 		logger.Errorf("Invalid query offset: %s, %+v", offsetStr, err)

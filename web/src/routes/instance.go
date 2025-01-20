@@ -652,7 +652,7 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 	}
 
 	if query != "" {
-		query = fmt.Sprintf("hostname like '%%%s%%'", query)
+		query = fmt.Sprintf("hostname like '%%%s%%' AND %s", "", query)
 	}
 	where := memberShip.GetWhere()
 	instances = []*model.Instance{}
