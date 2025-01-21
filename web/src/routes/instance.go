@@ -651,9 +651,6 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 		order = "created_at"
 	}
 
-	if query != "" {
-		query = fmt.Sprintf("hostname like '%%%s%%' AND %s", "", query)
-	}
 	where := memberShip.GetWhere()
 	instances = []*model.Instance{}
 	if err = db.Model(&model.Instance{}).Where(where).Where(query).Count(&total).Error; err != nil {
@@ -706,6 +703,9 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 		order = "-created_at"
 	}
 	query := c.QueryTrim("q")
+	if query != "" {
+		query = fmt.Sprintf("hostname like '%%%s%%'", query)
+	}
 	total, instances, err := instanceAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
