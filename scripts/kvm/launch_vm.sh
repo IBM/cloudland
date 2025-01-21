@@ -24,8 +24,7 @@ metadata=$(echo $md | base64 -d)
 let fsize=$disk_size*1024*1024*1024
 ./build_meta.sh "$vm_ID" "$vm_name" <<< $md >/dev/null 2>&1
 vm_meta=$cache_dir/meta/$vm_ID.iso
-template=$template_dir/template.xml
-[ "$qa_enabled" = "true" ] && template=$template_dir/template_with_qa.xml
+template=$template_dir/template_with_qa.xml
 if [ -z "$wds_address" ]; then
     vm_img=$volume_dir/$vm_ID.disk
     is_vol="true"
@@ -86,9 +85,7 @@ else
     fi
     echo "|:-COMMAND-:| create_volume_wds_vhost '$vol_ID' 'attached' 'wds_vhost://$wds_pool_id/$volume_id'"
     ux_sock=/var/run/wds/$vhost_name
-    template=$template_dir/wds_template.xml
-    [ "$qa_enabled" = "true" ] && template=$template_dir/wds_template_with_qa.xml
-
+    template=$template_dir/wds_template_with_qa.xml
 fi
 
 [ -z "$vm_mem" ] && vm_mem='1024m'
