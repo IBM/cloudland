@@ -2893,9 +2893,6 @@ const docTemplatev1 = `{
                     "maxLength": 32,
                     "minLength": 2
                 },
-                "qa_enabled": {
-                    "type": "boolean"
-                },
                 "user": {
                     "type": "string",
                     "maxLength": 32,
@@ -2923,9 +2920,6 @@ const docTemplatev1 = `{
                 },
                 "owner": {
                     "type": "string"
-                },
-                "qa_enabled": {
-                    "type": "boolean"
                 },
                 "size": {
                     "type": "integer"

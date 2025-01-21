@@ -31,7 +31,7 @@ type ImageResponse struct {
 	Architecture string `json:"architecture"`
 	User         string `json:"user"`
 	Status       string `json:"status"`
-	QAEnabled    bool   `json:"qa_enabled"`
+	// QAEnabled    bool   `json:"qa_enabled"`
 }
 
 type ImageListResponse struct {
@@ -47,7 +47,7 @@ type ImagePayload struct {
 	OSVersion    string `json:"os_version" binding:"required,min=2,max=32"`
 	User         string `json:"user" binding:"required,min=2,max=32"`
 	InstanceUUID string `json:"instance_uuid"`
-	QAEnabled    bool   `json:"qa_enabled"`
+	// QAEnabled    bool   `json:"qa_enabled"`
 }
 
 type ImagePatchPayload struct {
@@ -156,7 +156,7 @@ func (v *ImageAPI) Create(c *gin.Context) {
 		instanceID = instance.ID
 	}
 	logger.Debugf("Creating image with payload %+v", payload)
-	image, err := imageAdmin.Create(ctx, payload.Name, payload.OSVersion, "kvm-x86_64", payload.User, payload.DownloadURL, "x86_64", payload.QAEnabled, instanceID)
+	image, err := imageAdmin.Create(ctx, payload.Name, payload.OSVersion, "kvm-x86_64", payload.User, payload.DownloadURL, "x86_64", true, instanceID)
 	if err != nil {
 		logger.Errorf("Not able to create image %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Not able to create", err)
