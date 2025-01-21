@@ -8,6 +8,7 @@ package rpcs
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -20,41 +21,68 @@ func init() {
 }
 
 func deleteInterfaces(ctx context.Context, instance *model.Instance) (err error) {
-	for _, iface := range instance.Interfaces {
-		err = deleteInterface(ctx, iface)
+	ctx, db := GetContextDB(ctx)
+	hyperSet := make(map[int32]struct{})
+	instances := []*model.Instance{}
+	hyperNode := instance.Hyper
+	hyper := &model.Hyper{}
+	err = db.Where("hostid = ?", hyperNode).Take(hyper).Error
+	if err != nil || hyper.Hostid < 0 {
+		logger.Error("Failed to query hypervisor")
+		return
+	}
+	if instance.RouterID > 0 {
+		err = db.Where("router_id = ?", instance.RouterID).Find(&instances).Error
 		if err != nil {
-			logger.Error("Failed to delete interface", err)
-			continue
+			logger.Error("Failed to query all instances", err)
+			return
+		}
+		for _, inst := range instances {
+			hyperSet[inst.Hyper] = struct{}{}
 		}
 	}
-	return
-}
-
-func deleteInterface(ctx context.Context, iface *model.Interface) (err error) {
-	db := DB()
-	if err = db.Model(&model.Address{}).Where("interface = ?", iface.ID).Update(map[string]interface{}{"allocated": false, "interface": 0}).Error; err != nil {
-		logger.Error("Failed to Update addresses, %v", err)
-		return
+	hyperList := fmt.Sprintf("group-fdb-%d", hyperNode)
+	i := 0
+	for key := range hyperSet {
+		if i == 0 {
+			hyperList = fmt.Sprintf("%s:%d", hyperList, key)
+		} else {
+			hyperList = fmt.Sprintf("%s,%d", hyperList, key)
+		}
+		i++
 	}
-	err = db.Delete(iface).Error
-	if err != nil {
-		logger.Error("Failed to delete interface", err)
-		return
-	}
-	vlan := iface.Address.Subnet.Vlan
-	control := ""
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/del_host.sh '%d' '%s' '%s'", vlan, iface.MacAddr, iface.Address.Address)
-	err = HyperExecute(ctx, control, command)
-	if err != nil {
-		logger.Error("Execute deleting interface failed")
-		return
+	for _, iface := range instance.Interfaces {
+		err = db.Model(&model.Address{}).Where("interface = ?", iface.ID).Update(map[string]interface{}{"allocated": false, "interface": 0}).Error
+		if err != nil {
+			logger.Error("Failed to Update addresses, %v", err)
+			return
+		}
+		err = db.Delete(iface).Error
+		if err != nil {
+			logger.Error("Failed to delete interface", err)
+			return
+		}
+		spreadRules := []*FdbRule{{Instance: iface.Name, Vni: iface.Address.Subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper.HostIP, Gateway: iface.Address.Subnet.Gateway, Router: iface.Address.Subnet.RouterID}}
+		fdbJson, _ := json.Marshal(spreadRules)
+		control := "toall=" + hyperList
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/del_fwrule.sh <<EOF\n%s\nEOF", fdbJson)
+		err = HyperExecute(ctx, control, command)
+		if err != nil {
+			logger.Error("Execute floating ip failed", err)
+			return
+		}
 	}
 	return
 }
 
 func ClearVM(ctx context.Context, args []string) (status string, err error) {
 	//|:-COMMAND-:| clear_vm.sh '127'
-	db := DB()
+	ctx, db, newTransaction := StartTransaction(ctx)
+	defer func() {
+		if newTransaction {
+			EndTransaction(ctx, err)
+		}
+	}()
 	argn := len(args)
 	if argn < 2 {
 		err = fmt.Errorf("Wrong params")
@@ -94,11 +122,6 @@ func ClearVM(ctx context.Context, args []string) (status string, err error) {
 	}
 	if err = db.Delete(instance).Error; err != nil {
 		logger.Error("Failed to delete instance, %v", err)
-		return
-	}
-	err = sendFdbRules(ctx, instance, "/opt/cloudland/scripts/backend/del_fwrule.sh")
-	if err != nil {
-		logger.Error("Failed to send clear fdb rules", err)
 		return
 	}
 	return

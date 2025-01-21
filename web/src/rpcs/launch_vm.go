@@ -35,13 +35,13 @@ func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript strin
 	localRules := []*FdbRule{}
 	spreadRules := []*FdbRule{}
 	hyperNode := instance.Hyper
+	hyper := &model.Hyper{}
+	err = db.Where("hostid = ?", hyperNode).Take(hyper).Error
+	if err != nil || hyper.Hostid < 0 {
+		logger.Error("Failed to query hypervisor")
+		return
+	}
 	for _, iface := range instance.Interfaces {
-		hyper := &model.Hyper{}
-		err = db.Where("hostid = ?", hyperNode).Take(hyper).Error
-		if err != nil || hyper.Hostid < 0 {
-			logger.Error("Failed to query hypervisor")
-			continue
-		}
 		if iface.Address.Subnet.Type != "public" {
 			spreadRules = append(spreadRules, &FdbRule{Instance: iface.Name, Vni: iface.Address.Subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper.HostIP, Gateway: iface.Address.Subnet.Gateway, Router: iface.Address.Subnet.RouterID})
 		}
