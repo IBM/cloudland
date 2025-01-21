@@ -353,7 +353,7 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	osVersion := c.QueryTrim("osVersion")
 	virtType := "kvm-x86_64"
 	userName := c.QueryTrim("userName")
-	qaEnabled := c.QueryBool("qaEnabled")
+	qaEnabled := true
 	architecture := "x86_64"
 	_, err := imageAdmin.Create(c.Req.Context(), name, osVersion, virtType, userName, url, architecture, qaEnabled, instance)
 	if err != nil {

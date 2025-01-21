@@ -198,8 +198,6 @@ definitions:
         maxLength: 32
         minLength: 2
         type: string
-      qa_enabled:
-        type: boolean
       user:
         maxLength: 32
         minLength: 2
@@ -224,8 +222,6 @@ definitions:
         type: string
       owner:
         type: string
-      qa_enabled:
-        type: boolean
       size:
         type: integer
       status:
