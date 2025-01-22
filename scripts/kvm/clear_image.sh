@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -xv
 
 cd $(dirname $0)
 source ../cloudrc
@@ -14,11 +14,11 @@ if [ -z "$wds_address" ]; then
     image=$image_cache/$iname_name.${format}
     rm -f $image
 else
-    volume_id=$(wds_curl GET "api/v2/sync/block/volumes?name=$image_name" | jq -r 'volumes[0].id')
+    volume_id=$(wds_curl GET "api/v2/sync/block/volumes?name=$image_name" | jq -r '.volumes[0].id')
     if [ -n "$volume_id" ]; then
-        snapshots=$(wds_curl GET "api/v2/sync/block/snaps" | jq --arg volume_id $volume_id -r '.snaps | .[] | select(.volume_id == $volume_id) | .id')
+        snapshots=$(wds_curl GET "api/v2/block/snaps?index=0&offset=10000" | jq --arg volume_id $volume_id -r '.snaps | .[] | select(.volume_id == $volume_id) | .id')
     else
-	snapshots=$(wds_curl GET "api/v2/sync/block/snaps" | jq --arg name $image_name -r '.snaps | .[] | select(.name | startswith($name)) | .id')
+	snapshots=$(wds_curl GET "api/v2/block/snaps?index=0&offset=10000" | jq --arg name $image_name -r '.snaps | .[] | select(.name | startswith($name)) | .id')
     fi
     for snapshot in $snapshots; do
         wds_curl DELETE "api/v2/sync/block/snaps/$snapshot?force=false"
