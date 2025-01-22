@@ -26,6 +26,7 @@ type ImageAPI struct{}
 
 type ImageResponse struct {
 	*ResourceReference
+	OSCode       string `json:"os_code"`
 	Size         int64  `json:"size"`
 	Format       string `json:"format"`
 	Architecture string `json:"architecture"`
@@ -43,6 +44,7 @@ type ImageListResponse struct {
 
 type ImagePayload struct {
 	Name         string `json:"name" binding:"required,min=2,max=32"`
+	OSCode       string `json:"os_code" binding:"required,oneof=linux windows other"`
 	DownloadURL  string `json:"download_url" binding:"required,http_url"`
 	OSVersion    string `json:"os_version" binding:"required,min=2,max=32"`
 	User         string `json:"user" binding:"required,min=2,max=32"`
@@ -156,7 +158,7 @@ func (v *ImageAPI) Create(c *gin.Context) {
 		instanceID = instance.ID
 	}
 	logger.Debugf("Creating image with payload %+v", payload)
-	image, err := imageAdmin.Create(ctx, payload.Name, payload.OSVersion, "kvm-x86_64", payload.User, payload.DownloadURL, "x86_64", true, instanceID)
+	image, err := imageAdmin.Create(ctx, payload.OSCode, payload.Name, payload.OSVersion, "kvm-x86_64", payload.User, payload.DownloadURL, "x86_64", true, instanceID)
 	if err != nil {
 		logger.Errorf("Not able to create image %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Not able to create", err)
@@ -180,6 +182,7 @@ func (v *ImageAPI) getImageResponse(ctx context.Context, image *model.Image) (im
 			CreatedAt: image.CreatedAt.Format(TimeStringForMat),
 			UpdatedAt: image.UpdatedAt.Format(TimeStringForMat),
 		},
+		OSCode:       image.OSCode,
 		Size:         image.Size,
 		Format:       image.Format,
 		Architecture: image.Architecture,

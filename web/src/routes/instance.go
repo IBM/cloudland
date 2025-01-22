@@ -73,6 +73,7 @@ type InstanceData struct {
 	Links      []*NetworkLink     `json:"links"`
 	Keys       []string           `json:"keys"`
 	RootPasswd string             `json:"root_passwd"`
+	OSCode     string             `json:"os_code"`
 }
 
 type InstancesData struct {
@@ -110,7 +111,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 	flavor *model.Flavor, zone *model.Zone, routerID int64, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo,
 	keys []*model.Key, rootPasswd string, hyperID int) (instances []*model.Instance, err error) {
 	logger.Debugf("Create %d instances with image %s, flavor %s, zone %s, router %d, primary interface %v, secondary interfaces %v, keys %v, root password %s, hyper %d",
-		count, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, rootPasswd, hyperID)
+		count, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, "********", hyperID)
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
 		if newTransaction {
@@ -192,6 +193,15 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		}
 		metadata := ""
 		var ifaces []*model.Interface
+		// cloud-init does not support set encrypted password for windows
+		// so we only encrypt the password for linux and others
+		if rootPasswd != "" && image.OSCode != "windows" {
+			rootPasswd, err = encrpt.Mkpasswd(rootPasswd, "sha512")
+			if err != nil {
+				logger.Errorf("Failed to encrypt admin password, %v", err)
+				return
+			}
+		}
 		ifaces, metadata, err = a.buildMetadata(ctx, primaryIface, secondaryIfaces, rootPasswd, keys, instance, userdata, routerID, zoneID, "")
 		if err != nil {
 			logger.Error("Build instance metadata failed", err)
@@ -406,11 +416,6 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 	} else {
 		logger.Debugf("Build instance metadata with primaryIface: %v, secondaryIfaces: %+v, keys: %+v, instance: %+v, userdata: %s, routerID: %d, zoneID: %d, service: %s, root password: %s",
 			primaryIface, secondaryIfaces, keys, instance, userdata, routerID, zoneID, service, "******")
-		rootPasswd, err = encrpt.Mkpasswd(rootPasswd, "sha512")
-		if err != nil {
-			logger.Errorf("Failed to encrypt root password, %v", err)
-			return nil, "", err
-		}
 	}
 	vlans := []*VlanInfo{}
 	instNetworks := []*InstanceNetwork{}
@@ -480,6 +485,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 		Links:      instLinks,
 		Keys:       instKeys,
 		RootPasswd: rootPasswd,
+		OSCode:     image.OSCode,
 	}
 	jsonData, err := json.Marshal(instData)
 	if err != nil {
@@ -1253,8 +1259,8 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		IpAddress:      ipAddr,
 		MacAddress:     macAddr,
 		SecurityGroups: securityGroups,
-		Inbound: 1000,
-		Outbound: 1000,
+		Inbound:        1000,
+		Outbound:       1000,
 	}
 	subnets := c.QueryTrim("subnets")
 	var secondaryIfaces []*InterfaceInfo
@@ -1284,8 +1290,8 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			IpAddress:      "",
 			MacAddress:     "",
 			SecurityGroups: securityGroups,
-			Inbound: 1000,
-			Outbound: 1000,
+			Inbound:        1000,
+			Outbound:       1000,
 		})
 	}
 	keys := c.QueryTrim("keys")

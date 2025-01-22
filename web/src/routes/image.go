@@ -36,8 +36,8 @@ func FileExist(filename string) bool {
 	return !os.IsNotExist(err)
 }
 
-func (a *ImageAdmin) Create(ctx context.Context, name, osVersion, virtType, userName, url, architecture string, qaEnabled bool, instID int64) (image *model.Image, err error) {
-	logger.Debugf("Creating image %s %s %s %s %s %s %t %d", name, osVersion, virtType, userName, url, architecture, qaEnabled, instID)
+func (a *ImageAdmin) Create(ctx context.Context, osCode, name, osVersion, virtType, userName, url, architecture string, qaEnabled bool, instID int64) (image *model.Image, err error) {
+	logger.Debugf("Creating image %s %s %s %s %s %s %s %t %d", osCode, name, osVersion, virtType, userName, url, architecture, qaEnabled, instID)
 	memberShip := GetMemberShip(ctx)
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
@@ -73,7 +73,7 @@ func (a *ImageAdmin) Create(ctx context.Context, name, osVersion, virtType, user
 			VirtType:     virtType,
 			UserName:     userName,
 			Name:         name,
-			OSCode:       name,
+			OSCode:       osCode,
 			Status:       "creating",
 			Architecture: architecture,
 			QAEnabled:    qaEnabled,
@@ -347,6 +347,7 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 		return
 	}
 	redirectTo := "../images"
+	osCode := c.QueryTrim("osCode")
 	name := c.QueryTrim("name")
 	url := c.QueryTrim("url")
 	instance := c.QueryInt64("instance")
@@ -355,7 +356,7 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	userName := c.QueryTrim("userName")
 	qaEnabled := true
 	architecture := "x86_64"
-	_, err := imageAdmin.Create(c.Req.Context(), name, osVersion, virtType, userName, url, architecture, qaEnabled, instance)
+	_, err := imageAdmin.Create(c.Req.Context(), osCode, name, osVersion, virtType, userName, url, architecture, qaEnabled, instance)
 	if err != nil {
 		logger.Error("Create image failed", err)
 		c.HTML(http.StatusBadRequest, err.Error())

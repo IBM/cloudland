@@ -15,6 +15,14 @@
 							</h3>
 							<div class="ui attached segment">
 								<div class="required inline field">
+									<label for="osCode">{{.i18n.Tr "OSCode"}}</label>
+									<select name="osCode" id="osCode" class="ui selection dropdown">
+										 <option value="linux" selected>Linux</option>
+										 <option value="windows">Windows</option>
+										 <option value="other">Others</option>
+									</select>
+								</div>
+								<div class="required inline field">
 									<label for="name">{{.i18n.Tr "Name"}}</label>
 									<input id="name" name="name" autofocus required>
 								</div>

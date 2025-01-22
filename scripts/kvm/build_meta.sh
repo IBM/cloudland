@@ -19,7 +19,7 @@ vm_meta=$(echo $vm_meta | base64 -d)
 
 pub_keys=$(jq -r '.keys' <<< $vm_meta)
 root_passwd=$(jq -r '.root_passwd' <<< $vm_meta)
-
+os_code=$(jq -r '.os_code' <<< $vm_meta)
 admin_pass=`openssl rand -base64 12`
 random_seed=`cat /dev/urandom | head -c 512 | base64 -w 0`
 (
@@ -41,7 +41,11 @@ random_seed=`cat /dev/urandom | head -c 512 | base64 -w 0`
     echo '  "hostname": "'${vm_name}'",'
     echo '  "availability_zone": "cloudland",'
     echo '  "uuid": "'${vm_ID}'",'
-    echo '  "admin_pass": "'${admin_pass}'",'
+    if [ -n "${root_passwd}" ] && [ "${os_code}" = "windows" ]; then
+        echo '  "admin_pass": "'${root_passwd}'",'
+    else
+        echo '  "admin_pass": "'${admin_pass}'",'
+    fi
     echo '  "random_seed": "'${random_seed}'"'
     echo '}'
 ) > $latest_dir/meta_data.json
