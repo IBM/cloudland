@@ -200,7 +200,7 @@ func (a *ImageAdmin) Delete(ctx context.Context, image *model.Image) (err error)
 	if image.Status == "available" {
 		prefix := strings.Split(image.UUID, "-")[0]
 		control := "inter="
-		command := fmt.Sprint("/opt/cloudland/scripts/backend/clear_image.sh %d %s", image.ID, prefix, image.Format)
+		command := fmt.Sprint("/opt/cloudland/scripts/backend/clear_image.sh '%d' '%s' '%s'", image.ID, prefix, image.Format)
 		err = HyperExecute(ctx, control, command)
 		if err != nil {
 			logger.Error("Clear image command execution failed", err)
