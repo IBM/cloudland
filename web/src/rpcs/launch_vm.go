@@ -58,6 +58,9 @@ func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript strin
 			if iface.Address.Subnet.Type == "public" {
 				continue
 			}
+			if iface.Hyper == -1 {
+				continue
+			}
 			hyper := &model.Hyper{}
 			hyperErr := db.Where("hostid = ? and hostid != ?", iface.Hyper, hyperNode).Take(hyper).Error
 			if hyperErr != nil {
