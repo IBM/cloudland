@@ -185,7 +185,7 @@ func (v *ImageAPI) getImageResponse(ctx context.Context, image *model.Image) (im
 		Architecture: image.Architecture,
 		User:         image.UserName,
 		Status:       image.Status,
-		QAEnabled:    image.QAEnabled,
+		// QAEnabled:    image.QAEnabled,
 	}
 	return
 }
