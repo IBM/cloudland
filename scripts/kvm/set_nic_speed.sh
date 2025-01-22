@@ -14,9 +14,9 @@ outbound=$4
 inbound_burst=$(( $inbound / 8 ))
 inbound_rate=$(( $inbound * 125 )) # in kilobytes per second
 inbound_peak=$(( $inbound_rate * 2 ))
-inbound_burst=$(( $inbound_rate * 3 ))
+#inbound_burst=$(( $inbound_rate * 3 ))
 [ -z "$outbound" -o "$outbound" -eq 0 ] && outbound=1000
 outbound_rate=$(( $outbound * 125 )) # in kilobytes per second
 outbound_peak=$(( $outbound_rate * 2 ))
-outbound_burst=$outbound_peak
-virsh domiftune $vm_ID $nic_name --inbound $inbound_rate,$inbound_peak,$inbound_burst --outbound $outbound_rate,$outbound_peak,$outbound_burst --config --live
+#outbound_burst=$outbound_peak
+virsh domiftune $vm_ID $nic_name --inbound $inbound_rate,$inbound_peak --outbound $outbound_rate,$outbound_peak --config --live
