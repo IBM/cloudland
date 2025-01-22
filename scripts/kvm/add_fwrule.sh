@@ -22,11 +22,13 @@ while [ $i -lt $len ]; do
     if [ "$outer_ip" != "$vtep_ip" ]; then
         inner_ip=$(jq -r .inner_ip <<< $rule)
         inner_mac=$(jq -r .inner_mac <<< $rule)
-	bridge fdb del $inner_mac dev v-$vni
+	bridge fdb | grep "\<$inner_mac\>"
+        [ $? -eq 0 ] && bridge fdb del $inner_mac dev v-$vni
         bridge fdb add $inner_mac dev v-$vni dst $outer_ip self permanent
-	ip neighbor del ${inner_ip%%/*} dev v-$vni
-        ip neighbor add ${inner_ip%%/*} lladdr $inner_mac dev v-$vni nud permanent
+	in_ip=${inner_ip%%/*}
+	ip neighbor | grep "\<$in_ip\> dev v-$vni\>"
+        [ $? -eq 0 ] && ip neighbor del $in_ip dev v-$vni
+        ip neighbor add $in_ip lladdr $inner_mac dev v-$vni nud permanent
     fi
-#    sql_exec "insert into vxlan_rules (instance, vni, inner_ip, inner_mac, outer_ip) values ('$instance', '$vni', '$inner_ip', '$inner_mac', '$outer_ip')"
     let i=$i+1
 done
