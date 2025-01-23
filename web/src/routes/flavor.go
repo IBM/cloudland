@@ -167,13 +167,13 @@ func (v *FlavorView) Delete(c *macaron.Context, store session.Store) (err error)
 	id := c.ParamsInt64("id")
 	if id <= 0 {
 		c.Data["ErrorMsg"] = "id <= 0"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	flavor, err := flavorAdmin.Get(ctx, id)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	err = flavorAdmin.Delete(ctx, flavor)
@@ -194,7 +194,7 @@ func (v *FlavorView) New(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.HTML(200, "flavors_new")
@@ -207,20 +207,20 @@ func (v *FlavorView) Create(c *macaron.Context, store session.Store) {
 	cpu, err := strconv.Atoi(cores)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	memory := c.QueryInt("memory")
 	if memory <= 0 {
 		c.Data["ErrorMsg"] = "memory <= 0"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 
 	disk := c.QueryInt("disk")
 	if disk <= 0 {
 		c.Data["ErrorMsg"] = "disk <= 0"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	_, err = flavorAdmin.Create(c.Req.Context(), name, int32(cpu), int32(memory), int32(disk))

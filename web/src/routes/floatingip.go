@@ -343,7 +343,7 @@ func (v *FloatingIpView) List(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	offset := c.QueryInt64("offset")
@@ -412,7 +412,7 @@ func (v *FloatingIpView) New(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	db := DB()
@@ -444,13 +444,13 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 	if inbound < 0 || inbound > 20000 {
 		logger.Error("Inbound out of range (0-20000)")
 		c.Data["ErrorMsg"] = "Inbound out of range (0-20000)"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	if outbound < 0 || outbound > 20000 {
 		logger.Error("Outbound out of range (0-20000)")
 		c.Data["ErrorMsg"] = "Outbound out of range (0-20000)"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	instance, err := instanceAdmin.Get(ctx, int64(instID))

@@ -30,8 +30,4 @@ hw_addr=$hw_addr:$(echo $hyper_map | cut -c 1-2):$(echo $hyper_map | cut -c 3-4)
 if [ $? -eq 0 ]; then
     ip netns exec $router ip link set ns-$vlan address $hw_addr
 fi
-link_mtu=$(ip -o link show $vxlan_interface | sed "s/.* mtu \(.*\) qdisc.*/\1/")
-if [ $link_mtu -gt 1400 ]; then
-    link_mtu=$(( $link_mtu - 50 ))
-    ip netns exec $router ip link set ns-$vlan mtu $link_mtu
-fi
+./set_subnet_dhcp.sh "$router" "$vlan" "$gateway"

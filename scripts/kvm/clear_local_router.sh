@@ -24,12 +24,15 @@ for link in $ns_links; do
     vlan=${link/ns-/}
     ./clear_link.sh $vlan
     apply_vnic -D ln-$vlan
+    dnsmasq_pid=$(ps -ef | grep dnsmasq | grep "\<interface=ns-$vlan\>" | awk '{print $2}')
+    [ -n "$dnsmasq_pid" ] && kill -9 $dnsmasq_pid
 done
 
 ip netns exec $router ip link set lo down
 suffix=$ID
 ip netns exec router-0 ip link del int-$suffix
 ip netns del $router
+rm -rf $cache_dir/router/$router
 
 nat_ip=169.$(($SCI_CLIENT_ID % 234)).$(($suffix % 234)).3
 route_ip=$(ifconfig $vxlan_interface | grep 'inet ' | awk '{print $2}')

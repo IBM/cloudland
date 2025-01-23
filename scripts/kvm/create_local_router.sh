@@ -16,8 +16,8 @@ ip netns add $router
 ip netns exec $router ip link set lo up
 suffix=${router/router-/}
 
-route_ip=$(ip netns exec router-0 ifconfig link-sys | grep 'inet ' | awk '{print $2}')
-if [ -z "$route_ip" ]; then
+def_route=$(ip netns exec router-0 ip route | grep default)
+if [ -z "$def_route" ]; then
     echo "|:-COMMAND-:| system_router.sh '$SCI_CLIENT_ID' '$HOSTNAME'"
 fi
 
