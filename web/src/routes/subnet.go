@@ -435,8 +435,8 @@ func (a *SubnetAdmin) Delete(ctx context.Context, subnet *model.Subnet) (err err
 		return
 	}
 	if count > 0 {
-		err = fmt.Errorf("Some addresses of this subnet in use")
-		logger.Error("There are addresses of this subnet still in use")
+		err = fmt.Errorf("Some addresses of this subnet are still in use")
+		logger.Error("Some addresses of this subnet are still in use")
 		return
 	}
 	err = db.Model(&model.Subnet{}).Where("vlan = ?", subnet.Vlan).Count(&count).Error
@@ -518,7 +518,7 @@ func (v *SubnetView) List(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	offset := c.QueryInt64("offset")
@@ -585,7 +585,7 @@ func (v *SubnetView) New(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	routers := []*model.Router{}
@@ -604,20 +604,20 @@ func (v *SubnetView) Edit(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	id := c.ParamsInt64("id")
 	if id <= 0 {
 		c.Data["ErrorMsg"] = "Id <= 0"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Reader, "subnets", id)
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	subnet := &model.Subnet{Model: model.Model{ID: id}}
@@ -729,21 +729,21 @@ func (v *SubnetView) Patch(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	redirectTo := "../subnets"
 	id := c.ParamsInt64("id")
 	if id <= 0 {
 		c.Data["ErrorMsg"] = "Id <= 0"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "subnets", id)
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	name := c.QueryTrim("name")
@@ -757,14 +757,14 @@ func (v *SubnetView) Patch(c *macaron.Context, store session.Store) {
 	routeJson, err := v.checkRoutes(network, netmask, gateway, start, end, dns, routes, id)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	_, err = subnetAdmin.Update(c.Req.Context(), id, name, gateway, start, end, dns, routeJson)
 	if err != nil {
 		logger.Error("Create subnet failed", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.Redirect(redirectTo)
@@ -792,7 +792,7 @@ func (v *SubnetView) Create(c *macaron.Context, store session.Store) {
 		routeJson, err := v.checkRoutes(network, netmask, gateway, start, end, dns, routes, 0)
 		if err != nil {
 			c.Data["ErrorMsg"] = err.Error()
-			c.Error(http.StatusBadRequest)
+			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
 	*/

@@ -323,7 +323,7 @@ func (v *RouterView) List(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	offset := c.QueryInt64("offset")
@@ -393,7 +393,7 @@ func (v *RouterView) New(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.HTML(200, "routers_new")
@@ -407,14 +407,14 @@ func (v *RouterView) Edit(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Invalid router id, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "routers", int64(routerID))
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	router := &model.Router{Model: model.Model{ID: int64(routerID)}}
@@ -434,14 +434,14 @@ func (v *RouterView) Patch(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Invalid router id, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "routers", int64(routerID))
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	name := c.QueryTrim("name")
@@ -455,7 +455,7 @@ func (v *RouterView) Patch(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Failed to create router", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.Redirect(redirectTo)
@@ -468,7 +468,7 @@ func (v *RouterView) Create(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Failed to create router, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.Redirect(redirectTo)

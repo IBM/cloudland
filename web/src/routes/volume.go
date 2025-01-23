@@ -369,7 +369,7 @@ func (v *VolumeView) List(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	offset := c.QueryInt64("offset")
@@ -434,7 +434,7 @@ func (v *VolumeView) New(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.HTML(200, "volumes_new")
@@ -447,20 +447,20 @@ func (v *VolumeView) Edit(c *macaron.Context, store session.Store) {
 	volID, err := strconv.Atoi(id)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "volumes", int64(volID))
 	if err != nil {
 		logger.Error("Failed to check permission", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	volume := &model.Volume{Model: model.Model{ID: int64(volID)}}
@@ -489,28 +489,28 @@ func (v *VolumeView) Patch(c *macaron.Context, store session.Store) {
 	volID, err := strconv.Atoi(id)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "volumes", int64(volID))
 	if err != nil {
 		logger.Error("Failed to check permission", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	logger.Debugf("Patch volume(%s) to instance(%s)", id, instance)
 	instID, err := strconv.Atoi(instance)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	if instID > 0 {
@@ -519,14 +519,14 @@ func (v *VolumeView) Patch(c *macaron.Context, store session.Store) {
 		if err != nil {
 			logger.Error("Failed to check permission", err)
 			c.Data["ErrorMsg"] = err.Error()
-			c.Error(http.StatusBadRequest)
+			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
 
 		if !permit {
 			logger.Error("Not authorized for this operation")
 			c.Data["ErrorMsg"] = "Not authorized for this operation"
-			c.Error(http.StatusBadRequest)
+			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
 	}
@@ -534,7 +534,7 @@ func (v *VolumeView) Patch(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Failed to update volume", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.Redirect(redirectTo)
@@ -547,7 +547,7 @@ func (v *VolumeView) Create(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	redirectTo := "../volumes"
@@ -556,14 +556,14 @@ func (v *VolumeView) Create(c *macaron.Context, store session.Store) {
 	vsize, err := strconv.Atoi(size)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	_, err = volumeAdmin.Create(c.Req.Context(), name, int32(vsize), 0, 0, 0, 0, "")
 	if err != nil {
 		logger.Error("Create volume failed", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.Redirect(redirectTo)

@@ -160,7 +160,7 @@ func (v *PortmapView) List(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	offset := c.QueryInt64("offset")
@@ -228,7 +228,7 @@ func (v *PortmapView) New(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	db := DB()
@@ -246,7 +246,7 @@ func (v *PortmapView) Create(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	redirectTo := "../portmaps"
@@ -256,21 +256,21 @@ func (v *PortmapView) Create(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Invalid interface ID", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	permit, err = memberShip.CheckOwner(model.Writer, "instances", int64(instID))
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	portNo, err := strconv.Atoi(port)
 	if err != nil {
 		logger.Error("Invalid port number", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	_, err = portmapAdmin.Create(c.Req.Context(), int64(instID), portNo)

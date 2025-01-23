@@ -350,7 +350,7 @@ func (v *UserView) List(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	offset := c.QueryInt64("offset")
@@ -383,21 +383,21 @@ func (v *UserView) Edit(c *macaron.Context, store session.Store) {
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is Empty"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	userID, err := strconv.Atoi(id)
 	if err != nil {
 		logger.Error("Failed to get input id, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	permit, err := memberShip.CheckUser(int64(userID))
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	db := DB()
@@ -406,7 +406,7 @@ func (v *UserView) Edit(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Failed to query user", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.Data["User"] = user
@@ -418,14 +418,14 @@ func (v *UserView) Change(c *macaron.Context, store session.Store) {
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is Empty"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	userID, err := strconv.Atoi(id)
 	if err != nil {
 		logger.Error("Failed to get input id, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	orgName := c.QueryTrim("org")
@@ -435,7 +435,7 @@ func (v *UserView) Change(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Failed to query user", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	redirectTo := "/dashboard"
@@ -468,21 +468,21 @@ func (v *UserView) Patch(c *macaron.Context, store session.Store) {
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is Empty"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	userID, err := strconv.Atoi(id)
 	if err != nil {
 		logger.Error("Failed to get input id, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	permit, err := memberShip.CheckUser(int64(userID))
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	password := c.QueryTrim("password")
@@ -491,7 +491,7 @@ func (v *UserView) Patch(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Failed to update password, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.HTML(200, "ok")
@@ -539,7 +539,7 @@ func (v *UserView) New(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	c.HTML(200, "users_new")
@@ -551,7 +551,7 @@ func (v *UserView) Create(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	redirectTo := "/users"
@@ -562,7 +562,7 @@ func (v *UserView) Create(c *macaron.Context, store session.Store) {
 	if confirm != password {
 		logger.Error("Passwords do not match")
 		c.Data["ErrorMsg"] = "Passwords do not match"
-		c.Error(http.StatusBadRequest)
+		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	_, err := userAdmin.Create(c.Req.Context(), username, password)
