@@ -80,7 +80,7 @@ func (v *ZoneView) List(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	offset := c.QueryInt64("offset")
@@ -104,14 +104,5 @@ func (v *ZoneView) List(c *macaron.Context, store session.Store) {
 	c.Data["Total"] = total
 	c.Data["Pages"] = pages
 	c.Data["Query"] = query
-	if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, map[string]interface{}{
-			"zones": zones,
-			"total": total,
-			"pages": pages,
-			"query": query,
-		})
-		return
-	}
 	c.HTML(200, "zones")
 }

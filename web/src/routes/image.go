@@ -197,6 +197,17 @@ func (a *ImageAdmin) Delete(ctx context.Context, image *model.Image) (err error)
 		err = fmt.Errorf("Not authorized")
 		return
 	}
+	refCount := 0
+	err = db.Model(&model.Instance{}).Where("image_id = ?", image.ID).Count(&refCount).Error
+	if err != nil {
+		logger.Error("Failed to count the number of instances using the image", err)
+		return
+	}
+	if refCount > 0 {
+		logger.Error("Image can not be deleted if there are instances using it")
+		err = fmt.Errorf("Image can not be deleted if there are instances using it")
+		return
+	}
 	if image.Status == "available" {
 		prefix := strings.Split(image.UUID, "-")[0]
 		control := "inter="
@@ -244,7 +255,7 @@ func (v *ImageView) List(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	offset := c.QueryInt64("offset")
@@ -259,14 +270,8 @@ func (v *ImageView) List(c *macaron.Context, store session.Store) {
 	query := c.QueryTrim("q")
 	total, images, err := imageAdmin.List(offset, limit, order, query)
 	if err != nil {
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(500, "500")
+		c.Error(http.StatusInternalServerError)
 		return
 	}
 	pages := GetPages(total, limit)
@@ -274,15 +279,6 @@ func (v *ImageView) List(c *macaron.Context, store session.Store) {
 	c.Data["Total"] = total
 	c.Data["Pages"] = pages
 	c.Data["Query"] = query
-	if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, map[string]interface{}{
-			"images": images,
-			"total":  total,
-			"pages":  pages,
-			"query":  query,
-		})
-		return
-	}
 	c.HTML(200, "images")
 }
 
@@ -291,25 +287,25 @@ func (v *ImageView) Delete(c *macaron.Context, store session.Store) (err error) 
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is empty"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	imageID, err := strconv.Atoi(id)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	image, err := imageAdmin.Get(ctx, int64(imageID))
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	err = imageAdmin.Delete(ctx, image)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.JSON(200, map[string]interface{}{
@@ -324,13 +320,13 @@ func (v *ImageView) New(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	_, instances, err := instanceAdmin.List(c.Req.Context(), 0, -1, "", "")
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(500, "500")
+		c.Error(http.StatusInternalServerError)
 		return
 	}
 	c.Data["Instances"] = instances
@@ -343,7 +339,7 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	redirectTo := "../images"
@@ -359,7 +355,8 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	_, err := imageAdmin.Create(c.Req.Context(), osCode, name, osVersion, virtType, userName, url, architecture, qaEnabled, instance)
 	if err != nil {
 		logger.Error("Create image failed", err)
-		c.HTML(http.StatusBadRequest, err.Error())
+		c.Data["ErrorMsg"] = err.Error()
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.Redirect(redirectTo)

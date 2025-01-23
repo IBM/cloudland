@@ -350,7 +350,7 @@ func (v *UserView) List(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	offset := c.QueryInt64("offset")
@@ -366,14 +366,8 @@ func (v *UserView) List(c *macaron.Context, store session.Store) {
 	total, users, err := userAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		logger.Error("Failed to list user(s)", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(500, "500")
+		c.Error(500)
 		return
 	}
 	pages := GetPages(total, limit)
@@ -381,15 +375,6 @@ func (v *UserView) List(c *macaron.Context, store session.Store) {
 	c.Data["Total"] = total
 	c.Data["Pages"] = pages
 	c.Data["Query"] = query
-	if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, map[string]interface{}{
-			"users": users,
-			"total": total,
-			"pages": pages,
-			"query": query,
-		})
-		return
-	}
 	c.HTML(200, "users")
 }
 
@@ -398,21 +383,21 @@ func (v *UserView) Edit(c *macaron.Context, store session.Store) {
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is Empty"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	userID, err := strconv.Atoi(id)
 	if err != nil {
 		logger.Error("Failed to get input id, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	permit, err := memberShip.CheckUser(int64(userID))
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	db := DB()
@@ -421,7 +406,7 @@ func (v *UserView) Edit(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Failed to query user", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.Data["User"] = user
@@ -433,14 +418,14 @@ func (v *UserView) Change(c *macaron.Context, store session.Store) {
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is Empty"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	userID, err := strconv.Atoi(id)
 	if err != nil {
 		logger.Error("Failed to get input id, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	orgName := c.QueryTrim("org")
@@ -450,7 +435,7 @@ func (v *UserView) Change(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Failed to query user", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	redirectTo := "/dashboard"
@@ -483,39 +468,30 @@ func (v *UserView) Patch(c *macaron.Context, store session.Store) {
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is Empty"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	userID, err := strconv.Atoi(id)
 	if err != nil {
 		logger.Error("Failed to get input id, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	permit, err := memberShip.CheckUser(int64(userID))
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	password := c.QueryTrim("password")
 	members := c.QueryStrings("members")
-	user, err := userAdmin.Update(c.Req.Context(), int64(userID), password, members)
+	_, err = userAdmin.Update(c.Req.Context(), int64(userID), password, members)
 	if err != nil {
 		logger.Error("Failed to update password, %v", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, user)
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.HTML(200, "ok")
@@ -527,28 +503,28 @@ func (v *UserView) Delete(c *macaron.Context, store session.Store) (err error) {
 	if id == "" {
 		logger.Error("User id is empty ", err)
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	userID, err := strconv.Atoi(id)
 	if err != nil {
 		logger.Error("Failed to get user id ", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	user, err := userAdmin.Get(ctx, int64(userID))
 	if err != nil {
 		logger.Error("Failed to get user ", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	err = userAdmin.Delete(ctx, user)
 	if err != nil {
 		logger.Error("Failed to delete user ", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.JSON(200, map[string]interface{}{
@@ -563,7 +539,7 @@ func (v *UserView) New(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.HTML(200, "users_new")
@@ -575,7 +551,7 @@ func (v *UserView) Create(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	redirectTo := "/users"
@@ -586,10 +562,10 @@ func (v *UserView) Create(c *macaron.Context, store session.Store) {
 	if confirm != password {
 		logger.Error("Passwords do not match")
 		c.Data["ErrorMsg"] = "Passwords do not match"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
-	user, err := userAdmin.Create(c.Req.Context(), username, password)
+	_, err := userAdmin.Create(c.Req.Context(), username, password)
 	if err != nil {
 		logger.Error("Failed to create user, %v", err)
 		c.HTML(500, "500")
@@ -598,17 +574,7 @@ func (v *UserView) Create(c *macaron.Context, store session.Store) {
 	_, err = orgAdmin.Create(c.Req.Context(), username, username)
 	if err != nil {
 		logger.Error("Failed to create organization, %v", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.HTML(500, "500")
-		return
-	}
-	if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, user)
 		return
 	}
 	c.Redirect(redirectTo)

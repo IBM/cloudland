@@ -81,7 +81,7 @@ func (v *HyperView) List(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	offset := c.QueryInt64("offset")
@@ -96,12 +96,6 @@ func (v *HyperView) List(c *macaron.Context, store session.Store) {
 	query := c.QueryTrim("q")
 	total, hypers, err := hyperAdmin.List(offset, limit, order, query)
 	if err != nil {
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -111,14 +105,5 @@ func (v *HyperView) List(c *macaron.Context, store session.Store) {
 	c.Data["Total"] = total
 	c.Data["Pages"] = pages
 	c.Data["Query"] = query
-	if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, map[string]interface{}{
-			"hypers": hypers,
-			"total":  total,
-			"pages":  pages,
-			"query":  query,
-		})
-		return
-	}
 	c.HTML(200, "hypers")
 }

@@ -225,7 +225,7 @@ func (v *KeyView) List(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	offset := c.QueryInt64("offset")
@@ -241,30 +241,14 @@ func (v *KeyView) List(c *macaron.Context, store session.Store) {
 	total, keys, err := keyAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		logger.Error("Failed to list keys, %v", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
 	}
-	pages := GetPages(total, limit)
 	c.Data["Keys"] = keys
 	c.Data["Total"] = total
 	c.Data["Pages"] = GetPages(total, limit)
 	c.Data["Query"] = query
-	if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, map[string]interface{}{
-			"keys":  keys,
-			"total": total,
-			"pages": pages,
-			"query": query,
-		})
-		return
-	}
 	c.HTML(200, "keys")
 }
 
@@ -273,28 +257,28 @@ func (v *KeyView) Delete(c *macaron.Context, store session.Store) (err error) {
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is Empty"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	keyID, err := strconv.Atoi(id)
 	if err != nil {
 		logger.Error("Invalid key id, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	key, err := keyAdmin.Get(ctx, int64(keyID))
 	if err != nil {
 		logger.Error("Failed to get key, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	err = keyAdmin.Delete(ctx, key)
 	if err != nil {
 		logger.Error("Failed to delete key, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.JSON(200, map[string]interface{}{
@@ -309,7 +293,7 @@ func (v *KeyView) New(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.HTML(200, "keys_new")
@@ -351,7 +335,7 @@ func (v *KeyView) SolvePrintedPublicKeyError(c *macaron.Context, store session.S
 		} else {
 			logger.Error("Public key is wrong")
 			c.Data["ErrorMsg"] = "Public key is wrong"
-			c.HTML(http.StatusBadRequest, "error")
+			c.Error(http.StatusBadRequest)
 			return
 		}
 	}
@@ -383,7 +367,7 @@ func (v *KeyView) SearchDbFingerPrint(c *macaron.Context, store session.Store, f
 			return
 		} else {
 			c.Data["ErrorMsg"] = "This public key has been used"
-			c.HTML(http.StatusBadRequest, "error")
+			c.Error(http.StatusBadRequest)
 			return
 		}
 	} else {
@@ -417,7 +401,7 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 		if err != nil {
 			logger.Error("failed to create key")
 			c.Data["ErrorMsg"] = err.Error()
-			c.HTML(http.StatusBadRequest, "error")
+			c.Error(http.StatusBadRequest)
 		}
 		redirectTo := "../keys"
 		c.Redirect(redirectTo)
@@ -426,7 +410,7 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 		if err != nil {
 			logger.Error("failed")
 			c.Data["ErrorMsg"] = err.Error()
-			c.HTML(http.StatusBadRequest, "error")
+			c.Error(http.StatusBadRequest)
 			return
 		}
 		if c.QueryTrim("from_instance") != "" {

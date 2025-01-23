@@ -51,15 +51,7 @@
 			                        <td>{{.OSCode}}</td>
 			                        <td>{{.OsVersion}}</td>
                                                 <td> 
-                                                    {{ if eq .VirtType "kvm-s390x" }}
-                                                        KVM on Z
-                                                    {{ else }}
-                                                        {{ if eq .VirtType "zvm" }}
-                                                            z/VM
-                                                        {{ else }}
-                                                            KVM on x86_64
-                                                        {{ end }}
-                                                    {{ end }}
+                                                     KVM on x86_64
                                                 </td>
 			                        <td>{{.UserName}}</td>
 			                        <td>{{.Architecture}}</td>
