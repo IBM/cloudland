@@ -1030,9 +1030,9 @@ func (v *InstanceView) SetUserPassword(c *macaron.Context, store session.Store) 
 		return
 	}
 	instanceID, err := strconv.Atoi(id)
-
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
+		logger.Error("Instance ID error ", err)
 		c.Error(http.StatusBadRequest)
 		return
 	}

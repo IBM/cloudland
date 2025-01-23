@@ -196,7 +196,6 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 		"?", "%3F").Replace(
 		strings.TrimSuffix(c.Req.URL.Path, "/"))
 	logger.Debugf("LinkHandler: %s\n", link)
-	logger.Debugf("Full URL: %s\n", c.Req.URL.String())
 	c.Data["Link"] = link
 	if login, ok := store.Get("login").(string); ok {
 		// logger.Debug("$$$$$$$$$$$$$$$$$$", c.Locale.Language())
