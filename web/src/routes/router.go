@@ -336,6 +336,15 @@ func (v *RouterView) List(c *macaron.Context, store session.Store) {
 		order = "-created_at"
 	}
 	query := c.QueryTrim("q")
+	queryStr := c.QueryTrim("router_id")
+	logger.Debugf("The query parameters is in RouterView list: query=%s, queryStr=%s", query, queryStr)
+
+	if queryStr != "" {
+		redirectURL := fmt.Sprintf("/instances?router_id=%s", queryStr)
+		// Perform the redirect
+		c.Redirect(redirectURL)
+	}
+
 	total, routers, err := routerAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		logger.Error("Failed to list routers, %v", err)
