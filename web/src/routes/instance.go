@@ -656,6 +656,7 @@ func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, qu
 	if order == "" {
 		order = "created_at"
 	}
+	logger.Debugf("The query in admin console is %s", query)
 
 	where := memberShip.GetWhere()
 	instances = []*model.Instance{}
@@ -701,6 +702,7 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
 	hostname := c.QueryTrim("hostname")
+	router_id := c.QueryTrim("router_id")
 	if limit == 0 {
 		limit = 16
 	}
@@ -712,6 +714,14 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	if query != "" {
 		query = fmt.Sprintf("hostname like '%%%s%%'", query)
 	}
+	if router_id != "" {
+		routerID, err := strconv.Atoi(router_id)
+		if err != nil {
+				logger.Debugf("Error to convert router_id to integer: %+v ", err)
+		}	
+		query = fmt.Sprintf("router_id = %d", routerID)
+	}
+
 	total, instances, err := instanceAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
