@@ -343,7 +343,7 @@ func (v *FloatingIpView) List(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	offset := c.QueryInt64("offset")
@@ -359,12 +359,6 @@ func (v *FloatingIpView) List(c *macaron.Context, store session.Store) {
 	total, floatingIps, err := floatingIpAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		logger.Error("Failed to list floating ip(s), %v", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, err.Error())
 		return
@@ -374,15 +368,6 @@ func (v *FloatingIpView) List(c *macaron.Context, store session.Store) {
 	c.Data["Total"] = total
 	c.Data["Pages"] = pages
 	c.Data["Query"] = query
-	if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, map[string]interface{}{
-			"floatingIps": floatingIps,
-			"total":       total,
-			"pages":       pages,
-			"query":       query,
-		})
-		return
-	}
 	c.HTML(200, "floatingips")
 }
 
@@ -391,28 +376,28 @@ func (v *FloatingIpView) Delete(c *macaron.Context, store session.Store) (err er
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "id does not exist"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	floatingIpID, err := strconv.Atoi(id)
 	if err != nil {
 		logger.Error("Invalid floating ip ID ", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	floatingIp, err := floatingIpAdmin.Get(ctx, int64(floatingIpID))
 	if err != nil {
 		logger.Error("Failed to get floating ip ", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	err = floatingIpAdmin.Delete(ctx, floatingIp)
 	if err != nil {
 		logger.Error("Failed to delete floating ip, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.JSON(200, map[string]interface{}{
@@ -427,7 +412,7 @@ func (v *FloatingIpView) New(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	db := DB()
@@ -459,13 +444,13 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 	if inbound < 0 || inbound > 20000 {
 		logger.Error("Inbound out of range (0-20000)")
 		c.Data["ErrorMsg"] = "Inbound out of range (0-20000)"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	if outbound < 0 || outbound > 20000 {
 		logger.Error("Outbound out of range (0-20000)")
 		c.Data["ErrorMsg"] = "Outbound out of range (0-20000)"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	instance, err := instanceAdmin.Get(ctx, int64(instID))

@@ -323,7 +323,7 @@ func (v *RouterView) List(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	offset := c.QueryInt64("offset")
@@ -339,12 +339,6 @@ func (v *RouterView) List(c *macaron.Context, store session.Store) {
 	total, routers, err := routerAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		logger.Error("Failed to list routers, %v", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -354,15 +348,6 @@ func (v *RouterView) List(c *macaron.Context, store session.Store) {
 	c.Data["Total"] = total
 	c.Data["Pages"] = pages
 	c.Data["Query"] = query
-	if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, map[string]interface{}{
-			"routers": routers,
-			"total":   total,
-			"pages":   pages,
-			"query":   query,
-		})
-		return
-	}
 	c.HTML(200, "routers")
 }
 
@@ -372,28 +357,28 @@ func (v *RouterView) Delete(c *macaron.Context, store session.Store) (err error)
 	if id == "" {
 		logger.Error("Id is empty")
 		c.Data["ErrorMsg"] = "Id is empty"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	routerID, err := strconv.Atoi(id)
 	if err != nil {
 		logger.Error("Invalid router id, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	router, err := routerAdmin.Get(ctx, int64(routerID))
 	if err != nil {
 		logger.Error("Not able to get vpc")
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	err = routerAdmin.Delete(ctx, router)
 	if err != nil {
 		logger.Error("Failed to delete router, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.JSON(200, map[string]interface{}{
@@ -408,7 +393,7 @@ func (v *RouterView) New(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.HTML(200, "routers_new")
@@ -422,14 +407,14 @@ func (v *RouterView) Edit(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Invalid router id, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "routers", int64(routerID))
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	router := &model.Router{Model: model.Model{ID: int64(routerID)}}
@@ -449,14 +434,14 @@ func (v *RouterView) Patch(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Invalid router id, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "routers", int64(routerID))
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	name := c.QueryTrim("name")
@@ -466,20 +451,11 @@ func (v *RouterView) Patch(c *macaron.Context, store session.Store) {
 		logger.Error("Invalid public subnet id, %v", err)
 		pubID = 0
 	}
-	router, err := routerAdmin.Update(c.Req.Context(), int64(routerID), name, int64(pubID))
+	_, err = routerAdmin.Update(c.Req.Context(), int64(routerID), name, int64(pubID))
 	if err != nil {
 		logger.Error("Failed to create router", err)
 		c.Data["ErrorMsg"] = err.Error()
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, router)
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.Redirect(redirectTo)
@@ -492,7 +468,7 @@ func (v *RouterView) Create(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Failed to create router, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.Redirect(redirectTo)

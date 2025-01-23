@@ -94,6 +94,17 @@ func (a *FlavorAdmin) Delete(ctx context.Context, flavor *model.Flavor) (err err
 			EndTransaction(ctx, err)
 		}
 	}()
+	refCount := 0
+	err = db.Model(&model.Instance{}).Where("flavor_id = ?", flavor.ID).Count(&refCount).Error
+	if err != nil {
+		logger.Error("Failed to count the number of instances using the flavor", err)
+		return
+	}
+	if refCount > 0 {
+		logger.Error("Flavor can not be deleted if there are instances using it")
+		err = fmt.Errorf("Flavor can not be deleted if there are instances using it")
+		return
+	}
 	if err = db.Delete(flavor).Error; err != nil {
 		logger.Error("Failed to delete flavor", err)
 		return
@@ -139,12 +150,6 @@ func (v *FlavorView) List(c *macaron.Context, store session.Store) {
 	query := c.QueryTrim("q")
 	total, flavors, err := flavorAdmin.List(offset, limit, order, query)
 	if err != nil {
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -154,15 +159,6 @@ func (v *FlavorView) List(c *macaron.Context, store session.Store) {
 	c.Data["Total"] = total
 	c.Data["Pages"] = pages
 	c.Data["Query"] = query
-	if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, map[string]interface{}{
-			"flavors": flavors,
-			"total":   total,
-			"pages":   pages,
-			"query":   query,
-		})
-		return
-	}
 	c.HTML(200, "flavors")
 }
 
@@ -171,19 +167,19 @@ func (v *FlavorView) Delete(c *macaron.Context, store session.Store) (err error)
 	id := c.ParamsInt64("id")
 	if id <= 0 {
 		c.Data["ErrorMsg"] = "id <= 0"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	flavor, err := flavorAdmin.Get(ctx, id)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	err = flavorAdmin.Delete(ctx, flavor)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.JSON(200, map[string]interface{}{
@@ -198,7 +194,7 @@ func (v *FlavorView) New(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.HTML(200, "flavors_new")
@@ -211,20 +207,20 @@ func (v *FlavorView) Create(c *macaron.Context, store session.Store) {
 	cpu, err := strconv.Atoi(cores)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	memory := c.QueryInt("memory")
 	if memory <= 0 {
 		c.Data["ErrorMsg"] = "memory <= 0"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 
 	disk := c.QueryInt("disk")
 	if disk <= 0 {
 		c.Data["ErrorMsg"] = "disk <= 0"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	_, err = flavorAdmin.Create(c.Req.Context(), name, int32(cpu), int32(memory), int32(disk))

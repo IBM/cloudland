@@ -257,21 +257,21 @@ func (v *SecruleView) List(c *macaron.Context, store session.Store) {
 	if sgid == "" {
 		logger.Error("Security group ID is empty")
 		c.Data["ErrorMsg"] = "Security group ID is empty"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	secgroupID, err := strconv.Atoi(sgid)
 	if err != nil {
 		logger.Error("Invalid security group ID", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	secgroup, err := secgroupAdmin.Get(ctx, int64(secgroupID))
 	if err != nil {
 		logger.Error("Failed to get security group", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	total, secrules, err := secruleAdmin.List(ctx, offset, limit, order, secgroup)
@@ -285,14 +285,6 @@ func (v *SecruleView) List(c *macaron.Context, store session.Store) {
 	c.Data["SecurityRules"] = secrules
 	c.Data["Total"] = total
 	c.Data["Pages"] = pages
-	if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, map[string]interface{}{
-			"secrules": secrules,
-			"total":    total,
-			"pages":    pages,
-		})
-		return
-	}
 	c.HTML(200, "secrules")
 }
 
@@ -302,49 +294,49 @@ func (v *SecruleView) Delete(c *macaron.Context, store session.Store) (err error
 	if sgid == "" {
 		logger.Error("Security group ID is empty")
 		c.Data["ErrorMsg"] = "Security group ID is empty"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	secgroupID, err := strconv.Atoi(sgid)
 	if err != nil {
 		logger.Error("Invalid security group ID", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	secgroup, err := secgroupAdmin.Get(ctx, int64(secgroupID))
 	if err != nil {
 		logger.Error("Failed to get security group", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	id := c.Params("id")
 	if id == "" {
 		logger.Error("ID is empty, %v", err)
 		c.Data["ErrorMsg"] = "ID is empty"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	secruleID, err := strconv.Atoi(id)
 	if err != nil {
 		logger.Error("Invalid security rule ID, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	secrule, err := secruleAdmin.Get(ctx, int64(secruleID), secgroup)
 	if err != nil {
 		logger.Error("Failed to get security rule", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	err = secruleAdmin.Delete(c.Req.Context(), secrule, secgroup)
 	if err != nil {
 		logger.Error("Failed to delete security rule, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.JSON(200, map[string]interface{}{
@@ -359,7 +351,7 @@ func (v *SecruleView) New(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.HTML(200, "secrules_new")
@@ -373,14 +365,14 @@ func (v *SecruleView) Create(c *macaron.Context, store session.Store) {
 	if sgid == "" {
 		logger.Error("Security group ID is empty")
 		c.Data["ErrorMsg"] = "Security group ID is empty"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	secgroupID, err := strconv.Atoi(sgid)
 	if err != nil {
 		logger.Error("Invalid security group ID", err)
 		c.Data["Error:Msg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	direction := c.QueryTrim("direction")
@@ -393,13 +385,14 @@ func (v *SecruleView) Create(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Failed to get security group", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	_, err = secruleAdmin.Create(ctx, remoteIp, direction, protocol, int32(portMin), int32(portMax), secgroup)
 	if err != nil {
 		logger.Error("Failed to create security rule, %v", err)
-		c.HTML(http.StatusBadRequest, err.Error())
+		c.Data["ErrorMsg"] = err.Error()
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.Redirect(redirectTo)
@@ -455,7 +448,7 @@ func (v *SecruleView) Edit(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Security Rule ID is empty")
 		c.Data["ErrorMsg"] = "Security Rule ID is empty"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	secrules := &model.SecurityRule{Model: model.Model{ID: int64(secruleID)}}
@@ -476,7 +469,7 @@ func (v *SecruleView) Patch(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Invalid secure rule ID, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	remoteIp := c.QueryTrim("remoteip")
@@ -490,7 +483,7 @@ func (v *SecruleView) Patch(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Create Security Rules failed, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.Redirect(redirectTo)

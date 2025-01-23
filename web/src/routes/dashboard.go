@@ -57,7 +57,7 @@ func (a *Dashboard) GetData(c *macaron.Context, store session.Store) {
 		if err != nil {
 			logger.Error("Failed to query system resource")
 			c.Data["ErrorMsg"] = err.Error()
-			c.HTML(http.StatusBadRequest, "error")
+			c.Error(http.StatusBadRequest)
 			return
 		}
 		pubipTotal, pubipUsed, err := a.getSystemIpUsage(ctx, "public")
@@ -95,7 +95,7 @@ func (a *Dashboard) GetData(c *macaron.Context, store session.Store) {
 			if err != nil {
 				logger.Error("Failed to query quota")
 				c.Data["ErrorMsg"] = err.Error()
-				c.HTML(http.StatusBadRequest, "error")
+				c.Error(http.StatusBadRequest)
 				return
 			}
 		}
@@ -103,7 +103,7 @@ func (a *Dashboard) GetData(c *macaron.Context, store session.Store) {
 		if err != nil {
 			logger.Error("Failed to get usage")
 			c.Data["ErrorMsg"] = err.Error()
-			c.HTML(http.StatusBadRequest, "error")
+			c.Error(http.StatusBadRequest)
 			return
 		}
 	}

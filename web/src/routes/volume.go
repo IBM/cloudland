@@ -369,7 +369,7 @@ func (v *VolumeView) List(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	offset := c.QueryInt64("offset")
@@ -384,12 +384,6 @@ func (v *VolumeView) List(c *macaron.Context, store session.Store) {
 	query := c.QueryTrim("q")
 	total, volumes, err := volumeAdmin.ListVolume(c.Req.Context(), offset, limit, order, query, "all")
 	if err != nil {
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.Data["ErrorMsg"] = err.Error()
 		c.HTML(500, "500")
 		return
@@ -399,15 +393,6 @@ func (v *VolumeView) List(c *macaron.Context, store session.Store) {
 	c.Data["Total"] = total
 	c.Data["Pages"] = pages
 	c.Data["Query"] = query
-	if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, map[string]interface{}{
-			"volumes": volumes,
-			"total":   total,
-			"pages":   pages,
-			"query":   query,
-		})
-		return
-	}
 	c.HTML(200, "volumes")
 }
 
@@ -416,25 +401,25 @@ func (v *VolumeView) Delete(c *macaron.Context, store session.Store) (err error)
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is Empty"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	volumeID, err := strconv.Atoi(id)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	volume, err := volumeAdmin.Get(ctx, int64(volumeID))
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	err = volumeAdmin.Delete(c.Req.Context(), volume)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.JSON(200, map[string]interface{}{
@@ -449,7 +434,7 @@ func (v *VolumeView) New(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.HTML(200, "volumes_new")
@@ -462,20 +447,20 @@ func (v *VolumeView) Edit(c *macaron.Context, store session.Store) {
 	volID, err := strconv.Atoi(id)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "volumes", int64(volID))
 	if err != nil {
 		logger.Error("Failed to check permission", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	volume := &model.Volume{Model: model.Model{ID: int64(volID)}}
@@ -504,28 +489,28 @@ func (v *VolumeView) Patch(c *macaron.Context, store session.Store) {
 	volID, err := strconv.Atoi(id)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "volumes", int64(volID))
 	if err != nil {
 		logger.Error("Failed to check permission", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	logger.Debugf("Patch volume(%s) to instance(%s)", id, instance)
 	instID, err := strconv.Atoi(instance)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	if instID > 0 {
@@ -534,31 +519,22 @@ func (v *VolumeView) Patch(c *macaron.Context, store session.Store) {
 		if err != nil {
 			logger.Error("Failed to check permission", err)
 			c.Data["ErrorMsg"] = err.Error()
-			c.HTML(http.StatusBadRequest, "error")
+			c.Error(http.StatusBadRequest)
 			return
 		}
 
 		if !permit {
 			logger.Error("Not authorized for this operation")
 			c.Data["ErrorMsg"] = "Not authorized for this operation"
-			c.HTML(http.StatusBadRequest, "error")
+			c.Error(http.StatusBadRequest)
 			return
 		}
 	}
-	volume, err := volumeAdmin.Update(c.Req.Context(), int64(volID), name, int64(instID))
+	_, err = volumeAdmin.Update(c.Req.Context(), int64(volID), name, int64(instID))
 	if err != nil {
 		logger.Error("Failed to update volume", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
-		return
-	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, volume)
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.Redirect(redirectTo)
@@ -571,7 +547,7 @@ func (v *VolumeView) Create(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	redirectTo := "../volumes"
@@ -580,22 +556,14 @@ func (v *VolumeView) Create(c *macaron.Context, store session.Store) {
 	vsize, err := strconv.Atoi(size)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
-	volume, err := volumeAdmin.Create(c.Req.Context(), name, int32(vsize), 0, 0, 0, 0, "")
+	_, err = volumeAdmin.Create(c.Req.Context(), name, int32(vsize), 0, 0, 0, 0, "")
 	if err != nil {
 		logger.Error("Create volume failed", err)
-		if c.Req.Header.Get("X-Json-Format") == "yes" {
-			c.JSON(500, map[string]interface{}{
-				"error": err.Error(),
-			})
-			return
-		}
-		c.HTML(http.StatusBadRequest, err.Error())
-		return
-	} else if c.Req.Header.Get("X-Json-Format") == "yes" {
-		c.JSON(200, volume)
+		c.Data["ErrorMsg"] = err.Error()
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.Redirect(redirectTo)

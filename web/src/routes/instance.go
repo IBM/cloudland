@@ -727,7 +727,7 @@ func (v *InstanceView) UpdateTable(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	offset := c.QueryInt64("offset")
@@ -762,7 +762,7 @@ func (v *InstanceView) Status(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 
@@ -770,19 +770,19 @@ func (v *InstanceView) Status(c *macaron.Context, store session.Store) {
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is empty"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	instanceID, err := strconv.Atoi(id)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	instance, err := instanceAdmin.Get(ctx, int64(instanceID))
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.Data["Instance"] = instance
@@ -795,25 +795,25 @@ func (v *InstanceView) Delete(c *macaron.Context, store session.Store) (err erro
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is empty"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	instanceID, err := strconv.Atoi(id)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	instance, err := instanceAdmin.Get(ctx, int64(instanceID))
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	err = instanceAdmin.Delete(ctx, instance)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.JSON(200, map[string]interface{}{
@@ -829,7 +829,7 @@ func (v *InstanceView) New(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	db := DB()
@@ -894,21 +894,21 @@ func (v *InstanceView) Edit(c *macaron.Context, store session.Store) {
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is Empty"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	instanceID, err := strconv.Atoi(id)
 
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instanceID))
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	instance := &model.Instance{Model: model.Model{ID: int64(instanceID)}}
@@ -995,7 +995,7 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Invalid instance", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	var flavor *model.Flavor
@@ -1004,7 +1004,7 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 		if err != nil {
 			logger.Error("Invalid flavor", err)
 			c.Data["ErrorMsg"] = err.Error()
-			c.HTML(http.StatusBadRequest, "error")
+			c.Error(http.StatusBadRequest)
 			return
 		}
 	}
@@ -1012,7 +1012,7 @@ func (v *InstanceView) Patch(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Errorf("update instance failed, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.Redirect(redirectTo)
@@ -1026,28 +1026,28 @@ func (v *InstanceView) SetUserPassword(c *macaron.Context, store session.Store) 
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is Empty"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	instanceID, err := strconv.Atoi(id)
 
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "instances", int64(instanceID))
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	instance := &model.Instance{Model: model.Model{ID: int64(instanceID)}}
 	if err = db.Preload("Image").Take(instance).Error; err != nil {
 		logger.Error("Instance query failed", err)
 		c.Data["ErrorMsg"] = fmt.Sprintf("Instance query failed", err)
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	if c.Req.Method == "GET" {
@@ -1057,7 +1057,7 @@ func (v *InstanceView) SetUserPassword(c *macaron.Context, store session.Store) 
 			c.HTML(200, "instances_user_passwd")
 		} else {
 			c.Data["ErrorMsg"] = "Guest Agent is not enabled for the image of instance"
-			c.HTML(http.StatusBadRequest, "error")
+			c.Error(http.StatusBadRequest)
 		}
 		return
 	} else if c.Req.Method == "POST" {
@@ -1067,7 +1067,7 @@ func (v *InstanceView) SetUserPassword(c *macaron.Context, store session.Store) 
 		if err != nil {
 			logger.Error("Set user password failed", err)
 			c.Data["ErrorMsg"] = err.Error()
-			c.HTML(http.StatusBadRequest, "error")
+			c.Error(http.StatusBadRequest)
 			return
 		}
 		c.Redirect(redirectTo)
@@ -1116,7 +1116,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Need Write permissions")
 		c.Data["ErrorMsg"] = "Need Write permissions"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	redirectTo := "../instances"
@@ -1127,7 +1127,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Invalid instance count", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	hyperID := c.QueryInt("hyper")
@@ -1136,7 +1136,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		if !permit {
 			logger.Error("Need Admin permissions")
 			c.Data["ErrorMsg"] = "Need Admin permissions"
-			c.HTML(http.StatusBadRequest, "error")
+			c.Error(http.StatusBadRequest)
 			return
 		}
 	}
@@ -1144,27 +1144,27 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	if imageID <= 0 {
 		logger.Error("No valid image ID", imageID)
 		c.Data["ErrorMsg"] = "No valid image ID"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	image, err := imageAdmin.Get(ctx, imageID)
 	if err != nil {
 		c.Data["ErrorMsg"] = "No valid image"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	flavorID := c.QueryInt64("flavor")
 	if flavorID <= 0 {
 		logger.Error("Invalid flavor ID", flavorID)
 		c.Data["ErrorMsg"] = "Invalid flavor ID"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	flavor, err := flavorAdmin.Get(ctx, flavorID)
 	if err != nil {
 		logger.Error("No valid flavor", err)
 		c.Data["ErrorMsg"] = "No valid flavor"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	zoneID := c.QueryInt64("zone")
@@ -1172,7 +1172,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("No valid zone", err)
 		c.Data["ErrorMsg"] = "No valid zone"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	primary := c.QueryTrim("primary")
@@ -1180,7 +1180,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Invalid primary subnet ID, %v", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	primaryIP := c.QueryTrim("primaryip")
@@ -1190,13 +1190,13 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Get primary subnet failed", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	macAddr, err := v.checkNetparam(primarySubnet, ipAddr, primaryMac)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	secgroups := c.QueryTrim("secgroups")
@@ -1213,13 +1213,13 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			if err != nil {
 				logger.Error("Get security groups failed", err)
 				c.Data["ErrorMsg"] = "Get security groups failed"
-				c.HTML(http.StatusBadRequest, "error")
+				c.Error(http.StatusBadRequest)
 				return
 			}
 			if secgroup.RouterID != primarySubnet.RouterID {
 				logger.Error("Security group is not the same router with subnet")
 				c.Data["ErrorMsg"] = "Security group is not in subnet vpc"
-				c.HTML(http.StatusBadRequest, "error")
+				c.Error(http.StatusBadRequest)
 				return
 			}
 			securityGroups = append(securityGroups, secgroup)
@@ -1233,7 +1233,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			if err != nil {
 				logger.Error("Get router failed", err)
 				c.Data["ErrorMsg"] = "Get router failed"
-				c.HTML(http.StatusBadRequest, "error")
+				c.Error(http.StatusBadRequest)
 				return
 			}
 			sgID = router.DefaultSG
@@ -1243,7 +1243,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		if err != nil {
 			logger.Error("Get security groups failed", err)
 			c.Data["ErrorMsg"] = "Get security groups failed"
-			c.HTML(http.StatusBadRequest, "error")
+			c.Error(http.StatusBadRequest)
 			return
 		}
 		securityGroups = append(securityGroups, secGroup)
@@ -1270,13 +1270,13 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		if err != nil {
 			logger.Error("Get secondary subnet failed", err)
 			c.Data["ErrorMsg"] = err.Error()
-			c.HTML(http.StatusBadRequest, "error")
+			c.Error(http.StatusBadRequest)
 			return
 		}
 		if subnet.RouterID != primarySubnet.RouterID {
 			logger.Error("All subnets must be in the same vpc", err)
 			c.Data["ErrorMsg"] = "All subnets must be in the same vpc"
-			c.HTML(http.StatusBadRequest, "error")
+			c.Error(http.StatusBadRequest)
 			return
 		}
 		secondaryIfaces = append(secondaryIfaces, &InterfaceInfo{
@@ -1302,7 +1302,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		if err != nil {
 			logger.Error("Failed to access key", err)
 			c.Data["ErrorMsg"] = "Failed to access key"
-			c.HTML(http.StatusBadRequest, "error")
+			c.Error(http.StatusBadRequest)
 			return
 		}
 		instKeys = append(instKeys, key)
@@ -1312,7 +1312,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Error("Create instance failed", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.Redirect(redirectTo)

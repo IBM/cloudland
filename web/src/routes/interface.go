@@ -175,20 +175,20 @@ func (v *InterfaceView) Edit(c *macaron.Context, store session.Store) {
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is Empty"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	ifaceID, err := strconv.Atoi(id)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	permit, err := memberShip.CheckOwner(model.Writer, "interfaces", int64(ifaceID))
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	iface := &model.Interface{Model: model.Model{ID: int64(ifaceID)}}
@@ -219,7 +219,8 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 	subnet, err := subnetAdmin.Get(ctx, subnetID)
 	if err != nil {
 		logger.Error("Get subnet failed", err)
-		c.HTML(http.StatusBadRequest, err.Error())
+		c.Data["ErrorMsg"] = err.Error()
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	instID := c.QueryInt64("instance")
@@ -228,7 +229,7 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 		if !permit {
 			logger.Error("Not authorized to access instance")
 			c.Data["ErrorMsg"] = "Not authorized to access instance"
-			c.HTML(http.StatusBadRequest, "error")
+			c.Error(http.StatusBadRequest)
 			return
 		}
 	}
@@ -249,7 +250,7 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 			if !permit {
 				logger.Error("Not authorized to access security group")
 				c.Data["ErrorMsg"] = "Not authorized to access security group"
-				c.HTML(http.StatusBadRequest, "error")
+				c.Error(http.StatusBadRequest)
 				return
 			}
 			sgIDs = append(sgIDs, int64(sgID))
@@ -260,7 +261,7 @@ func (v *InterfaceView) Create(c *macaron.Context, store session.Store) {
 		if !permit {
 			logger.Error("Not authorized to access security group")
 			c.Data["ErrorMsg"] = "Not authorized to access security group"
-			c.HTML(http.StatusBadRequest, "error")
+			c.Error(http.StatusBadRequest)
 			return
 		}
 		sgIDs = append(sgIDs, sgID)
@@ -287,20 +288,20 @@ func (v *InterfaceView) Delete(c *macaron.Context, store session.Store) {
 	if !permit {
 		logger.Error("Not authorized for this operation")
 		c.Data["ErrorMsg"] = "Not authorized for this operation"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	iface := &model.Interface{Model: model.Model{ID: id}}
 	err = DB().Take(iface).Error
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	err = DeleteInterface(ctx, iface)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	c.JSON(200, "ok")
@@ -312,25 +313,25 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 	id := c.Params("id")
 	if id == "" {
 		c.Data["ErrorMsg"] = "Id is Empty"
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	ifaceID, err := strconv.Atoi(id)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	iface, err := interfaceAdmin.Get(ctx, int64(ifaceID))
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	instance, err := instanceAdmin.Get(ctx, iface.Instance)
 	if err != nil {
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 		return
 	}
 	name := c.QueryTrim("name")
@@ -350,14 +351,14 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 			if err != nil {
 				logger.Debug("Invalid security group ID, %v", err)
 				c.Data["ErrorMsg"] = err.Error()
-				c.HTML(http.StatusBadRequest, "error")
+				c.Error(http.StatusBadRequest)
 				return
 			}
 			secgroup, err := secgroupAdmin.Get(ctx, int64(sgID))
 			if err != nil {
 				logger.Debug("Failed to query security group, %v", err)
 				c.Data["ErrorMsg"] = err.Error()
-				c.HTML(http.StatusBadRequest, "error")
+				c.Error(http.StatusBadRequest)
 				return
 			}
 			secgroups = append(secgroups, secgroup)
@@ -367,7 +368,7 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 	if err != nil {
 		logger.Debug("Failed to update interface", err)
 		c.Data["ErrorMsg"] = err.Error()
-		c.HTML(http.StatusBadRequest, "error")
+		c.Error(http.StatusBadRequest)
 	}
 	c.Redirect(redirectTo)
 }
