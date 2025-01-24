@@ -28,6 +28,7 @@
 			                        <th>{{.i18n.Tr "Name"}}</th>
 			                        <th>{{.i18n.Tr "Subnets"}}</th>
 			                        <th>{{.i18n.Tr "Status"}}</th>
+			                        <th>{{.i18n.Tr "SecurityGroup"}}</th>
 		   			        {{ if $.IsAdmin }}
 			                        <th>{{.i18n.Tr "Owner"}}</th>
 						{{ end }}
@@ -50,6 +51,7 @@
 										{{ end }}
 									</td>
 			                        <td>{{ $.i18n.Tr .Status }}</td>
+			                        <td><a href="/secgroups/router_id={{.ID}}">{{ $.i18n.Tr  "SecurityGroup"}}</td>
 		   			        {{ if $.IsAdmin }}
 			                        <td>{{.OwnerInfo.Name}}</td>
 						{{ end }}
