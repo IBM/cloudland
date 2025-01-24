@@ -366,6 +366,7 @@ func (a *SecgroupAdmin) List(ctx context.Context, offset, limit int64, order, qu
 	if order == "" {
 		order = "created_at"
 	}
+	logger.Debugf("The query in admin console is %s", query)
 
 	where := memberShip.GetWhere()
 	secgroups = []*model.SecurityGroup{}
@@ -407,6 +408,7 @@ func (a *SecgroupAdmin) List(ctx context.Context, offset, limit int64, order, qu
 func (v *SecgroupView) List(c *macaron.Context, store session.Store) {
 	offset := c.QueryInt64("offset")
 	limit := c.QueryInt64("limit")
+	router_id := c.QueryTrim("router_id")
 	if limit == 0 {
 		limit = 16
 	}
@@ -415,6 +417,17 @@ func (v *SecgroupView) List(c *macaron.Context, store session.Store) {
 		order = "-created_at"
 	}
 	query := c.QueryTrim("q")
+	if query != "" {
+		query = fmt.Sprintf("name like '%%%s%%'", query)
+	}
+	if router_id != "" {
+		routerID, err := strconv.Atoi(router_id)
+		if err != nil {
+			logger.Debugf("Error to convert router_id to integer: %+v ", err)
+		}
+		query = fmt.Sprintf("router_id = %d", routerID)
+	}
+
 	total, secgroups, err := secgroupAdmin.List(c.Req.Context(), offset, limit, order, query)
 	if err != nil {
 		logger.Error("Failed to list security group(s), %v", err)
