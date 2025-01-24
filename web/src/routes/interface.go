@@ -147,6 +147,10 @@ func (a *InterfaceAdmin) Update(ctx context.Context, instance *model.Instance, i
 		needRemoteUpdate = true
 	}
 	if len(secgroups) > 0 {
+		if err = db.Model(iface).Association("Security_Groups").Replace(secgroups).Error; err != nil {
+			logger.Debug("Failed to save interface", err)
+			return
+		}
 		iface.SecurityGroups = secgroups
 		needRemoteUpdate = true
 	} else {
@@ -204,11 +208,7 @@ func (v *InterfaceView) Edit(c *macaron.Context, store session.Store) {
 	}
 	c.Data["Interface"] = iface
 	c.Data["Secgroups"] = secgroups
-	if len(iface.SecurityGroups) > 0 {
-		c.Data["SecgroupID"] = iface.SecurityGroups[0].ID
-	} else {
-		c.Data["SecgroupID"] = -1
-	}
+	c.Data["IfaceSecgroups"] = iface.SecurityGroups
 	c.HTML(200, "interfaces_patch")
 }
 

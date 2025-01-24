@@ -17,6 +17,7 @@ type Key struct {
 	PublicKey   string `gorm:"type:varchar(8192)"`
 	Length      int32
 	FingerPrint string `gorm:"type:varchar(100)"`
+	Instances   []*Instance `gorm:"many2many:instance_keys;"`
 }
 
 func init() {

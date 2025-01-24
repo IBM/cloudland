@@ -46,13 +46,20 @@
                     <div class="inline field">
                         <label for="secgroups">{{.i18n.Tr "Security Groups"}}</label>
                         <select name="secgroups" id="secgroups" multiple="" class="ui multiple selection dropdown">
-                            {{ $sgID := .SecgroupID }}
-            			    {{ range .Secgroups }}
+                            {{ $IfaceSecgroups := .IfaceSecgroups }}
+            		    {{ range .Secgroups }}
+                              {{ $sgID := .ID }}
+                              {{ $selected := false }}
+            		      {{ range $IfaceSecgroups }}
                                 {{ if eq .ID $sgID }}
-                                    <option value="{{ .ID }}" selected>{{ .ID }}-{{ .Name }}</option>
-                                {{ else }}
-                                    <option value="{{ .ID }}">{{ .ID }}-{{ .Name }}</option>
+                                  {{ $selected = true }}
                                 {{ end }}
+                              {{ end }}
+                              {{ if $selected }}
+                                  <option value="{{ .ID }}" selected>{{ .ID }}-{{ .Name }}</option>
+                              {{ else }}
+                                  <option value="{{ .ID }}">{{ .ID }}-{{ .Name }}</option>
+                              {{ end }}
                             {{ end }}
                         </select>
 		    </div>

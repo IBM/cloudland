@@ -249,6 +249,11 @@ func (a *SecgroupAdmin) Create(ctx context.Context, name string, isDefault bool,
 		logger.Error("Failed to create security rule", err)
 		return
 	}
+	_, err = secruleAdmin.Create(ctx, "0.0.0.0/0", "ingress", "tcp", 3389, 3389, secgroup)
+	if err != nil {
+		logger.Error("Failed to create security rule", err)
+		return
+	}
 	_, err = secruleAdmin.Create(ctx, "0.0.0.0/0", "ingress", "udp", 68, 68, secgroup)
 	if err != nil {
 		logger.Error("Failed to create security rule", err)
@@ -317,9 +322,14 @@ func (a *SecgroupAdmin) Delete(ctx context.Context, secgroup *model.SecurityGrou
 			return
 		}
 	}
+	err = db.Model(secgroup).Related(&secgroup.Interfaces, "Interfaces").Error
+	if err != nil {
+		logger.Error("Failed to count the number of interfaces using the security group", err)
+		return
+	}
 	if len(secgroup.Interfaces) > 0 {
-		logger.Error("Security group has associated interfaces")
-		err = fmt.Errorf("Security group has associated interfaces")
+		logger.Error("Security group can not be deleted if there are associated interfaces")
+		err = fmt.Errorf("The security group can not be deleted if there are associated interfaces")
 		return
 	}
 	err = db.Where("secgroup = ?", secgroup.ID).Delete(&model.SecurityRule{}).Error
@@ -463,6 +473,13 @@ func (v *SecgroupView) New(c *macaron.Context, store session.Store) {
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
+	routers := []*model.Router{}
+	err := DB().Find(&routers).Error
+	if err != nil {
+		logger.Error("Database failed to query gateways", err)
+		return
+	}
+	c.Data["Routers"] = routers
 	c.HTML(200, "secgroups_new")
 }
 

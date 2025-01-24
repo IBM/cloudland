@@ -19,6 +19,23 @@
 									<input id="name" name="name" autofocus required>
 								</div>
 								<div class="inline field">
+								    <label for="router">{{.i18n.Tr "VPCs"}}</label>
+									<div class="ui selection dropdown">
+									  <input name="router" id="router" type="hidden">
+									  <i class="dropdown icon"></i>
+									  <div class="default text">{{.i18n.Tr "VPCs"}}</div>
+									  <div class="menu">
+										{{ if .Routers }}
+										{{ range .Routers }}
+										<div class="item" data-value={{.ID}} data-text={{.Name}}>
+										  {{.Name}}
+										</div>
+										{{ end }}
+										{{ end }}
+									  </div>
+									</div>
+								</div>
+								<div class="inline field">
 									<label for="isdefault">{{.i18n.Tr "IsDefault"}}</label>
 									<div class="ui selection dropdown">
 									  <input id="isdefault" name="isdefault" type="hidden">
