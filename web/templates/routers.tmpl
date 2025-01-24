@@ -51,7 +51,7 @@
 										{{ end }}
 									</td>
 			                        <td>{{ $.i18n.Tr .Status }}</td>
-			                        <td><a href="/secgroups/router_id={{.ID}}">{{ $.i18n.Tr  "SecurityGroup"}}</td>
+			                        <td><a href="/secgroups?router_id={{.ID}}">{{ $.i18n.Tr  "SecurityGroup"}}</td>
 		   			        {{ if $.IsAdmin }}
 			                        <td>{{.OwnerInfo.Name}}</td>
 						{{ end }}
