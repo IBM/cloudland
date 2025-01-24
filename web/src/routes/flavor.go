@@ -102,7 +102,7 @@ func (a *FlavorAdmin) Delete(ctx context.Context, flavor *model.Flavor) (err err
 	}
 	if refCount > 0 {
 		logger.Error("Flavor can not be deleted if there are instances using it")
-		err = fmt.Errorf("Flavor can not be deleted if there are instances using it")
+		err = fmt.Errorf("The flavor can not be deleted if there are instances using it")
 		return
 	}
 	if err = db.Delete(flavor).Error; err != nil {

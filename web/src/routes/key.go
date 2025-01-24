@@ -106,6 +106,16 @@ func (a *KeyAdmin) Delete(ctx context.Context, key *model.Key) (err error) {
 		err = fmt.Errorf("Not authorized")
 		return
 	}
+	err = db.Model(key).Related(&key.Instances, "Instances").Error
+	if err != nil {
+		logger.Error("Failed to count the number of instances using the key", err)
+		return
+	}
+	if len(key.Instances) > 0 {
+		logger.Error("Key can not be deleted if there are instances using it")
+		err = fmt.Errorf("The key can not be deleted if there are instances using it")
+		return
+	}
 	key.Name = fmt.Sprintf("%s-%d", key.Name, key.CreatedAt.Unix())
 	err = db.Model(key).Update("name", key.Name).Error
 	if err != nil {

@@ -205,7 +205,7 @@ func (a *ImageAdmin) Delete(ctx context.Context, image *model.Image) (err error)
 	}
 	if refCount > 0 {
 		logger.Error("Image can not be deleted if there are instances using it")
-		err = fmt.Errorf("Image can not be deleted if there are instances using it")
+		err = fmt.Errorf("The image can not be deleted if there are instances using it")
 		return
 	}
 	if image.Status == "available" {
