@@ -442,14 +442,14 @@ func (v *FloatingIpView) Create(c *macaron.Context, store session.Store) {
 	inbound := c.QueryInt("inbound")
 	outbound := c.QueryInt("outbound")
 	if inbound < 0 || inbound > 20000 {
-		logger.Error("Inbound out of range (0-20000)")
-		c.Data["ErrorMsg"] = "Inbound out of range (0-20000)"
+		logger.Errorf("Inbound out of range %d", inbound)
+		c.Data["ErrorMsg"] = "Inbound out of range [0-20000]"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
 	if outbound < 0 || outbound > 20000 {
-		logger.Error("Outbound out of range (0-20000)")
-		c.Data["ErrorMsg"] = "Outbound out of range (0-20000)"
+		logger.Errorf("Outbound out of range %d", outbound)
+		c.Data["ErrorMsg"] = "Outbound out of range [0-20000]"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
