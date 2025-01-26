@@ -202,6 +202,9 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 				return
 			}
 		}
+		if primaryIface.Subnet.DomainSearch != "" {
+			hostname = fmt.Sprintf("%s.%s", hostname, primaryIface.Subnet.DomainSearch)
+		}
 		ifaces, metadata, err = a.buildMetadata(ctx, primaryIface, secondaryIfaces, rootPasswd, keys, instance, userdata, routerID, zoneID, "")
 		if err != nil {
 			logger.Error("Build instance metadata failed", err)
@@ -473,8 +476,8 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 	}
 	virtType := image.VirtType
 	dns := primary.NameServer
-	if dns == primaryIP {
-		dns = ""
+	if dns == "" {
+		dns = gateway
 	}
 	instData := &InstanceData{
 		Userdata:   userdata,

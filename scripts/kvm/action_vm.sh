@@ -25,6 +25,7 @@ if [ "$action" = "restart" ]; then
 elif [ "$action" = "start" ]; then
     virsh start $vm_ID
     wait_vm_status $vm_ID "running"
+    echo "|:-COMMAND-:| launch_vm.sh '$vm_ID' 'running' '$SCI_CLIENT_ID' 'sync'"
 elif [ "$action" = "stop" ]; then
     virsh shutdown $vm_ID
     wait_vm_status $vm_ID "shut_off"
@@ -41,6 +42,7 @@ elif [ "$action" = "pause" ]; then
 elif [ "$action" = "resume" ]; then
     virsh resume $vm_ID
     wait_vm_status $vm_ID "running"
+    echo "|:-COMMAND-:| launch_vm.sh '$vm_ID' 'running' '$SCI_CLIENT_ID' 'sync'"
 else
     die "Invalid action: $action"
 fi

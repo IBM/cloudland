@@ -45,7 +45,7 @@ type InstanceSetUserPasswordPayload struct {
 type InstancePayload struct {
 	Count               int                 `json:"count" binding:"omitempty,gte=1,lte=16"`
 	Hypervisor          *int                `json:"hypervisor" binding:"omitempty,gte=0,lte=65535"`
-	Hostname            string              `json:"hostname" binding:"required,hostname|fqdn"`
+	Hostname            string              `json:"hostname" binding:"required,hostname"`
 	Keys                []*BaseReference    `json:"keys" binding:"omitempty,gte=0,lte=16"`
 	RootPasswd          string              `json:"root_passwd" binding:"omitempty,min=8,max=32"`
 	Flavor              string              `json:"flavor" binding:"required,min=1,max=32"`

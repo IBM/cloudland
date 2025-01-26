@@ -3,12 +3,13 @@
 cd `dirname $0`
 source ../cloudrc
 
-[ $# -lt 3 ] && echo "$0 <router> <vlan> <gateway>" && exit -1
+[ $# -lt 3 ] && echo "$0 <router> <vlan> <gateway> <domain_search>" && exit -1
 
 router=$1
 [ "${router/router-/}" = "$router" ] && router=router-$1
 vlan=$2
 gateway=$3
+domain_search=$4
 
 [ "$router" = "router-0" ] && exit 0
 
@@ -30,4 +31,3 @@ hw_addr=$hw_addr:$(echo $hyper_map | cut -c 1-2):$(echo $hyper_map | cut -c 3-4)
 if [ $? -eq 0 ]; then
     ip netns exec $router ip link set ns-$vlan address $hw_addr
 fi
-./set_subnet_dhcp.sh "$router" "$vlan" "$gateway"

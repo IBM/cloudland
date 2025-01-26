@@ -5,7 +5,14 @@ source ../cloudrc
 
 vm_ID=$1
 vm_name=$2
-[ "${vm_name%%.*}" = "$vm_name" ] && vm_name=${vm_name}.$cloud_domain
+domain_search=$cloud_domain
+if [ "${vm_name%%.*}" != "$vm_name" ]; then
+    domain_search=$(echo $vm_name | cut -d. -f2-)
+fi
+if [ -z "$domain_search" ]; then
+    domain_search=$cloud_domain
+    vm_name=${vm_name}.$cloud_domain
+fi
 working_dir=/tmp/$vm_ID
 latest_dir=$working_dir/openstack/latest
 mkdir -p $latest_dir
@@ -83,9 +90,12 @@ if [ -n "${root_passwd}" ]; then
 fi
 
 dns=$(jq -r .dns <<< $vm_meta)
-local_ip=$(jq -r .vlans[0].ip_address <<< $vm_meta)
-[ -z "$dns" -o "$dns" = "$local_ip" ] && dns=$dns_server
-net_json=$(jq 'del(.userdata) | del(.vlans) | del(.keys) | del(.security) | del(.zvm) | del(.ocp) | del(.virt_type) | del(.dns)' <<< $vm_meta | jq --arg dns $dns '.services[0].type = "dns" | .services[0].address |= .+$dns')
+gateway=$(jq -r .vlans[0].gateway <<< $vm_meta)
+gateway_ip=${gateway%%/*}
+[ -z "$dns" -o "$dns" = $gateway_ip ] && dns=$gateway_ip && dns1=$dns_server
+
+net_json=$(jq 'del(.userdata) | del(.vlans) | del(.keys) | del(.security) | del(.zvm) | del(.ocp) | del(.virt_type) | del(.dns)' <<< $vm_meta | jq --arg domain_search $domain_search --arg dns $dns '.services[0].type = "dns" | .services[0].address |= .+$dns | .services[0].search[0] |= .+$domain_search')
+[ -n "$dns1" ] && net_json=$(jq --arg dns $dns1 '.services[1].type = "dns" | .services[1].address |= .+$dns' <<< $net_json)
 echo "$net_json" > $latest_dir/network_data.json
 
 mkisofs -quiet -R -J -V config-2 -o ${cache_dir}/meta/${vm_ID}.iso $working_dir &> /dev/null

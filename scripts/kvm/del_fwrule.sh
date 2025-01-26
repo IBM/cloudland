@@ -17,8 +17,6 @@ while [ $i -lt $len ]; do
     outer_ip=$(jq -r .outer_ip <<< $rule)
     bridge fdb del $inner_mac dev v-$vni
     ip neighbor del ${inner_ip%%/*} dev v-$vni
-    if [ "$outer_ip" = "$vtep_ip" ]; then
-        ./del_host.sh "$router" "$vni" "$inner_mac" "$inner_mac"
-    fi
+    ./del_host.sh "$router" "$vni" "$inner_mac" "$inner_mac"
     let i=$i+1
 done

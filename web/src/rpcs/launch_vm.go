@@ -28,6 +28,7 @@ type FdbRule struct {
 	OuterIP  string `json:"outer_ip"`
 	Gateway  string `json:"gateway"`
 	Router   int64  `json:"router"`
+	Hostname string `json:"hostname"`
 }
 
 func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript string) (err error) {
@@ -35,60 +36,74 @@ func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript strin
 	localRules := []*FdbRule{}
 	spreadRules := []*FdbRule{}
 	hyperNode := instance.Hyper
-	hyper := &model.Hyper{}
-	err = db.Where("hostid = ?", hyperNode).Take(hyper).Error
-	if err != nil || hyper.Hostid < 0 {
-		logger.Error("Failed to query hypervisor")
+	instHyper := &model.Hyper{}
+	err = db.Where("hostid = ?", hyperNode).Take(instHyper).Error
+	if err != nil || instHyper.Hostid < 0 {
+		logger.Error("Failed to query instance hypervisor")
 		return
 	}
 	for _, iface := range instance.Interfaces {
 		if iface.Address.Subnet.Type != "public" {
-			spreadRules = append(spreadRules, &FdbRule{Instance: iface.Name, Vni: iface.Address.Subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper.HostIP, Gateway: iface.Address.Subnet.Gateway, Router: iface.Address.Subnet.RouterID})
+			subnet := iface.Address.Subnet
+			hostname := instance.Hostname
+			if iface.PrimaryIf && subnet.DomainSearch != "" {
+				hostname = fmt.Sprintf("%s.%s", instance.Hostname, subnet.DomainSearch)
+			}
+			spreadRules = append(spreadRules, &FdbRule{Instance: iface.Name, Vni: subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: instHyper.HostIP, Gateway: subnet.Gateway, Router: subnet.RouterID, Hostname: hostname})
 		}
 	}
 	allIfaces := []*model.Interface{}
-	hyperSet := make(map[int32]struct{})
+	hyperSet := make(map[int32]bool)
 	err = db.Preload("Address").Preload("Address.Subnet").Preload("Address.Subnet.Router").Where("router_id = ? and instance > 0", instance.RouterID).Find(&allIfaces).Error
 	if err != nil {
 		logger.Error("Failed to query all interfaces", err)
 		return
 	}
-	if instance.Status != "deleted" {
-		for _, iface := range allIfaces {
-			if iface.Address.Subnet.Type == "public" {
-				continue
-			}
-			if iface.Hyper == -1 {
-				continue
-			}
-			hyper := &model.Hyper{}
-			hyperErr := db.Where("hostid = ? and hostid != ?", iface.Hyper, hyperNode).Take(hyper).Error
-			if hyperErr != nil {
-				logger.Error("Failed to query hypervisor", hyperErr)
-				continue
-			}
-			hyperSet[iface.Hyper] = struct{}{}
-			localRules = append(localRules, &FdbRule{Instance: iface.Name, Vni: iface.Address.Subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper.HostIP, Gateway: iface.Address.Subnet.Gateway, Router: iface.Address.Subnet.RouterID})
+	for _, iface := range allIfaces {
+		if iface.Address.Subnet.Type == "public" {
+			continue
 		}
-		if len(hyperSet) > 0 && len(spreadRules) > 0 {
-			hyperList := fmt.Sprintf("group-fdb-%d", hyperNode)
-			i := 0
-			for key := range hyperSet {
-				if i == 0 {
-					hyperList = fmt.Sprintf("%s:%d", hyperList, key)
-				} else {
-					hyperList = fmt.Sprintf("%s,%d", hyperList, key)
-				}
-				i++
+		if iface.Hyper == -1 {
+			continue
+		}
+		remoteInstance := &model.Instance{Model: model.Model{ID: int64(iface.Instance)}}
+		err = db.Take(remoteInstance).Error
+		if err != nil {
+			logger.Error("Failed to query remote instance", err)
+			continue
+		}
+		hyper := &model.Hyper{}
+		err = db.Where("hostid = ?", remoteInstance.Hyper).Take(hyper).Error
+		if err != nil || instHyper.Hostid < 0 {
+			logger.Error("Failed to query hypervisor", err)
+			continue
+		}
+		hyperSet[iface.Hyper] = true
+		subnet := iface.Address.Subnet
+		hostname := remoteInstance.Hostname
+		if iface.PrimaryIf && subnet.DomainSearch != "" {
+			hostname = fmt.Sprintf("%s.%s", remoteInstance.Hostname, subnet.DomainSearch)
+		}
+		localRules = append(localRules, &FdbRule{Instance: iface.Name, Vni: subnet.Vlan, InnerIP: iface.Address.Address, InnerMac: iface.MacAddr, OuterIP: hyper.HostIP, Gateway: subnet.Gateway, Router: subnet.RouterID, Hostname: hostname})
+	}
+	if len(hyperSet) > 0 && len(spreadRules) > 0 {
+		hyperList := fmt.Sprintf("group-fdb-%d", hyperNode)
+		i := 0
+		for key := range hyperSet {
+			if i == 0 {
+				hyperList = fmt.Sprintf("%s:%d", hyperList, key)
+			} else {
+				hyperList = fmt.Sprintf("%s,%d", hyperList, key)
 			}
-			fdbJson, _ := json.Marshal(spreadRules)
-			control := "toall=" + hyperList
-			command := fmt.Sprintf("%s <<EOF\n%s\nEOF", fdbScript, fdbJson)
-			err = HyperExecute(ctx, control, command)
-			if err != nil {
-				logger.Error("Add_fwrule execution failed", err)
-				return
-			}
+			i++
+		}
+		fdbJson, _ := json.Marshal(spreadRules)
+		control := "toall=" + hyperList
+		command := fmt.Sprintf("%s <<EOF\n%s\nEOF", fdbScript, fdbJson)
+		err = HyperExecute(ctx, control, command)
+		if err != nil {
+			logger.Error("Add_fwrule execution failed", err)
+			return
 		}
 	}
 	if len(localRules) > 0 {
@@ -192,6 +207,7 @@ func syncNicInfo(ctx context.Context, instance *model.Instance) (err error) {
 	vlans := []*VlanInfo{}
 	var securityData []*SecurityData
 	db := DB()
+	hostname := instance.Hostname
 	for _, iface := range instance.Interfaces {
 		err = db.Model(iface).Related(&iface.SecurityGroups, "SecurityGroups").Error
 		if err != nil {
@@ -204,6 +220,9 @@ func syncNicInfo(ctx context.Context, instance *model.Instance) (err error) {
 			return
 		}
 		subnet := iface.Address.Subnet
+		if iface.PrimaryIf && subnet.DomainSearch != "" {
+			hostname = fmt.Sprintf("%s.%s", instance.Hostname, subnet.DomainSearch)
+		}
 		vlans = append(vlans, &VlanInfo{Device: iface.Name, Vlan: subnet.Vlan, Inbound: iface.Inbound, Outbound: iface.Outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: iface.Address.Address, MacAddr: iface.MacAddr, SecRules: securityData})
 	}
 	jsonData, err := json.Marshal(vlans)
@@ -212,7 +231,7 @@ func syncNicInfo(ctx context.Context, instance *model.Instance) (err error) {
 		return
 	}
 	control := fmt.Sprintf("inter=%d", instance.Hyper)
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/sync_nic_info.sh '%d' '%s' <<EOF\n%s\nEOF", instance.ID, instance.Hostname, jsonData)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/sync_nic_info.sh '%d' '%s' <<EOF\n%s\nEOF", instance.ID, hostname, jsonData)
 	err = HyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Error("Execute floating ip failed", err)

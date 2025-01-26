@@ -27,4 +27,3 @@ fi
 ./set_nic_speed.sh "$ID" "$nic_name" "$inbound" "$outbound"
 ./create_sg_chain.sh "$nic_name" "$vm_ip" "$vm_mac" "$allow_spoofing"
 ./apply_sg_rule.sh "$nic_name"
-./set_subnet_gw.sh "$router" "$vlan" "$gateway" "$ext_vlan"
