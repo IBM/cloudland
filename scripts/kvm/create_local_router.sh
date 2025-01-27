@@ -22,6 +22,12 @@ if [ -z "$def_route" ]; then
 fi
 
 ./create_veth.sh $router int-$suffix ti-$suffix
+[ -z "$system_packet_rate_limit" ] && system_packet_rate_limit=120
+system_packet_burst=$(( $system_packet_rate_limit / 2 ))
+ip netns exec $router iptables -I FORWARD -i ti-$suffix -j DROP
+ip netns exec $router iptables -I FORWARD -o ti-$suffix -j DROP
+ip netns exec $router iptables -I FORWARD -i ti-$suffix -m limit --limit $system_packet_rate_limit/second --limit-burst $system_packet_burst -j ACCEPT
+ip netns exec $router iptables -I FORWARD -o ti-$suffix -m limit --limit $system_packet_rate_limit/second --limit-burst $system_packet_burst -j ACCEPT
 local_ip=169.$(($SCI_CLIENT_ID % 234)).$(($suffix % 234)).3
 peer_ip=169.$(($SCI_CLIENT_ID % 234)).$(($suffix % 234)).2
 ip netns exec $router ip addr add ${local_ip}/31 dev ti-$suffix

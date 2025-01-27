@@ -17,6 +17,7 @@ ip netns exec $router ip link set lo up
 ip netns exec $router ip addr add $ext_ip dev link-$ext_vlan
 ip netns exec $router ip route add default via $gateway
 route_ip=${ext_ip%/*}
+ip netns exec $router iptables -P INPUT DROP
 ip netns exec $router iptables -t nat -S | grep "to-source $ext_ip\>"
 [ $? -ne 0 ] && ip netns exec $router iptables -t nat -A POSTROUTING -j SNAT --to-source $route_ip
 
