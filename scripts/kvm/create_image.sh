@@ -28,6 +28,7 @@ if [ -z "$wds_address" ]; then
     state=available
     #sync_target /opt/cloudland/cache/image
 else
+    get_wds_token
     qemu-img convert -f $format -O raw ${image} ${image}.raw
     format=raw
     uss_id=$(get_uss_gateway)

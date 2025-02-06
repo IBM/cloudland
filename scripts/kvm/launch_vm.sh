@@ -48,6 +48,7 @@ if [ -z "$wds_address" ]; then
         echo "|:-COMMAND-:| create_volume_local.sh '$vol_ID' 'volume-${vol_ID}.disk' 'attached'"
     fi
 else
+    get_wds_token
     image=$(basename $img_name .raw)
     vhost_name=instance-$ID-volume-$vol_ID-$RANDOM
     snapshot_name=${image}-${snapshot}

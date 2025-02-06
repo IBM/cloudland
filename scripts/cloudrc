@@ -19,7 +19,7 @@ snapshot_dir=/var/snapshot
 deploy_dir=/opt/cloudland/deploy
 vxlan_db=/opt/cloudland/db/cloudland.db
 cland_private_key=$deploy_dir/.ssh/cland.key
-export JAEGER_SERVICE_NAME="SCI-Backend"
+#export JAEGER_SERVICE_NAME="SCI-Backend"
 function die()
 {
     echo $1
@@ -122,14 +122,19 @@ function sql_exec()
     sqlite3 $vxlan_db "$*"
 }
 
+function get_wds_token()
+{
+    [ -z "$wds_token" ] && wds_token="bearer $(curl -L -XPOST -k "$wds_address/api/v1/login" -H "Content-Type: application/json" -d "{\"name\": \"$wds_admin\",\"password\": \"$wds_pass\"}" | jq -r .access_token)"
+}
+
 function wds_curl()
 {
     action=$1
     path=$2
     data=$3
     [ -z "$data" ] && data='{}'
-    token="bearer $(curl -L -XPOST -k "$wds_address/api/v1/login" -H "Content-Type: application/json" -d "{\"name\": \"$wds_admin\",\"password\": \"$wds_pass\"}" | jq -r .access_token)"
-    curl -s -L -X$action -H 'Content-Type: application/json' -H "Authorization: $token" -k "$wds_address/$path" -d "$data"
+    get_wds_token
+    curl -s -L -X$action -H 'Content-Type: application/json' -H "Authorization: $wds_token" -k "$wds_address/$path" -d "$data"
 }
 
 function get_uss_gateway()

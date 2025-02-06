@@ -11,6 +11,7 @@ vol_ID=$2
 vol_PATH=$3
 wds_volume_id=$4
 
+get_wds_token
 count=$(virsh dumpxml $vm_ID | grep -c "<disk type='vhostuser' device='disk'")
 let letter=97+$count
 vhost_name=instance-$ID-vol-$vol_ID
