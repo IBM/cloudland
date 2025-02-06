@@ -23,7 +23,7 @@ type Image struct {
 	Model
 	Owner                 int64     `gorm:"default:1"` /* The organization ID of the resource */
 	Name                  string    `gorm:"type:varchar(128)"`
-	OSCode                string    `gorm:"type:varchar(128), default:'linux'"`
+	OSCode                string    `gorm:"type:varchar(128);default:'linux'"`
 	Format                string    `gorm:"type:varchar(128)"`
 	Architecture          string    `gorm:"type:varchar(256)"`
 	Status                string    `gorm:"type:varchar(128)"`
