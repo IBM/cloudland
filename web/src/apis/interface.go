@@ -50,16 +50,16 @@ type InterfacePayload struct {
 	IpAddress      string           `json:"ip_address", binding:"omitempty,ipv4"`
 	MacAddress     string           `json:"mac_address" binding:"omitempty,mac"`
 	Name           string           `json:"name" binding:"omitempty,min=2,max=32"`
-	Inbound        int32            `json:"inbound" binding:"omitempty,min=1,max=20000"`
-	Outbound       int32            `json:"outbound" binding:"omitempty,min=1,max=20000"`
+	Inbound        int32            `json:"inbound" binding:"omitempty,min=0,max=20000"`
+	Outbound       int32            `json:"outbound" binding:"omitempty,min=0,max=20000"`
 	AllowSpoofing  bool             `json:"allow_spoofing" binding:"omitempty"`
 	SecurityGroups []*BaseReference `json:"security_group" binding:"omitempty"`
 }
 
 type InterfacePatchPayload struct {
 	Name           string           `json:"name" binding:"omitempty,min=2,max=32"`
-	Inbound        int32            `json:"inbound" binding:"omitempty,min=1,max=20000"`
-	Outbound       int32            `json:"outbound" binding:"omitempty,min=1,max=20000"`
+	Inbound        *int32            `json:"inbound" binding:"omitempty,min=0,max=20000"`
+	Outbound       *int32            `json:"outbound" binding:"omitempty,min=0,max=20000"`
 	AllowSpoofing  *bool             `json:"allow_spoofing" binding:"omitempty"`
 	SecurityGroups []*BaseReference `json:"security_group" binding:"omitempty"`
 }
@@ -177,12 +177,12 @@ func (v *InterfaceAPI) Patch(c *gin.Context) {
 		logger.Debugf("Update interface name to %s", ifaceName)
 	}
 	inbound := iface.Inbound
-	if payload.Inbound > 0 {
-		inbound = payload.Inbound
+	if payload.Inbound != nil {
+		inbound = *payload.Inbound
 	}
 	outbound := iface.Outbound
-	if payload.Outbound > 0 {
-		outbound = payload.Outbound
+	if payload.Outbound != nil {
+		outbound = *payload.Outbound
 	}
 	allowSpoofing := iface.AllowSpoofing
 	if payload.AllowSpoofing != nil {

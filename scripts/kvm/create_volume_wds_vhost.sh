@@ -30,6 +30,7 @@ if [ -z "$pool_ID" ]; then
     exit -1
 fi
 
+get_wds_token
 state="creating"
 let size=$size*1024*1024*1024 # GB to Bytes
 # fix wds said: "The volume name cannot start with a number"

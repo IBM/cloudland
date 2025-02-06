@@ -19,6 +19,7 @@ fi
 vm_xml=$xml_dir/$vm_ID/$vm_ID.xml
 virsh dumpxml --security-info $vm_ID 2>/dev/null | sed "s/autoport='yes'/autoport='no'/g" > $vm_xml.dump && mv -f $vm_xml.dump $vm_xml
 
+get_wds_token
 vhost_name=instance-$ID-vol-$vol_ID
 vhost_id=$(wds_curl GET "api/v2/sync/block/vhost?name=$vhost_name" | jq -r '.vhosts[0].id')
 uss_id=$(get_uss_gateway)

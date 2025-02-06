@@ -29,6 +29,7 @@ else
         echo "|:-COMMAND-:| capture_image.sh '$img_ID' 'error' 'qcow2' 'boot_volume is not specified'"
         exit -1
     fi
+    get_wds_token
     # use max speed to clone the boot volume
     clone_ret=$(wds_curl PUT "api/v2/sync/block/volumes/$boot_volume/copy_clone" "{\"name\":\"$image_name\", \"speed\": 32, \"phy_pool_id\": \"$wds_pool_id\"}")
     task_id=$(jq -r .task_id <<< $clone_ret)

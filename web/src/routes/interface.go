@@ -337,15 +337,15 @@ func (v *InterfaceView) Patch(c *macaron.Context, store session.Store) {
 	name := c.QueryTrim("name")
 	inbound := c.QueryInt("inbound")
 	outbound := c.QueryInt("outbound")
-	if inbound > 20000 || inbound < 1 {
+	if inbound > 20000 || inbound < 0 {
 		logger.Errorf("Inbound out of range %d", inbound)
-		c.Data["ErrorMsg"] = "Invalid inbound range [1-20000]"
+		c.Data["ErrorMsg"] = "Invalid inbound range [0-20000]"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}
-	if outbound > 20000 || outbound < 1 {
+	if outbound > 20000 || outbound < 0 {
 		logger.Errorf("Outbound out of range %d", outbound)
-		c.Data["ErrorMsg"] = "Inbound out of range [1-20000]"
+		c.Data["ErrorMsg"] = "Inbound out of range [0-20000]"
 		c.HTML(http.StatusBadRequest, "error")
 		return
 	}

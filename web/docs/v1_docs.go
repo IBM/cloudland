@@ -2873,6 +2873,7 @@ const docTemplatev1 = `{
             "required": [
                 "download_url",
                 "name",
+                "os_code",
                 "os_version",
                 "user"
             ],
@@ -2887,6 +2888,14 @@ const docTemplatev1 = `{
                     "type": "string",
                     "maxLength": 32,
                     "minLength": 2
+                },
+                "os_code": {
+                    "type": "string",
+                    "enum": [
+                        "linux",
+                        "windows",
+                        "other"
+                    ]
                 },
                 "os_version": {
                     "type": "string",
@@ -2916,6 +2925,9 @@ const docTemplatev1 = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "os_code": {
                     "type": "string"
                 },
                 "owner": {
@@ -3165,7 +3177,7 @@ const docTemplatev1 = `{
                 "inbound": {
                     "type": "integer",
                     "maximum": 20000,
-                    "minimum": 1
+                    "minimum": 0
                 },
                 "name": {
                     "type": "string",
@@ -3175,7 +3187,7 @@ const docTemplatev1 = `{
                 "outbound": {
                     "type": "integer",
                     "maximum": 20000,
-                    "minimum": 1
+                    "minimum": 0
                 },
                 "security_group": {
                     "type": "array",
@@ -3197,7 +3209,7 @@ const docTemplatev1 = `{
                 "inbound": {
                     "type": "integer",
                     "maximum": 20000,
-                    "minimum": 1
+                    "minimum": 0
                 },
                 "ip_address": {
                     "type": "string"
@@ -3213,7 +3225,7 @@ const docTemplatev1 = `{
                 "outbound": {
                     "type": "integer",
                     "maximum": 20000,
-                    "minimum": 1
+                    "minimum": 0
                 },
                 "security_group": {
                     "type": "array",

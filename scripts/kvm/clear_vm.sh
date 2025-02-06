@@ -33,6 +33,7 @@ rm -rf $xml_dir/$vm_ID
 if [ -z "$wds_address" ]; then	
     rm -f ${image_dir}/${vm_ID}.*
 else
+    get_wds_token
     vhosts=$(basename $(ls /var/run/wds/instance-${ID}-*))
     for vhost_name in $vhosts; do
         if [ -S "/var/run/wds/$vhost_name" ]; then
