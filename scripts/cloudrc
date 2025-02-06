@@ -135,6 +135,7 @@ function wds_curl()
     [ -z "$data" ] && data='{}'
     get_wds_token
     curl -s -L -X$action -H 'Content-Type: application/json' -H "Authorization: $wds_token" -k "$wds_address/$path" -d "$data"
+    echo
 }
 
 function get_uss_gateway()
