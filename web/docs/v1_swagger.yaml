@@ -194,6 +194,12 @@ definitions:
         maxLength: 32
         minLength: 2
         type: string
+      os_code:
+        enum:
+        - linux
+        - windows
+        - other
+        type: string
       os_version:
         maxLength: 32
         minLength: 2
@@ -205,6 +211,7 @@ definitions:
     required:
     - download_url
     - name
+    - os_code
     - os_version
     - user
     type: object
@@ -219,6 +226,8 @@ definitions:
       id:
         type: string
       name:
+        type: string
+      os_code:
         type: string
       owner:
         type: string
@@ -390,7 +399,7 @@ definitions:
         type: boolean
       inbound:
         maximum: 20000
-        minimum: 1
+        minimum: 0
         type: integer
       name:
         maxLength: 32
@@ -398,7 +407,7 @@ definitions:
         type: string
       outbound:
         maximum: 20000
-        minimum: 1
+        minimum: 0
         type: integer
       security_group:
         items:
@@ -411,7 +420,7 @@ definitions:
         type: boolean
       inbound:
         maximum: 20000
-        minimum: 1
+        minimum: 0
         type: integer
       ip_address:
         type: string
@@ -423,7 +432,7 @@ definitions:
         type: string
       outbound:
         maximum: 20000
-        minimum: 1
+        minimum: 0
         type: integer
       security_group:
         items:
