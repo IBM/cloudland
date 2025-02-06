@@ -100,7 +100,7 @@ function sync_instance()
         sudo virsh start inst-$inst_id
         echo "|:-COMMAND-:| launch_vm.sh '$inst_id' 'running' '$SCI_CLIENT_ID' 'sync'"
     done
-    cp /proc/sys/kernel/random/boot_id $flag_file
+    sudo cp $boot_file $flag_file
 }
 
 function calc_resource()
