@@ -8,13 +8,7 @@ len=$(jq length <<< $rules)
 vtep_ip=$(ifconfig $vxlan_interface | grep 'inet ' | awk '{print $2}')
 i=0
 while [ $i -lt $len ]; do
-    rule=$(jq -r .[$i] <<< $rules)
-    router=$(jq -r .router <<< $rule)
-#    instance=$(jq -r .instance <<< $rule)
-    vni=$(jq -r .vni <<< $rule)
-    inner_ip=$(jq -r .inner_ip <<< $rule)
-    inner_mac=$(jq -r .inner_mac <<< $rule)
-    outer_ip=$(jq -r .outer_ip <<< $rule)
+    read -d'\n' -r vni router outer_ip inner_ip inner_mac < <(jq -r ".[$i].vni, .[$i].router, .[$i].outer_ip, .[$i].inner_ip, .[$i].inner_mac" <<<$rules)
     bridge fdb del $inner_mac dev v-$vni
     ip neighbor del ${inner_ip%%/*} dev v-$vni
     if [ "$outer_ip" = "$vtep_ip" ]; then

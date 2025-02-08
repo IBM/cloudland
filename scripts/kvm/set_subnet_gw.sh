@@ -19,9 +19,8 @@ if [ $? -ne 0 ]; then
     apply_vnic -I ln-$vlan
 fi
 brctl addif br$vlan ln-$vlan
-ip_net=$(ipcalc -b $gateway | grep Network | awk '{print $2}')
-ip netns exec $router ipset add nonat $ip_net
-bcast=$(ipcalc -b $gateway | grep Broadcast | awk '{print $2}')
+read -d'\n' -r network bcast hostmin hostmax < <(ipcalc -nb $gateway | awk '/Network/ {print $2} /Broadcast/ {print $2} /HostMin/ {print $2} /HostMax/ {print $2}')
+ip netns exec $router ipset add nonat $network
 ip netns exec $router ip addr add $gateway brd $bcast dev ns-$vlan
 mac_map=$(printf "%06x" $vlan)
 hw_addr=52:$(echo $mac_map | cut -c 1-2):$(echo $mac_map | cut -c 3-4):$(echo $mac_map | cut -c 5-6)
@@ -30,4 +29,4 @@ hw_addr=$hw_addr:$(echo $hyper_map | cut -c 1-2):$(echo $hyper_map | cut -c 3-4)
 if [ $? -eq 0 ]; then
     ip netns exec $router ip link set ns-$vlan address $hw_addr
 fi
-./set_subnet_dhcp.sh "$router" "$vlan" "$gateway"
+./set_subnet_dhcp.sh "$router" "$vlan" "$gateway" "$network" "$hostmin" "$hostmax"

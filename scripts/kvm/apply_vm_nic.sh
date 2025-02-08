@@ -25,6 +25,6 @@ if [ $? -ne 0 ]; then
     virsh attach-interface $vm_ID bridge $vm_br --model virtio --mac $vm_mac --target $nic_name --config
 fi
 ./set_nic_speed.sh "$ID" "$nic_name" "$inbound" "$outbound"
-./create_sg_chain.sh "$nic_name" "$vm_ip" "$vm_mac" "$allow_spoofing"
+./create_sg_chain.sh "$nic_name" "$vm_ip" "$vm_mac" "$allow_spoofing" >/dev/null 2>&1
 ./apply_sg_rule.sh "$nic_name"
 ./set_subnet_gw.sh "$router" "$vlan" "$gateway" "$ext_vlan"

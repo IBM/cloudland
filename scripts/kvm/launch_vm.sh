@@ -99,7 +99,8 @@ cp $template $vm_xml
 sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_img#g; s#VM_UNIX_SOCK#$ux_sock#g; s#VM_META#$vm_meta#g; s#VM_AGENT#$vm_QA#g" $vm_xml
 virsh define $vm_xml
 virsh autostart $vm_ID
+virsh start $vm_ID --paused
 jq .vlans <<< $metadata | ./sync_nic_info.sh "$ID" "$vm_name"
-virsh start $vm_ID
+virsh resume $vm_ID
 [ $? -eq 0 ] && state=running
 echo "|:-COMMAND-:| $(basename $0) '$ID' '$state' '$SCI_CLIENT_ID' 'init'"

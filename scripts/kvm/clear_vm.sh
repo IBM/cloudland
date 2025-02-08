@@ -23,7 +23,7 @@ for (( i=1; i <= $count; i++ )); do
         result=$(icp-tower --ovs-bridge=$br_name gate remove --interface $vif_dev)
     else
         vni=${br_name#br}
-        ./clear_sg_chain.sh $vif_dev
+        ./clear_sg_chain.sh $vif_dev >/dev/null 2>&1
     fi
 done
 ./clear_local_router.sh $router

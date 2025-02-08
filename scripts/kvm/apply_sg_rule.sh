@@ -47,17 +47,13 @@ sec_data=$(cat)
 i=0
 len=$(jq length <<< $sec_data)
 while [ $i -lt $len ]; do
-    direction=$(jq -r .[$i].direction <<< $sec_data)
-    remote_ip=$(jq -r .[$i].remote_ip <<< $sec_data)
-    protocol=$(jq -r .[$i].protocol <<< $sec_data)
+    read -d'\n' -r direction remote_ip protocol port_min port_max < <(jq -r ".[$i].direction, .[$i].remote_ip, .[$i].protocol, .[$i].port_min, .[$i].port_max" <<<$sec_data)
     chain=$chain_in
     [ "$direction" = "egress" ] && chain=$chain_out
     if [ -n "$remote_ip" ]; then
         [ "$direction" = "ingress" ] && args="-s $remote_ip"
         [ "$direction" = "egress" ] && args="-d $remote_ip"
     fi
-    port_min=$(jq -r .[$i].port_min <<< $sec_data)
-    port_max=$(jq -r .[$i].port_max <<< $sec_data)
     case "$protocol" in
         "tcp")
             allow_ipv4 "$chain" "$args" "tcp" "$port_min" "$port_max"

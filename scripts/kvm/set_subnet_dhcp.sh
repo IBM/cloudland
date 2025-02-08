@@ -3,24 +3,22 @@
 cd `dirname $0`
 source ../cloudrc
 
-[ $# -lt 3 ] && echo "$0 <router> <vlan> <gateway> [name_server]" && exit -1
+[ $# -lt 6 ] && echo "$0 <router> <vlan> <gateway> <network> <hostmin> <hostmax> [name_server]" && exit -1
 
 router=$1
 [ "${router/router-/}" = "$router" ] && router=router-$1
 vlan=$2
-gateway_cidr=$3
 gateway=${3%%/*}
-name_server=$4
+network=$4
+hostmin=$5
+hostmax=$6
+name_server=$7
 [ -z "$name_server" ] && name_server=$dns_server
 
 [ "$vlan" -le 4095 ] && exit 0
 let mtu=$(ip -o link show $vxlan_interface | cut -d' ' -f5)-50
 
-ipcalc_ret=$(ipcalc -b $gateway_cidr)
-network=$(echo "$ipcalc_ret" | grep Network | awk '{print $2}')
 netstr=$(echo $network | tr -s './' '_')
-hostmin=$(echo "$ipcalc_ret" | grep HostMin | awk '{print $2}')
-hostmax=$(echo "$ipcalc_ret" | grep HostMax | awk '{print $2}')
 vlan_dir=$cache_dir/router/$router/$vlan
 dnsmasq_conf=$vlan_dir/dnsmasq.conf
 dhcp_host=$vlan_dir/dhcp_hosts
