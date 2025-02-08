@@ -438,7 +438,12 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 	instNetwork.Routes = append(instNetwork.Routes, instRoute)
 	instNetworks = append(instNetworks, instNetwork)
 	instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, Inbound: inbound, Outbound: outbound, Gateway: primary.Gateway, Router: primary.RouterID, IpAddr: address, MacAddr: iface.MacAddr})
+	securityData, err := GetSecurityData(ctx, iface.SecurityGroups)
+	if err != nil {
+		logger.Error("Get security data for interface failed", err)
+		return
+	}
+	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, Inbound: inbound, Outbound: outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: primary.Gateway, Router: primary.RouterID, IpAddr: iface.Address.Address, MacAddr: iface.MacAddr, SecRules: securityData})
 	for i, ifaceInfo := range secondaryIfaces {
 		subnet := ifaceInfo.Subnet
 		ifname := fmt.Sprintf("eth%d", i+1)
@@ -459,7 +464,12 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 			ID:      fmt.Sprintf("network%d", i+1),
 		})
 		instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Inbound: inbound, Outbound: outbound, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: address, MacAddr: iface.MacAddr})
+		securityData, err = GetSecurityData(ctx, iface.SecurityGroups)
+		if err != nil {
+			logger.Error("Get security data for interface failed", err)
+			return
+		}
+		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Inbound: inbound, Outbound: outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: iface.Address.Address, MacAddr: iface.MacAddr, SecRules: securityData})
 	}
 	var instKeys []string
 	for _, key := range keys {

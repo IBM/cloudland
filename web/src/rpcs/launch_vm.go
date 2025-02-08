@@ -166,11 +166,6 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 		return
 	}
 	if serverStatus == "running" {
-		err = syncNicInfo(ctx, instance)
-		if err != nil {
-			logger.Error("Failed to sync floating ip", err)
-			return
-		}
 		if reason == "init" {
 			err = sendFdbRules(ctx, instance, "/opt/cloudland/scripts/backend/add_fwrule.sh")
 			if err != nil {
@@ -178,6 +173,11 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 				return
 			}
 		} else if reason == "sync" {
+			err = syncNicInfo(ctx, instance)
+			if err != nil {
+				logger.Error("Failed to sync nic info", err)
+				return
+			}
 			err = syncFloatingIp(ctx, instance)
 			if err != nil {
 				logger.Error("Failed to sync floating ip", err)

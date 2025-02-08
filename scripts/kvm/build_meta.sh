@@ -10,16 +10,14 @@ working_dir=/tmp/$vm_ID
 latest_dir=$working_dir/openstack/latest
 mkdir -p $latest_dir
 
-vm_meta=$(cat)
-userdata=$(echo $vm_meta | base64 -d | jq -r .userdata)
+vm_meta=$(cat | base64 -d)
+userdata=$(jq -r .userdata <<<$vm_meta)
 if [ -n "$userdata" ]; then
-   echo $vm_meta | base64 -d | jq -r .userdata > $latest_dir/user_data
+   echo "$userdata" > $latest_dir/user_data
 fi
-vm_meta=$(echo $vm_meta | base64 -d)
 
+read -d'\n' -r root_passwd os_code dns < <(jq -r ".root_passwd, .os_code, .dns" <<<$vm_meta)
 pub_keys=$(jq -r '.keys' <<< $vm_meta)
-root_passwd=$(jq -r '.root_passwd' <<< $vm_meta)
-os_code=$(jq -r '.os_code' <<< $vm_meta)
 admin_pass=`openssl rand -base64 12`
 random_seed=`cat /dev/urandom | head -c 512 | base64 -w 0`
 (
@@ -82,9 +80,7 @@ if [ -n "${root_passwd}" ]; then
     ) > $latest_dir/vendor_data.json
 fi
 
-dns=$(jq -r .dns <<< $vm_meta)
-local_ip=$(jq -r .vlans[0].ip_address <<< $vm_meta)
-[ -z "$dns" -o "$dns" = "$local_ip" ] && dns=$dns_server
+[ -z "$dns" ] && dns=$dns_server
 net_json=$(jq 'del(.userdata) | del(.vlans) | del(.keys) | del(.security) | del(.zvm) | del(.ocp) | del(.virt_type) | del(.dns)' <<< $vm_meta | jq --arg dns $dns '.services[0].type = "dns" | .services[0].address |= .+$dns')
 echo "$net_json" > $latest_dir/network_data.json
 

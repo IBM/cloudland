@@ -31,10 +31,7 @@ else
     fi
     get_wds_token
     # use max speed to clone the boot volume
-    clone_ret=$(wds_curl PUT "api/v2/sync/block/volumes/$boot_volume/copy_clone" "{\"name\":\"$image_name\", \"speed\": 32, \"phy_pool_id\": \"$wds_pool_id\"}")
-    task_id=$(jq -r .task_id <<< $clone_ret)
-    ret_code=$(jq -r .ret_code <<< $clone_ret)
-    message=$(jq -r .message <<< $clone_ret)
+    read -d'\n' -r task_id ret_code message < <(wds_curl PUT "api/v2/sync/block/volumes/$boot_volume/copy_clone" "{\"name\":\"$image_name\", \"speed\": 32, \"phy_pool_id\": \"$wds_pool_id\"}")
     [ "$ret_code" != "0" ] && echo "|:-COMMAND-:| capture_image.sh '$img_ID' 'error' 'qcow2' 'failed to clone the boot volume: $message'" && exit -1
     state=cloning
     for i in {1..100}; do
