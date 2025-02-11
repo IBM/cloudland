@@ -12,6 +12,7 @@ import (
 
 type Instance struct {
 	Model
+	UUID        string        `gorm:"type:char(36);uniqueIndex"`
 	Owner       int64         `gorm:"default:1"` /* The organization ID of the resource */
 	Hostname    string        `gorm:"unique_index:idx_router_instance;type:varchar(128)"`
 	Domain      string        `gorm:"type:varchar(128)"`

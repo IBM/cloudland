@@ -25,6 +25,7 @@
 									{{ if $.IsAdmin }}
 			                        <th>{{.i18n.Tr "ID"}}</th>
 									{{ end }}
+									<th>{{.i18n.Tr "UUID"}}</th>
 			                        <th>{{.i18n.Tr "Name"}}</th>
 			                        <th>{{.i18n.Tr "Subnets"}}</th>
 			                        <th>{{.i18n.Tr "Status"}}</th>
@@ -42,6 +43,7 @@
 									{{ if $.IsAdmin }}
 			                        <td><a href="{{$Link}}?router_id={{.ID}}">{{.ID}}</td>
 									{{ end }}
+									<td>{{.ID}}</td>
 			                        <td><a href="{{$Link}}?router_id={{.ID}}">{{.Name}}</td>
 			                        <td>
 										{{ if .Subnets }}

@@ -18,6 +18,7 @@ import (
 
 type User struct {
 	Model
+	UUID     string    `gorm:"type:char(36);uniqueIndex"`
 	Owner    int64     `gorm:"default:1"` /* The organization ID of the resource */
 	Username string    `gorm:"size:255;unique_index" json:"username,omitempty"`
 	Password string    `gorm:"size:255" json:"password,omitempty"`

@@ -21,6 +21,7 @@ var OSCodes = []string{OS_LINUX, OS_WINDOWS, OS_OTHER}
 
 type Image struct {
 	Model
+	UUID                  string    `gorm:"type:char(36);uniqueIndex"`
 	Owner                 int64     `gorm:"default:1"` /* The organization ID of the resource */
 	Name                  string    `gorm:"type:varchar(128)"`
 	OSCode                string    `gorm:"type:varchar(128);default:'linux'"`

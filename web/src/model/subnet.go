@@ -12,6 +12,7 @@ import (
 
 type Subnet struct {
 	Model
+	UUID         string `gorm:"type:char(36);uniqueIndex"`
 	Owner        int64  `gorm:"default:1"` /* The organization ID of the resource */
 	Name         string `gorm:"unique_index:idx_router_subnet;type:varchar(64)"`
 	Network      string `gorm:"type:varchar(64)"`

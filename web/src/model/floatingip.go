@@ -12,6 +12,7 @@ import (
 
 type FloatingIp struct {
 	Model
+	UUID       string `gorm:"type:char(36);uniqueIndex"`
 	Owner      int64  `gorm:"default:1"`                     /* The organization ID of the resource */
 	Name       string `gorm:"type:varchar(64)",gorm:"index"` /* The name of the resource */
 	FipAddress string `gorm:"type:varchar(64)"`

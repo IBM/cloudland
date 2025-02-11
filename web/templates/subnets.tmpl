@@ -25,6 +25,7 @@
 									{{ if $.IsAdmin }}
 			                        <th>{{.i18n.Tr "ID"}}</th>
 									{{ end }}
+									<th>{{.i18n.Tr "UUID"}}</th>
 			                        <th>{{.i18n.Tr "Name"}}</th>
 			                        <th>{{.i18n.Tr "Network"}}</th>
 			                        <th>{{.i18n.Tr "Netmask"}}</th>
@@ -44,6 +45,7 @@
 									{{ if $.IsAdmin }}
 			                        <td><a href="{{$Link}}/{{.ID}}">{{.ID}}</a></td>
 									{{ end }}
+									<td>{{.UUID}}</td>
 			                        <td><a href="{{$Link}}/{{.ID}}">{{.Name}}</a></td>
 			                        <td>{{.Network}}</td>
 			                        <td>{{.Netmask}}</td>

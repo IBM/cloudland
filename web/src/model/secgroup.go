@@ -16,6 +16,7 @@ func init() {
 
 type SecurityGroup struct {
 	Model
+	UUID       string       `gorm:"type:char(36);uniqueIndex"`
 	Owner      int64        `gorm:"unique_index:idx_account_secgroup;efault:1"` /* The organization ID of the resource */
 	Name       string       `gorm:"unique_index:idx_account_secgroup;type:varchar(64)"`
 	IsDefault  bool         `gorm:"default:false"`

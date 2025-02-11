@@ -238,6 +238,7 @@
 									{{ if $.IsAdmin }}
 			                        <th>{{.i18n.Tr "ID"}}</th>
 									{{ end }}
+									<th>{{.i18n.Tr "UUID"}}</th>
 			                        <th>{{.i18n.Tr "Hostname"}}</th>
 			                        <th>{{.i18n.Tr "Flavor"}}</th>
 			                        <th>{{.i18n.Tr "Image"}}</th>
@@ -261,6 +262,7 @@
 									{{ if $.IsAdmin }}
 			                        <td><a href="{{$Link}}/{{.ID}}">{{.ID}}</a></td>
 									{{ end }}
+									<td>{{.UUID}}</td>
 			                        <td>{{ if .Hostname }}<a href="{{$Link}}/{{.ID}}">{{.Hostname}}</a>{{ end }}</td>
 			                        <td>{{ if .Flavor }}{{.Flavor.Name}}{{ end }}</td>
 			                        <td>{{ if .Image }}{{.Image.Name}}{{end}}</td>

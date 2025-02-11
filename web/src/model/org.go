@@ -56,6 +56,7 @@ func (r Role) String() string {
 
 type Organization struct {
 	Model
+	UUID      string    `gorm:"type:char(36);uniqueIndex"`
 	Owner     int64     `gorm:"default:1"` /* The organization ID of the resource */
 	Name      string    `gorm:"size:255;unique_index" json:"name,omitempty"`
 	Members   []*Member `gorm:"foreignkey:OrgID"`
