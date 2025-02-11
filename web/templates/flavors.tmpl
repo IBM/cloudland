@@ -23,6 +23,7 @@
 	                        <thead>
 		                        <tr>
 			                        <th>{{.i18n.Tr "ID"}}</th>
+			                        <th>{{.i18n.Tr "UUID"}}</th>
 			                        <th>{{.i18n.Tr "Name"}}</th>
 			                        <th>{{.i18n.Tr "Cpu"}}</th>
 			                        <th>{{.i18n.Tr "Memory"}}</th>
@@ -35,6 +36,7 @@
                                 {{ range .Flavors }}
 		                        <tr>
 			                        <td>{{.ID}}</td>
+			                        <td>{{.UUID}}</td>
 			                        <td>{{.Name}}</td>
 			                        <td>{{.Cpu}}</td>
 			                        <td>{{.Memory}}</td>

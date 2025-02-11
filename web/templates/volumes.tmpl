@@ -25,8 +25,8 @@
 									{{ if $.IsAdmin }}
 			                        <th>{{.i18n.Tr "ID"}}</th>
 									{{ end }}
+									<th>{{.i18n.Tr "UUID"}}</th>
 			                        <th>{{.i18n.Tr "Name"}}</th>
-			                        <th>{{.i18n.Tr "UUID"}}</th>
 			                        <th>{{.i18n.Tr "Size"}} (G)</th>
 			                        <th>{{.i18n.Tr "Status"}}</th>
 									<th>{{.i18n.Tr "Bootable"}}</th>
@@ -44,8 +44,8 @@
 									{{ if $.IsAdmin }}
 			                        <td><a href="{{$Link}}/{{.ID}}">{{.ID}}</a></td>
 									{{ end }}
+									<td><a href="{{$Link}}/{{.ID}}">{{.UUID}}</a></td>
 			                        <td><a href="{{$Link}}/{{.ID}}">{{.Name}}</a></td>
-			                        <td><a href="{{$Link}}/{{.ID}}">{{.UUID}}</a></td>
 			                        <td>{{.Size}}</td>
 			                        <td>{{.Status}}</td>
 									<td>{{.Booting}}</td>
