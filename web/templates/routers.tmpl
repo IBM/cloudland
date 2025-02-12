@@ -43,7 +43,7 @@
 									{{ if $.IsAdmin }}
 			                        <td><a href="{{$Link}}?router_id={{.ID}}">{{.ID}}</td>
 									{{ end }}
-									<td>{{.ID}}</td>
+									<td>{{.UUID}}</td>
 			                        <td><a href="{{$Link}}?router_id={{.ID}}">{{.Name}}</td>
 			                        <td>
 										{{ if .Subnets }}
