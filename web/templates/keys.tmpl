@@ -25,6 +25,7 @@
 									{{ if $.IsAdmin }}
 			                        <th>{{.i18n.Tr "ID"}}</th>
 									{{ end }}
+									<th>{{.i18n.Tr "UUID"}}</th>
 			                        <th>{{.i18n.Tr "Name"}}</th>
 						{{ if $.IsAdmin }}
 			                        <th>{{.i18n.Tr "Owner"}}</th>
@@ -40,6 +41,7 @@
 									{{ if $.IsAdmin }}
 			                        <td>{{.ID}}</td>
 									{{ end }}
+			                        <td>{{.UUID}}</td>
 			                        <td>{{.Name}}</td>
 						{{ if $.IsAdmin }}
 			                        <td>{{ if .OwnerInfo }} {{.OwnerInfo.Name}} {{end}}</td>

@@ -25,6 +25,7 @@
 									{{ if $.IsAdmin }}
 			                        <th>{{.i18n.Tr "ID"}}</th>
 									{{ end }}
+									<th>{{.i18n.Tr "UUID"}}</th>
 			                        <th>{{.i18n.Tr "Name"}}</th>
 			                        <th>{{.i18n.Tr "Created_At"}}</th>
 			                        <th>{{.i18n.Tr "Edit"}}</th>
@@ -38,6 +39,7 @@
 									{{ if $.IsAdmin }}
 			                        <td>{{.ID}}</td>
 									{{ end }}
+									<td>{{.UUID}}</td>
 			                        <td>{{.Username}}</td>
 			                        <td><span title="Tue, 18 Dec 2018 14:24:59 &#43;0800">{{.CreatedAt}}</span></td>
 			                        <td><a href="{{$Link}}/{{.ID}}"><i class="fa fa-pencil-square-o"></i></a></td>
