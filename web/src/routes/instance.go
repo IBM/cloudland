@@ -65,9 +65,9 @@ type NetworkLink struct {
 }
 
 type VolumeInfo struct {
-	ID      int64 `json:"id"`
+	ID      string `json:"id"`
 	UUID    string `json:"uuid"`
-	Device  string `json:"device"`
+	device  string `json:"device"`
 	Booting bool   `json:"booting"`
 }
 
