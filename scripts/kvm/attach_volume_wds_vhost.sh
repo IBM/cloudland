@@ -14,7 +14,7 @@ wds_volume_id=$4
 get_wds_token
 count=$(virsh dumpxml $vm_ID | grep -c "<disk type='vhostuser' device='disk'")
 let letter=97+$count
-vhost_name=instance-$ID-vol-$vol_ID
+vhost_name=instance-$ID-vol-$vol_ID-$RANDOM
 uss_id=$(get_uss_gateway)
 vhost_id=$(wds_curl POST "api/v2/sync/block/vhost" "{\"name\": \"$vhost_name\"}" | jq -r .id)
 ret_code=$(wds_curl PUT "api/v2/sync/block/vhost/bind_uss" "{\"vhost_id\": \"$vhost_id\", \"uss_gw_id\": \"$uss_id\", \"lun_id\": \"$wds_volume_id\", \"is_snapshot\": false}" | jq -r .ret_code)

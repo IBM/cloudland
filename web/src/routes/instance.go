@@ -64,6 +64,13 @@ type NetworkLink struct {
 	Type    string `json:"type,omitempty"`
 }
 
+type VolumeInfo struct {
+	ID      string `json:"id"`
+	UUID    string `json:"uuid"`
+	device  string `json:"device"`
+	Booting bool   `json:"booting"`
+}
+
 type InstanceData struct {
 	Userdata   string             `json:"userdata"`
 	VirtType   string             `json:"virt_type"`
@@ -71,6 +78,7 @@ type InstanceData struct {
 	Vlans      []*VlanInfo        `json:"vlans"`
 	Networks   []*InstanceNetwork `json:"networks"`
 	Links      []*NetworkLink     `json:"links"`
+	Volumes    []*VolumeInfo      `json:"volumes"`
 	Keys       []string           `json:"keys"`
 	RootPasswd string             `json:"root_passwd"`
 	OSCode     string             `json:"os_code"`
@@ -244,6 +252,32 @@ func (a *InstanceAdmin) ChangeInstanceStatus(ctx context.Context, instance *mode
 		logger.Error("Delete vm command execution failed", err)
 		return
 	}
+	return
+}
+
+func (a *InstanceAdmin) Migrate(ctx context.Context, instance *model.Instance, fromHyper, toHyper *model.Hyper) (err error) {
+	memberShip := GetMemberShip(ctx)
+	permit, err := memberShip.CheckAdmin(model.Admin, "instances", instance.ID)
+	if err != nil {
+		logger.Error("Failed to check owner")
+		return
+	}
+	if !permit {
+		logger.Error("Not authorized to migrate the instance")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
+	if toHyper.Hostid == int(instance.Hyper) {
+			logger.Error("No need to migrate the instance to the same host")
+			err = fmt.Errorf("No need to migrate the instance to the same host")
+			return
+	}
+	ctx, db, newTransaction := StartTransaction(ctx)
+	defer func() {
+		if newTransaction {
+			EndTransaction(ctx, err)
+		}
+	}()
 	return
 }
 
