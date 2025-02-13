@@ -40,6 +40,7 @@ type KeyListResponse struct {
 type KeyPayload struct {
 	Name      string `json:"name" binding:"required,min=2,max=32"`
 	PublicKey string `json:"public_key" binding:"required,min=4,max=4096"`
+	UUID      string `json:"uuid,omitempty" binding:"omitempty"`
 }
 
 type KeyPatchPayload struct {
@@ -129,7 +130,7 @@ func (v *KeyAPI) Create(c *gin.Context) {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
 		return
 	}
-	key, err := keyAdmin.Create(ctx, payload.Name, payload.PublicKey)
+	key, err := keyAdmin.Create(ctx, payload.Name, payload.PublicKey, payload.UUID)
 	if err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Not able to create", err)
 		return
