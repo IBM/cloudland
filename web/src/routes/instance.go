@@ -65,9 +65,9 @@ type NetworkLink struct {
 }
 
 type VolumeInfo struct {
-	ID      string `json:"id"`
+	ID      int64 `json:"id"`
 	UUID    string `json:"uuid"`
-	device  string `json:"device"`
+	Device  string `json:"device"`
 	Booting bool   `json:"booting"`
 }
 
@@ -267,17 +267,24 @@ func (a *InstanceAdmin) Migrate(ctx context.Context, instance *model.Instance, f
 		err = fmt.Errorf("Not authorized")
 		return
 	}
-	if toHyper.Hostid == int(instance.Hyper) {
+	if toHyper.Hostid == instance.Hyper {
 			logger.Error("No need to migrate the instance to the same host")
 			err = fmt.Errorf("No need to migrate the instance to the same host")
 			return
 	}
-	ctx, db, newTransaction := StartTransaction(ctx)
-	defer func() {
-		if newTransaction {
-			EndTransaction(ctx, err)
-		}
-	}()
+	metadata, err := a.getMetadata(ctx, instance)
+	if err != nil {
+		logger.Error("Failed to get metadata")
+		return
+	}
+	flavor := instance.Flavor
+	control := fmt.Sprintf("inter=%d", instance.Hyper)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/pre_migrate_vm.sh '%d' '%t' '%s' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, instance.Image.QAEnabled, instance.Hostname, flavor.Cpu, flavor.Memory, flavor.Disk, base64.StdEncoding.EncodeToString([]byte(metadata)))
+	err = HyperExecute(ctx, control, command)
+	if err != nil {
+		logger.Error("Pre migrate vm command execution failed", err)
+		return
+	}
 	return
 }
 
@@ -439,6 +446,61 @@ func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subne
 		return
 	}
 	return
+}
+
+func (a *InstanceAdmin) getMetadata(ctx context.Context, instance *model.Instance) (metadata string, err error) {
+	vlans := []*VlanInfo{}
+	instNetworks := []*InstanceNetwork{}
+	instLinks := []*NetworkLink{}
+	volumes := []*VolumeInfo{}
+	var instKeys []string
+	for _, key := range instance.Keys {
+		instKeys = append(instKeys, key.PublicKey)
+	}
+	for _, volume := range instance.Volumes {
+		volumes = append(volumes, &VolumeInfo{
+			ID: volume.ID,
+			UUID: volume.GetOriginVolumeID(),
+			Device: volume.Target,
+			Booting: volume.Booting,
+		})
+	}
+	dns := ""
+	for i, iface := range instance.Interfaces {
+		subnet := iface.Address.Subnet
+		instNetwork := &InstanceNetwork{
+                        Address: iface.Address.Address,
+                        Netmask: subnet.Netmask,
+                        Type:    "ipv4",
+                        Link:    iface.Name,
+                        ID:      fmt.Sprintf("network%d", i+1),
+                }
+		if iface.PrimaryIf {
+			instRoute := &NetworkRoute{Network: "0.0.0.0", Netmask: "0.0.0.0", Gateway: subnet.Gateway}
+			instNetwork.Routes = append(instNetwork.Routes, instRoute)
+			dns = subnet.NameServer
+		}
+		instNetworks = append(instNetworks, instNetwork)
+		instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
+		vlans = append(vlans, &VlanInfo{Device: iface.Name, Vlan: subnet.Vlan, Inbound: iface.Inbound, Outbound: iface.Outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: iface.Address.Address, MacAddr: iface.MacAddr})
+	}
+	instData := &InstanceData{
+		Userdata:   instance.Userdata,
+		DNS:        dns,
+		Vlans:      vlans,
+		Networks:   instNetworks,
+		Links:      instLinks,
+		Volumes:    volumes,
+		Keys:       instKeys,
+		RootPasswd: "",
+		OSCode:     instance.Image.OSCode,
+	}
+	jsonData, err := json.Marshal(instData)
+	if err != nil {
+		logger.Errorf("Failed to marshal instance json data, %v", err)
+		return
+	}
+	return string(jsonData), nil
 }
 
 func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo,
