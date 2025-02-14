@@ -195,14 +195,15 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		var ifaces []*model.Interface
 		// cloud-init does not support set encrypted password for windows
 		// so we only encrypt the password for linux and others
+		instancePasswd := ""
 		if rootPasswd != "" && image.OSCode != "windows" {
-			rootPasswd, err = encrpt.Mkpasswd(rootPasswd, "sha512")
+			instancePasswd, err = encrpt.Mkpasswd(rootPasswd, "sha512")
 			if err != nil {
 				logger.Errorf("Failed to encrypt admin password, %v", err)
 				return
 			}
 		}
-		ifaces, metadata, err = a.buildMetadata(ctx, primaryIface, secondaryIfaces, rootPasswd, keys, instance, userdata, routerID, zoneID, "")
+		ifaces, metadata, err = a.buildMetadata(ctx, primaryIface, secondaryIfaces, instancePasswd, keys, instance, userdata, routerID, zoneID, "")
 		if err != nil {
 			logger.Error("Build instance metadata failed", err)
 			return
