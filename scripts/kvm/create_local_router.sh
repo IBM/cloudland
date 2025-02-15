@@ -28,8 +28,16 @@ ip netns exec $router iptables -I FORWARD -i ti-$suffix -j DROP
 ip netns exec $router iptables -I FORWARD -o ti-$suffix -j DROP
 ip netns exec $router iptables -I FORWARD -i ti-$suffix -m limit --limit $system_packet_rate_limit/second --limit-burst $system_packet_burst -j ACCEPT
 ip netns exec $router iptables -I FORWARD -o ti-$suffix -m limit --limit $system_packet_rate_limit/second --limit-burst $system_packet_burst -j ACCEPT
-local_ip=169.$(($SCI_CLIENT_ID % 234)).$(($suffix % 234)).3
-peer_ip=169.$(($SCI_CLIENT_ID % 234)).$(($suffix % 234)).2
+remaineder=$(( $suffix % 64516 ))
+part2=$(( $remaineder / 254 ))
+part3=$(( $remaineder % 254 ))
+for i in {1..125}; do
+    part4=$(( ($RANDOM % 125) * 2 + 3))
+    local_ip=169.$part2.$part3.$part4
+    peer_ip=169.$part2.$part3.$(( $part4 - 1 ))
+    ip netns exec router-0 ip addr | grep "\<$peer_ip\>"
+    [ $? -ne 0 ] && break
+done
 ip netns exec $router ip addr add ${local_ip}/31 dev ti-$suffix
 ip netns exec $router ip route add default via $peer_ip
 
