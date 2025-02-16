@@ -145,3 +145,8 @@ function get_uss_gateway()
     [ -z "$uss_id" -o "$uss_id" = null ] && uss_id=$(wds_curl GET "api/v2/wds/uss" | jq --arg hname $(hostname -s) -r '.uss_gateways | .[] | select(.server_name == $hname) | .id')
     [ -n "$uss_id" ] && echo $uss_id
 }
+
+function timeout_virsh()
+{
+    timeout -s 9 5 virsh $*
+}
