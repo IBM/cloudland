@@ -9,9 +9,9 @@ ID=$1
 vm_ID=inst-$ID
 router=$2
 boot_volume=$3
-vm_xml=$(virsh dumpxml $vm_ID)
-virsh undefine $vm_ID
-cmd="virsh destroy $vm_ID"
+vm_xml=$(timeout_virsh dumpxml $vm_ID)
+timeout_virsh undefine $vm_ID
+cmd="timeout_virsh destroy $vm_ID"
 result=$(eval "$cmd")
 count=$(echo $vm_xml | xmllint --xpath 'count(/domain/devices/interface)' -)
 for (( i=1; i <= $count; i++ )); do
