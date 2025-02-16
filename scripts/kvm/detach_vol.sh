@@ -10,5 +10,5 @@ vol_name=$2
 device=$3
 vol_file=$volume_dir/$vol_name.disk
 
-virsh detach-disk $vm_ID $device
+timeout_virsh detach-disk $vm_ID $device
 [ $? -eq 0 ] && echo "|:-COMMAND-:| /opt/cloudland/scripts/frontback/`basename $0` '$vm_ID' '$vol_name' '$device'"
