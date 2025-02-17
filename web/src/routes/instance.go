@@ -738,9 +738,10 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	if order == "" {
 		order = "-created_at"
 	}
-	query := c.QueryTrim("q")
+	queryStr := c.QueryTrim("q")
+	query := queryStr
 	if query != "" {
-		query = fmt.Sprintf("hostname like '%%%s%%'", query)
+		query = fmt.Sprintf("hostname like '%%%s%%'", queryStr)
 	}
 	if router_id != "" {
 		routerID, err := strconv.Atoi(router_id)
@@ -760,7 +761,7 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	c.Data["Instances"] = instances
 	c.Data["Total"] = total
 	c.Data["Pages"] = pages
-	c.Data["Query"] = query
+	c.Data["Query"] = queryStr
 	c.Data["HostName"] = hostname
 	c.HTML(200, "instances")
 }
