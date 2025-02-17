@@ -97,7 +97,7 @@ function sync_instance()
             [ $? -eq 0 ] && break
             sleep 2
         done
-        sudo timeout_virsh start inst-$inst_id
+        sudo virsh start inst-$inst_id
         echo "|:-COMMAND-:| launch_vm.sh '$inst_id' 'running' '$SCI_CLIENT_ID' 'sync'"
     done
     sudo cp $boot_file $flag_file

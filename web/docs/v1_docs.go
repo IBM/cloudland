@@ -3060,6 +3060,11 @@ const docTemplatev1 = `{
                         "$ref": "#/definitions/common.BaseReference"
                     }
                 },
+                "login_port": {
+                    "type": "integer",
+                    "maximum": 65535,
+                    "minimum": 0
+                },
                 "primary_interface": {
                     "$ref": "#/definitions/apis.InterfacePayload"
                 },
