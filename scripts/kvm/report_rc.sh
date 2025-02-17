@@ -37,7 +37,7 @@ function probe_arp()
 function inst_status()
 {
     old_inst_list=$(cat $image_dir/old_inst_list 2>/dev/null)
-    inst_list=$(sudo timeout_virsh list --all | tail -n +3 | cut -d' ' -f3- | xargs | sed 's/inst-//g;s/shut off/shut_off/g')
+    inst_list=$(sudo virsh list --all | tail -n +3 | cut -d' ' -f3- | xargs | sed 's/inst-//g;s/shut off/shut_off/g')
     [ "$inst_list" = "$old_inst_list" ] && return
     [ -n "$inst_list" ] && echo "|:-COMMAND-:| inst_status.sh '$SCI_CLIENT_ID' '$inst_list'"
     echo "$inst_list" >$image_dir/old_inst_list
@@ -90,7 +90,7 @@ function sync_instance()
 	sudo iptables -D FORWARD -i $bridge -o $bridge -j ACCEPT
 	sudo iptables -I FORWARD -i $bridge -o $bridge -j ACCEPT
     done
-    inst_ids=$(sudo timeout_virsh list --all | grep inst- | awk '{print $2}' | cut -d- -f2)
+    inst_ids=$(sudo virsh list --all | grep inst- | awk '{print $2}' | cut -d- -f2)
     for inst_id in $inst_ids; do
         for i in {1..10}; do
             ls /var/run/wds/instance-${inst_id}*
