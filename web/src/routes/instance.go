@@ -73,6 +73,7 @@ type InstanceData struct {
 	Links      []*NetworkLink     `json:"links"`
 	Keys       []string           `json:"keys"`
 	RootPasswd string             `json:"root_passwd"`
+	LoginPort  int                `json:"login_port"`
 	OSCode     string             `json:"os_code"`
 }
 
@@ -109,7 +110,7 @@ func (a *InstanceAdmin) getHyperGroup(ctx context.Context, imageType string, zon
 
 func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, image *model.Image,
 	flavor *model.Flavor, zone *model.Zone, routerID int64, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo,
-	keys []*model.Key, rootPasswd string, hyperID int) (instances []*model.Instance, err error) {
+	keys []*model.Key, rootPasswd string, loginPort, hyperID int) (instances []*model.Instance, err error) {
 	logger.Debugf("Create %d instances with image %s, flavor %s, zone %s, router %d, primary interface %v, secondary interfaces %v, keys %v, root password %s, hyper %d",
 		count, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, "********", hyperID)
 	ctx, db, newTransaction := StartTransaction(ctx)
@@ -136,6 +137,13 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			logger.Errorf("Hypervisor %v is not in zone %d, %v", hyper, zoneID, err)
 			err = fmt.Errorf("Hypervisor is not in this zone")
 			return
+		}
+	}
+	if loginPort == 0 {
+		if image.OSCode == "linux" {
+			loginPort = 22
+		} else if image.OSCode == "windows" {
+			loginPort = 3389
 		}
 	}
 	hyperGroup, err := a.getHyperGroup(ctx, image.VirtType, zoneID)
@@ -170,6 +178,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			FlavorID:    flavor.ID,
 			Keys:        keys,
 			PasswdLogin: passwdLogin,
+			LoginPort:   int32(loginPort),
 			Userdata:    userdata,
 			Status:      "pending",
 			ZoneID:      zoneID,
@@ -203,7 +212,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 				return
 			}
 		}
-		ifaces, metadata, err = a.buildMetadata(ctx, primaryIface, secondaryIfaces, instancePasswd, keys, instance, userdata, routerID, zoneID, "")
+		ifaces, metadata, err = a.buildMetadata(ctx, primaryIface, secondaryIfaces, instancePasswd, loginPort, keys, instance, userdata, routerID, zoneID, "")
 		if err != nil {
 			logger.Error("Build instance metadata failed", err)
 			return
@@ -409,7 +418,7 @@ func (a *InstanceAdmin) createInterface(ctx context.Context, subnet *model.Subne
 }
 
 func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo,
-	rootPasswd string, keys []*model.Key, instance *model.Instance, userdata string, routerID, zoneID int64,
+	rootPasswd string, loginPort int, keys []*model.Key, instance *model.Instance, userdata string, routerID, zoneID int64,
 	service string) (interfaces []*model.Interface, metadata string, err error) {
 	if rootPasswd == "" {
 		logger.Debugf("Build instance metadata with primaryIface: %v, secondaryIfaces: %+v, keys: %+v, instance: %+v, userdata: %s, routerID: %d, zoneID: %d, service: %s",
@@ -439,12 +448,12 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 	instNetwork.Routes = append(instNetwork.Routes, instRoute)
 	instNetworks = append(instNetworks, instNetwork)
 	instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-	securityData, err := GetSecurityData(ctx, iface.SecurityGroups)
+	err = secgroupAdmin.AllowPortForInterfaceSecgroups(ctx, int32(loginPort), iface)
 	if err != nil {
-		logger.Error("Get security data for interface failed", err)
+		logger.Error("Failed to allow login port for interface security groups ", err)
 		return
 	}
-	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, Inbound: inbound, Outbound: outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: primary.Gateway, Router: primary.RouterID, IpAddr: iface.Address.Address, MacAddr: iface.MacAddr, SecRules: securityData})
+	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, Inbound: inbound, Outbound: outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: primary.Gateway, Router: primary.RouterID, IpAddr: iface.Address.Address, MacAddr: iface.MacAddr})
 	for i, ifaceInfo := range secondaryIfaces {
 		subnet := ifaceInfo.Subnet
 		ifname := fmt.Sprintf("eth%d", i+1)
@@ -465,12 +474,12 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 			ID:      fmt.Sprintf("network%d", i+1),
 		})
 		instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-		securityData, err = GetSecurityData(ctx, iface.SecurityGroups)
+		err = secgroupAdmin.AllowPortForInterfaceSecgroups(ctx, int32(loginPort), iface)
 		if err != nil {
-			logger.Error("Get security data for interface failed", err)
+			logger.Error("Failed to allow login port for interface security groups ", err)
 			return
 		}
-		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Inbound: inbound, Outbound: outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: iface.Address.Address, MacAddr: iface.MacAddr, SecRules: securityData})
+		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Inbound: inbound, Outbound: outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: iface.Address.Address, MacAddr: iface.MacAddr})
 	}
 	var instKeys []string
 	for _, key := range keys {
@@ -496,6 +505,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 		Links:      instLinks,
 		Keys:       instKeys,
 		RootPasswd: rootPasswd,
+		LoginPort:  loginPort,
 		OSCode:     image.OSCode,
 	}
 	jsonData, err := json.Marshal(instData)
@@ -520,7 +530,14 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 		err = fmt.Errorf("Not authorized")
 		return
 	}
-	if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
+	for _, iface := range instance.Interfaces {
+		err = secgroupAdmin.RemovePortForInterfaceSecgroups(ctx, instance.LoginPort, iface)
+		if err != nil {
+			logger.Error("Ignore the failure of removing login port for interface security groups ", err)
+		}
+	}
+	err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error
+	if err != nil {
 		logger.Errorf("Failed to query floating ip(s), %v", err)
 		return
 	}
@@ -721,9 +738,10 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	if order == "" {
 		order = "-created_at"
 	}
-	query := c.QueryTrim("q")
+	queryStr := c.QueryTrim("q")
+	query := queryStr
 	if query != "" {
-		query = fmt.Sprintf("hostname like '%%%s%%'", query)
+		query = fmt.Sprintf("hostname like '%%%s%%'", queryStr)
 	}
 	if router_id != "" {
 		routerID, err := strconv.Atoi(router_id)
@@ -743,7 +761,7 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	c.Data["Instances"] = instances
 	c.Data["Total"] = total
 	c.Data["Pages"] = pages
-	c.Data["Query"] = query
+	c.Data["Query"] = queryStr
 	c.Data["HostName"] = hostname
 	c.HTML(200, "instances")
 }
@@ -1167,6 +1185,13 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 			return
 		}
 	}
+	loginPort := c.QueryInt("login_port")
+	if loginPort > 65535 || loginPort < 0 {
+		logger.Error("Invalid ssh port")
+		c.Data["ErrorMsg"] = "Invalid login port"
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
 	imageID := c.QueryInt64("image")
 	if imageID <= 0 {
 		logger.Error("No valid image ID", imageID)
@@ -1335,7 +1360,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		instKeys = append(instKeys, key)
 	}
 	userdata := c.QueryTrim("userdata")
-	_, err = instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, primarySubnet.RouterID, primaryIface, secondaryIfaces, instKeys, rootPasswd, hyperID)
+	_, err = instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, primarySubnet.RouterID, primaryIface, secondaryIfaces, instKeys, rootPasswd, loginPort, hyperID)
 	if err != nil {
 		logger.Error("Create instance failed", err)
 		c.Data["ErrorMsg"] = err.Error()

@@ -48,6 +48,7 @@ type InstancePayload struct {
 	Hostname            string              `json:"hostname" binding:"required,hostname|fqdn"`
 	Keys                []*BaseReference    `json:"keys" binding:"omitempty,gte=0,lte=16"`
 	RootPasswd          string              `json:"root_passwd" binding:"omitempty,min=8,max=32"`
+	LoginPort           int                 `json:"login_port" binding:"omitempty,min=0,max=65535"`
 	Flavor              string              `json:"flavor" binding:"required,min=1,max=32"`
 	Image               *BaseReference      `json:"image" binding:"required"`
 	PrimaryInterface    *InterfacePayload   `json:"primary_interface", binding:"required"`
@@ -318,7 +319,7 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 	}
 	logger.Debugf("Creating %d instances with hostname %s, userdata %s, image %s, flavor %s, zone %s, router %d, primaryIface %v, secondaryIfaces %v, keys %v, hypervisor %d",
 		count, hostname, userdata, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, hypervisor)
-	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, routerID, primaryIface, secondaryIfaces, keys, rootPasswd, hypervisor)
+	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, routerID, primaryIface, secondaryIfaces, keys, rootPasswd, hypervisor, payload.LoginPort)
 	if err != nil {
 		logger.Errorf("Failed to create instances, %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Failed to create instances", err)

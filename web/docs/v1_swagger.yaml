@@ -314,6 +314,10 @@ definitions:
         maxItems: 16
         minItems: 0
         type: array
+      login_port:
+        maximum: 65535
+        minimum: 0
+        type: integer
       primary_interface:
         $ref: '#/definitions/apis.InterfacePayload'
       root_passwd:
