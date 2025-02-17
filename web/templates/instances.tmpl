@@ -240,6 +240,7 @@
 									{{ end }}
 									<th>{{.i18n.Tr "UUID"}}</th>
 			                        <th>{{.i18n.Tr "Hostname"}}</th>
+			                        <th>{{.i18n.Tr "LoginPort"}}</th>
 			                        <th>{{.i18n.Tr "Flavor"}}</th>
 			                        <th>{{.i18n.Tr "Image"}}</th>
 			                        <th>{{.i18n.Tr "IP_Address"}}</th>
@@ -264,6 +265,7 @@
 									{{ end }}
 									<td>{{.UUID}}</td>
 			                        <td>{{ if .Hostname }}<a href="{{$Link}}/{{.ID}}">{{.Hostname}}</a>{{ end }}</td>
+			                        <td>{{ if .LoginPort }}{{.LoginPort}}{{ end }}</td>
 			                        <td>{{ if .Flavor }}{{.Flavor.Name}}{{ end }}</td>
 			                        <td>{{ if .Image }}{{.Image.Name}}{{end}}</td>
 			                        <td>
