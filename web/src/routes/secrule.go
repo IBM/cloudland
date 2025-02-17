@@ -180,6 +180,47 @@ func (a *SecruleAdmin) Create(ctx context.Context, remoteIp, direction, protocol
 	return
 }
 
+func (a *SecruleAdmin) DeleteRule(ctx context.Context, remoteIp, direction, protocol string, portMin, portMax int32, secgroup *model.SecurityGroup) (secrule *model.SecurityRule, err error) {
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.ValidateOwner(model.Writer, secgroup.Owner)
+	if !permit {
+		logger.Error("Not authorized for this operation")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
+	ctx, db, newTransaction := StartTransaction(ctx)
+	defer func() {
+		if newTransaction {
+			EndTransaction(ctx, err)
+		}
+	}()
+	secrule = &model.SecurityRule{
+		Secgroup:  secgroup.ID,
+		RemoteIp:  remoteIp,
+		Direction: direction,
+		IpVersion: "ipv4",
+		Protocol:  protocol,
+		PortMin:   portMin,
+		PortMax:   portMax,
+	}
+	err = db.Where(secrule).Take(secrule).Error
+	if err != nil {
+		logger.Error("Failed to query secrule", err)
+		return
+	}
+	err = db.Delete(secrule).Error
+	if err != nil {
+		logger.Error("DB failed to delete security rule", err)
+		return
+	}
+	err = a.ApplySecgroup(ctx, secgroup)
+	if err != nil {
+		logger.Error("Failed to apply security rule", err)
+		return
+	}
+	return
+}
+
 func (a *SecruleAdmin) Delete(ctx context.Context, secrule *model.SecurityRule, secgroup *model.SecurityGroup) (err error) {
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {

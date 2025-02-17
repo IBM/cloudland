@@ -121,7 +121,7 @@ fi
 if [ -n "${login_port}" ] && [ "${login_port}" != "3389" ] && [ "${os_code}" = "windows" ]; then
     cloud_config_txt+=$(
         echo \
-'  - path: /tmp/change_rdp_port.ps1\n'\
+'  - path: C:\\change_rdp_port.ps1\n'\
 '    content: |\n'\
 '      $new_port = '${login_port}'\n'\
 '      $old_port = (Get-ItemProperty -Path \"HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp\").PortNumber\n'\
@@ -131,7 +131,7 @@ if [ -n "${login_port}" ] && [ "${login_port}" != "3389" ] && [ "${os_code}" = "
 '        New-NetFirewallRule -DisplayName \"RDP-TCP-$($new_port)\" -Action Allow -Protocol TCP -LocalPort $new_port\n'\
 '      }\n'\
 'runcmd:\n'\
-'  - powershell -ExecutionPolicy Bypass -File /tmp/change_rdp_port.ps1\n'
+'  - powershell -ExecutionPolicy Bypass -File C:\\change_rdp_port.ps1\n'
     )
 fi
 
@@ -142,7 +142,7 @@ echo -e "$vendor_data_header""$cloud_config_txt""$vendor_data_end" > $latest_dir
 sed -i -n '1h; 1!H; ${ x; s/\n/\\n/g; p; }' $latest_dir/vendor_data.json
 
 [ -z "$dns" ] && dns=$dns_server
-net_json=$(jq 'del(.userdata) | del(.vlans) | del(.keys) | del(.security) | del(.zvm) | del(.ocp) | del(.virt_type) | del(.dns) | del(.login_port)' <<< $vm_meta | jq --arg dns $dns '.services[0].type = "dns" | .services[0].address |= .+$dns')
+net_json=$(jq 'del(.userdata) | del(.vlans) | del(.keys) | del(.security) | del(.login_port) | del(.root_passwd) | del(.dns)' <<< $vm_meta | jq --arg dns $dns '.services[0].type = "dns" | .services[0].address |= .+$dns')
 echo "$net_json" > $latest_dir/network_data.json
 
 mkisofs -quiet -R -J -V config-2 -o ${cache_dir}/meta/${vm_ID}.iso $working_dir &> /dev/null
