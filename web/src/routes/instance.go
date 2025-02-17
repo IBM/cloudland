@@ -73,6 +73,7 @@ type InstanceData struct {
 	Links      []*NetworkLink     `json:"links"`
 	Keys       []string           `json:"keys"`
 	RootPasswd string             `json:"root_passwd"`
+	LoginPort  int                `json:"login_port"`
 	OSCode     string             `json:"os_code"`
 }
 
@@ -504,6 +505,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 		Links:      instLinks,
 		Keys:       instKeys,
 		RootPasswd: rootPasswd,
+		LoginPort:  loginPort,
 		OSCode:     image.OSCode,
 	}
 	jsonData, err := json.Marshal(instData)
