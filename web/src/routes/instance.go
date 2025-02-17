@@ -82,6 +82,7 @@ type InstanceData struct {
 	Keys       []string           `json:"keys"`
 	RootPasswd string             `json:"root_passwd"`
 	OSCode     string             `json:"os_code"`
+	LoginPort  int                `json:"login_port"`
 }
 
 type InstancesData struct {
@@ -516,11 +517,11 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 	rootPasswd string, loginPort int, keys []*model.Key, instance *model.Instance, userdata string, routerID, zoneID int64,
 	service string) (interfaces []*model.Interface, metadata string, err error) {
 	if rootPasswd == "" {
-		logger.Debugf("Build instance metadata with primaryIface: %v, secondaryIfaces: %+v, keys: %+v, instance: %+v, userdata: %s, routerID: %d, zoneID: %d, service: %s",
-			primaryIface, secondaryIfaces, keys, instance, userdata, routerID, zoneID, service)
+		logger.Debugf("Build instance metadata with primaryIface: %v, secondaryIfaces: %+v, login_port: %d, keys: %+v, instance: %+v, userdata: %s, routerID: %d, zoneID: %d, service: %s",
+			primaryIface, secondaryIfaces, loginPort, keys, instance, userdata, routerID, zoneID, service)
 	} else {
-		logger.Debugf("Build instance metadata with primaryIface: %v, secondaryIfaces: %+v, keys: %+v, instance: %+v, userdata: %s, routerID: %d, zoneID: %d, service: %s, root password: %s",
-			primaryIface, secondaryIfaces, keys, instance, userdata, routerID, zoneID, service, "******")
+		logger.Debugf("Build instance metadata with primaryIface: %v, secondaryIfaces: %+v, login_port: %d, keys: %+v, instance: %+v, userdata: %s, routerID: %d, zoneID: %d, service: %s, root password: %s",
+			primaryIface, secondaryIfaces, loginPort, keys, instance, userdata, routerID, zoneID, service, "******")
 	}
 	vlans := []*VlanInfo{}
 	instNetworks := []*InstanceNetwork{}
@@ -611,6 +612,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 		Keys:       instKeys,
 		RootPasswd: rootPasswd,
 		OSCode:     image.OSCode,
+		LoginPort:  loginPort,
 	}
 	jsonData, err := json.Marshal(instData)
 	if err != nil {
@@ -842,8 +844,8 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	if router_id != "" {
 		routerID, err := strconv.Atoi(router_id)
 		if err != nil {
-				logger.Debugf("Error to convert router_id to integer: %+v ", err)
-		}	
+			logger.Debugf("Error to convert router_id to integer: %+v ", err)
+		}
 		query = fmt.Sprintf("router_id = %d", routerID)
 	}
 
