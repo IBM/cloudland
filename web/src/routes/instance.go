@@ -73,8 +73,8 @@ type InstanceData struct {
 	Links      []*NetworkLink     `json:"links"`
 	Keys       []string           `json:"keys"`
 	RootPasswd string             `json:"root_passwd"`
-	OSCode     string             `json:"os_code"`
 	LoginPort  int                `json:"login_port"`
+	OSCode     string             `json:"os_code"`
 }
 
 type InstancesData struct {
@@ -204,7 +204,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		var ifaces []*model.Interface
 		// cloud-init does not support set encrypted password for windows
 		// so we only encrypt the password for linux and others
-		instancePasswd := ""
+		instancePasswd := rootPasswd
 		if rootPasswd != "" && image.OSCode != "windows" {
 			instancePasswd, err = encrpt.Mkpasswd(rootPasswd, "sha512")
 			if err != nil {
@@ -453,12 +453,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 		logger.Error("Failed to allow login port for interface security groups ", err)
 		return
 	}
-	securityData, err := GetSecurityData(ctx, iface.SecurityGroups)
-	if err != nil {
-		logger.Error("Get security data for interface failed", err)
-		return
-	}
-	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, Inbound: inbound, Outbound: outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: primary.Gateway, Router: primary.RouterID, IpAddr: iface.Address.Address, MacAddr: iface.MacAddr, SecRules: securityData})
+	vlans = append(vlans, &VlanInfo{Device: "eth0", Vlan: primary.Vlan, Inbound: inbound, Outbound: outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: primary.Gateway, Router: primary.RouterID, IpAddr: iface.Address.Address, MacAddr: iface.MacAddr})
 	for i, ifaceInfo := range secondaryIfaces {
 		subnet := ifaceInfo.Subnet
 		ifname := fmt.Sprintf("eth%d", i+1)
@@ -484,12 +479,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 			logger.Error("Failed to allow login port for interface security groups ", err)
 			return
 		}
-		securityData, err = GetSecurityData(ctx, iface.SecurityGroups)
-		if err != nil {
-			logger.Error("Get security data for interface failed", err)
-			return
-		}
-		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Inbound: inbound, Outbound: outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: iface.Address.Address, MacAddr: iface.MacAddr, SecRules: securityData})
+		vlans = append(vlans, &VlanInfo{Device: ifname, Vlan: subnet.Vlan, Inbound: inbound, Outbound: outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: iface.Address.Address, MacAddr: iface.MacAddr})
 	}
 	var instKeys []string
 	for _, key := range keys {
@@ -515,8 +505,8 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 		Links:      instLinks,
 		Keys:       instKeys,
 		RootPasswd: rootPasswd,
-		OSCode:     image.OSCode,
 		LoginPort:  loginPort,
+		OSCode:     image.OSCode,
 	}
 	jsonData, err := json.Marshal(instData)
 	if err != nil {
@@ -540,7 +530,14 @@ func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (e
 		err = fmt.Errorf("Not authorized")
 		return
 	}
-	if err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error; err != nil {
+	for _, iface := range instance.Interfaces {
+		err = secgroupAdmin.RemovePortForInterfaceSecgroups(ctx, instance.LoginPort, iface)
+		if err != nil {
+			logger.Error("Ignore the failure of removing login port for interface security groups ", err)
+		}
+	}
+	err = db.Where("instance_id = ?", instance.ID).Find(&instance.FloatingIps).Error
+	if err != nil {
 		logger.Errorf("Failed to query floating ip(s), %v", err)
 		return
 	}
@@ -741,9 +738,10 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	if order == "" {
 		order = "-created_at"
 	}
-	query := c.QueryTrim("q")
+	queryStr := c.QueryTrim("q")
+	query := queryStr
 	if query != "" {
-		query = fmt.Sprintf("hostname like '%%%s%%'", query)
+		query = fmt.Sprintf("hostname like '%%%s%%'", queryStr)
 	}
 	if router_id != "" {
 		routerID, err := strconv.Atoi(router_id)
@@ -763,7 +761,7 @@ func (v *InstanceView) List(c *macaron.Context, store session.Store) {
 	c.Data["Instances"] = instances
 	c.Data["Total"] = total
 	c.Data["Pages"] = pages
-	c.Data["Query"] = query
+	c.Data["Query"] = queryStr
 	c.Data["HostName"] = hostname
 	c.HTML(200, "instances")
 }

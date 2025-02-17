@@ -51,6 +51,11 @@ random_seed=`cat /dev/urandom | head -c 512 | base64 -w 0`
     echo '}'
 ) > $latest_dir/meta_data.json
 
+ssh_pwauth="false"
+if [ -n "${root_passwd}" ] && [ "${os_code}" != "windows" ]; then
+    ssh_pwauth="true"
+fi
+
 # vendor_data.json header
 vendor_data_header=$( 
     echo \
@@ -69,14 +74,14 @@ cloud_config_txt=$(
 'Content-Disposition: attachment; filename=\"cloud-config.txt\"\n'\
 '\n'\
 '#cloud-config\n'\
+'ssh_pwauth: '${ssh_pwauth}'\n'\
+'disable_root: false\n'\
 )
 
 # cloud-config.txt body
 if [ -n "${root_passwd}" ] && [ "${os_code}" != "windows" ]; then
     cloud_config_txt+=$(
         echo \
-'ssh_pwauth: true\n'\
-'disable_root: false\n'\
 'chpasswd:\n'\
 '  expire: false\n'\
 '  users:\n'\
@@ -84,26 +89,14 @@ if [ -n "${root_passwd}" ] && [ "${os_code}" != "windows" ]; then
 '      password: '${root_passwd}'\n'\
 '  list: |\n'\
 '    root:'${root_passwd}'\n'\
-    )
-fi
-
-# write_files header
-cloud_config_txt+=$(
-    echo \
-    '\n'\
 'write_files:\n'
-)
-
-# write allow_root to sshd_config.d/allow_root.conf
-if [ -n "${root_passwd}" ] && [ "${os_code}" != "windows" ]; then
-    cloud_config_txt+=$(
-        echo \
 '  - path: /etc/ssh/sshd_config.d/allow_root.conf\n'\
 '    content: |\n'\
 '      PermitRootLogin yes\n'\
 '      PasswordAuthentication yes\n'
     )
 fi
+
 # use runcmd to change the port value of /etc/ssh/sshd_config
 # and restart the ssh service
 if [ -n "${login_port}" ] && [ "${login_port}" != "22" ] && [ "${os_code}" != "windows" ]; then
@@ -114,35 +107,34 @@ if [ -n "${login_port}" ] && [ "${login_port}" != "22" ] && [ "${os_code}" != "w
 '    - systemctl restart sshd\n'
     )
 fi
-
-# write execute command to call windows powershell script to change the RDP port 
-# and restart the RDP service
-# and configure windows firewall to allow the new RDP port
-if [ -n "${login_port}" ] && [ "${login_port}" != "3389" ] && [ "${os_code}" = "windows" ]; then
-    cloud_config_txt+=$(
-        echo \
-'  - path: /tmp/change_rdp_port.ps1\n'\
-'    content: |\n'\
-'      $new_port = '${login_port}'\n'\
-'      $old_port = (Get-ItemProperty -Path \"HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp\").PortNumber\n'\
-'      if ($new_port -ne $old_port) {\n'\
-'        Set-ItemProperty -Path \"HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp\" -Name PortNumber -Value $new_port\n'\
-'        Restart-Service -Name \"TermService\"\n'\
-'        New-NetFirewallRule -DisplayName \"RDP-TCP-$($new_port)\" -Action Allow -Protocol TCP -LocalPort $new_port\n'\
-'      }\n'\
-'runcmd:\n'\
-'  - powershell -ExecutionPolicy Bypass -File /tmp/change_rdp_port.ps1\n'
-    )
-fi
-
+    
 vendor_data_end='\n--//--"'
 
 # write to vendor_data.json
-echo -e "$vendor_data_header""$cloud_config_txt""$vendor_data_end" > $latest_dir/vendor_data.json
-sed -i -n '1h; 1!H; ${ x; s/\n/\\n/g; p; }' $latest_dir/vendor_data.json
+if [ "${os_code}" != "windows" ]; then
+    echo -e "$vendor_data_header""$cloud_config_txt""$vendor_data_end" > $latest_dir/vendor_data.json
+    sed -i -n '1h; 1!H; ${ x; s/\n/\\n/g; p; }' $latest_dir/vendor_data.json
+fi
+
+# write script part windows powershell script to change the RDP port 
+# and restart the RDP service
+# and configure windows firewall to allow the new RDP port
+if [ -n "${login_port}" ] && [ "${login_port}" != "3389" ] && [ "${os_code}" = "windows" ]; then
+    (
+        echo '<powershell>'
+        echo '$new_port = '${login_port}
+        echo '$old_port = (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp\").PortNumber'
+        echo 'if ($new_port -ne $old_port) {'
+        echo '  Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name PortNumber -Value $new_port'
+        echo '  Restart-Service -Name "TermService" -Force'
+        echo '  New-NetFirewallRule -DisplayName "RDP-TCP-$($new_port)" -Action Allow -Protocol TCP -LocalPort $new_port'
+        echo '}'
+        echo '</powershell>'
+    ) > $latest_dir/user_data
+fi
 
 [ -z "$dns" ] && dns=$dns_server
-net_json=$(jq 'del(.userdata) | del(.vlans) | del(.keys) | del(.security) | del(.zvm) | del(.ocp) | del(.virt_type) | del(.dns) | del(.login_port)' <<< $vm_meta | jq --arg dns $dns '.services[0].type = "dns" | .services[0].address |= .+$dns')
+net_json=$(jq 'del(.userdata) | del(.vlans) | del(.keys) | del(.security) | del(.login_port) | del(.root_passwd) | del(.dns)' <<< $vm_meta | jq --arg dns $dns '.services[0].type = "dns" | .services[0].address |= .+$dns')
 echo "$net_json" > $latest_dir/network_data.json
 
 mkisofs -quiet -R -J -V config-2 -o ${cache_dir}/meta/${vm_ID}.iso $working_dir &> /dev/null
