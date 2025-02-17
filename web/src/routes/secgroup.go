@@ -205,7 +205,20 @@ func (a *SecgroupAdmin) GetInterfaceSecgroups(ctx context.Context, iface *model.
 func (a *SecgroupAdmin) AllowPortForInterfaceSecgroups(ctx context.Context, port int32, iface *model.Interface) (err error) {
 	if port > 0 && port != 22 && port != 3389 {
 		for _, sg := range iface.SecurityGroups {
-			_, err = secruleAdmin.Create(ctx, "0.0.0.0/0", "ingress", "ipv4", port, port, sg)
+			_, err = secruleAdmin.Create(ctx, "0.0.0.0/0", "ingress", "tcp", port, port, sg)
+			if err != nil {
+				logger.Error("Failed to create security rule", err)
+				return
+			}
+		}
+	}
+	return
+}
+
+func (a *SecgroupAdmin) RemovePortForInterfaceSecgroups(ctx context.Context, port int32, iface *model.Interface) (err error) {
+	if port > 0 && port != 22 && port != 3389 {
+		for _, sg := range iface.SecurityGroups {
+			_, err = secruleAdmin.DeleteRule(ctx, "0.0.0.0/0", "ingress", "tcp", port, port, sg)
 			if err != nil {
 				logger.Error("Failed to create security rule", err)
 				return
