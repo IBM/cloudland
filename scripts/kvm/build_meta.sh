@@ -16,7 +16,9 @@ if [ -n "$userdata" ]; then
    echo "$userdata" > $latest_dir/user_data
 fi
 
-read -d'\n' -r root_passwd os_code dns < <(jq -r ".root_passwd, .os_code, .dns" <<<$vm_meta)
+root_passwd=$(jq -r '.root_passwd' <<< $vm_meta)
+os_code=$(jq -r '.os_code' <<< $vm_meta)
+dns=$(jq -r '.dns' <<< $vm_meta)
 pub_keys=$(jq -r '.keys' <<< $vm_meta)
 admin_pass=`openssl rand -base64 12`
 random_seed=`cat /dev/urandom | head -c 512 | base64 -w 0`
