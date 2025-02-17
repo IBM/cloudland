@@ -81,6 +81,7 @@ type InstanceData struct {
 	Volumes    []*VolumeInfo      `json:"volumes"`
 	Keys       []string           `json:"keys"`
 	RootPasswd string             `json:"root_passwd"`
+	LoginPort  int                `json:"login_port"`
 	OSCode     string             `json:"os_code"`
 	LoginPort  int                `json:"login_port"`
 }
@@ -601,6 +602,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 		Links:      instLinks,
 		Keys:       instKeys,
 		RootPasswd: rootPasswd,
+		LoginPort:  loginPort,
 		OSCode:     image.OSCode,
 		LoginPort:  loginPort,
 	}
