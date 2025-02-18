@@ -413,7 +413,7 @@ definitions:
         maximum: 20000
         minimum: 0
         type: integer
-      security_group:
+      security_groups:
         items:
           $ref: '#/definitions/common.BaseReference'
         type: array
@@ -438,7 +438,7 @@ definitions:
         maximum: 20000
         minimum: 0
         type: integer
-      security_group:
+      security_groups:
         items:
           $ref: '#/definitions/common.BaseReference'
         type: array
