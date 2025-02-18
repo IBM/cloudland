@@ -204,7 +204,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		var ifaces []*model.Interface
 		// cloud-init does not support set encrypted password for windows
 		// so we only encrypt the password for linux and others
-		instancePasswd := ""
+		instancePasswd := rootPasswd
 		if rootPasswd != "" && image.OSCode != "windows" {
 			instancePasswd, err = encrpt.Mkpasswd(rootPasswd, "sha512")
 			if err != nil {
