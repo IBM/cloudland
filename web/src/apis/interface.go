@@ -53,7 +53,7 @@ type InterfacePayload struct {
 	Inbound        int32            `json:"inbound" binding:"omitempty,min=0,max=20000"`
 	Outbound       int32            `json:"outbound" binding:"omitempty,min=0,max=20000"`
 	AllowSpoofing  bool             `json:"allow_spoofing" binding:"omitempty"`
-	SecurityGroups []*BaseReference `json:"security_group" binding:"omitempty"`
+	SecurityGroups []*BaseReference `json:"security_groups" binding:"omitempty"`
 }
 
 type InterfacePatchPayload struct {
@@ -61,7 +61,7 @@ type InterfacePatchPayload struct {
 	Inbound        *int32            `json:"inbound" binding:"omitempty,min=0,max=20000"`
 	Outbound       *int32            `json:"outbound" binding:"omitempty,min=0,max=20000"`
 	AllowSpoofing  *bool             `json:"allow_spoofing" binding:"omitempty"`
-	SecurityGroups []*BaseReference `json:"security_group" binding:"omitempty"`
+	SecurityGroups []*BaseReference `json:"security_groups" binding:"omitempty"`
 }
 
 // @Summary get a interface
@@ -189,7 +189,7 @@ func (v *InterfaceAPI) Patch(c *gin.Context) {
 		allowSpoofing = *payload.AllowSpoofing
 	}
 	secgroups := []*model.SecurityGroup{}
-	if len(payload.SecurityGroups) == 0 {
+	if len(payload.SecurityGroups) > 0 {
 		for _, sg := range payload.SecurityGroups {
 			var secgroup *model.SecurityGroup
 			secgroup, err = secgroupAdmin.GetSecurityGroup(ctx, sg)
@@ -205,6 +205,15 @@ func (v *InterfaceAPI) Patch(c *gin.Context) {
 			}
 			secgroups = append(secgroups, secgroup)
 		}
+	} else {
+		var secgroup *model.SecurityGroup
+		secgroup, err = secgroupAdmin.Get(ctx, instance.Router.DefaultSG)
+		if err != nil {
+			logger.Errorf("Get security group failed, %+v", err)
+			ErrorResponse(c, http.StatusBadRequest, "Invalid security group", err)
+			return
+		}
+		secgroups = append(secgroups, secgroup)
 	}
 	err = interfaceAdmin.Update(ctx, instance, iface, ifaceName, inbound, outbound, allowSpoofing, secgroups)
 	if err != nil {

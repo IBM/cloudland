@@ -3194,7 +3194,7 @@ const docTemplatev1 = `{
                     "maximum": 20000,
                     "minimum": 0
                 },
-                "security_group": {
+                "security_groups": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/common.BaseReference"
@@ -3232,7 +3232,7 @@ const docTemplatev1 = `{
                     "maximum": 20000,
                     "minimum": 0
                 },
-                "security_group": {
+                "security_groups": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/common.BaseReference"

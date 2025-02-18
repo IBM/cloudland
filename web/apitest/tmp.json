@@ -1,8 +1,7 @@
 {
-    "name": "fip-27631",
-    "instance": {
-        "id": "a40318db-1221-418e-8e01-15f395e96484"
-    },
-    "inbound": 100,
-    "outbound": 100
+  "security_groups": [
+    {
+      "id": "382fb8d9-44ac-46e7-9660-867e289e182c"
+    }
+  ]
 }
