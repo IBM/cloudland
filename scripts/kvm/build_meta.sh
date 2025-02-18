@@ -80,6 +80,28 @@ if [ -n "${root_passwd}" ]; then
 '      PasswordAuthentication yes\n'\
 '\n--//--"'
     ) > $latest_dir/vendor_data.json
+else
+    (
+        echo \
+'"Content-Type: multipart/mixed; boundary=\"//\"\n'\
+'MIME-Version: 1.0\n'\
+'\n'\
+'--//\n'\
+'Content-Type: text/cloud-config; charset=\"us-ascii\"\n'\
+'MIME-Version: 1.0\n'\
+'Content-Transfer-Encoding: 7bit\n'\
+'Content-Disposition: attachment; filename=\"cloud-config.txt\"\n'\
+'\n'\
+'#cloud-config\n'\
+'ssh_pwauth: false\n'\
+'disable_root: false\n'\
+'write_files:\n'\
+'  - path: /etc/ssh/sshd_config.d/allow_root.conf\n'\
+'    content: |\n'\
+'      PermitRootLogin yes\n'\
+'      PasswordAuthentication no\n'\
+'\n--//--"'
+    ) > $latest_dir/vendor_data.json
 fi
 
 [ -z "$dns" ] && dns=$dns_server
