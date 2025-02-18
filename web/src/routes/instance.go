@@ -148,7 +148,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			return
 		}
 	}
-	if loginPort == 0 {
+	if loginPort <= 0 {
 		if image.OSCode == "linux" {
 			loginPort = 22
 		} else if image.OSCode == "windows" {
