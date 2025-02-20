@@ -103,6 +103,14 @@ function sync_instance()
     sudo cp $boot_file $flag_file
 }
 
+function sync_delayed_job()
+{
+    for f in $(ls $async_job_dir/*.done); do
+        cat $f
+	sudo rm -f $f
+    done
+}
+
 function calc_resource()
 {
     virtual_cpu=0
@@ -166,6 +174,7 @@ function calc_resource()
 
 calc_resource
 sync_instance
+sync_delayed_job
 #probe_arp >/dev/null 2>&1
 inst_status
 #vlan_status
