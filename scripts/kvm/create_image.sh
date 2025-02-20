@@ -3,4 +3,4 @@
 cd $(dirname $0)
 source ../cloudrc
 
-async_exec ./create_image_async.sh $*
+async_exec ./async_job/$(basename $0) $*
