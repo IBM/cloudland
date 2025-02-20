@@ -119,19 +119,19 @@ fi
 # write script part windows powershell script to change the RDP port 
 # and restart the RDP service
 # and configure windows firewall to allow the new RDP port
-if [ -n "${login_port}" ] && [ "${login_port}" != "3389" ] && [ "${os_code}" = "windows" ]; then
-    (
-        echo '<powershell>'
-        echo '$new_port = '${login_port}
-        echo '$old_port = (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp\").PortNumber'
-        echo 'if ($new_port -ne $old_port) {'
-        echo '  Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name PortNumber -Value $new_port'
-        echo '  Restart-Service -Name "TermService" -Force'
-        echo '  New-NetFirewallRule -DisplayName "RDP-TCP-$($new_port)" -Action Allow -Protocol TCP -LocalPort $new_port'
-        echo '}'
-        echo '</powershell>'
-    ) > $latest_dir/user_data
-fi
+# if [ -n "${login_port}" ] && [ "${login_port}" != "3389" ] && [ "${os_code}" = "windows" ]; then
+#     (
+#         echo '<powershell>\r'
+#         echo '$new_port = '${login_port}'\r'
+#         echo '$old_port = (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp\").PortNumber\r'
+#         echo 'if ($new_port -ne $old_port) {\r'
+#         echo '  Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name PortNumber -Value $new_port\r'
+#         echo '  Restart-Service -Name "TermService" -Force\r'
+#         echo '  New-NetFirewallRule -DisplayName "RDP-TCP-$($new_port)" -Action Allow -Protocol TCP -LocalPort $new_port\r'
+#         echo '}\r'
+#         echo '</powershell>'
+#     ) > $latest_dir/change_rdp_port.ps1
+# fi
 
 [ -z "$dns" ] && dns=$dns_server
 net_json=$(jq 'del(.userdata) | del(.vlans) | del(.keys) | del(.security) | del(.login_port) | del(.root_passwd) | del(.dns)' <<< $vm_meta | jq --arg dns $dns '.services[0].type = "dns" | .services[0].address |= .+$dns')
