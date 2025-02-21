@@ -1,6 +1,7 @@
 #!/bin/bash
+
 cd `dirname $0`
-source ../cloudrc
+source ../../cloudrc
 [ $# -lt 2 ] && echo "$0 <vm_ID> <rdp_port>" && exit -1
 
 vm_ID=$1
@@ -24,7 +25,6 @@ while true; do
     # check if the timeout has been reached
     if [ $ELAPSED_TIME -ge $TIMEOUT ]; then
         # echo "Timeout waiting for Windows VM '$vm_ID' to start after $TIMEOUT seconds."
-        echo "|:-COMMAND-:| $(basename $0) '$1' 'not running'"
         exit 1
     fi
 
@@ -44,7 +44,6 @@ while true; do
 
     # check if the timeout has been reached
     if [ $ELAPSED_TIME -ge $TIMEOUT ]; then
-        echo "|:-COMMAND-:| $(basename $0) '$1' 'guest agent not running'"
         exit 1
     fi
 
@@ -56,5 +55,3 @@ PS_SCRIPT='Set-ItemProperty -Path \"HKLM:\\SYSTEM\\CurrentControlSet\\Control\\T
 
 echo "Executing PowerShell script to change RDP port..."
 OUTPUT=$(virsh qemu-agent-command "$vm_ID" '{"execute":"guest-exec","arguments":{"path":"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe","arg":["-Command","'"$PS_SCRIPT"'"],"capture-output":true}}')
-
-echo "|:-COMMAND-:| $(basename $0) '$1' '$rdp_port'"
