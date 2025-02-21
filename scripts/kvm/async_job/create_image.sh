@@ -1,6 +1,7 @@
 #!/bin/bash
 
-source ../cloudrc
+cd `dirname $0`
+source ../../cloudrc
 
 [ $# -lt 3 ] && die "$0 <ID> <prefix> <url>"
 
