@@ -104,6 +104,7 @@ if [ -n "${login_port}" ] && [ "${login_port}" != "22" ] && [ "${os_code}" != "w
         echo \
 'runcmd:\n'\
 '    - sed -i \"s/^#Port .*/Port '${login_port}'/\" /etc/ssh/sshd_config\n'\
+'    - sed -i \"s/^Port .*/Port '${login_port}'/\" /etc/ssh/sshd_config\n'\
 '    - systemctl restart sshd\n'
     )
 fi
