@@ -16,7 +16,7 @@ name_server=$7
 [ -z "$name_server" ] && name_server=$dns_server
 
 [ "$vlan" -le 4095 ] && exit 0
-let mtu=$(ip -o link show $vxlan_interface | cut -d' ' -f5)-50
+let mtu=$(cat /sys/class/net/$vxlan_interface/mtu)-50
 
 netstr=$(echo $network | tr -s './' '_')
 vlan_dir=$cache_dir/router/$router/$vlan

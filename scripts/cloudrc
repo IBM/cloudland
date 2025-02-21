@@ -3,6 +3,7 @@ localrc="${BASH_SOURCE[0]}.local"
 source "$localrc"
 guest_userid_template=ZCC%05X
 run_dir=/opt/cloudland/run
+async_job_dir=$run_dir/async_job
 cache_dir=/opt/cloudland/cache
 cache_tmp_dir=$cache_dir/tmp
 backup_dir=$cache_dir/backup
@@ -149,4 +150,15 @@ function get_uss_gateway()
 function timeout_virsh()
 {
     timeout -s 9 5 virsh $*
+}
+
+function async_exec()
+{
+    mkdir -p $async_job_dir
+    (
+        delayed_log=$async_job_dir/$(date +%s.%N)
+        exec >${delayed_log}.in_progress 2>&1
+        $*
+        mv ${delayed_log}.in_progress ${delayed_log}.done
+    ) &
 }
