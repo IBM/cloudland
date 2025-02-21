@@ -44,6 +44,7 @@ function allow_icmp()
 }
 
 sec_data=$(cat)
+echo "$sec_data" >/tmp/security_data
 i=0
 len=$(jq length <<< $sec_data)
 while [ $i -lt $len ]; do
