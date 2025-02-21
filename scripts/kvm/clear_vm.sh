@@ -9,7 +9,7 @@ ID=$1
 vm_ID=inst-$ID
 router=$2
 boot_volume=$3
-vm_xml=$(timeout_virsh dumpxml $vm_ID)
+vm_xml=$(virsh dumpxml $vm_ID)
 timeout_virsh undefine $vm_ID
 cmd="timeout_virsh destroy $vm_ID"
 result=$(eval "$cmd")
