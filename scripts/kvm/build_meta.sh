@@ -145,7 +145,7 @@ sed -i -n '1h; 1!H; ${ x; s/\n/\\n/g; p; }' $latest_dir/vendor_data.json
 net_json=$(jq 'del(.userdata) | del(.vlans) | del(.keys) | del(.security) | del(.login_port) | del(.root_passwd) | del(.dns)' <<< $vm_meta | jq --arg dns $dns '.services[0].type = "dns" | .services[0].address |= .+$dns')
 let mtu=$(cat /sys/class/net/$vxlan_interface/mtu)-50
 if [ "$mtu" -lt 1450 ]; then
-    net_json=$(jq ".links[] | .mtu = $mtu" <<<$net_json)
+    net_json=$(sed "s/\"mtu\": 1450/\"mtu\": $mtu/g" <<<$net_json)
 fi
 echo "$net_json" > $latest_dir/network_data.json
 
