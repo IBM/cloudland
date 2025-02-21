@@ -12,7 +12,7 @@ vol_PATH=$3
 wds_volume_id=$4
 
 get_wds_token
-count=$(timeout_virsh dumpxml $vm_ID | grep -c "<disk type='vhostuser' device='disk'")
+count=$(virsh dumpxml $vm_ID | grep -c "<disk type='vhostuser' device='disk'")
 let letter=97+$count
 vhost_name=instance-$ID-vol-$vol_ID
 uss_id=$(get_uss_gateway)

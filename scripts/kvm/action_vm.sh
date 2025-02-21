@@ -11,7 +11,7 @@ function wait_vm_status()
     status=$2
     # wait for 30 seconds
     for i in {1..60}; do
-        state=$(timeout_virsh dominfo $vm_ID | grep State | cut -d: -f2- | xargs | sed 's/shut off/shut_off/g')
+        state=$(virsh dominfo $vm_ID | grep State | cut -d: -f2- | xargs | sed 's/shut off/shut_off/g')
         [ "$state" = "$status" ] && break
         sleep 0.5
     done
@@ -45,5 +45,5 @@ else
     die "Invalid action: $action"
 fi
 
-state=$(timeout_virsh dominfo $vm_ID | grep State | cut -d: -f2- | xargs | sed 's/shut off/shut_off/g')
+state=$(virsh dominfo $vm_ID | grep State | cut -d: -f2- | xargs | sed 's/shut off/shut_off/g')
 echo "|:-COMMAND-:| $(basename $0) '$1' '$state'"
