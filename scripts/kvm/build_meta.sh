@@ -69,6 +69,8 @@ cloud_config_txt=$(
 'Content-Disposition: attachment; filename=\"cloud-config.txt\"\n'\
 '\n'\
 '#cloud-config\n'\
+'ssh_pwauth: '${ssh_pwauth}'\n'\
+'disable_root: false\n'
 )
 
 # cloud-config.txt body
@@ -106,7 +108,7 @@ if [ -n "${root_passwd}" ] && [ "${os_code}" != "windows" ]; then
 fi
 # use runcmd to change the port value of /etc/ssh/sshd_config
 # and restart the ssh service
-if [ -n "${login_port}" ] && [ "${login_port}" != "22" ] && [ "${os_code}" != "windows" ]; then
+if [ -n "${login_port}" ] && [ "${login_port}" != "22" ] && [ ${login_port} -gt 0 ] && [ "${os_code}" != "windows" ]; then
     cloud_config_txt+=$(
         echo \
 'runcmd:\n'\
