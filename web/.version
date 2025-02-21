@@ -1,5 +1,9 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 v1.0.0-344-g47ab265
 =======
 v1.0.0-343-gf4ad3e4
 >>>>>>> 1b45336 (not using timeout_virsh in bracket)
+=======
+v1.0.0-343-gf4ad3e4
+>>>>>>> c01d91d (not using timeout_virsh in bracket)
