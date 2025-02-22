@@ -53,5 +53,26 @@ done
 
 PS_SCRIPT='Set-ItemProperty -Path \"HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server\\WinStations\\RDP-Tcp\" -Name PortNumber -Value '${rdp_port}'; Restart-Service -Name \"TermService\" -Force; New-NetFirewallRule -DisplayName \"RDP-TCP-'${rdp_port}'\" -Action Allow -Protocol TCP -LocalPort '${rdp_port}
 
-echo "Executing PowerShell script to change RDP port..."
-OUTPUT=$(virsh qemu-agent-command "$vm_ID" '{"execute":"guest-exec","arguments":{"path":"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe","arg":["-Command","'"$PS_SCRIPT"'"],"capture-output":true}}')
+ELAPSED_TIME=0
+PS_SUCEED_TIMES=0
+# echo "Executing PowerShell script to change RDP port..." >> /opt/cloudland/log/debug.log
+while true; do
+    OUTPUT=$(virsh qemu-agent-command "$vm_ID" '{"execute":"guest-exec","arguments":{"path":"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe","arg":["-Command","'"$PS_SCRIPT"'"],"capture-output":true}}')
+    if [ -n "${OUTPUT}" ]; then
+        # echo "$vm_ID exec powershell: $OUTPUT" >> /opt/cloudland/log/debug.log
+        QA_RS=$(jq -r '.return' <<< $OUTPUT)
+        if [ -n "${QA_RS}" ]; then
+            PS_SUCEED_TIMES=$((PS_SUCEED_TIMES + 1))
+            if [ ${PS_SUCEED_TIMES} -gt 2 ]; then
+                # echo "$vm_ID exec powershell succeed" >> /opt/cloudland/log/debug.log
+                break
+            fi
+        fi
+    fi
+    if [ $ELAPSED_TIME -ge $TIMEOUT ]; then
+        # echo "$vm_ID timeout while waiting guest agent ready" >> /opt/cloudland/log/debug.log
+        exit 1
+    fi
+    sleep $WAIT_TIME
+    ELAPSED_TIME=$((ELAPSED_TIME + WAIT_TIME))
+done
