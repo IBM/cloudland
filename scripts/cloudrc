@@ -20,6 +20,8 @@ snapshot_dir=/var/snapshot
 deploy_dir=/opt/cloudland/deploy
 vxlan_db=/opt/cloudland/db/cloudland.db
 cland_private_key=$deploy_dir/.ssh/cland.key
+debug_log_file=/opt/cloudland/log/script.log
+debug_flag_file=/opt/cloudland/debug
 #export JAEGER_SERVICE_NAME="SCI-Backend"
 function die()
 {
@@ -164,4 +166,17 @@ function async_exec()
         mv ${delayed_log}.in_progress ${delayed_log}.done
     ) &
     exec 3<&-
+}
+
+function log_debug()
+{
+    # check if parameter count less than 2
+    [ $# -lt 2 ] && return
+    vm_ID=$1
+    shift
+    # check if debug file exists
+    if [ -f $debug_flag_file ]; then
+        # write log and timestamp to debug log file
+        echo "[$(date -u +%Y%m%d%H%M%S)] $vm_ID $*" >> $debug_log_file
+    fi
 }
