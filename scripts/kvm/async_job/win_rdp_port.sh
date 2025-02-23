@@ -13,19 +13,19 @@ WAIT_TIME=5
 ELAPSED_TIME=0
 
 # wait for the VM to boot
-# echo "Waiting for Windows VM '$vm_ID' to boot..."
+log_debug $vm_ID "Waiting for Windows VM '$vm_ID' to boot..."
 while true; do
     # check if the VM is running
     VM_STATE=$(virsh domstate "$vm_ID" 2>&1)
     if [ "$VM_STATE" == "running" ]; then
-        # echo "Windows VM '$vm_ID' is running."
+        log_debug $vm_ID "Windows VM '$vm_ID' is running."
         break
     fi
 
     # check if the timeout has been reached
     if [ $ELAPSED_TIME -ge $TIMEOUT ]; then
-        # echo "Timeout waiting for Windows VM '$vm_ID' to start after $TIMEOUT seconds."
-        exit 1
+        log_debug $vm_ID "Timeout waiting for Windows VM '$vm_ID' to start after $TIMEOUT seconds."
+        die "Timeout waiting for Windows VM '$vm_ID' to start after $TIMEOUT seconds."
     fi
 
     sleep $WAIT_TIME
@@ -33,18 +33,19 @@ while true; do
 done
 
 # wait for the windows guest agent to start
-# echo "Waiting for Windows VM '$vm_ID' to start the guest agent..."
+log_debug $vm_ID "Waiting for Windows VM '$vm_ID' to start the guest agent..."
 while true; do
     # check if the guest agent is running
     virsh qemu-agent-command "$vm_ID" '{"execute":"guest-ping"}'
     if [ $? -eq 0 ]; then
-        # echo "Windows VM '$vm_ID' has started the guest agent."
+        log_debug $vm_ID "Windows VM '$vm_ID' has started the guest agent."
         break
     fi
 
     # check if the timeout has been reached
     if [ $ELAPSED_TIME -ge $TIMEOUT ]; then
-        exit 1
+        log_debug $vm_ID "Timeout waiting for Windows VM '$vm_ID' to start the guest agent after $TIMEOUT seconds."
+        die "Timeout waiting for Windows VM '$vm_ID' to start the guest agent after $TIMEOUT seconds."
     fi
 
     sleep $WAIT_TIME
@@ -55,23 +56,23 @@ PS_SCRIPT='Set-ItemProperty -Path \"HKLM:\\SYSTEM\\CurrentControlSet\\Control\\T
 
 ELAPSED_TIME=0
 PS_SUCEED_TIMES=0
-# echo "Executing PowerShell script to change RDP port..." >> /opt/cloudland/log/debug.log
+log_debug $vm_ID "Executing PowerShell script to change RDP port..."
 while true; do
     OUTPUT=$(virsh qemu-agent-command "$vm_ID" '{"execute":"guest-exec","arguments":{"path":"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe","arg":["-Command","'"$PS_SCRIPT"'"],"capture-output":true}}')
     if [ -n "${OUTPUT}" ]; then
-        # echo "$vm_ID exec powershell: $OUTPUT" >> /opt/cloudland/log/debug.log
+        log_debug $vm_ID "$vm_ID exec powershell: $OUTPUT"
         QA_RS=$(jq -r '.return' <<< $OUTPUT)
         if [ -n "${QA_RS}" ]; then
             PS_SUCEED_TIMES=$((PS_SUCEED_TIMES + 1))
             if [ ${PS_SUCEED_TIMES} -gt 2 ]; then
-                # echo "$vm_ID exec powershell succeed" >> /opt/cloudland/log/debug.log
+                log_debug $vm_ID "$vm_ID exec powershell succeed"
                 break
             fi
         fi
     fi
     if [ $ELAPSED_TIME -ge $TIMEOUT ]; then
-        # echo "$vm_ID timeout while waiting guest agent ready" >> /opt/cloudland/log/debug.log
-        exit 1
+        log_debug $vm_ID "$vm_ID timeout while waiting guest agent ready"
+        die "Timeout waiting for Windows VM '$vm_ID' to execute PowerShell script after $TIMEOUT seconds."
     fi
     sleep $WAIT_TIME
     ELAPSED_TIME=$((ELAPSED_TIME + WAIT_TIME))
