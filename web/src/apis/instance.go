@@ -42,11 +42,6 @@ type InstanceSetUserPasswordPayload struct {
 	UserName string `json:"user_name" binding:"required,min=2,max=32"`
 }
 
-type InstanceReinstallPayload struct {
-	Image  *BaseReference `json:"image" binding:"required"`
-	Flavor string         `json:"flavor" binding:"omitempty"`
-}
-
 type InstancePayload struct {
 	Count               int                 `json:"count" binding:"omitempty,gte=1,lte=16"`
 	Hypervisor          *int                `json:"hypervisor" binding:"omitempty,gte=0,lte=65535"`
