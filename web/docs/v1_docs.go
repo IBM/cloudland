@@ -3125,6 +3125,9 @@ const docTemplatev1 = `{
                         "$ref": "#/definitions/common.ResourceReference"
                     }
                 },
+                "login_port": {
+                    "type": "integer"
+                },
                 "name": {
                     "type": "string"
                 },

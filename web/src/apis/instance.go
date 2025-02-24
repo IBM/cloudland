@@ -67,6 +67,7 @@ type InstanceResponse struct {
 	*ResourceReference
 	Hostname    string               `json:"hostname"`
 	Status      string               `json:"status"`
+	LoginPort   int                  `json:"login_port"`
 	Interfaces  []*InterfaceResponse `json:"interfaces"`
 	Volumes     []*ResourceReference `json:"volumes"`
 	Flavor      string               `json:"flavor"`
@@ -489,8 +490,9 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 			CreatedAt: instance.CreatedAt.Format(TimeStringForMat),
 			UpdatedAt: instance.UpdatedAt.Format(TimeStringForMat),
 		},
-		Hostname: instance.Hostname,
-		Status:   instance.Status,
+		Hostname:  instance.Hostname,
+		LoginPort: int(instance.LoginPort),
+		Status:    instance.Status,
 		Reason:   instance.Reason,
 	}
 	if instance.Image != nil {
