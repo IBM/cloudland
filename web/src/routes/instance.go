@@ -332,6 +332,54 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 	return
 }
 
+func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance, image *model.Image, flavor *model.Flavor) (err error) {
+	logger.Debugf("Reinstall instance %d with image %d and flavor %d", instance.ID, image.ID, flavor.ID)
+	ctx, db, newTransaction := StartTransaction(ctx)
+	defer func() {
+		if newTransaction {
+			EndTransaction(ctx, err)
+		}
+	}()
+	memberShip := GetMemberShip(ctx)
+	permit, err := memberShip.CheckOwner(model.Writer, "instances", instance.ID)
+	if err != nil {
+		logger.Error("Failed to check owner")
+		return
+	}
+	if !permit {
+		logger.Error("Not authorized to reinstall the instance")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
+	var bootVolume *model.Volume
+	for _, volume := range instance.Volumes {
+		if volume.Booting {
+			bootVolume = volume
+			break
+		}
+	}
+	if bootVolume == nil {
+		logger.Error("Instance has no boot volume")
+		err = fmt.Errorf("Corrupted instance")
+		return
+	}
+	imagePrefix := fmt.Sprintf("image-%d-%s", image.ID, strings.Split(image.UUID, "-")[0])
+	total := 0
+	if err = db.Unscoped().Model(&model.Instance{}).Where("image_id = ?", image.ID).Count(&total).Error; err != nil {
+		logger.Error("Failed to query total instances with the image", err)
+		return
+	}
+	snapshot := total/MaxmumSnapshot + 1 // Same snapshot reference can not be over 128, so use 96 here
+	control := fmt.Sprintf("inter=%d", instance.Hyper)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/reinstall.sh '%d' '%s.%s' '%d' '%d' '%s' '%d' '%d' '%d'", instance.ID, imagePrefix, image.Format, snapshot, bootVolume.ID, bootVolume.GetOriginVolumeID(), flavor.Cpu, flavor.Memory, flavor.Disk)
+	err = HyperExecute(ctx, control, command)
+	if err != nil {
+		logger.Error("Reinstall remote exec failed", err)
+		return
+	}
+	return
+}
+
 func (a *InstanceAdmin) SetUserPassword(ctx context.Context, id int64, user, password string) (err error) {
 	logger.Debugf("Set password for user %s of instance %d", user, id)
 	ctx, db := GetContextDB(ctx)
@@ -1117,6 +1165,88 @@ func (v *InstanceView) SetUserPassword(c *macaron.Context, store session.Store) 
 		}
 		c.Redirect(redirectTo)
 
+	}
+}
+
+func (v *InstanceView) Reinstall(c *macaron.Context, store session.Store) {
+	ctx := c.Req.Context()
+	redirectTo := "/instances"
+	db := DB()
+	id := c.Params("id")
+	if id == "" {
+		c.Data["ErrorMsg"] = "Id is Empty"
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	instanceID, err := strconv.Atoi(id)
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		logger.Error("Instance ID error ", err)
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	instance, err := instanceAdmin.Get(ctx, int64(instanceID))
+	if err != nil {
+		logger.Error("Instance query failed", err)
+		c.Data["ErrorMsg"] = fmt.Sprintf("Instance query failed", err)
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	if c.Req.Method == "GET" {
+		images := []*model.Image{}
+		if err := db.Find(&images).Error; err != nil {
+			c.Data["ErrorMsg"] = err.Error()
+			c.HTML(500, "500")
+			return
+		}
+		flavors := []*model.Flavor{}
+		if err := db.Find(&flavors).Error; err != nil {
+			c.Data["ErrorMsg"] = err.Error()
+			c.HTML(500, "500")
+			return
+		}
+		c.Data["Instance"] = instance
+		c.Data["Images"] = images
+		c.Data["Flavors"] = flavors
+		c.Data["Link"] = fmt.Sprintf("/instances/%d/reinstall", instanceID)
+		c.HTML(200, "instances_reinstall")
+		return
+	} else if c.Req.Method == "POST" {
+		imageID := c.QueryInt64("image")
+		if imageID <= 0 {
+			logger.Error("No valid image ID", imageID)
+			c.Data["ErrorMsg"] = "No valid image ID"
+			c.HTML(http.StatusBadRequest, "error")
+			return
+		}
+		image, err := imageAdmin.Get(ctx, imageID)
+		if err != nil {
+			c.Data["ErrorMsg"] = "No valid image"
+			c.HTML(http.StatusBadRequest, "error")
+			return
+		}
+		flavorID := c.QueryInt64("flavor")
+		if flavorID <= 0 {
+			logger.Error("Invalid flavor ID", flavorID)
+			c.Data["ErrorMsg"] = "Invalid flavor ID"
+			c.HTML(http.StatusBadRequest, "error")
+			return
+		}
+		flavor, err := flavorAdmin.Get(ctx, flavorID)
+		if err != nil {
+			logger.Error("No valid flavor", err)
+			c.Data["ErrorMsg"] = "No valid flavor"
+			c.HTML(http.StatusBadRequest, "error")
+			return
+		}
+		err = instanceAdmin.Reinstall(ctx, instance, image, flavor)
+		if err != nil {
+			logger.Error("Set user password failed", err)
+			c.Data["ErrorMsg"] = err.Error()
+			c.HTML(http.StatusBadRequest, "error")
+			return
+		}
+		c.Redirect(redirectTo)
 	}
 }
 
