@@ -180,3 +180,13 @@ function log_debug()
         echo "[$(date -u +%Y%m%d%H%M%S)] $vm_ID $*" >> $debug_log_file
     fi
 }
+
+function inet_access()
+{
+    mkdir -p /etc/netns/router-0
+    echo "nameserver $dns_server" >/etc/netns/router-0/resolv.conf
+    ip netns exec router-0 iptables -D INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+    ip netns exec router-0 iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+    $*
+    ip netns exec router-0 iptables -D INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+}
