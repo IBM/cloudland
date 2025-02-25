@@ -20,6 +20,8 @@ snapshot_dir=/var/snapshot
 deploy_dir=/opt/cloudland/deploy
 vxlan_db=/opt/cloudland/db/cloudland.db
 cland_private_key=$deploy_dir/.ssh/cland.key
+debug_log_file=/opt/cloudland/log/script.log
+debug_flag_file=/opt/cloudland/run/debug
 #export JAEGER_SERVICE_NAME="SCI-Backend"
 function die()
 {
@@ -154,11 +156,37 @@ function timeout_virsh()
 
 function async_exec()
 {
+    exec 3<&0
     mkdir -p $async_job_dir
     (
         delayed_log=$async_job_dir/$(date +%s.%N)
+        exec 0<&3
         exec >${delayed_log}.in_progress 2>&1
         $*
         mv ${delayed_log}.in_progress ${delayed_log}.done
     ) &
+    exec 3<&-
+}
+
+function log_debug()
+{
+    # check if parameter count less than 2
+    [ $# -lt 2 ] && return
+    vm_ID=$1
+    shift
+    # check if debug file exists
+    if [ -f $debug_flag_file ]; then
+        # write log and timestamp to debug log file
+        echo "[$(date -u +%Y%m%d%H%M%S)] $vm_ID $*" >> $debug_log_file
+    fi
+}
+
+function inet_access()
+{
+    mkdir -p /etc/netns/router-0
+    echo "nameserver $dns_server" >/etc/netns/router-0/resolv.conf
+    ip netns exec router-0 iptables -D INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+    ip netns exec router-0 iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+    ip netns exec router-0 $*
+    ip netns exec router-0 iptables -D INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 }

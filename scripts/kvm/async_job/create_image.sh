@@ -13,7 +13,7 @@ image_name=image-$ID-$prefix
 state=error
 mkdir -p $image_cache
 image=$image_cache/$image_name
-curl -s -k $url -o $image
+inet_access curl -s -k $url -o $image
 if [ ! -s "$image" ]; then
     echo "|:-COMMAND-:| $(basename $0) '$ID' '$state' '$format'"
     exit -1

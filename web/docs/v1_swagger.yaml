@@ -364,6 +364,8 @@ definitions:
         items:
           $ref: '#/definitions/common.ResourceReference'
         type: array
+      login_port:
+        type: integer
       name:
         type: string
       owner:
