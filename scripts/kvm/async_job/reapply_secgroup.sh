@@ -24,3 +24,4 @@ fi
 ../clear_sg_chain.sh "$nic_name"
 ../create_sg_chain.sh "$nic_name" "$vm_ip" "$vm_mac" "$allow_spoofing"
 ../apply_sg_rule.sh "$nic_name"
+touch $async_job_dir/$nic_name
