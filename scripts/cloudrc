@@ -187,6 +187,6 @@ function inet_access()
     echo "nameserver $dns_server" >/etc/netns/router-0/resolv.conf
     ip netns exec router-0 iptables -D INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
     ip netns exec router-0 iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-    $*
+    ip netns exec router-0 $*
     ip netns exec router-0 iptables -D INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 }
