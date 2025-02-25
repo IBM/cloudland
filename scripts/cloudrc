@@ -21,7 +21,7 @@ deploy_dir=/opt/cloudland/deploy
 vxlan_db=/opt/cloudland/db/cloudland.db
 cland_private_key=$deploy_dir/.ssh/cland.key
 debug_log_file=/opt/cloudland/log/script.log
-debug_flag_file=/opt/cloudland/debug
+debug_flag_file=/opt/cloudland/run/debug
 #export JAEGER_SERVICE_NAME="SCI-Backend"
 function die()
 {
