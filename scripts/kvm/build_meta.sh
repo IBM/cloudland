@@ -113,7 +113,10 @@ if [ -n "${login_port}" ] && [ "${login_port}" != "22" ] && [ ${login_port} -gt 
         echo \
 'runcmd:\n'\
 '    - sed -i \"s/^#Port .*/Port '${login_port}'/\" /etc/ssh/sshd_config\n'\
-'    - systemctl restart sshd\n'
+'    - sed -i \"s/^Port .*/Port '${login_port}'/\" /etc/ssh/sshd_config\n'\
+'    - systemctl daemon-reload\n'\
+'    - systemctl restart sshd\n'\
+'    - systemctl restart ssh.socket\n'
     )
 fi
 
