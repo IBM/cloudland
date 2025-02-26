@@ -371,10 +371,7 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 	}
 
 	// change vm status to reinstalling
-	instance.Status = "reinstalling"
-	instance.FlavorID = flavor.ID
-	instance.ImageID = image.ID
-	if err = db.Model(instance).Updates(instance).Error; err != nil {
+	if err = db.Model(&model.Instance{}).Where("id = ?", instance.ID).Updates(map[string]interface{}{"flavor_id": flavor.ID, "image_id": image.ID, "status": "reinstalling"}).Error; err != nil {
 		logger.Error("Failed to save instance", err)
 		return
 	}
