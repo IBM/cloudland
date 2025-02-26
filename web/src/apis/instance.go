@@ -42,6 +42,11 @@ type InstanceSetUserPasswordPayload struct {
 	UserName string `json:"user_name" binding:"required,min=2,max=32"`
 }
 
+type InstanceReinstallPayload struct {
+	Image  *BaseReference `json:"image" binding:"required"`
+	Flavor string         `json:"flavor" binding:"omitempty"`
+}
+
 type InstancePayload struct {
 	Count               int                 `json:"count" binding:"omitempty,gte=1,lte=16"`
 	Hypervisor          *int                `json:"hypervisor" binding:"omitempty,gte=0,lte=65535"`
@@ -200,6 +205,69 @@ func (v *InstanceAPI) SetUserPassword(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, nil)
+}
+
+// @Summary reinstall a instance
+// @Description reinstall a instance
+// @tags Compute
+// @Accept  json
+// @Produce json
+// @Param   id  path  string  true  "Instance UUID"
+// @Param   message	body   InstanceReinstallPayload  true   "Instance reinstall payload"
+// @Success 200
+// @Failure 400 {object} common.APIError "Bad request"
+// @Failure 401 {object} common.APIError "Not authorized"
+// @Router /instances/{id}/reinstall [post]
+func (v *InstanceAPI) Reinstall(c *gin.Context) {
+	ctx := c.Request.Context()
+	uuID := c.Param("id")
+	logger.Debugf("Reinstall instance %s", uuID)
+	instance, err := instanceAdmin.GetInstanceByUUID(ctx, uuID)
+	if err != nil {
+		logger.Errorf("Failed to get instance %s, %+v", uuID, err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid instance query", err)
+		return
+	}
+
+	// bind JSON
+	payload := &InstanceReinstallPayload{}
+	err = c.ShouldBindJSON(payload)
+	if err != nil {
+		logger.Errorf("Failed to bind JSON, %+v", err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
+		return
+	}
+	logger.Debugf("Reinstall instance with %+v", payload)
+
+	// check image
+	image, err := imageAdmin.GetImage(ctx, payload.Image)
+	if err != nil {
+		logger.Errorf("Failed to get image %+v, %+v", payload.Image, err)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid image", err)
+		return
+	}
+
+	// check flavor
+	flavor := instance.Flavor
+	if payload.Flavor != "" {
+		flavor, err = flavorAdmin.GetFlavorByName(ctx, payload.Flavor)
+		if err != nil {
+			logger.Errorf("Failed to get flavor %+v, %+v", payload.Flavor, err)
+			ErrorResponse(c, http.StatusBadRequest, "Invalid flavor", err)
+			return
+		}
+	}
+
+	// running command
+	err = instanceAdmin.Reinstall(ctx, instance, image, flavor)
+	if err != nil {
+		logger.Error("Reinstall failed", err)
+		ErrorResponse(c, http.StatusInternalServerError, "Reinstall failed", err)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
+
 }
 
 // @Summary delete a instance
@@ -361,7 +429,7 @@ func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, vpc *model.Router, i
 		}
 	}
 	ifaceInfo = &routes.InterfaceInfo{
-		Subnet: subnet,
+		Subnet:        subnet,
 		AllowSpoofing: ifacePayload.AllowSpoofing,
 	}
 	if ifacePayload.IpAddress != "" {
