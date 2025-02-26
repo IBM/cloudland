@@ -40,6 +40,7 @@ if [ -z "$wds_address" ]; then
         fi
         qemu-img resize -q $vm_img "${disk_size}G" &> /dev/null
     fi
+    echo "|:-COMMAND-:| create_volume_local '$vol_ID' 'volume-${vol_ID}.disk' 'attached'"
 else
     get_wds_token
     image=$(basename $img_name .raw)
