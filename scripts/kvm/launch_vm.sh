@@ -95,11 +95,10 @@ vm_QA="$qemu_agent_dir/$vm_ID.agent"
 vm_xml=$xml_dir/$vm_ID/${vm_ID}.xml
 cp $template $vm_xml
 sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_img#g; s#VM_UNIX_SOCK#$ux_sock#g; s#VM_META#$vm_meta#g; s#VM_AGENT#$vm_QA#g" $vm_xml
-timeout_virsh define $vm_xml
-timeout_virsh autostart $vm_ID
-timeout_virsh start $vm_ID --paused
-jq .vlans <<< $metadata | async_exec ./sync_nic_info.sh "$ID" "$vm_name"
-timeout_virsh resume $vm_ID
+virsh define $vm_xml
+virsh autostart $vm_ID
+jq .vlans <<< $metadata | ./sync_nic_info.sh "$ID" "$vm_name"
+virsh start $vm_ID
 [ $? -eq 0 ] && state=running
 echo "|:-COMMAND-:| $(basename $0) '$ID' '$state' '$SCI_CLIENT_ID' 'init'"
 

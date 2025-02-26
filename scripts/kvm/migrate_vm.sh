@@ -16,12 +16,12 @@ ephemeral=$image_dir/${vm_ID}.ephemeral
 [ -f "$ephemeral" ] && copy_target $ephemeral $hyper
 metaiso=$cache_dir/meta/${vm_ID}.iso
 [ -f "$metaiso" ] && copy_target $metaiso $hyper
-action_target $hyper "sudo virsh define $xml_dir/${vm_ID}.xml && sudo timeout_virsh start $vm_ID"
+action_target $hyper "sudo virsh define $xml_dir/${vm_ID}.xml && sudo virsh start $vm_ID"
 state=$(action_target $hyper "sudo virsh dominfo $vm_ID" | grep State | cut -d: -f2- | xargs)
 if [ "$state" = "running" ]; then
     mv $xml_dir $backup_dir
     mv $inst_disk $ephemeral $metaiso $backup_dir/$vm_ID
     ./clear_vm.sh $ID
 else
-    timeout_virsh undefine $vm_ID
+    virsh undefine $vm_ID
 fi

@@ -149,11 +149,6 @@ function get_uss_gateway()
     [ -n "$uss_id" ] && echo $uss_id
 }
 
-function timeout_virsh()
-{
-    timeout -s 9 5 virsh $*
-}
-
 function async_exec()
 {
     exec 3<&0
