@@ -13,7 +13,7 @@ image_name=image-$img_ID-$prefix
 state=error
 
 # its better to let user shutdown the vm before capturing the image
-# timeout_virsh suspend $vm_ID
+# virsh suspend $vm_ID
 if [ -z "$wds_address" ]; then
     # capture the image from the running instance locally
     image=${image_dir}/image-$vm_ID.qcow2
@@ -45,5 +45,5 @@ else
     volume_id=$(wds_curl GET "api/v2/sync/block/volumes?name=$image_name" | jq -r '.volumes[0].id')
     [ -n "$volume_id" ] && state=available
 fi
-# timeout_virsh resume $vm_ID
+# virsh resume $vm_ID
 echo "|:-COMMAND-:| capture_image.sh '$img_ID' '$state' 'qcow2' 'success'"
