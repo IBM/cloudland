@@ -15,11 +15,11 @@ ephemeral_size=$6
 
 ./action_vm.sh $ID shutdown
 let vm_mem=${vm_mem%[m|M]}*1024
-timeout_virsh setmaxmem $vm_ID $vm_mem --config
-timeout_virsh setmem $vm_ID $vm_mem --config
-timeout_virsh setvcpus $vm_ID --count $vm_cpu --config
-timeout_virsh setvcpus $vm_ID --count $vm_cpu --config --maximum
-timeout_virsh setvcpus $vm_ID --count $vm_cpu --config
+virsh setmaxmem $vm_ID $vm_mem --config
+virsh setmem $vm_ID $vm_mem --config
+virsh setvcpus $vm_ID --count $vm_cpu --config
+virsh setvcpus $vm_ID --count $vm_cpu --config --maximum
+virsh setvcpus $vm_ID --count $vm_cpu --config
 vm_img=$image_dir/$vm_ID.disk
 vsize=$(qemu-img info $vm_img | grep 'virtual size:' | cut -d' ' -f4 | tr -d '(')
 let fsize=$disk_size*1024*1024*1024
@@ -28,13 +28,13 @@ if [ $ephemeral_size -gt 0 ]; then
     ephemeral=$image_dir/${vm_ID}.ephemeral
     if [ ! -f "$ephemeral" ]; then
         qemu-img create $ephemeral ${ephemeral_size}G
-        timeout_virsh attach-disk $vm_ID $ephemeral vdb --config
+        virsh attach-disk $vm_ID $ephemeral vdb --config
     else
         vsize=$(qemu-img info $ephemeral | grep 'virtual size:' | cut -d' ' -f4 | tr -d '(')
         let fsize=$ephemeral_size*1024*1024*1024
         [ $fsize -gt $vsize ] && qemu-img resize -q $ephemeral "${ephemeral_size}G" &> /dev/null
     fi
 fi
-timeout_virsh start $vm_ID
-[ $? -eq 0 ] && timeout_virsh dumpxml $vm_ID > $xml_dir/$vm_ID/${vm_ID}.xml
+virsh start $vm_ID
+[ $? -eq 0 ] && virsh dumpxml $vm_ID > $xml_dir/$vm_ID/${vm_ID}.xml
 echo "|:-COMMAND-:| inst_status.sh '$SCI_CLIENT_ID' '$ID running'"
