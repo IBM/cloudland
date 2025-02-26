@@ -369,9 +369,24 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 		logger.Error("Failed to query total instances with the image", err)
 		return
 	}
+
+	// change vm status to reinstalling
+	instance.Status = "reinstalling"
+	if err = db.Model(instance).Updates(instance).Error; err != nil {
+		logger.Error("Failed to save instance", err)
+		return
+	}
+
+	// change volume status to reinstalling
+	bootVolume.Status = "reinstalling"
+	if err = db.Model(bootVolume).Updates(bootVolume).Error; err != nil {
+		logger.Error("Failed to save volume", err)
+		return
+	}
+
 	snapshot := total/MaxmumSnapshot + 1 // Same snapshot reference can not be over 128, so use 96 here
 	control := fmt.Sprintf("inter=%d", instance.Hyper)
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/reinstall.sh '%d' '%s.%s' '%d' '%d' '%s' '%d' '%d' '%d'", instance.ID, imagePrefix, image.Format, snapshot, bootVolume.ID, bootVolume.GetOriginVolumeID(), flavor.Cpu, flavor.Memory, flavor.Disk)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/reinstall_vm.sh '%d' '%s.%s' '%d' '%d' '%s' '%d' '%d' '%d'", instance.ID, imagePrefix, image.Format, snapshot, bootVolume.ID, bootVolume.GetOriginVolumeID(), flavor.Cpu, flavor.Memory, flavor.Disk)
 	err = HyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Error("Reinstall remote exec failed", err)
@@ -1241,7 +1256,7 @@ func (v *InstanceView) Reinstall(c *macaron.Context, store session.Store) {
 		}
 		err = instanceAdmin.Reinstall(ctx, instance, image, flavor)
 		if err != nil {
-			logger.Error("Set user password failed", err)
+			logger.Error("Reinstall failed", err)
 			c.Data["ErrorMsg"] = err.Error()
 			c.HTML(http.StatusBadRequest, "error")
 			return
