@@ -20,26 +20,26 @@ function wait_vm_status()
 vm_ID=inst-$1
 action=$2
 if [ "$action" = "restart" ]; then
-    virsh reboot $vm_ID
+    timeout_virsh reboot $vm_ID
     wait_vm_status $vm_ID "running"
 elif [ "$action" = "start" ]; then
-    virsh start $vm_ID
+    timeout_virsh start $vm_ID
     wait_vm_status $vm_ID "running"
 elif [ "$action" = "stop" ]; then
-    virsh shutdown $vm_ID
+    timeout_virsh shutdown $vm_ID
     wait_vm_status $vm_ID "shut_off"
 elif [ "$action" = "hard_stop" ]; then
-    virsh destroy $vm_ID
+    timeout_virsh destroy $vm_ID
     wait_vm_status $vm_ID "shut_off"
 elif [ "$action" = "hard_restart" ]; then
-    virsh destroy $vm_ID
+    timeout_virsh destroy $vm_ID
     wait_vm_status $vm_ID "shut_off"
-    virsh start $vm_ID
+    timeout_virsh start $vm_ID
 elif [ "$action" = "pause" ]; then
-    virsh suspend $vm_ID
+    timeout_virsh suspend $vm_ID
     wait_vm_status $vm_ID "paused"
 elif [ "$action" = "resume" ]; then
-    virsh resume $vm_ID
+    timeout_virsh resume $vm_ID
     wait_vm_status $vm_ID "running"
 else
     die "Invalid action: $action"
