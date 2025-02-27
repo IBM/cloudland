@@ -30,7 +30,7 @@ type Instance struct {
 	PasswdLogin bool   `gorm:"default:false"`
 	Userdata    string `gorm:"type:text"`
 	LoginPort   int32
-	Hyper       int32  `gorm:"default:-1"`
+	Hyper       int32 `gorm:"default:-1"`
 	ZoneID      int64
 	Zone        *Zone `gorm:"foreignkey:ZoneID"`
 	RouterID    int64 `gorm:"unique_index:idx_router_instance"`
