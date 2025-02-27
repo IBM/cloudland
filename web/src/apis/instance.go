@@ -76,6 +76,7 @@ type InstanceResponse struct {
 	Zone        string               `json:"zone"`
 	VPC         *ResourceReference   `json:"vpc,omitempty"`
 	Hypervisor  string               `json:"hypervisor,omitempty"`
+	Reason      string               `json:"reason"`
 }
 
 type InstanceListResponse struct {
@@ -490,6 +491,7 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 		},
 		Hostname: instance.Hostname,
 		Status:   instance.Status,
+		Reason:   instance.Reason,
 	}
 	if instance.Image != nil {
 		instanceResp.Image = &ResourceReference{
