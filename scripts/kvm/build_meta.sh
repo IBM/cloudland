@@ -106,7 +106,7 @@ if [ -n "${login_port}" ] && [ "${login_port}" != "22" ] && [ ${login_port} -gt 
 '    - sed -i \"s/^#Port .*/Port '${login_port}'/\" /etc/ssh/sshd_config\n'\
 '    - sed -i \"s/^Port .*/Port '${login_port}'/\" /etc/ssh/sshd_config\n'\
 '    - systemctl daemon-reload\n'\
-'    - systemctl restart ssh.socket\n'
+'    - systemctl restart ssh.socket\n'\
 '    - systemctl restart sshd || systemctl restart ssh\n'
     )
 fi
@@ -118,23 +118,6 @@ if [ "${os_code}" != "windows" ]; then
     echo -e "$vendor_data_header""$cloud_config_txt""$vendor_data_end" > $latest_dir/vendor_data.json
     sed -i -n '1h; 1!H; ${ x; s/\n/\\n/g; p; }' $latest_dir/vendor_data.json
 fi
-
-# write script part windows powershell script to change the RDP port 
-# and restart the RDP service
-# and configure windows firewall to allow the new RDP port
-# if [ -n "${login_port}" ] && [ "${login_port}" != "3389" ] && [ "${os_code}" = "windows" ]; then
-#     (
-#         echo '<powershell>\r'
-#         echo '$new_port = '${login_port}'\r'
-#         echo '$old_port = (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp\").PortNumber\r'
-#         echo 'if ($new_port -ne $old_port) {\r'
-#         echo '  Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name PortNumber -Value $new_port\r'
-#         echo '  Restart-Service -Name "TermService" -Force\r'
-#         echo '  New-NetFirewallRule -DisplayName "RDP-TCP-$($new_port)" -Action Allow -Protocol TCP -LocalPort $new_port\r'
-#         echo '}\r'
-#         echo '</powershell>'
-#     ) > $latest_dir/change_rdp_port.ps1
-# fi
 
 [ -z "$dns" ] && dns=$dns_server
 net_json=$(jq 'del(.userdata) | del(.vlans) | del(.keys) | del(.security) | del(.login_port) | del(.root_passwd) | del(.dns)' <<< $vm_meta | jq --arg dns $dns '.services[0].type = "dns" | .services[0].address |= .+$dns')
