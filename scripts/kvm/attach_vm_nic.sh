@@ -16,10 +16,10 @@ nic_name=tap$(echo $vm_mac | cut -d: -f4- | tr -d :)
 vm_br=br$vlan
 ./create_link.sh $vlan
 brctl setageing $vm_br 0
-timeout_virsh domiflist $vm_ID | grep $vm_mac
+virsh domiflist $vm_ID | grep $vm_mac
 if [ $? -ne 0 ]; then
-    timeout_virsh attach-interface $vm_ID bridge $vm_br --model virtio --mac $vm_mac --target $nic_name --live
-    timeout_virsh attach-interface $vm_ID bridge $vm_br --model virtio --mac $vm_mac --target $nic_name --config
+    virsh attach-interface $vm_ID bridge $vm_br --model virtio --mac $vm_mac --target $nic_name --live
+    virsh attach-interface $vm_ID bridge $vm_br --model virtio --mac $vm_mac --target $nic_name --config
 fi
 ./set_nic_speed "$ID" "$nic_name" "$inbound" "$outbound"
 ./create_sg_chain.sh $nic_name $vm_ip $vm_mac

@@ -14,8 +14,8 @@ vm_br=br$vlan
 ./clear_link.sh $vlan
 state=$(virsh dominfo $vm_ID | grep State | cut -d: -f2- | xargs)
 if [ "$state" = "running" ]; then
-    timeout_virsh detach-interface $vm_ID bridge --mac $vm_mac --live --config
+    virsh detach-interface $vm_ID bridge --mac $vm_mac --live --config
 else
-    timeout_virsh detach-interface $vm_ID bridge --mac $vm_mac --config
+    virsh detach-interface $vm_ID bridge --mac $vm_mac --config
 fi
 ./clear_sg_chain.sh $nic_name

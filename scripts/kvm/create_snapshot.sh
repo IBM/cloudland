@@ -9,11 +9,11 @@ vm_ID=$1
 snap_file=$snapshot_dir/$vm_ID.qcow2
 stat='failed'
 
-timeout_virsh suspend $vm_ID
+virsh suspend $vm_ID
 image=${image_dir}/$vm_ID.qcow2
 
 qemu-img convert -f qcow2 -O qcow2 $image $snap_file
 snap_size=`ls -l $snap_file | cut -d' ' -f5`
 [ $? -eq 0 ] && stat='created'
-timeout_virsh resume $vm_ID
+virsh resume $vm_ID
 echo "|:-COMMAND-:| /opt/cloudland/scripts/frontback/`basename $0` '$vm_ID' '$snap_size' '$stat'"
