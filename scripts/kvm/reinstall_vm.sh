@@ -36,7 +36,7 @@ if [ -z "$wds_address" ]; then
         result=$(eval "$cmd")
         vsize=$(qemu-img info $vm_img | grep 'virtual size:' | cut -d' ' -f5 | tr -d '(')
         if [ "$vsize" -gt "$fsize" ]; then
-            echo "|:-COMMAND-:| `basename $0` '$ID' '$vm_stat' '$SCI_CLIENT_ID' '$vol_ID' 'flavor is smaller than image size'"
+            echo "|:-COMMAND-:| `basename $0` '$ID' '$state' '$SCI_CLIENT_ID' '$vol_ID' 'flavor is smaller than image size'"
             exit -1
         fi
         qemu-img resize -q $vm_img "${disk_size}G" &> /dev/null
