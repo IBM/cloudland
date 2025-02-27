@@ -26,5 +26,5 @@ if [ $? -ne 0 ]; then
 fi
 udevadm settle
 ./set_nic_speed.sh "$ID" "$nic_name" "$inbound" "$outbound"
-./reapply_secgroup.sh "$vm_ip" "$vm_mac" "$allow_spoofing" "$nic_name" "$ID"
+./reapply_secgroup.sh "$vm_ip" "$vm_mac" "$allow_spoofing" "$nic_name"
 ./set_subnet_gw.sh "$router" "$vlan" "$gateway" "$ext_vlan"
