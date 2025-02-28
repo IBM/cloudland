@@ -10,19 +10,23 @@ import (
 	"web/src/dbs"
 )
 
-type TaskStage struct {
+type Task struct {
 	Model
+	Mission     int64
+	Name        string `gorm:"type:varchar(64)"`
+	Summary     string `gorm:"type:varchar(128)`
+	Status      string `gorm:"type:varchar(32)"`
 }
 
 type Migration struct {
 	Model
-	Name       string `gorm:"type:varchar(128)"`
+	Name       string `gorm:"type:varchar(64)"`
+	InstanceID int64
+	Instance   *Instance `gorm:"foreignkey:InstanceID"`
 	Force      bool   `gorm:"default:false"`
 	FromHyper  int32
 	ToHyper    int32
-	Stages     []*TaskStage
-	InstanceID int64
-	Instance   *Instance `gorm:"foreignkey:InstanceID",gorm:"PRELOAD:false"`
+	Phases     []*Task `gorm:"foreignkey:Mission"`
 }
 
 func init() {
