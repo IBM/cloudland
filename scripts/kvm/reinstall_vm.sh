@@ -18,8 +18,8 @@ state=error
 
 vm_xml=$xml_dir/$vm_ID/${vm_ID}.xml
 mv $vm_xml $vm_xml-$(date +'%s.%N')
-timeout_virsh dumpxml $vm_ID >$vm_xml
-timeout_virsh undefine $vm_ID
+virsh dumpxml $vm_ID >$vm_xml
+virsh undefine $vm_ID
 virsh destroy $vm_ID
 let fsize=$disk_size*1024*1024*1024
 if [ -z "$wds_address" ]; then
@@ -100,8 +100,8 @@ if [ -n "$wds_address" ]; then
   sed_cmd="$sed_cmd; s#$old_vhost_name#$vhost_name#g"
 fi
 sed -i "$sed_cmd" $vm_xml
-timeout_virsh define $vm_xml
-timeout_virsh autostart $vm_ID
-timeout_virsh start $vm_ID
+virsh define $vm_xml
+virsh autostart $vm_ID
+virsh start $vm_ID
 [ $? -eq 0 ] && state=running
 echo "|:-COMMAND-:| launch_vm.sh '$ID' '$state' '$SCI_CLIENT_ID' 'sync'"
