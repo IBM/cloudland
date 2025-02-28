@@ -125,6 +125,11 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		logger.Error("Image status not available")
 		return
 	}
+	if image.Size > int64(flavor.Disk)*1024*1024*1024 {
+		err = fmt.Errorf("Flavor disk size is not enough for the image")
+		logger.Error(err)
+		return
+	}
 	zoneID := zone.ID
 	if hyperID >= 0 {
 		hyper := &model.Hyper{}
@@ -367,6 +372,12 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 	total := 0
 	if err = db.Unscoped().Model(&model.Instance{}).Where("image_id = ?", image.ID).Count(&total).Error; err != nil {
 		logger.Error("Failed to query total instances with the image", err)
+		return
+	}
+
+	if image.Size > int64(flavor.Disk)*1024*1024*1024 {
+		err = fmt.Errorf("Flavor disk size is not enough for the image")
+		logger.Error(err)
 		return
 	}
 
