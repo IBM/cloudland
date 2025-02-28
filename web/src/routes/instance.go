@@ -388,8 +388,7 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 	}
 
 	// change volume status to reinstalling
-	bootVolume.Status = "reinstalling"
-	if err = db.Model(bootVolume).Updates(bootVolume).Error; err != nil {
+	if err = db.Model(&model.Volume{}).Where("id = ?", bootVolume.ID).Updates(map[string]interface{}{"status": "reinstalling", "size": flavor.Disk}).Error; err != nil {
 		logger.Error("Failed to save volume", err)
 		return
 	}
