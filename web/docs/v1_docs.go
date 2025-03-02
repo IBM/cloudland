@@ -2157,6 +2157,41 @@ const docTemplatev1 = `{
                 }
             }
         },
+        "/version": {
+            "get": {
+                "description": "get version",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Compute"
+                ],
+                "summary": "get version",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/apis.VersionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    }
+                }
+            }
+        },
         "/volumes": {
             "get": {
                 "description": "list volumes",
@@ -3890,6 +3925,14 @@ const docTemplatev1 = `{
                     }
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "apis.VersionResponse": {
+            "type": "object",
+            "properties": {
+                "version": {
                     "type": "string"
                 }
             }
