@@ -21,7 +21,7 @@ func init() {
 }
 
 func CreateVolumeLocal(ctx context.Context, args []string) (status string, err error) {
-	//|:-COMMAND-:| create_volume.sh 5 /volume-12.disk available reason
+	//|:-COMMAND-:| create_volume.sh 5 /volume-12.disk available
 	logger.Debug("CreateVolumeLocal", args)
 	db := DB()
 	argn := len(args)
@@ -49,8 +49,8 @@ func CreateVolumeLocal(ctx context.Context, args []string) (status string, err e
 		return
 	}
 
-	reason := args[4]
 	if volume.Booting && status == "error" {
+		reason := path
 		instanceId := volume.InstanceID
 		instance := &model.Instance{Model: model.Model{ID: instanceId}}
 		err = db.Take(&instance).Error
@@ -71,7 +71,7 @@ func CreateVolumeLocal(ctx context.Context, args []string) (status string, err e
 }
 
 func CreateVolumeWDSVhost(ctx context.Context, args []string) (status string, err error) {
-	//|:-COMMAND-:| create_volume_wds_vhost.sh 5 available wds_vhost://1/2 reason
+	//|:-COMMAND-:| create_volume_wds_vhost.sh 5 available wds_vhost://1/2
 	logger.Debug("CreateVolumeWDSVhost", args)
 	db := DB()
 	argn := len(args)
@@ -99,8 +99,8 @@ func CreateVolumeWDSVhost(ctx context.Context, args []string) (status string, er
 		return
 	}
 
-	reason := args[4]
 	if volume.Booting && status == "error" {
+		reason := path
 		instanceId := volume.InstanceID
 		instance := &model.Instance{Model: model.Model{ID: instanceId}}
 		err = db.Take(&instance).Error

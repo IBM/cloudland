@@ -32,7 +32,7 @@ if [ -z "$wds_address" ]; then
         vm_img=$image_dir/$vm_ID.disk
         if [ ! -s "$image_cache/$img_name" ]; then
             echo "Image is not available!"
-            echo "|:-COMMAND-:| create_volume_local '$vol_ID' 'volume-${vol_ID}.disk' '$vol_state' 'image $img_name not available!'"
+            echo "|:-COMMAND-:| create_volume_local '$vol_ID' 'image $img_name not available!' '$vol_state'"
             exit -1
         fi
         format=$(qemu-img info $image_cache/$img_name | grep 'file format' | cut -d' ' -f3)
@@ -40,12 +40,12 @@ if [ -z "$wds_address" ]; then
         result=$(eval "$cmd")
         vsize=$(qemu-img info $vm_img | grep 'virtual size:' | cut -d' ' -f5 | tr -d '(')
         if [ "$vsize" -gt "$fsize" ]; then
-            echo "|:-COMMAND-:| create_volume_local '$vol_ID' 'volume-${vol_ID}.disk' '$vol_state' 'flavor is smaller than image size'"
+            echo "|:-COMMAND-:| create_volume_local '$vol_ID' 'flavor is smaller than image size' '$vol_state'"
             exit -1
         fi
         qemu-img resize -q $vm_img "${disk_size}G" &> /dev/null
         vol_state=attached
-        echo "|:-COMMAND-:| create_volume_local.sh '$vol_ID' 'volume-${vol_ID}.disk' 'attached' 'success'"
+        echo "|:-COMMAND-:| create_volume_local.sh '$vol_ID' 'volume-${vol_ID}.disk' '$vol_state'"
     fi
 else
     get_wds_token
@@ -58,7 +58,7 @@ else
 	snapshot_ret=$(wds_curl POST "api/v2/sync/block/snaps" "{\"name\": \"$snapshot_name\", \"description\": \"$snapshot_name\", \"volume_id\": \"$image_volume_id\"}")
         snapshot_id=$(wds_curl GET "api/v2/sync/block/snaps?name=$snapshot_name" | jq -r '.snaps[0].id')
         if [ -z "$snapshot_id" -o "$snapshot_id" = null ]; then
-            echo "|:-COMMAND-:| create_volume_wds_vhost '$vol_ID' '$vol_state' '' 'failed to create image snapshot, $snapshot_ret'"
+            echo "|:-COMMAND-:| create_volume_wds_vhost '$vol_ID' '$vol_state' 'failed to create image snapshot, $snapshot_ret'"
             exit -1
         fi
         wds_curl DELETE "api/v2/sync/block/snaps/$image-$(($snapshot-1))?force=false"
@@ -66,13 +66,13 @@ else
     volume_ret=$(wds_curl POST "api/v2/sync/block/snaps/$snapshot_id/clone" "{\"name\": \"$vhost_name\"}")
     volume_id=$(echo $volume_ret | jq -r .id)
     if [ -z "$volume_id" -o "$volume_id" = null ]; then
-        echo "|:-COMMAND-:| create_volume_wds_vhost '$vol_ID' '$vol_state' '' 'failed to create boot volume based on snapshot $snapshot_name, $volume_ret!'"
+        echo "|:-COMMAND-:| create_volume_wds_vhost '$vol_ID' '$vol_state' 'failed to create boot volume based on snapshot $snapshot_name, $volume_ret!'"
         exit -1
     fi
     expand_ret=$(wds_curl PUT "api/v2/sync/block/volumes/$volume_id/expand" "{\"size\": $fsize}")
     ret_code=$(echo $expand_ret | jq -r .ret_code)
     if [ "$ret_code" != "0" ]; then
-        echo "|:-COMMAND-:| create_volume_wds_vhost '$vol_ID' '$vol_state' 'wds_vhost://$wds_pool_id/$volume_id' 'failed to expand boot volume to size $fsize, $expand_ret'"
+        echo "|:-COMMAND-:| create_volume_wds_vhost '$vol_ID' '$vol_state' 'failed to expand boot volume to size $fsize, $expand_ret'"
         exit -1
     fi
     uss_id=$(get_uss_gateway)
@@ -81,11 +81,11 @@ else
     uss_ret=$(wds_curl PUT "api/v2/sync/block/vhost/bind_uss" "{\"vhost_id\": \"$vhost_id\", \"uss_gw_id\": \"$uss_id\", \"lun_id\": \"$volume_id\", \"is_snapshot\": false}")
     ret_code=$(echo $uss_ret | jq -r .ret_code)
     if [ "$ret_code" != "0" ]; then
-        echo "|:-COMMAND-:| create_volume_wds_vhost '$vol_ID' '$vol_state' 'wds_vhost://$wds_pool_id/$volume_id' 'failed to create wds vhost for boot volume, $vhost_ret, $uss_ret!'"
+        echo "|:-COMMAND-:| create_volume_wds_vhost '$vol_ID' '$vol_state' 'failed to create wds vhost for boot volume, $vhost_ret, $uss_ret!'"
         exit -1
     fi
     vol_state=attached
-    echo "|:-COMMAND-:| create_volume_wds_vhost '$vol_ID' '$vol_state' 'wds_vhost://$wds_pool_id/$volume_id' 'success"
+    echo "|:-COMMAND-:| create_volume_wds_vhost '$vol_ID' '$vol_state' 'wds_vhost://$wds_pool_id/$volume_id'"
     ux_sock=/var/run/wds/$vhost_name
     template=$template_dir/wds_template_with_qa.xml
 fi
