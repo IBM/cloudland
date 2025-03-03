@@ -21,11 +21,11 @@ func init() {
 }
 
 func CreateVolumeLocal(ctx context.Context, args []string) (status string, err error) {
-	//|:-COMMAND-:| create_volume.sh 5 /volume-12.disk available
+	//|:-COMMAND-:| create_volume.sh 5 /volume-12.disk available reason
 	logger.Debug("CreateVolumeLocal", args)
 	db := DB()
 	argn := len(args)
-	if argn < 4 {
+	if argn < 5 {
 		err = fmt.Errorf("Wrong params")
 		logger.Error("Invalid args", err)
 		return
@@ -50,7 +50,7 @@ func CreateVolumeLocal(ctx context.Context, args []string) (status string, err e
 	}
 
 	if volume.Booting && status == "error" {
-		reason := path
+		reason := args[4]
 		instanceId := volume.InstanceID
 		instance := &model.Instance{Model: model.Model{ID: instanceId}}
 		err = db.Take(&instance).Error
@@ -71,11 +71,11 @@ func CreateVolumeLocal(ctx context.Context, args []string) (status string, err e
 }
 
 func CreateVolumeWDSVhost(ctx context.Context, args []string) (status string, err error) {
-	//|:-COMMAND-:| create_volume_wds_vhost.sh 5 available wds_vhost://1/2
+	//|:-COMMAND-:| create_volume_wds_vhost.sh 5 available wds_vhost://1/2 reason
 	logger.Debug("CreateVolumeWDSVhost", args)
 	db := DB()
 	argn := len(args)
-	if argn < 4 {
+	if argn < 5 {
 		err = fmt.Errorf("Wrong params")
 		logger.Error("Invalid args", err)
 		return
@@ -100,7 +100,7 @@ func CreateVolumeWDSVhost(ctx context.Context, args []string) (status string, er
 	}
 
 	if volume.Booting && status == "error" {
-		reason := path
+		reason := args[4]
 		instanceId := volume.InstanceID
 		instance := &model.Instance{Model: model.Model{ID: instanceId}}
 		err = db.Take(&instance).Error
