@@ -21,11 +21,11 @@ func init() {
 }
 
 func CreateVolumeLocal(ctx context.Context, args []string) (status string, err error) {
-	//|:-COMMAND-:| create_volume.sh 5 /volume-12.disk available
+	//|:-COMMAND-:| create_volume.sh 5 /volume-12.disk available reason
 	logger.Debug("CreateVolumeLocal", args)
 	db := DB()
 	argn := len(args)
-	if argn < 4 {
+	if argn < 5 {
 		err = fmt.Errorf("Wrong params")
 		logger.Error("Invalid args", err)
 		return
@@ -48,15 +48,34 @@ func CreateVolumeLocal(ctx context.Context, args []string) (status string, err e
 		logger.Error("Update volume status failed", err)
 		return
 	}
+
+	reason := args[4]
+	if volume.Booting && status == "error" {
+		instanceId := volume.InstanceID
+		instance := &model.Instance{Model: model.Model{ID: instanceId}}
+		err = db.Take(&instance).Error
+		if err != nil {
+			logger.Error("Invalid instance ID", err)
+			return
+		}
+
+		instance.Status = status
+		instance.Reason = reason
+		err = db.Save(&instance).Error
+		if err != nil {
+			logger.Error("Update instance status failed", err)
+			return
+		}
+	}
 	return
 }
 
 func CreateVolumeWDSVhost(ctx context.Context, args []string) (status string, err error) {
-	//|:-COMMAND-:| create_volume_wds_vhost.sh 5 available wds_vhost://1/2
+	//|:-COMMAND-:| create_volume_wds_vhost.sh 5 available wds_vhost://1/2 reason
 	logger.Debug("CreateVolumeWDSVhost", args)
 	db := DB()
 	argn := len(args)
-	if argn < 4 {
+	if argn < 5 {
 		err = fmt.Errorf("Wrong params")
 		logger.Error("Invalid args", err)
 		return
@@ -78,6 +97,25 @@ func CreateVolumeWDSVhost(ctx context.Context, args []string) (status string, er
 	if err != nil {
 		logger.Error("Update volume status failed", err)
 		return
+	}
+
+	reason := args[4]
+	if volume.Booting && status == "error" {
+		instanceId := volume.InstanceID
+		instance := &model.Instance{Model: model.Model{ID: instanceId}}
+		err = db.Take(&instance).Error
+		if err != nil {
+			logger.Error("Invalid instance ID", err)
+			return
+		}
+
+		instance.Status = status
+		instance.Reason = reason
+		err = db.Save(&instance).Error
+		if err != nil {
+			logger.Error("Update instance status failed", err)
+			return
+		}
 	}
 	return
 }

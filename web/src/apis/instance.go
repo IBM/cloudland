@@ -43,7 +43,7 @@ type InstanceSetUserPasswordPayload struct {
 }
 
 type InstanceReinstallPayload struct {
-	Image  *BaseReference `json:"image" binding:"required"`
+	Image  *BaseReference `json:"image" binding:"omitempty"`
 	Flavor string         `json:"flavor" binding:"omitempty"`
 }
 
@@ -242,11 +242,14 @@ func (v *InstanceAPI) Reinstall(c *gin.Context) {
 	logger.Debugf("Reinstall instance with %+v", payload)
 
 	// check image
-	image, err := imageAdmin.GetImage(ctx, payload.Image)
-	if err != nil {
-		logger.Errorf("Failed to get image %+v, %+v", payload.Image, err)
-		ErrorResponse(c, http.StatusBadRequest, "Invalid image", err)
-		return
+	image := instance.Image
+	if payload.Image != nil {
+		image, err = imageAdmin.GetImage(ctx, payload.Image)
+		if err != nil {
+			logger.Errorf("Failed to get image %+v, %+v", payload.Image, err)
+			ErrorResponse(c, http.StatusBadRequest, "Invalid image", err)
+			return
+		}
 	}
 
 	// check flavor
