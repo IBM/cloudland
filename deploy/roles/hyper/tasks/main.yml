@@ -264,3 +264,124 @@
     value: '16777216'
     reload: yes
   tags: [sysctl]
+
+- name: Install Docker SDK for Python
+  become: true
+  pip:
+    name: docker
+    executable: pip3
+  tags: [monitor]
+
+- name: Check if Docker is running
+  become: true
+  command: docker info
+  register: docker_status
+  ignore_errors: yes
+  changed_when: false
+  tags: [monitor]
+
+- name: Install Docker if not present
+  become: true
+  apt:
+    name: docker.io
+    state: present
+  when: docker_status.rc != 0
+  tags: [monitor]
+
+- name: Start Docker service if not running
+  become: true
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+  when: docker_status.rc != 0
+  tags: [monitor]
+
+- name: Run libvirt-exporter in Docker
+  become: true
+  docker_container:
+    name: prometheus-libvirt-exporter
+    image: "kiennt26/prometheus-libvirt-exporter:latest"
+    network_mode: host
+    volumes:
+      - "/:/host:ro,rslave"
+      - "/var/run/libvirt:/var/run/libvirt"
+    privileged: yes
+    restart_policy: always
+  tags: [monitor]
+
+- name: Create directory for monitor scripts
+  file:
+    path: /opt/cloudland/scripts/monitor
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  tags: [monitor]
+
+- name: Set node exporter port variable
+  set_fact:
+    node_exporter_port: 9101
+  tags: [monitor]
+
+- name: Install prometheus-node-exporter without starting
+  become: true
+  apt:
+    name: prometheus-node-exporter
+    state: present
+  register: pkg_install
+  ignore_errors: yes  # ignore for will chage port number
+  tags: [monitor]
+
+- name: Force stop node exporter after install
+  become: true
+  systemd:
+    name: prometheus-node-exporter
+    state: stopped
+  ignore_errors: yes
+  changed_when: false
+  when: pkg_install is succeeded
+  tags: [monitor]
+
+- name: Ensure systemd override directory exists
+  file:
+    path: /etc/systemd/system/prometheus-node-exporter.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  tags: [monitor]
+
+- name: Configure Node Exporter with textfile directory
+  become: true
+  copy:
+    dest: /etc/systemd/system/prometheus-node-exporter.service.d/override.conf
+    content: |
+      [Service]
+      ExecStart=
+      ExecStart=/usr/bin/prometheus-node-exporter --web.listen-address=:{{ node_exporter_port }} --collector.textfile.directory=/var/lib/node_exporter
+    mode: '0644'
+    owner: root
+    group: root
+  tags: [monitor]
+
+- name: Apply systemd configuration changes
+  become: true
+  systemd:
+    daemon_reload: yes
+    name: prometheus-node-exporter
+  changed_when: false
+  tags: [monitor]
+
+- name: Ensure service started with new config is enabled and started
+  become: true
+  systemd:
+    name: prometheus-node-exporter
+    enabled: yes
+    state: restarted
+    daemon_reload: no
+  register: service_status
+  until: service_status.status.ActiveState == "active"
+  retries: 3
+  delay: 5
+  tags: [monitor]

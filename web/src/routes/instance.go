@@ -11,6 +11,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -22,7 +23,9 @@ import (
 	"web/src/model"
 	"web/src/utils/encrpt"
 
+	"github.com/gin-gonic/gin"
 	"github.com/go-macaron/session"
+	"github.com/jinzhu/gorm"
 	macaron "gopkg.in/macaron.v1"
 )
 
@@ -850,6 +853,27 @@ func (a *InstanceAdmin) GetInstanceByUUID(ctx context.Context, uuID string) (ins
 		return
 	}
 	return
+}
+
+func GetDBIndexByInstanceUUID(c *gin.Context, uuid string) (int, error) {
+	db := DB()
+
+	var instance model.Instance
+	if err := db.Model(&model.Instance{}).
+		Select("id").
+		Where("uuid = ?", uuid).
+		First(&instance).Error; err != nil {
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Instance not found"})
+			fmt.Printf("Instance not found: %s\n", uuid)
+			return -1, fmt.Errorf("instance %s not found: %w", uuid, err)
+		}
+		logger.Error("Database error for UUID %s: %v", uuid, err)
+		return -1, fmt.Errorf("database error: %v", err)
+	}
+
+	return int(instance.ID), nil
 }
 
 func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, instances []*model.Instance, err error) {
