@@ -44,7 +44,7 @@ func CreateVolumeLocal(ctx context.Context, args []string) (status string, err e
 	logger.Debug("CreateVolumeLocal", args)
 	db := DB()
 	argn := len(args)
-	if argn < 5 {
+	if argn < 4 {
 		err = fmt.Errorf("Wrong params")
 		logger.Error("Invalid args", err)
 		return
@@ -79,7 +79,7 @@ func CreateVolumeWDSVhost(ctx context.Context, args []string) (status string, er
 	logger.Debug("CreateVolumeWDSVhost", args)
 	db := DB()
 	argn := len(args)
-	if argn < 5 {
+	if argn < 4 {
 		err = fmt.Errorf("Wrong params")
 		logger.Error("Invalid args", err)
 		return
