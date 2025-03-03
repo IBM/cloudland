@@ -85,7 +85,7 @@ else
         exit -1
     fi
     vol_state=attached
-    echo "|:-COMMAND-:| create_volume_wds_vhost '$vol_ID' '$vol_state' 'wds_vhost://$wds_pool_id/$volume_id' 'success"
+    echo "|:-COMMAND-:| create_volume_wds_vhost '$vol_ID' '$vol_state' 'wds_vhost://$wds_pool_id/$volume_id' 'success'"
     ux_sock=/var/run/wds/$vhost_name
     template=$template_dir/wds_template_with_qa.xml
 fi
