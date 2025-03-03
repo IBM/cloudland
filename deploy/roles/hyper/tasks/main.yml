@@ -8,7 +8,7 @@
 
 - name: install packages for kvm
   apt:
-    name: ['qemu-system-x86', 'qemu-utils', 'bridge-utils', 'ipcalc', 'ipset', 'keepalived', 'iputils-arping', 'libvirt-daemon', 'libvirt-daemon-system', 'libvirt-daemon-system-systemd', 'libvirt-clients', 'dnsmasq', 'dnsmasq-utils', 'conntrack']
+    name: ['qemu-system-x86', 'qemu-utils', 'bridge-utils', 'ipcalc', 'ipset', 'keepalived', 'iputils-arping', 'libvirt-daemon', 'libvirt-daemon-system', 'libvirt-daemon-system-systemd', 'libvirt-clients', 'dnsmasq', 'dnsmasq-utils', 'conntrack', 'prometheus-libvirt-exporter', 'prometheus-node-exporter']
     state: present
   ignore_errors: yes
   tags: [be_pkg]
@@ -264,3 +264,98 @@
     value: '16777216'
     reload: yes
   tags: [sysctl]
+
+- name: Create directory for monitor scripts
+  file:
+    path: /opt/cloudland/scripts/monitor
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  tags: [monitor]
+
+- name: Copy guest VM memory exporter script
+  copy:
+    src: files/guest_kvm_vm_memory_export.sh
+    dest: /opt/cloudland/scripts/monitor/guest_kvm_vm_memory_export.sh
+    mode: '0755'
+    owner: root
+    group: root
+  tags: [monitor]
+
+
+- name: Ensure systemd override directory exists
+  file:
+    path: /etc/systemd/system/prometheus-node-exporter.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  tags: [monitor]
+
+
+- name: Create directory for node_exporter textfile
+  file:
+    path: /var/lib/node_exporter
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  tags: [monitor]
+
+- name: Configure Node Exporter with textfile directory
+  become: true
+  copy:
+    dest: /etc/systemd/system/prometheus-node-exporter.service.d/override.conf
+    content: |
+      [Service]
+      ExecStart=
+      ExecStart=/usr/bin/prometheus-node-exporter --collector.textfile.directory=/var/lib/node_exporter
+    mode: '0644'
+    owner: root
+    group: root
+  tags: [monitor]
+
+- name: Create systemd service for guest VM memory export
+  copy:
+    dest: /etc/systemd/system/guest_kvm_vm_memory_usage.service
+    mode: '0644'
+    owner: root
+    group: root
+    content: |
+      [Unit]
+      Description=Guest VM Memory Exporter Service
+      After=network.target
+
+      [Service]
+      Type=simple
+      ExecStart=/opt/cloudland/scripts/monitor/guest_kvm_vm_memory_export.sh
+      Restart=always
+      User=root
+
+      [Install]
+      WantedBy=multi-user.target
+  tags: [monitor]
+
+- name: Reload systemd to recognize new service
+  systemd:
+    daemon_reload: yes
+  tags: [monitor]
+
+- name: Enable guest VM memory exporter service
+  systemd:
+    name: guest_kvm_vm_memory_usage
+    enabled: yes
+    state: started
+  tags: [monitor]
+
+
+- name: Reload and restart prometheus services
+  systemd:
+    name: "{{ item }}"
+    daemon_reload: yes
+    state: restarted
+  with_items:
+    - 'prometheus-libvirt-exporter'
+    - 'prometheus-node-exporter'
+  tags: [monitor]

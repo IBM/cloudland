@@ -43,3 +43,10 @@
   become_user: root
   roles:
     - {role: wds, become: yes, tags: [wds]}
+
+# deploy monitor 
+- name: install monitor
+  hosts: monitor
+  become_user: root
+  roles:
+    - {role: monitor, become: yes, tags: [monitor]}
