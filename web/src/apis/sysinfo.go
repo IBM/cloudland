@@ -9,18 +9,14 @@ package apis
 
 import (
 	"net/http"
-	"os"
+	"web/src/routes"
 
 	"github.com/gin-gonic/gin"
 )
 
-const (
-	VersionFile = "/opt/cloudland/version"
-)
-
 var (
-	Version    = "unknown"
-	versionAPI = &VersionAPI{}
+	versionAPI   = &VersionAPI{}
+	sysInfoAdmin = &routes.SysInfoAdmin{}
 )
 
 type VersionAPI struct{}
@@ -39,21 +35,9 @@ type VersionResponse struct {
 // @Failure 401 {object} common.APIError "Not authorized"
 // @Router /version [get]
 func (v *VersionAPI) Get(c *gin.Context) {
-	if Version == "unknown" {
-		// read version from file
-		// check if file exists
-		// if not, return default version
-		// if yes, read version from file
-		// return version
-		version, err := os.ReadFile(VersionFile)
-		if err != nil {
-			logger.Warningf("failed to read version file: %v", err)
-		} else {
-			Version = string(version)
-		}
-	}
+
 	versionResp := &VersionResponse{
-		Version: Version,
+		Version: sysInfoAdmin.GetVersion(),
 	}
 	c.JSON(http.StatusOK, versionResp)
 }
