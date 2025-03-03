@@ -882,6 +882,11 @@ definitions:
       updated_at:
         type: string
     type: object
+  apis.VersionResponse:
+    properties:
+      version:
+        type: string
+    type: object
   apis.VolumeListResponse:
     properties:
       limit:
@@ -2488,6 +2493,29 @@ paths:
       summary: patch a user
       tags:
       - Authorization
+  /version:
+    get:
+      consumes:
+      - application/json
+      description: get version
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.VersionResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/common.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/common.APIError'
+      summary: get version
+      tags:
+      - Compute
   /volumes:
     get:
       consumes:
