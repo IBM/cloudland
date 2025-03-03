@@ -264,7 +264,7 @@ func (v *InstanceAPI) Reinstall(c *gin.Context) {
 	err = instanceAdmin.Reinstall(ctx, instance, image, flavor)
 	if err != nil {
 		logger.Error("Reinstall failed", err)
-		ErrorResponse(c, http.StatusInternalServerError, "Reinstall failed", err)
+		ErrorResponse(c, http.StatusBadRequest, "Reinstall failed", err)
 		return
 	}
 
@@ -493,7 +493,7 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 		Hostname:  instance.Hostname,
 		LoginPort: int(instance.LoginPort),
 		Status:    instance.Status,
-		Reason:   instance.Reason,
+		Reason:    instance.Reason,
 	}
 	if instance.Image != nil {
 		instanceResp.Image = &ResourceReference{
