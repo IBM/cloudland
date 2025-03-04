@@ -1248,10 +1248,7 @@ func (v *InstanceView) Reinstall(c *macaron.Context, store session.Store) {
 	} else if c.Req.Method == "POST" {
 		imageID := c.QueryInt64("image")
 		if imageID <= 0 {
-			logger.Error("No valid image ID", imageID)
-			c.Data["ErrorMsg"] = "No valid image ID"
-			c.HTML(http.StatusBadRequest, "error")
-			return
+			imageID = instance.ImageID
 		}
 		image, err := imageAdmin.Get(ctx, imageID)
 		if err != nil {
@@ -1261,10 +1258,7 @@ func (v *InstanceView) Reinstall(c *macaron.Context, store session.Store) {
 		}
 		flavorID := c.QueryInt64("flavor")
 		if flavorID <= 0 {
-			logger.Error("Invalid flavor ID", flavorID)
-			c.Data["ErrorMsg"] = "Invalid flavor ID"
-			c.HTML(http.StatusBadRequest, "error")
-			return
+			flavorID = instance.FlavorID
 		}
 		flavor, err := flavorAdmin.Get(ctx, flavorID)
 		if err != nil {
