@@ -3143,6 +3143,9 @@
                 },
                 "image": {
                     "$ref": "#/definitions/common.BaseReference"
+                },
+                "password": {
+                    "type": "string"
                 }
             }
         },

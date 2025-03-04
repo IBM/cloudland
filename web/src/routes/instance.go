@@ -337,7 +337,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 	return
 }
 
-func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance, image *model.Image, flavor *model.Flavor) (err error) {
+func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance, image *model.Image, flavor *model.Flavor, password string) (err error) {
 	logger.Debugf("Reinstall instance %d with image %d and flavor %d", instance.ID, image.ID, flavor.ID)
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
@@ -382,7 +382,18 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 	}
 
 	// change vm status to reinstalling
-	if err = db.Model(&model.Instance{}).Where("id = ?", instance.ID).Updates(map[string]interface{}{"flavor_id": flavor.ID, "image_id": image.ID, "status": "reinstalling"}).Error; err != nil {
+	var loginPort int32
+	switch instance.LoginPort {
+	case 22, 3389:
+		if image.OSCode == "windows" {
+			loginPort = 3389
+		} else {
+			loginPort = 22
+		}
+	default:
+		loginPort = instance.LoginPort
+	}
+	if err = db.Model(&model.Instance{}).Where("id = ?", instance.ID).Updates(map[string]interface{}{"flavor_id": flavor.ID, "image_id": image.ID, "status": "reinstalling", "login_port": loginPort}).Error; err != nil {
 		logger.Error("Failed to save instance", err)
 		return
 	}
@@ -395,7 +406,7 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 
 	snapshot := total/MaxmumSnapshot + 1 // Same snapshot reference can not be over 128, so use 96 here
 	control := fmt.Sprintf("inter=%d", instance.Hyper)
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/reinstall_vm.sh '%d' '%s.%s' '%d' '%d' '%s' '%d' '%d' '%d'", instance.ID, imagePrefix, image.Format, snapshot, bootVolume.ID, bootVolume.GetOriginVolumeID(), flavor.Cpu, flavor.Memory, flavor.Disk)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/reinstall_vm.sh '%d' '%s.%s' '%d' '%d' '%s' '%d' '%d' '%d' '%s' '%d' '%s'", instance.ID, imagePrefix, image.Format, snapshot, bootVolume.ID, bootVolume.GetOriginVolumeID(), flavor.Cpu, flavor.Memory, flavor.Disk, image.OSCode, loginPort, password)
 	err = HyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Error("Reinstall remote exec failed", err)
@@ -1267,7 +1278,13 @@ func (v *InstanceView) Reinstall(c *macaron.Context, store session.Store) {
 			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
-		err = instanceAdmin.Reinstall(ctx, instance, image, flavor)
+		password := c.QueryTrim("password")
+		if password == "" {
+			c.Data["ErrorMsg"] = "Password is empty"
+			c.HTML(http.StatusBadRequest, "error")
+			return
+		}
+		err = instanceAdmin.Reinstall(ctx, instance, image, flavor, password)
 		if err != nil {
 			logger.Error("Reinstall failed", err)
 			c.Data["ErrorMsg"] = err.Error()

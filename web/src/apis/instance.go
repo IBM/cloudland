@@ -43,8 +43,9 @@ type InstanceSetUserPasswordPayload struct {
 }
 
 type InstanceReinstallPayload struct {
-	Image  *BaseReference `json:"image" binding:"omitempty"`
-	Flavor string         `json:"flavor" binding:"omitempty"`
+	Image    *BaseReference `json:"image" binding:"omitempty"`
+	Flavor   string         `json:"flavor" binding:"omitempty"`
+	Password string         `json:"password" binging:"required,min=8,max=64"`
 }
 
 type InstancePayload struct {
@@ -264,7 +265,8 @@ func (v *InstanceAPI) Reinstall(c *gin.Context) {
 	}
 
 	// running command
-	err = instanceAdmin.Reinstall(ctx, instance, image, flavor)
+	password := payload.Password
+	err = instanceAdmin.Reinstall(ctx, instance, image, flavor, password)
 	if err != nil {
 		logger.Error("Reinstall failed", err)
 		ErrorResponse(c, http.StatusBadRequest, "Reinstall failed", err)

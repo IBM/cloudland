@@ -348,6 +348,8 @@ definitions:
         type: string
       image:
         $ref: '#/definitions/common.BaseReference'
+      password:
+        type: string
     type: object
   apis.InstanceResponse:
     properties:

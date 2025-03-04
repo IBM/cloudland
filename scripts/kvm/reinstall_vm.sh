@@ -3,7 +3,7 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 8 ] && die "$0 <vm_ID> <image> <snapshot> <volume_id> <old_volume_uuid> <cpu> <memory> <disk_size>"
+[ $# -lt 11 ] && die "$0 <vm_ID> <image> <snapshot> <volume_id> <old_volume_uuid> <cpu> <memory> <disk_size> <os_code> <login_port> <password>"
 
 ID=$1
 vm_ID=inst-$ID
@@ -14,6 +14,9 @@ old_volume_id=$5
 vm_cpu=$6
 vm_mem=$7
 disk_size=$8
+os_code=$9
+login_port=${10}
+password=${11}
 state=error
 vol_state=error
 
@@ -108,3 +111,14 @@ virsh autostart $vm_ID
 virsh start $vm_ID
 [ $? -eq 0 ] && state=running
 echo "|:-COMMAND-:| launch_vm.sh '$ID' '$state' '$SCI_CLIENT_ID' 'sync'"
+
+# check if the vm is windows and whether to change the port and password
+if [ "$os_code" = "windows" ]; then
+    if [ -n "$login_port" ] && [ ${login_port} -gt 0 ]; then
+        async_exec ./async_job/win_rdp_port.sh $vm_ID $login_port $password
+    fi
+else
+    if [ -n "$login_port" ] && [ ${login_port} -gt 0 ]; then
+        async_exec ./async_job/linux_ssh_port.sh $vm_ID $login_port $password
+    fi
+fi

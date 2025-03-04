@@ -3150,6 +3150,9 @@ const docTemplatev1 = `{
                 },
                 "image": {
                     "$ref": "#/definitions/common.BaseReference"
+                },
+                "password": {
+                    "type": "string"
                 }
             }
         },

@@ -2,10 +2,11 @@
 
 cd `dirname $0`
 source ../../cloudrc
-[ $# -lt 2 ] && echo "$0 <vm_ID> <rdp_port>" && exit -1
+[ $# -lt 3 ] && echo "$0 <vm_ID> <rdp_port> <password>" && exit -1
 
 vm_ID=$1
 rdp_port=$2
+password=$3
 
 
 TIMEOUT=60
@@ -77,3 +78,10 @@ while true; do
     sleep $WAIT_TIME
     ELAPSED_TIME=$((ELAPSED_TIME + WAIT_TIME))
 done
+
+# change the password
+if [ -n "$password" ]; then
+    virsh set-user-password --domain inst-$vm_ID --user Administrator --password $password
+    [ $? -ne 0 ] && die "Failed to set user password"
+    echo "|:-COMMAND-:| $(basename $0) '$1' 'success'"
+fi
