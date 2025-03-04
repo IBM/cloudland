@@ -81,31 +81,25 @@ done
 
 # change the password
 if [ -n "$password" ]; then
+    ELAPSED_TIME=0
+    PS_SUCEED_TIMES=0
     log_debug $vm_ID "$vm_ID setting user password"
-    output=$(virsh set-user-password --domain $vm_ID --user Administrator --password $password 2>&1)
-    exit_code=$?
-    if [ $exit_code -ne 0 ]; then
-        log_debug $vm_ID "Failed to set user password: $output"
-        die "Failed to set user password: $output"
-    fi
-    log_debug $vm_ID "$vm_ID set user password succeed"
-
-    log_debug $vm_ID "Forcing group policy update..."
-    virsh qemu-agent-command $vm_ID '{
-        "execute":"guest-exec",
-        "arguments": {
-            "path": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
-            "arg": ["/c","gpupdate /force"]
-        }
-    }' &>/dev/null
-
-    log_debug $vm_ID "Logging off current user..."
-    virsh qemu-agent-command $vm_ID '{
-        "execute": "guest-exec",
-        "arguments": {
-            "path": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
-            "arg": ["-Command", "logoff"],
-            "capture-output": true
-        }
-    }'
+    while true; do
+        OUTPUT=$(virsh set-user-password --domain $vm_ID --user Administrator --password $password 2>&1)
+        exit_code=$?
+        if [ $exit_code -eq 0 ]; then
+            log_debug $vm_ID "$vm_ID set password result: $OUTPUT"
+            PS_SUCEED_TIMES=$((PS_SUCEED_TIMES + 1))
+            if [ ${PS_SUCEED_TIMES} -gt 5 ]; then
+                log_debug $vm_ID "$vm_ID set password succeed"
+                break
+            fi
+        fi
+        if [ $ELAPSED_TIME -ge $TIMEOUT ]; then
+            log_debug $vm_ID "$vm_ID timeout while set password"
+            die "Timeout waiting for Windows VM '$vm_ID' to set password script after $TIMEOUT seconds."
+        fi
+        sleep $WAIT_TIME
+        ELAPSED_TIME=$((ELAPSED_TIME + WAIT_TIME))
+    done
 fi
