@@ -2157,6 +2157,41 @@ const docTemplatev1 = `{
                 }
             }
         },
+        "/version": {
+            "get": {
+                "description": "get version",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Compute"
+                ],
+                "summary": "get version",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/apis.VersionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    }
+                }
+            }
+        },
         "/volumes": {
             "get": {
                 "description": "list volumes",
@@ -3060,6 +3095,11 @@ const docTemplatev1 = `{
                         "$ref": "#/definitions/common.BaseReference"
                     }
                 },
+                "login_port": {
+                    "type": "integer",
+                    "maximum": 65535,
+                    "minimum": 0
+                },
                 "primary_interface": {
                     "$ref": "#/definitions/apis.InterfacePayload"
                 },
@@ -3119,6 +3159,9 @@ const docTemplatev1 = `{
                     "items": {
                         "$ref": "#/definitions/common.ResourceReference"
                     }
+                },
+                "login_port": {
+                    "type": "integer"
                 },
                 "name": {
                     "type": "string"
@@ -3189,7 +3232,7 @@ const docTemplatev1 = `{
                     "maximum": 20000,
                     "minimum": 0
                 },
-                "security_group": {
+                "security_groups": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/common.BaseReference"
@@ -3227,7 +3270,7 @@ const docTemplatev1 = `{
                     "maximum": 20000,
                     "minimum": 0
                 },
-                "security_group": {
+                "security_groups": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/common.BaseReference"
@@ -3882,6 +3925,14 @@ const docTemplatev1 = `{
                     }
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "apis.VersionResponse": {
+            "type": "object",
+            "properties": {
+                "version": {
                     "type": "string"
                 }
             }

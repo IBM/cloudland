@@ -314,6 +314,10 @@ definitions:
         maxItems: 16
         minItems: 0
         type: array
+      login_port:
+        maximum: 65535
+        minimum: 0
+        type: integer
       primary_interface:
         $ref: '#/definitions/apis.InterfacePayload'
       root_passwd:
@@ -360,6 +364,8 @@ definitions:
         items:
           $ref: '#/definitions/common.ResourceReference'
         type: array
+      login_port:
+        type: integer
       name:
         type: string
       owner:
@@ -409,7 +415,7 @@ definitions:
         maximum: 20000
         minimum: 0
         type: integer
-      security_group:
+      security_groups:
         items:
           $ref: '#/definitions/common.BaseReference'
         type: array
@@ -434,7 +440,7 @@ definitions:
         maximum: 20000
         minimum: 0
         type: integer
-      security_group:
+      security_groups:
         items:
           $ref: '#/definitions/common.BaseReference'
         type: array
@@ -874,6 +880,11 @@ definitions:
           $ref: '#/definitions/apis.SubnetResponse'
         type: array
       updated_at:
+        type: string
+    type: object
+  apis.VersionResponse:
+    properties:
+      version:
         type: string
     type: object
   apis.VolumeListResponse:
@@ -2482,6 +2493,29 @@ paths:
       summary: patch a user
       tags:
       - Authorization
+  /version:
+    get:
+      consumes:
+      - application/json
+      description: get version
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.VersionResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/common.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/common.APIError'
+      summary: get version
+      tags:
+      - Compute
   /volumes:
     get:
       consumes:

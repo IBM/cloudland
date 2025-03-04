@@ -70,8 +70,8 @@ else
         exit -1
     fi
     expand_ret=$(wds_curl PUT "api/v2/sync/block/volumes/$volume_id/expand" "{\"size\": $fsize}")
-    rest_code=$(echo $expand_ret | jq -r .ret_code)
-    if [ "$rest_code" != "0" ]; then
+    ret_code=$(echo $expand_ret | jq -r .ret_code)
+    if [ "$ret_code" != "0" ]; then
         echo "|:-COMMAND-:| `basename $0` '$ID' '$state' '$SCI_CLIENT_ID' 'failed to expand boot volume to size $fsize, $expand_ret'"
         exit -1
     fi
@@ -80,7 +80,7 @@ else
     vhost_id=$(echo $vhost_ret | jq -r .id)
     uss_ret=$(wds_curl PUT "api/v2/sync/block/vhost/bind_uss" "{\"vhost_id\": \"$vhost_id\", \"uss_gw_id\": \"$uss_id\", \"lun_id\": \"$volume_id\", \"is_snapshot\": false}")
     ret_code=$(echo $uss_ret | jq -r .ret_code)
-    if [ "$rest_code" != "0" ]; then
+    if [ "$ret_code" != "0" ]; then
         echo "|:-COMMAND-:| `basename $0` '$ID' '$state' '$SCI_CLIENT_ID' 'failed to create wds vhost for boot volume, $vhost_ret, $uss_ret!'"
         exit -1
     fi
@@ -99,8 +99,17 @@ cp $template $vm_xml
 sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_img#g; s#VM_UNIX_SOCK#$ux_sock#g; s#VM_META#$vm_meta#g; s#VM_AGENT#$vm_QA#g" $vm_xml
 virsh define $vm_xml
 virsh autostart $vm_ID
-virsh start $vm_ID --paused
 jq .vlans <<< $metadata | ./sync_nic_info.sh "$ID" "$vm_name"
-virsh resume $vm_ID
+virsh start $vm_ID
 [ $? -eq 0 ] && state=running
 echo "|:-COMMAND-:| $(basename $0) '$ID' '$state' '$SCI_CLIENT_ID' 'init'"
+
+# check if the vm is windows and whether to change the rdp port
+os_code=$(jq -r '.os_code' <<< $metadata)
+if [ "$os_code" = "windows" ]; then
+    rdp_port=$(jq -r '.login_port' <<< $metadata)
+    if [ -n "$rdp_port" ] && [ "${rdp_port}" != "3389" ]  && [ ${rdp_port} -gt 0 ]; then
+        # run the script to change the rdp port in background
+        async_exec ./async_job/win_rdp_port.sh $vm_ID $rdp_port
+    fi
+fi

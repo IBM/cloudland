@@ -48,6 +48,7 @@ type InstancePayload struct {
 	Hostname            string              `json:"hostname" binding:"required,hostname|fqdn"`
 	Keys                []*BaseReference    `json:"keys" binding:"omitempty,gte=0,lte=16"`
 	RootPasswd          string              `json:"root_passwd" binding:"omitempty,min=8,max=32"`
+	LoginPort           int                 `json:"login_port" binding:"omitempty,min=0,max=65535"`
 	Flavor              string              `json:"flavor" binding:"required,min=1,max=32"`
 	Image               *BaseReference      `json:"image" binding:"required"`
 	PrimaryInterface    *InterfacePayload   `json:"primary_interface", binding:"required"`
@@ -61,6 +62,7 @@ type InstanceResponse struct {
 	*ResourceReference
 	Hostname    string               `json:"hostname"`
 	Status      string               `json:"status"`
+	LoginPort   int                  `json:"login_port"`
 	Interfaces  []*InterfaceResponse `json:"interfaces"`
 	Volumes     []*ResourceReference `json:"volumes"`
 	Flavor      string               `json:"flavor"`
@@ -316,9 +318,9 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 	if payload.Hypervisor != nil {
 		hypervisor = *payload.Hypervisor
 	}
-	logger.Debugf("Creating %d instances with hostname %s, userdata %s, image %s, flavor %s, zone %s, router %d, primaryIface %v, secondaryIfaces %v, keys %v, hypervisor %d",
-		count, hostname, userdata, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, hypervisor)
-	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, routerID, primaryIface, secondaryIfaces, keys, rootPasswd, hypervisor)
+	logger.Debugf("Creating %d instances with hostname %s, userdata %s, image %s, flavor %s, zone %s, router %d, primaryIface %v, secondaryIfaces %v, keys %v, login_port %d, hypervisor %d",
+		count, hostname, userdata, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, payload.LoginPort, hypervisor)
+	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, routerID, primaryIface, secondaryIfaces, keys, rootPasswd, payload.LoginPort, hypervisor)
 	if err != nil {
 		logger.Errorf("Failed to create instances, %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Failed to create instances", err)
@@ -360,7 +362,7 @@ func (v *InstanceAPI) getInterfaceInfo(ctx context.Context, vpc *model.Router, i
 		}
 	}
 	ifaceInfo = &routes.InterfaceInfo{
-		Subnet: subnet,
+		Subnet:        subnet,
 		AllowSpoofing: ifacePayload.AllowSpoofing,
 	}
 	if ifacePayload.IpAddress != "" {
@@ -419,8 +421,9 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 			CreatedAt: instance.CreatedAt.Format(TimeStringForMat),
 			UpdatedAt: instance.UpdatedAt.Format(TimeStringForMat),
 		},
-		Hostname: instance.Hostname,
-		Status:   instance.Status,
+		Hostname:  instance.Hostname,
+		LoginPort: int(instance.LoginPort),
+		Status:    instance.Status,
 	}
 	if instance.Image != nil {
 		instanceResp.Image = &ResourceReference{

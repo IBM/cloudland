@@ -16,7 +16,10 @@ if [ -n "$userdata" ]; then
    echo "$userdata" > $latest_dir/user_data
 fi
 
-read -d'\n' -r root_passwd os_code dns < <(jq -r ".root_passwd, .os_code, .dns" <<<$vm_meta)
+root_passwd=$(jq -r '.root_passwd' <<< $vm_meta)
+os_code=$(jq -r '.os_code' <<< $vm_meta)
+dns=$(jq -r '.dns' <<< $vm_meta)
+login_port=$(jq -r '.login_port' <<< $vm_meta)
 pub_keys=$(jq -r '.keys' <<< $vm_meta)
 admin_pass=`openssl rand -base64 12`
 random_seed=`cat /dev/urandom | head -c 512 | base64 -w 0`
@@ -48,21 +51,37 @@ random_seed=`cat /dev/urandom | head -c 512 | base64 -w 0`
     echo '}'
 ) > $latest_dir/meta_data.json
 
-if [ -n "${root_passwd}" ]; then
-    (
-        echo \
+ssh_pwauth="false"
+if [ -n "${root_passwd}" ] && [ "${os_code}" != "windows" ]; then
+    ssh_pwauth="true"
+fi
+
+# vendor_data.json header
+vendor_data_header=$( 
+    echo \
 '"Content-Type: multipart/mixed; boundary=\"//\"\n'\
 'MIME-Version: 1.0\n'\
 '\n'\
-'--//\n'\
+'--//\n'
+)
+
+# cloud-config.txt header
+cloud_config_txt=$(
+    echo \
 'Content-Type: text/cloud-config; charset=\"us-ascii\"\n'\
 'MIME-Version: 1.0\n'\
 'Content-Transfer-Encoding: 7bit\n'\
 'Content-Disposition: attachment; filename=\"cloud-config.txt\"\n'\
 '\n'\
 '#cloud-config\n'\
-'ssh_pwauth: true\n'\
-'disable_root: false\n'\
+'ssh_pwauth: '${ssh_pwauth}'\n'\
+'disable_root: false\n'
+)
+
+# cloud-config.txt body
+if [ -n "${root_passwd}" ] && [ "${os_code}" != "windows" ]; then
+    cloud_config_txt+=$(
+        echo \
 'chpasswd:\n'\
 '  expire: false\n'\
 '  users:\n'\
@@ -70,18 +89,42 @@ if [ -n "${root_passwd}" ]; then
 '      password: '${root_passwd}'\n'\
 '  list: |\n'\
 '    root:'${root_passwd}'\n'\
-'\n'\
-'write_files:\n'\
+'write_files:\n'
 '  - path: /etc/ssh/sshd_config.d/allow_root.conf\n'\
 '    content: |\n'\
 '      PermitRootLogin yes\n'\
-'      PasswordAuthentication yes\n'\
-'\n--//--"'
-    ) > $latest_dir/vendor_data.json
+'      PasswordAuthentication yes\n'
+    )
+fi
+
+# use runcmd to change the port value of /etc/ssh/sshd_config
+# and restart the ssh service
+if [ -n "${login_port}" ] && [ "${login_port}" != "22" ] && [ ${login_port} -gt 0 ] && [ "${os_code}" != "windows" ]; then
+    cloud_config_txt+=$(
+        echo \
+'runcmd:\n'\
+'    - sed -i \"s/^#Port .*/Port '${login_port}'/\" /etc/ssh/sshd_config\n'\
+'    - sed -i \"s/^Port .*/Port '${login_port}'/\" /etc/ssh/sshd_config\n'\
+'    - systemctl daemon-reload\n'\
+'    - systemctl restart ssh.socket\n'\
+'    - systemctl restart sshd || systemctl restart ssh\n'
+    )
+fi
+    
+vendor_data_end='\n--//--"'
+
+# write to vendor_data.json
+if [ "${os_code}" != "windows" ]; then
+    echo -e "$vendor_data_header""$cloud_config_txt""$vendor_data_end" > $latest_dir/vendor_data.json
+    sed -i -n '1h; 1!H; ${ x; s/\n/\\n/g; p; }' $latest_dir/vendor_data.json
 fi
 
 [ -z "$dns" ] && dns=$dns_server
-net_json=$(jq 'del(.userdata) | del(.vlans) | del(.keys) | del(.security) | del(.zvm) | del(.ocp) | del(.virt_type) | del(.dns)' <<< $vm_meta | jq --arg dns $dns '.services[0].type = "dns" | .services[0].address |= .+$dns')
+net_json=$(jq 'del(.userdata) | del(.vlans) | del(.keys) | del(.security) | del(.login_port) | del(.root_passwd) | del(.dns)' <<< $vm_meta | jq --arg dns $dns '.services[0].type = "dns" | .services[0].address |= .+$dns')
+let mtu=$(cat /sys/class/net/$vxlan_interface/mtu)-50
+if [ "$mtu" -lt 1450 ]; then
+    net_json=$(sed "s/\"mtu\": 1450/\"mtu\": $mtu/g" <<<$net_json)
+fi
 echo "$net_json" > $latest_dir/network_data.json
 
 mkisofs -quiet -R -J -V config-2 -o ${cache_dir}/meta/${vm_ID}.iso $working_dir &> /dev/null
