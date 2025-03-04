@@ -53,7 +53,7 @@ while true; do
     ELAPSED_TIME=$((ELAPSED_TIME + WAIT_TIME))
 done
 
-SSH_SCRIPT="sed -i 's/^#\?Port [0-9]\+/Port ${ssh_port}/' /etc/ssh/sshd_config && systemctl restart sshd"
+SSH_SCRIPT='sed -i \"s/^#\\?Port [0-9]\\+/Port '${ssh_port}'/\" /etc/ssh/sshd_config && systemctl restart sshd'
 
 ELAPSED_TIME=0
 SSH_SUCEED_TIMES=0
@@ -81,7 +81,12 @@ done
 
 # change the password
 if [ -n "$password" ]; then
-    virsh set-user-password --domain inst-$vm_ID --user root --password $password
-    [ $? -ne 0 ] && die "Failed to set user password"
-    echo "|:-COMMAND-:| $(basename $0) '$1' 'success'"
+    log_debug $vm_ID "$vm_ID setting user password"
+    output=$(virsh set-user-password --domain $vm_ID --user root --password $password 2>&1)
+    exit_code=$?
+    if [ $exit_code -ne 0 ]; then
+        log_debug $vm_ID "Failed to set user password: $output"
+        die "Failed to set user password: $output"
+    fi
+    log_debug $vm_ID "$vm_ID set user password succeed"
 fi
