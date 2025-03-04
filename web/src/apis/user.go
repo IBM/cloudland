@@ -15,6 +15,7 @@ import (
 	. "web/src/common"
 	"web/src/model"
 	"web/src/routes"
+	"web/src/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -174,6 +175,12 @@ func (v *UserAPI) Create(c *gin.Context) {
 	password := payload.Password
 	// PET-349 in case want to have same uuid for user and org for all regions
 	userUUID := payload.ID // optional, if not provided, will generate a new one
+	if userUUID != "" && !utils.IsUUID(userUUID) {
+		logger.Errorf("Invalid user uuid: %s", userUUID)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid user uuid", nil)
+		return
+	}
+
 	user, err := userAdmin.Create(ctx, username, password, userUUID)
 	if err != nil {
 		logger.Errorf("Failed to create user: %+v", err)
@@ -181,6 +188,11 @@ func (v *UserAPI) Create(c *gin.Context) {
 		return
 	}
 	orgUUID := payload.Org.ID // optional, if not provided, will generate a new one
+	if orgUUID != "" && !utils.IsUUID(orgUUID) {
+		logger.Errorf("Invalid org uuid: %s", orgUUID)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid org uuid", nil)
+		return
+	}
 	org, err := orgAdmin.Create(ctx, username, username, orgUUID)
 	if err != nil {
 		logger.Errorf("Failed to create org: %+v", err)

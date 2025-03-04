@@ -36,7 +36,7 @@ func FileExist(filename string) bool {
 	return !os.IsNotExist(err)
 }
 
-func (a *ImageAdmin) Create(ctx context.Context, osCode, name, osVersion, virtType, userName, url, architecture string, qaEnabled bool, instID int64) (image *model.Image, err error) {
+func (a *ImageAdmin) Create(ctx context.Context, osCode, name, osVersion, virtType, userName, url, architecture string, qaEnabled bool, instID int64, uuid string) (image *model.Image, err error) {
 	logger.Debugf("Creating image %s %s %s %s %s %s %s %t %d", osCode, name, osVersion, virtType, userName, url, architecture, qaEnabled, instID)
 	memberShip := GetMemberShip(ctx)
 	ctx, db, newTransaction := StartTransaction(ctx)
@@ -77,6 +77,10 @@ func (a *ImageAdmin) Create(ctx context.Context, osCode, name, osVersion, virtTy
 			Status:       "creating",
 			Architecture: architecture,
 			QAEnabled:    qaEnabled,
+		}
+		if uuid != "" {
+			logger.Debugf("Creating image with UUID %s", uuid)
+			image.UUID = uuid
 		}
 	}
 	logger.Debugf("Creating image %+v", image)
@@ -352,7 +356,7 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	userName := c.QueryTrim("userName")
 	qaEnabled := true
 	architecture := "x86_64"
-	_, err := imageAdmin.Create(c.Req.Context(), osCode, name, osVersion, virtType, userName, url, architecture, qaEnabled, instance)
+	_, err := imageAdmin.Create(c.Req.Context(), osCode, name, osVersion, virtType, userName, url, architecture, qaEnabled, instance, "")
 	if err != nil {
 		logger.Error("Create image failed", err)
 		c.Data["ErrorMsg"] = err.Error()

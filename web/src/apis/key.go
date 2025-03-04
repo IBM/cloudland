@@ -15,6 +15,7 @@ import (
 	. "web/src/common"
 	"web/src/model"
 	"web/src/routes"
+	"web/src/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -128,6 +129,11 @@ func (v *KeyAPI) Create(c *gin.Context) {
 	err := c.ShouldBindJSON(payload)
 	if err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
+		return
+	}
+	if payload.UUID != "" && !utils.IsUUID(payload.UUID) {
+		logger.Errorf("Invalid input UUID %s", payload.UUID)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid input UUID", nil)
 		return
 	}
 	key, err := keyAdmin.Create(ctx, payload.Name, payload.PublicKey, payload.UUID)
