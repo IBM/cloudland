@@ -662,15 +662,17 @@ func (a *InstanceAdmin) getMetadata(instance *model.Instance, rootPasswd string)
 	dns := ""
 	for i, iface := range instance.Interfaces {
 		subnet := iface.Address.Subnet
+		address := strings.Split(iface.Address.Address, "/")[0]
 		instNetwork := &InstanceNetwork{
-			Address: iface.Address.Address,
+			Address: address,
 			Netmask: subnet.Netmask,
 			Type:    "ipv4",
 			Link:    iface.Name,
 			ID:      fmt.Sprintf("network%d", i+1),
 		}
 		if iface.PrimaryIf {
-			instRoute := &NetworkRoute{Network: "0.0.0.0", Netmask: "0.0.0.0", Gateway: subnet.Gateway}
+			gateway := strings.Split(subnet.Gateway, "/")[0]
+			instRoute := &NetworkRoute{Network: "0.0.0.0", Netmask: "0.0.0.0", Gateway: gateway}
 			instNetwork.Routes = append(instNetwork.Routes, instRoute)
 			dns = subnet.NameServer
 		}
