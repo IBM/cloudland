@@ -337,7 +337,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 	return
 }
 
-func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance, image *model.Image, flavor *model.Flavor, password string) (err error) {
+func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance, image *model.Image, flavor *model.Flavor, rootPasswd string, keys []*model.Key) (err error) {
 	logger.Debugf("Reinstall instance %d with image %d and flavor %d", instance.ID, image.ID, flavor.ID)
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
@@ -393,20 +393,44 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 	default:
 		loginPort = instance.LoginPort
 	}
-	if err = db.Model(&model.Instance{}).Where("id = ?", instance.ID).Updates(map[string]interface{}{"flavor_id": flavor.ID, "image_id": image.ID, "status": "reinstalling", "login_port": loginPort}).Error; err != nil {
+	passwdLogin := false
+	if rootPasswd != "" {
+		passwdLogin = true
+	}
+	instance.Status = "reinstalling"
+	instance.LoginPort = loginPort
+	instance.PasswdLogin = passwdLogin
+	instance.FlavorID = flavor.ID
+	instance.ImageID = image.ID
+	instance.Keys = keys
+	if err = db.Save(&instance).Error; err != nil {
 		logger.Error("Failed to save instance", err)
 		return
 	}
 
 	// change volume status to reinstalling
-	if err = db.Model(&model.Volume{}).Where("id = ?", bootVolume.ID).Updates(map[string]interface{}{"status": "reinstalling", "size": flavor.Disk}).Error; err != nil {
+	bootVolume.Status = "reinstalling"
+	bootVolume.Size = flavor.Disk
+	if err = db.Save(&bootVolume).Error; err != nil {
 		logger.Error("Failed to save volume", err)
+		return
+	}
+
+	// rebuild metadata
+	metadata, err := a.getMetadata(instance)
+	if err != nil {
+		logger.Error("Failed to get instance metadata", err)
+		return
+	}
+	jsonData, err := json.Marshal(metadata)
+	if err != nil {
+		logger.Errorf("Failed to marshal instance json data, %v", err)
 		return
 	}
 
 	snapshot := total/MaxmumSnapshot + 1 // Same snapshot reference can not be over 128, so use 96 here
 	control := fmt.Sprintf("inter=%d", instance.Hyper)
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/reinstall_vm.sh '%d' '%s.%s' '%d' '%d' '%s' '%d' '%d' '%d' '%s' '%d' '%s'", instance.ID, imagePrefix, image.Format, snapshot, bootVolume.ID, bootVolume.GetOriginVolumeID(), flavor.Cpu, flavor.Memory, flavor.Disk, image.OSCode, loginPort, password)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/reinstall_vm.sh '%d' '%s.%s' '%d' '%d' '%s' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, imagePrefix, image.Format, snapshot, bootVolume.ID, bootVolume.GetOriginVolumeID(), flavor.Cpu, flavor.Memory, flavor.Disk, base64.StdEncoding.EncodeToString(jsonData))
 	err = HyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Error("Reinstall remote exec failed", err)
@@ -607,6 +631,46 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 		return
 	}
 	return interfaces, string(jsonData), nil
+}
+
+func (a *InstanceAdmin) getMetadata(instance *model.Instance) (metadata *InstanceData, err error) {
+	vlans := []*VlanInfo{}
+	instNetworks := []*InstanceNetwork{}
+	instLinks := []*NetworkLink{}
+	var instKeys []string
+	for _, key := range instance.Keys {
+		instKeys = append(instKeys, key.PublicKey)
+	}
+	dns := ""
+	for i, iface := range instance.Interfaces {
+		subnet := iface.Address.Subnet
+		instNetwork := &InstanceNetwork{
+			Address: iface.Address.Address,
+			Netmask: subnet.Netmask,
+			Type:    "ipv4",
+			Link:    iface.Name,
+			ID:      fmt.Sprintf("network%d", i+1),
+		}
+		if iface.PrimaryIf {
+			instRoute := &NetworkRoute{Network: "0.0.0.0", Netmask: "0.0.0.0", Gateway: subnet.Gateway}
+			instNetwork.Routes = append(instNetwork.Routes, instRoute)
+			dns = subnet.NameServer
+		}
+		instNetworks = append(instNetworks, instNetwork)
+		instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
+		vlans = append(vlans, &VlanInfo{Device: iface.Name, Vlan: subnet.Vlan, Inbound: iface.Inbound, Outbound: iface.Outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: iface.Address.Address, MacAddr: iface.MacAddr})
+	}
+	instData := &InstanceData{
+		Userdata:  instance.Userdata,
+		DNS:       dns,
+		Vlans:     vlans,
+		Networks:  instNetworks,
+		Links:     instLinks,
+		Keys:      instKeys,
+		LoginPort: int(instance.LoginPort),
+		OSCode:    instance.Image.OSCode,
+	}
+	return instData, nil
 }
 
 func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (err error) {
@@ -1250,9 +1314,16 @@ func (v *InstanceView) Reinstall(c *macaron.Context, store session.Store) {
 			c.HTML(500, "500")
 			return
 		}
+		keys := []*model.Key{}
+		if err := db.Find(&keys).Error; err != nil {
+			c.Data["ErrorMsg"] = err.Error()
+			c.HTML(500, "500")
+			return
+		}
 		c.Data["Instance"] = instance
 		c.Data["Images"] = images
 		c.Data["Flavors"] = flavors
+		c.Data["Keys"] = keys
 		c.Data["Link"] = fmt.Sprintf("/instances/%d/reinstall", instanceID)
 		c.HTML(200, "instances_reinstall")
 		return
@@ -1279,12 +1350,32 @@ func (v *InstanceView) Reinstall(c *macaron.Context, store session.Store) {
 			return
 		}
 		password := c.QueryTrim("password")
-		if password == "" {
-			c.Data["ErrorMsg"] = "Password is empty"
+		keys := c.QueryTrim("keys")
+		k := strings.Split(keys, ",")
+		if password == "" && len(k) <= 0 {
+			c.Data["ErrorMsg"] = "Password or key is empty"
 			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
-		err = instanceAdmin.Reinstall(ctx, instance, image, flavor, password)
+		var instKeys []*model.Key
+		for i := 0; i < len(k); i++ {
+			kID, err := strconv.Atoi(k[i])
+			if err != nil {
+				logger.Error("Invalid key ID", err)
+				continue
+			}
+			var key *model.Key
+			key, err = keyAdmin.Get(ctx, int64(kID))
+			if err != nil {
+				logger.Error("Failed to access key", err)
+				c.Data["ErrorMsg"] = "Failed to access key"
+				c.HTML(http.StatusBadRequest, "error")
+				return
+			}
+			instKeys = append(instKeys, key)
+		}
+
+		err = instanceAdmin.Reinstall(ctx, instance, image, flavor, password, instKeys)
 		if err != nil {
 			logger.Error("Reinstall failed", err)
 			c.Data["ErrorMsg"] = err.Error()

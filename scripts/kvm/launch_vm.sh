@@ -111,6 +111,6 @@ if [ "$os_code" = "windows" ]; then
     rdp_port=$(jq -r '.login_port' <<< $metadata)
     if [ -n "$rdp_port" ] && [ "${rdp_port}" != "3389" ]  && [ ${rdp_port} -gt 0 ]; then
         # run the script to change the rdp port in background
-        async_exec ./async_job/win_rdp_port.sh $vm_ID $rdp_port ''
+        async_exec ./async_job/win_rdp_port.sh $vm_ID $rdp_port
     fi
 fi

@@ -3,7 +3,7 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 11 ] && die "$0 <vm_ID> <image> <snapshot> <volume_id> <old_volume_uuid> <cpu> <memory> <disk_size> <os_code> <login_port> <password>"
+[ $# -lt 8 ] && die "$0 <vm_ID> <image> <snapshot> <volume_id> <old_volume_uuid> <cpu> <memory> <disk_size>"
 
 ID=$1
 vm_ID=inst-$ID
@@ -14,11 +14,11 @@ old_volume_id=$5
 vm_cpu=$6
 vm_mem=$7
 disk_size=$8
-os_code=$9
-login_port=${10}
-password=${11}
 state=error
 vol_state=error
+
+md=$(cat)
+metadata=$(echo $md | base64 -d)
 
 vm_xml=$xml_dir/$vm_ID/${vm_ID}.xml
 mv $vm_xml $vm_xml-$(date +'%s.%N')
@@ -26,6 +26,10 @@ virsh dumpxml $vm_ID >$vm_xml
 virsh undefine $vm_ID
 virsh destroy $vm_ID
 let fsize=$disk_size*1024*1024*1024
+
+# rebuild metadata
+./build_meta.sh "$vm_ID" "$vm_name" <<< $md >/dev/null 2>&1
+
 if [ -z "$wds_address" ]; then
     vm_img=$volume_dir/$vm_ID.disk
     if [ ! -f "$vm_img" ]; then
@@ -112,13 +116,12 @@ virsh start $vm_ID
 [ $? -eq 0 ] && state=running
 echo "|:-COMMAND-:| launch_vm.sh '$ID' '$state' '$SCI_CLIENT_ID' 'sync'"
 
-# check if the vm is windows and whether to change the port and password
+# check if the vm is windows and whether to change the rdp port
+os_code=$(jq -r '.os_code' <<< $metadata)
 if [ "$os_code" = "windows" ]; then
-    if [ -n "$login_port" ] && [ ${login_port} -gt 0 ]; then
-        async_exec ./async_job/win_rdp_port.sh $vm_ID $login_port $password
-    fi
-else
-    if [ -n "$login_port" ] && [ ${login_port} -gt 0 ]; then
-        async_exec ./async_job/linux_ssh_port.sh $vm_ID $login_port $password
+    rdp_port=$(jq -r '.login_port' <<< $metadata)
+    if [ -n "$rdp_port" ] && [ "${rdp_port}" != "3389" ]  && [ ${rdp_port} -gt 0 ]; then
+        # run the script to change the rdp port in background
+        async_exec ./async_job/win_rdp_port.sh $vm_ID $rdp_port
     fi
 fi

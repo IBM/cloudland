@@ -2,11 +2,10 @@
 
 cd `dirname $0`
 source ../../cloudrc
-[ $# -lt 3 ] && echo "$0 <vm_ID> <rdp_port> <password>" && exit -1
+[ $# -lt 2 ] && echo "$0 <vm_ID> <rdp_port>" && exit -1
 
 vm_ID=$1
 rdp_port=$2
-password=$3
 
 
 TIMEOUT=60
@@ -78,28 +77,3 @@ while true; do
     sleep $WAIT_TIME
     ELAPSED_TIME=$((ELAPSED_TIME + WAIT_TIME))
 done
-
-# change the password
-if [ -n "$password" ]; then
-    ELAPSED_TIME=0
-    PS_SUCEED_TIMES=0
-    log_debug $vm_ID "$vm_ID setting user password"
-    while true; do
-        OUTPUT=$(virsh set-user-password --domain $vm_ID --user Administrator --password $password 2>&1)
-        exit_code=$?
-        if [ $exit_code -eq 0 ]; then
-            log_debug $vm_ID "$vm_ID set password result: $OUTPUT"
-            PS_SUCEED_TIMES=$((PS_SUCEED_TIMES + 1))
-            if [ ${PS_SUCEED_TIMES} -gt 5 ]; then
-                log_debug $vm_ID "$vm_ID set password succeed"
-                break
-            fi
-        fi
-        if [ $ELAPSED_TIME -ge $TIMEOUT ]; then
-            log_debug $vm_ID "$vm_ID timeout while set password"
-            die "Timeout waiting for Windows VM '$vm_ID' to set password script after $TIMEOUT seconds."
-        fi
-        sleep $WAIT_TIME
-        ELAPSED_TIME=$((ELAPSED_TIME + WAIT_TIME))
-    done
-fi

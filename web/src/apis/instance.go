@@ -43,9 +43,10 @@ type InstanceSetUserPasswordPayload struct {
 }
 
 type InstanceReinstallPayload struct {
-	Image    *BaseReference `json:"image" binding:"omitempty"`
-	Flavor   string         `json:"flavor" binding:"omitempty"`
-	Password string         `json:"password" binging:"required,min=8,max=64"`
+	Image    *BaseReference   `json:"image" binding:"omitempty"`
+	Flavor   string           `json:"flavor" binding:"omitempty"`
+	Keys     []*BaseReference `json:"keys" binding:"omitempty,gte=0,lte=16"`
+	Password string           `json:"password" binging:"required,min=8,max=64"`
 }
 
 type InstancePayload struct {
@@ -266,7 +267,22 @@ func (v *InstanceAPI) Reinstall(c *gin.Context) {
 
 	// running command
 	password := payload.Password
-	err = instanceAdmin.Reinstall(ctx, instance, image, flavor, password)
+	var keys []*model.Key
+	for _, ky := range payload.Keys {
+		var key *model.Key
+		key, err = keyAdmin.GetKey(ctx, ky)
+		if err != nil {
+			logger.Errorf("Failed to get key %+v, %+v", ky, err)
+			ErrorResponse(c, http.StatusBadRequest, "Invalid key", err)
+		}
+		keys = append(keys, key)
+	}
+	if password == "" && len(keys) == 0 {
+		logger.Errorf("Password or key must be provided")
+		ErrorResponse(c, http.StatusBadRequest, "Password or key must be provided", err)
+		return
+	}
+	err = instanceAdmin.Reinstall(ctx, instance, image, flavor, password, keys)
 	if err != nil {
 		logger.Error("Reinstall failed", err)
 		ErrorResponse(c, http.StatusBadRequest, "Reinstall failed", err)
