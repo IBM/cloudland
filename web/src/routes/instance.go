@@ -393,18 +393,26 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 	default:
 		loginPort = instance.LoginPort
 	}
+	logger.Debug("Login Port is: %d", loginPort)
 	passwdLogin := false
 	if rootPasswd != "" {
 		passwdLogin = true
+		logger.Debug("Root password login enabled")
 	}
 	instance.Status = "reinstalling"
 	instance.LoginPort = loginPort
 	instance.PasswdLogin = passwdLogin
 	instance.FlavorID = flavor.ID
+	instance.Flavor = flavor
 	instance.ImageID = image.ID
-	instance.Keys = keys
+	instance.Image = image
 	if err = db.Save(&instance).Error; err != nil {
 		logger.Error("Failed to save instance", err)
+		return
+	}
+
+	if err = db.Model(&instance).Association("Keys").Replace(keys).Error; err != nil {
+		logger.Errorf("Failed to update keys association: %v", err)
 		return
 	}
 
@@ -422,6 +430,7 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 		logger.Error("Failed to get instance metadata", err)
 		return
 	}
+	metadata.RootPasswd = rootPasswd
 	jsonData, err := json.Marshal(metadata)
 	if err != nil {
 		logger.Errorf("Failed to marshal instance json data, %v", err)
@@ -1349,33 +1358,35 @@ func (v *InstanceView) Reinstall(c *macaron.Context, store session.Store) {
 			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
-		password := c.QueryTrim("password")
+		rootPasswd := c.QueryTrim("rootpasswd")
 		keys := c.QueryTrim("keys")
-		k := strings.Split(keys, ",")
-		if password == "" && len(k) <= 0 {
+		if rootPasswd == "" && keys == "" {
 			c.Data["ErrorMsg"] = "Password or key is empty"
 			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
 		var instKeys []*model.Key
-		for i := 0; i < len(k); i++ {
-			kID, err := strconv.Atoi(k[i])
-			if err != nil {
-				logger.Error("Invalid key ID", err)
-				continue
+		if keys != "" {
+			k := strings.Split(keys, ",")
+			for i := 0; i < len(k); i++ {
+				kID, err := strconv.Atoi(k[i])
+				if err != nil {
+					logger.Error("Invalid key ID", err)
+					continue
+				}
+				var key *model.Key
+				key, err = keyAdmin.Get(ctx, int64(kID))
+				if err != nil {
+					logger.Error("Failed to access key", err)
+					c.Data["ErrorMsg"] = "Failed to access key"
+					c.HTML(http.StatusBadRequest, "error")
+					return
+				}
+				instKeys = append(instKeys, key)
 			}
-			var key *model.Key
-			key, err = keyAdmin.Get(ctx, int64(kID))
-			if err != nil {
-				logger.Error("Failed to access key", err)
-				c.Data["ErrorMsg"] = "Failed to access key"
-				c.HTML(http.StatusBadRequest, "error")
-				return
-			}
-			instKeys = append(instKeys, key)
 		}
 
-		err = instanceAdmin.Reinstall(ctx, instance, image, flavor, password, instKeys)
+		err = instanceAdmin.Reinstall(ctx, instance, image, flavor, rootPasswd, instKeys)
 		if err != nil {
 			logger.Error("Reinstall failed", err)
 			c.Data["ErrorMsg"] = err.Error()
