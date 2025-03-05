@@ -425,21 +425,23 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 	}
 
 	// rebuild metadata
-	metadata, err := a.getMetadata(instance)
+	instancePasswd := rootPasswd
+	if rootPasswd != "" && image.OSCode != "windows" {
+		instancePasswd, err = encrpt.Mkpasswd(rootPasswd, "sha512")
+		if err != nil {
+			logger.Errorf("Failed to encrypt admin password, %v", err)
+			return
+		}
+	}
+	metadata, err := a.getMetadata(instance, instancePasswd)
 	if err != nil {
 		logger.Error("Failed to get instance metadata", err)
-		return
-	}
-	metadata.RootPasswd = rootPasswd
-	jsonData, err := json.Marshal(metadata)
-	if err != nil {
-		logger.Errorf("Failed to marshal instance json data, %v", err)
 		return
 	}
 
 	snapshot := total/MaxmumSnapshot + 1 // Same snapshot reference can not be over 128, so use 96 here
 	control := fmt.Sprintf("inter=%d", instance.Hyper)
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/reinstall_vm.sh '%d' '%s.%s' '%d' '%d' '%s' '%d' '%d' '%d' '%s'<<EOF\n%s\nEOF", instance.ID, imagePrefix, image.Format, snapshot, bootVolume.ID, bootVolume.GetOriginVolumeID(), flavor.Cpu, flavor.Memory, flavor.Disk, instance.Hostname, base64.StdEncoding.EncodeToString(jsonData))
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/reinstall_vm.sh '%d' '%s.%s' '%d' '%d' '%s' '%d' '%d' '%d' '%s'<<EOF\n%s\nEOF", instance.ID, imagePrefix, image.Format, snapshot, bootVolume.ID, bootVolume.GetOriginVolumeID(), flavor.Cpu, flavor.Memory, flavor.Disk, instance.Hostname, base64.StdEncoding.EncodeToString([]byte(metadata)))
 	err = HyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Error("Reinstall remote exec failed", err)
@@ -642,7 +644,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 	return interfaces, string(jsonData), nil
 }
 
-func (a *InstanceAdmin) getMetadata(instance *model.Instance) (metadata *InstanceData, err error) {
+func (a *InstanceAdmin) getMetadata(instance *model.Instance, rootPasswd string) (metadata string, err error) {
 	vlans := []*VlanInfo{}
 	instNetworks := []*InstanceNetwork{}
 	instLinks := []*NetworkLink{}
@@ -677,17 +679,23 @@ func (a *InstanceAdmin) getMetadata(instance *model.Instance) (metadata *Instanc
 		vlans = append(vlans, &VlanInfo{Device: iface.Name, Vlan: subnet.Vlan, Inbound: iface.Inbound, Outbound: iface.Outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: iface.Address.Address, MacAddr: iface.MacAddr})
 	}
 	instData := &InstanceData{
-		Userdata:  instance.Userdata,
-		VirtType:  virtType,
-		DNS:       dns,
-		Vlans:     vlans,
-		Networks:  instNetworks,
-		Links:     instLinks,
-		Keys:      instKeys,
-		LoginPort: int(instance.LoginPort),
-		OSCode:    instance.Image.OSCode,
+		Userdata:   instance.Userdata,
+		VirtType:   virtType,
+		DNS:        dns,
+		Vlans:      vlans,
+		Networks:   instNetworks,
+		Links:      instLinks,
+		Keys:       instKeys,
+		RootPasswd: rootPasswd,
+		LoginPort:  int(instance.LoginPort),
+		OSCode:     instance.Image.OSCode,
 	}
-	return instData, nil
+	jsonData, err := json.Marshal(instData)
+	if err != nil {
+		logger.Errorf("Failed to marshal instance json data, %v", err)
+		return
+	}
+	return string(jsonData), nil
 }
 
 func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (err error) {
