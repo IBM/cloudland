@@ -7,7 +7,7 @@
 		            <h4 class="ui top attached header">
 			            {{.i18n.Tr "Image_Manage_Panel"}} ({{.i18n.Tr "Total"}}: {{.Total}})
 			            <div class="ui right">
-				            <a class="ui green tiny button" href="images/new">{{.i18n.Tr "Create"}}</a>
+				            <a class="ui green tiny button" href="migrations/new">{{.i18n.Tr "Create"}}</a>
 			            </div>
 		            </h4>
 		            <div class="ui attached segment">
@@ -27,37 +27,29 @@
 									{{ end }}
 									<th>{{.i18n.Tr "UUID"}}</th>
 			                        <th>{{.i18n.Tr "Name"}}</th>
-			                        <th>{{.i18n.Tr "Format"}}</th>
+			                        <th>{{.i18n.Tr "Instance"}}</th>
+			                        <th>{{.i18n.Tr "Source Hyper"}}</th>
+			                        <th>{{.i18n.Tr "Target Hyper"}}</th>
+			                        <th>{{.i18n.Tr "Force"}}</th>
+			                        <th>{{.i18n.Tr "Phases"}}</th>
 			                        <th>{{.i18n.Tr "Status"}}</th>
-			                        <th>{{.i18n.Tr "Created_At"}}</th>
-			                        <th>{{.i18n.Tr "OSCode"}}</th>
-			                        <th>{{.i18n.Tr "OS Version"}}</th>
-			                        <th>{{.i18n.Tr "Hypervisor Type"}}</th>
-			                        <th>{{.i18n.Tr "Default Username"}}</th>
-			                        <th>{{.i18n.Tr "Architecture"}}</th>
-                                    <th>{{.i18n.Tr "Delete"}}</th>
 		                        </tr>
 	                        </thead>
 	                        <tbody>
                                 {{ $Link := .Link }}
-                                {{ range .Images }}
+                                {{ range .Migrations }}
 		                        <tr>
 									{{ if $.IsAdmin }}
 			                        <td>{{.ID}}</td>
 									{{ end }}
 									<td>{{.UUID}}</td>
 			                        <td>{{.Name}}</td>
-			                        <td>{{.Format}}</td>
+			                        <td>{{.InstanceID}}-{{.Instance.Hostname}}</td>
+			                        <td>{{.SourceHyper}}</td>
+			                        <td>{{.TargetHyper}}</td>
+			                        <td>{{.Force}}</td>
+			                        <td>{{ range .Phases }}{{.Summary}}-{{.Status}}<br>{{ end }}</td>
 			                        <td>{{.Status}}</td>
-			                        <td><span title="Tue, 18 Dec 2018 14:24:59 &#43;0800">{{.CreatedAt}}</span></td>
-			                        <td>{{.OSCode}}</td>
-			                        <td>{{.OsVersion}}</td>
-                                                <td> 
-                                                     KVM on x86_64
-                                                </td>
-			                        <td>{{.UserName}}</td>
-			                        <td>{{.Architecture}}</td>
-                                    <td><div class="delete-button" data-url="{{$Link}}/{{.ID}}" data-id="{{.ID}}"><i class="dark purple trash alternate outline icon"></i></div></td>
 		                        </tr>
                                 {{ end }}
 	                        </tbody>

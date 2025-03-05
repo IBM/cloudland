@@ -24,9 +24,11 @@ type Migration struct {
 	InstanceID int64
 	Instance   *Instance `gorm:"foreignkey:InstanceID"`
 	Force      bool   `gorm:"default:false"`
-	FromHyper  int32
-	ToHyper    int32
+	Type       string `gorm:"type:varchar(32)"`
+	SourceHyper   int32
+	TargetHyper   int32
 	Phases     []*Task `gorm:"foreignkey:Mission"`
+	Status      string `gorm:"type:varchar(32)"`
 }
 
 func init() {

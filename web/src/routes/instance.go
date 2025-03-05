@@ -67,6 +67,13 @@ type NetworkLink struct {
 	Type    string `json:"type,omitempty"`
 }
 
+type VolumeInfo struct {
+	ID      int64 `json:"id"`
+	UUID    string `json:"uuid"`
+	Device  string `json:"device"`
+	Booting bool   `json:"booting"`
+}
+
 type InstanceData struct {
 	Userdata   string             `json:"userdata"`
 	VirtType   string             `json:"virt_type"`
@@ -74,6 +81,7 @@ type InstanceData struct {
 	Vlans      []*VlanInfo        `json:"vlans"`
 	Networks   []*InstanceNetwork `json:"networks"`
 	Links      []*NetworkLink     `json:"links"`
+	Volumes    []*VolumeInfo      `json:"volumes"`
 	Keys       []string           `json:"keys"`
 	RootPasswd string             `json:"root_passwd"`
 	LoginPort  int                `json:"login_port"`
@@ -85,13 +93,10 @@ type InstancesData struct {
 	IsAdmin   bool              `json:"is_admin"`
 }
 
-func (a *InstanceAdmin) getHyperGroup(ctx context.Context, imageType string, zoneID int64) (hyperGroup string, err error) {
+func (a *InstanceAdmin) GetHyperGroup(ctx context.Context, zoneID int64, skipHyper int32) (hyperGroup string, err error) {
 	ctx, db := GetContextDB(ctx)
 	hypers := []*model.Hyper{}
-	where := fmt.Sprintf("zone_id = %d and status = 1", zoneID)
-	if imageType != "" {
-		where = fmt.Sprintf("%s and virt_type = '%s'", where, imageType)
-	}
+	where := fmt.Sprintf("zone_id = %d and status = 1 and hostid = %d", zoneID, skipHyper)
 	if err = db.Where(where).Find(&hypers).Error; err != nil {
 		logger.Error("Hypers query failed", err)
 		return
@@ -154,7 +159,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			loginPort = 3389
 		}
 	}
-	hyperGroup, err := a.getHyperGroup(ctx, image.VirtType, zoneID)
+	hyperGroup, err := a.GetHyperGroup(ctx, zoneID, -1)
 	if err != nil {
 		logger.Error("No valid hypervisor", err)
 		return
