@@ -439,7 +439,7 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 
 	snapshot := total/MaxmumSnapshot + 1 // Same snapshot reference can not be over 128, so use 96 here
 	control := fmt.Sprintf("inter=%d", instance.Hyper)
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/reinstall_vm.sh '%d' '%s.%s' '%d' '%d' '%s' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, imagePrefix, image.Format, snapshot, bootVolume.ID, bootVolume.GetOriginVolumeID(), flavor.Cpu, flavor.Memory, flavor.Disk, base64.StdEncoding.EncodeToString(jsonData))
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/reinstall_vm.sh '%d' '%s.%s' '%d' '%d' '%s' '%d' '%d' '%d' '%s'<<EOF\n%s\nEOF", instance.ID, imagePrefix, image.Format, snapshot, bootVolume.ID, bootVolume.GetOriginVolumeID(), flavor.Cpu, flavor.Memory, flavor.Disk, instance.Hostname, base64.StdEncoding.EncodeToString(jsonData))
 	err = HyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Error("Reinstall remote exec failed", err)
@@ -650,6 +650,13 @@ func (a *InstanceAdmin) getMetadata(instance *model.Instance) (metadata *Instanc
 	for _, key := range instance.Keys {
 		instKeys = append(instKeys, key.PublicKey)
 	}
+	image := &model.Image{Model: model.Model{ID: instance.ImageID}}
+	err = DB().Take(image).Error
+	if err != nil {
+		logger.Error("Invalid image ", instance.ImageID)
+		return
+	}
+	virtType := image.VirtType
 	dns := ""
 	for i, iface := range instance.Interfaces {
 		subnet := iface.Address.Subnet
@@ -671,6 +678,7 @@ func (a *InstanceAdmin) getMetadata(instance *model.Instance) (metadata *Instanc
 	}
 	instData := &InstanceData{
 		Userdata:  instance.Userdata,
+		VirtType:  virtType,
 		DNS:       dns,
 		Vlans:     vlans,
 		Networks:  instNetworks,

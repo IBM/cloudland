@@ -3,7 +3,7 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 8 ] && die "$0 <vm_ID> <image> <snapshot> <volume_id> <old_volume_uuid> <cpu> <memory> <disk_size>"
+[ $# -lt 9 ] && die "$0 <vm_ID> <image> <snapshot> <volume_id> <old_volume_uuid> <cpu> <memory> <disk_size> <hostname>"
 
 ID=$1
 vm_ID=inst-$ID
@@ -14,6 +14,7 @@ old_volume_id=$5
 vm_cpu=$6
 vm_mem=$7
 disk_size=$8
+vm_name=$9
 state=error
 vol_state=error
 

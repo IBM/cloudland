@@ -46,7 +46,7 @@ type InstanceReinstallPayload struct {
 	Image    *BaseReference   `json:"image" binding:"omitempty"`
 	Flavor   string           `json:"flavor" binding:"omitempty"`
 	Keys     []*BaseReference `json:"keys" binding:"omitempty,gte=0,lte=16"`
-	Password string           `json:"password" binging:"required,min=8,max=64"`
+	Password string           `json:"password" binging:"omitempty,min=8,max=64"`
 }
 
 type InstancePayload struct {
