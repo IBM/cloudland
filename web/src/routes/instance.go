@@ -670,15 +670,15 @@ func (a *InstanceAdmin) getMetadata(instance *model.Instance, rootPasswd string)
 			Link:    iface.Name,
 			ID:      fmt.Sprintf("network%d", i+1),
 		}
+		gateway := strings.Split(subnet.Gateway, "/")[0]
 		if iface.PrimaryIf {
-			gateway := strings.Split(subnet.Gateway, "/")[0]
 			instRoute := &NetworkRoute{Network: "0.0.0.0", Netmask: "0.0.0.0", Gateway: gateway}
 			instNetwork.Routes = append(instNetwork.Routes, instRoute)
 			dns = subnet.NameServer
 		}
 		instNetworks = append(instNetworks, instNetwork)
 		instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-		vlans = append(vlans, &VlanInfo{Device: iface.Name, Vlan: subnet.Vlan, Inbound: iface.Inbound, Outbound: iface.Outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: iface.Address.Address, MacAddr: iface.MacAddr})
+		vlans = append(vlans, &VlanInfo{Device: iface.Name, Vlan: subnet.Vlan, Inbound: iface.Inbound, Outbound: iface.Outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: gateway, Router: subnet.RouterID, IpAddr: address, MacAddr: iface.MacAddr})
 	}
 	instData := &InstanceData{
 		Userdata:   instance.Userdata,
