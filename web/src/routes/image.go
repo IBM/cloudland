@@ -18,6 +18,7 @@ import (
 	. "web/src/common"
 	"web/src/dbs"
 	"web/src/model"
+	"web/src/utils"
 
 	"github.com/go-macaron/session"
 	macaron "gopkg.in/macaron.v1"
@@ -348,6 +349,12 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	}
 	redirectTo := "../images"
 	osCode := c.QueryTrim("osCode")
+	uuid := c.QueryTrim("uuid")
+	if uuid != "" && !utils.IsUUID(uuid) {
+		c.Data["ErrorMsg"] = "Invalid UUID"
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
 	name := c.QueryTrim("name")
 	url := c.QueryTrim("url")
 	instance := c.QueryInt64("instance")
@@ -356,7 +363,7 @@ func (v *ImageView) Create(c *macaron.Context, store session.Store) {
 	userName := c.QueryTrim("userName")
 	qaEnabled := true
 	architecture := "x86_64"
-	_, err := imageAdmin.Create(c.Req.Context(), osCode, name, osVersion, virtType, userName, url, architecture, qaEnabled, instance, "")
+	_, err := imageAdmin.Create(c.Req.Context(), osCode, name, osVersion, virtType, userName, url, architecture, qaEnabled, instance, uuid)
 	if err != nil {
 		logger.Error("Create image failed", err)
 		c.Data["ErrorMsg"] = err.Error()

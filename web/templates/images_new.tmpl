@@ -27,6 +27,10 @@
 									<input id="name" name="name" autofocus required>
 								</div>
 								<div class="inline field">
+									<label for="uuid">{{.i18n.Tr "UUID"}}</label>
+									<input id="uuid" name="uuid" autocomplete="off">
+								</div>
+								<div class="inline field">
 									<label for="instance">{{.i18n.Tr "From Instance"}}</label>
 									<select name="instance" id="instance" class="ui selection dropdown">
 										 <option value="0" selected>{{.i18n.Tr "None"}}</option>
