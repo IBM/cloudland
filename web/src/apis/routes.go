@@ -127,6 +127,8 @@ func Register() (r *gin.Engine) {
 
 		authGroup.POST("/api/v1/instances/:id/console", consoleAPI.Create)
 
+		authGroup.POST("/api/v1/instances/:id/reinstall", instanceAPI.Reinstall)
+
 		authGroup.GET("/api/v1/instances/:id/interfaces", interfaceAPI.List)
 		authGroup.POST("/api/v1/instances/:id/interfaces", interfaceAPI.Create)
 		authGroup.GET("/api/v1/instances/:id/interfaces/:interface_id", interfaceAPI.Get)
