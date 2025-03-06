@@ -348,6 +348,12 @@ definitions:
         type: string
       image:
         $ref: '#/definitions/common.BaseReference'
+      keys:
+        items:
+          $ref: '#/definitions/common.BaseReference'
+        maxItems: 16
+        minItems: 0
+        type: array
       password:
         type: string
     type: object

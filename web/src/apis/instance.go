@@ -274,6 +274,7 @@ func (v *InstanceAPI) Reinstall(c *gin.Context) {
 		if err != nil {
 			logger.Errorf("Failed to get key %+v, %+v", ky, err)
 			ErrorResponse(c, http.StatusBadRequest, "Invalid key", err)
+			return
 		}
 		keys = append(keys, key)
 	}

@@ -3151,6 +3151,14 @@ const docTemplatev1 = `{
                 "image": {
                     "$ref": "#/definitions/common.BaseReference"
                 },
+                "keys": {
+                    "type": "array",
+                    "maxItems": 16,
+                    "minItems": 0,
+                    "items": {
+                        "$ref": "#/definitions/common.BaseReference"
+                    }
+                },
                 "password": {
                     "type": "string"
                 }
