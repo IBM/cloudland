@@ -3,23 +3,22 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 9 ] && die "$0 <migrate_ID> <task_ID> <vm_ID> <qa_enabled> <name> <cpu> <memory> <disk_size> <migration_type>"
+[ $# -lt 8 ] && die "$0 <migrate_ID> <task_ID> <vm_ID> <name> <cpu> <memory> <disk_size> <migration_type>"
 
 migrate_ID=$1
 task_ID=$2
 ID=$3
 vm_ID=inst-$ID
-qa_enabled=$4
-vm_name=$5
-vm_cpu=$6
-vm_mem=$7
-disk_size=$8
-migration_type=$9
+vm_name=$4
+vm_cpu=$5
+vm_mem=$6
+disk_size=$7
+migration_type=$8
 state=error
 
 if [ -z "$wds_address" ]; then
     state="not_supported"
-    echo "|:-COMMAND-:| $(basename $0) '$migrate_ID' '$task_ID' '$ID' '$state' '$SCI_CLIENT_ID' '$state'"
+    echo "|:-COMMAND-:| migrate_vm.sh '$migrate_ID' '$task_ID' '$ID' '$SCI_CLIENT_ID' '$state'"
     exit 0
 fi
 
@@ -46,8 +45,8 @@ done
 
 if [ "$migration_type" = "warm" ]; then
     state="target_prepared"
-    echo "|:-COMMAND-:| $(basename $0) '$migrate_ID' '$task_ID' '$ID' '$state' '$SCI_CLIENT_ID' '$state'"
-    async_exec ./async_job/wait_source_migration.sh $vm_ID
+    echo "|:-COMMAND-:| migrate_vm.sh '$migrate_ID' '$task_ID' '$ID' '$SCI_CLIENT_ID' '$state'"
+    async_exec ./async_job/wait_warm_migration.sh '$migrate_ID' '$task_ID' '$ID'
     exit 0
 fi
 
@@ -67,4 +66,4 @@ for vol_xml in $xml_dir/$vm_ID/disk-*.xml; do
 done
 jq .vlans <<< $metadata | ./sync_nic_info.sh "$ID" "$vm_name"
 [ $? -eq 0 ] && state=completed
-echo "|:-COMMAND-:| $(basename $0) '$migrate_ID' '$task_ID' '$ID' '$state' '$SCI_CLIENT_ID' '$state'"
+echo "|:-COMMAND-:| migrate_vm.sh '$migrate_ID' '$task_ID' '$ID' '$SCI_CLIENT_ID' '$state'"
