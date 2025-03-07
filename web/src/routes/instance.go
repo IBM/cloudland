@@ -125,6 +125,11 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		logger.Error("Image status not available")
 		return
 	}
+	if image.Size > int64(flavor.Disk)*1024*1024*1024 {
+		err = fmt.Errorf("Flavor disk size is not enough for the image")
+		logger.Error(err)
+		return
+	}
 	zoneID := zone.ID
 	if hyperID >= 0 {
 		hyper := &model.Hyper{}
@@ -332,6 +337,119 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 	return
 }
 
+func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance, image *model.Image, flavor *model.Flavor, rootPasswd string, keys []*model.Key) (err error) {
+	logger.Debugf("Reinstall instance %d with image %d and flavor %d", instance.ID, image.ID, flavor.ID)
+	ctx, db, newTransaction := StartTransaction(ctx)
+	defer func() {
+		if newTransaction {
+			EndTransaction(ctx, err)
+		}
+	}()
+	memberShip := GetMemberShip(ctx)
+	permit, err := memberShip.CheckOwner(model.Writer, "instances", instance.ID)
+	if err != nil {
+		logger.Error("Failed to check owner")
+		return
+	}
+	if !permit {
+		logger.Error("Not authorized to reinstall the instance")
+		err = fmt.Errorf("Not authorized")
+		return
+	}
+	var bootVolume *model.Volume
+	for _, volume := range instance.Volumes {
+		if volume.Booting {
+			bootVolume = volume
+			break
+		}
+	}
+	if bootVolume == nil {
+		logger.Error("Instance has no boot volume")
+		err = fmt.Errorf("Corrupted instance")
+		return
+	}
+	imagePrefix := fmt.Sprintf("image-%d-%s", image.ID, strings.Split(image.UUID, "-")[0])
+	total := 0
+	if err = db.Unscoped().Model(&model.Instance{}).Where("image_id = ?", image.ID).Count(&total).Error; err != nil {
+		logger.Error("Failed to query total instances with the image", err)
+		return
+	}
+
+	if image.Size > int64(flavor.Disk)*1024*1024*1024 {
+		err = fmt.Errorf("Flavor disk size is not enough for the image")
+		logger.Error(err)
+		return
+	}
+
+	// change vm status to reinstalling
+	var loginPort int32
+	switch instance.LoginPort {
+	case 22, 3389:
+		if image.OSCode == "windows" {
+			loginPort = 3389
+		} else {
+			loginPort = 22
+		}
+	default:
+		loginPort = instance.LoginPort
+	}
+	logger.Debug("Login Port is: %d", loginPort)
+	passwdLogin := false
+	if rootPasswd != "" {
+		passwdLogin = true
+		logger.Debug("Root password login enabled")
+	}
+	instance.Status = "reinstalling"
+	instance.LoginPort = loginPort
+	instance.PasswdLogin = passwdLogin
+	instance.FlavorID = flavor.ID
+	instance.Flavor = flavor
+	instance.ImageID = image.ID
+	instance.Image = image
+	if err = db.Save(&instance).Error; err != nil {
+		logger.Error("Failed to save instance", err)
+		return
+	}
+
+	if err = db.Model(&instance).Association("Keys").Replace(keys).Error; err != nil {
+		logger.Errorf("Failed to update keys association: %v", err)
+		return
+	}
+
+	// change volume status to reinstalling
+	bootVolume.Status = "reinstalling"
+	bootVolume.Size = flavor.Disk
+	if err = db.Save(&bootVolume).Error; err != nil {
+		logger.Error("Failed to save volume", err)
+		return
+	}
+
+	// rebuild metadata
+	instancePasswd := rootPasswd
+	if rootPasswd != "" && image.OSCode != "windows" {
+		instancePasswd, err = encrpt.Mkpasswd(rootPasswd, "sha512")
+		if err != nil {
+			logger.Errorf("Failed to encrypt admin password, %v", err)
+			return
+		}
+	}
+	metadata, err := a.getMetadata(instance, instancePasswd)
+	if err != nil {
+		logger.Error("Failed to get instance metadata", err)
+		return
+	}
+
+	snapshot := total/MaxmumSnapshot + 1 // Same snapshot reference can not be over 128, so use 96 here
+	control := fmt.Sprintf("inter=%d", instance.Hyper)
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/reinstall_vm.sh '%d' '%s.%s' '%d' '%d' '%s' '%d' '%d' '%d' '%s'<<EOF\n%s\nEOF", instance.ID, imagePrefix, image.Format, snapshot, bootVolume.ID, bootVolume.GetOriginVolumeID(), flavor.Cpu, flavor.Memory, flavor.Disk, instance.Hostname, base64.StdEncoding.EncodeToString([]byte(metadata)))
+	err = HyperExecute(ctx, control, command)
+	if err != nil {
+		logger.Error("Reinstall remote exec failed", err)
+		return
+	}
+	return
+}
+
 func (a *InstanceAdmin) SetUserPassword(ctx context.Context, id int64, user, password string) (err error) {
 	logger.Debugf("Set password for user %s of instance %d", user, id)
 	ctx, db := GetContextDB(ctx)
@@ -524,6 +642,62 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 		return
 	}
 	return interfaces, string(jsonData), nil
+}
+
+func (a *InstanceAdmin) getMetadata(instance *model.Instance, rootPasswd string) (metadata string, err error) {
+	vlans := []*VlanInfo{}
+	instNetworks := []*InstanceNetwork{}
+	instLinks := []*NetworkLink{}
+	var instKeys []string
+	for _, key := range instance.Keys {
+		instKeys = append(instKeys, key.PublicKey)
+	}
+	image := &model.Image{Model: model.Model{ID: instance.ImageID}}
+	err = DB().Take(image).Error
+	if err != nil {
+		logger.Error("Invalid image ", instance.ImageID)
+		return
+	}
+	virtType := image.VirtType
+	dns := ""
+	for i, iface := range instance.Interfaces {
+		subnet := iface.Address.Subnet
+		address := strings.Split(iface.Address.Address, "/")[0]
+		instNetwork := &InstanceNetwork{
+			Address: address,
+			Netmask: subnet.Netmask,
+			Type:    "ipv4",
+			Link:    iface.Name,
+			ID:      fmt.Sprintf("network%d", i+1),
+		}
+		gateway := strings.Split(subnet.Gateway, "/")[0]
+		if iface.PrimaryIf {
+			instRoute := &NetworkRoute{Network: "0.0.0.0", Netmask: "0.0.0.0", Gateway: gateway}
+			instNetwork.Routes = append(instNetwork.Routes, instRoute)
+			dns = subnet.NameServer
+		}
+		instNetworks = append(instNetworks, instNetwork)
+		instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
+		vlans = append(vlans, &VlanInfo{Device: iface.Name, Vlan: subnet.Vlan, Inbound: iface.Inbound, Outbound: iface.Outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: gateway, Router: subnet.RouterID, IpAddr: address, MacAddr: iface.MacAddr})
+	}
+	instData := &InstanceData{
+		Userdata:   instance.Userdata,
+		VirtType:   virtType,
+		DNS:        dns,
+		Vlans:      vlans,
+		Networks:   instNetworks,
+		Links:      instLinks,
+		Keys:       instKeys,
+		RootPasswd: rootPasswd,
+		LoginPort:  int(instance.LoginPort),
+		OSCode:     instance.Image.OSCode,
+	}
+	jsonData, err := json.Marshal(instData)
+	if err != nil {
+		logger.Errorf("Failed to marshal instance json data, %v", err)
+		return
+	}
+	return string(jsonData), nil
 }
 
 func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (err error) {
@@ -1127,6 +1301,117 @@ func (v *InstanceView) SetUserPassword(c *macaron.Context, store session.Store) 
 		}
 		c.Redirect(redirectTo)
 
+	}
+}
+
+func (v *InstanceView) Reinstall(c *macaron.Context, store session.Store) {
+	ctx := c.Req.Context()
+	redirectTo := "/instances"
+	db := DB()
+	id := c.Params("id")
+	if id == "" {
+		c.Data["ErrorMsg"] = "Id is Empty"
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	instanceID, err := strconv.Atoi(id)
+	if err != nil {
+		c.Data["ErrorMsg"] = err.Error()
+		logger.Error("Instance ID error ", err)
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	instance, err := instanceAdmin.Get(ctx, int64(instanceID))
+	if err != nil {
+		logger.Error("Instance query failed", err)
+		c.Data["ErrorMsg"] = fmt.Sprintf("Instance query failed", err)
+		c.HTML(http.StatusBadRequest, "error")
+		return
+	}
+	if c.Req.Method == "GET" {
+		images := []*model.Image{}
+		if err := db.Find(&images).Error; err != nil {
+			c.Data["ErrorMsg"] = err.Error()
+			c.HTML(500, "500")
+			return
+		}
+		flavors := []*model.Flavor{}
+		if err := db.Find(&flavors).Error; err != nil {
+			c.Data["ErrorMsg"] = err.Error()
+			c.HTML(500, "500")
+			return
+		}
+		keys := []*model.Key{}
+		if err := db.Find(&keys).Error; err != nil {
+			c.Data["ErrorMsg"] = err.Error()
+			c.HTML(500, "500")
+			return
+		}
+		c.Data["Instance"] = instance
+		c.Data["Images"] = images
+		c.Data["Flavors"] = flavors
+		c.Data["Keys"] = keys
+		c.Data["Link"] = fmt.Sprintf("/instances/%d/reinstall", instanceID)
+		c.HTML(200, "instances_reinstall")
+		return
+	} else if c.Req.Method == "POST" {
+		imageID := c.QueryInt64("image")
+		if imageID <= 0 {
+			imageID = instance.ImageID
+		}
+		image, err := imageAdmin.Get(ctx, imageID)
+		if err != nil {
+			c.Data["ErrorMsg"] = "No valid image"
+			c.HTML(http.StatusBadRequest, "error")
+			return
+		}
+		flavorID := c.QueryInt64("flavor")
+		if flavorID <= 0 {
+			flavorID = instance.FlavorID
+		}
+		flavor, err := flavorAdmin.Get(ctx, flavorID)
+		if err != nil {
+			logger.Error("No valid flavor", err)
+			c.Data["ErrorMsg"] = "No valid flavor"
+			c.HTML(http.StatusBadRequest, "error")
+			return
+		}
+		rootPasswd := c.QueryTrim("rootpasswd")
+		keys := c.QueryTrim("keys")
+		if rootPasswd == "" && keys == "" {
+			c.Data["ErrorMsg"] = "Password or key is empty"
+			c.HTML(http.StatusBadRequest, "error")
+			return
+		}
+		var instKeys []*model.Key
+		if keys != "" {
+			k := strings.Split(keys, ",")
+			for i := 0; i < len(k); i++ {
+				kID, err := strconv.Atoi(k[i])
+				if err != nil {
+					logger.Error("Invalid key ID", err)
+					continue
+				}
+				var key *model.Key
+				key, err = keyAdmin.Get(ctx, int64(kID))
+				if err != nil {
+					logger.Error("Failed to access key", err)
+					c.Data["ErrorMsg"] = "Failed to access key"
+					c.HTML(http.StatusBadRequest, "error")
+					return
+				}
+				instKeys = append(instKeys, key)
+			}
+		}
+
+		err = instanceAdmin.Reinstall(ctx, instance, image, flavor, rootPasswd, instKeys)
+		if err != nil {
+			logger.Error("Reinstall failed", err)
+			c.Data["ErrorMsg"] = err.Error()
+			c.HTML(http.StatusBadRequest, "error")
+			return
+		}
+		c.Redirect(redirectTo)
 	}
 }
 

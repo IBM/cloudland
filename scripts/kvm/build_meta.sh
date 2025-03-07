@@ -9,6 +9,7 @@ vm_name=$2
 working_dir=/tmp/$vm_ID
 latest_dir=$working_dir/openstack/latest
 mkdir -p $latest_dir
+rm -f ${latest_dir}/*
 
 vm_meta=$(cat | base64 -d)
 userdata=$(jq -r .userdata <<<$vm_meta)

@@ -11,4 +11,4 @@ state='error'
 
 qemu-img create -f qcow2 -o cluster_size=2M $volume_dir/volume-${vol_ID}.disk ${size}G
 [ $? -eq 0 ] && state='available'
-echo "|:-COMMAND-:| $(basename $0) '$vol_ID' 'volume-${vol_ID}.disk' '$state'"
+echo "|:-COMMAND-:| $(basename $0) '$vol_ID' 'volume-${vol_ID}.disk' '$state' 'success'"
