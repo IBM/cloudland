@@ -44,11 +44,11 @@
 									{{ end }}
 									<td>{{.UUID}}</td>
 			                        <td>{{.Name}}</td>
-			                        <td>{{.InstanceID}}-{{.Instance.Hostname}}</td>
+			                        <td>{{ if .Instance }}{{.Instance.ID}}-{{.Instance.Hostname}}{{ end }}</td>
 			                        <td>{{.SourceHyper}}</td>
 			                        <td>{{.TargetHyper}}</td>
 			                        <td>{{.Force}}</td>
-			                        <td>{{ range .Phases }}{{.Summary}}-{{.Status}}<br>{{ end }}</td>
+			                        <td>{{ range .Phases }}{{.Name}}:{{.Summary}}:{{.Status}}<br>{{ end }}</td>
 			                        <td>{{.Status}}</td>
 		                        </tr>
                                 {{ end }}

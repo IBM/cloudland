@@ -231,19 +231,21 @@ func syncFloatingIp(ctx context.Context, instance *model.Instance) (err error) {
 		}
 	}
 	if primaryIface != nil {
-		floatingIp := &model.FloatingIp{}
-		err = db.Preload("Interface").Preload("Interface.Address").Preload("Interface.Address.Subnet").Where("instance_id = ?", instance.ID).Take(floatingIp).Error
+		floatingIps := []*model.FloatingIp{}
+		err = db.Preload("Interface").Preload("Interface.Address").Preload("Interface.Address.Subnet").Where("instance_id = ?", instance.ID).Find(&floatingIps).Error
 		if err != nil {
 			logger.Error("Failed to get floating ip", err)
 			return
 		}
-		pubSubnet := floatingIp.Interface.Address.Subnet
-		control := fmt.Sprintf("inter=%d", instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_floating.sh '%d' '%s' '%s' '%d' '%s' '%d' '%d' '%d' '%d'", floatingIp.RouterID, floatingIp.FipAddress, pubSubnet.Gateway, pubSubnet.Vlan, primaryIface.Address.Address, primaryIface.Address.Subnet.Vlan, floatingIp.ID, floatingIp.Inbound, floatingIp.Outbound)
-		err = HyperExecute(ctx, control, command)
-		if err != nil {
-			logger.Error("Execute floating ip failed", err)
-			return
+		for _, floatingIp := range floatingIps {
+			pubSubnet := floatingIp.Interface.Address.Subnet
+			control := fmt.Sprintf("inter=%d", instance.Hyper)
+			command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_floating.sh '%d' '%s' '%s' '%d' '%s' '%d' '%d' '%d' '%d'", floatingIp.RouterID, floatingIp.FipAddress, pubSubnet.Gateway, pubSubnet.Vlan, primaryIface.Address.Address, primaryIface.Address.Subnet.Vlan, floatingIp.ID, floatingIp.Inbound, floatingIp.Outbound)
+			err = HyperExecute(ctx, control, command)
+			if err != nil {
+				logger.Error("Execute floating ip failed", err)
+				return
+			}
 		}
 	}
 	return

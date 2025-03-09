@@ -122,11 +122,7 @@ func (a *MigrationAdmin) Create(ctx context.Context, name string, instances []*m
 			logger.Error("Failed to query hyper", err)
 			return
 		}
-		task1 := &model.Task{
-			Name:    "Prepare_Target",
-			Summary: "Prepare resources on target hypervisor",
-			Status: "in_progress",
-		}
+		status := "in_progress"
 		migrationType := "cold"
 		if sourceHyper.Status == 1 && !force {
 			migrationType = "warm"
@@ -136,15 +132,21 @@ func (a *MigrationAdmin) Create(ctx context.Context, name string, instances []*m
 			err = fmt.Errorf("No need to migrate if source and target hypervisors are the same")
 			return
 		}
+		task1 := &model.Task{
+			Name:    "Prepare_Target",
+			Summary: "Prepare resources on target hypervisor",
+			Status:  status,
+		}
 		migration = &model.Migration{
 			Model:       model.Model{Creater: memberShip.UserID},
 			Name:        name,
+			InstanceID:  instance.ID,
 			Type:        migrationType,
 			Force:       force,
 			SourceHyper: instance.Hyper,
 			TargetHyper: tgtHyper,
 			Phases:      []*model.Task{task1},
-			Status:      "in_progress",
+			Status:      status,
 		}
 		logger.Debugf("Creating migration %+v", migration)
 		err = db.Create(migration).Error
@@ -161,17 +163,17 @@ func (a *MigrationAdmin) Create(ctx context.Context, name string, instances []*m
 		control := fmt.Sprintf("inter=%d", tgtHyper)
 		if tgtHyper == -1 {
 			var hyperGroup string
-			hyperGroup, err = instanceAdmin.GetHyperGroup(ctx, instance.ZoneID, tgtHyper)
+			hyperGroup, err = instanceAdmin.GetHyperGroup(ctx, instance.ZoneID, instance.Hyper)
 			if err != nil {
 				continue
 			}
 			control = "select=" + hyperGroup
 		}
 		flavor := instance.Flavor
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/target_migration.sh '%d' '%t' '%s' '%d' '%d' '%d' '%s'<<EOF\n%s\nEOF", instance.ID, instance.Image.QAEnabled, instance.Hostname, flavor.Cpu, flavor.Memory, flavor.Disk, migrationType, base64.StdEncoding.EncodeToString([]byte(metadata)))
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/target_migration.sh '%d' '%d' '%d' '%s' '%d' '%d' '%d' '%s' '%s'<<EOF\n%s\nEOF", migration.ID, task1.ID, instance.ID, instance.Hostname, flavor.Cpu, flavor.Memory, flavor.Disk, sourceHyper.Hostname, migrationType, base64.StdEncoding.EncodeToString([]byte(metadata)))
 		err = HyperExecute(ctx, control, command)
 		if err != nil {
-			logger.Error("Create migration command execution failed", err)
+			logger.Error("Target migration command execution failed", err)
 			return
 		}
 	}
@@ -271,7 +273,7 @@ func (a *MigrationAdmin) List(offset, limit int64, order, query string) (total i
 		return
 	}
 	db = dbs.Sortby(db.Offset(offset).Limit(limit), order)
-	if err = db.Where(query).Find(&migrations).Error; err != nil {
+	if err = db.Preload("Instance").Preload("Phases").Where(query).Find(&migrations).Error; err != nil {
 		return
 	}
 
@@ -364,7 +366,7 @@ func (v *MigrationView) Create(c *macaron.Context, store session.Store) {
 	tgthyper := c.QueryInt("hyper")
 	forceStr := c.QueryTrim("force")
 	force := false
-	if forceStr != "yes" {
+	if forceStr == "yes" {
 		force = true
 	}
 	_, err := migrationAdmin.Create(ctx, name, instances, force, int32(tgthyper))
