@@ -68,7 +68,7 @@ type NetworkLink struct {
 }
 
 type VolumeInfo struct {
-	ID      int64 `json:"id"`
+	ID      int64  `json:"id"`
 	UUID    string `json:"uuid"`
 	Device  string `json:"device"`
 	Booting bool   `json:"booting"`
@@ -96,7 +96,7 @@ type InstancesData struct {
 func (a *InstanceAdmin) GetHyperGroup(ctx context.Context, zoneID int64, skipHyper int32) (hyperGroup string, err error) {
 	ctx, db := GetContextDB(ctx)
 	hypers := []*model.Hyper{}
-	where := fmt.Sprintf("zone_id = %d and status = 1 and hostid = %d", zoneID, skipHyper)
+	where := fmt.Sprintf("zone_id = %d and status = 1 and hostid <> %d", zoneID, skipHyper)
 	if err = db.Where(where).Find(&hypers).Error; err != nil {
 		logger.Error("Hypers query failed", err)
 		return

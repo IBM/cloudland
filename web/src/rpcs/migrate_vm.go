@@ -48,19 +48,49 @@ func MigrateVM(ctx context.Context, args []string) (status string, err error) {
 		logger.Error("Invalid hyper ID", err)
 		return
 	}
+	status = args[5]
+	taskStatus := status
 	migration := &model.Migration{Model: model.Model{ID: int64(migrationID)}}
 	err = db.Model(migration).Take(migration).Error
 	if err != nil {
 		logger.Error("Failed to get migration record", err)
 		return
 	}
-	status = args[5]
 	if status == "completed" {
 		_, err = LaunchVM(ctx, []string{args[0], args[3], "running", args[4], "sync"})
 		if err != nil {
-			logger.Error("Failed to create system router", err)
+			logger.Error("Failed to sync vm info", err)
 			return
 		}
+	} else if status == "target_prepared" {
+		migration.TargetHyper = int32(hyperID)
+		targetHyper := &model.Hyper{}
+		err = db.Where("hostid = ?", hyperID).Take(targetHyper).Error
+		if err != nil {
+			logger.Error("Failed to query hyper", err)
+			return
+		}
+		task2 := &model.Task{
+			Name:    "Prepare_Source",
+			Mission: migration.ID,
+			Summary: "Prepare resources on source hypervisor",
+			Status:  "in_progress",
+		}
+		err = db.Model(task2).Create(task2).Error
+		if err != nil {
+			logger.Error("Failed to create task2", err)
+			return
+		}
+		if targetHyper.Status == 1 {
+			control := fmt.Sprintf("inter=%d", migration.SourceHyper)
+			command := fmt.Sprintf("/opt/cloudland/scripts/backend/source_migration.sh '%d' '%d' '%d' '%s' '%s'", migration.ID, task2.ID, instID, targetHyper.Hostname, migration.Type)
+			err = HyperExecute(ctx, control, command)
+			if err != nil {
+				logger.Error("Source migration command execution failed", err)
+				return
+			}
+		}
+		taskStatus = "completed"
 	} else if status == "source_prepared" {
 		instance := &model.Instance{Model: model.Model{ID: int64(instID)}}
 		err = db.Take(instance).Error
@@ -96,14 +126,17 @@ func MigrateVM(ctx context.Context, args []string) (status string, err error) {
 				}
 			}
 		}
+		taskStatus = "completed"
 	}
-	err = db.Model(migration).Update(map[string]interface{}{"status": status, "target_hyper": hyperID}).Error
+	if migration.Status != "completed" {
+		migration.Status = status
+	}
+	err = db.Model(migration).Save(migration).Error
 	if err != nil {
 		logger.Error("Failed to update migration", err)
 		return
 	}
-	task := &model.Instance{Model: model.Model{ID: int64(taskID)}}
-	err = db.Model(task).Update(map[string]interface{}{"status": status}).Error
+	err = db.Model(&model.Task{}).Where("id = ?", taskID).Update(map[string]interface{}{"status": taskStatus}).Error
 	if err != nil {
 		logger.Error("Failed to update task", err)
 		return
