@@ -3,14 +3,15 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 5 ] && die "$0 <migration_ID> <task_ID> <vm_ID> <target_hyper> <migration_type>"
+[ $# -lt 6 ] && die "$0 <migration_ID> <task_ID> <vm_ID> <router> <target_hyper> <migration_type>"
 
 migration_ID=$1
 task_ID=$2
 ID=$3
 vm_ID=inst-$ID
-target_hyper=$4
-migration_type=$5
+router=$4
+target_hyper=$5
+migration_type=$6
 state=error
 
 vm_xml=$(virsh dumpxml $vm_ID)
@@ -34,6 +35,7 @@ else
     fi
 fi
 
+count=$(echo $vm_xml | xmllint --xpath 'count(/domain/devices/interface)' -)
 for (( i=1; i <= $count; i++ )); do
     vif_dev=$(echo $vm_xml | xmllint --xpath "string(/domain/devices/interface[$i]/target/@dev)" -)
     br_name=$(echo $vm_xml | xmllint --xpath "string(/domain/devices/interface[$i]/source/@bridge)" -)

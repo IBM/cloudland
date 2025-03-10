@@ -39,8 +39,16 @@ else
         if [ -S "/var/run/wds/$vhost_name" ]; then
            vhost_id=$(wds_curl GET "api/v2/sync/block/vhost?name=$vhost_name" | jq -r '.vhosts[0].id')
            uss_id=$(get_uss_gateway)
+	   vhost_paths=$(wds_curl GET "api/v2/sync/block/volumes/$volume_id/bind_status" | jq -r .path)
            wds_curl PUT "api/v2/sync/block/vhost/unbind_uss" "{\"vhost_id\": \"$vhost_id\", \"uss_gw_id\": \"$uss_id\", \"is_snapshot\": false}"
            wds_curl DELETE "api/v2/sync/block/vhost/$vhost_id"
+	   nvpaths=$(jq length <<< $vhost_paths)
+	   j=0
+	   while [ $j -lt $nvpaths ]; do
+	       vhost_path=$(jq -r .[$j] <<<$vhost_paths)
+               wds_curl DELETE "api/v2/failure_domain/black_list" "{\"path\": \"$vhost_path\"}"
+               let j=$j+1
+	   done
         fi
     done
     [ -n "$boot_volume" ] && wds_curl DELETE "api/v2/sync/block/volumes/$boot_volume?force=false"

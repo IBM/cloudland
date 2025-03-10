@@ -271,6 +271,10 @@ func (a *InstanceAdmin) ChangeInstanceStatus(ctx context.Context, instance *mode
 }
 
 func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, flavor *model.Flavor, hostname string, action PowerAction, hyperID int) (err error) {
+	if instance.Status == "migrating" {
+		err = fmt.Errorf("Instance is not in a valid state")
+		return
+	}
 	memberShip := GetMemberShip(ctx)
 	permit, err := memberShip.CheckOwner(model.Writer, "instances", instance.ID)
 	if err != nil {
@@ -709,6 +713,10 @@ func (a *InstanceAdmin) getMetadata(instance *model.Instance, rootPasswd string)
 }
 
 func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (err error) {
+	if instance.Status == "migrating" {
+		err = fmt.Errorf("Instance is not in a valid state")
+		return
+	}
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
 		if newTransaction {
