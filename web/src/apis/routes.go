@@ -46,8 +46,10 @@ func Register() (r *gin.Engine) {
 	r = gin.Default()
 
 	r.POST("/api/v1/login", userAPI.LoginPost)
+	r.GET("/api/v1/version", versionAPI.Get)
 	authGroup := r.Group("").Use(Authorize())
 	{
+		//authGroup.GET("/api/v1/version", versionAPI.Get)
 		authGroup.GET("/api/v1/hypers", hyperAPI.List)
 		authGroup.GET("/api/v1/hypers/:name", hyperAPI.Get)
 
@@ -124,6 +126,8 @@ func Register() (r *gin.Engine) {
 		authGroup.POST("/api/v1/instances/:id/set_user_password", instanceAPI.SetUserPassword)
 
 		authGroup.POST("/api/v1/instances/:id/console", consoleAPI.Create)
+
+		authGroup.POST("/api/v1/instances/:id/reinstall", instanceAPI.Reinstall)
 
 		authGroup.GET("/api/v1/instances/:id/interfaces", interfaceAPI.List)
 		authGroup.POST("/api/v1/instances/:id/interfaces", interfaceAPI.Create)

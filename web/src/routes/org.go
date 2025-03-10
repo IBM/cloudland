@@ -37,7 +37,7 @@ type OrgAdmin struct {
 
 type OrgView struct{}
 
-func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.Organization, err error) {
+func (a *OrgAdmin) Create(ctx context.Context, name, owner, uuid string) (org *model.Organization, err error) {
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Admin)
 	if name != "admin" && !permit {
@@ -61,6 +61,10 @@ func (a *OrgAdmin) Create(ctx context.Context, name, owner string) (org *model.O
 		Model: model.Model{Creater: memberShip.UserID},
 		Owner: user.ID,
 		Name:  name,
+	}
+	if uuid != "" {
+		org.UUID = uuid
+		logger.Infof("Create org with uuid: %s", uuid)
 	}
 	err = db.Create(org).Error
 	if err != nil {
@@ -488,7 +492,7 @@ func (v *OrgView) Create(c *macaron.Context, store session.Store) {
 	redirectTo := "../orgs"
 	name := c.QueryTrim("orgname")
 	owner := c.QueryTrim("owner")
-	_, err := orgAdmin.Create(c.Req.Context(), name, owner)
+	_, err := orgAdmin.Create(c.Req.Context(), name, owner, "")
 	if err != nil {
 		logger.Error("Failed to create organization, %v", err)
 		c.Data["ErrorMsg"] = err.Error()

@@ -342,6 +342,21 @@ definitions:
     - image
     - zone
     type: object
+  apis.InstanceReinstallPayload:
+    properties:
+      flavor:
+        type: string
+      image:
+        $ref: '#/definitions/common.BaseReference'
+      keys:
+        items:
+          $ref: '#/definitions/common.BaseReference'
+        maxItems: 16
+        minItems: 0
+        type: array
+      password:
+        type: string
+    type: object
   apis.InstanceResponse:
     properties:
       created_at:
@@ -372,6 +387,8 @@ definitions:
         type: string
       passwd_login:
         type: boolean
+      reason:
+        type: string
       status:
         type: string
       updated_at:
@@ -880,6 +897,11 @@ definitions:
           $ref: '#/definitions/apis.SubnetResponse'
         type: array
       updated_at:
+        type: string
+    type: object
+  apis.VersionResponse:
+    properties:
+      version:
         type: string
     type: object
   apis.VolumeListResponse:
@@ -1686,6 +1708,39 @@ paths:
       summary: patch a instance
       tags:
       - Compute
+  /instances/{id}/reinstall:
+    post:
+      consumes:
+      - application/json
+      description: reinstall a instance
+      parameters:
+      - description: Instance UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Instance reinstall payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.InstanceReinstallPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/common.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/common.APIError'
+      summary: reinstall a instance
+      tags:
+      - Compute
   /instances/{id}/set_user_password:
     post:
       consumes:
@@ -2488,6 +2543,29 @@ paths:
       summary: patch a user
       tags:
       - Authorization
+  /version:
+    get:
+      consumes:
+      - application/json
+      description: get version
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.VersionResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/common.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/common.APIError'
+      summary: get version
+      tags:
+      - Compute
   /volumes:
     get:
       consumes:

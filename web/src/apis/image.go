@@ -15,6 +15,7 @@ import (
 	. "web/src/common"
 	"web/src/model"
 	"web/src/routes"
+	"web/src/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -43,6 +44,7 @@ type ImageListResponse struct {
 }
 
 type ImagePayload struct {
+	UUID         string `json:"uuid,omitempty" binding:"omitempty"`
 	Name         string `json:"name" binding:"required,min=2,max=32"`
 	OSCode       string `json:"os_code" binding:"required,oneof=linux windows other"`
 	DownloadURL  string `json:"download_url" binding:"required,http_url"`
@@ -157,8 +159,13 @@ func (v *ImageAPI) Create(c *gin.Context) {
 		}
 		instanceID = instance.ID
 	}
+	if payload.UUID != "" && !utils.IsUUID(payload.UUID) {
+		logger.Errorf("Invalid input UUID %s", payload.UUID)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid input UUID", nil)
+		return
+	}
 	logger.Debugf("Creating image with payload %+v", payload)
-	image, err := imageAdmin.Create(ctx, payload.OSCode, payload.Name, payload.OSVersion, "kvm-x86_64", payload.User, payload.DownloadURL, "x86_64", true, instanceID)
+	image, err := imageAdmin.Create(ctx, payload.OSCode, payload.Name, payload.OSVersion, "kvm-x86_64", payload.User, payload.DownloadURL, "x86_64", true, instanceID, payload.UUID)
 	if err != nil {
 		logger.Errorf("Not able to create image %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Not able to create", err)

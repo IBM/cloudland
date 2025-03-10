@@ -1019,6 +1019,56 @@ const docTemplatev1 = `{
                 }
             }
         },
+        "/instances/{id}/reinstall": {
+            "post": {
+                "description": "reinstall a instance",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Compute"
+                ],
+                "summary": "reinstall a instance",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Instance UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Instance reinstall payload",
+                        "name": "message",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/apis.InstanceReinstallPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    }
+                }
+            }
+        },
         "/instances/{id}/set_user_password": {
             "post": {
                 "description": "set user password for a instance",
@@ -2157,6 +2207,41 @@ const docTemplatev1 = `{
                 }
             }
         },
+        "/version": {
+            "get": {
+                "description": "get version",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Compute"
+                ],
+                "summary": "get version",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/apis.VersionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    }
+                }
+            }
+        },
         "/volumes": {
             "get": {
                 "description": "list volumes",
@@ -3092,6 +3177,28 @@ const docTemplatev1 = `{
                 }
             }
         },
+        "apis.InstanceReinstallPayload": {
+            "type": "object",
+            "properties": {
+                "flavor": {
+                    "type": "string"
+                },
+                "image": {
+                    "$ref": "#/definitions/common.BaseReference"
+                },
+                "keys": {
+                    "type": "array",
+                    "maxItems": 16,
+                    "minItems": 0,
+                    "items": {
+                        "$ref": "#/definitions/common.BaseReference"
+                    }
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
         "apis.InstanceResponse": {
             "type": "object",
             "properties": {
@@ -3136,6 +3243,9 @@ const docTemplatev1 = `{
                 },
                 "passwd_login": {
                     "type": "boolean"
+                },
+                "reason": {
+                    "type": "string"
                 },
                 "status": {
                     "type": "string"
@@ -3890,6 +4000,14 @@ const docTemplatev1 = `{
                     }
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "apis.VersionResponse": {
+            "type": "object",
+            "properties": {
+                "version": {
                     "type": "string"
                 }
             }

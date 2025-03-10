@@ -15,6 +15,7 @@ import (
 	. "web/src/common"
 	"web/src/model"
 	"web/src/routes"
+	"web/src/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -40,6 +41,7 @@ type KeyListResponse struct {
 type KeyPayload struct {
 	Name      string `json:"name" binding:"required,min=2,max=32"`
 	PublicKey string `json:"public_key" binding:"required,min=4,max=4096"`
+	UUID      string `json:"uuid,omitempty" binding:"omitempty"`
 }
 
 type KeyPatchPayload struct {
@@ -129,7 +131,12 @@ func (v *KeyAPI) Create(c *gin.Context) {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid input JSON", err)
 		return
 	}
-	key, err := keyAdmin.Create(ctx, payload.Name, payload.PublicKey)
+	if payload.UUID != "" && !utils.IsUUID(payload.UUID) {
+		logger.Errorf("Invalid input UUID %s", payload.UUID)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid input UUID", nil)
+		return
+	}
+	key, err := keyAdmin.Create(ctx, payload.Name, payload.PublicKey, payload.UUID)
 	if err != nil {
 		ErrorResponse(c, http.StatusBadRequest, "Not able to create", err)
 		return

@@ -94,7 +94,7 @@ func New() (m *macaron.Macaron) {
 		},
 	))
 	m.Use(LinkHandler)
-
+	m.Use(SysVersion)
 	m.Get("/", Index)
 	m.Get("/dashboard", dashboard.Show)
 	m.Get("/dashboard/getdata", dashboard.GetData)
@@ -124,6 +124,8 @@ func New() (m *macaron.Macaron) {
 	m.Post("/instances/:id", instanceView.Patch)
 	m.Get("/instances/:id/set_user_password", instanceView.SetUserPassword)
 	m.Post("/instances/:id/set_user_password", instanceView.SetUserPassword)
+	m.Get("/instances/:id/reinstall", instanceView.Reinstall)
+	m.Post("/instances/:id/reinstall", instanceView.Reinstall)
 	m.Post("/instances/:id/console", consoleView.ConsoleURL)
 	m.Get("/interfaces/:id", interfaceView.Edit)
 	m.Post("/interfaces/:id", interfaceView.Patch)
@@ -218,4 +220,8 @@ func LinkHandler(c *macaron.Context, store session.Store) {
 		UrlBefore = link
 		c.Redirect("login?redirect_to=")
 	}
+}
+
+func SysVersion(c *macaron.Context, store session.Store) {
+	c.Data["Version"] = sysInfoAdmin.GetVersion()
 }

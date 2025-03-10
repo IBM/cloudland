@@ -15,6 +15,7 @@ import (
 	. "web/src/common"
 	"web/src/model"
 	"web/src/routes"
+	"web/src/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,13 +26,14 @@ var userAdmin = &routes.UserAdmin{}
 type UserAPI struct{}
 
 type UserPayload struct {
-	Username string         `json:"username,required" binding:"required,min=2"`
-	Password string         `json:"password,required" binding:"required,min=8,max=32"`
+	Username string         `json:"username" binding:"required,min=2"`
+	Password string         `json:"password" binding:"required,min=8,max=32"`
+	ID       string         `json:"id,omitempty" binding:"omitempty"`
 	Org      *BaseReference `json:"org,omitempty" binding:"omitempty"`
 }
 
 type UserPatchPayload struct {
-	Password string `json:"password,required" binding:"required,min=6"`
+	Password string `json:"password" binding:"required,min=6"`
 }
 
 type UserResponse struct {
@@ -171,13 +173,27 @@ func (v *UserAPI) Create(c *gin.Context) {
 	logger.Debugf("Creating user with %+v", payload)
 	username := payload.Username
 	password := payload.Password
-	user, err := userAdmin.Create(ctx, username, password)
+	// PET-349 in case want to have same uuid for user and org for all regions
+	userUUID := payload.ID // optional, if not provided, will generate a new one
+	if userUUID != "" && !utils.IsUUID(userUUID) {
+		logger.Errorf("Invalid user uuid: %s", userUUID)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid user uuid", nil)
+		return
+	}
+
+	user, err := userAdmin.Create(ctx, username, password, userUUID)
 	if err != nil {
 		logger.Errorf("Failed to create user: %+v", err)
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to create user", err)
 		return
 	}
-	org, err := orgAdmin.Create(ctx, username, username)
+	orgUUID := payload.Org.ID // optional, if not provided, will generate a new one
+	if orgUUID != "" && !utils.IsUUID(orgUUID) {
+		logger.Errorf("Invalid org uuid: %s", orgUUID)
+		ErrorResponse(c, http.StatusBadRequest, "Invalid org uuid", nil)
+		return
+	}
+	org, err := orgAdmin.Create(ctx, username, username, orgUUID)
 	if err != nil {
 		logger.Errorf("Failed to create org: %+v", err)
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to create org", err)
