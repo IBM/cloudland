@@ -207,6 +207,33 @@
     - 'systemd-networkd'
   tags: [be_srv, netplan]
 
+- name: Create .ssh directory if not exists
+  file:
+    path: ~/.ssh
+    state: directory
+    mode: '0700'
+  tags: [ssh_key]
+
+- name: Add SSH public key to authorized_keys
+  authorized_key:
+    user: root
+    state: present
+    key: "{{ lookup('file', '/tmp/.ssh/cland.key.pub') }}"
+  tags: [ssh_key]
+
+- name: Copy private key to target nodes
+  copy:
+    src: /tmp/.ssh/cland.key
+    dest: ~/.ssh/id_rsa
+    mode: '0600'
+  tags: [ssh_key]
+
+- name: Remove pub key if present
+  file:
+    path: ~/.ssh/id_rsa.pub
+    state: absent
+  tags: [ssh_key]
+
 - name: allow necessary ports for hypervisor
   script: firewall.sh
   tags: [firewall]

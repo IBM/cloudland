@@ -94,7 +94,7 @@ func MigrateVM(ctx context.Context, args []string) (status string, err error) {
 		}
 		if targetHyper.Status == 1 {
 			control := fmt.Sprintf("inter=%d", migration.SourceHyper)
-			command := fmt.Sprintf("/opt/cloudland/scripts/backend/source_migration.sh '%d' '%d' '%d' '%s' '%s' '%s'", migration.ID, task2.ID, instID, instance.RouterID, targetHyper.Hostname, migration.Type)
+			command := fmt.Sprintf("/opt/cloudland/scripts/backend/source_migration.sh '%d' '%d' '%d' '%d' '%s' '%s'", migration.ID, task2.ID, instID, instance.RouterID, targetHyper.Hostname, migration.Type)
 			err = HyperExecute(ctx, control, command)
 			if err != nil {
 				logger.Error("Source migration command execution failed", err)
