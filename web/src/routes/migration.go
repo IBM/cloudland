@@ -154,6 +154,11 @@ func (a *MigrationAdmin) Create(ctx context.Context, name string, instances []*m
 			logger.Error("DB create migration failed, %v", err)
 			return
 		}
+		err = db.Model(instance).Update("status", "migrating").Error
+		if err != nil {
+			logger.Error("Instance update status to migrating, %v", err)
+			return
+		}
 		var metadata string
 		metadata, err = a.getMetadata(ctx, instance)
 		if err != nil {

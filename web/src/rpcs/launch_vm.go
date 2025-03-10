@@ -152,18 +152,20 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 	}
 	reason = args[4]
 	instance.Hyper = int32(hyperID)
-	err = db.Model(&instance).Updates(map[string]interface{}{
-		"status": serverStatus,
-		"hyper":  int32(hyperID),
-		"reason": reason}).Error
-	if err != nil {
-		logger.Error("Failed to update instance", err)
-		return
-	}
-	err = db.Model(&model.Interface{}).Where("instance = ?", instance.ID).Update(map[string]interface{}{"hyper": int32(hyperID)}).Error
-	if err != nil {
-		logger.Error("Failed to update interface", err)
-		return
+	if instance.Status != "migrating" {
+		err = db.Model(&instance).Updates(map[string]interface{}{
+			"status": serverStatus,
+			"hyper":  int32(hyperID),
+			"reason": reason}).Error
+		if err != nil {
+			logger.Error("Failed to update instance", err)
+			return
+		}
+		err = db.Model(&model.Interface{}).Where("instance = ?", instance.ID).Update(map[string]interface{}{"hyper": int32(hyperID)}).Error
+		if err != nil {
+			logger.Error("Failed to update interface", err)
+			return
+		}
 	}
 	if serverStatus == "running" {
 		if reason == "init" {
