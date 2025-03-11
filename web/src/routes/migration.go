@@ -87,7 +87,7 @@ func (a *MigrationAdmin) getMetadata(ctx context.Context, instance *model.Instan
 	return string(jsonData), nil
 }
 
-func (a *MigrationAdmin) Create(ctx context.Context, name string, instances []*model.Instance, force bool, tgtHyper int32) (migration *model.Migration, err error) {
+func (a *MigrationAdmin) Create(ctx context.Context, name string, instances []*model.Instance, force bool, tgtHyper int32) (migrations []*model.Migration, err error) {
 	logger.Debugf("Start migrating instances to %d", name, tgtHyper)
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Admin)
@@ -137,7 +137,7 @@ func (a *MigrationAdmin) Create(ctx context.Context, name string, instances []*m
 			Summary: "Prepare resources on target hypervisor",
 			Status:  status,
 		}
-		migration = &model.Migration{
+		migration := &model.Migration{
 			Model:       model.Model{Creater: memberShip.UserID},
 			Name:        name,
 			InstanceID:  instance.ID,
@@ -154,6 +154,7 @@ func (a *MigrationAdmin) Create(ctx context.Context, name string, instances []*m
 			logger.Error("DB create migration failed, %v", err)
 			return
 		}
+		migration.Instance = instance
 		err = db.Model(instance).Update("status", "migrating").Error
 		if err != nil {
 			logger.Error("Instance update status to migrating, %v", err)
@@ -181,6 +182,7 @@ func (a *MigrationAdmin) Create(ctx context.Context, name string, instances []*m
 			logger.Error("Target migration command execution failed", err)
 			return
 		}
+		migrations = append(migrations, migration)
 	}
 	return
 }
@@ -188,13 +190,13 @@ func (a *MigrationAdmin) Create(ctx context.Context, name string, instances []*m
 func (a *MigrationAdmin) GetMigrationByUUID(ctx context.Context, uuID string) (migration *model.Migration, err error) {
 	db := DB()
 	migration = &model.Migration{}
-	err = db.Where("uuid = ?", uuID).Take(migration).Error
+	err = db.Preload("Instance").Preload("Phases").Where("uuid = ?", uuID).Take(migration).Error
 	if err != nil {
 		logger.Error("Failed to query migration, %v", err)
 		return
 	}
 	memberShip := GetMemberShip(ctx)
-	permit := memberShip.CheckPermission(model.Reader)
+	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
 		logger.Error("Not authorized to get migration")
 		err = fmt.Errorf("Not authorized")
