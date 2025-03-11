@@ -187,7 +187,10 @@ func (v *UserAPI) Create(c *gin.Context) {
 		ErrorResponse(c, http.StatusInternalServerError, "Failed to create user", err)
 		return
 	}
-	orgUUID := payload.Org.ID // optional, if not provided, will generate a new one
+	orgUUID := ""
+	if payload.Org != nil && payload.Org.ID != "" {
+		orgUUID = payload.Org.ID // optional, if not provided, will generate a new one
+	}
 	if orgUUID != "" && !utils.IsUUID(orgUUID) {
 		logger.Errorf("Invalid org uuid: %s", orgUUID)
 		ErrorResponse(c, http.StatusBadRequest, "Invalid org uuid", nil)
