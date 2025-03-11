@@ -158,7 +158,7 @@ func (a *MigrationAdmin) GetMigrationByName(ctx context.Context, name string) (m
 		return
 	}
 	memberShip := GetMemberShip(ctx)
-	permit := memberShip.CheckPermission(model.Reader)
+	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
 		logger.Error("Not authorized to get migration")
 		err = fmt.Errorf("Not authorized")
@@ -181,7 +181,7 @@ func (a *MigrationAdmin) Get(ctx context.Context, id int64) (migration *model.Mi
 		return
 	}
 	memberShip := GetMemberShip(ctx)
-	permit := memberShip.CheckPermission(model.Reader)
+	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
 		logger.Error("Not authorized to get migration")
 		err = fmt.Errorf("Not authorized")
