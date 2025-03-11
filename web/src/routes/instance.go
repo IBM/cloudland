@@ -689,7 +689,7 @@ func (a *InstanceAdmin) GetMetadata(ctx context.Context, instance *model.Instanc
 		}
 		instNetworks = append(instNetworks, instNetwork)
 		instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-		vlans = append(vlans, &VlanInfo{Device: iface.Name, Vlan: subnet.Vlan, Inbound: iface.Inbound, Outbound: iface.Outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: gateway, Router: subnet.RouterID, IpAddr: address, MacAddr: iface.MacAddr})
+		vlans = append(vlans, &VlanInfo{Device: iface.Name, Vlan: subnet.Vlan, Inbound: iface.Inbound, Outbound: iface.Outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: address, MacAddr: iface.MacAddr})
 	}
 	instData := &InstanceData{
 		Userdata:   instance.Userdata,
