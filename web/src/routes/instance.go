@@ -76,7 +76,6 @@ type VolumeInfo struct {
 
 type InstanceData struct {
 	Userdata   string             `json:"userdata"`
-	VirtType   string             `json:"virt_type"`
 	DNS        string             `json:"dns"`
 	Vlans      []*VlanInfo        `json:"vlans"`
 	Networks   []*InstanceNetwork `json:"networks"`
@@ -445,7 +444,7 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 			return
 		}
 	}
-	metadata, err := a.getMetadata(instance, instancePasswd)
+	metadata, err := a.GetMetadata(ctx, instance, instancePasswd)
 	if err != nil {
 		logger.Error("Failed to get instance metadata", err)
 		return
@@ -631,14 +630,12 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 		logger.Error("Invalid image ", instance.ImageID)
 		return
 	}
-	virtType := image.VirtType
 	dns := primary.NameServer
 	if dns == primaryIP {
 		dns = ""
 	}
 	instData := &InstanceData{
 		Userdata:   userdata,
-		VirtType:   virtType,
 		DNS:        dns,
 		Vlans:      vlans,
 		Networks:   instNetworks,
@@ -656,21 +653,23 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 	return interfaces, string(jsonData), nil
 }
 
-func (a *InstanceAdmin) getMetadata(instance *model.Instance, rootPasswd string) (metadata string, err error) {
+func (a *InstanceAdmin) GetMetadata(ctx context.Context, instance *model.Instance, rootPasswd string) (metadata string, err error) {
 	vlans := []*VlanInfo{}
 	instNetworks := []*InstanceNetwork{}
 	instLinks := []*NetworkLink{}
+	volumes := []*VolumeInfo{}
 	var instKeys []string
 	for _, key := range instance.Keys {
 		instKeys = append(instKeys, key.PublicKey)
 	}
-	image := &model.Image{Model: model.Model{ID: instance.ImageID}}
-	err = DB().Take(image).Error
-	if err != nil {
-		logger.Error("Invalid image ", instance.ImageID)
-		return
+	for _, volume := range instance.Volumes {
+		volumes = append(volumes, &VolumeInfo{
+			ID:      volume.ID,
+			UUID:    volume.GetOriginVolumeID(),
+			Device:  volume.Target,
+			Booting: volume.Booting,
+		})
 	}
-	virtType := image.VirtType
 	dns := ""
 	for i, iface := range instance.Interfaces {
 		subnet := iface.Address.Subnet
@@ -694,11 +693,11 @@ func (a *InstanceAdmin) getMetadata(instance *model.Instance, rootPasswd string)
 	}
 	instData := &InstanceData{
 		Userdata:   instance.Userdata,
-		VirtType:   virtType,
 		DNS:        dns,
 		Vlans:      vlans,
 		Networks:   instNetworks,
 		Links:      instLinks,
+		Volumes:    volumes,
 		Keys:       instKeys,
 		RootPasswd: rootPasswd,
 		LoginPort:  int(instance.LoginPort),

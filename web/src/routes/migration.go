@@ -10,7 +10,6 @@ package routes
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -31,61 +30,6 @@ var (
 
 type MigrationAdmin struct{}
 type MigrationView struct{}
-
-func (a *MigrationAdmin) getMetadata(ctx context.Context, instance *model.Instance) (metadata string, err error) {
-	vlans := []*VlanInfo{}
-	instNetworks := []*InstanceNetwork{}
-	instLinks := []*NetworkLink{}
-	volumes := []*VolumeInfo{}
-	var instKeys []string
-	for _, key := range instance.Keys {
-		instKeys = append(instKeys, key.PublicKey)
-	}
-	for _, volume := range instance.Volumes {
-		volumes = append(volumes, &VolumeInfo{
-			ID:      volume.ID,
-			UUID:    volume.GetOriginVolumeID(),
-			Device:  volume.Target,
-			Booting: volume.Booting,
-		})
-	}
-	dns := ""
-	for i, iface := range instance.Interfaces {
-		subnet := iface.Address.Subnet
-		instNetwork := &InstanceNetwork{
-			Address: iface.Address.Address,
-			Netmask: subnet.Netmask,
-			Type:    "ipv4",
-			Link:    iface.Name,
-			ID:      fmt.Sprintf("network%d", i+1),
-		}
-		if iface.PrimaryIf {
-			instRoute := &NetworkRoute{Network: "0.0.0.0", Netmask: "0.0.0.0", Gateway: subnet.Gateway}
-			instNetwork.Routes = append(instNetwork.Routes, instRoute)
-			dns = subnet.NameServer
-		}
-		instNetworks = append(instNetworks, instNetwork)
-		instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-		vlans = append(vlans, &VlanInfo{Device: iface.Name, Vlan: subnet.Vlan, Inbound: iface.Inbound, Outbound: iface.Outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: iface.Address.Address, MacAddr: iface.MacAddr})
-	}
-	instData := &InstanceData{
-		Userdata:   instance.Userdata,
-		DNS:        dns,
-		Vlans:      vlans,
-		Networks:   instNetworks,
-		Links:      instLinks,
-		Volumes:    volumes,
-		Keys:       instKeys,
-		RootPasswd: "",
-		OSCode:     instance.Image.OSCode,
-	}
-	jsonData, err := json.Marshal(instData)
-	if err != nil {
-		logger.Errorf("Failed to marshal instance json data, %v", err)
-		return
-	}
-	return string(jsonData), nil
-}
 
 func (a *MigrationAdmin) Create(ctx context.Context, name string, instances []*model.Instance, force bool, tgtHyper int32) (migrations []*model.Migration, err error) {
 	logger.Debugf("Start migrating instances to %d", name, tgtHyper)
@@ -161,7 +105,7 @@ func (a *MigrationAdmin) Create(ctx context.Context, name string, instances []*m
 			return
 		}
 		var metadata string
-		metadata, err = a.getMetadata(ctx, instance)
+		metadata, err = instanceAdmin.GetMetadata(ctx, instance, "")
 		if err != nil {
 			logger.Error("Failed to get metadata")
 			return

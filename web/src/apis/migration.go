@@ -52,7 +52,7 @@ type MigrationPayload struct {
 	Name        string    `json:"name" binding:"required,min=2,max=32"`
 	Instances   []*BaseID `json:"instances" binding:"required,gte=1"`
 	Force       bool      `json:"force" binding:"omitempty"`
-	TargetHyper *int32     `json:"target_hyper" binding:"omitempty"`
+	TargetHyper *int32     `json:"target_hyper" binding:"omitempty,gte=0,lte=65535"`
 }
 
 // @Summary get a migration

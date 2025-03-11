@@ -17,7 +17,7 @@ source_hyper=$8
 migration_type=$9
 state=error
 
-if [ -z "$wds_address" -a "$migration_type" = "cold" ]; then
+if [ -z "$wds_address" ]; then
     state="not_supported"
     echo "|:-COMMAND-:| migrate_vm.sh '$migrate_ID' '$task_ID' '$ID' '$SCI_CLIENT_ID' '$state'"
     exit 0
