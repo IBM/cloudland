@@ -1,7 +1,8 @@
 {
-  "security_groups": [
-    {
-      "id": "382fb8d9-44ac-46e7-9660-867e289e182c"
-    }
-  ]
+    "name": "migration-31910",
+    "instances": [
+        {
+            "id": "f0a1db43-25d9-4dac-a02e-3272a0fc75d7"
+        }
+    ]
 }
