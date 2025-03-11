@@ -25,15 +25,9 @@ var instanceAdmin = &routes.InstanceAdmin{}
 
 type InstanceAPI struct{}
 
-type MigrateAction struct {
-	FromHypervisor string `json:"from_hypervisor" binding:"omitempty"`
-	ToHypervisor   string `json:"to_hypervisor" binding:"required"`
-}
-
 type InstancePatchPayload struct {
 	Hostname      string        `json:"hostname" binding:"omitempty,hostname|fqdn"`
 	PowerAction   PowerAction   `json:"power_action" binding:"omitempty,oneof=stop hard_stop start restart hard_restart pause resume"`
-	MigrateAction MigrateAction `json:"migrate_action" binding:"omitempty"`
 	Flavor        string        `json:"flavor" binding:"omitempty,min=1,max=32"`
 }
 
