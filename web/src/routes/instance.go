@@ -419,6 +419,9 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 	instance.Flavor = flavor
 	instance.ImageID = image.ID
 	instance.Image = image
+	instance.Cpu = flavor.Cpu
+	instance.Memory = flavor.Memory
+	instance.Disk = flavor.Disk
 	if err = db.Save(&instance).Error; err != nil {
 		logger.Error("Failed to save instance", err)
 		return
