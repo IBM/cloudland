@@ -110,9 +110,9 @@ func (a *InstanceAdmin) getHyperGroup(ctx context.Context, imageType string, zon
 
 func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, image *model.Image,
 	flavor *model.Flavor, zone *model.Zone, routerID int64, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo,
-	keys []*model.Key, rootPasswd string, loginPort, hyperID int) (instances []*model.Instance, err error) {
-	logger.Debugf("Create %d instances with image %s, flavor %s, zone %s, router %d, primary interface %v, secondary interfaces %v, keys %v, root password %s, hyper %d",
-		count, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, "********", hyperID)
+	keys []*model.Key, rootPasswd string, loginPort, hyperID int, cpu int32, memory int32, disk int32) (instances []*model.Instance, err error) {
+	logger.Debugf("Create %d instances with image %s, flavor %s, zone %s, router %d, primary interface %v, secondary interfaces %v, keys %v, root password %s, hyper %d, cpu %s, memory %d, disk %d",
+		count, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, "********", hyperID, cpu, memory, disk)
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
 		if newTransaction {
@@ -125,7 +125,17 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		logger.Error("Image status not available")
 		return
 	}
-	if image.Size > int64(flavor.Disk)*1024*1024*1024 {
+	// final configuration
+	if cpu <= 0 {
+		cpu = flavor.Cpu
+	}
+	if memory <= 0 {
+		memory = flavor.Memory
+	}
+	if disk <= 0 {
+		disk = flavor.Disk
+	}
+	if image.Size > int64(disk)*1024*1024*1024 {
 		err = fmt.Errorf("Flavor disk size is not enough for the image")
 		logger.Error(err)
 		return
@@ -188,6 +198,9 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			Status:      "pending",
 			ZoneID:      zoneID,
 			RouterID:    routerID,
+			Cpu:         cpu,
+			Memory:      memory,
+			Disk:        disk,
 		}
 		err = db.Create(instance).Error
 		if err != nil {
@@ -200,7 +213,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		var bootVolume *model.Volume
 		imagePrefix := fmt.Sprintf("image-%d-%s", image.ID, strings.Split(image.UUID, "-")[0])
 		// boot volume name format: instance-15-boot-volume-10
-		bootVolume, err = volumeAdmin.CreateVolume(ctx, fmt.Sprintf("instance-%d-boot-volume", instance.ID), flavor.Disk, instance.ID, true, 0, 0, 0, 0, "")
+		bootVolume, err = volumeAdmin.CreateVolume(ctx, fmt.Sprintf("instance-%d-boot-volume", instance.ID), instance.Disk, instance.ID, true, 0, 0, 0, 0, "")
 		if err != nil {
 			logger.Error("Failed to create boot volume", err)
 			return
@@ -223,12 +236,12 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			return
 		}
 		instance.Interfaces = ifaces
-		rcNeeded := fmt.Sprintf("cpu=%d memory=%d disk=%d network=%d", flavor.Cpu, flavor.Memory*1024, (flavor.Disk+flavor.Swap+flavor.Ephemeral)*1024*1024, 0)
+		rcNeeded := fmt.Sprintf("cpu=%d memory=%d disk=%d network=%d", instance.Cpu, instance.Memory*1024, instance.Disk*1024*1024, 0)
 		control := "select=" + hyperGroup + " " + rcNeeded
 		if i == 0 && hyperID >= 0 {
 			control = fmt.Sprintf("inter=%d %s", hyperID, rcNeeded)
 		}
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' '%s.%s' '%t' '%d' '%s' '%d' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, imagePrefix, image.Format, image.QAEnabled, snapshot, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, bootVolume.ID, base64.StdEncoding.EncodeToString([]byte(metadata)))
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' '%s.%s' '%t' '%d' '%s' '%d' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, imagePrefix, image.Format, image.QAEnabled, snapshot, hostname, instance.Cpu, instance.Memory, instance.Disk, bootVolume.ID, base64.StdEncoding.EncodeToString([]byte(metadata)))
 		execCommands = append(execCommands, &ExecutionCommand{
 			Control: control,
 			Command: command,
@@ -1655,7 +1668,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		instKeys = append(instKeys, key)
 	}
 	userdata := c.QueryTrim("userdata")
-	_, err = instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, primarySubnet.RouterID, primaryIface, secondaryIfaces, instKeys, rootPasswd, loginPort, hyperID)
+	_, err = instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, primarySubnet.RouterID, primaryIface, secondaryIfaces, instKeys, rootPasswd, loginPort, hyperID, 0, 0, 0)
 	if err != nil {
 		logger.Error("Create instance failed", err)
 		c.Data["ErrorMsg"] = err.Error()

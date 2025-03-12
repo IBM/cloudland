@@ -56,9 +56,12 @@ type InstancePayload struct {
 	Keys                []*BaseReference    `json:"keys" binding:"omitempty,gte=0,lte=16"`
 	RootPasswd          string              `json:"root_passwd" binding:"omitempty,min=8,max=32"`
 	LoginPort           int                 `json:"login_port" binding:"omitempty,min=0,max=65535"`
-	Flavor              string              `json:"flavor" binding:"required,min=1,max=32"`
+	Cpu                 int32               `json:"cpu" binding:"omitempty,gte=1"`
+	Memory              int32               `json:"memory" binding:"omitempty,gte=1"`
+	Disk                int32               `json:"disk" binding:"omitempty,gte=1"`
+	Flavor              string              `json:"flavor" binding:"omitempty,min=1,max=32"`
 	Image               *BaseReference      `json:"image" binding:"required"`
-	PrimaryInterface    *InterfacePayload   `json:"primary_interface", binding:"required"`
+	PrimaryInterface    *InterfacePayload   `json:"primary_interface" binding:"required"`
 	SecondaryInterfaces []*InterfacePayload `json:"secondary_interfaces" binding:"omitempty"`
 	Zone                string              `json:"zone" binding:"required,min=1,max=32"`
 	VPC                 *BaseReference      `json:"vpc" binding:"omitempty"`
@@ -72,6 +75,9 @@ type InstanceResponse struct {
 	LoginPort   int                  `json:"login_port"`
 	Interfaces  []*InterfaceResponse `json:"interfaces"`
 	Volumes     []*ResourceReference `json:"volumes"`
+	Cpu         int32                `json:"cpu"`
+	Memory      int32                `json:"memory"`
+	Disk        int32                `json:"disk"`
 	Flavor      string               `json:"flavor"`
 	Image       *ResourceReference   `json:"image"`
 	Keys        []*ResourceReference `json:"keys"`
@@ -353,11 +359,22 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 		ErrorResponse(c, http.StatusBadRequest, "Invalid image", err)
 		return
 	}
-	flavor, err := flavorAdmin.GetFlavorByName(ctx, payload.Flavor)
-	if err != nil {
-		logger.Errorf("Failed to get flavor %+v, %+v", payload.Flavor, err)
-		ErrorResponse(c, http.StatusBadRequest, "Invalid flavor", err)
+
+	// if flavor and custom configuration is invalid, return error
+	if payload.Flavor == "" && (payload.Cpu <= 0 || payload.Memory <= 0 || payload.Disk <= 0) {
+		logger.Errorf("Flavor or custom configuration must be provided")
+		ErrorResponse(c, http.StatusBadRequest, "Flavor or custom configuration must be provided", err)
 		return
+	}
+
+	var flavor *model.Flavor
+	if payload.Flavor != "" {
+		flavor, err = flavorAdmin.GetFlavorByName(ctx, payload.Flavor)
+		if err != nil {
+			logger.Errorf("Failed to get flavor %+v, %+v", payload.Flavor, err)
+			ErrorResponse(c, http.StatusBadRequest, "Invalid flavor", err)
+			return
+		}
 	}
 	zone, err := zoneAdmin.GetZoneByName(ctx, payload.Zone)
 	if err != nil {
@@ -409,9 +426,9 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 	if payload.Hypervisor != nil {
 		hypervisor = *payload.Hypervisor
 	}
-	logger.Debugf("Creating %d instances with hostname %s, userdata %s, image %s, flavor %s, zone %s, router %d, primaryIface %v, secondaryIfaces %v, keys %v, login_port %d, hypervisor %d",
-		count, hostname, userdata, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, payload.LoginPort, hypervisor)
-	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, routerID, primaryIface, secondaryIfaces, keys, rootPasswd, payload.LoginPort, hypervisor)
+	logger.Debugf("Creating %d instances with hostname %s, userdata %s, image %s, flavor %s, zone %s, router %d, primaryIface %v, secondaryIfaces %v, keys %v, login_port %d, hypervisor %d, cpu %d, memory %d, disk %d",
+		count, hostname, userdata, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, payload.LoginPort, hypervisor, payload.Cpu, payload.Memory, payload.Disk)
+	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, routerID, primaryIface, secondaryIfaces, keys, rootPasswd, payload.LoginPort, hypervisor, payload.Cpu, payload.Memory, payload.Disk)
 	if err != nil {
 		logger.Errorf("Failed to create instances, %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Failed to create instances", err)
@@ -516,6 +533,9 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 		LoginPort: int(instance.LoginPort),
 		Status:    instance.Status,
 		Reason:    instance.Reason,
+		Cpu:       instance.Cpu,
+		Memory:    instance.Memory,
+		Disk:      instance.Disk,
 	}
 	if instance.Image != nil {
 		instanceResp.Image = &ResourceReference{

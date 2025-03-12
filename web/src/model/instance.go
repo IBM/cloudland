@@ -21,8 +21,11 @@ type Instance struct {
 	Volumes     []*Volume     `gorm:"foreignkey:InstanceID",gorm:"PRELOAD:false"`
 	Interfaces  []*Interface  `gorm:"foreignkey:Instance`
 	Portmaps    []*Portmap    `gorm:"foreignkey:instanceID"`
-	FlavorID    int64
-	Flavor      *Flavor `gorm:"foreignkey:FlavorID"`
+	Cpu         int32         `gorm:"default:0"`
+	Memory      int32         `gorm:"default:0"`
+	Disk        int32         `gorm:"default:0"`
+	FlavorID    int64         `gorm:"default:0"`
+	Flavor      *Flavor       `gorm:"foreignkey:FlavorID"`
 	ImageID     int64
 	Image       *Image `gorm:"foreignkey:ImageID"`
 	Snapshot    int64
@@ -30,7 +33,7 @@ type Instance struct {
 	PasswdLogin bool   `gorm:"default:false"`
 	Userdata    string `gorm:"type:text"`
 	LoginPort   int32
-	Hyper       int32  `gorm:"default:-1"`
+	Hyper       int32 `gorm:"default:-1"`
 	ZoneID      int64
 	Zone        *Zone `gorm:"foreignkey:ZoneID"`
 	RouterID    int64 `gorm:"unique_index:idx_router_instance"`
