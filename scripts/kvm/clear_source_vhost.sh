@@ -20,11 +20,11 @@ while [ $i -lt $nvolume ]; do
             nvpaths=$(jq length <<< $vhost_paths)
             j=0
             while [ $j -lt $nvpaths ]; do
-    	    vhost_path=$(jq -r .[$j] <<<$vhost_paths)
-    	    wds_curl DELETE "api/v2/failure_domain/black_list" "{\"path\": \"$vhost_path\"}"
-    	    let j=$j+1
+                vhost_path=$(jq -r .[$j] <<<$vhost_paths)
+                wds_curl DELETE "api/v2/failure_domain/black_list" "{\"path\": \"$vhost_path\"}"
+                let j=$j+1
             done
-    	break
+            break
         fi
         sleep 1
     done
