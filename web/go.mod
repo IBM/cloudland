@@ -1,8 +1,7 @@
 module web
 
 go 1.21
-
-toolchain go1.21.13
+toolchain go1.23.7
 
 require (
 	github.com/apparentlymart/go-cidr v1.1.0
@@ -25,9 +24,9 @@ require (
 	github.com/swaggo/swag v1.16.4
 	github.com/tredoe/osutil v1.5.0
 	github.com/uber/jaeger-client-go v2.29.1+incompatible
-	golang.org/x/crypto v0.31.0
-	golang.org/x/net v0.33.0
-	golang.org/x/sync v0.10.0
+	golang.org/x/crypto v0.35.0
+	golang.org/x/net v0.36.0
+	golang.org/x/sync v0.11.0
 	gopkg.in/macaron.v1 v1.5.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
@@ -84,8 +83,8 @@ require (
 	github.com/unknwon/i18n v0.0.0-20190805065654-5c6446a380b6 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/arch v0.8.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/ini.v1 v1.66.6 // indirect
