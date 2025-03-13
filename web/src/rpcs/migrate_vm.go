@@ -8,6 +8,7 @@ package rpcs
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -19,8 +20,39 @@ func init() {
 	Add("migrate_vm", MigrateVM)
 }
 
+func execSourceMigrate(ctx context.Context, instance *model.Instance, migration *model.Migration, taskID int64, migrationType string) (err error) {
+	db := DB()
+	targetHyper := &model.Hyper{}
+	err = db.Where("hostid = ?", migration.TargetHyper).Take(targetHyper).Error
+	if err != nil {
+		logger.Error("Failed to query target hyper", err)
+		return
+	}
+	sourceHyper := &model.Hyper{}
+	err = db.Where("hostid = ?", migration.SourceHyper).Take(sourceHyper).Error
+	if err != nil {
+		logger.Error("Failed to query source hyper", err)
+		return
+	}
+	volumesJson, err := json.Marshal(instance.Volumes)
+	if err != nil {
+		logger.Error("Failed to marshal instance json data", err)
+		return
+	}
+	if sourceHyper.Status == 1 {
+		control := fmt.Sprintf("inter=%d", migration.SourceHyper)
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/source_migration.sh '%d' '%d' '%d' '%d' '%s' '%s'<<EOF\n%s\nEOF", migration.ID, taskID, instance.ID, instance.RouterID, targetHyper.Hostname, migration.Type, volumesJson)
+		err = HyperExecute(ctx, control, command)
+		if err != nil {
+			logger.Error("Source migration command execution failed", err)
+			return
+		}
+	}
+	return
+}
+
 func MigrateVM(ctx context.Context, args []string) (status string, err error) {
-	//|:-COMMAND-:| target_migrate.sh '12' '2' '127' '3' 'state'
+	//|:-COMMAND-:| migrate_vm.sh '12' '2' '127' '3' 'state'
 	db := DB()
 	argn := len(args)
 	if argn < 5 {
@@ -57,7 +89,7 @@ func MigrateVM(ctx context.Context, args []string) (status string, err error) {
 		return
 	}
 	instance := &model.Instance{Model: model.Model{ID: int64(instID)}}
-	err = db.Take(instance).Error
+	err = db.Preload("Volumes").Take(instance).Error
 	if err != nil {
 		logger.Error("Invalid instance ID", err)
 		return
@@ -65,12 +97,18 @@ func MigrateVM(ctx context.Context, args []string) (status string, err error) {
 	if status == "completed" {
 		err = db.Model(instance).Update("status", "running").Error
 		if err != nil {
-			logger.Error("Instance update status to migrated, %v", err)
+			logger.Error("Failed to update instance status to running, %v", err)
 			return
 		}
 		_, err = LaunchVM(ctx, []string{args[0], args[3], "running", args[4], "sync"})
 		if err != nil {
 			logger.Error("Failed to sync vm info", err)
+			return
+		}
+	} else if status == "failed" {
+		err = db.Model(instance).Update("status", "unknown").Error
+		if err != nil {
+			logger.Error("Failed to update instance status to unknown, %v", err)
 			return
 		}
 	} else if status == "target_prepared" {
@@ -92,14 +130,10 @@ func MigrateVM(ctx context.Context, args []string) (status string, err error) {
 			logger.Error("Failed to create task2", err)
 			return
 		}
-		if targetHyper.Status == 1 {
-			control := fmt.Sprintf("inter=%d", migration.SourceHyper)
-			command := fmt.Sprintf("/opt/cloudland/scripts/backend/source_migration.sh '%d' '%d' '%d' '%d' '%s' '%s'", migration.ID, task2.ID, instID, instance.RouterID, targetHyper.Hostname, migration.Type)
-			err = HyperExecute(ctx, control, command)
-			if err != nil {
-				logger.Error("Source migration command execution failed", err)
-				return
-			}
+		err = execSourceMigrate(ctx, instance, migration, task2.ID, migration.Type)
+		if err != nil {
+			logger.Error("Failed to exec source migration", err)
+			return
 		}
 		taskStatus = "completed"
 	} else if status == "source_prepared" {
@@ -133,7 +167,7 @@ func MigrateVM(ctx context.Context, args []string) (status string, err error) {
 		}
 		taskStatus = "completed"
 	}
-	if migration.Status != "completed" {
+	if migration.Status != "completed" && migration.Status != "failed" {
 		migration.Status = status
 	}
 	err = db.Model(migration).Save(migration).Error

@@ -74,7 +74,7 @@ func (a *MigrationAdmin) Create(ctx context.Context, name string, instances []*m
 		if instance.Hyper == tgtHyper {
 			logger.Error("No need to migrate if source and target hypervisors are the same")
 			err = fmt.Errorf("No need to migrate if source and target hypervisors are the same")
-			return
+			continue
 		}
 		task1 := &model.Task{
 			Name:    "Prepare_Target",
@@ -92,16 +92,11 @@ func (a *MigrationAdmin) Create(ctx context.Context, name string, instances []*m
 			Phases:      []*model.Task{task1},
 			Status:      status,
 		}
+		migration.Instance = instance
 		logger.Debugf("Creating migration %+v", migration)
 		err = db.Create(migration).Error
 		if err != nil {
 			logger.Error("DB create migration failed, %v", err)
-			return
-		}
-		migration.Instance = instance
-		err = db.Model(instance).Update("status", "migrating").Error
-		if err != nil {
-			logger.Error("Instance update status to migrating, %v", err)
 			return
 		}
 		var metadata string
@@ -115,9 +110,22 @@ func (a *MigrationAdmin) Create(ctx context.Context, name string, instances []*m
 			var hyperGroup string
 			hyperGroup, err = instanceAdmin.GetHyperGroup(ctx, instance.ZoneID, instance.Hyper)
 			if err != nil {
+				task1.Summary = "No qualified target"
+				task1.Status = "not_doing"
+				migration.Status = "not_doing"
+				err = db.Model(migration).Save(migration).Error
+				if err != nil {
+					logger.Error("Failed to update save migration, %v", err)
+					return
+				}
 				continue
 			}
 			control = "select=" + hyperGroup
+		}
+		err = db.Model(instance).Update("status", "migrating").Error
+		if err != nil {
+			logger.Error("Failed to update instance status to migrating, %v", err)
+			return
 		}
 		flavor := instance.Flavor
 		command := fmt.Sprintf("/opt/cloudland/scripts/backend/target_migration.sh '%d' '%d' '%d' '%s' '%d' '%d' '%d' '%s' '%s'<<EOF\n%s\nEOF", migration.ID, task1.ID, instance.ID, instance.Hostname, flavor.Cpu, flavor.Memory, flavor.Disk, sourceHyper.Hostname, migrationType, base64.StdEncoding.EncodeToString([]byte(metadata)))

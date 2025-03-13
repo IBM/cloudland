@@ -45,3 +45,4 @@ rm -f ${cache_dir}/meta/${vm_ID}.iso
 rm -rf $xml_dir/$vm_ID
 state="source_prepared"
 echo "|:-COMMAND-:| migrate_vm.sh '$migration_ID' '$task_ID' '$ID' '$SCI_CLIENT_ID' '$state'"
+./clear_source_vhost.sh

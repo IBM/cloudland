@@ -48,7 +48,7 @@ func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript strin
 	}
 	allIfaces := []*model.Interface{}
 	hyperSet := make(map[int32]struct{})
-	err = db.Preload("Address").Preload("Address.Subnet").Preload("Address.Subnet.Router").Where("router_id = ? and instance > 0", instance.RouterID).Find(&allIfaces).Error
+	err = db.Preload("Volumes").Preload("Address").Preload("Address.Subnet").Preload("Address.Subnet.Router").Where("router_id = ? and instance > 0", instance.RouterID).Find(&allIfaces).Error
 	if err != nil {
 		logger.Error("Failed to query all interfaces", err)
 		return
@@ -183,6 +183,26 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 			err = syncFloatingIp(ctx, instance)
 			if err != nil {
 				logger.Error("Failed to sync floating ip", err)
+				return
+			}
+		}
+	}
+	return
+}
+
+func syncMigration(ctx context.Context, instance *model.Instance) (err error) {
+	var migrations []*model.Migration
+	db := DB()
+	err = db.Preload("Tasks", "name = 'Prepare_Source' and status != 'completed'").Where("instance_id = ? and status = 'completed' and source_hyper != ?", instance.ID, instance.Hyper).Find(&migrations).Error
+	if err != nil {
+		logger.Error("Failed to get migrations", err)
+		return
+	}
+	for _, migration := range migrations {
+		for _, task := range migration.Phases {
+			err = execSourceMigrate(ctx, instance, migration, task.ID, "cold")
+			if err != nil {
+				logger.Error("Failed to exec source migration", err)
 				return
 			}
 		}
