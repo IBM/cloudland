@@ -175,6 +175,11 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 				return
 			}
 		} else if reason == "sync" {
+			err = syncMigration(ctx, instance)
+			if err != nil {
+				logger.Error("Failed to sync nic info", err)
+				return
+			}
 			err = syncNicInfo(ctx, instance)
 			if err != nil {
 				logger.Error("Failed to sync nic info", err)
