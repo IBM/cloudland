@@ -41,6 +41,9 @@
         <a {{ if eq .Link "/hypers" }} class="active item" {{ else }} class="item" {{ end }} href="/hypers">
             {{.i18n.Tr "Hypers"}}
         </a>
+        <a {{ if eq .Link "/migrations" }} class="active item" {{ else }} class="item" {{ end }} href="/migrations">
+            {{.i18n.Tr "Migrations"}}
+        </a>
 		{{ end }}
     </div>
 </div>

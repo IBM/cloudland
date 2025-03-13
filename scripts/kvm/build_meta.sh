@@ -129,3 +129,4 @@ fi
 echo "$net_json" > $latest_dir/network_data.json
 
 mkisofs -quiet -R -J -V config-2 -o ${cache_dir}/meta/${vm_ID}.iso $working_dir &> /dev/null
+rm -rf $latest_dir

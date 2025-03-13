@@ -143,7 +143,9 @@ function wds_curl()
 
 function get_uss_gateway()
 {
-    uss_name=$(hostname -s | tr -s '-' '_')
+    uss_name=$1
+    [ -z "$uss_name" ] && uss_name=$(hostname -s)
+    uss_name=$(echo $uss_name | tr -s '-' '_')
     uss_id=$(wds_curl GET "api/v2/wds/uss?name=$uss_name" | jq -r '.uss_gateways[0].id')
     [ -z "$uss_id" -o "$uss_id" = null ] && uss_id=$(wds_curl GET "api/v2/wds/uss" | jq --arg hname $(hostname -s) -r '.uss_gateways | .[] | select(.server_name == $hname) | .id')
     [ -n "$uss_id" ] && echo $uss_id

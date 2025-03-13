@@ -65,7 +65,7 @@ func InstanceStatus(ctx context.Context, args []string) (status string, err erro
 			}
 			continue
 		}
-		if instance.Status == "migrating" && instance.Hyper == int32(hyperID) {
+		if instance.Status == "migrating" {
 			continue
 		}
 		if instance.Status != status {
@@ -92,27 +92,6 @@ func InstanceStatus(ctx context.Context, args []string) (status string, err erro
 				logger.Error("Failed to update interface", err)
 				continue
 			}
-			err = ApplySecgroups(ctx, instance)
-			if err != nil {
-				logger.Error("Failed to apply security groups", err)
-				continue
-			}
-		}
-	}
-	return
-}
-
-func ApplySecgroups(ctx context.Context, instance *model.Instance) (err error) {
-	db := DB()
-	if err = db.Preload("SecurityGroups").Preload("Address").Preload("Address.Subnet").Where("instance = ?", instance.ID).Find(&instance.Interfaces).Error; err != nil {
-		logger.Error("Interfaces query failed", err)
-		return
-	}
-	for _, iface := range instance.Interfaces {
-		err = ApplyInterface(ctx, instance, iface)
-		if err != nil {
-			logger.Error("Launch vm command execution failed", err)
-			continue
 		}
 	}
 	return

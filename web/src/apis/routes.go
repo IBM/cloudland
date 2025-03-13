@@ -53,6 +53,10 @@ func Register() (r *gin.Engine) {
 		authGroup.GET("/api/v1/hypers", hyperAPI.List)
 		authGroup.GET("/api/v1/hypers/:name", hyperAPI.Get)
 
+		authGroup.GET("/api/v1/migrations", migrationAPI.List)
+		authGroup.POST("/api/v1/migrations", migrationAPI.Create)
+		authGroup.GET("/api/v1/migrations/:id", migrationAPI.Get)
+
 		authGroup.GET("/api/v1/users", userAPI.List)
 		authGroup.POST("/api/v1/users", userAPI.Create)
 		authGroup.GET("/api/v1/users/:id", userAPI.Get)

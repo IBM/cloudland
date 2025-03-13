@@ -16,15 +16,7 @@ result=$(eval "$cmd")
 count=$(echo $vm_xml | xmllint --xpath 'count(/domain/devices/interface)' -)
 for (( i=1; i <= $count; i++ )); do
     vif_dev=$(echo $vm_xml | xmllint --xpath "string(/domain/devices/interface[$i]/target/@dev)" -)
-    br_name=$(echo $vm_xml | xmllint --xpath "string(/domain/devices/interface[$i]/source/@bridge)" -)
-    mac_addr=$(echo $vm_xml | xmllint --xpath "string(/domain/devices/interface[$i]/mac/@address)" -)
-    if [ "$use_lb" = "false" ]; then
-        br_name=br$SCI_CLIENT_ID
-        result=$(icp-tower --ovs-bridge=$br_name gate remove --interface $vif_dev)
-    else
-        vni=${br_name#br}
-        ./clear_sg_chain.sh $vif_dev
-    fi
+    ./clear_sg_chain.sh $vif_dev
 done
 ./clear_local_router.sh $router
 
@@ -43,6 +35,16 @@ else
            wds_curl DELETE "api/v2/sync/block/vhost/$vhost_id"
         fi
     done
-    [ -n "$boot_volume" ] && wds_curl DELETE "api/v2/sync/block/volumes/$boot_volume?force=false"
+    if [ -n "$boot_volume" ]; then
+        vhost_paths=$(wds_curl GET "api/v2/sync/block/volumes/$boot_volume/bind_status" | jq -r .path)
+  	nvpaths=$(jq length <<< $vhost_paths)
+	j=0
+	while [ $j -lt $nvpaths ]; do
+	    vhost_path=$(jq -r .[$j] <<<$vhost_paths)
+            wds_curl DELETE "api/v2/failure_domain/black_list" "{\"path\": \"$vhost_path\"}"
+            let j=$j+1
+	done
+        wds_curl DELETE "api/v2/sync/block/volumes/$boot_volume?force=false"
+    fi
 fi
 echo "|:-COMMAND-:| $(basename $0) '$ID'"
