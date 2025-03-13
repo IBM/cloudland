@@ -426,8 +426,8 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 	if payload.Hypervisor != nil {
 		hypervisor = *payload.Hypervisor
 	}
-	logger.Debugf("Creating %d instances with hostname %s, userdata %s, image %s, flavor %s, zone %s, router %d, primaryIface %v, secondaryIfaces %v, keys %v, login_port %d, hypervisor %d, cpu %d, memory %d, disk %d",
-		count, hostname, userdata, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, payload.LoginPort, hypervisor, payload.Cpu, payload.Memory, payload.Disk)
+	logger.Debugf("Creating %d instances with hostname %s, userdata %s, image %s, flavor %v, zone %s, router %d, primaryIface %v, secondaryIfaces %v, keys %v, login_port %d, hypervisor %d, cpu %d, memory %d, disk %d",
+		count, hostname, userdata, image.Name, flavor, zone.Name, routerID, primaryIface, secondaryIfaces, keys, payload.LoginPort, hypervisor, payload.Cpu, payload.Memory, payload.Disk)
 	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, routerID, primaryIface, secondaryIfaces, keys, rootPasswd, payload.LoginPort, hypervisor, payload.Cpu, payload.Memory, payload.Disk)
 	if err != nil {
 		logger.Errorf("Failed to create instances, %+v", err)

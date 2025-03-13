@@ -111,8 +111,8 @@ func (a *InstanceAdmin) getHyperGroup(ctx context.Context, imageType string, zon
 func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, image *model.Image,
 	flavor *model.Flavor, zone *model.Zone, routerID int64, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo,
 	keys []*model.Key, rootPasswd string, loginPort, hyperID int, cpu int32, memory int32, disk int32) (instances []*model.Instance, err error) {
-	logger.Debugf("Create %d instances with image %s, flavor %s, zone %s, router %d, primary interface %v, secondary interfaces %v, keys %v, root password %s, hyper %d, cpu %s, memory %d, disk %d",
-		count, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, "********", hyperID, cpu, memory, disk)
+	logger.Debugf("Create %d instances with image %s, flavor %v, zone %s, router %d, primary interface %v, secondary interfaces %v, keys %v, root password %s, hyper %d, cpu %d, memory %d, disk %d",
+		count, image.Name, flavor, zone.Name, routerID, primaryIface, secondaryIfaces, keys, "********", hyperID, cpu, memory, disk)
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
 		if newTransaction {
@@ -190,7 +190,6 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			Hostname:    hostname,
 			ImageID:     image.ID,
 			Snapshot:    int64(snapshot),
-			FlavorID:    flavor.ID,
 			Keys:        keys,
 			PasswdLogin: passwdLogin,
 			LoginPort:   int32(loginPort),
@@ -201,6 +200,9 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			Cpu:         cpu,
 			Memory:      memory,
 			Disk:        disk,
+		}
+		if flavor != nil {
+			instance.FlavorID = flavor.ID
 		}
 		err = db.Create(instance).Error
 		if err != nil {

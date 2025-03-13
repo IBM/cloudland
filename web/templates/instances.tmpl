@@ -269,7 +269,13 @@
 									<td>{{.UUID}}</td>
 			                        <td>{{ if .Hostname }}<a href="{{$Link}}/{{.ID}}">{{.Hostname}}</a>{{ end }}</td>
 			                        <td>{{ if .LoginPort }}{{.LoginPort}}{{ end }}</td>
-			                        <td>{{ if .Flavor }}{{.Flavor.Name}}{{ end }}</td>
+			                        <td>
+			                        {{ if .Cpu }}
+                                        {{ .Cpu }}H{{ .Memory}}M{{ .Disk }}G
+                                    {{ else if .Flavor }}
+                                        {{ .Flavor.Cpu }}H{{ .Flavor.Memory }}M{{ .Flavor.Disk }}G
+                                    {{ end }}
+                                    </td>
 			                        <td>{{ if .Image }}{{.Image.Name}}{{end}}</td>
 			                        <td>
 						{{ if .FloatingIps }}

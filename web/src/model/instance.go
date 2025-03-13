@@ -25,7 +25,7 @@ type Instance struct {
 	Memory      int32         `gorm:"default:0"`
 	Disk        int32         `gorm:"default:0"`
 	FlavorID    int64         `gorm:"default:0"`
-	Flavor      *Flavor       `gorm:"foreignkey:FlavorID"`
+	Flavor      *Flavor       `gorm:"foreignkey:FlavorID;references:ID;constraint:-;"`
 	ImageID     int64
 	Image       *Image `gorm:"foreignkey:ImageID"`
 	Snapshot    int64
