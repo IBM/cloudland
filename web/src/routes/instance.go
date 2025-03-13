@@ -126,6 +126,11 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		return
 	}
 	// final configuration
+	if flavor == nil && (cpu <= 0 || memory <= 0 || disk <= 0) {
+		err = fmt.Errorf("No valid configuration")
+		logger.Errorf("No valid configuration")
+		return
+	}
 	if cpu <= 0 {
 		cpu = flavor.Cpu
 	}

@@ -360,13 +360,6 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 		return
 	}
 
-	// if flavor and custom configuration is invalid, return error
-	if payload.Flavor == "" && (payload.Cpu <= 0 || payload.Memory <= 0 || payload.Disk <= 0) {
-		logger.Errorf("Flavor or custom configuration must be provided")
-		ErrorResponse(c, http.StatusBadRequest, "Flavor or custom configuration must be provided", err)
-		return
-	}
-
 	var flavor *model.Flavor
 	if payload.Flavor != "" {
 		flavor, err = flavorAdmin.GetFlavorByName(ctx, payload.Flavor)
