@@ -169,6 +169,8 @@
     user: admin
     password: admin
     force_basic_auth: yes
+  ignore_errors: yes
+  changed_when: false
   tags: [monitor]
 
 - name: Add monitor section to config.toml

@@ -31,14 +31,15 @@ var (
 
 	// query range metrics
 	rangeQueries = map[string]string{
-		"cpu":              `100 * rate(libvirt_domain_info_cpu_time_seconds_total{uuid=~"%s"}[2m]) / (2 * 5 * 60)`,
-		"memory_used":      `guest_kvm_vm_memory_usage_bytes{uuid=~"%s"} / 1024 / 1024`,
-		"memory_total":     `libvirt_domain_info_maximum_memory_bytes{uuid=~"%s"} / 1024 / 1024`,
-		"disk_read":        `rate(libvirt_domain_block_stats_read_bytes_total{uuid=~"%s",target_device=~"%s"}[2m]) / 1024`,
-		"disk_write":       `rate(libvirt_domain_block_stats_write_bytes_total{uuid=~"%s",target_device=~"%s"}[2m]) / 1024`,
-		"network_receive":  `rate(libvirt_domain_interface_stats_receive_bytes_total{uuid=~"%s",target_device=~"%s"}[1m]) * 8 / 1024`,
-		"network_transmit": `rate(libvirt_domain_interface_stats_transmit_bytes_total{uuid=~"%s",target_device=~"%s"}[1m]) * 8 / 1024`,
-		"traffic":          `(rate(libvirt_domain_interface_stats_receive_bytes_total{uuid=~"%s",target_device=~"%s"}[1m]) * 1440) / (1024 * 1024)`, // ingress only
+		"cpu": `100 * rate(libvirt_domain_info_cpu_time_seconds_total{domain=~"%s"}[2m]) / (2 * 5 * 60)`,
+		//"memory_used":      `guest_kvm_vm_memory_usage_bytes{domain=~"%s"} / 1024 / 1024`,
+		"memory_unused":    `libvirt_domain_memory_stats_unused_bytes{domain=~"%s"} / 1024 / 1024`,
+		"memory_total":     `libvirt_domain_info_maximum_memory_bytes{domain=~"%s"} / 1024 / 1024`,
+		"disk_read":        `rate(libvirt_domain_block_stats_read_bytes_total{domain=~"%s",target_device=~"%s"}[2m]) / 1024`,
+		"disk_write":       `rate(libvirt_domain_block_stats_write_bytes_total{domain=~"%s",target_device=~"%s"}[2m]) / 1024`,
+		"network_receive":  `rate(libvirt_domain_interface_stats_receive_bytes_total{domain=~"%s",target_device=~"%s"}[1m]) * 8 / 1024`,
+		"network_transmit": `rate(libvirt_domain_interface_stats_transmit_bytes_total{domain=~"%s",target_device=~"%s"}[1m]) * 8 / 1024`,
+		"traffic":          `(rate(libvirt_domain_interface_stats_receive_bytes_total{domain=~"%s",target_device=~"%s"}[1m]) * 1440) / (1024 * 1024)`, // ingress only
 	}
 )
 
@@ -97,7 +98,6 @@ type CPUResponse struct {
 				Domain   string `json:"domain"`
 				Instance string `json:"instance"`
 				Job      string `json:"job"`
-				UUID     string `json:"uuid"`
 			} `json:"metric"`
 			Values []struct { // one-dimensional array
 				Time  string `json:"time"`
@@ -120,7 +120,6 @@ type MemoryResponse struct {
 				Domain   string `json:"domain"`
 				Instance string `json:"instance"`
 				Job      string `json:"job"`
-				UUID     string `json:"uuid"`
 			} `json:"metric"`
 			Values [][]struct { // two-dimensional array [total, used]
 				Time  string `json:"time"`
@@ -142,7 +141,6 @@ type DiskResponse struct {
 				Domain   string `json:"domain"`
 				Instance string `json:"instance"`
 				Job      string `json:"job"`
-				UUID     string `json:"uuid"`
 			} `json:"metric"`
 			Values [][]struct { // two-dimensional array [read speed, write speed]
 				Time  string `json:"time"`
@@ -165,9 +163,7 @@ type NetworkResponse struct {
 				Domain       string `json:"domain"`
 				Instance     string `json:"instance"`
 				Job          string `json:"job"`
-				SourceBridge string `json:"source_bridge"`
 				TargetDevice string `json:"target_device"`
-				UUID         string `json:"uuid"`
 			} `json:"metric"`
 			Values [][]struct { // two-dimensional array [receive speed, transmit speed]
 				Time  string `json:"time"`
@@ -188,9 +184,7 @@ type TrafficResponse struct {
 				Domain       string `json:"domain"`
 				Instance     string `json:"instance"`
 				Job          string `json:"job"`
-				SourceBridge string `json:"source_bridge"`
 				TargetDevice string `json:"target_device"`
-				UUID         string `json:"uuid"`
 			} `json:"metric"`
 			Values []struct { // one-dimensional array
 				Time  string `json:"time"`
@@ -301,9 +295,23 @@ func (api *MonitorAPI) GetTraffic(c *gin.Context) {
 
 		// format return result
 		formattedResult := formatResponse(result, "traffic")
+		if trafficResult, ok := formattedResult.(*TrafficResponse); ok {
+			for i := range trafficResult.Data.Result {
+				trafficResult.Data.Result[i].Metric = struct {
+					Domain       string `json:"domain"`
+					Instance     string `json:"instance"`
+					Job          string `json:"job"`
+					TargetDevice string `json:"target_device"`
+				}{
+					Domain:       trafficResult.Data.Result[i].Metric.Domain,
+					Instance:     trafficResult.Data.Result[i].Metric.Instance,
+					Job:          trafficResult.Data.Result[i].Metric.Job,
+					TargetDevice: trafficResult.Data.Result[i].Metric.TargetDevice,
+				}
+			}
+		}
 		allResults = append(allResults, formattedResult)
 	}
-
 	c.JSON(http.StatusOK, allResults)
 }
 
@@ -343,6 +351,21 @@ func (api *MonitorAPI) GetCPU(c *gin.Context) {
 
 	// format result
 	formattedResult := formatResponse(result, "cpu")
+	if formattedResult != nil {
+		if cpuResp, ok := formattedResult.(*CPUResponse); ok {
+			for i := range cpuResp.Data.Result {
+				cpuResp.Data.Result[i].Metric = struct {
+					Domain   string `json:"domain"`
+					Instance string `json:"instance"`
+					Job      string `json:"job"`
+				}{
+					Domain:   cpuResp.Data.Result[i].Metric.Domain,
+					Instance: cpuResp.Data.Result[i].Metric.Instance,
+					Job:      cpuResp.Data.Result[i].Metric.Job,
+				}
+			}
+		}
+	}
 	c.JSON(http.StatusOK, formattedResult)
 }
 
@@ -365,18 +388,18 @@ func (api *MonitorAPI) GetMemory(c *gin.Context) {
 		return
 	}
 
-	// build memory used and total query
-	usedQuery := api.getRangeQuery("memory_used", request.ID, nil)
+	// build memory unused and total query
+	unusedQuery := api.getRangeQuery("memory_unused", request.ID, nil)
 	totalQuery := api.getRangeQuery("memory_total", request.ID, nil)
-	if usedQuery == "" || totalQuery == "" {
+	if unusedQuery == "" || totalQuery == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid metric type"})
 		return
 	}
 
 	// execute query
-	usedResult, err := queryPrometheus(usedQuery, fmt.Sprintf("%d", start), fmt.Sprintf("%d", end), request.Step)
+	unusedResult, err := queryPrometheus(unusedQuery, fmt.Sprintf("%d", start), fmt.Sprintf("%d", end), request.Step)
 	if err != nil {
-		logger.Error("Failed to query memory used: %v", err)
+		logger.Error("Failed to query memory unused: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "Failed to query metrics"})
 		return
 	}
@@ -389,7 +412,18 @@ func (api *MonitorAPI) GetMemory(c *gin.Context) {
 	}
 
 	// merge results
-	result := mergeMemoryResults(usedResult, totalResult)
+	result := mergeMemoryResults(unusedResult, totalResult)
+	for i := range result.Data.Result {
+		result.Data.Result[i].Metric = struct {
+			Domain   string `json:"domain"`
+			Instance string `json:"instance"`
+			Job      string `json:"job"`
+		}{
+			Domain:   result.Data.Result[i].Metric.Domain,
+			Instance: result.Data.Result[i].Metric.Instance,
+			Job:      result.Data.Result[i].Metric.Job,
+		}
+	}
 	c.JSON(http.StatusOK, result)
 }
 
@@ -445,6 +479,17 @@ func (api *MonitorAPI) GetDisk(c *gin.Context) {
 
 	// merge results
 	result := mergeDiskResults(readResult, writeResult)
+	for i := range result.Data.Result {
+		result.Data.Result[i].Metric = struct {
+			Domain   string `json:"domain"`
+			Instance string `json:"instance"`
+			Job      string `json:"job"`
+		}{
+			Domain:   result.Data.Result[i].Metric.Domain,
+			Instance: result.Data.Result[i].Metric.Instance,
+			Job:      result.Data.Result[i].Metric.Job,
+		}
+	}
 	c.JSON(http.StatusOK, result)
 }
 
@@ -506,6 +551,19 @@ func (api *MonitorAPI) GetNetwork(c *gin.Context) {
 
 		// merge results
 		result := mergeNetworkResults(receiveResult, transmitResult)
+		for i := range result.Data.Result {
+			result.Data.Result[i].Metric = struct {
+				Domain       string `json:"domain"`
+				Instance     string `json:"instance"`
+				Job          string `json:"job"`
+				TargetDevice string `json:"target_device"`
+			}{
+				Domain:       result.Data.Result[i].Metric.Domain,
+				Instance:     result.Data.Result[i].Metric.Instance,
+				Job:          result.Data.Result[i].Metric.Job,
+				TargetDevice: result.Data.Result[i].Metric.TargetDevice,
+			}
+		}
 		allResults = append(allResults, result)
 	}
 
@@ -579,7 +637,7 @@ func queryPrometheus(query string, start, end, step string) (*PrometheusResponse
 }
 
 // merge memory query results
-func mergeMemoryResults(used, total *PrometheusResponse) *MemoryResponse {
+func mergeMemoryResults(unused, total *PrometheusResponse) *MemoryResponse {
 	var memResp MemoryResponse
 	memResp.Status = "success"
 	memResp.Data.ResultType = "matrix"
@@ -587,63 +645,58 @@ func mergeMemoryResults(used, total *PrometheusResponse) *MemoryResponse {
 	memResp.Data.Label = []string{"Total(MB)", "Used(MB)"}
 	memResp.Data.Unit = "MB"
 
-	// use map to match results with the same UUID
+	// Use map to match results with the same domain
 	resultMap := make(map[string]struct {
 		metric struct {
 			Domain   string
 			Instance string
 			Job      string
-			UUID     string
 		}
-		usedValues  [][]interface{}
-		totalValues [][]interface{}
+		unusedValues [][]interface{}
+		totalValues  [][]interface{}
 	})
 
-	// collect used data
-	for _, r := range used.Data.Result {
-		uuid := r.Metric["uuid"]
-		resultMap[uuid] = struct {
+	// Collect unused data
+	for _, r := range unused.Data.Result {
+		domain := r.Metric["domain"]
+		resultMap[domain] = struct {
 			metric struct {
 				Domain   string
 				Instance string
 				Job      string
-				UUID     string
 			}
-			usedValues  [][]interface{}
-			totalValues [][]interface{}
+			unusedValues [][]interface{}
+			totalValues  [][]interface{}
 		}{
 			metric: struct {
 				Domain   string
 				Instance string
 				Job      string
-				UUID     string
 			}{
 				Domain:   r.Metric["domain"],
 				Instance: r.Metric["instance"],
 				Job:      r.Metric["job"],
-				UUID:     uuid,
 			},
-			usedValues: r.Values,
+			unusedValues: r.Values,
 		}
 	}
 
-	// merge total data
+	// Merge total data
 	for _, r := range total.Data.Result {
-		uuid := r.Metric["uuid"]
-		if item, exists := resultMap[uuid]; exists {
+		domain := r.Metric["domain"]
+		if item, exists := resultMap[domain]; exists {
 			item.totalValues = r.Values
-			resultMap[uuid] = item
+			resultMap[domain] = item
 		}
 	}
 
-	// build final result
+	// Build final result
 	for _, item := range resultMap {
 		var result struct {
 			Metric struct {
 				Domain   string `json:"domain"`
 				Instance string `json:"instance"`
 				Job      string `json:"job"`
-				UUID     string `json:"uuid"`
 			} `json:"metric"`
 			Values [][]struct {
 				Time  string `json:"time"`
@@ -655,45 +708,38 @@ func mergeMemoryResults(used, total *PrometheusResponse) *MemoryResponse {
 			Domain   string `json:"domain"`
 			Instance string `json:"instance"`
 			Job      string `json:"job"`
-			UUID     string `json:"uuid"`
 		}{
 			Domain:   item.metric.Domain,
 			Instance: item.metric.Instance,
 			Job:      item.metric.Job,
-			UUID:     item.metric.UUID,
 		}
 
-		// process total data
-		var totalValues []struct {
+		// Process total and unused values to calculate used memory
+		var totalValues, usedValues []struct {
 			Time  string `json:"time"`
 			Value string `json:"value"`
 		}
-		for _, v := range item.totalValues {
-			timestamp := v[0].(float64)
-			value := v[1].(string)
+
+		for i := 0; i < len(item.totalValues) && i < len(item.unusedValues); i++ {
+			totalTime := item.totalValues[i][0].(float64)
+			totalVal, _ := strconv.ParseFloat(item.totalValues[i][1].(string), 64)
+			unusedVal, _ := strconv.ParseFloat(item.unusedValues[i][1].(string), 64)
+			usedVal := totalVal - unusedVal
+
 			totalValues = append(totalValues, struct {
 				Time  string `json:"time"`
 				Value string `json:"value"`
 			}{
-				Time:  time.Unix(int64(timestamp), 0).Format("2006-01-02 15:04:05"),
-				Value: value,
+				Time:  time.Unix(int64(totalTime), 0).Format("2006-01-02 15:04:05"),
+				Value: fmt.Sprintf("%.2f", totalVal),
 			})
-		}
 
-		// process used data
-		var usedValues []struct {
-			Time  string `json:"time"`
-			Value string `json:"value"`
-		}
-		for _, v := range item.usedValues {
-			timestamp := v[0].(float64)
-			value := v[1].(string)
 			usedValues = append(usedValues, struct {
 				Time  string `json:"time"`
 				Value string `json:"value"`
 			}{
-				Time:  time.Unix(int64(timestamp), 0).Format("2006-01-02 15:04:05"),
-				Value: value,
+				Time:  time.Unix(int64(totalTime), 0).Format("2006-01-02 15:04:05"),
+				Value: fmt.Sprintf("%.2f", usedVal),
 			})
 		}
 
@@ -708,7 +754,6 @@ func mergeMemoryResults(used, total *PrometheusResponse) *MemoryResponse {
 	return &memResp
 }
 
-// merge disk query results
 func mergeDiskResults(read, write *PrometheusResponse) *DiskResponse {
 	var diskResp DiskResponse
 	diskResp.Status = "success"
@@ -716,13 +761,11 @@ func mergeDiskResults(read, write *PrometheusResponse) *DiskResponse {
 	diskResp.Data.Label = []string{"读取速度 (KB/s)", "写入速度 (KB/s)"}
 	diskResp.Data.Unit = "KB/s"
 
-	// use map to match results with the same UUID
 	resultMap := make(map[string]struct {
 		metric struct {
 			Domain   string
 			Instance string
 			Job      string
-			UUID     string
 		}
 		readValues  [][]interface{}
 		writeValues [][]interface{}
@@ -736,7 +779,6 @@ func mergeDiskResults(read, write *PrometheusResponse) *DiskResponse {
 				Domain   string
 				Instance string
 				Job      string
-				UUID     string
 			}
 			readValues  [][]interface{}
 			writeValues [][]interface{}
@@ -745,12 +787,10 @@ func mergeDiskResults(read, write *PrometheusResponse) *DiskResponse {
 				Domain   string
 				Instance string
 				Job      string
-				UUID     string
 			}{
 				Domain:   r.Metric["domain"],
 				Instance: r.Metric["instance"],
 				Job:      r.Metric["job"],
-				UUID:     uuid,
 			},
 			readValues: r.Values,
 		}
@@ -772,7 +812,6 @@ func mergeDiskResults(read, write *PrometheusResponse) *DiskResponse {
 				Domain   string `json:"domain"`
 				Instance string `json:"instance"`
 				Job      string `json:"job"`
-				UUID     string `json:"uuid"`
 			} `json:"metric"`
 			Values [][]struct {
 				Time  string `json:"time"`
@@ -784,12 +823,10 @@ func mergeDiskResults(read, write *PrometheusResponse) *DiskResponse {
 			Domain   string `json:"domain"`
 			Instance string `json:"instance"`
 			Job      string `json:"job"`
-			UUID     string `json:"uuid"`
 		}{
 			Domain:   item.metric.Domain,
 			Instance: item.metric.Instance,
 			Job:      item.metric.Job,
-			UUID:     item.metric.UUID,
 		}
 
 		// process read data
@@ -852,9 +889,7 @@ func mergeNetworkResults(receive, transmit *PrometheusResponse) *NetworkResponse
 			Domain       string
 			Instance     string
 			Job          string
-			SourceBridge string
 			TargetDevice string
-			UUID         string
 		}
 		receiveValues  [][]interface{}
 		transmitValues [][]interface{}
@@ -868,9 +903,7 @@ func mergeNetworkResults(receive, transmit *PrometheusResponse) *NetworkResponse
 				Domain       string
 				Instance     string
 				Job          string
-				SourceBridge string
 				TargetDevice string
-				UUID         string
 			}
 			receiveValues  [][]interface{}
 			transmitValues [][]interface{}
@@ -879,16 +912,12 @@ func mergeNetworkResults(receive, transmit *PrometheusResponse) *NetworkResponse
 				Domain       string
 				Instance     string
 				Job          string
-				SourceBridge string
 				TargetDevice string
-				UUID         string
 			}{
 				Domain:       r.Metric["domain"],
 				Instance:     r.Metric["instance"],
 				Job:          r.Metric["job"],
-				SourceBridge: r.Metric["source_bridge"],
 				TargetDevice: r.Metric["target_device"],
-				UUID:         uuid,
 			},
 			receiveValues: r.Values,
 		}
@@ -910,9 +939,7 @@ func mergeNetworkResults(receive, transmit *PrometheusResponse) *NetworkResponse
 				Domain       string `json:"domain"`
 				Instance     string `json:"instance"`
 				Job          string `json:"job"`
-				SourceBridge string `json:"source_bridge"`
 				TargetDevice string `json:"target_device"`
-				UUID         string `json:"uuid"`
 			} `json:"metric"`
 			Values [][]struct {
 				Time  string `json:"time"`
@@ -924,16 +951,12 @@ func mergeNetworkResults(receive, transmit *PrometheusResponse) *NetworkResponse
 			Domain       string `json:"domain"`
 			Instance     string `json:"instance"`
 			Job          string `json:"job"`
-			SourceBridge string `json:"source_bridge"`
 			TargetDevice string `json:"target_device"`
-			UUID         string `json:"uuid"`
 		}{
 			Domain:       item.metric.Domain,
 			Instance:     item.metric.Instance,
 			Job:          item.metric.Job,
-			SourceBridge: item.metric.SourceBridge,
 			TargetDevice: item.metric.TargetDevice,
-			UUID:         item.metric.UUID,
 		}
 
 		// process receive data
@@ -1002,7 +1025,6 @@ func formatResponse(resp *PrometheusResponse, metricType string) interface{} {
 					Domain   string `json:"domain"`
 					Instance string `json:"instance"`
 					Job      string `json:"job"`
-					UUID     string `json:"uuid"`
 				} `json:"metric"`
 				Values []struct { // one-dimensional array
 					Time  string `json:"time"`
@@ -1013,7 +1035,6 @@ func formatResponse(resp *PrometheusResponse, metricType string) interface{} {
 			result.Metric.Domain = r.Metric["domain"]
 			result.Metric.Instance = r.Metric["instance"]
 			result.Metric.Job = r.Metric["job"]
-			result.Metric.UUID = r.Metric["uuid"]
 
 			var values []struct {
 				Time  string `json:"time"`
@@ -1051,7 +1072,6 @@ func formatResponse(resp *PrometheusResponse, metricType string) interface{} {
 					Domain   string `json:"domain"`
 					Instance string `json:"instance"`
 					Job      string `json:"job"`
-					UUID     string `json:"uuid"`
 				} `json:"metric"`
 				Values [][]struct { // two-dimensional array
 					Time  string `json:"time"`
@@ -1062,7 +1082,6 @@ func formatResponse(resp *PrometheusResponse, metricType string) interface{} {
 			result.Metric.Domain = r.Metric["domain"]
 			result.Metric.Instance = r.Metric["instance"]
 			result.Metric.Job = r.Metric["job"]
-			result.Metric.UUID = r.Metric["uuid"]
 
 			var readValues []struct {
 				Time  string `json:"time"`
@@ -1103,7 +1122,6 @@ func formatResponse(resp *PrometheusResponse, metricType string) interface{} {
 					Domain   string `json:"domain"`
 					Instance string `json:"instance"`
 					Job      string `json:"job"`
-					UUID     string `json:"uuid"`
 				} `json:"metric"`
 				Values [][]struct { // two-dimensional array
 					Time  string `json:"time"`
@@ -1114,7 +1132,6 @@ func formatResponse(resp *PrometheusResponse, metricType string) interface{} {
 			result.Metric.Domain = r.Metric["domain"]
 			result.Metric.Instance = r.Metric["instance"]
 			result.Metric.Job = r.Metric["job"]
-			result.Metric.UUID = r.Metric["uuid"]
 
 			var writeValues []struct {
 				Time  string `json:"time"`
@@ -1156,9 +1173,7 @@ func formatResponse(resp *PrometheusResponse, metricType string) interface{} {
 					Domain       string `json:"domain"`
 					Instance     string `json:"instance"`
 					Job          string `json:"job"`
-					SourceBridge string `json:"source_bridge"`
 					TargetDevice string `json:"target_device"`
-					UUID         string `json:"uuid"`
 				} `json:"metric"`
 				Values [][]struct { // two-dimensional array
 					Time  string `json:"time"`
@@ -1169,9 +1184,7 @@ func formatResponse(resp *PrometheusResponse, metricType string) interface{} {
 			result.Metric.Domain = r.Metric["domain"]
 			result.Metric.Instance = r.Metric["instance"]
 			result.Metric.Job = r.Metric["job"]
-			result.Metric.SourceBridge = r.Metric["source_bridge"]
 			result.Metric.TargetDevice = r.Metric["target_device"]
-			result.Metric.UUID = r.Metric["uuid"]
 
 			var receiveValues []struct {
 				Time  string `json:"time"`
@@ -1213,9 +1226,7 @@ func formatResponse(resp *PrometheusResponse, metricType string) interface{} {
 					Domain       string `json:"domain"`
 					Instance     string `json:"instance"`
 					Job          string `json:"job"`
-					SourceBridge string `json:"source_bridge"`
 					TargetDevice string `json:"target_device"`
-					UUID         string `json:"uuid"`
 				} `json:"metric"`
 				Values [][]struct { // two-dimensional array
 					Time  string `json:"time"`
@@ -1226,9 +1237,7 @@ func formatResponse(resp *PrometheusResponse, metricType string) interface{} {
 			result.Metric.Domain = r.Metric["domain"]
 			result.Metric.Instance = r.Metric["instance"]
 			result.Metric.Job = r.Metric["job"]
-			result.Metric.SourceBridge = r.Metric["source_bridge"]
 			result.Metric.TargetDevice = r.Metric["target_device"]
-			result.Metric.UUID = r.Metric["uuid"]
 
 			var transmitValues []struct {
 				Time  string `json:"time"`
@@ -1269,9 +1278,7 @@ func formatResponse(resp *PrometheusResponse, metricType string) interface{} {
 					Domain       string `json:"domain"`
 					Instance     string `json:"instance"`
 					Job          string `json:"job"`
-					SourceBridge string `json:"source_bridge"`
 					TargetDevice string `json:"target_device"`
-					UUID         string `json:"uuid"`
 				} `json:"metric"`
 				Values []struct { // one-dimensional array
 					Time  string `json:"time"`
@@ -1282,9 +1289,7 @@ func formatResponse(resp *PrometheusResponse, metricType string) interface{} {
 			result.Metric.Domain = r.Metric["domain"]
 			result.Metric.Instance = r.Metric["instance"]
 			result.Metric.Job = r.Metric["job"]
-			result.Metric.SourceBridge = r.Metric["source_bridge"]
 			result.Metric.TargetDevice = r.Metric["target_device"]
-			result.Metric.UUID = r.Metric["uuid"]
 
 			var values []struct {
 				Time  string `json:"time"`
