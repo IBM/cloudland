@@ -152,10 +152,18 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 	}
 	reason = args[4]
 	instance.Hyper = int32(hyperID)
+	hyper := &model.Hyper{}
+	err = db.Where("hostid = ?", hyperID).Take(hyper).Error
+	if err != nil {
+		logger.Error("Failed to query hypervisor", err)
+		return
+	}
+	instance.ZoneID = hyper.ZoneID
 	if instance.Status != "migrating" {
 		err = db.Model(&instance).Updates(map[string]interface{}{
 			"status": serverStatus,
 			"hyper":  int32(hyperID),
+			"zoneID":  hyper.ZoneID,
 			"reason": reason}).Error
 		if err != nil {
 			logger.Error("Failed to update instance", err)
@@ -198,7 +206,7 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 func syncMigration(ctx context.Context, instance *model.Instance) (err error) {
 	var migrations []*model.Migration
 	db := DB()
-	err = db.Preload("Tasks", "name = 'Prepare_Source' and status != 'completed'").Where("instance_id = ? and status = 'completed' and source_hyper != ?", instance.ID, instance.Hyper).Find(&migrations).Error
+	err = db.Preload("Phases", "name = 'Prepare_Source' and status != 'completed'").Where("instance_id = ? and status = 'completed' and source_hyper != ?", instance.ID, instance.Hyper).Find(&migrations).Error
 	if err != nil {
 		logger.Error("Failed to get migrations", err)
 		return

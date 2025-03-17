@@ -95,7 +95,7 @@ func MigrateVM(ctx context.Context, args []string) (status string, err error) {
 		return
 	}
 	if status == "completed" {
-		err = db.Model(instance).Update("status", "running").Error
+		err = db.Model(instance).Updates(map[string]interface{}{"status": "running"}).Error
 		if err != nil {
 			logger.Error("Failed to update instance status to running, %v", err)
 			return
@@ -106,7 +106,7 @@ func MigrateVM(ctx context.Context, args []string) (status string, err error) {
 			return
 		}
 	} else if status == "failed" {
-		err = db.Model(instance).Update("status", "unknown").Error
+		err = db.Model(instance).Updates(map[string]interface{}{"status": "unknown"}).Error
 		if err != nil {
 			logger.Error("Failed to update instance status to unknown, %v", err)
 			return

@@ -14,6 +14,7 @@ state="error"
 for i in {1..1800}; do
     vm_state=$(virsh domstate $vm_ID)
     if [ "$vm_state" = "running" ]; then
+        echo
         state="completed"
         echo "|:-COMMAND-:| migrate_vm.sh '$migrate_ID' '$task_ID' '$ID' '$SCI_CLIENT_ID' '$state'"
         exit 0

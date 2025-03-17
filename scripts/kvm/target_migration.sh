@@ -82,4 +82,4 @@ jq .vlans <<< $metadata | ./sync_nic_info.sh "$ID" "$vm_name"
 [ "$migration_type" = "cold" ] && virsh start $vm_ID
 state="target_prepared"
 echo "|:-COMMAND-:| migrate_vm.sh '$migrate_ID' '$task_ID' '$ID' '$SCI_CLIENT_ID' '$state'"
-echo "$volumes" | async_exec ./async_job/complete_migration.sh "$migrate_ID" "$task_ID" "$ID" "$source_hyper"
+async_exec ./async_job/complete_migration.sh "$migrate_ID" "$task_ID" "$ID" "$source_hyper"
