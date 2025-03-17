@@ -20,6 +20,13 @@ func init() {
 	Add("migrate_vm", MigrateVM)
 }
 
+type VolumeInfo struct {
+	ID      int64  `json:"id"`
+	UUID    string `json:"uuid"`
+	Device  string `json:"device"`
+	Booting bool   `json:"booting"`
+}
+
 func execSourceMigrate(ctx context.Context, instance *model.Instance, migration *model.Migration, taskID int64, migrationType string) (err error) {
 	db := DB()
 	targetHyper := &model.Hyper{}
@@ -34,7 +41,16 @@ func execSourceMigrate(ctx context.Context, instance *model.Instance, migration 
 		logger.Error("Failed to query source hyper", err)
 		return
 	}
-	volumesJson, err := json.Marshal(instance.Volumes)
+	volumes := []*VolumeInfo{}
+	for _, volume := range instance.Volumes {
+		volumes = append(volumes, &VolumeInfo{
+			ID:      volume.ID,
+			UUID:    volume.GetOriginVolumeID(),
+			Device:  volume.Target,
+			Booting: volume.Booting,
+		})
+	}
+	volumesJson, err := json.Marshal(volumes)
 	if err != nil {
 		logger.Error("Failed to marshal instance json data", err)
 		return
