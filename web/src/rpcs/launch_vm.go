@@ -185,7 +185,7 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 		} else if reason == "sync" {
 			err = syncMigration(ctx, instance)
 			if err != nil {
-				logger.Error("Failed to sync nic info", err)
+				logger.Error("Failed to sync migrationinfo", err)
 				return
 			}
 			err = syncNicInfo(ctx, instance)
@@ -206,7 +206,7 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 func syncMigration(ctx context.Context, instance *model.Instance) (err error) {
 	var migrations []*model.Migration
 	db := DB()
-	err = db.Preload("Phases", "name = 'Prepare_Source' and status != 'completed'").Where("instance_id = ? and status = 'completed' and source_hyper != ?", instance.ID, instance.Hyper).Find(&migrations).Error
+	err = db.Preload("Phases", "name = 'Prepare_Source' and status != 'completed'").Where("instance_id = ? and status = 'completed' and source_hyper = ?", instance.ID, instance.Hyper).Find(&migrations).Error
 	if err != nil {
 		logger.Error("Failed to get migrations", err)
 		return
