@@ -62,6 +62,12 @@ type VolumeResponse struct {
 	BpsBurst  int32          `json:"bps_burst"`
 }
 
+type VolumeInfoResponse struct {
+	*ResourceReference
+	Target  string `json:"target"`
+	Booting bool   `json:"booting"`
+}
+
 type VolumeListResponse struct {
 	Offset  int               `json:"offset"`
 	Total   int               `json:"total"`

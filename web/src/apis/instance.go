@@ -67,19 +67,19 @@ type InstancePayload struct {
 
 type InstanceResponse struct {
 	*ResourceReference
-	Hostname    string               `json:"hostname"`
-	Status      string               `json:"status"`
-	LoginPort   int                  `json:"login_port"`
-	Interfaces  []*InterfaceResponse `json:"interfaces"`
-	Volumes     []*ResourceReference `json:"volumes"`
-	Flavor      string               `json:"flavor"`
-	Image       *ResourceReference   `json:"image"`
-	Keys        []*ResourceReference `json:"keys"`
-	PasswdLogin bool                 `json:"passwd_login"`
-	Zone        string               `json:"zone"`
-	VPC         *ResourceReference   `json:"vpc,omitempty"`
-	Hypervisor  string               `json:"hypervisor,omitempty"`
-	Reason      string               `json:"reason"`
+	Hostname    string                `json:"hostname"`
+	Status      string                `json:"status"`
+	LoginPort   int                   `json:"login_port"`
+	Interfaces  []*InterfaceResponse  `json:"interfaces"`
+	Volumes     []*VolumeInfoResponse `json:"volumes"`
+	Flavor      string                `json:"flavor"`
+	Image       *ResourceReference    `json:"image"`
+	Keys        []*ResourceReference  `json:"keys"`
+	PasswdLogin bool                  `json:"passwd_login"`
+	Zone        string                `json:"zone"`
+	VPC         *ResourceReference    `json:"vpc,omitempty"`
+	Hypervisor  string                `json:"hypervisor,omitempty"`
+	Reason      string                `json:"reason"`
 }
 
 type InstanceListResponse struct {
@@ -537,11 +537,15 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 		}
 	}
 	instanceResp.Keys = keys
-	volumes := make([]*ResourceReference, len(instance.Volumes))
+	volumes := make([]*VolumeInfoResponse, len(instance.Volumes))
 	for i, volume := range instance.Volumes {
-		volumes[i] = &ResourceReference{
-			ID:   volume.UUID,
-			Name: volume.Name,
+		volumes[i] = &VolumeInfoResponse{
+			ResourceReference: &ResourceReference{
+				ID:   volume.UUID,
+				Name: volume.Name,
+			},
+			Target:  volume.Target,
+			Booting: volume.Booting,
 		}
 	}
 	instanceResp.Volumes = volumes
