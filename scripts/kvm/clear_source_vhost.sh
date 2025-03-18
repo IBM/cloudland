@@ -15,7 +15,7 @@ while [ $i -lt $nvolume ]; do
     vhost_id=$(wds_curl GET "api/v2/sync/block/vhost?name=$vhost_name" | jq -r '.vhosts[0].id')
     vhost_paths=$(wds_curl GET "api/v2/sync/block/volumes/$volume_id/bind_status" | jq -r .path)
     for k in {1..1}; do
-        uss_ret=$(wds_curl PUT "api/v2/sync/block/vhost/unbind_uss" "{\"vhost_id\": \"$vhost_id\", \"uss_gw_id\": \"$src_uss_id\", \"lun_id\": \"$volume_id\", \"is_snapshot\": false}")
+        uss_ret=$(wds_curl PUT "api/v2/sync/block/vhost/unbind_uss" "{\"vhost_id\": \"$vhost_id\", \"uss_gw_id\": \"$src_uss_id\", \"is_snapshot\": false}")
         ret_code=$(echo $uss_ret | jq -r .ret_code)
         if [ "$ret_code" = "0" ]; then
             nvpaths=$(jq length <<< $vhost_paths)
