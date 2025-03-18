@@ -48,7 +48,7 @@ func sendFdbRules(ctx context.Context, instance *model.Instance, fdbScript strin
 	}
 	allIfaces := []*model.Interface{}
 	hyperSet := make(map[int32]struct{})
-	err = db.Preload("Volumes").Preload("Address").Preload("Address.Subnet").Preload("Address.Subnet.Router").Where("router_id = ? and instance > 0", instance.RouterID).Find(&allIfaces).Error
+	err = db.Preload("Address").Preload("Address.Subnet").Preload("Address.Subnet.Router").Where("router_id = ? and instance > 0", instance.RouterID).Find(&allIfaces).Error
 	if err != nil {
 		logger.Error("Failed to query all interfaces", err)
 		return
@@ -131,7 +131,7 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 		}
 		return
 	}
-	err = db.Take(instance).Error
+	err = db.Preload("Volumes").Take(instance).Error
 	if err != nil {
 		logger.Error("Invalid instance ID", err)
 		reason = err.Error()

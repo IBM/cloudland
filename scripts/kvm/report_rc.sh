@@ -90,8 +90,9 @@ function sync_instance()
 	sudo iptables -D FORWARD -i $bridge -o $bridge -j ACCEPT
 	sudo iptables -I FORWARD -i $bridge -o $bridge -j ACCEPT
     done
-    inst_ids=$(sudo virsh list --all | grep inst- | awk '{print $2}' | cut -d- -f2)
-    for inst_id in $inst_ids; do
+    insts=$(ls $xml_dir)
+    for inst in $insts; do
+	inst_id=${inst/inst-/}
         for i in {1..10}; do
             ls /var/run/wds/instance-${inst_id}*
             [ $? -eq 0 ] && break
