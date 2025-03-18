@@ -38,9 +38,7 @@ function inst_status()
 {
     old_inst_list=$(cat $image_dir/old_inst_list 2>/dev/null)
     inst_list=$(sudo virsh list --all | tail -n +3 | cut -d' ' -f3- | xargs | sed 's/inst-//g;s/shut off/shut_off/g')
-    [ "$inst_list" = "$old_inst_list" ] && return
     [ -n "$inst_list" ] && echo "|:-COMMAND-:| inst_status.sh '$SCI_CLIENT_ID' '$inst_list'"
-    echo "$inst_list" >$image_dir/old_inst_list
 }
 
 function vlan_status()
