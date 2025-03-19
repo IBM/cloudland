@@ -5,7 +5,7 @@ source tokenrc
 cat >tmp.json <<EOF
 {
   "username": "user-$RANDOM",
-  "password": "test12345"
+  "password": "test12345ytr"
 }
 EOF
 

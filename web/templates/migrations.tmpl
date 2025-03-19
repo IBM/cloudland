@@ -1,0 +1,83 @@
+{{template "_head" .}}
+    <div class="admin user">
+	    <div class="ui container">
+		    <div class="ui grid">
+                {{template "_left" .}}
+          	    <div class="twelve wide column content">
+		            <h4 class="ui top attached header">
+			            {{.i18n.Tr "Migration_task_Panel"}} ({{.i18n.Tr "Total"}}: {{.Total}})
+			            <div class="ui right">
+				            <a class="ui green tiny button" href="migrations/new">{{.i18n.Tr "Create"}}</a>
+			            </div>
+		            </h4>
+		            <div class="ui attached segment">
+			            <form class="ui form">
+	                        <div class="ui fluid tiny action input">
+	                            <input name="q" value="{{ .Query }}" placeholder="Search..." autofocus>
+	                            <button class="ui blue tiny button">{{.i18n.Tr "Search"}}</button>
+	                        </div>
+                        </form>
+		            </div>
+		            <div class="ui unstackable attached table segment">
+                        <table class="ui unstackable very basic striped table">
+	                        <thead>
+		                        <tr>
+									{{ if $.IsAdmin }}
+			                        <th>{{.i18n.Tr "ID"}}</th>
+									{{ end }}
+									<th>{{.i18n.Tr "UUID"}}</th>
+			                        <th>{{.i18n.Tr "Name"}}</th>
+			                        <th>{{.i18n.Tr "Instance"}}</th>
+			                        <th>{{.i18n.Tr "Source Hyper"}}</th>
+			                        <th>{{.i18n.Tr "Target Hyper"}}</th>
+			                        <th>{{.i18n.Tr "Force"}}</th>
+			                        <th>{{.i18n.Tr "Phases"}}</th>
+			                        <th>{{.i18n.Tr "Status"}}</th>
+		                        </tr>
+	                        </thead>
+	                        <tbody>
+                                {{ $Link := .Link }}
+                                {{ range .Migrations }}
+		                        <tr>
+									{{ if $.IsAdmin }}
+			                        <td>{{.ID}}</td>
+									{{ end }}
+									<td>{{.UUID}}</td>
+			                        <td>{{.Name}}</td>
+			                        <td>{{ if .Instance }}{{.Instance.ID}}-{{.Instance.Hostname}}{{ end }}</td>
+			                        <td>{{.SourceHyper}}</td>
+			                        <td>{{.TargetHyper}}</td>
+			                        <td>{{.Force}}</td>
+			                        <td>{{ range .Phases }}{{.Name}}:{{.Summary}}:{{.Status}}<br>{{ end }}</td>
+			                        <td>{{.Status}}</td>
+		                        </tr>
+                                {{ end }}
+	                        </tbody>
+                        </table>
+		            </div>
+		            <div class="ui attached segment">
+                                 {{ if .Pages}}
+                                 <div class="ui pagination menu">
+                                     {{ range  $index, $element := .Pages }}
+                                         <a class="active item">
+                                             <a href="{{$Link}}?offset={{$element.Offset}}">{{ $element.Number }}</a>
+                                         </a>
+                                     {{ end }}
+                                 </div>
+                                 {{ end }}
+	                    </div>
+	            </div>
+            </div>
+        </div>
+    </div>
+    <div class="ui small basic delete modal">
+	    <div class="ui icon header">
+		    <i class="trash icon"></i>
+            {{.i18n.Tr "Image Deletion"}}
+	    </div>
+	    <div class="content">
+		    <p>{{.i18n.Tr "Image_Deletion_Confirm"}}</p>
+	    </div>
+	    {{template "_delete_modal_actions" .}}
+    </div>
+{{template "_footer" .}}
