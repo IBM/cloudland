@@ -17,7 +17,7 @@ state=error
 vm_xml=$(virsh dumpxml $vm_ID)
 virsh undefine $vm_ID
 if [ "$migration_type" = "warm" ]; then
-    virsh migrate --live $vm_ID qemu+ssh://$target_hyper/system
+    virsh migrate --persistent --live $vm_ID qemu+ssh://$target_hyper/system
     if [ $? -ne 0 ]; then
 	state="failed"
         echo "|:-COMMAND-:| migrate_vm.sh '$migration_ID' '$task_ID' '$ID' '$SCI_CLIENT_ID' '$state'"
