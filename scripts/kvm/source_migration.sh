@@ -34,6 +34,7 @@ else
         virsh destroy $vm_ID
     fi
 fi
+./clear_source_vhost.sh
 
 count=$(echo $vm_xml | xmllint --xpath 'count(/domain/devices/interface)' -)
 for (( i=1; i <= $count; i++ )); do
@@ -45,4 +46,3 @@ rm -f ${cache_dir}/meta/${vm_ID}.iso
 rm -rf $xml_dir/$vm_ID
 state="source_prepared"
 echo "|:-COMMAND-:| migrate_vm.sh '$migration_ID' '$task_ID' '$ID' '$SCI_CLIENT_ID' '$state'"
-./clear_source_vhost.sh
