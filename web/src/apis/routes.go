@@ -146,6 +146,7 @@ func Register() (r *gin.Engine) {
 			metricsGroup.POST("/instances/memory/his_data", monitorAPI.GetMemory)
 			metricsGroup.POST("/instances/network/his_data", monitorAPI.GetNetwork)
 			metricsGroup.POST("/instances/traffic/his_data", monitorAPI.GetTraffic)
+			metricsGroup.POST("/instances/volume/his_data", monitorAPI.GetVolume)
 		}
 
 	}
