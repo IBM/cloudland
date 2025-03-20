@@ -16,6 +16,9 @@ for i in {1..1800}; do
     if [ "$vm_state" = "running" ]; then
         echo
         state="completed"
+        vm_xml=$xml_dir/$vm_ID/${vm_ID}.xml
+        virsh define $vm_xml
+        virsh autostart $vm_ID
         echo "|:-COMMAND-:| migrate_vm.sh '$migrate_ID' '$task_ID' '$ID' '$SCI_CLIENT_ID' '$state'"
         exit 0
     fi
