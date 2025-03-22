@@ -22,6 +22,8 @@ type Subnet struct {
 	NameServer   string `gorm:"type:varchar(64)"`
 	DomainSearch string `gorm:"type:varchar(256)"`
 	Dhcp         bool   `gorm:"default:false"`
+	IsSite       bool   `gorm:"default:false"`
+	Interface    int64
 	Vlan         int64
 	Type         string  `gorm:"type:varchar(20);default:'internal'"`
 	RouterID     int64   `gorm:"unique_index:idx_router_subnet"`

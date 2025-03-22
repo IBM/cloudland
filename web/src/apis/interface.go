@@ -49,6 +49,7 @@ type InterfacePayload struct {
 	Subnet         *BaseReference   `json:"subnet" binding:"required"`
 	IpAddress      string           `json:"ip_address", binding:"omitempty,ipv4"`
 	MacAddress     string           `json:"mac_address" binding:"omitempty,mac"`
+	SiteSubnets    []*BaseReference `json:"site_subnets" binding:"omitempty"`
 	Name           string           `json:"name" binding:"omitempty,min=2,max=32"`
 	Inbound        int32            `json:"inbound" binding:"omitempty,min=0,max=20000"`
 	Outbound       int32            `json:"outbound" binding:"omitempty,min=0,max=20000"`

@@ -7,18 +7,23 @@ cat >tmp.json <<EOF
   "hostname": "test",
   "primary_interface": {
     "subnet": {
-      "id": "69e7af0d-2f0d-4fdc-a874-a69a99012e55"
+      "id": "8bc206c8-0ced-49f8-ba9b-4b9717fbacc5"
     },
+    "site_ip_subnets": [
+        {
+            "id": "699a6e75-56e2-43e1-9048-6a7907ef1245"
+        }
+    ],
     "inbound": 100,
     "outbound": 100
   },
   "flavor": "small",
   "image": {
-    "id": "3c0cca59-df4f-4daa-bfa1-04d771e1a17c"
+    "id": "84d2a640-d6c3-4bff-9e03-5a5a535560c6"
   },
   "keys": [
     {
-      "id": "506d75da-1e3f-47a2-8f98-8ff7deefa0f0"
+      "id": "59dd901d-ac7d-4918-afbf-ff485de31f07"
     }
   ],
   "zone": "zone0"

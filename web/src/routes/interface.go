@@ -31,6 +31,7 @@ type InterfaceInfo struct {
 	Subnet         *model.Subnet
 	MacAddress     string
 	IpAddress      string
+	SiteSubnets    []*model.Subnet
 	Inbound        int32
 	Outbound       int32
 	AllowSpoofing  bool
