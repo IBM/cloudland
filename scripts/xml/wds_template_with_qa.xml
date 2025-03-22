@@ -3,10 +3,11 @@
   <memory unit='KiB'>VM_MEM</memory>
   <currentMemory unit='KiB'>VM_MEM</currentMemory>
   <memoryBacking>
-    <hugepages/>
-    <nosharepages/>
+    <hugepages>
+      <page size='2048' unit='KiB'/>
+    </hugepages>
+    <source type='file'/>
     <access mode='shared'/>
-    <allocation mode='immediate'/>
   </memoryBacking>
   <vcpu placement='static'>VM_CPU</vcpu>
   <os>
