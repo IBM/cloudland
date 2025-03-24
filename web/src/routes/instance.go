@@ -368,8 +368,8 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 	return
 }
 
-func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance, image *model.Image, flavor *model.Flavor, rootPasswd string, keys []*model.Key) (err error) {
-	logger.Debugf("Reinstall instance %d with image %d and flavor %d", instance.ID, image.ID, flavor.ID)
+func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance, image *model.Image, flavor *model.Flavor, rootPasswd string, keys []*model.Key, cpu int32, memory int32, disk int32) (err error) {
+	logger.Debugf("Reinstall instance %d with image %d and flavor %v", instance.ID, image.ID, flavor)
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
 		if newTransaction {
@@ -405,8 +405,18 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 		logger.Error("Failed to query total instances with the image", err)
 		return
 	}
-
-	if image.Size > int64(flavor.Disk)*1024*1024*1024 {
+	// final configuration
+	if flavor == nil && (cpu <= 0 || memory <= 0 || disk <= 0) {
+		err = fmt.Errorf("No valid configuration")
+		logger.Error("No valid configuration")
+		return
+	}
+	if flavor != nil {
+		cpu = flavor.Cpu
+		memory = flavor.Memory
+		disk = flavor.Disk
+	}
+	if image.Size > int64(disk)*1024*1024*1024 {
 		err = fmt.Errorf("Flavor disk size is not enough for the image")
 		logger.Error(err)
 		return
@@ -433,13 +443,15 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 	instance.Status = "reinstalling"
 	instance.LoginPort = loginPort
 	instance.PasswdLogin = passwdLogin
-	instance.FlavorID = flavor.ID
 	instance.Flavor = flavor
 	instance.ImageID = image.ID
 	instance.Image = image
-	instance.Cpu = flavor.Cpu
-	instance.Memory = flavor.Memory
-	instance.Disk = flavor.Disk
+	instance.Cpu = cpu
+	instance.Memory = memory
+	instance.Disk = disk
+	if flavor != nil {
+		instance.FlavorID = flavor.ID
+	}
 	if err = db.Save(&instance).Error; err != nil {
 		logger.Error("Failed to save instance", err)
 		return
@@ -475,7 +487,7 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 
 	snapshot := total/MaxmumSnapshot + 1 // Same snapshot reference can not be over 128, so use 96 here
 	control := fmt.Sprintf("inter=%d", instance.Hyper)
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/reinstall_vm.sh '%d' '%s.%s' '%d' '%d' '%s' '%d' '%d' '%d' '%s'<<EOF\n%s\nEOF", instance.ID, imagePrefix, image.Format, snapshot, bootVolume.ID, bootVolume.GetOriginVolumeID(), flavor.Cpu, flavor.Memory, flavor.Disk, instance.Hostname, base64.StdEncoding.EncodeToString([]byte(metadata)))
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/reinstall_vm.sh '%d' '%s.%s' '%d' '%d' '%s' '%d' '%d' '%d' '%s'<<EOF\n%s\nEOF", instance.ID, imagePrefix, image.Format, snapshot, bootVolume.ID, bootVolume.GetOriginVolumeID(), cpu, memory, disk, instance.Hostname, base64.StdEncoding.EncodeToString([]byte(metadata)))
 	err = HyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Error("Reinstall remote exec failed", err)
@@ -1424,16 +1436,17 @@ func (v *InstanceView) Reinstall(c *macaron.Context, store session.Store) {
 			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
+		var flavor *model.Flavor
 		flavorID := c.QueryInt64("flavor")
 		if flavorID <= 0 {
 			flavorID = instance.FlavorID
-		}
-		flavor, err := flavorAdmin.Get(ctx, flavorID)
-		if err != nil {
-			logger.Error("No valid flavor", err)
-			c.Data["ErrorMsg"] = "No valid flavor"
-			c.HTML(http.StatusBadRequest, "error")
-			return
+			flavor, err = flavorAdmin.Get(ctx, flavorID)
+			if err != nil {
+				logger.Error("No valid flavor", err)
+				c.Data["ErrorMsg"] = "No valid flavor"
+				c.HTML(http.StatusBadRequest, "error")
+				return
+			}
 		}
 		rootPasswd := c.QueryTrim("rootpasswd")
 		keys := c.QueryTrim("keys")
@@ -1463,7 +1476,7 @@ func (v *InstanceView) Reinstall(c *macaron.Context, store session.Store) {
 			}
 		}
 
-		err = instanceAdmin.Reinstall(ctx, instance, image, flavor, rootPasswd, instKeys)
+		err = instanceAdmin.Reinstall(ctx, instance, image, flavor, rootPasswd, instKeys, instance.Cpu, instance.Memory, instance.Disk)
 		if err != nil {
 			logger.Error("Reinstall failed", err)
 			c.Data["ErrorMsg"] = err.Error()
