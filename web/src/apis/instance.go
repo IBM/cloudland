@@ -254,8 +254,11 @@ func (v *InstanceAPI) Reinstall(c *gin.Context) {
 		}
 	}
 
-	// check flavor
-	flavor := instance.Flavor
+	// old data compatibility
+	var flavor *model.Flavor
+	if payload.Flavor == "" && instance.Cpu == 0 && instance.FlavorID > 0 {
+		payload.Flavor = instance.Flavor.Name
+	}
 	if payload.Flavor != "" {
 		flavor, err = flavorAdmin.GetFlavorByName(ctx, payload.Flavor)
 		if err != nil {

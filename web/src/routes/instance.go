@@ -1436,10 +1436,14 @@ func (v *InstanceView) Reinstall(c *macaron.Context, store session.Store) {
 			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
+
+		// old data compatibility
 		var flavor *model.Flavor
 		flavorID := c.QueryInt64("flavor")
-		if flavorID <= 0 && instance.FlavorID > 0 {
+		if flavorID <= 0 && instance.Cpu == 0 && instance.FlavorID > 0 {
 			flavorID = instance.FlavorID
+		}
+		if flavorID > 0 {
 			flavor, err = flavorAdmin.Get(ctx, flavorID)
 			if err != nil {
 				logger.Error("No valid flavor", err)
@@ -1448,6 +1452,7 @@ func (v *InstanceView) Reinstall(c *macaron.Context, store session.Store) {
 				return
 			}
 		}
+
 		rootPasswd := c.QueryTrim("rootpasswd")
 		keys := c.QueryTrim("keys")
 		if rootPasswd == "" && keys == "" {
