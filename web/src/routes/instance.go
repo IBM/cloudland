@@ -1438,7 +1438,7 @@ func (v *InstanceView) Reinstall(c *macaron.Context, store session.Store) {
 		}
 		var flavor *model.Flavor
 		flavorID := c.QueryInt64("flavor")
-		if flavorID <= 0 {
+		if flavorID <= 0 && instance.FlavorID > 0 {
 			flavorID = instance.FlavorID
 			flavor, err = flavorAdmin.Get(ctx, flavorID)
 			if err != nil {
