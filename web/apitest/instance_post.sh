@@ -9,9 +9,9 @@ cat >tmp.json <<EOF
     "subnet": {
       "id": "8bc206c8-0ced-49f8-ba9b-4b9717fbacc5"
     },
-    "site_ip_subnets": [
+    "site_subnets": [
         {
-            "id": "699a6e75-56e2-43e1-9048-6a7907ef1245"
+            "id": "eb8b4ea9-c885-48c1-ab87-c63804859b71"
         }
     ],
     "inbound": 100,

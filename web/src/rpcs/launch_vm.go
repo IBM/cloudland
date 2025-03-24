@@ -256,6 +256,40 @@ func syncNicInfo(ctx context.Context, instance *model.Instance) (err error) {
 	return
 }
 
+func syncSiteSubnets(ctx context.Context, instance *model.Instance) (err error) {
+	db := DB()
+	var primaryIface *model.Interface
+	for i, iface := range instance.Interfaces {
+		if iface.PrimaryIf {
+			primaryIface = instance.Interfaces[i]
+			break
+		}
+	}
+	if primaryIface != nil {
+		siteSubnets := []*model.Subnet{}
+		err = db.Where("interface = ?", primaryIface.ID).Find(&siteSubnets).Error
+		if err != nil {
+			logger.Error("Failed to get site subnets", err)
+			return
+		}
+		if len(siteSubnets) > 0 {
+			sitesJson, err := json.Marshal(siteSubnets)
+			if err != nil {
+				logger.Error("Failed to mashal site subnets", err)
+				return
+			}
+			control := fmt.Sprintf("inter=%d", instance.Hyper)
+			command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_site_subnets.sh '%d' '%d' '%s' '%d' <<EOF\n%s\nEOF", instance.ID, instance.RouterID, primaryIface.Address.Address, primaryIface.Address.Subnet.Vlan, sitesJson)
+			err = HyperExecute(ctx, control, command)
+			if err != nil {
+				logger.Error("Execute floating ip failed", err)
+				return
+			}
+		}
+	}
+	return
+}
+
 func syncFloatingIp(ctx context.Context, instance *model.Instance) (err error) {
 	db := DB()
 	var primaryIface *model.Interface
