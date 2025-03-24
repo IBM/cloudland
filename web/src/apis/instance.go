@@ -25,15 +25,9 @@ var instanceAdmin = &routes.InstanceAdmin{}
 
 type InstanceAPI struct{}
 
-type MigrateAction struct {
-	FromHypervisor string `json:"from_hypervisor" binding:"omitempty"`
-	ToHypervisor   string `json:"to_hypervisor" binding:"required"`
-}
-
 type InstancePatchPayload struct {
 	Hostname      string        `json:"hostname" binding:"omitempty,hostname|fqdn"`
 	PowerAction   PowerAction   `json:"power_action" binding:"omitempty,oneof=stop hard_stop start restart hard_restart pause resume"`
-	MigrateAction MigrateAction `json:"migrate_action" binding:"omitempty"`
 	Flavor        string        `json:"flavor" binding:"omitempty,min=1,max=32"`
 }
 
@@ -70,22 +64,22 @@ type InstancePayload struct {
 
 type InstanceResponse struct {
 	*ResourceReference
-	Hostname    string               `json:"hostname"`
-	Status      string               `json:"status"`
-	LoginPort   int                  `json:"login_port"`
-	Interfaces  []*InterfaceResponse `json:"interfaces"`
-	Volumes     []*ResourceReference `json:"volumes"`
+	Hostname    string                `json:"hostname"`
+	Status      string                `json:"status"`
+	LoginPort   int                   `json:"login_port"`
+	Interfaces  []*InterfaceResponse  `json:"interfaces"`
+	Volumes     []*VolumeInfoResponse `json:"volumes"`
 	Cpu         int32                `json:"cpu"`
 	Memory      int32                `json:"memory"`
 	Disk        int32                `json:"disk"`
-	Flavor      string               `json:"flavor"`
-	Image       *ResourceReference   `json:"image"`
-	Keys        []*ResourceReference `json:"keys"`
-	PasswdLogin bool                 `json:"passwd_login"`
-	Zone        string               `json:"zone"`
-	VPC         *ResourceReference   `json:"vpc,omitempty"`
-	Hypervisor  string               `json:"hypervisor,omitempty"`
-	Reason      string               `json:"reason"`
+	Flavor      string                `json:"flavor"`
+	Image       *ResourceReference    `json:"image"`
+	Keys        []*ResourceReference  `json:"keys"`
+	PasswdLogin bool                  `json:"passwd_login"`
+	Zone        string                `json:"zone"`
+	VPC         *ResourceReference    `json:"vpc,omitempty"`
+	Hypervisor  string                `json:"hypervisor,omitempty"`
+	Reason      string                `json:"reason"`
 }
 
 type InstanceListResponse struct {
@@ -360,13 +354,6 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 		return
 	}
 
-	// if flavor and custom configuration is invalid, return error
-	if payload.Flavor == "" && (payload.Cpu <= 0 || payload.Memory <= 0 || payload.Disk <= 0) {
-		logger.Errorf("Flavor or custom configuration must be provided")
-		ErrorResponse(c, http.StatusBadRequest, "Flavor or custom configuration must be provided", err)
-		return
-	}
-
 	var flavor *model.Flavor
 	if payload.Flavor != "" {
 		flavor, err = flavorAdmin.GetFlavorByName(ctx, payload.Flavor)
@@ -557,11 +544,15 @@ func (v *InstanceAPI) getInstanceResponse(ctx context.Context, instance *model.I
 		}
 	}
 	instanceResp.Keys = keys
-	volumes := make([]*ResourceReference, len(instance.Volumes))
+	volumes := make([]*VolumeInfoResponse, len(instance.Volumes))
 	for i, volume := range instance.Volumes {
-		volumes[i] = &ResourceReference{
-			ID:   volume.UUID,
-			Name: volume.Name,
+		volumes[i] = &VolumeInfoResponse{
+			ResourceReference: &ResourceReference{
+				ID:   volume.UUID,
+				Name: volume.Name,
+			},
+			Target:  volume.Target,
+			Booting: volume.Booting,
 		}
 	}
 	instanceResp.Volumes = volumes

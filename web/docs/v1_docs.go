@@ -1341,6 +1341,117 @@ const docTemplatev1 = `{
                 }
             }
         },
+        "/migrations": {
+            "get": {
+                "description": "list migrations",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Compute"
+                ],
+                "summary": "list migrations",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/apis.MigrationListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "create a migration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Compute"
+                ],
+                "summary": "create a migration",
+                "parameters": [
+                    {
+                        "description": "Migration create payload",
+                        "name": "message",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/apis.MigrationPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/apis.MigrationResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/migrations/{id}": {
+            "get": {
+                "description": "get a migration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Compute"
+                ],
+                "summary": "get a migration",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/apis.MigrationResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.APIError"
+                        }
+                    }
+                }
+            }
+        },
         "/orgs": {
             "get": {
                 "description": "list orgs",
@@ -2991,6 +3102,9 @@ const docTemplatev1 = `{
                     "type": "string",
                     "maxLength": 32,
                     "minLength": 2
+                },
+                "uuid": {
+                    "type": "string"
                 }
             }
         },
@@ -3086,9 +3200,6 @@ const docTemplatev1 = `{
                 "hostname": {
                     "type": "string"
                 },
-                "migrate_action": {
-                    "$ref": "#/definitions/apis.MigrateAction"
-                },
                 "power_action": {
                     "enum": [
                         "stop",
@@ -3110,15 +3221,23 @@ const docTemplatev1 = `{
         "apis.InstancePayload": {
             "type": "object",
             "required": [
-                "flavor",
                 "hostname",
                 "image",
+                "primary_interface",
                 "zone"
             ],
             "properties": {
                 "count": {
                     "type": "integer",
                     "maximum": 16,
+                    "minimum": 1
+                },
+                "cpu": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "disk": {
+                    "type": "integer",
                     "minimum": 1
                 },
                 "flavor": {
@@ -3149,6 +3268,10 @@ const docTemplatev1 = `{
                     "type": "integer",
                     "maximum": 65535,
                     "minimum": 0
+                },
+                "memory": {
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "primary_interface": {
                     "$ref": "#/definitions/apis.InterfacePayload"
@@ -3202,8 +3325,14 @@ const docTemplatev1 = `{
         "apis.InstanceResponse": {
             "type": "object",
             "properties": {
+                "cpu": {
+                    "type": "integer"
+                },
                 "created_at": {
                     "type": "string"
+                },
+                "disk": {
+                    "type": "integer"
                 },
                 "flavor": {
                     "type": "string"
@@ -3235,6 +3364,9 @@ const docTemplatev1 = `{
                 "login_port": {
                     "type": "integer"
                 },
+                "memory": {
+                    "type": "integer"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -3256,7 +3388,7 @@ const docTemplatev1 = `{
                 "volumes": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.ResourceReference"
+                        "$ref": "#/definitions/apis.VolumeInfoResponse"
                     }
                 },
                 "vpc": {
@@ -3448,6 +3580,9 @@ const docTemplatev1 = `{
                     "type": "string",
                     "maxLength": 4096,
                     "minLength": 4
+                },
+                "uuid": {
+                    "type": "string"
                 }
             }
         },
@@ -3477,16 +3612,95 @@ const docTemplatev1 = `{
                 }
             }
         },
-        "apis.MigrateAction": {
+        "apis.MigrationListResponse": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer"
+                },
+                "migrations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/apis.MigrationResponse"
+                    }
+                },
+                "offset": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "apis.MigrationPayload": {
             "type": "object",
             "required": [
-                "to_hypervisor"
+                "instances",
+                "name"
             ],
             "properties": {
-                "from_hypervisor": {
+                "force": {
+                    "type": "boolean"
+                },
+                "instances": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/common.BaseID"
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                },
+                "target_hyper": {
+                    "type": "integer",
+                    "maximum": 65535,
+                    "minimum": 0
+                }
+            }
+        },
+        "apis.MigrationResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
                     "type": "string"
                 },
-                "to_hypervisor": {
+                "force": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "instance": {
+                    "$ref": "#/definitions/apis.InstanceInfo"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "phases": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/apis.TaskResponse"
+                    }
+                },
+                "source_hyper": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "target_hyper": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }
@@ -3872,6 +4086,20 @@ const docTemplatev1 = `{
                 }
             }
         },
+        "apis.TaskResponse": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                }
+            }
+        },
         "apis.UserListResponse": {
             "type": "object",
             "properties": {
@@ -3911,6 +4139,9 @@ const docTemplatev1 = `{
                 "username"
             ],
             "properties": {
+                "id": {
+                    "type": "string"
+                },
                 "org": {
                     "$ref": "#/definitions/common.BaseReference"
                 },
@@ -4008,6 +4239,32 @@ const docTemplatev1 = `{
             "type": "object",
             "properties": {
                 "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "apis.VolumeInfoResponse": {
+            "type": "object",
+            "properties": {
+                "booting": {
+                    "type": "boolean"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "target": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }

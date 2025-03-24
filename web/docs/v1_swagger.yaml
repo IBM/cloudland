@@ -208,6 +208,8 @@ definitions:
         maxLength: 32
         minLength: 2
         type: string
+      uuid:
+        type: string
     required:
     - download_url
     - name
@@ -276,8 +278,6 @@ definitions:
         type: string
       hostname:
         type: string
-      migrate_action:
-        $ref: '#/definitions/apis.MigrateAction'
       power_action:
         allOf:
         - $ref: '#/definitions/common.PowerAction'
@@ -294,6 +294,12 @@ definitions:
     properties:
       count:
         maximum: 16
+        minimum: 1
+        type: integer
+      cpu:
+        minimum: 1
+        type: integer
+      disk:
         minimum: 1
         type: integer
       flavor:
@@ -318,6 +324,9 @@ definitions:
         maximum: 65535
         minimum: 0
         type: integer
+      memory:
+        minimum: 1
+        type: integer
       primary_interface:
         $ref: '#/definitions/apis.InterfacePayload'
       root_passwd:
@@ -337,9 +346,9 @@ definitions:
         minLength: 1
         type: string
     required:
-    - flavor
     - hostname
     - image
+    - primary_interface
     - zone
     type: object
   apis.InstanceReinstallPayload:
@@ -359,8 +368,12 @@ definitions:
     type: object
   apis.InstanceResponse:
     properties:
+      cpu:
+        type: integer
       created_at:
         type: string
+      disk:
+        type: integer
       flavor:
         type: string
       hostname:
@@ -381,6 +394,8 @@ definitions:
         type: array
       login_port:
         type: integer
+      memory:
+        type: integer
       name:
         type: string
       owner:
@@ -395,7 +410,7 @@ definitions:
         type: string
       volumes:
         items:
-          $ref: '#/definitions/common.ResourceReference'
+          $ref: '#/definitions/apis.VolumeInfoResponse'
         type: array
       vpc:
         $ref: '#/definitions/common.ResourceReference'
@@ -527,6 +542,8 @@ definitions:
         maxLength: 4096
         minLength: 4
         type: string
+      uuid:
+        type: string
     required:
     - name
     - public_key
@@ -548,14 +565,68 @@ definitions:
       updated_at:
         type: string
     type: object
-  apis.MigrateAction:
+  apis.MigrationListResponse:
     properties:
-      from_hypervisor:
+      limit:
+        type: integer
+      migrations:
+        items:
+          $ref: '#/definitions/apis.MigrationResponse'
+        type: array
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
+  apis.MigrationPayload:
+    properties:
+      force:
+        type: boolean
+      instances:
+        items:
+          $ref: '#/definitions/common.BaseID'
+        minItems: 1
+        type: array
+      name:
+        maxLength: 32
+        minLength: 2
         type: string
-      to_hypervisor:
-        type: string
+      target_hyper:
+        maximum: 65535
+        minimum: 0
+        type: integer
     required:
-    - to_hypervisor
+    - instances
+    - name
+    type: object
+  apis.MigrationResponse:
+    properties:
+      created_at:
+        type: string
+      force:
+        type: boolean
+      id:
+        type: string
+      instance:
+        $ref: '#/definitions/apis.InstanceInfo'
+      name:
+        type: string
+      owner:
+        type: string
+      phases:
+        items:
+          $ref: '#/definitions/apis.TaskResponse'
+        type: array
+      source_hyper:
+        type: integer
+      status:
+        type: string
+      target_hyper:
+        type: integer
+      type:
+        type: string
+      updated_at:
+        type: string
     type: object
   apis.OrgListResponse:
     properties:
@@ -811,6 +882,15 @@ definitions:
       updated_at:
         type: string
     type: object
+  apis.TaskResponse:
+    properties:
+      name:
+        type: string
+      status:
+        type: string
+      summary:
+        type: string
+    type: object
   apis.UserListResponse:
     properties:
       limit:
@@ -834,6 +914,8 @@ definitions:
     type: object
   apis.UserPayload:
     properties:
+      id:
+        type: string
       org:
         $ref: '#/definitions/common.BaseReference'
       password:
@@ -902,6 +984,23 @@ definitions:
   apis.VersionResponse:
     properties:
       version:
+        type: string
+    type: object
+  apis.VolumeInfoResponse:
+    properties:
+      booting:
+        type: boolean
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      owner:
+        type: string
+      target:
+        type: string
+      updated_at:
         type: string
     type: object
   apis.VolumeListResponse:
@@ -1972,6 +2071,79 @@ paths:
       summary: login to get the access token
       tags:
       - Authorization
+  /migrations:
+    get:
+      consumes:
+      - application/json
+      description: list migrations
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.MigrationListResponse'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/common.APIError'
+      summary: list migrations
+      tags:
+      - Compute
+    post:
+      consumes:
+      - application/json
+      description: create a migration
+      parameters:
+      - description: Migration create payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/apis.MigrationPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/apis.MigrationResponse'
+            type: array
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/common.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/common.APIError'
+      summary: create a migration
+      tags:
+      - Compute
+  /migrations/{id}:
+    get:
+      consumes:
+      - application/json
+      description: get a migration
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apis.MigrationResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/common.APIError'
+        "401":
+          description: Not authorized
+          schema:
+            $ref: '#/definitions/common.APIError'
+      summary: get a migration
+      tags:
+      - Compute
   /orgs:
     get:
       consumes:
