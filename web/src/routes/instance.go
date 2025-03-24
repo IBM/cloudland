@@ -464,7 +464,7 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 
 	// change volume status to reinstalling
 	bootVolume.Status = "reinstalling"
-	bootVolume.Size = flavor.Disk
+	bootVolume.Size = disk
 	if err = db.Save(&bootVolume).Error; err != nil {
 		logger.Error("Failed to save volume", err)
 		return
