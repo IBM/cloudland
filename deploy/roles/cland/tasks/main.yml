@@ -92,6 +92,3 @@
     state: started
   tags: [fe_srv]
 
-- name: allow cloudland necessary ports
-  script: firewall.sh
-  tags: [firewall]

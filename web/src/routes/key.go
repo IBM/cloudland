@@ -62,7 +62,7 @@ func (a *KeyAdmin) CreateKeyPair(ctx context.Context) (publicKey, fingerPrint, p
 	return
 }
 
-func (a *KeyAdmin) Create(ctx context.Context, name, publicKey string) (key *model.Key, err error) {
+func (a *KeyAdmin) Create(ctx context.Context, name, publicKey, uuid string) (key *model.Key, err error) {
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Writer)
 	if !permit {
@@ -84,6 +84,10 @@ func (a *KeyAdmin) Create(ctx context.Context, name, publicKey string) (key *mod
 		}
 	}()
 	key = &model.Key{Model: model.Model{Creater: memberShip.UserID}, Owner: memberShip.OrgID, Name: name, PublicKey: publicKey, FingerPrint: fingerPrint}
+	if uuid != "" {
+		logger.Infof("Creating new ssh key with uuid %s", uuid)
+		key.UUID = uuid
+	}
 	err = db.Create(key).Error
 	if err != nil {
 		logger.Error("DB failed to create key, %v", err)
@@ -313,7 +317,7 @@ func (v *KeyView) Confirm(c *macaron.Context, store session.Store) {
 	ctx := c.Req.Context()
 	name := c.QueryTrim("name")
 	publicKey := c.QueryTrim("pubkey")
-	_, err := keyAdmin.Create(ctx, name, publicKey)
+	_, err := keyAdmin.Create(ctx, name, publicKey, "")
 	if err != nil {
 		logger.Error("Failed to create key ", err)
 		c.Data["ErrorMsg"] = err.Error()
@@ -407,7 +411,7 @@ func (v *KeyView) Create(c *macaron.Context, store session.Store) {
 	name := c.QueryTrim("name")
 	if c.QueryTrim("pubkey") != "" {
 		publicKey := c.QueryTrim("pubkey")
-		_, err := keyAdmin.Create(ctx, name, publicKey)
+		_, err := keyAdmin.Create(ctx, name, publicKey, "")
 		if err != nil {
 			logger.Error("failed to create key")
 			c.Data["ErrorMsg"] = err.Error()

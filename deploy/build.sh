@@ -101,7 +101,9 @@ $hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key
 
 [database]
 $hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key
-EOF
+
+[monitor]
+$hname ansible_host=$myip ansible_ssh_private_key_file=$cland_ssh_dir/cland.key
 }
 
 git config --global --add safe.directory /opt/cloudland

@@ -46,10 +46,16 @@ func Register() (r *gin.Engine) {
 	r = gin.Default()
 
 	r.POST("/api/v1/login", userAPI.LoginPost)
+	r.GET("/api/v1/version", versionAPI.Get)
 	authGroup := r.Group("").Use(Authorize())
 	{
+		//authGroup.GET("/api/v1/version", versionAPI.Get)
 		authGroup.GET("/api/v1/hypers", hyperAPI.List)
 		authGroup.GET("/api/v1/hypers/:name", hyperAPI.Get)
+
+		authGroup.GET("/api/v1/migrations", migrationAPI.List)
+		authGroup.POST("/api/v1/migrations", migrationAPI.Create)
+		authGroup.GET("/api/v1/migrations/:id", migrationAPI.Get)
 
 		authGroup.GET("/api/v1/users", userAPI.List)
 		authGroup.POST("/api/v1/users", userAPI.Create)
@@ -132,7 +138,18 @@ func Register() (r *gin.Engine) {
 		authGroup.GET("/api/v1/instances/:id/interfaces/:interface_id", interfaceAPI.Get)
 		authGroup.DELETE("/api/v1/instances/:id/interfaces/:interface_id", interfaceAPI.Delete)
 		authGroup.PATCH("/api/v1/instances/:id/interfaces/:interface_id", interfaceAPI.Patch)
+
+		metricsGroup := authGroup.(*gin.RouterGroup).Group("/api/v1/metrics")
+		{
+			metricsGroup.POST("/instances/cpu/his_data", monitorAPI.GetCPU)
+			metricsGroup.POST("/instances/disk/his_data", monitorAPI.GetDisk)
+			metricsGroup.POST("/instances/memory/his_data", monitorAPI.GetMemory)
+			metricsGroup.POST("/instances/network/his_data", monitorAPI.GetNetwork)
+			metricsGroup.POST("/instances/traffic/his_data", monitorAPI.GetTraffic)
+		}
+
 	}
+
 	r.GET("/swagger/api/v1/*any", ginSwagger.WrapHandler(swaggerFiles.NewHandler(), ginSwagger.InstanceName("v1")))
 	return
 }
