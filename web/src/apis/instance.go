@@ -26,9 +26,9 @@ var instanceAdmin = &routes.InstanceAdmin{}
 type InstanceAPI struct{}
 
 type InstancePatchPayload struct {
-	Hostname      string        `json:"hostname" binding:"omitempty,hostname|fqdn"`
-	PowerAction   PowerAction   `json:"power_action" binding:"omitempty,oneof=stop hard_stop start restart hard_restart pause resume"`
-	Flavor        string        `json:"flavor" binding:"omitempty,min=1,max=32"`
+	Hostname    string      `json:"hostname" binding:"omitempty,hostname|fqdn"`
+	PowerAction PowerAction `json:"power_action" binding:"omitempty,oneof=stop hard_stop start restart hard_restart pause resume"`
+	Flavor      string      `json:"flavor" binding:"omitempty,min=1,max=32"`
 }
 
 type InstanceSetUserPasswordPayload struct {
@@ -37,10 +37,11 @@ type InstanceSetUserPasswordPayload struct {
 }
 
 type InstanceReinstallPayload struct {
-	Image    *BaseReference   `json:"image" binding:"omitempty"`
-	Flavor   string           `json:"flavor" binding:"omitempty"`
-	Keys     []*BaseReference `json:"keys" binding:"omitempty,gte=0,lte=16"`
-	Password string           `json:"password" binging:"omitempty,min=8,max=64"`
+	Image     *BaseReference   `json:"image" binding:"omitempty"`
+	Flavor    string           `json:"flavor" binding:"omitempty"`
+	Keys      []*BaseReference `json:"keys" binding:"omitempty,gte=0,lte=16"`
+	Password  string           `json:"password" binging:"omitempty,min=8,max=64"`
+	LoginPort int              `json:"login_port" binding:"omitempty,min=0,max=65535"`
 }
 
 type InstancePayload struct {
@@ -277,7 +278,7 @@ func (v *InstanceAPI) Reinstall(c *gin.Context) {
 		ErrorResponse(c, http.StatusBadRequest, "Password or key must be provided", err)
 		return
 	}
-	err = instanceAdmin.Reinstall(ctx, instance, image, flavor, password, keys)
+	err = instanceAdmin.Reinstall(ctx, instance, image, flavor, password, keys, payload.LoginPort)
 	if err != nil {
 		logger.Error("Reinstall failed", err)
 		ErrorResponse(c, http.StatusBadRequest, "Reinstall failed", err)
