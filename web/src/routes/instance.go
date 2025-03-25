@@ -13,11 +13,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net"
 	"net/http"
 	"strconv"
 	"strings"
-
 	. "web/src/common"
 	"web/src/dbs"
 	"web/src/model"
@@ -1387,11 +1387,16 @@ func (v *InstanceView) Reinstall(c *macaron.Context, store session.Store) {
 			c.HTML(500, "500")
 			return
 		}
+		loginPort := instance.LoginPort
+		if loginPort == 22 || loginPort == 3389 {
+			loginPort = int32(rand.Intn(45535) + 20000)
+		}
 		c.Data["Instance"] = instance
 		c.Data["Images"] = images
 		c.Data["Flavors"] = flavors
 		c.Data["Keys"] = keys
 		c.Data["Link"] = fmt.Sprintf("/instances/%d/reinstall", instanceID)
+		c.Data["LoginPort"] = instance.LoginPort
 		c.HTML(200, "instances_reinstall")
 		return
 	} else if c.Req.Method == "POST" {

@@ -65,6 +65,10 @@
                                                                     <label>{{.i18n.Tr "Root Password"}}</label>
                                                                     <input type="password" id="rootpasswd"  name="rootpasswd" >
                                                                 </div>
+                                                                <div class="required inline field">
+                                                                    <label for="login_port">{{.i18n.Tr "Login Port"}}</label>
+                                                                    <input type="number" id="login_port" name="login_port" value="{{.LoginPort}}" required>
+                                                                </div>
 								<div class="inline field">
 									<label></label>
 									<button class="ui green button">{{.i18n.Tr "OS Reinstall"}}</button>
