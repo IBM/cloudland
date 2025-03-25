@@ -1392,7 +1392,6 @@ func (v *InstanceView) Reinstall(c *macaron.Context, store session.Store) {
 		c.Data["Flavors"] = flavors
 		c.Data["Keys"] = keys
 		c.Data["Link"] = fmt.Sprintf("/instances/%d/reinstall", instanceID)
-		c.Data["Port"] = "12345"
 		c.HTML(200, "instances_reinstall")
 		return
 	} else if c.Req.Method == "POST" {
