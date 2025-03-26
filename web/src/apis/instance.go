@@ -41,7 +41,7 @@ type InstanceReinstallPayload struct {
 	Flavor    string           `json:"flavor" binding:"omitempty"`
 	Keys      []*BaseReference `json:"keys" binding:"omitempty,gte=0,lte=16"`
 	Password  string           `json:"password" binging:"omitempty,min=8,max=64"`
-	LoginPort int              `json:"login_port" binding:"omitempty,min=0,max=65535"`
+	LoginPort int              `json:"login_port" binding:"omitempty,min=1,max=65535"`
 }
 
 type InstancePayload struct {
