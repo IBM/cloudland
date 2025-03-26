@@ -32,7 +32,7 @@ type MigrationAdmin struct{}
 type MigrationView struct{}
 
 func (a *MigrationAdmin) Create(ctx context.Context, name string, instances []*model.Instance, force bool, tgtHyper int32) (migrations []*model.Migration, err error) {
-	logger.Debugf("Start migrating instances to %d", name, tgtHyper)
+	logger.Debugf("Start migrating instances to %d", tgtHyper)
 	memberShip := GetMemberShip(ctx)
 	permit := memberShip.CheckPermission(model.Admin)
 	if !permit {
@@ -60,6 +60,9 @@ func (a *MigrationAdmin) Create(ctx context.Context, name string, instances []*m
 		}
 	}
 	for _, instance := range instances {
+		if instance.Status == "migrating" {
+			continue
+		}
 		sourceHyper := &model.Hyper{Hostid: instance.Hyper}
 		err = db.Where(sourceHyper).Take(sourceHyper).Error
 		if err != nil {
