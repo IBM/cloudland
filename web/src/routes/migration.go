@@ -73,7 +73,6 @@ func (a *MigrationAdmin) Create(ctx context.Context, name string, instances []*m
 		}
 		if instance.Hyper == tgtHyper {
 			logger.Error("No need to migrate if source and target hypervisors are the same")
-			err = fmt.Errorf("No need to migrate if source and target hypervisors are the same")
 			continue
 		}
 		task1 := &model.Task{
