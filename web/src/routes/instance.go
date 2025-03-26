@@ -666,6 +666,10 @@ func (a *InstanceAdmin) GetMetadata(ctx context.Context, instance *model.Instanc
 		instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
 		vlans = append(vlans, &VlanInfo{Device: iface.Name, Vlan: subnet.Vlan, Inbound: iface.Inbound, Outbound: iface.Outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: iface.Address.Address, MacAddr: iface.MacAddr})
 	}
+	osCode := "linux"
+	if instance.Image != nil {
+		osCode = instance.Image.OSCode
+	}
 	instData := &InstanceData{
 		Userdata:   instance.Userdata,
 		DNS:        dns,
@@ -676,7 +680,7 @@ func (a *InstanceAdmin) GetMetadata(ctx context.Context, instance *model.Instanc
 		Keys:       instKeys,
 		RootPasswd: rootPasswd,
 		LoginPort:  int(instance.LoginPort),
-		OSCode:     instance.Image.OSCode,
+		OSCode:     osCode,
 	}
 	jsonData, err := json.Marshal(instData)
 	if err != nil {

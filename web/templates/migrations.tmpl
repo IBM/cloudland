@@ -27,6 +27,8 @@
 									{{ end }}
 									<th>{{.i18n.Tr "UUID"}}</th>
 			                        <th>{{.i18n.Tr "Name"}}</th>
+			                        <th>{{.i18n.Tr "CreatedAt"}}</th>
+			                        <th>{{.i18n.Tr "UpdatedAt"}}</th>
 			                        <th>{{.i18n.Tr "Instance"}}</th>
 			                        <th>{{.i18n.Tr "Source Hyper"}}</th>
 			                        <th>{{.i18n.Tr "Target Hyper"}}</th>
@@ -44,6 +46,8 @@
 									{{ end }}
 									<td>{{.UUID}}</td>
 			                        <td>{{.Name}}</td>
+			                        <td>{{.CreatedAt}}</td>
+			                        <td>{{.UpdatedAt}}</td>
 			                        <td>{{ if .Instance }}{{.Instance.ID}}-{{.Instance.Hostname}}{{ end }}</td>
 			                        <td>{{.SourceHyper}}</td>
 			                        <td>{{.TargetHyper}}</td>
