@@ -413,12 +413,10 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 			err = secgroupAdmin.RemovePortForInterfaceSecgroups(ctx, instance.LoginPort, iface)
 			if err != nil {
 				logger.Errorf("Failed to remove security rule", err)
-				return
 			}
 			err = secgroupAdmin.AllowPortForInterfaceSecgroups(ctx, int32(loginPort), iface)
 			if err != nil {
 				logger.Errorf("Failed to create security rule", err)
-				return
 			}
 		}
 	}
