@@ -116,6 +116,7 @@ func ClearVM(ctx context.Context, args []string) (status string, err error) {
 	instance.Hostname = fmt.Sprintf("%s-%d", instance.Hostname, instance.CreatedAt.Unix())
 	instance.Status = "deleted"
 	instance.Reason = reason
+	instance.Interfaces = nil
 	err = db.Save(instance).Error
 	if err != nil {
 		return

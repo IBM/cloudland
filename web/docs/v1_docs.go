@@ -3221,15 +3221,23 @@ const docTemplatev1 = `{
         "apis.InstancePayload": {
             "type": "object",
             "required": [
-                "flavor",
                 "hostname",
                 "image",
+                "primary_interface",
                 "zone"
             ],
             "properties": {
                 "count": {
                     "type": "integer",
                     "maximum": 16,
+                    "minimum": 1
+                },
+                "cpu": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "disk": {
+                    "type": "integer",
                     "minimum": 1
                 },
                 "flavor": {
@@ -3260,6 +3268,10 @@ const docTemplatev1 = `{
                     "type": "integer",
                     "maximum": 65535,
                     "minimum": 0
+                },
+                "memory": {
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "primary_interface": {
                     "$ref": "#/definitions/apis.InterfacePayload"
@@ -3313,8 +3325,14 @@ const docTemplatev1 = `{
         "apis.InstanceResponse": {
             "type": "object",
             "properties": {
+                "cpu": {
+                    "type": "integer"
+                },
                 "created_at": {
                     "type": "string"
+                },
+                "disk": {
+                    "type": "integer"
                 },
                 "flavor": {
                     "type": "string"
@@ -3346,6 +3364,9 @@ const docTemplatev1 = `{
                 "login_port": {
                     "type": "integer"
                 },
+                "memory": {
+                    "type": "integer"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -3367,7 +3388,7 @@ const docTemplatev1 = `{
                 "volumes": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.ResourceReference"
+                        "$ref": "#/definitions/apis.VolumeInfoResponse"
                     }
                 },
                 "vpc": {
@@ -4218,6 +4239,32 @@ const docTemplatev1 = `{
             "type": "object",
             "properties": {
                 "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "apis.VolumeInfoResponse": {
+            "type": "object",
+            "properties": {
+                "booting": {
+                    "type": "boolean"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "target": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }

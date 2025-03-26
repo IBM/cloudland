@@ -296,6 +296,12 @@ definitions:
         maximum: 16
         minimum: 1
         type: integer
+      cpu:
+        minimum: 1
+        type: integer
+      disk:
+        minimum: 1
+        type: integer
       flavor:
         maxLength: 32
         minLength: 1
@@ -317,6 +323,9 @@ definitions:
       login_port:
         maximum: 65535
         minimum: 0
+        type: integer
+      memory:
+        minimum: 1
         type: integer
       primary_interface:
         $ref: '#/definitions/apis.InterfacePayload'
@@ -337,9 +346,9 @@ definitions:
         minLength: 1
         type: string
     required:
-    - flavor
     - hostname
     - image
+    - primary_interface
     - zone
     type: object
   apis.InstanceReinstallPayload:
@@ -359,8 +368,12 @@ definitions:
     type: object
   apis.InstanceResponse:
     properties:
+      cpu:
+        type: integer
       created_at:
         type: string
+      disk:
+        type: integer
       flavor:
         type: string
       hostname:
@@ -381,6 +394,8 @@ definitions:
         type: array
       login_port:
         type: integer
+      memory:
+        type: integer
       name:
         type: string
       owner:
@@ -395,7 +410,7 @@ definitions:
         type: string
       volumes:
         items:
-          $ref: '#/definitions/common.ResourceReference'
+          $ref: '#/definitions/apis.VolumeInfoResponse'
         type: array
       vpc:
         $ref: '#/definitions/common.ResourceReference'
@@ -969,6 +984,23 @@ definitions:
   apis.VersionResponse:
     properties:
       version:
+        type: string
+    type: object
+  apis.VolumeInfoResponse:
+    properties:
+      booting:
+        type: boolean
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      owner:
+        type: string
+      target:
+        type: string
+      updated_at:
         type: string
     type: object
   apis.VolumeListResponse:

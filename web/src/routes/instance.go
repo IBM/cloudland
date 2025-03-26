@@ -117,9 +117,9 @@ func (a *InstanceAdmin) GetHyperGroup(ctx context.Context, zoneID int64, skipHyp
 
 func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, image *model.Image,
 	flavor *model.Flavor, zone *model.Zone, routerID int64, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo,
-	keys []*model.Key, rootPasswd string, loginPort, hyperID int) (instances []*model.Instance, err error) {
-	logger.Debugf("Create %d instances with image %s, flavor %s, zone %s, router %d, primary interface %v, secondary interfaces %v, keys %v, root password %s, hyper %d",
-		count, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, "********", hyperID)
+	keys []*model.Key, rootPasswd string, loginPort, hyperID int, cpu int32, memory int32, disk int32) (instances []*model.Instance, err error) {
+	logger.Debugf("Create %d instances with image %s, flavor %v, zone %s, router %d, primary interface %v, secondary interfaces %v, keys %v, root password %s, hyper %d, cpu %d, memory %d, disk %d",
+		count, image.Name, flavor, zone.Name, routerID, primaryIface, secondaryIfaces, keys, "********", hyperID, cpu, memory, disk)
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
 		if newTransaction {
@@ -132,7 +132,22 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		logger.Error("Image status not available")
 		return
 	}
-	if image.Size > int64(flavor.Disk)*1024*1024*1024 {
+	// final configuration
+	if flavor == nil && (cpu <= 0 || memory <= 0 || disk <= 0) {
+		err = fmt.Errorf("No valid configuration")
+		logger.Errorf("No valid configuration")
+		return
+	}
+	if cpu <= 0 {
+		cpu = flavor.Cpu
+	}
+	if memory <= 0 {
+		memory = flavor.Memory
+	}
+	if disk <= 0 {
+		disk = flavor.Disk
+	}
+	if image.Size > int64(disk)*1024*1024*1024 {
 		err = fmt.Errorf("Flavor disk size is not enough for the image")
 		logger.Error(err)
 		return
@@ -187,7 +202,6 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			Hostname:    hostname,
 			ImageID:     image.ID,
 			Snapshot:    int64(snapshot),
-			FlavorID:    flavor.ID,
 			Keys:        keys,
 			PasswdLogin: passwdLogin,
 			LoginPort:   int32(loginPort),
@@ -195,6 +209,12 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			Status:      "pending",
 			ZoneID:      zoneID,
 			RouterID:    routerID,
+			Cpu:         cpu,
+			Memory:      memory,
+			Disk:        disk,
+		}
+		if flavor != nil {
+			instance.FlavorID = flavor.ID
 		}
 		err = db.Create(instance).Error
 		if err != nil {
@@ -207,7 +227,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		var bootVolume *model.Volume
 		imagePrefix := fmt.Sprintf("image-%d-%s", image.ID, strings.Split(image.UUID, "-")[0])
 		// boot volume name format: instance-15-boot-volume-10
-		bootVolume, err = volumeAdmin.CreateVolume(ctx, fmt.Sprintf("instance-%d-boot-volume", instance.ID), flavor.Disk, instance.ID, true, 0, 0, 0, 0, "")
+		bootVolume, err = volumeAdmin.CreateVolume(ctx, fmt.Sprintf("instance-%d-boot-volume", instance.ID), instance.Disk, instance.ID, true, 0, 0, 0, 0, "")
 		if err != nil {
 			logger.Error("Failed to create boot volume", err)
 			return
@@ -230,12 +250,12 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			return
 		}
 		instance.Interfaces = ifaces
-		rcNeeded := fmt.Sprintf("cpu=%d memory=%d disk=%d network=%d", flavor.Cpu, flavor.Memory*1024, (flavor.Disk+flavor.Swap+flavor.Ephemeral)*1024*1024, 0)
+		rcNeeded := fmt.Sprintf("cpu=%d memory=%d disk=%d network=%d", instance.Cpu, instance.Memory*1024, instance.Disk*1024*1024, 0)
 		control := "select=" + hyperGroup + " " + rcNeeded
 		if i == 0 && hyperID >= 0 {
 			control = fmt.Sprintf("inter=%d %s", hyperID, rcNeeded)
 		}
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' '%s.%s' '%t' '%d' '%s' '%d' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, imagePrefix, image.Format, image.QAEnabled, snapshot, hostname, flavor.Cpu, flavor.Memory, flavor.Disk, bootVolume.ID, base64.StdEncoding.EncodeToString([]byte(metadata)))
+		command := fmt.Sprintf("/opt/cloudland/scripts/backend/launch_vm.sh '%d' '%s.%s' '%t' '%d' '%s' '%d' '%d' '%d' '%d'<<EOF\n%s\nEOF", instance.ID, imagePrefix, image.Format, image.QAEnabled, snapshot, hostname, instance.Cpu, instance.Memory, instance.Disk, bootVolume.ID, base64.StdEncoding.EncodeToString([]byte(metadata)))
 		execCommands = append(execCommands, &ExecutionCommand{
 			Control: control,
 			Command: command,
@@ -348,8 +368,8 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 	return
 }
 
-func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance, image *model.Image, flavor *model.Flavor, rootPasswd string, keys []*model.Key, port int) (err error) {
-	logger.Debugf("Reinstall instance %d with image %d and flavor %d", instance.ID, image.ID, flavor.ID)
+func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance, image *model.Image, flavor *model.Flavor, rootPasswd string, keys []*model.Key, cpu int32, memory int32, disk int32, port int) (err error) {
+	logger.Debugf("Reinstall instance %d with image %d and flavor %v", instance.ID, image.ID, flavor)
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
 		if newTransaction {
@@ -385,8 +405,18 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 		logger.Error("Failed to query total instances with the image", err)
 		return
 	}
-
-	if image.Size > int64(flavor.Disk)*1024*1024*1024 {
+	// final configuration
+	if flavor == nil && (cpu <= 0 || memory <= 0 || disk <= 0) {
+		err = fmt.Errorf("No valid configuration")
+		logger.Error("No valid configuration")
+		return
+	}
+	if flavor != nil {
+		cpu = flavor.Cpu
+		memory = flavor.Memory
+		disk = flavor.Disk
+	}
+	if image.Size > int64(disk)*1024*1024*1024 {
 		err = fmt.Errorf("Flavor disk size is not enough for the image")
 		logger.Error(err)
 		return
@@ -417,10 +447,15 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 	instance.Status = "reinstalling"
 	instance.LoginPort = loginPort
 	instance.PasswdLogin = passwdLogin
-	instance.FlavorID = flavor.ID
 	instance.Flavor = flavor
 	instance.ImageID = image.ID
 	instance.Image = image
+	instance.Cpu = cpu
+	instance.Memory = memory
+	instance.Disk = disk
+	if flavor != nil {
+		instance.FlavorID = flavor.ID
+	}
 	if err = db.Save(&instance).Error; err != nil {
 		logger.Error("Failed to save instance", err)
 		return
@@ -433,7 +468,7 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 
 	// change volume status to reinstalling
 	bootVolume.Status = "reinstalling"
-	bootVolume.Size = flavor.Disk
+	bootVolume.Size = disk
 	if err = db.Save(&bootVolume).Error; err != nil {
 		logger.Error("Failed to save volume", err)
 		return
@@ -456,7 +491,7 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 
 	snapshot := total/MaxmumSnapshot + 1 // Same snapshot reference can not be over 128, so use 96 here
 	control := fmt.Sprintf("inter=%d", instance.Hyper)
-	command := fmt.Sprintf("/opt/cloudland/scripts/backend/reinstall_vm.sh '%d' '%s.%s' '%d' '%d' '%s' '%d' '%d' '%d' '%s'<<EOF\n%s\nEOF", instance.ID, imagePrefix, image.Format, snapshot, bootVolume.ID, bootVolume.GetOriginVolumeID(), flavor.Cpu, flavor.Memory, flavor.Disk, instance.Hostname, base64.StdEncoding.EncodeToString([]byte(metadata)))
+	command := fmt.Sprintf("/opt/cloudland/scripts/backend/reinstall_vm.sh '%d' '%s.%s' '%d' '%d' '%s' '%d' '%d' '%d' '%s'<<EOF\n%s\nEOF", instance.ID, imagePrefix, image.Format, snapshot, bootVolume.ID, bootVolume.GetOriginVolumeID(), cpu, memory, disk, instance.Hostname, base64.StdEncoding.EncodeToString([]byte(metadata)))
 	err = HyperExecute(ctx, control, command)
 	if err != nil {
 		logger.Error("Reinstall remote exec failed", err)
@@ -1410,17 +1445,23 @@ func (v *InstanceView) Reinstall(c *macaron.Context, store session.Store) {
 			c.HTML(http.StatusBadRequest, "error")
 			return
 		}
+
+		// old data compatibility
+		var flavor *model.Flavor
 		flavorID := c.QueryInt64("flavor")
-		if flavorID <= 0 {
+		if flavorID <= 0 && instance.Cpu == 0 && instance.FlavorID > 0 {
 			flavorID = instance.FlavorID
 		}
-		flavor, err := flavorAdmin.Get(ctx, flavorID)
-		if err != nil {
-			logger.Error("No valid flavor", err)
-			c.Data["ErrorMsg"] = "No valid flavor"
-			c.HTML(http.StatusBadRequest, "error")
-			return
+		if flavorID > 0 {
+			flavor, err = flavorAdmin.Get(ctx, flavorID)
+			if err != nil {
+				logger.Error("No valid flavor", err)
+				c.Data["ErrorMsg"] = "No valid flavor"
+				c.HTML(http.StatusBadRequest, "error")
+				return
+			}
 		}
+
 		rootPasswd := c.QueryTrim("rootpasswd")
 		keys := c.QueryTrim("keys")
 		if rootPasswd == "" && keys == "" {
@@ -1450,7 +1491,7 @@ func (v *InstanceView) Reinstall(c *macaron.Context, store session.Store) {
 		}
 		loginPort := c.QueryInt("login_port")
 
-		err = instanceAdmin.Reinstall(ctx, instance, image, flavor, rootPasswd, instKeys, loginPort)
+		err = instanceAdmin.Reinstall(ctx, instance, image, flavor, rootPasswd, instKeys, instance.Cpu, instance.Memory, instance.Disk, loginPort)
 		if err != nil {
 			logger.Error("Reinstall failed", err)
 			c.Data["ErrorMsg"] = err.Error()
@@ -1701,7 +1742,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		instKeys = append(instKeys, key)
 	}
 	userdata := c.QueryTrim("userdata")
-	_, err = instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, primarySubnet.RouterID, primaryIface, secondaryIfaces, instKeys, rootPasswd, loginPort, hyperID)
+	_, err = instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, primarySubnet.RouterID, primaryIface, secondaryIfaces, instKeys, rootPasswd, loginPort, hyperID, 0, 0, 0)
 	if err != nil {
 		logger.Error("Create instance failed", err)
 		c.Data["ErrorMsg"] = err.Error()
