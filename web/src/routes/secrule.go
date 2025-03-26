@@ -167,6 +167,11 @@ func (a *SecruleAdmin) Create(ctx context.Context, remoteIp, direction, protocol
 		PortMin:   portMin,
 		PortMax:   portMax,
 	}
+	err = db.Where(secrule).Take(secrule).Error
+	if err == nil {
+		logger.Error("Security rule already exists")
+		return
+	}
 	err = db.Create(secrule).Error
 	if err != nil {
 		logger.Error("DB failed to create security rule", err)

@@ -435,7 +435,24 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 			loginPort = int(instance.LoginPort)
 		}
 	}
-	logger.Debug("Login Port is: %d", loginPort)
+	logger.Debugf("Login Port is: %d", loginPort)
+
+	// update security group rules
+	if loginPort != int(instance.LoginPort) {
+		for _, iface := range instance.Interfaces {
+			err = secgroupAdmin.RemovePortForInterfaceSecgroups(ctx, instance.LoginPort, iface)
+			if err != nil {
+				logger.Errorf("Failed to remove security rule", err)
+				return
+			}
+			err = secgroupAdmin.AllowPortForInterfaceSecgroups(ctx, int32(loginPort), iface)
+			if err != nil {
+				logger.Errorf("Failed to create security rule", err)
+				return
+			}
+		}
+	}
+
 	passwdLogin := false
 	if rootPasswd != "" {
 		passwdLogin = true
@@ -480,7 +497,7 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 			return
 		}
 	}
-	metadata, err := a.GetMetadata(ctx, instance, instancePasswd, loginPort)
+	metadata, err := a.GetMetadata(ctx, instance, instancePasswd)
 	if err != nil {
 		logger.Error("Failed to get instance metadata", err)
 		return
@@ -689,7 +706,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 	return interfaces, string(jsonData), nil
 }
 
-func (a *InstanceAdmin) GetMetadata(ctx context.Context, instance *model.Instance, rootPasswd string, loginPort int) (metadata string, err error) {
+func (a *InstanceAdmin) GetMetadata(ctx context.Context, instance *model.Instance, rootPasswd string) (metadata string, err error) {
 	vlans := []*VlanInfo{}
 	instNetworks := []*InstanceNetwork{}
 	instLinks := []*NetworkLink{}
@@ -736,7 +753,7 @@ func (a *InstanceAdmin) GetMetadata(ctx context.Context, instance *model.Instanc
 		Volumes:    volumes,
 		Keys:       instKeys,
 		RootPasswd: rootPasswd,
-		LoginPort:  loginPort,
+		LoginPort:  int(instance.LoginPort),
 		OSCode:     instance.Image.OSCode,
 	}
 	jsonData, err := json.Marshal(instData)
