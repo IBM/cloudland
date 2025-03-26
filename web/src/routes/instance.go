@@ -447,6 +447,7 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 			err = secgroupAdmin.AllowPortForInterfaceSecgroups(ctx, int32(loginPort), iface)
 			if err != nil {
 				logger.Errorf("Failed to create security rule", err)
+				return
 			}
 		}
 	}
