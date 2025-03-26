@@ -63,6 +63,8 @@ func execSourceMigrate(ctx context.Context, instance *model.Instance, migration 
 			logger.Error("Source migration command execution failed", err)
 			return
 		}
+	} else {
+		err = fmt.Errorf("Source hyper is not in a valid state")
 	}
 	return
 }
@@ -149,7 +151,7 @@ func MigrateVM(ctx context.Context, args []string) (status string, err error) {
 		err = execSourceMigrate(ctx, instance, migration, task2.ID, migration.Type)
 		if err != nil {
 			logger.Error("Failed to exec source migration", err)
-			return
+			status = "failed"
 		}
 		taskStatus = "completed"
 	} else if status == "source_prepared" {
