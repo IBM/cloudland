@@ -3,7 +3,7 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 10 ] && die "$0 <vm_ID> <image> <qa_enabled> <snapshot> <name> <cpu> <memory> <disk_size> <volume_id> <nested>"
+[ $# -lt 10 ] && die "$0 <vm_ID> <image> <qa_enabled> <snapshot> <name> <cpu> <memory> <disk_size> <volume_id> <nested_enable>"
 
 ID=$1
 vm_ID=inst-$ID
@@ -15,7 +15,7 @@ vm_cpu=$6
 vm_mem=$7
 disk_size=$8
 vol_ID=$9
-nested=${10}
+nested_enable=${10}
 state=error
 vm_vnc=""
 vol_state=error
@@ -98,7 +98,7 @@ mkdir -p $xml_dir/$vm_ID
 vm_QA="$qemu_agent_dir/$vm_ID.agent"
 vm_xml=$xml_dir/$vm_ID/${vm_ID}.xml
 cp $template $vm_xml
-if [ "$nested" = "true" ]; then
+if [ "$nested_enable" = "true" ]; then
     vm_nested="require"
 else
     vm_nested="disable"
