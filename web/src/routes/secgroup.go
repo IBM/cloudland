@@ -220,7 +220,7 @@ func (a *SecgroupAdmin) RemovePortForInterfaceSecgroups(ctx context.Context, por
 		for _, sg := range iface.SecurityGroups {
 			_, err = secruleAdmin.DeleteRule(ctx, "0.0.0.0/0", "ingress", "tcp", port, port, sg)
 			if err != nil {
-				logger.Error("Failed to create security rule", err)
+				logger.Error("Failed to remove security rule", err)
 				return
 			}
 		}

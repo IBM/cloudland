@@ -100,7 +100,7 @@ func (a *MigrationAdmin) Create(ctx context.Context, name string, instances []*m
 			return
 		}
 		var metadata string
-		metadata, err = instanceAdmin.GetMetadata(ctx, instance, "", int(instance.LoginPort))
+		metadata, err = instanceAdmin.GetMetadata(ctx, instance, "")
 		if err != nil {
 			logger.Error("Failed to get metadata")
 			return
