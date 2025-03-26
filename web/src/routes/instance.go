@@ -118,8 +118,8 @@ func (a *InstanceAdmin) GetHyperGroup(ctx context.Context, zoneID int64, skipHyp
 func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, image *model.Image,
 	flavor *model.Flavor, zone *model.Zone, routerID int64, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo,
 	keys []*model.Key, rootPasswd string, loginPort, hyperID int, nested bool) (instances []*model.Instance, err error) {
-	logger.Debugf("Create %d instances with image %s, flavor %s, zone %s, router %d, primary interface %v, secondary interfaces %v, keys %v, root password %s, hyper %d",
-		count, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, "********", hyperID)
+	logger.Debugf("Create %d instances with image %s, flavor %s, zone %s, router %d, primary interface %v, secondary interfaces %v, keys %v, root password %s, hyper %d, nested %t",
+		count, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, "********", hyperID, nested)
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
 		if newTransaction {
