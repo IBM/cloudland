@@ -273,7 +273,8 @@ func syncSiteSubnets(ctx context.Context, instance *model.Instance) (err error) 
 			return
 		}
 		if len(siteSubnets) > 0 {
-			sitesJson, err := json.Marshal(siteSubnets)
+			var sitesJson []byte
+			sitesJson, err = json.Marshal(siteSubnets)
 			if err != nil {
 				logger.Error("Failed to mashal site subnets", err)
 				return
