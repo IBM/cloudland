@@ -368,7 +368,7 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 	return
 }
 
-func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance, image *model.Image, flavor *model.Flavor, rootPasswd string, keys []*model.Key, cpu int32, memory int32, disk int32, port int) (err error) {
+func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance, image *model.Image, flavor *model.Flavor, rootPasswd string, keys []*model.Key, cpu int32, memory int32, disk int32, loginPort int) (err error) {
 	logger.Debugf("Reinstall instance %d with image %d and flavor %v", instance.ID, image.ID, flavor)
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
@@ -423,8 +423,7 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 	}
 
 	// change vm status to reinstalling
-	var loginPort int32
-	if port <= 0 {
+	if loginPort <= 0 {
 		switch instance.LoginPort {
 		case 22, 3389:
 			if image.OSCode == "windows" {
@@ -433,10 +432,8 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 				loginPort = 22
 			}
 		default:
-			loginPort = instance.LoginPort
+			loginPort = int(instance.LoginPort)
 		}
-	} else {
-		loginPort = int32(port)
 	}
 	logger.Debug("Login Port is: %d", loginPort)
 	passwdLogin := false
@@ -445,7 +442,7 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 		logger.Debug("Root password login enabled")
 	}
 	instance.Status = "reinstalling"
-	instance.LoginPort = loginPort
+	instance.LoginPort = int32(loginPort)
 	instance.PasswdLogin = passwdLogin
 	instance.Flavor = flavor
 	instance.ImageID = image.ID
@@ -483,7 +480,7 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 			return
 		}
 	}
-	metadata, err := a.GetMetadata(ctx, instance, instancePasswd)
+	metadata, err := a.GetMetadata(ctx, instance, instancePasswd, loginPort)
 	if err != nil {
 		logger.Error("Failed to get instance metadata", err)
 		return
@@ -692,7 +689,7 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 	return interfaces, string(jsonData), nil
 }
 
-func (a *InstanceAdmin) GetMetadata(ctx context.Context, instance *model.Instance, rootPasswd string) (metadata string, err error) {
+func (a *InstanceAdmin) GetMetadata(ctx context.Context, instance *model.Instance, rootPasswd string, loginPort int) (metadata string, err error) {
 	vlans := []*VlanInfo{}
 	instNetworks := []*InstanceNetwork{}
 	instLinks := []*NetworkLink{}
@@ -739,7 +736,7 @@ func (a *InstanceAdmin) GetMetadata(ctx context.Context, instance *model.Instanc
 		Volumes:    volumes,
 		Keys:       instKeys,
 		RootPasswd: rootPasswd,
-		LoginPort:  int(instance.LoginPort),
+		LoginPort:  loginPort,
 		OSCode:     instance.Image.OSCode,
 	}
 	jsonData, err := json.Marshal(instData)
