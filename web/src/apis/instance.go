@@ -26,9 +26,9 @@ var instanceAdmin = &routes.InstanceAdmin{}
 type InstanceAPI struct{}
 
 type InstancePatchPayload struct {
-	Hostname      string        `json:"hostname" binding:"omitempty,hostname|fqdn"`
-	PowerAction   PowerAction   `json:"power_action" binding:"omitempty,oneof=stop hard_stop start restart hard_restart pause resume"`
-	Flavor        string        `json:"flavor" binding:"omitempty,min=1,max=32"`
+	Hostname    string      `json:"hostname" binding:"omitempty,hostname|fqdn"`
+	PowerAction PowerAction `json:"power_action" binding:"omitempty,oneof=stop hard_stop start restart hard_restart pause resume"`
+	Flavor      string      `json:"flavor" binding:"omitempty,min=1,max=32"`
 }
 
 type InstanceSetUserPasswordPayload struct {
@@ -57,6 +57,7 @@ type InstancePayload struct {
 	Zone                string              `json:"zone" binding:"required,min=1,max=32"`
 	VPC                 *BaseReference      `json:"vpc" binding:"omitempty"`
 	Userdata            string              `json:"userdata,omitempty"`
+	Nested              bool                `json:"nested,omitempty"`
 }
 
 type InstanceResponse struct {
@@ -403,9 +404,9 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 	if payload.Hypervisor != nil {
 		hypervisor = *payload.Hypervisor
 	}
-	logger.Debugf("Creating %d instances with hostname %s, userdata %s, image %s, flavor %s, zone %s, router %d, primaryIface %v, secondaryIfaces %v, keys %v, login_port %d, hypervisor %d",
-		count, hostname, userdata, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, payload.LoginPort, hypervisor)
-	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, routerID, primaryIface, secondaryIfaces, keys, rootPasswd, payload.LoginPort, hypervisor)
+	logger.Debugf("Creating %d instances with hostname %s, userdata %s, image %s, flavor %s, zone %s, router %d, primaryIface %v, secondaryIfaces %v, keys %v, login_port %d, hypervisor %d, nested %v",
+		count, hostname, userdata, image.Name, flavor.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, payload.LoginPort, hypervisor, payload.Nested)
+	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, routerID, primaryIface, secondaryIfaces, keys, rootPasswd, payload.LoginPort, hypervisor, payload.Nested)
 	if err != nil {
 		logger.Errorf("Failed to create instances, %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Failed to create instances", err)

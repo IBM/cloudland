@@ -12,7 +12,9 @@
     <apic/>
     <pae/>
   </features>
-  <cpu mode='host-passthrough'/>
+  <cpu mode='host-model' check='none'>
+    <feature policy='VM_NESTED' name='VM_VIRT_FEATURE'/>
+  </cpu>
   <clock offset='utc'/>
   <on_poweroff>destroy</on_poweroff>
   <on_reboot>restart</on_reboot>

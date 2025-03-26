@@ -3,7 +3,7 @@
 cd $(dirname $0)
 source ../cloudrc
 
-[ $# -lt 7 ] && die "$0 <vm_ID> <image> <qa_enabled> <snapshot> <name> <cpu> <memory> <disk_size> <volume_id>"
+[ $# -lt 10 ] && die "$0 <vm_ID> <image> <qa_enabled> <snapshot> <name> <cpu> <memory> <disk_size> <volume_id> <nested>"
 
 ID=$1
 vm_ID=inst-$ID
@@ -15,6 +15,7 @@ vm_cpu=$6
 vm_mem=$7
 disk_size=$8
 vol_ID=$9
+nested=${10}
 state=error
 vm_vnc=""
 vol_state=error
@@ -97,7 +98,18 @@ mkdir -p $xml_dir/$vm_ID
 vm_QA="$qemu_agent_dir/$vm_ID.agent"
 vm_xml=$xml_dir/$vm_ID/${vm_ID}.xml
 cp $template $vm_xml
-sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_img#g; s#VM_UNIX_SOCK#$ux_sock#g; s#VM_META#$vm_meta#g; s#VM_AGENT#$vm_QA#g" $vm_xml
+if [ "$nested" = "true" ]; then
+    vm_nested="require"
+else
+    vm_nested="disable"
+fi
+cpu_vendor=$(lscpu | grep "Vendor ID" | awk -F ':' '{print $2}' | tr -d ' ')
+if [ "$cpu_vendor" = "GenuineIntel" ]; then
+    vm_virt_feature="vmx"
+else
+    vm_virt_feature="svm"
+fi
+sed -i "s/VM_ID/$vm_ID/g; s/VM_MEM/$vm_mem/g; s/VM_CPU/$vm_cpu/g; s#VM_IMG#$vm_img#g; s#VM_UNIX_SOCK#$ux_sock#g; s#VM_META#$vm_meta#g; s#VM_AGENT#$vm_QA#g; s/VM_NESTED/$vm_nested/g; s/VM_VIRT_FEATURE/$vm_virt_feature/g" $vm_xml
 virsh define $vm_xml
 virsh autostart $vm_ID
 jq .vlans <<< $metadata | ./sync_nic_info.sh "$ID" "$vm_name"
