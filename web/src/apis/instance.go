@@ -257,17 +257,18 @@ func (v *InstanceAPI) Reinstall(c *gin.Context) {
 	}
 
 	// old data compatibility
-	var flavor *model.Flavor
-	if payload.Flavor == "" && instance.Cpu == 0 && instance.FlavorID > 0 {
+	if payload.Flavor == "" && instance.Cpu == 0 {
 		payload.Flavor = instance.Flavor.Name
 	}
+	cpu, memory, disk := instance.Cpu, instance.Memory, instance.Disk
 	if payload.Flavor != "" {
-		flavor, err = flavorAdmin.GetFlavorByName(ctx, payload.Flavor)
+		flavor, err := flavorAdmin.GetFlavorByName(ctx, payload.Flavor)
 		if err != nil {
 			logger.Errorf("Failed to get flavor %+v, %+v", payload.Flavor, err)
 			ErrorResponse(c, http.StatusBadRequest, "Invalid flavor", err)
 			return
 		}
+		cpu, memory, disk = flavor.Cpu, flavor.Memory, flavor.Disk
 	}
 
 	// running command
@@ -288,7 +289,7 @@ func (v *InstanceAPI) Reinstall(c *gin.Context) {
 		ErrorResponse(c, http.StatusBadRequest, "Password or key must be provided", err)
 		return
 	}
-	err = instanceAdmin.Reinstall(ctx, instance, image, flavor, password, keys, instance.Cpu, instance.Memory, instance.Disk, payload.LoginPort)
+	err = instanceAdmin.Reinstall(ctx, instance, image, password, keys, cpu, memory, disk, payload.LoginPort)
 	if err != nil {
 		logger.Error("Reinstall failed", err)
 		ErrorResponse(c, http.StatusBadRequest, "Reinstall failed", err)
@@ -418,9 +419,23 @@ func (v *InstanceAPI) Create(c *gin.Context) {
 	if payload.Hypervisor != nil {
 		hypervisor = *payload.Hypervisor
 	}
-	logger.Debugf("Creating %d instances with hostname %s, userdata %s, image %s, flavor %v, zone %s, router %d, primaryIface %v, secondaryIfaces %v, keys %v, login_port %d, hypervisor %d, cpu %d, memory %d, disk %d, nestedEnable %v",
+	if flavor == nil && (payload.Cpu <= 0 || payload.Memory <= 0 || payload.Disk <= 0) {
+		err = fmt.Errorf("no valid configuration")
+		logger.Error(err)
+		return
+	}
+	if payload.Cpu <= 0 {
+		payload.Cpu = flavor.Cpu
+	}
+	if payload.Memory <= 0 {
+		payload.Memory = flavor.Memory
+	}
+	if payload.Disk <= 0 {
+		payload.Disk = flavor.Disk
+	}
+	logger.Debugf("Creating %d instances with hostname %s, userdata %s, image %s, zone %s, router %d, primaryIface %v, secondaryIfaces %v, keys %v, login_port %d, hypervisor %d, cpu %d, memory %d, disk %d, nestedEnable %v",
 		count, hostname, userdata, image.Name, flavor, zone.Name, routerID, primaryIface, secondaryIfaces, keys, payload.LoginPort, hypervisor, payload.Cpu, payload.Memory, payload.Disk, payload.NestedEnable)
-	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, routerID, primaryIface, secondaryIfaces, keys, rootPasswd, payload.LoginPort, hypervisor, payload.Cpu, payload.Memory, payload.Disk, payload.NestedEnable)
+	instances, err := instanceAdmin.Create(ctx, count, hostname, userdata, image, zone, routerID, primaryIface, secondaryIfaces, keys, rootPasswd, payload.LoginPort, hypervisor, payload.Cpu, payload.Memory, payload.Disk, payload.NestedEnable)
 	if err != nil {
 		logger.Errorf("Failed to create instances, %+v", err)
 		ErrorResponse(c, http.StatusBadRequest, "Failed to create instances", err)
