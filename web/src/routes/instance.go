@@ -116,10 +116,10 @@ func (a *InstanceAdmin) GetHyperGroup(ctx context.Context, zoneID int64, skipHyp
 }
 
 func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata string, image *model.Image,
-	flavor *model.Flavor, zone *model.Zone, routerID int64, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo,
+	zone *model.Zone, routerID int64, primaryIface *InterfaceInfo, secondaryIfaces []*InterfaceInfo,
 	keys []*model.Key, rootPasswd string, loginPort, hyperID int, cpu int32, memory int32, disk int32) (instances []*model.Instance, err error) {
-	logger.Debugf("Create %d instances with image %s, flavor %v, zone %s, router %d, primary interface %v, secondary interfaces %v, keys %v, root password %s, hyper %d, cpu %d, memory %d, disk %d",
-		count, image.Name, flavor, zone.Name, routerID, primaryIface, secondaryIfaces, keys, "********", hyperID, cpu, memory, disk)
+	logger.Debugf("Create %d instances with image %s, zone %s, router %d, primary interface %v, secondary interfaces %v, keys %v, root password %s, hyper %d, cpu %d, memory %d, disk %d",
+		count, image.Name, zone.Name, routerID, primaryIface, secondaryIfaces, keys, "********", hyperID, cpu, memory, disk)
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
 		if newTransaction {
@@ -131,21 +131,6 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 		err = fmt.Errorf("Image status not available")
 		logger.Error("Image status not available")
 		return
-	}
-	// final configuration
-	if flavor == nil && (cpu <= 0 || memory <= 0 || disk <= 0) {
-		err = fmt.Errorf("No valid configuration")
-		logger.Errorf("No valid configuration")
-		return
-	}
-	if cpu <= 0 {
-		cpu = flavor.Cpu
-	}
-	if memory <= 0 {
-		memory = flavor.Memory
-	}
-	if disk <= 0 {
-		disk = flavor.Disk
 	}
 	if image.Size > int64(disk)*1024*1024*1024 {
 		err = fmt.Errorf("Flavor disk size is not enough for the image")
@@ -213,16 +198,12 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			Memory:      memory,
 			Disk:        disk,
 		}
-		if flavor != nil {
-			instance.FlavorID = flavor.ID
-		}
 		err = db.Create(instance).Error
 		if err != nil {
 			logger.Error("DB create instance failed", err)
 			return
 		}
 		instance.Image = image
-		instance.Flavor = flavor
 		instance.Zone = zone
 		var bootVolume *model.Volume
 		imagePrefix := fmt.Sprintf("image-%d-%s", image.ID, strings.Split(image.UUID, "-")[0])
@@ -368,8 +349,8 @@ func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, fl
 	return
 }
 
-func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance, image *model.Image, flavor *model.Flavor, rootPasswd string, keys []*model.Key, cpu int32, memory int32, disk int32) (err error) {
-	logger.Debugf("Reinstall instance %d with image %d and flavor %v", instance.ID, image.ID, flavor)
+func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance, image *model.Image, rootPasswd string, keys []*model.Key, cpu int32, memory int32, disk int32) (err error) {
+	logger.Debugf("Reinstall instance %d with image %d, cpu %d, memory %d, disk %d", instance.ID, image.ID, cpu, memory, disk)
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
 		if newTransaction {
@@ -405,17 +386,6 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 		logger.Error("Failed to query total instances with the image", err)
 		return
 	}
-	// final configuration
-	if flavor == nil && (cpu <= 0 || memory <= 0 || disk <= 0) {
-		err = fmt.Errorf("No valid configuration")
-		logger.Error("No valid configuration")
-		return
-	}
-	if flavor != nil {
-		cpu = flavor.Cpu
-		memory = flavor.Memory
-		disk = flavor.Disk
-	}
 	if image.Size > int64(disk)*1024*1024*1024 {
 		err = fmt.Errorf("Flavor disk size is not enough for the image")
 		logger.Error(err)
@@ -443,20 +413,19 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 	instance.Status = "reinstalling"
 	instance.LoginPort = loginPort
 	instance.PasswdLogin = passwdLogin
-	instance.Flavor = flavor
 	instance.ImageID = image.ID
 	instance.Image = image
 	instance.Cpu = cpu
 	instance.Memory = memory
 	instance.Disk = disk
-	if flavor != nil {
-		instance.FlavorID = flavor.ID
-	}
 	if err = db.Save(&instance).Error; err != nil {
 		logger.Error("Failed to save instance", err)
 		return
 	}
-
+	if err = db.Model(&instance).Update("flavor_id", 0).Error; err != nil {
+		logger.Error("Failed to update flavor_id", err)
+		return
+	}
 	if err = db.Model(&instance).Association("Keys").Replace(keys).Error; err != nil {
 		logger.Errorf("Failed to update keys association: %v", err)
 		return
@@ -1437,20 +1406,20 @@ func (v *InstanceView) Reinstall(c *macaron.Context, store session.Store) {
 			return
 		}
 
-		// old data compatibility
-		var flavor *model.Flavor
 		flavorID := c.QueryInt64("flavor")
-		if flavorID <= 0 && instance.Cpu == 0 && instance.FlavorID > 0 {
+		if flavorID <= 0 && instance.Cpu == 0 {
 			flavorID = instance.FlavorID
 		}
+		cpu, memory, disk := instance.Cpu, instance.Memory, instance.Disk
 		if flavorID > 0 {
-			flavor, err = flavorAdmin.Get(ctx, flavorID)
+			flavor, err := flavorAdmin.Get(ctx, flavorID)
 			if err != nil {
-				logger.Error("No valid flavor", err)
+				logger.Errorf("No valid flavor", err)
 				c.Data["ErrorMsg"] = "No valid flavor"
 				c.HTML(http.StatusBadRequest, "error")
 				return
 			}
+			cpu, memory, disk = flavor.Cpu, flavor.Memory, flavor.Disk
 		}
 
 		rootPasswd := c.QueryTrim("rootpasswd")
@@ -1481,7 +1450,7 @@ func (v *InstanceView) Reinstall(c *macaron.Context, store session.Store) {
 			}
 		}
 
-		err = instanceAdmin.Reinstall(ctx, instance, image, flavor, rootPasswd, instKeys, instance.Cpu, instance.Memory, instance.Disk)
+		err = instanceAdmin.Reinstall(ctx, instance, image, rootPasswd, instKeys, cpu, memory, disk)
 		if err != nil {
 			logger.Error("Reinstall failed", err)
 			c.Data["ErrorMsg"] = err.Error()
@@ -1732,7 +1701,7 @@ func (v *InstanceView) Create(c *macaron.Context, store session.Store) {
 		instKeys = append(instKeys, key)
 	}
 	userdata := c.QueryTrim("userdata")
-	_, err = instanceAdmin.Create(ctx, count, hostname, userdata, image, flavor, zone, primarySubnet.RouterID, primaryIface, secondaryIfaces, instKeys, rootPasswd, loginPort, hyperID, 0, 0, 0)
+	_, err = instanceAdmin.Create(ctx, count, hostname, userdata, image, zone, primarySubnet.RouterID, primaryIface, secondaryIfaces, instKeys, rootPasswd, loginPort, hyperID, flavor.Cpu, flavor.Memory, flavor.Disk)
 	if err != nil {
 		logger.Error("Create instance failed", err)
 		c.Data["ErrorMsg"] = err.Error()
