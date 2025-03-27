@@ -486,12 +486,19 @@ func (a *InstanceAdmin) SetUserPassword(ctx context.Context, id int64, user, pas
 }
 
 func (a *InstanceAdmin) deleteInterfaces(ctx context.Context, instance *model.Instance) (err error) {
+	ctx, db := GetContextDB(ctx)
 	for _, iface := range instance.Interfaces {
 		err = a.deleteInterface(ctx, iface)
 		if err != nil {
 			logger.Error("Failed to delete interface", err)
 			continue
 		}
+		err = db.Model(&model.Subnet{}).Where("interface = ?", iface.ID).Updates(map[string]interface{}{
+			"interface": 0}).Error
+		if err != nil {
+			logger.Error("Failed to update instance", err)
+		}
+		return
 	}
 	return
 }
