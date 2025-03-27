@@ -75,6 +75,23 @@ func (a *HyperAdmin) GetHyperByHostid(ctx context.Context, hostid int32) (hyper 
 	return
 }
 
+func (a *HyperAdmin) GetHyperByHostname(ctx context.Context, hostname string) (hyper *model.Hyper, err error) {
+	memberShip := GetMemberShip(ctx)
+	permit := memberShip.CheckPermission(model.Admin)
+	if !permit {
+		err = fmt.Errorf("Not authorized for this operation")
+		logger.Error("Not authorized for this operation", err)
+		return
+	}
+	db := DB()
+	hyper = &model.Hyper{}
+	if err = db.Where("hostname = ?", hostname).Take(hyper).Error; err != nil {
+		logger.Error("Failed to query hypervisor", err)
+		return
+	}
+	return
+}
+
 func (v *HyperView) List(c *macaron.Context, store session.Store) {
 	memberShip := GetMemberShip(c.Req.Context())
 	permit := memberShip.CheckPermission(model.Admin)

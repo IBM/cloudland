@@ -131,7 +131,7 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 		}
 		return
 	}
-	err = db.Take(instance).Error
+	err = db.Preload("Volumes").Take(instance).Error
 	if err != nil {
 		logger.Error("Invalid instance ID", err)
 		reason = err.Error()
@@ -152,18 +152,28 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 	}
 	reason = args[4]
 	instance.Hyper = int32(hyperID)
-	err = db.Model(&instance).Updates(map[string]interface{}{
-		"status": serverStatus,
-		"hyper":  int32(hyperID),
-		"reason": reason}).Error
+	hyper := &model.Hyper{}
+	err = db.Where("hostid = ?", hyperID).Take(hyper).Error
 	if err != nil {
-		logger.Error("Failed to update instance", err)
+		logger.Error("Failed to query hypervisor", err)
 		return
 	}
-	err = db.Model(&model.Interface{}).Where("instance = ?", instance.ID).Update(map[string]interface{}{"hyper": int32(hyperID)}).Error
-	if err != nil {
-		logger.Error("Failed to update interface", err)
-		return
+	instance.ZoneID = hyper.ZoneID
+	if instance.Status != "migrating" {
+		err = db.Model(&instance).Updates(map[string]interface{}{
+			"status": serverStatus,
+			"hyper":  int32(hyperID),
+			"zoneID":  hyper.ZoneID,
+			"reason": reason}).Error
+		if err != nil {
+			logger.Error("Failed to update instance", err)
+			return
+		}
+		err = db.Model(&model.Interface{}).Where("instance = ?", instance.ID).Update(map[string]interface{}{"hyper": int32(hyperID)}).Error
+		if err != nil {
+			logger.Error("Failed to update interface", err)
+			return
+		}
 	}
 	if serverStatus == "running" {
 		if reason == "init" {
@@ -173,6 +183,11 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 				return
 			}
 		} else if reason == "sync" {
+			err = syncMigration(ctx, instance)
+			if err != nil {
+				logger.Error("Failed to sync migrationinfo", err)
+				return
+			}
 			err = syncNicInfo(ctx, instance)
 			if err != nil {
 				logger.Error("Failed to sync nic info", err)
@@ -181,6 +196,26 @@ func LaunchVM(ctx context.Context, args []string) (status string, err error) {
 			err = syncFloatingIp(ctx, instance)
 			if err != nil {
 				logger.Error("Failed to sync floating ip", err)
+				return
+			}
+		}
+	}
+	return
+}
+
+func syncMigration(ctx context.Context, instance *model.Instance) (err error) {
+	var migrations []*model.Migration
+	db := DB()
+	err = db.Preload("Phases", "name = 'Prepare_Source' and status != 'completed'").Where("instance_id = ? and status = 'completed' and source_hyper = ?", instance.ID, instance.Hyper).Find(&migrations).Error
+	if err != nil {
+		logger.Error("Failed to get migrations", err)
+		return
+	}
+	for _, migration := range migrations {
+		for _, task := range migration.Phases {
+			err = execSourceMigrate(ctx, instance, migration, task.ID, "cold")
+			if err != nil {
+				logger.Error("Failed to exec source migration", err)
 				return
 			}
 		}
@@ -231,19 +266,21 @@ func syncFloatingIp(ctx context.Context, instance *model.Instance) (err error) {
 		}
 	}
 	if primaryIface != nil {
-		floatingIp := &model.FloatingIp{}
-		err = db.Preload("Interface").Preload("Interface.Address").Preload("Interface.Address.Subnet").Where("instance_id = ?", instance.ID).Take(floatingIp).Error
+		floatingIps := []*model.FloatingIp{}
+		err = db.Preload("Interface").Preload("Interface.Address").Preload("Interface.Address.Subnet").Where("instance_id = ?", instance.ID).Find(&floatingIps).Error
 		if err != nil {
 			logger.Error("Failed to get floating ip", err)
 			return
 		}
-		pubSubnet := floatingIp.Interface.Address.Subnet
-		control := fmt.Sprintf("inter=%d", instance.Hyper)
-		command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_floating.sh '%d' '%s' '%s' '%d' '%s' '%d' '%d' '%d' '%d'", floatingIp.RouterID, floatingIp.FipAddress, pubSubnet.Gateway, pubSubnet.Vlan, primaryIface.Address.Address, primaryIface.Address.Subnet.Vlan, floatingIp.ID, floatingIp.Inbound, floatingIp.Outbound)
-		err = HyperExecute(ctx, control, command)
-		if err != nil {
-			logger.Error("Execute floating ip failed", err)
-			return
+		for _, floatingIp := range floatingIps {
+			pubSubnet := floatingIp.Interface.Address.Subnet
+			control := fmt.Sprintf("inter=%d", instance.Hyper)
+			command := fmt.Sprintf("/opt/cloudland/scripts/backend/create_floating.sh '%d' '%s' '%s' '%d' '%s' '%d' '%d' '%d' '%d'", floatingIp.RouterID, floatingIp.FipAddress, pubSubnet.Gateway, pubSubnet.Vlan, primaryIface.Address.Address, primaryIface.Address.Subnet.Vlan, floatingIp.ID, floatingIp.Inbound, floatingIp.Outbound)
+			err = HyperExecute(ctx, control, command)
+			if err != nil {
+				logger.Error("Execute floating ip failed", err)
+				return
+			}
 		}
 	}
 	return

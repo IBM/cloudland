@@ -11,6 +11,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -22,7 +23,9 @@ import (
 	"web/src/model"
 	"web/src/utils/encrpt"
 
+	"github.com/gin-gonic/gin"
 	"github.com/go-macaron/session"
+	"github.com/jinzhu/gorm"
 	macaron "gopkg.in/macaron.v1"
 )
 
@@ -64,13 +67,20 @@ type NetworkLink struct {
 	Type    string `json:"type,omitempty"`
 }
 
+type VolumeInfo struct {
+	ID      int64  `json:"id"`
+	UUID    string `json:"uuid"`
+	Device  string `json:"device"`
+	Booting bool   `json:"booting"`
+}
+
 type InstanceData struct {
 	Userdata   string             `json:"userdata"`
-	VirtType   string             `json:"virt_type"`
 	DNS        string             `json:"dns"`
 	Vlans      []*VlanInfo        `json:"vlans"`
 	Networks   []*InstanceNetwork `json:"networks"`
 	Links      []*NetworkLink     `json:"links"`
+	Volumes    []*VolumeInfo      `json:"volumes"`
 	Keys       []string           `json:"keys"`
 	RootPasswd string             `json:"root_passwd"`
 	LoginPort  int                `json:"login_port"`
@@ -82,13 +92,10 @@ type InstancesData struct {
 	IsAdmin   bool              `json:"is_admin"`
 }
 
-func (a *InstanceAdmin) getHyperGroup(ctx context.Context, imageType string, zoneID int64) (hyperGroup string, err error) {
+func (a *InstanceAdmin) GetHyperGroup(ctx context.Context, zoneID int64, skipHyper int32) (hyperGroup string, err error) {
 	ctx, db := GetContextDB(ctx)
 	hypers := []*model.Hyper{}
-	where := fmt.Sprintf("zone_id = %d and status = 1", zoneID)
-	if imageType != "" {
-		where = fmt.Sprintf("%s and virt_type = '%s'", where, imageType)
-	}
+	where := fmt.Sprintf("zone_id = %d and status = 1 and hostid <> %d", zoneID, skipHyper)
 	if err = db.Where(where).Find(&hypers).Error; err != nil {
 		logger.Error("Hypers query failed", err)
 		return
@@ -151,7 +158,7 @@ func (a *InstanceAdmin) Create(ctx context.Context, count int, prefix, userdata 
 			loginPort = 3389
 		}
 	}
-	hyperGroup, err := a.getHyperGroup(ctx, image.VirtType, zoneID)
+	hyperGroup, err := a.GetHyperGroup(ctx, zoneID, -1)
 	if err != nil {
 		logger.Error("No valid hypervisor", err)
 		return
@@ -263,6 +270,10 @@ func (a *InstanceAdmin) ChangeInstanceStatus(ctx context.Context, instance *mode
 }
 
 func (a *InstanceAdmin) Update(ctx context.Context, instance *model.Instance, flavor *model.Flavor, hostname string, action PowerAction, hyperID int) (err error) {
+	if instance.Status == "migrating" {
+		err = fmt.Errorf("Instance is not in a valid state")
+		return
+	}
 	memberShip := GetMemberShip(ctx)
 	permit, err := memberShip.CheckOwner(model.Writer, "instances", instance.ID)
 	if err != nil {
@@ -433,7 +444,7 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 			return
 		}
 	}
-	metadata, err := a.getMetadata(instance, instancePasswd)
+	metadata, err := a.GetMetadata(ctx, instance, instancePasswd)
 	if err != nil {
 		logger.Error("Failed to get instance metadata", err)
 		return
@@ -619,14 +630,12 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 		logger.Error("Invalid image ", instance.ImageID)
 		return
 	}
-	virtType := image.VirtType
 	dns := primary.NameServer
 	if dns == primaryIP {
 		dns = ""
 	}
 	instData := &InstanceData{
 		Userdata:   userdata,
-		VirtType:   virtType,
 		DNS:        dns,
 		Vlans:      vlans,
 		Networks:   instNetworks,
@@ -644,21 +653,23 @@ func (a *InstanceAdmin) buildMetadata(ctx context.Context, primaryIface *Interfa
 	return interfaces, string(jsonData), nil
 }
 
-func (a *InstanceAdmin) getMetadata(instance *model.Instance, rootPasswd string) (metadata string, err error) {
+func (a *InstanceAdmin) GetMetadata(ctx context.Context, instance *model.Instance, rootPasswd string) (metadata string, err error) {
 	vlans := []*VlanInfo{}
 	instNetworks := []*InstanceNetwork{}
 	instLinks := []*NetworkLink{}
+	volumes := []*VolumeInfo{}
 	var instKeys []string
 	for _, key := range instance.Keys {
 		instKeys = append(instKeys, key.PublicKey)
 	}
-	image := &model.Image{Model: model.Model{ID: instance.ImageID}}
-	err = DB().Take(image).Error
-	if err != nil {
-		logger.Error("Invalid image ", instance.ImageID)
-		return
+	for _, volume := range instance.Volumes {
+		volumes = append(volumes, &VolumeInfo{
+			ID:      volume.ID,
+			UUID:    volume.GetOriginVolumeID(),
+			Device:  volume.Target,
+			Booting: volume.Booting,
+		})
 	}
-	virtType := image.VirtType
 	dns := ""
 	for i, iface := range instance.Interfaces {
 		subnet := iface.Address.Subnet
@@ -678,19 +689,23 @@ func (a *InstanceAdmin) getMetadata(instance *model.Instance, rootPasswd string)
 		}
 		instNetworks = append(instNetworks, instNetwork)
 		instLinks = append(instLinks, &NetworkLink{MacAddr: iface.MacAddr, Mtu: uint(iface.Mtu), ID: iface.Name, Type: "phy"})
-		vlans = append(vlans, &VlanInfo{Device: iface.Name, Vlan: subnet.Vlan, Inbound: iface.Inbound, Outbound: iface.Outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: gateway, Router: subnet.RouterID, IpAddr: address, MacAddr: iface.MacAddr})
+		vlans = append(vlans, &VlanInfo{Device: iface.Name, Vlan: subnet.Vlan, Inbound: iface.Inbound, Outbound: iface.Outbound, AllowSpoofing: iface.AllowSpoofing, Gateway: subnet.Gateway, Router: subnet.RouterID, IpAddr: address, MacAddr: iface.MacAddr})
+	}
+	osCode := "linux"
+	if instance.Image != nil {
+		osCode = instance.Image.OSCode
 	}
 	instData := &InstanceData{
 		Userdata:   instance.Userdata,
-		VirtType:   virtType,
 		DNS:        dns,
 		Vlans:      vlans,
 		Networks:   instNetworks,
 		Links:      instLinks,
+		Volumes:    volumes,
 		Keys:       instKeys,
 		RootPasswd: rootPasswd,
 		LoginPort:  int(instance.LoginPort),
-		OSCode:     instance.Image.OSCode,
+		OSCode:     osCode,
 	}
 	jsonData, err := json.Marshal(instData)
 	if err != nil {
@@ -701,6 +716,10 @@ func (a *InstanceAdmin) getMetadata(instance *model.Instance, rootPasswd string)
 }
 
 func (a *InstanceAdmin) Delete(ctx context.Context, instance *model.Instance) (err error) {
+	if instance.Status == "migrating" {
+		err = fmt.Errorf("Instance is not in a valid state")
+		return
+	}
 	ctx, db, newTransaction := StartTransaction(ctx)
 	defer func() {
 		if newTransaction {
@@ -850,6 +869,27 @@ func (a *InstanceAdmin) GetInstanceByUUID(ctx context.Context, uuID string) (ins
 		return
 	}
 	return
+}
+
+func GetDBIndexByInstanceUUID(c *gin.Context, uuid string) (int, error) {
+	db := DB()
+
+	var instance model.Instance
+	if err := db.Model(&model.Instance{}).
+		Select("id").
+		Where("uuid = ?", uuid).
+		First(&instance).Error; err != nil {
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Instance not found"})
+			fmt.Printf("Instance not found: %s\n", uuid)
+			return -1, fmt.Errorf("instance %s not found: %w", uuid, err)
+		}
+		logger.Error("Database error for UUID %s: %v", uuid, err)
+		return -1, fmt.Errorf("database error: %v", err)
+	}
+
+	return int(instance.ID), nil
 }
 
 func (a *InstanceAdmin) List(ctx context.Context, offset, limit int64, order, query string) (total int64, instances []*model.Instance, err error) {

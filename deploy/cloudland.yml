@@ -3,6 +3,21 @@
   roles:
     - {role: base, become: yes, tags: [base]}
 
+# generate ssh key pair
+- name: generate ssh key pair
+  hosts: localhost
+  become_user: root
+  tasks:
+    - name: Create a directory
+      file:
+        path: /tmp/.ssh/
+        state: directory
+    - name: Generate SSH key pair
+      shell: ssh-keygen -t rsa -N "" -f /tmp/.ssh/cland.key
+      args:
+        creates: /tmp/.ssh/cland.key
+  tags: [ssh_key]
+
 # deploy hypers
 - name: install hyper
   hosts: hyper
@@ -43,3 +58,21 @@
   become_user: root
   roles:
     - {role: wds, become: yes, tags: [wds]}
+
+# deploy monitor 
+- name: install monitor
+  hosts: monitor
+  become_user: root
+  roles:
+    - {role: monitor, become: yes, tags: [monitor]}
+
+# delete tmp ssh key pair
+- name: generate ssh key pair
+  hosts: localhost
+  become_user: root
+  tasks:
+    - name: remove tmp ssh directory
+      file:
+        path: /tmp/.ssh/
+        state: absent
+  tags: [ssh_key]

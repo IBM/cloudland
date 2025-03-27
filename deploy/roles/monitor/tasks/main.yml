@@ -1,0 +1,186 @@
+- name: Set scrape interval variable
+  set_fact:
+    scrape_interval: 15  # 15 seconds
+
+- name: Set prometheus_server_ip from monitor group
+  set_fact:
+    prometheus_server_ip: "{{ hostvars[groups['monitor'][0]]['ansible_host'] }}"
+
+- name: Gather IP addresses from hyper group
+  set_fact:
+    hyper_ips: "{{ groups['hyper'] | map('extract', hostvars, 'ansible_host') | list }}"
+
+- name: Generate node exporters config block
+  set_fact:
+    node_exporters_block: |
+      - job_name: 'prometheus_node_exporter'
+        static_configs:
+          {% for ip in hyper_ips -%}
+          - targets: ['{{ ip }}:9100']
+          {% endfor %}
+
+- name: Generate libvirt exporters config block
+  set_fact:
+    libvirt_exporters_block: |
+      - job_name: 'prometheus_libvirt_exporter'
+        static_configs:
+          {% for ip in hyper_ips -%}
+          - targets: ['{{ ip }}:9177']
+          {% endfor %}
+
+- name: Install packages for monitor server
+  delegate_to: "{{ prometheus_server_ip }}"
+  become: true
+  apt:
+    name: ['prometheus', 'prometheus-node-exporter']
+    state: present
+  tags: [monitor]
+
+- name: Configure Prometheus server
+  delegate_to: "{{ prometheus_server_ip }}"
+  become: true
+  copy:
+    content: |
+      global:
+        scrape_interval: {{ scrape_interval }}s
+      scrape_configs:
+        - job_name: 'prometheus'
+          static_configs:
+            - targets: ['localhost:9090']
+    dest: /etc/prometheus/prometheus.yml
+    owner: prometheus
+    group: prometheus
+  tags: [monitor]
+
+- name: Update Prometheus with node exporters block
+  delegate_to: "{{ prometheus_server_ip }}"
+  become: true
+  blockinfile:
+    path: /etc/prometheus/prometheus.yml
+    block: |
+      {{ node_exporters_block | indent(2, True) }}
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - Node Exporters"
+    insertafter: '^scrape_configs:'
+    create: yes
+  tags: [monitor]
+
+- name: Update Prometheus with libvirt exporters block
+  delegate_to: "{{ prometheus_server_ip }}"
+  become: true
+  blockinfile:
+    path: /etc/prometheus/prometheus.yml
+    block: |
+      {{ libvirt_exporters_block | indent(2, True) }}
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - Libvirt Exporters"
+    insertafter: '^scrape_configs:'
+    create: yes
+  tags: [monitor]
+
+
+- name: Start Prometheus services on Prometheus server
+  delegate_to: "{{ prometheus_server_ip }}"
+  become: true
+  systemd:
+    name: "{{ item }}"
+    enabled: yes
+    daemon_reload: yes
+    state: restarted
+  loop:
+    - 'prometheus-node-exporter'
+    - 'prometheus'
+  tags: [monitor]
+
+- name: Add Grafana GPG key
+  delegate_to: "{{ prometheus_server_ip }}"
+  become: true
+  apt_key:
+    url: https://packages.grafana.com/gpg.key
+    state: present
+  tags: [monitor]
+
+- name: Add Grafana repository
+  delegate_to: "{{ prometheus_server_ip }}"
+  become: true
+  apt_repository:
+    repo: deb https://packages.grafana.com/oss/deb stable main
+    state: present
+  tags: [monitor]
+
+- name: Update apt cache and install Grafana
+  delegate_to: "{{ prometheus_server_ip }}"
+  become: true
+  apt:
+    update_cache: true
+    name: grafana
+    state: present
+  tags: [monitor]
+
+- name: Configure Grafana
+  delegate_to: "{{ prometheus_server_ip }}"
+  become: true
+  copy:
+    dest: /etc/grafana/grafana.ini
+    content: |
+      [server]
+      http_port = 3000
+      [database]
+      type = sqlite3
+      path = /var/lib/grafana/grafana.db
+
+- name: Start and enable Grafana service
+  delegate_to: "{{ prometheus_server_ip }}"
+  become: true
+  systemd:
+    name: grafana-server
+    state: started
+    enabled: true
+  tags: [monitor]
+
+- name: Wait for Grafana to be ready
+  delegate_to: "{{ prometheus_server_ip }}"
+  become: true
+  uri:
+    url: http://localhost:3000/api/health
+    method: GET
+    status_code: 200
+    timeout: 10
+  register: grafana_health
+  until: grafana_health.status == 200
+  retries: 10
+  delay: 5
+  tags: [monitor]
+
+- name: Add Prometheus as Grafana data source
+  delegate_to: "{{ prometheus_server_ip }}"
+  become: true
+  uri:
+    url: http://localhost:3000/api/datasources
+    method: POST
+    body:
+      name: "Prometheus"
+      type: "prometheus"
+      url: "http://{{ prometheus_server_ip }}:9090"  
+      access: "proxy"
+      isDefault: true
+    body_format: json
+    status_code: 200
+    headers:
+      Content-Type: "application/json"
+    user: admin
+    password: admin
+    force_basic_auth: yes
+  ignore_errors: yes
+  changed_when: false
+  tags: [monitor]
+
+- name: Add monitor section to config.toml
+  delegate_to: "{{ prometheus_server_ip }}"
+  become: true
+  blockinfile:
+    path: /opt/cloudland/web/conf/config.toml
+    block: |
+      [monitor]
+      host = "{{ prometheus_server_ip }}"
+      port = 9090
+    create: yes
+  tags: [monitor]
