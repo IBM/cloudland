@@ -7,3 +7,5 @@ cpu_ratio: 1
 mem_ratio: 1
 disk_ratio: 1
 domain_name: example.com
+monitor_vip: localhost
+monitor_monitor_access_port: 9090
