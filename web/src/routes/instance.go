@@ -404,26 +404,24 @@ func (a *InstanceAdmin) Reinstall(ctx context.Context, instance *model.Instance,
 	default:
 		loginPort = instance.LoginPort
 	}
-	logger.Debug("Login Port is: %d", loginPort)
+	logger.Debugf("Login Port is: %d", loginPort)
 	passwdLogin := false
 	if rootPasswd != "" {
 		passwdLogin = true
 		logger.Debug("Root password login enabled")
 	}
-	instance.Status = "reinstalling"
-	instance.LoginPort = loginPort
-	instance.PasswdLogin = passwdLogin
-	instance.ImageID = image.ID
-	instance.Image = image
-	instance.Cpu = cpu
-	instance.Memory = memory
-	instance.Disk = disk
-	if err = db.Save(&instance).Error; err != nil {
+	err = db.Model(&model.Instance{}).Where("id = ?", instance.ID).Updates(map[string]interface{}{
+		"flavor_id":    0,
+		"status":       "reinstalling",
+		"login_port":   loginPort,
+		"passwd_login": passwdLogin,
+		"image_id":     image.ID,
+		"cpu":          cpu,
+		"memory":       memory,
+		"disk":         disk,
+	}).Error
+	if err != nil {
 		logger.Error("Failed to save instance", err)
-		return
-	}
-	if err = db.Model(&instance).Update("flavor_id", 0).Error; err != nil {
-		logger.Error("Failed to update flavor_id", err)
 		return
 	}
 	if err = db.Model(&instance).Association("Keys").Replace(keys).Error; err != nil {
