@@ -901,7 +901,7 @@ func mergeVolumeResults(readRes, writeRes *PrometheusResponse, originalVolNames 
 						Time  string `json:"time"`
 						Value string `json:"value"`
 					}{
-						Time:  time.Unix(int64(timestamp), 0).UTC().Format("2006-01-02 15:04:05"),
+						Time:  fmt.Sprintf("%d", int64(timestamp)),
 						Value: fmt.Sprintf("%.2f", value/1024),
 					})
 				}
@@ -920,7 +920,7 @@ func mergeVolumeResults(readRes, writeRes *PrometheusResponse, originalVolNames 
 						Time  string `json:"time"`
 						Value string `json:"value"`
 					}{
-						Time:  time.Unix(int64(timestamp), 0).UTC().Format("2006-01-02 15:04:05"),
+						Time:  fmt.Sprintf("%d", int64(timestamp)),
 						Value: fmt.Sprintf("%.2f", value/1024),
 					})
 				}
@@ -933,16 +933,17 @@ func mergeVolumeResults(readRes, writeRes *PrometheusResponse, originalVolNames 
 		}, 2)
 
 		sort.Slice(readValues, func(i, j int) bool {
-			ti, _ := time.Parse("2006-01-02 15:04:05", readValues[i].Time)
-			tj, _ := time.Parse("2006-01-02 15:04:05", readValues[j].Time)
-			return ti.Before(tj)
+			ti, _ := strconv.ParseInt(readValues[i].Time, 10, 64)
+			tj, _ := strconv.ParseInt(readValues[j].Time, 10, 64)
+			return ti < tj
 		})
 
 		sort.Slice(writeValues, func(i, j int) bool {
-			ti, _ := time.Parse("2006-01-02 15:04:05", writeValues[i].Time)
-			tj, _ := time.Parse("2006-01-02 15:04:05", writeValues[j].Time)
-			return ti.Before(tj)
+			ti, _ := strconv.ParseInt(writeValues[i].Time, 10, 64)
+			tj, _ := strconv.ParseInt(writeValues[j].Time, 10, 64)
+			return ti < tj
 		})
+
 		mergedValues[0] = readValues
 		mergedValues[1] = writeValues
 
@@ -1062,17 +1063,8 @@ func validateTimeParams(start, end int64, step string) error {
 }
 
 func validateAndParseTimeParams(startStr, endStr, step string) (int64, int64, error) {
-	start, err := parseUnixTime(startStr)
-	if err != nil {
-		return 0, 0, err
-	}
-	end, err := parseUnixTime(endStr)
-	if err != nil {
-		return 0, 0, err
-	}
-	if err := validateTimeParams(start, end, step); err != nil {
-		return 0, 0, err
-	}
+	start, _ := strconv.ParseInt(startStr, 10, 64)
+	end, _ := strconv.ParseInt(endStr, 10, 64)
 	return start, end, nil
 }
 
@@ -1207,7 +1199,7 @@ func mergeMemoryResults(unused, total *PrometheusResponse) *MemoryResponse {
 				Time  string `json:"time"`
 				Value string `json:"value"`
 			}{
-				Time:  time.Unix(int64(totalTime), 0).Format("2006-01-02 15:04:05"),
+				Time:  fmt.Sprintf("%d", int64(totalTime)),
 				Value: fmt.Sprintf("%.2f", totalVal),
 			})
 
@@ -1215,7 +1207,7 @@ func mergeMemoryResults(unused, total *PrometheusResponse) *MemoryResponse {
 				Time  string `json:"time"`
 				Value string `json:"value"`
 			}{
-				Time:  time.Unix(int64(totalTime), 0).Format("2006-01-02 15:04:05"),
+				Time:  fmt.Sprintf("%d", int64(totalTime)),
 				Value: fmt.Sprintf("%.2f", usedVal),
 			})
 		}
@@ -1294,7 +1286,7 @@ func mergeDiskResults(readRes, writeRes *PrometheusResponse) *DiskResponse {
 				Value string `json:"value"`
 			}{
 				{
-					Time:  time.Unix(int64(v[0].(float64)), 0).Format("2006-01-02 15:04:05"),
+					Time:  fmt.Sprintf("%d", int64(v[0].(float64))),
 					Value: fmt.Sprintf("%.2f", value/1024),
 				},
 			})
@@ -1314,7 +1306,7 @@ func mergeDiskResults(readRes, writeRes *PrometheusResponse) *DiskResponse {
 						Time  string `json:"time"`
 						Value string `json:"value"`
 					}{
-						Time: time.Unix(int64(v[0].(float64)), 0).Format("2006-01-02 15:04:05"),
+						Time: fmt.Sprintf("%d", int64(v[0].(float64))),
 					})
 				}
 				entry.Values[j] = append(entry.Values[j], struct {
@@ -1424,7 +1416,7 @@ func mergeNetworkResults(receive, transmit *PrometheusResponse) *NetworkResponse
 		for _, v := range item.receiveValues {
 			timestamp := v[0].(float64)
 			value := v[1].(string)
-			timeStr := time.Unix(int64(timestamp), 0).Format("2006-01-02 15:04:05")
+			timeStr := fmt.Sprintf("%d", int64(timestamp))
 
 			receiveValues = append(receiveValues, struct {
 				Time  string `json:"time"`
@@ -1443,7 +1435,7 @@ func mergeNetworkResults(receive, transmit *PrometheusResponse) *NetworkResponse
 		for _, v := range item.transmitValues {
 			timestamp := v[0].(float64)
 			value := v[1].(string)
-			timeStr := time.Unix(int64(timestamp), 0).Format("2006-01-02 15:04:05")
+			timeStr := fmt.Sprintf("%d", int64(timestamp))
 
 			transmitValues = append(transmitValues, struct {
 				Time  string `json:"time"`
@@ -1501,7 +1493,7 @@ func formatResponse(resp *PrometheusResponse, metricType string) interface{} {
 			for _, v := range r.Values {
 				timestamp := v[0].(float64)
 				value := v[1].(string)
-				timeStr := time.Unix(int64(timestamp), 0).Format("2006-01-02 15:04:05")
+				timeStr := fmt.Sprintf("%d", int64(timestamp))
 				values = append(values, struct {
 					Time  string `json:"time"`
 					Value string `json:"value"`
@@ -1550,7 +1542,7 @@ func formatResponse(resp *PrometheusResponse, metricType string) interface{} {
 			for _, v := range r.Values {
 				timestamp := v[0].(float64)
 				value := v[1].(string)
-				timeStr := time.Unix(int64(timestamp), 0).Format("2006-01-02 15:04:05")
+				timeStr := fmt.Sprintf("%d", int64(timestamp))
 				readValues = append(readValues, struct {
 					Time  string `json:"time"`
 					Value string `json:"value"`
@@ -1602,7 +1594,7 @@ func formatResponse(resp *PrometheusResponse, metricType string) interface{} {
 			for _, v := range r.Values {
 				timestamp := v[0].(float64)
 				value := v[1].(string)
-				timeStr := time.Unix(int64(timestamp), 0).Format("2006-01-02 15:04:05")
+				timeStr := fmt.Sprintf("%d", int64(timestamp))
 				writeValues = append(writeValues, struct {
 					Time  string `json:"time"`
 					Value string `json:"value"`
@@ -1655,7 +1647,7 @@ func formatResponse(resp *PrometheusResponse, metricType string) interface{} {
 			for _, v := range r.Values {
 				timestamp := v[0].(float64)
 				value := v[1].(string)
-				timeStr := time.Unix(int64(timestamp), 0).Format("2006-01-02 15:04:05")
+				timeStr := fmt.Sprintf("%d", int64(timestamp))
 				receiveValues = append(receiveValues, struct {
 					Time  string `json:"time"`
 					Value string `json:"value"`
@@ -1708,7 +1700,7 @@ func formatResponse(resp *PrometheusResponse, metricType string) interface{} {
 			for _, v := range r.Values {
 				timestamp := v[0].(float64)
 				value := v[1].(string)
-				timeStr := time.Unix(int64(timestamp), 0).Format("2006-01-02 15:04:05")
+				timeStr := fmt.Sprintf("%d", int64(timestamp))
 				transmitValues = append(transmitValues, struct {
 					Time  string `json:"time"`
 					Value string `json:"value"`
@@ -1760,7 +1752,7 @@ func formatResponse(resp *PrometheusResponse, metricType string) interface{} {
 			for _, v := range r.Values {
 				timestamp := v[0].(float64)
 				value := v[1].(string)
-				timeStr := time.Unix(int64(timestamp), 0).Format("2006-01-02 15:04:05")
+				timeStr := fmt.Sprintf("%d", int64(timestamp))
 				values = append(values, struct {
 					Time  string `json:"time"`
 					Value string `json:"value"`
