@@ -1,3 +1,3 @@
 # MAINTAINERS
 
-Catherine - tuhongj@cn.ibm.com
+Catherine - catherine@raksmart.com

@@ -4,7 +4,7 @@ Cloudland is a lightweight Infrastructure-as-a-Service (IaaS) framework designed
 In addition to its built-in multi-tenant support, Cloudland offers seamless integration with third-party authentication and authorization systems, making it an ideal solution for private cloud deployments or hyper-converged infrastructure (HCI) setups.   
     
 ## Architecture overview
-![](https://raw.githubusercontent.com/wiki/IBM/cloudland/images/architecture.svg?sanitize=true)   
+![](https://raw.githubusercontent.com/wiki/maplerime/cloudland/images/architecture.svg?sanitize=true)   
 To support ultra-large scale, the hypervisors are organized into a tree hierarchy, the agents (scia are launched on demand)   
 
 **Cloudland’s key distinguishing features include:**   
@@ -15,23 +15,23 @@ To support ultra-large scale, the hypervisors are organized into a tree hierarch
 - Self-Healing and Stable: Automatic failure recovery with robust stability for continuous operation.
 - Customizable: Easily extensible to implement custom features and meet specific needs.
 
-For more information, see the [Introduction](https://github.com/IBM/cloudland/wiki/Introduction)
+For more information, see the [Introduction](https://github.com/maplerime/cloudland/wiki/Introduction)
 
 ## Installation
-Refer to [Installation](https://github.com/IBM/cloudland/wiki/Installation)
+Refer to [Installation](https://github.com/maplerime/cloudland/wiki/Installation)
 
 ## User Guide
-Refer to [User Manual](https://github.com/IBM/cloudland/wiki/Manual)
+Refer to [User Manual](https://github.com/maplerime/cloudland/wiki/Manual)
 
 ## Reporting Issues
-If you encounter any problem with this package, please open an [issue](https://github.com/IBM/cloudland/issues) tracker to us
+If you encounter any problem with this package, please open an [issue](https://github.com/maplerime/cloudland/issues) tracker to us
 
 ## Contributing
-Refer to [CONTRIBUTING](https://github.com/IBM/cloudland/wiki/Contribution)
+Refer to [CONTRIBUTING](https://github.com/maplerime/cloudland/wiki/Contribution)
 
 ## License
-Apache License 2.0, see [LICENSE](https://github.com/IBM/cloudland/blob/master/LICENSE)
-Visit [doc](https://github.com/IBM/cloudland/wiki) for full documentation and guide.
+Apache License 2.0, see [LICENSE](https://github.com/maplerime/cloudland/blob/master/LICENSE)
+Visit [doc](https://github.com/maplerime/cloudland/wiki) for full documentation and guide.
 
 
 
